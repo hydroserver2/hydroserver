@@ -4,7 +4,7 @@
 
 The Streaming Data Loader desktop app is a tool used to automatically load data into 
 HydroServer from local data files (such as datalogger output files for example). You can download 
-the SDL app from [this page]([/guides/content/editing-an-existing-page](http://ciroh-his-dev.us-east-1.elasticbeanstalk.com/hydroloader/download)).
+the SDL app from [this page](http://ciroh-his-dev.us-east-1.elasticbeanstalk.com/hydroloader/download).
 
 When you install the SDL app, it will ask for your account credentials and a name for the SDL 
 instance. You can install multiple SDL apps across different machines, so it's recommended you 
