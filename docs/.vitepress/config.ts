@@ -18,6 +18,7 @@ export default defineConfig({
         items: [
           { text: "Indroduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
+          { text: "Loading Data", link: "/guide/loading-data" }
         ],
       },
       {
