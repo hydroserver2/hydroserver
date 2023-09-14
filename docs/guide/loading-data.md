@@ -23,7 +23,7 @@ you can also delete the record of that SDL from this dashboard.
 
 ## Data Sources
 
-After installing the Streming Data Loader, you can configure data sources on HydroServer for 
+After installing the Streaming Data Loader, you can configure data sources on HydroServer for 
 the SDL to load data from. A data source is a CSV file that the HDL app can read and contains
 raw timeseries data for one or more datastreams.
 

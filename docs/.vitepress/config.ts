@@ -9,21 +9,30 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: "Home", link: "/" },
-      // { text: "Examples", link: "/markdown-examples" },
     ],
 
     sidebar: [
       {
         text: "Guide",
         items: [
-          { text: "Indroduction", link: "/guide/introduction" },
+          { text: "Introduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Loading Data", link: "/guide/loading-data" }
         ],
       },
       {
         text: "APIs",
-        items: [{ text: "SensorThings API", link: "/api/sensor-things" }],
+        items: [
+          { text: "SensorThings API", link: "/api/sensor-things-api" },
+          { text: "Data Management API", link: "/api/data-management-api"}
+        ],
+      },
+      {
+        text: "Deployment",
+        items: [
+          { text: "Amazon Web Services", link: "/deployment/aws-deployment" },
+          { text: "Timescale Cloud", link: "/deployment/timescale-cloud" }
+        ],
       },
     ],
 

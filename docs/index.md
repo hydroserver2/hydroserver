@@ -11,7 +11,7 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: Indroduction
+      text: Introduction
       link: /guide/introduction
     - theme: alt
       text: GitHub
