@@ -6,10 +6,9 @@ export default defineConfig({
   description: "The official docs for HydroServer",
   base: "/docs/",
   themeConfig: {
+    logo: "/logo.png",
     // https://vitepress.dev/reference/default-theme-config
-    nav: [
-      { text: "Home", link: "/" },
-    ],
+    nav: [{ text: "Home", link: "/" }],
 
     sidebar: [
       {
@@ -17,21 +16,21 @@ export default defineConfig({
         items: [
           { text: "Introduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
-          { text: "Loading Data", link: "/guide/loading-data" }
+          { text: "Loading Data", link: "/guide/loading-data" },
         ],
       },
       {
         text: "APIs",
         items: [
           { text: "SensorThings API", link: "/api/sensor-things-api" },
-          { text: "Data Management API", link: "/api/data-management-api"}
+          { text: "Data Management API", link: "/api/data-management-api" },
         ],
       },
       {
         text: "Deployment",
         items: [
           { text: "Amazon Web Services", link: "/deployment/aws-deployment" },
-          { text: "Timescale Cloud", link: "/deployment/timescale-cloud" }
+          { text: "Timescale Cloud", link: "/deployment/timescale-cloud" },
         ],
       },
     ],
