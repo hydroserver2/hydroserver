@@ -6,7 +6,7 @@ hero:
   name: "HydroServer"
   text: "Advanced Water Data Management"
   image:
-    src: \logo.png
+    src: /logo.png
     alt: HydroServer Logo
   tagline: Empowering Hydrologic Research with Efficient Data Streaming and Sharing
   actions:
