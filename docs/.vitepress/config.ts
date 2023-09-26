@@ -4,7 +4,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "HydroServer",
   description: "The official docs for HydroServer",
-  base: "/docs/",
+  base: "/hydroserver/",
   themeConfig: {
     logo: "/logo.png",
     // https://vitepress.dev/reference/default-theme-config
