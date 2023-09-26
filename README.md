@@ -2,6 +2,9 @@
 
 This repository hosts the main issue tracker for the HydroServer software stack and documentation for HydroServer components. Code repositories for each HydroServer component are linked below.
 
+* Access the [HydroServer issue tracker](https://github.com/hydroserver2/hydroserver/issues)
+* Access [HydroServer documentation](https://hydroserver2.github.io/hydroserver/)
+
 HydroServer is a software cyberinfrastructure platform created to support collection, management, and sharing of time series of observations from hydrologic and evironmental monitoring sites. Under development at the [Utah Water Research Laboratory](https://uwrl.usu.edu/) at [Utah State University](https://www.usu.edu/), HydroServer is designed to be an open platform that enables research groups, agencies, organizations, and practitioners to more easily collect and manage streaming observations from environmental sensors. 
 
 HydroServer consists of the following components:
