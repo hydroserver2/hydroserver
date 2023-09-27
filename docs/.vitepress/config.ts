@@ -5,6 +5,15 @@ export default defineConfig({
   title: "HydroServer",
   description: "The official docs for HydroServer",
   base: "/hydroserver/",
+  head: [
+    [
+      "link",
+      {
+        rel: "icon",
+        href: "/hydroserver/favicon.ico",
+      },
+    ],
+  ],
   themeConfig: {
     logo: "/logo.png",
     // https://vitepress.dev/reference/default-theme-config
