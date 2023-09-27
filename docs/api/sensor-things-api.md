@@ -1,21 +1,16 @@
 # HydroServer SensorThings API
 
-Welcome to the documentation for the HydroServer SensorThings API. This API provides access and observations posting
-capabilities of environmental sensor data hosted by HydroServer. SensorThings API is an open standard developed by the
-Open Geospatial Consortium (OGC) for the Internet of Things (IoT) and environmental monitoring. More detailed
-specifications for SensorThings v1.1 can be found at https://docs.ogc.org/is/18-088/18-088.html.
+This section is an in-depth explanation of our Django implementation of the Open Geospatial Consortium
+SensorThings specification. We recommend reading the [SensorThings overview](/guide/sensor-things.md)
+before reading this.
 
-## 1. Introduction
-
-The HydroServer SensorThings API allows you to retrieve and interact with environmental sensor data related to water
-resources. This documentation provides information on how to upload and retrieve data from HydroServer using
-SensorThings. You can also view interactive documentation at:
+You can also view interactive documentation at:
 
 ```
 https://beta.hydroserver2.org/api/sensorthings/v1.1/docs
 ```
 
-## 2. SensorThings Base URL
+## SensorThings Base URL
 
 HydroServer currently only supports version 1.1 of the SensorThings specification. The base URL for HydroServer
 SensorThings is:
@@ -26,18 +21,18 @@ https://beta.hydroserver2.org/api/sensorthings/v1.1/
 
 This URL will return a list of capabilities currently supported by this SensorThings implementation.
 
-## 3. Authentication
+## Authentication
 
 Authentication is not required for public data access. However, if you require access to restricted data or wish to
 upload or modify your own data, you will need to authenticate using either basic authentication or API access tokens.
-See the account API documentation for additional instructions on how to use both of these authentication methods.
+See the [account API documentation](/api/account-api.md) for additional instructions on how to use both of these authentication methods.
 
 The HydroServer SensorThings API supports requests over both HTTPS and HTTP connections due to
 limitations of some datalogger devices. We highly recommend connecting via HTTPS whenever possible. It is also highly
 recommended to use token based authentication rather than basic authentication, especially when using HTTP connections.
 Using basic authentication over unencrypted HTTP connections makes your account highly vulnerable to security threats.
 
-## 4. Endpoints
+## Endpoints
 
 This section provides an overview of all endpoints provided by the HydroServer SensorThings API. Portions of URLs
 enclosed in angle brackets, such as {thing_id}, represent user provided parameters; these are typically UUIDs associated
@@ -104,7 +99,7 @@ not been disabled, but be aware that the responses of these endpoints will alway
 **Note:** HydroServer does not currently support the creation of features of interest of observations. These endpoints
 have not been disabled, but be aware that the responses of these endpoints will always be empty.
 
-## 5. Retrieving Data
+## Retrieving Data
 
 The HydroServer SensorThings API allows you to access various sensor-related data via HTTP GET requests. SensorThings
 provides several patterns for retrieving subsets of monitoring data which will be covered here.
@@ -217,12 +212,12 @@ The following is an example of a data array response:
 }
 ```
 
-### Python Data Retrieval Examples <a name="python-data-retrieval"></a>
+### Python Data Retrieval Examples
 
 This section contains several examples showing how to retrieve data from the SensorThings API using the Python
 "requests" module.
 
-#### Retrieve a list of Things using server-side pagination, ordering, and filtering. <a name="python-pagination"></a>
+#### Retrieve a list of Things using server-side pagination, ordering, and filtering.
 
 ```python
 import requests
@@ -251,7 +246,7 @@ if response.status_code == 200:
    things = json.loads(response.content)
 ```
 
-#### Retrieve a Datastream entity with related entities expanded. <a name="python-expansion"></a>
+#### Retrieve a Datastream entity with related entities expanded.
 
 ```python
 import requests
@@ -273,7 +268,7 @@ if response.status_code == 200:
    datastreams = json.loads(response.content)
 ```
 
-#### Retrieve a set of Observations belonging to a Datastream in the dataArray format. <a name="python-data-array"></a>
+#### Retrieve a set of Observations belonging to a Datastream in the dataArray format.
 
 ```python
 import requests
@@ -296,12 +291,12 @@ if response.status_code == 200:
    observations = json.loads(response.content)
 ```
 
-## 6. Posting Data <a name="posting-data"></a>
+## Posting Data
 
 The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or
 modified using the Data Management API.
 
-### Observations <a name="posting-data"></a>
+### Observations
 
 Observations can be posted to HydroServer via the SensorThings API using two different methods. The first uses a more
 verbose body and can be used to post one Observation per request. The example POST body below shows how to format this

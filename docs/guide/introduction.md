@@ -37,5 +37,5 @@ If you'd like a hands-on tutorial for setting up a monitoring site and streaming
 [Getting Started Guide](getting-started.md)
 
 If you'd like to read some more about our system, feel free to skip around the documentation as most of the sections are fairly self-contained.
-We recommend starting with the [SensorThings API](/api/sensor-things-api.md) which will explain more about HydroServer's architecture then moving on to
+We recommend starting with the [SensorThings Overview](/guide/sensor-things.md) which will explain more about HydroServer's architecture, then moving on to
 the other major parts of HydroServer listed at the beginning of this page

@@ -25,8 +25,9 @@ export default defineConfig({
         items: [
           { text: "Introduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
-          { text: "Loading Data", link: "/guide/loading-data" },
+          { text: "SensorThings", link: "/guide/sensor-things" },
           { text: "The Web Application", link: "/guide/web-application" },
+          { text: "Loading Data", link: "/guide/loading-data" },
         ],
       },
       {
@@ -34,6 +35,7 @@ export default defineConfig({
         items: [
           { text: "SensorThings API", link: "/api/sensor-things-api" },
           { text: "Data Management API", link: "/api/data-management-api" },
+          { text: "Account API", link: "/api/account-api" },
         ],
       },
       {
