@@ -1,54 +1,23 @@
 # HydroServer SensorThings API
 
 Welcome to the documentation for the HydroServer SensorThings API. This API provides access and observations posting
-capabilities of environmental sensor data hosted by HydroServer. SensorThings API is an open standard developed by the 
-Open Geospatial Consortium (OGC) for the Internet of Things (IoT) and environmental monitoring. More detailed 
+capabilities of environmental sensor data hosted by HydroServer. SensorThings API is an open standard developed by the
+Open Geospatial Consortium (OGC) for the Internet of Things (IoT) and environmental monitoring. More detailed
 specifications for SensorThings v1.1 can be found at https://docs.ogc.org/is/18-088/18-088.html.
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [API Base URL](#api-base-url)
-3. [Authentication](#authentication)
-4. [Endpoints](#endpoints)
-   - [Things](#thing-endpoints)
-   - [Locations](#location-endpoints)
-   - [Historical Locations](#historical-location-endpoints)
-   - [Sensors](#sensor-endpoints)
-   - [Observed Properties](#observed-property-endpoints)
-   - [Datastreams](#datastream-endpoints)
-   - [Observations](#observation-endpoints)
-   - [Feature of Interest](#feature-of-interest-endpoints)
-5. [Retrieving Data](#querying-data)
-   - [Expansion](#expansion)
-   - [Filtering](#filtering)
-   - [Selection](#selection)
-   - [Ordering](#ordering)
-   - [Pagination](#pagination)
-   - [Nested Resource Paths](#nesting)
-   - [Observation Data Arrays](#data-arrays)
-   - [Python Data Retrieval Examples](#python-data-retrieval)
-     - [Pagination Example](#python-pagination)
-     - [Expansion Example](#python-expansion)
-     - [Data Array Example](#python-data-array)
-6. [Posting Data](#posting-data)
-   - [Observations](#posting-observations)
-   - [Python Data Posting Examples](#posting-with-python)
-     - [Observation POST Example](#python-observation-post)
-     - [Observation POST Example with Data Array](#python-data-array-post)
+## 1. Introduction
 
-## 1. Introduction <a name="introduction"></a>
-
-The HydroServer SensorThings API allows you to retrieve and interact with environmental sensor data related to water 
-resources. This documentation provides information on how to upload and retrieve data from HydroServer using 
+The HydroServer SensorThings API allows you to retrieve and interact with environmental sensor data related to water
+resources. This documentation provides information on how to upload and retrieve data from HydroServer using
 SensorThings. You can also view interactive documentation at:
 
 ```
 https://beta.hydroserver2.org/api/sensorthings/v1.1/docs
 ```
 
-## 2. SensorThings Base URL <a name="api-base-url"></a>
+## 2. SensorThings Base URL
 
-HydroServer currently only supports version 1.1 of the SensorThings specification. The base URL for HydroServer 
+HydroServer currently only supports version 1.1 of the SensorThings specification. The base URL for HydroServer
 SensorThings is:
 
 ```
@@ -57,18 +26,18 @@ https://beta.hydroserver2.org/api/sensorthings/v1.1/
 
 This URL will return a list of capabilities currently supported by this SensorThings implementation.
 
-## 3. Authentication <a name="authentication"></a>
+## 3. Authentication
 
-Authentication is not required for public data access. However, if you require access to restricted data or wish to 
-upload or modify your own data, you will need to authenticate using either basic authentication or API access tokens. 
+Authentication is not required for public data access. However, if you require access to restricted data or wish to
+upload or modify your own data, you will need to authenticate using either basic authentication or API access tokens.
 See the account API documentation for additional instructions on how to use both of these authentication methods.
 
 The HydroServer SensorThings API supports requests over both HTTPS and HTTP connections due to
-limitations of some datalogger devices. We highly recommend connecting via HTTPS whenever possible. It is also highly 
+limitations of some datalogger devices. We highly recommend connecting via HTTPS whenever possible. It is also highly
 recommended to use token based authentication rather than basic authentication, especially when using HTTP connections.
 Using basic authentication over unencrypted HTTP connections makes your account highly vulnerable to security threats.
 
-## 4. Endpoints <a name="endpoints"></a>
+## 4. Endpoints
 
 This section provides an overview of all endpoints provided by the HydroServer SensorThings API. Portions of URLs
 enclosed in angle brackets, such as {thing_id}, represent user provided parameters; these are typically UUIDs associated
@@ -76,7 +45,7 @@ with the record that will be returned by the endpoint.
 
 The HydroServer SensorThings API provides the following endpoints:
 
-### Things <a name="thing-endpoints"></a>
+### Things
 
 - **GET /Things**: Retrieve a list of Things.
 - **GET /Things({thing_id})**: Retrieve details for a single Thing record using the given Thing ID.
@@ -84,7 +53,7 @@ The HydroServer SensorThings API provides the following endpoints:
 **Note:** In HydroServer, "Things" typically refers to monitoring sites where
 one or more sensors have been set up to record observations.
 
-### Locations <a name="location-endpoints"></a>
+### Locations
 
 - **GET /Locations**: Retrieve a list of Locations.
 - **GET /Locations({location_id})**: Retrieve details for a single Location record using the given Location ID.
@@ -92,55 +61,55 @@ one or more sensors have been set up to record observations.
 **Note:** In HydroServer, each Location will be associated with only one Thing, but they can still be queried separately
 if needed.
 
-### Historical Locations <a name="historical-location-endpoints"></a>
+### Historical Locations
 
 - **GET /HistoricalLocations**: Retrieve a list of Historical Locations.
 - **GET /HistoricalLocations({historical_location_id})**: Retrieve details for a single Historical Locations using the
-given Historical Location ID.
+  given Historical Location ID.
 
-**Note:** HydroServer does not currently support the creation of historical locations of things. These endpoints have 
+**Note:** HydroServer does not currently support the creation of historical locations of things. These endpoints have
 not been disabled, but be aware that the responses of these endpoints will always be empty.
 
-### Sensors <a name="sensor-endpoint"></a>
+### Sensors
 
 - **GET /Sensors**: Retrieve a list of Sensors.
 - **GET /Sensors({sensor_id})**: Retrieve details for a single Sensor record using the given Sensor ID.
 
-### Observed Properties <a name="observed-properties-endpoint"></a>
+### Observed Properties
 
 - **GET /ObservedProperties**: Retrieve a list of Sensors.
-- **GET /ObservedProperties({observed_property_id})**: Retrieve details for a single Observed Property record using the 
-given Observed Property ID.
+- **GET /ObservedProperties({observed_property_id})**: Retrieve details for a single Observed Property record using the
+  given Observed Property ID.
 
-### Datastreams <a name="datastreams-endpoint"></a>
+### Datastreams
 
 - **GET /Datastreams**: Retrieve a list of Datastreams.
 - **GET /Datastreams({datastream_id})**: Retrieve details for a single Datastream record using the given Datastream ID.
 
-### Observations <a name="observations-endpoint"></a>
+### Observations
 
 - **GET /Observations**: Retrieve a list of Observations.
 - **POST /Observations**: Create one or more new Observations.
-- **GET /Observations({observation_id})**: Retrieve details for a single Observation record using the given Observation 
-ID.
+- **GET /Observations({observation_id})**: Retrieve details for a single Observation record using the given Observation
+  ID.
 - **PATCH /Observations({observation_id})**: Update an existing Observation record with the given Observation ID.
 - **DELETE /Observations({observation_id})**: Delete an existing Observation record with the given Observation ID.
 
-### Features of Interest <a name="featuresof-interest-endpoint"></a>
+### Features of Interest
 
 - **GET /FeaturesOfInterest**: Retrieve a list of Features of Interest.
-- **GET /FeaturesOfInterest({feature_of_interest_id})**: Retrieve details for a single Feature of Interest record using 
-the given Feature of Interest ID.
+- **GET /FeaturesOfInterest({feature_of_interest_id})**: Retrieve details for a single Feature of Interest record using
+  the given Feature of Interest ID.
 
-**Note:** HydroServer does not currently support the creation of features of interest of observations. These endpoints 
+**Note:** HydroServer does not currently support the creation of features of interest of observations. These endpoints
 have not been disabled, but be aware that the responses of these endpoints will always be empty.
 
-## 5. Retrieving Data <a name="querying-data"></a>
+## 5. Retrieving Data
 
 The HydroServer SensorThings API allows you to access various sensor-related data via HTTP GET requests. SensorThings
 provides several patterns for retrieving subsets of monitoring data which will be covered here.
 
-### Expansion  <a name="expansion"></a>
+### Expansion
 
 By default, each endpoint returns only fields associated with itself and links to related records. You can expand
 related record details in a response using the **$expand** parameter. This parameter can be used to expand multiple
@@ -152,7 +121,7 @@ with related Locations, Datastreams, and Sensor records nested into the response
 /Things?$expand=Locations,Datastreams/Sensor
 ```
 
-### Filtering  <a name="filtering"></a>
+### Filtering
 
 SensorThings supports a wide array of filtering options. Filters can be applied to a request using the **$filter**
 query parameter. Filter values are generally constructed using a field, operator, and value separated by spaces, or
@@ -166,7 +135,7 @@ phenomenonTime between July 1, 2023, and August 1, 2023.
 **Note:** Filters for HydroServer SensorThings are still under development and are not currently all supported. At the
 moment, only comparison operators and logical operators are supported.
 
-### Selection  <a name="selection"></a>
+### Selection
 
 You can limit the number of fields included in a SensorThings response using the **$select** query parameter. The
 following endpoint will return a list of Things with only the Thing name included in the response.
@@ -175,7 +144,7 @@ following endpoint will return a list of Things with only the Thing name include
 /Things?&select=name
 ```
 
-### Ordering  <a name="ordering"></a>
+### Ordering
 
 Responses can be ordered using the **$orderby** query parameter. Multiple fields can be passed to this parameter
 separated by a comma, and the direction can be specified by adding **asc** or **desc** after the field name separated
@@ -187,27 +156,27 @@ Datastream name, then by Sensor name.
 /Datastrams?&expand=Sensor&$orderby=name asc,Sensor/name asc
 ```
 
-### Pagination <a name="pagination"></a>
+### Pagination
 
 You can paginate responses using the **$top**, **$skip**, and **$count** query parameters on entity collection requests.
 Pagination will be applied after filtering and ordering. The **$top** parameter is an integer that tells the server how
 many entities to include in the response. The **$skip** parameter is an integer that tells the server to skip entities
 from the beginning of the query. The **$count** parameter returns the total number of matched entities before **$top**
-and **$skip** are applied. 
+and **$skip** are applied.
 
 Additionally, GET collection responses will automatically generate an attribute called "@iot.nextLink"
 which includes the **$skip** and **$top** parameters needed for the next page of data if it exists. Subsequent page
 sizes will be based on your initial value for **$top**, which is set to 100 by default for all endpoints except
 Observations, which is 1000 by default.
 
-The following endpoint would return up to five Datastream entities, starting at the 11th entity stored in the 
+The following endpoint would return up to five Datastream entities, starting at the 11th entity stored in the
 HydroServer database, and also include the count of all Datastreams available:
 
 ```
 /Datastreams?$top=5&$skip=10&$count=true
 ```
 
-### Nested Resource Paths  <a name="nesting"></a>
+### Nested Resource Paths
 
 Records can be filtered using nested resource paths to query related records. For example, the following endpoint would
 get all Datastream records associated with the given Thing ID.
@@ -216,7 +185,7 @@ get all Datastream records associated with the given Thing ID.
 /Things(00000000-0000-0000-0000-000000000000)/Datastreams
 ```
 
-### Observation Data Arrays  <a name="data-arrays"></a>
+### Observation Data Arrays
 
 The GET Observations endpoint has a special query parameter called **resultFormat** which you can use to request a less
 verbose response from the server. This is especially useful when querying large sets of observation data. The following
@@ -237,19 +206,10 @@ The following is an example of a data array response:
   "values": [
     {
       "Datastream@iot.navigationLink": "https://www.hydroserver.org/api/sensorthings/v1.1/Datastreams(00000000-0000-0000-0000-000000000000)",
-      "components": [
-        "resultTime",
-        "result"
-      ],
+      "components": ["resultTime", "result"],
       "dataArray": [
-        [
-          "2022-02-01T10:10:10Z",
-          32.2
-        ],
-        [
-          "2022-03-01T10:10:10Z",
-          33.8
-        ]
+        ["2022-02-01T10:10:10Z", 32.2],
+        ["2022-03-01T10:10:10Z", 33.8]
       ]
     }
   ],
@@ -257,12 +217,12 @@ The following is an example of a data array response:
 }
 ```
 
-### Python Data Retrieval Examples  <a name="python-data-retrieval"></a>
+### Python Data Retrieval Examples <a name="python-data-retrieval"></a>
 
 This section contains several examples showing how to retrieve data from the SensorThings API using the Python
 "requests" module.
 
-#### Retrieve a list of Things using server-side pagination, ordering, and filtering.  <a name="python-pagination"></a>
+#### Retrieve a list of Things using server-side pagination, ordering, and filtering. <a name="python-pagination"></a>
 
 ```python
 import requests
@@ -291,7 +251,7 @@ if response.status_code == 200:
    things = json.loads(response.content)
 ```
 
-#### Retrieve a Datastream entity with related entities expanded.  <a name="python-expansion"></a>
+#### Retrieve a Datastream entity with related entities expanded. <a name="python-expansion"></a>
 
 ```python
 import requests
@@ -313,7 +273,7 @@ if response.status_code == 200:
    datastreams = json.loads(response.content)
 ```
 
-#### Retrieve a set of Observations belonging to a Datastream in the dataArray format.  <a name="python-data-array"></a>
+#### Retrieve a set of Observations belonging to a Datastream in the dataArray format. <a name="python-data-array"></a>
 
 ```python
 import requests
@@ -338,7 +298,7 @@ if response.status_code == 200:
 
 ## 6. Posting Data <a name="posting-data"></a>
 
-The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or 
+The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or
 modified using the Data Management API.
 
 ### Observations <a name="posting-data"></a>
@@ -365,28 +325,28 @@ Observations for two different Datastreams.
 
 ```json
 [
-   {
-        "Datastream": {
-          "@iot.id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-        },
-        "components": ["phenomenonTime", "result"],
-        "dataArray": [
-           ["2023-06-01T10:05:00Z", 32.4],
-           ["2023-06-01T10:10:00Z", 33.8],
-           ["2023-06-01T10:15:00Z", 31.9]
-        ]
-   },
-   {
-      "Datastream": {
-        "@iot.id": "18239c87-2c46-4714-9046-2eaf995977a1"
-      },
-      "components": ["phenomenonTime", "result"],
-      "dataArray": [
-           ["2023-06-01T10:05:00Z", 102.3],
-           ["2023-06-01T10:10:00Z", 133.4],
-           ["2023-06-01T10:15:00Z", 120.5]
-      ]
-   }
+  {
+    "Datastream": {
+      "@iot.id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    },
+    "components": ["phenomenonTime", "result"],
+    "dataArray": [
+      ["2023-06-01T10:05:00Z", 32.4],
+      ["2023-06-01T10:10:00Z", 33.8],
+      ["2023-06-01T10:15:00Z", 31.9]
+    ]
+  },
+  {
+    "Datastream": {
+      "@iot.id": "18239c87-2c46-4714-9046-2eaf995977a1"
+    },
+    "components": ["phenomenonTime", "result"],
+    "dataArray": [
+      ["2023-06-01T10:05:00Z", 102.3],
+      ["2023-06-01T10:10:00Z", 133.4],
+      ["2023-06-01T10:15:00Z", 120.5]
+    ]
+  }
 ]
 ```
 
