@@ -26,6 +26,7 @@ export default defineConfig({
           { text: "Introduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Loading Data", link: "/guide/loading-data" },
+          { text: "The Web Application", link: "/guide/web-application" },
         ],
       },
       {
