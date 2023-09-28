@@ -35,7 +35,10 @@ export default defineConfig({
         items: [
           { text: "SensorThings API", link: "/api/sensor-things-api" },
           { text: "Data Management API", link: "/api/data-management-api" },
-          { text: "Account API", link: "/api/account-api" },
+          {
+            text: "Account Management API",
+            link: "/api/account-management-api",
+          },
         ],
       },
       {

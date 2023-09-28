@@ -2,7 +2,7 @@
 
 The purpose of this API is to extend the [SensorThings standard](sensor-things-api.md) into a fully functional data management API.
 While SensorThings provides a core set of endpoints for managing internet of things (IoT) devices, the Data Management API adds the
-concepts of people that own these IoT devices, organizations, and datastream metadata such as processing levels and qualifier codes.
+concepts of site ownership and datastream metadata such as processing levels and qualifier codes.
 
 The Data Management API gives you a full range of endpoints to work with the data you and others have stored on HydroServer. By default,
 all data stored in the database is public, meaning a call to "GET api/data/things" will retrieve the basic information for all hydrologic
@@ -16,7 +16,7 @@ user. PATCH, and DELETE requests require the user to be authenticated and an own
 POST requests require the user to be authenticated and will create a new resource owned by the authenticated user.
 
 You may use either basic authentication or API access tokens to authenticate requests to the Data Management API.
-See the account API documentation for additional instructions on how to use both of these authentication methods.
+See the [Account Management API documentation](/api/account-management-api.md) for additional instructions on how to use both of these authentication methods.
 
 There are endpoints available for you to set your site and/or datastreams to private as well as add secondary owners to your site. For example,
 
