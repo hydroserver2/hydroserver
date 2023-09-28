@@ -23,10 +23,10 @@ export default defineConfig({
       {
         text: "Guide",
         items: [
-          { text: "Introduction", link: "/guide/introduction" },
           { text: "Getting Started", link: "/guide/getting-started" },
+          { text: "Introduction", link: "/guide/introduction" },
           { text: "SensorThings", link: "/guide/sensor-things" },
-          { text: "The Web Application", link: "/guide/web-application" },
+          { text: "HydroServer Web App", link: "/guide/web-application" },
           { text: "Loading Data", link: "/guide/loading-data" },
         ],
       },

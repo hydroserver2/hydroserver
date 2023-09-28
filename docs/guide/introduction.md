@@ -31,7 +31,7 @@ In every design decision, we aimed for the balance between using stable time-tes
 that claimed significant performance and ease of use improvements like Django Ninja, timescaleDB, and Vue3 in order to get the
 best possible data management experience.
 
-## Where to go from here?
+## Next Steps
 
 If you'd like a hands-on tutorial for setting up a monitoring site and streaming data to a playground verison of the Hydroserver database, head over to the
 [Getting Started Guide](getting-started.md)

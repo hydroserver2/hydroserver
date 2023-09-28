@@ -8,31 +8,26 @@ The Data Management API gives you a full range of endpoints to work with the dat
 all data stored in the database is public, meaning a call to "GET api/data/things" will retrieve the basic information for all hydrologic
 sites (things) in the system that haven't been explicitly set to private by their site owners.
 
+## Endpoints
+
+For the list of available endpoints and required parameters, check out the interactive docs at:
+
+https://beta.hydroserver2.org/api/data/docs
+
 ## Access Control
 
-User authentication is optional for most data management GET endpoints. Unauthorized requests will be able to view all
-public data hosted by HydroServer. Authorized requests will view public data plus any data owned by the authenticated
-user. PATCH, and DELETE requests require the user to be authenticated and an owner of the resources being modified.
-POST requests require the user to be authenticated and will create a new resource owned by the authenticated user.
-
-You may use either basic authentication or API access tokens to authenticate requests to the Data Management API.
-See the [Account Management API documentation](/api/account-management-api.md) for additional instructions on how to use both of these authentication methods.
-
-There are endpoints available for you to set your site and/or datastreams to private as well as add secondary owners to your site. For example,
+This API provides the ability for you to set your entire site or specific datastreams to private. For example,
 
 ```
 # Pass {"isPrivate": true} as the request body to make your site visible
-# Only to the owners of that site
+# only to the owners of that site
 
 PATCH api/data/things/{thing_id}/privacy
 ```
 
-## Endpoints
+See the [Account Management API documentation](/api/account-management-api.md) for instructions on sending authenticated requests.
 
-Go to [https://beta.hydroserver2.org/api/data/docs](https://beta.hydroserver2.org/api/data/docs) for the comprehensive list of available endpoints
-and the required parameters.
-
-In addition, this section provides a quick overview of the endpoints. Portions of URLs
+<!-- In addition, this section provides a quick overview of the endpoints. Portions of URLs
 enclosed in angle brackets, such as {thing_id}, represent user provided parameters; these are typically UUIDs associated
 with the record that will be returned or modified by the endpoint.
 
@@ -131,4 +126,4 @@ The Data Management API provides the following endpoints:
 - **GET /data-sources/{data_source_id}**: Retrieve details for a single Data Source record using the given Data Source
   ID.
 - **PATCH /data-sources/{data_source_id}**: Update properties of a Data Source owned by the authenticated user.
-- **DELETE /data-sources/{data_source_id}**: Delete a Data Source. Authenticated user must be the primary owner.
+- **DELETE /data-sources/{data_source_id}**: Delete a Data Source. Authenticated user must be the primary owner. -->

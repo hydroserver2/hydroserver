@@ -1,40 +1,27 @@
 # HydroServer SensorThings API
 
-This section is an in-depth explanation of our Django implementation of the Open Geospatial Consortium
+The HydroServer SensorThings API is a Django implementation of the Open Geospatial Consortium
 SensorThings specification. We recommend reading the [SensorThings overview](/guide/sensor-things.md)
 before reading this.
 
-You can also view interactive documentation at:
+## Endpoints
 
-```
+The list of endpoints for this API can be found on our interactive docs page at:
+
 https://beta.hydroserver2.org/api/sensorthings/v1.1/docs
-```
 
-## SensorThings Base URL
+<!-- ## SensorThings Base URL
 
-HydroServer currently only supports version 1.1 of the SensorThings specification. The base URL for HydroServer
+HydroServer supports version 1.1 of the SensorThings specification. The base URL for HydroServer
 SensorThings is:
 
 ```
 https://beta.hydroserver2.org/api/sensorthings/v1.1/
 ```
 
-This URL will return a list of capabilities currently supported by this SensorThings implementation.
+This URL will return a list of capabilities currently supported by this SensorThings implementation. -->
 
-## Authentication
-
-Authentication is not required for public data access. However, if you require access to restricted data or wish to
-upload or modify your own data, you will need to authenticate using either basic authentication or API access tokens.
-See the [account API documentation](/api/account-api.md) for additional instructions on how to use both of these authentication methods.
-
-The HydroServer SensorThings API supports requests over both HTTPS and HTTP connections due to
-limitations of some datalogger devices. We highly recommend connecting via HTTPS whenever possible. It is also highly
-recommended to use token based authentication rather than basic authentication, especially when using HTTP connections.
-Using basic authentication over unencrypted HTTP connections makes your account highly vulnerable to security threats.
-
-## Endpoints
-
-This section provides an overview of all endpoints provided by the HydroServer SensorThings API. Portions of URLs
+<!-- This section provides an overview of all endpoints provided by the HydroServer SensorThings API. Portions of URLs
 enclosed in angle brackets, such as {thing_id}, represent user provided parameters; these are typically UUIDs associated
 with the record that will be returned by the endpoint.
 
@@ -97,7 +84,7 @@ not been disabled, but be aware that the responses of these endpoints will alway
   the given Feature of Interest ID.
 
 **Note:** HydroServer does not currently support the creation of features of interest of observations. These endpoints
-have not been disabled, but be aware that the responses of these endpoints will always be empty.
+have not been disabled, but be aware that the responses of these endpoints will always be empty. -->
 
 ## Retrieving Data
 
@@ -411,3 +398,13 @@ response = requests.post(
 if response.status_code == 201:
    print('Observations were posted successfully.')
 ```
+
+## Authentication
+
+See the [Account Management API documentation](/api/account-management-api.md) for instructions on how to send
+authenticated requests.
+
+This API supports requests over both HTTPS and HTTP connections due to limitations of some datalogger devices.
+We highly recommend connecting via HTTPS whenever possible. It is also highly
+recommended to use token based authentication rather than basic authentication, especially when using HTTP connections.
+Using basic authentication over unencrypted HTTP connections makes your account highly vulnerable to security threats.

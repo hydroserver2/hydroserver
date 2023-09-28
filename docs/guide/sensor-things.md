@@ -20,7 +20,7 @@ stream flow gauge, or Snow Monitoring Site. These 'Things' contain a collection 
 
 ::: tip
 It's important to note that SensorThings uses the term "Thing" in order to stay as general as possible.
-In the field of water data management, most users are more familiar with the term "site" as in a hydrologic
+In the field of water data management, most users are more familiar with the term "site" as in a monitoring
 site. Therefore, we've opted to refer to a 'Thing' as 'Site' in all of our user facing applications, but stick with
 SensorThing's original 'Thing' naming for our APIs
 :::
@@ -29,13 +29,11 @@ Additionally, the SensorThings spec defines a Thing with its current locations a
 
 ## HydroServer Architecture
 
-Not to be confused with the SensorThings API specification, we've created a Django API that implements the
-SensorThings spec with a few caveats. Later in the documentation this is referred to as the "HydroServer SensorThings API".
-Our implementation of SensorThings doesn't use historical locations
+Not to be confused with the SensorThings API specification, we've created a Django API named the "HydroServer SensorThings API"
+that implements the SensorThings spec with a few caveats. Our implementation of SensorThings doesn't use historical locations
 and requires a Thing to have one and only one location. This is because in the context of water data management
-we can assume the sensor will never move, or if it does, we think of it as a completely different entity. For more in
-depth documentation of our SensorThings implementations, [go here.](/api/sensor-things-api.md)
+we can assume the sensor will never move, or if it does, we think of it as a completely different entity. For in
+depth documentation of our SensorThings implementation, [go here.](/api/sensor-things-api.md)
 
-In addition to our SensorThings API implementation, we created an extension to the standard called the "Data Management API".
 In order to host a system with a diverse user base, we needed to add concepts like users, organizations, and various metadata.
-For a more in depth explanation of that, [go here.](/api/data-management-api.md)
+These functionalities are implemted in extension APIs called the [Data Management API](/api/data-management-api.md) and the [Account Management API](/api/account-management-api.md).
