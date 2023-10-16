@@ -10,12 +10,6 @@ body:
         make sure to ask on [GitHub Discussions](https://github.com/hydroserver2/hydroserver/discussions/categories/q-a)
 
         Also try to search for your issue - it may have already been answered or even fixed in the development branch.
-  - type: input
-    id: hydroserver-version
-    attributes:
-      label: HydroServer Version
-    validations:
-      required: true
   - type: textarea
     id: steps-to-reproduce
     attributes:
