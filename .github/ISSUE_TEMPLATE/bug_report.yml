@@ -1,41 +1,40 @@
 name: "\U0001F41E Bug report"
 description: Create a report to help us improve HydroServer
 body:
+  - type: markdown
+    attributes:
+      value: |
+      **Before You Start...**
 
-- type: markdown
-  attributes:
-  value: |
-  **Before You Start...**
+          This form is only for submitting bug reports. If you have a usage question or are unsure if this is really a bug, 
+          make sure to ask on [GitHub Discussions](https://github.com/hydroserver2/hydroserver/discussions/categories/q-a)
 
-      This form is only for submitting bug reports. If you have a usage question or are unsure if this is really a bug, 
-      make sure to ask on [GitHub Discussions](https://github.com/hydroserver2/hydroserver/discussions/categories/q-a)
+          Also try to search for your issue - it may have already been answered or even fixed in the development branch.
 
-      Also try to search for your issue - it may have already been answered or even fixed in the development branch.
+  - type: input
+    id: hydroserver-version
+    attributes:
+      label: HydroServer Version
+    validations:
+      required: true
 
-- type: input
-  id: hydroserver-version
-  attributes:
-  label: HydroServer Version
-  validations:
-  required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+    validations:
+      required: true
 
-- type: textarea
-  id: steps-to-reproduce
-  attributes:
-  label: Steps to Reproduce
-  validations:
-  required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
 
-- type: textarea
-  id: expected-behavior
-  attributes:
-  label: Expected Behavior
-  validations:
-  required: true
-
-- type: textarea
-  id: actual-behavior
-  attributes:
-  label: Actual Behavior
-  validations:
-  required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true
