@@ -1,4 +1,5 @@
 name: "Feature Request"
+description: "Suggest a new feature or improvement for HydroServer"
 body:
   - type: textarea
     id: problem-description
