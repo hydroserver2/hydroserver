@@ -23,4 +23,4 @@ body:
     id: additional-comments
     attributes:
       label: Any additional comments?
-      description: Add any other context about the feature request here.
+      description: "Add any other context about the feature request here."
