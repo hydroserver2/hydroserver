@@ -28,3 +28,8 @@ body:
       label: Actual Behavior
     validations:
       required: true
+  - type: textarea
+    id: additional-comments
+    attributes:
+      label: Any additional comments?
+      description: e.g. some background/context of how you ran into this bug.
