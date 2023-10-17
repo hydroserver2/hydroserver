@@ -1,7 +1,0 @@
-contact_links:
-  - name: Feature Request
-    url: https://github.com/hydroserver2/hydroserver/discussions/categories/feature-requests
-    about: Suggest new features for consideration
-  - name: Questions & Discussions
-    url: https://github.com/hydroserver2/hydroserver/discussions/categories/q-a
-    about: Use GitHub discussions for message-board style questions and discussions.
