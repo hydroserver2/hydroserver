@@ -1,5 +1,4 @@
-name: "🌟 Feature Request"
-description: "Suggest a new feature or improvement for HydroServer"
+title: "Feature Request"
 body:
   - type: markdown
     attributes:
@@ -11,7 +10,6 @@ body:
         If you find that an existing feature request describes your needs, please join the existing discussion there.
 
         Otherwise, proceed to fill out this form to provide details about your feature request.
-
   - type: textarea
     id: problem-description
     attributes:
@@ -19,7 +17,6 @@ body:
       description: "Please give us a detailed explanation of the problem for which you are suggesting this feature."
     validations:
       required: true
-
   - type: textarea
     id: suggested-solution
     attributes:
@@ -27,13 +24,11 @@ body:
       description: "A detailed description of what you want to happen."
     validations:
       required: true
-
   - type: textarea
     id: alternatives-considered
     attributes:
       label: "Have you considered any alternatives?"
       description: "Are there alternative solutions or features you've considered? Why wouldn't they work?"
-
   - type: textarea
     id: additional-comments
     attributes:
