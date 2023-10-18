@@ -6,10 +6,7 @@ body:
       value: |
         **Before You Start...**
 
-        This form is only for submitting bug reports. If you have a usage question or are unsure if this is really a bug, 
-        make sure to ask on [GitHub Discussions](https://github.com/hydroserver2/hydroserver/discussions/categories/q-a)
-
-        Also try to search for your issue - it may have already been answered or even fixed in the development branch.
+        Try to search for your issue - it may have already been answered or even fixed in the development branch.
   - type: textarea
     id: steps-to-reproduce
     attributes:
