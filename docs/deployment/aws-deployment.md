@@ -1,12 +1,12 @@
 # HydroServer AWS Deployment
 
+This guide provides step-by-step instructions for setting up a HydroServer deployment on AWS.
+
 ## AWS Required Services
 
-Before reading this guide, you should set up an AWS account and be familiar with basic concepts of cloud security. It is
-recommended that any roles and policies you use to set up and manage these services are appropriately scoped.
+Before proceeding with this guide, ensure that you have an active AWS account and a basic understanding of cloud security concepts. It is recommended to appropriately scope any roles and policies used for setting up and managing the services.
 
-There are several ways to deploy websites and applications to AWS. The HydroServer AWS deployment described in this 
-guide will use the following AWS services:
+The HydroServer AWS deployment outlined in this guide uses the following AWS services:
 
 - CloudFront
 - Elastic Beanstalk
@@ -14,105 +14,66 @@ guide will use the following AWS services:
 - Amazon S3
 - Amazon SES
 
-This guide will also describe how to set up an AWS managed domain for HydroServer if you don't already have one set up.
-If you want to set up a domain with AWS, you will also use the following services:
+Additionally, the guide covers the setup of an AWS managed domain for HydroServer, using the following services:
 
 - Route 53
 - AWS Certificate Manager (ACM)
 
 ## AWS Domain Registration and Certificate Requests
 
-This section will briefly cover how register a domain and set up SSL certificates. If you already have a domain and SSL
-certificate you can skip to the next section to learn how to import your SSL certificate into AWS. For a more detailed 
-walkthrough on domain registration and certificate requests, you can visit these pages:
+This section provides a brief overview of domain registration and SSL certificate requests. If you already have a domain and SSL certificate, you can skip to the next section for instructions on importing your SSL certificate into AWS. For a more detailed walkthrough on domain registration and certificate requests, refer to the following pages:
 
 - [Registering a new domain](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html)
 - [Requesting a public certificate](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html)
 
 ### Register a Domain
 
-To set up an AWS managed domain, sign in to the AWS Console and go to the Route 53 service dashboard. Under "Register 
-Domain", enter the domain you want to register (such as "example.com"). From there, follow the instructions on the page
-to purchase and register the domain. Once the domain is registered, Amazon should have automatically created a hosted
-zone for your new domain. You'll refer back to this hosted zone throughout this guide to update domain records.
+To set up an AWS managed domain, log in to the AWS Console and navigate to the Route 53 service dashboard. Under "Register Domain," enter the desired domain (e.g., "example.com"). Follow the on-screen instructions to purchase and register the domain. Once registered, a hosted zone for the new domain is automatically created by Amazon. Throughout this guide, refer back to this hosted zone for updating domain records.
 
 ### Request an SSL Certificate
 
-To request an SSL certificate through AWS, sign in to the AWS Console and go to the AWS Certificate Manager (ACM)
-service dashboard. Click "Request", then follow the prompts to request a public certificate. When you're asked to enter
-a fully qualified domain name, you can either enter a wildcard domain name (such as "*.example.com") if you want the 
-certificate to cover your whole domain, or you can enter a specific subdomain. If you want to run multiple instances
-of HydroServer, each instance should be assigned a separate domain or subdomain to avoid routing conflicts. If you
-choose the wildcard domain name option, this certificate can be reused for multiple HydroServer instances.
+To request an SSL certificate through AWS, sign in to the AWS Console and access the AWS Certificate Manager (ACM) service dashboard. Click "Request," and follow the prompts to request a public certificate. When prompted for a fully qualified domain name, enter either a wildcard domain name (e.g., "*.example.com") to cover the entire domain or a specific subdomain. For multiple HydroServer instances, assign each instance a separate domain or subdomain to prevent routing conflicts. If opting for the wildcard domain name, reuse the certificate for multiple HydroServer instances.
 
-After entering a fully qualified domain name, you should choose "DNS Validation" for the validation method. Click
-"Request", then select the certificate from your list of certificates. It should have a status of "Pending validation".
-Click "Create records in Route 53" and follow the prompts to automatically create the necessary CNAME record to validate
-the certificate.
+After entering the domain name, select "DNS Validation" as the validation method. Click "Request," then choose the pending certificate from your list. Initiate the creation of necessary CNAME records by clicking "Create records in Route 53" and follow the prompts to validate the certificate.
 
 ### Import an SSL Certificate
 
-If you have a domain and SSL certificate set up outside AWS, you can import the certificate into AWS by going to the AWS
-Certificate Manager (ACM) service dashboard and clicking "Import certificate". Follow the instructions to import your 
-certificate into AWS.
-
+For existing domains and SSL certificates outside AWS, import the certificate into AWS by navigating to the AWS Certificate Manager (ACM) service dashboard and clicking "Import certificate." Follow the provided instructions to import your certificate into AWS.
 
 ## HydroServer Frontend Deployment
 
-This section will cover how to deploy the HydroServer Vite frontend application on AWS. Before you continue, you'll need
-set up an environment where you can run NodeJS to build the application code.
+This section covers deploying the HydroServer Vue frontend application on AWS. Before proceeding, set up an environment capable of running NodeJS to build the application code.
 
-Even though the frontend is dependent on the backend application, it's easier to deploy the frontend first because 
-you'll use the CloudFront distribution you create for the frontend as a reverse proxy for the backend Elastic Beanstalk 
-deployment as well. First, go to the 
-[HydroServer frontend GitHub repository](https://github.com/hydroserver2/hydroserver-webapp-front) and download the 
-repository, or create a fork if you want to modify the codebase or use GitHub Actions for automated deployment.
+While the frontend is dependent on the backend application, deploying the frontend first is recommended. This approach uses the CloudFront distribution created for the frontend as a reverse proxy for the backend Elastic Beanstalk deployment.
 
-### Build the Vite Application
+Start by visiting the [HydroServer frontend GitHub repository](https://github.com/hydroserver2/hydroserver-webapp-front). Download the repository or create a fork for codebase modifications or automated deployment using GitHub Actions.
 
-In the root directory of your local copy of the frontend repository, create a file called ".env". In this file add the 
-following settings:
-- VITE_PROXY_BASE_URL: The value should be the domain you want to use as the base URL of your deployment, including the
-desired protocol (e.g. https://hydroserver.example.com).
-- VITE_APP_GOOGLE_MAPS_API_KEY: You should obtain a Google Maps API key and place it here if you're deploying a
-production instance of HydroServer.
+### Build the Vue Application
 
-Run the following command to install all required Node packages:
+In the root directory of the local frontend repository, create a file named ".env" and add the following settings:
+- VITE_PROXY_BASE_URL: Set to the desired deployment base URL, including the protocol (e.g., https://hydroserver.example.com).
+- VITE_APP_GOOGLE_MAPS_API_KEY: Obtain a Google Maps API key and place it here for production HydroServer instances.
 
-```
+Run the following commands to install required Node packages and build the application:
+
+```bash
 npm install
-```
-
-Next, run the following command to build the application:
-
-```
 npm run build
 ```
 
-The previous command created a directory called "dist" in your root repo directory that contains your built application, 
-and is what you will upload to S3 in the next step.
-
+This process creates a "dist" directory in the root repository containing the built application, to be uploaded to S3 in the next step.
 
 ### S3 Bucket Setup
 
-Your frontend repository will be placed in an S3 bucket where it will be served by a CloudFront distribution. Sign in
-to the AWS Console and go to the Amazon S3 service dashboard. Click "Create Bucket". This bucket will be used
-exclusively for the frontend distribution, so name it accordingly. You'll add bucket policies later, so for now create
-the bucket with default settings. Be sure all public access is blocked.
+The frontend repository is placed in an S3 bucket, serving as the source for a CloudFront distribution. Access the AWS Console, navigate to the Amazon S3 service dashboard, and click "Create Bucket." Name the bucket appropriately for the frontend distribution and follow default settings, ensuring public access is blocked.
 
-After the bucket is created, select it from you list and then click "Upload" &rarr; "Add Files". Navigate to the "dist" 
-folder inside your local frontend repository that you created in the previous section and select all contents of that
-directory to upload. Note: Be sure to only upload the contents of "dist", not the "dist" folder itself.
+Once the bucket is created, select it and click "Upload" → "Add Files." Navigate to the "dist" folder within the local frontend repository and upload its contents. Note: Upload only the contents of "dist," not the "dist" folder itself.
 
 ### CloudFront Distribution Setup
 
-You'll use CloudFront to serve the HydroServer frontend application from the S3 bucket you just created. Before you set
-up the distribution, you need to create a SPA routing function for Vite to work correctly. From the AWS Console, go to 
-the CloudFront service dashboard, select "Functions" from the navigation pane, and click "Create function". The name of
-this function should be "spa-routing". When you create the function, paste the following block of code into the
-"Function code" section, overwriting the default code block, then click "Save Changes".
+Use CloudFront to serve the HydroServer frontend application from the S3 bucket. Before setting up the distribution, you need to create an SPA routing function for Vue to function correctly. In the AWS Console, go to the CloudFront service dashboard, select "Functions," and click "Create function." Name the function "spa-routing" and paste the provided code block into the "Function code" section. Click "Save Changes."
 
-```
+```javascript
 function handler(event) {
     var request = event.request;
     var uri = request.uri;
@@ -126,41 +87,28 @@ function handler(event) {
 }
 ```
 
-Once you've finished creating the SPA Routing function, go back to the CloudFront service dashboard and click 
-"Create distribution". You can use default values for the distribution settings except for the following:
+Return to the CloudFront service dashboard, click "Create distribution," and use default values for distribution settings except for the following:
 
-- Origin Domain: Select the S3 bucket you created in the previous step.
-- Origin Access: Select "Origin access control settings (recommended)", then click "Create control setting" with default
-values.
-- Viewer Protocol Policy: Select "Redirect HTTP to HTTPS"
-- Viewer Request (Under Function Associations): Select "CloudFront Functions" for the function type, then select 
-"spa-routing" for the function ARN/Name (This is the function you created in the previous step).
-- Web Application Firewall: Select "Enable security protections"
-- Alternate Domain Name (CNAME): Enter the domain or subdomain you want to use for HydroServer.
-- Custom SSL Certificate: Select the SSL certificate you created or imported in the previous section.
+- Origin Domain: Select the S3 bucket created earlier.
+- Origin Access: Choose "Origin access control settings (recommended)," and create control setting with default values.
+- Viewer Protocol Policy: Select "Redirect HTTP to HTTPS."
+- Viewer Request (Under Function Associations): Choose "CloudFront Functions," then select "spa-routing" for the function ARN/Name.
+- Web Application Firewall: Enable security protections.
+- Alternate Domain Name (CNAME): Enter the desired HydroServer domain or subdomain.
+- Custom SSL Certificate: Select the SSL certificate created or imported in the previous section.
 
-After you create the distribution, you'll see a notification that you need to update the S3 bucket policy. Click "Copy
-Policy", then navigate to your S3 dashboard and select the bucket you linked to the CloudFront distribution. Click 
-"Permissions", then "Edit" under "Bucket Policy". Paste the policy here, then click "Save Changes".
+After creating the distribution, a notification will prompt you to update the S3 bucket policy. Click "Copy Policy," navigate to the S3 dashboard, select the associated bucket, click "Permissions," and "Edit" under "Bucket Policy." Paste the policy and click "Save Changes."
 
-Next, you'll need to create records in Route 53 or other DNS provider that point to your new CloudFront distribution. 
-If you used Route 53, you should go to the Route 53 service dashboard and select the hosted zone you're
-using for your HydroServer deployment. Click "Create record", and enter the following configuration:
+Next, create records in Route 53 or other DNS providers pointing to the new CloudFront distribution. For Route 53 users, access the Route 53 service dashboard, select the hosted zone for HydroServer deployment, click "Create record," and configure as follows:
 
-- Record Name: Enter  subdomain if you want to use one. It must match the alternate domain name you provided to 
-CloudFront.
-- Record Type: Select "A"
-- Alias: True
-- Route traffic to: Select "Alias to CloudFront distribution", then select your CloudFront distribution from the 
-dropdown.
+- Record Name: Enter a subdomain (if used), matching the alternate domain name provided to CloudFront.
+- Record Type: Select "A."
+- Alias: True.
+- Route traffic to: Choose "Alias to CloudFront distribution," then select the CloudFront distribution from the dropdown.
 
-After entering the configuration, click "Add another record", and use the same configuration as the first record, except
-select "AAAA" as the record type instead of "A". Click "Create records".
+Click "Add another record" and configure the second record, selecting "AAAA" as the record type. Click "Create records."
 
-Once the records have been created and pushed to DNS servers, you should be able to enter your domain into a browser and
-see the HydroServer homepage. Remember that the site will not be fully functional until you deploy the backend
-application.
-
+Upon DNS propagation, enter your domain into a browser to view the HydroServer homepage. Note that full functionality requires backend application deployment.
 
 ## HydroServer Backend Deployment
 
@@ -171,17 +119,50 @@ follow the instructions to set up a development environment on your local machin
 
 Before you deploy the application, you'll want to create a zip archive of your copy of the backend HydroServer 
 repository. Depending on your platform, you may want to exclude certain hidden files from the zipped repository that 
-can cause issues (such as .DS_Store on macOS, your .git folder, and your local .env file for example).
+can cause issues (such as .DS_Store on macOS, your .git folder, and your local .env file, for example).
 
+### Serving Static and Media Files
+
+To serve static files or other media files for Django, you need to set up an additional
+S3 bucket for those files and link it to your CloudFront distribution. Navigate to your AWS S3
+dashboard and click "Create Bucket." Name the bucket appropriately for your deployment's 
+static files and follow default settings, ensuring public access is blocked.
+
+Return to the CloudFront service dashboard, select your distribution, then click "Origins" →
+"Create Origin."
+
+- Origin Domain: Under "Amazon S3" select the S3 bucket used to store your S3 files.
+- Protocol: Select "Redirect HTTP to HTTPS"
+
+After creating the new origin, a notification will prompt you to update the S3 bucket policy. Click 
+"Copy Policy," navigate to the S3 dashboard, select the associated bucket, click "Permissions," and "Edit" under "Bucket Policy." Paste the policy and click "Save Changes."
+
+After you create the origin, select "Behaviors" from the distribution landing page. You'll need to create two behaviors with the following configurations:
+
+1. Django Static Files
+   - Path Pattern: /static/*
+   - Origin and Origin Groups: Select your S3 storage bucket.
+   - Viewer Protocol Policy: Redirect HTTP to HTTPS
+   - Allowed HTTP Methods: GET, HEAD
+   - Cache Policy: CachingOptimized
+2. HydroServer Photos
+   - Path Pattern: /photos/*
+   - Origin and Origin Groups: Select your S3 storage bucket.
+   - Viewer Protocol Policy: Redirect HTTP to HTTPS
+   - Allowed HTTP Methods: GET, HEAD
+   - Cache Policy: CachingOptimized
+
+Static files will be copied to this bucket in a later step to a folder called "static."
+Photos will be saved to a folder called "photos."
 
 ### Elastic Beanstalk Setup
 
 Once you have access to the backend repository, sign in to the AWS Console and go to the Elastic Beanstalk service 
 dashboard. This service will be used to run the Django API application. Select "Applications", then click "Create 
 application". If you want to deploy multiple instances of the app, you can create one application for multiple 
-environments, or one application for each environment depending on how you want to handle versioning.
+environments or one application for each environment depending on how you want to handle versioning.
 
-Once you create the application, from the application's landing page you'll click "Create new 
+Once you create the application, from the application's landing page, click "Create new 
 environment". The environment setup process includes several pages of configuration. The default options are generally
 sufficient for the initial environment setup, but you should pay attention to the following settings:
 
@@ -189,7 +170,7 @@ sufficient for the initial environment setup, but you should pay attention to th
 - Domain: You can provide a domain name if you want, but this autogenerated domain will only be temporary. Take note of
   this value for later.
 - Platform and Branch: Select "Python" for the platform and "Python 3.8" for the branch.
-- Application Code: Choose "Upload you code" and select the zip file you created in the previous step.
+- Application Code: Choose "Upload your code" and select the zip file you created in the previous step.
 - Service Role: Create or select an IAM service role to manage this application.
 - EC2 Key Pair: Create or select an EC2 pair for this environment. You'll need this to be able to connect to your 
 instance via SSH.
@@ -198,33 +179,47 @@ through Timescale Cloud or Amazon RDS. If you set up the database here, you may 
 the environment.
 - Auto Scaling Group: You should select "Load balanced", even if you want to limit the environment to one instance. This
 will create an EC2 Application Load Balancer container that you'll use to connect to CloudFront in a later step.
-- Listeners: These will be updated later, but for now the default listener on port 80 is sufficient.
+- Listeners: These will be updated later, but for now, the default listener on port 80 is sufficient.
 - Environment Properties: Add the following environment properties in addition to the default PYTHONPATH:
     * DEPLOYED: True
-    * DEBUG: Set this to True for testing and development environments; otherwise set it to False.
+    * DEBUG: Set this to True for testing and development environments; otherwise, set it to False.
     * AWS_ACCESS_KEY_ID: Enter an access key that will be used to read and write static and media files to AWS S3 and send
     admin emails through Amazon SES for account verification and password reset.
     * AWS_SECRET_ACCESS_KEY: Enter the corresponding secret key.
-    * AWS_STORAGE_BUCKET_NAME: Enter the name of the bucket you want to use to host static files.
+    * AWS_STORAGE_BUCKET_NAME: Enter the name of the bucket you want to use to host static and media files which you configured in the previous section.
     * DATABASE_URL: Enter the URL for the database service you want to use. If you set up a Timescale Cloud
     instance, the pattern would be: 
     postgresql://{db_user}:{db_password}.{db_host}:{db_port}/tsdb
     * SECRET_KEY: Generate a random secret key string to use for Django.
-    * PROXY_BASE_URL: Enter the domain value from earlier (e.g. http://my-hs-env.us-east-1.elasticbeanstalk.com)
+    * PROXY_BASE_URL: Enter the domain value from earlier (e.g., http://my-hs-env.us-east-1.elasticbeanstalk.com)
     * ALLOWED_HOSTS: Enter the domain value from earlier without the protocol 
-      (e.g. my-hs-env.us-east-1.elasticbeanstalk.com)
+      (e.g., my-hs-env.us-east-1.elasticbeanstalk.com)
 
 After you finish creating your environment, you will be taken to the environment landing page. The environment will take
 several minutes to start up. From here you can monitor the health of the environment, access logs, and update
 configuration settings if needed. If everything ran successfully, after a few minutes the environment should display a
-health status of "Ok". If it doesn't you may need to check the logs and revisit your environment configuration to
+health status of "Ok". If it doesn't, you may need to check the logs and revisit your environment configuration to
 resolve the issue.
 
 To further verify that your environment started successfully, check the /admin/ endpoint of your temporary Elastic 
-Beanstalk domain. You should see an administrator login page.
+Beanstalk domain. You should see an administrator login page. If CSS styles haven't been applied to this
+page, you may need to rerun the following command from your Elastic Beanstalk shell or locally with your
+deployment settings applied. You can also verify that static files have been copied successfully by
+checking the S3 storage bucket you configured earlier. All static files should have been copied to a 
+folder called "static" in your storage bucket.
 
+```
+python manage.py collectstatic
+```
 
-### CloudFront Setup
+Additionally, at this point you may want to create an admin user for HydroServer. You can do so by 
+running the following command and following the prompts.
+
+```
+python manage.py createsuperuser
+```
+
+### Link CloudFront Distribution to Elastic Beanstalk
 
 Before you continue, you should have already set up a CloudFront distribution to deploy the HydroServer frontend. You'll
 use the same distribution to connect to the backend Elastic Beanstalk environment.
@@ -258,7 +253,7 @@ behaviors with the following configurations:
    - Path Pattern: /admin/*
    - Origin and Origin Groups: Select your load balancer
    - Viewer Protocol Policy: Redirect HTTP to HTTPS
-   - Allowed HTTP Methods: GET, HEAD
+   - Allowed HTTP Methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE
    - Cache Policy: CachingDisabled
    - Origin Request Policy: AllViewer
 
@@ -267,13 +262,22 @@ Once you've created these behaviors, make sure that they appear in the list in t
 1. /api/sensorthings/*
 2. /api/*
 3. /admin/*
-4. Default (*)
+4. /photos/*
+5. /static/*
+6. Default (*)
 
-If you ever need to add static files or other media files for Django, you can add additional behaviors here to point to
-their respective S3 buckets.
+#### Additional Deployment Security Settings
 
 Before you can access the Django API on your domain, you need to update some security settings on your load balancer
-to allow traffic to pass between CloudFront and Elastic Beanstalk. Go to the EC2 service dashboard in the AWS Console,
+to allow traffic to pass between CloudFront and Elastic Beanstalk. 
+
+First, from the AWS Console, go to the WAF & Shield
+
+ dashboard and select "Web ACLs". Select the Web ACL for your distribution,
+then under "Rules", click "AWS-AWSManagedRulesCommonRuleSet", then "Edit". Under "SizeRestrictions_BODY", select
+"Override to count", then click "Save rule". This is necessary to allow larger POST bodies to the SensorThings API.
+
+Go to the EC2 service dashboard in the AWS Console,
 select "Target Groups" from the navigation pane, then click "Create Target Group". Create a target group with the
 following configuration:
 
@@ -321,3 +325,46 @@ sandbox mode.
 
 At this point, you should have both the frontend and backend HydroServer applications deployed. Enter the domain you
 used to deploy HydroServer into a browser and begin using the site.
+
+### OAuth Setup
+
+HydroServer is set up to allow users to log in with their Google or ORCID account if they wish. To enable OAuth, you will
+need to register your HydroServer instance with both Google and ORCID.
+
+#### Google OAuth
+
+To register HydroServer with Google, visit the [Google API Console](https://console.cloud.google.com/apis/dashboard) and
+log in with a Google account. Create a new project for your deployment, then select "Credentials" and under "Create Credentials", 
+click "OAuth client ID". Select "Web Application" and give a name for your client. Under "Authorized redirect URIs", enter 
+the following URL using your HydroServer domain:
+
+```
+https://{hydroserver_domain}/api/account/google/auth
+```
+
+After you finish registering your client, Google will generate a Client ID and Client Secret value for you. Copy these values
+and return to your Elastic Beanstalk dashboard. In your configuration settings, add the following environment properties:
+
+- OAUTH_GOOGLE_CLIENT
+- OAUTH_GOOGLE_SECRET
+
+The values of these properties should be the client and secret values you copied in the previous step.
+
+#### ORCID OAuth
+
+To register HydroServer with ORCID, visit the [ORCID Dashboard](https://sandbox.orcid.org/my-orcid) and log in with an ORCID 
+account. ORCID recommends using [sandbox.orcid.org](sandbox.orcid.org) for development and testing. Under "Developer Tools", 
+click "Register for ORCID public API credentials". Enter the name and URL of your HydroServer application. Under "Redirect URIs", 
+enter the following URL using your HydroServer domain:
+
+```
+https://{hydroserver_domain}/api/account/orcid/auth
+```
+
+After your finish registering your client, ORCID will generate a Client ID and Client Secret for you. Copy these values and return
+to your Elastic Beanstalk dashboard. In your configuration settings, add the following environment properties:
+
+- OAUTH_ORCID_CLIENT
+- OAUTH_ORCID_SECRET
+
+The values of these properties should be the client and secret values you copied in the previous step.
