@@ -165,8 +165,8 @@ docker rm timescaledb     # deletes the timescaledb container
 
 ### Load Test Data
 
-We made some sample data for development that you can load into the database:
+We made some sample data for testing that you can load into the database with the python script load_test_data.py:
 
 ```bash
-python manage.py loaddata test_data.yaml
+python load_test_data.py
 ```
