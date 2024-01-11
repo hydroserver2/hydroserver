@@ -26,6 +26,7 @@ export default defineConfig({
           { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Introduction", link: "/guide/introduction" },
           { text: "SensorThings", link: "/guide/sensor-things" },
+          { text: "Terminology", link: "/guide/terminology" },
           { text: "HydroServer Web App", link: "/guide/web-application" },
           { text: "Loading Data", link: "/guide/loading-data" },
         ],
