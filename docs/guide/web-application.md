@@ -15,7 +15,7 @@ Publicly available sites can be found at the [`Browse Monitoring Sites`](https:/
 All of the software for HydroServer is free and open source, so creating an account is as simple as inputting and email and password along with some information that allows users to contact one another in order to facilitate better collaboration, and [`organization information`](terminology.md#site-ownership) if the user would like be associated with one.
 
 ::: tip
-All information you put in the account form will be visible to the other users of this system, so make sure you're only disclosing information you're comfortable sharing.
+All information you put in the account form will be visible to the other users of the system, so make sure you're only disclosing information you're comfortable sharing.
 :::
 
 ## Registering a New Site

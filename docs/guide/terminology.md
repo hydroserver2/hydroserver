@@ -47,6 +47,7 @@ The following table is a comparison of permissions for the primary and secondary
 | Create, Delete datastreams                          | Yes                     | Yes                        |
 | Create, Update, Delete sites                        | Yes                     | Yes                        |
 | Remove self as owner                                | Yes (deletes site data) | Yes                        |
+| Link a Data Loader to a Datastream                  | Yes                     | Yes                        |
 
 ## Datastreams
 
@@ -86,20 +87,6 @@ Any system which is running the Streaming Data Loader desktop app is referred to
 :::
 
 **- Data Source** is a CSV file on the user's computer(Data Loader) that the Streaming Data Loader desktop app can read and periodically stream to the HydroServer database automatically. A single Data Source may contains raw time series data for one or more datastreams.
-
-Below is an example of what a `StreamFlowData.csv` file might look like. This CSV file represents a typical Data Source used by the Streaming Data Loader to import data into HydroServer.
-
-```plaintext
-DateTime,FlowRate,Temperature
-2024-01-01T08:00Z,120,15.5
-2024-01-01T08:15Z,125,15.7
-2024-01-01T08:30Z,123,15.6
-2024-01-01T08:45Z,122,15.8
-```
-
-From the `/data-sources` URL of the HydroServer website, a user can define a new Data Source, which will include information like which computer(Data Loader) to find the Data Source CSV file on, the local file path to that CSV, which column contains the timestamps, which row contains the headers, which row marks the start of data points, etc.
-
-After a Data Source is created, the user can link it to multiple datastreams. In the case of `StreamFlowData.csv`, we'd want to link one datastream to column 2 (FlowRate) and different datastream to column 3 (Temperature).
 
 ## Observations
 
