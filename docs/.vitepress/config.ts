@@ -45,7 +45,24 @@ export default defineConfig({
       {
         text: "Deployment",
         items: [
-          { text: "Amazon Web Services", link: "/deployment/aws-deployment" },
+          {
+            text: "Deploying with AWS",
+            link: "/deployment/aws-deployment",
+            items: [
+              {
+                text: "Intro and Registration",
+                link: "/deployment/aws-deployment",
+              },
+              {
+                text: "Frontend Deployment",
+                link: "/deployment/frontend-deployment",
+              },
+              {
+                text: "Backend Deployment",
+                link: "/deployment/backend-deployment",
+              },
+            ],
+          },
           { text: "Timescale Cloud", link: "/deployment/timescale-cloud" },
         ],
       },
