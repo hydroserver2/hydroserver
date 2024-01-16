@@ -55,7 +55,47 @@ A Datastream is a sequence of data points collected over time, measured by a phy
 
 ### 1. Direct Metadata
 
-This is the information that directly relates to a specific datastream that users can edit. It includes fields like the Datastream's name, description, and other settings that are specific to how this particular Datastream operates or is displayed.
+This is the information that directly relates to a specific datastream that users can edit. Descriptions of each field is below:
+
+**- Name** is the identifier for the Datastream, typically a string that reflects its purpose or content.
+
+**- Description** a detailed text description of what the Datastream represents, including its scope and nature.
+
+**- Observation Type**is a string indicating the method or type of observation, such as time series or event-based.
+
+**- Sampled Medium** is the medium or environment from which the data is collected, like air, water, or soil.
+
+**- No Data Value** is the numerical value used to represent missing or null data in the Datastream.
+
+**- Aggregation Statistic**is string describing how data is aggregated, like average, sum, or maximum.
+
+**- Time Aggregation Interval** refers to the numerical value indicating the time interval for data aggregation.
+
+**- Status** is a string representing the current operational status of the Datastream, like complete or ongoing.
+
+**- Value Count** is a numerical value representing the total number of data points in the Datastream. Calculated by the API automatically.
+
+**- Intended Time Spacing** is the expected time interval between individual data points in the Datastream.
+
+**- Intended Time Spacing Unit** the unit for the intended time spacing value.
+
+**- Phenomenon Begin Time** is the actual start time of the phenomena being observed, formatted in ISO 8601 UTC. Calculated by the API automatically.
+
+**- Phenomenon End Time** is the actual end time of the phenomena being observed, formatted in ISO 8601 UTC. Calculated by the API automatically.
+
+**- Result Begin Time** is the start time the observation was recorded for the data results in the Datastream.
+
+**- Result End Time** is the end time the observation was recorded for the data results in the Datastream.
+
+::: tip
+Usually the phenomenon time and result time are the same, but sometimes there's a delay between the event and when it was recorded that needs to be accounted for. Only using phenomenon time will suit most use cases.
+:::
+
+**- Data Source Column** is a string indicating the column index or name of the Data Source CSV file that corresponds to this Datastream's observation values.
+
+**- Is Visible** is a boolean value (true or false) indicating if the Datastream is visible to users.
+
+**- Is Data Visible** is a boolean value determining whether the actual data of the Datastream is accessible to users.
 
 ### 2. Linked Metadata
 
