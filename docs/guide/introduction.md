@@ -11,7 +11,7 @@ and reliable way for you to handle your data. It consists of three major parts:
   observational sites, define their metadata, and view and download public hydrological data.
 - A [Streaming Data Loader (SDL)](loading-data.md) desktop application that will take your preferences as specified in the web application
   and automatically transform and upload your data to HydroServer's database. As long as you have an
-  internet enabled sensing device, you should be able to automatically stream your data into our database in real-time.
+  internet enabled sensing device, you should be able to automatically stream your data into a HydroServer database on a regular basis.
 - [APIs](/api/data-management-api.md) that provide endpoints which allow you to work with HydroServer's data directly. Our web application
   actually uses most of the API endpoints, so users should be able to do most of what they want through that user interface, but we've provided
   documentation for our APIs in case you'd like to build your own application that uses our services or need a specific data query not provided by the app.
@@ -38,4 +38,4 @@ If you'd like a hands-on tutorial for setting up a monitoring site and streaming
 
 If you'd like to read some more about our system, feel free to skip around the documentation as most of the sections are fairly self-contained.
 We recommend starting with the [SensorThings Overview](/guide/sensor-things.md) which will explain more about HydroServer's architecture, then moving on to
-the other major parts of HydroServer listed at the beginning of this page
+the other major parts of HydroServer listed at the beginning of this page.

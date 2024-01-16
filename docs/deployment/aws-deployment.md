@@ -21,7 +21,7 @@ Additionally, the guide covers the setup of an AWS managed domain for HydroServe
 
 ## AWS Domain Registration and Certificate Requests
 
-This section provides a brief overview of domain registration and SSL certificate requests. If you already have a domain and SSL certificate, you can skip to the next section for instructions on importing your SSL certificate into AWS. For a more detailed walkthrough on domain registration and certificate requests, refer to the following pages:
+If you already have a domain and SSL certificate, you can skip to the next section for instructions on importing your SSL certificate into AWS. For a more detailed walkthrough on domain registration and certificate requests, refer to the following pages:
 
 - [Registering a new domain](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html)
 - [Requesting a public certificate](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html)
@@ -32,7 +32,7 @@ To set up an AWS managed domain, log in to the AWS Console and navigate to the R
 
 ### Request an SSL Certificate
 
-To request an SSL certificate through AWS, sign in to the AWS Console and access the AWS Certificate Manager (ACM) service dashboard. Click "Request," and follow the prompts to request a public certificate. When prompted for a fully qualified domain name, enter either a wildcard domain name (e.g., "*.example.com") to cover the entire domain or a specific subdomain. For multiple HydroServer instances, assign each instance a separate domain or subdomain to prevent routing conflicts. If opting for the wildcard domain name, reuse the certificate for multiple HydroServer instances.
+To request an SSL certificate through AWS, sign in to the AWS Console and access the AWS Certificate Manager (ACM) service dashboard. Click "Request," and follow the prompts to request a public certificate. When prompted for a fully qualified domain name, enter either a wildcard domain name (e.g., "\*.example.com") to cover the entire domain or a specific subdomain. For multiple HydroServer instances, assign each instance a separate domain or subdomain to prevent routing conflicts. If opting for the wildcard domain name, reuse the certificate for multiple HydroServer instances.
 
 After entering the domain name, select "DNS Validation" as the validation method. Click "Request," then choose the pending certificate from your list. Initiate the creation of necessary CNAME records by clicking "Create records in Route 53" and follow the prompts to validate the certificate.
 
@@ -42,7 +42,7 @@ For existing domains and SSL certificates outside AWS, import the certificate in
 
 ## HydroServer Frontend Deployment
 
-This section covers deploying the HydroServer Vue frontend application on AWS. Before proceeding, set up an environment capable of running NodeJS to build the application code.
+Before proceeding, set up an environment capable of running NodeJS to build the application code.
 
 While the frontend is dependent on the backend application, deploying the frontend first is recommended. This approach uses the CloudFront distribution created for the frontend as a reverse proxy for the backend Elastic Beanstalk deployment.
 
@@ -51,6 +51,7 @@ Start by visiting the [HydroServer frontend GitHub repository](https://github.co
 ### Build the Vue Application
 
 In the root directory of the local frontend repository, create a file named ".env" and add the following settings:
+
 - VITE_PROXY_BASE_URL: Set to the desired deployment base URL, including the protocol (e.g., https://hydroserver.example.com).
 - VITE_APP_GOOGLE_MAPS_API_KEY: Obtain a Google Maps API key and place it here for production HydroServer instances.
 
@@ -75,15 +76,15 @@ Use CloudFront to serve the HydroServer frontend application from the S3 bucket.
 
 ```javascript
 function handler(event) {
-    var request = event.request;
-    var uri = request.uri;
+  var request = event.request;
+  var uri = request.uri;
 
-    // If the URI ends with a slash or doesn't have a dot, return the main index.html
-    if (uri.endsWith('/') || !uri.includes('.')) {
-        request.uri = '/index.html';
-    }
+  // If the URI ends with a slash or doesn't have a dot, return the main index.html
+  if (uri.endsWith("/") || !uri.includes(".")) {
+    request.uri = "/index.html";
+  }
 
-    return request;
+  return request;
 }
 ```
 
@@ -113,19 +114,19 @@ Upon DNS propagation, enter your domain into a browser to view the HydroServer h
 ## HydroServer Backend Deployment
 
 This section will cover how to deploy the HydroServer Django API application on AWS. First, go to the [HydroServer
-backend GitHub repository](https://github.com/hydroserver2/hydroserver-webapp-back) and download the repository, or 
-create a fork if you want to modify the codebase or use GitHub Actions for automated deployment. You may want to 
+backend GitHub repository](https://github.com/hydroserver2/hydroserver-webapp-back) and download the repository, or
+create a fork if you want to modify the codebase or use GitHub Actions for automated deployment. You may want to
 follow the instructions to set up a development environment on your local machine before continuing.
 
-Before you deploy the application, you'll want to create a zip archive of your copy of the backend HydroServer 
-repository. Depending on your platform, you may want to exclude certain hidden files from the zipped repository that 
+Before you deploy the application, you'll want to create a zip archive of your copy of the backend HydroServer
+repository. Depending on your platform, you may want to exclude certain hidden files from the zipped repository that
 can cause issues (such as .DS_Store on macOS, your .git folder, and your local .env file, for example).
 
 ### Serving Static and Media Files
 
 To serve static files or other media files for Django, you need to set up an additional
 S3 bucket for those files and link it to your CloudFront distribution. Navigate to your AWS S3
-dashboard and click "Create Bucket." Name the bucket appropriately for your deployment's 
+dashboard and click "Create Bucket." Name the bucket appropriately for your deployment's
 static files and follow default settings, ensuring public access is blocked.
 
 Return to the CloudFront service dashboard, select your distribution, then click "Origins" →
@@ -134,19 +135,19 @@ Return to the CloudFront service dashboard, select your distribution, then click
 - Origin Domain: Under "Amazon S3" select the S3 bucket used to store your S3 files.
 - Protocol: Select "Redirect HTTP to HTTPS"
 
-After creating the new origin, a notification will prompt you to update the S3 bucket policy. Click 
+After creating the new origin, a notification will prompt you to update the S3 bucket policy. Click
 "Copy Policy," navigate to the S3 dashboard, select the associated bucket, click "Permissions," and "Edit" under "Bucket Policy." Paste the policy and click "Save Changes."
 
 After you create the origin, select "Behaviors" from the distribution landing page. You'll need to create two behaviors with the following configurations:
 
 1. Django Static Files
-   - Path Pattern: /static/*
+   - Path Pattern: /static/\*
    - Origin and Origin Groups: Select your S3 storage bucket.
    - Viewer Protocol Policy: Redirect HTTP to HTTPS
    - Allowed HTTP Methods: GET, HEAD
    - Cache Policy: CachingOptimized
 2. HydroServer Photos
-   - Path Pattern: /photos/*
+   - Path Pattern: /photos/\*
    - Origin and Origin Groups: Select your S3 storage bucket.
    - Viewer Protocol Policy: Redirect HTTP to HTTPS
    - Allowed HTTP Methods: GET, HEAD
@@ -157,12 +158,12 @@ Photos will be saved to a folder called "photos."
 
 ### Elastic Beanstalk Setup
 
-Once you have access to the backend repository, sign in to the AWS Console and go to the Elastic Beanstalk service 
-dashboard. This service will be used to run the Django API application. Select "Applications", then click "Create 
-application". If you want to deploy multiple instances of the app, you can create one application for multiple 
+Once you have access to the backend repository, sign in to the AWS Console and go to the Elastic Beanstalk service
+dashboard. This service will be used to run the Django API application. Select "Applications", then click "Create
+application". If you want to deploy multiple instances of the app, you can create one application for multiple
 environments or one application for each environment depending on how you want to handle versioning.
 
-Once you create the application, from the application's landing page, click "Create new 
+Once you create the application, from the application's landing page, click "Create new
 environment". The environment setup process includes several pages of configuration. The default options are generally
 sufficient for the initial environment setup, but you should pay attention to the following settings:
 
@@ -172,28 +173,28 @@ sufficient for the initial environment setup, but you should pay attention to th
 - Platform and Branch: Select "Python" for the platform and "Python 3.8" for the branch.
 - Application Code: Choose "Upload your code" and select the zip file you created in the previous step.
 - Service Role: Create or select an IAM service role to manage this application.
-- EC2 Key Pair: Create or select an EC2 pair for this environment. You'll need this to be able to connect to your 
-instance via SSH.
+- EC2 Key Pair: Create or select an EC2 pair for this environment. You'll need this to be able to connect to your
+  instance via SSH.
 - Database: It is recommended that you set up the database instance separately from the application environment either
-through Timescale Cloud or Amazon RDS. If you set up the database here, you may lose data if you ever need to rebuild
-the environment.
+  through Timescale Cloud or Amazon RDS. If you set up the database here, you may lose data if you ever need to rebuild
+  the environment.
 - Auto Scaling Group: You should select "Load balanced", even if you want to limit the environment to one instance. This
-will create an EC2 Application Load Balancer container that you'll use to connect to CloudFront in a later step.
+  will create an EC2 Application Load Balancer container that you'll use to connect to CloudFront in a later step.
 - Listeners: These will be updated later, but for now, the default listener on port 80 is sufficient.
 - Environment Properties: Add the following environment properties in addition to the default PYTHONPATH:
-    * DEPLOYED: True
-    * DEBUG: Set this to True for testing and development environments; otherwise, set it to False.
-    * AWS_ACCESS_KEY_ID: Enter an access key that will be used to read and write static and media files to AWS S3 and send
+  - DEPLOYED: True
+  - DEBUG: Set this to True for testing and development environments; otherwise, set it to False.
+  - AWS_ACCESS_KEY_ID: Enter an access key that will be used to read and write static and media files to AWS S3 and send
     admin emails through Amazon SES for account verification and password reset.
-    * AWS_SECRET_ACCESS_KEY: Enter the corresponding secret key.
-    * AWS_STORAGE_BUCKET_NAME: Enter the name of the bucket you want to use to host static and media files which you configured in the previous section.
-    * DATABASE_URL: Enter the URL for the database service you want to use. If you set up a Timescale Cloud
-    instance, the pattern would be: 
+  - AWS_SECRET_ACCESS_KEY: Enter the corresponding secret key.
+  - AWS_STORAGE_BUCKET_NAME: Enter the name of the bucket you want to use to host static and media files which you configured in the previous section.
+  - DATABASE_URL: Enter the URL for the database service you want to use. If you set up a Timescale Cloud
+    instance, the pattern would be:
     postgresql://{db_user}:{db_password}.{db_host}:{db_port}/tsdb
-    * SECRET_KEY: Generate a random secret key string to use for Django.
-    * PROXY_BASE_URL: Enter the domain value from earlier (e.g., http://my-hs-env.us-east-1.elasticbeanstalk.com)
-    * ALLOWED_HOSTS: Enter the domain value from earlier without the protocol 
-      (e.g., my-hs-env.us-east-1.elasticbeanstalk.com)
+  - SECRET_KEY: Generate a random secret key string to use for Django.
+  - PROXY_BASE_URL: Enter the domain value from earlier (e.g., http://my-hs-env.us-east-1.elasticbeanstalk.com)
+  - ALLOWED_HOSTS: Enter the domain value from earlier without the protocol
+    (e.g., my-hs-env.us-east-1.elasticbeanstalk.com)
 
 After you finish creating your environment, you will be taken to the environment landing page. The environment will take
 several minutes to start up. From here you can monitor the health of the environment, access logs, and update
@@ -201,18 +202,18 @@ configuration settings if needed. If everything ran successfully, after a few mi
 health status of "Ok". If it doesn't, you may need to check the logs and revisit your environment configuration to
 resolve the issue.
 
-To further verify that your environment started successfully, check the /admin/ endpoint of your temporary Elastic 
+To further verify that your environment started successfully, check the /admin/ endpoint of your temporary Elastic
 Beanstalk domain. You should see an administrator login page. If CSS styles haven't been applied to this
 page, you may need to rerun the following command from your Elastic Beanstalk shell or locally with your
 deployment settings applied. You can also verify that static files have been copied successfully by
-checking the S3 storage bucket you configured earlier. All static files should have been copied to a 
+checking the S3 storage bucket you configured earlier. All static files should have been copied to a
 folder called "static" in your storage bucket.
 
 ```
 python manage.py collectstatic
 ```
 
-Additionally, at this point you may want to create an admin user for HydroServer. You can do so by 
+Additionally, at this point you may want to create an admin user for HydroServer. You can do so by
 running the following command and following the prompts.
 
 ```
@@ -228,29 +229,29 @@ Log in to the AWS Console and go to the CloudFront service dashboard. Select the
 earlier, then select "Origins" and click "Create origin". Use the following configuration options for this origin:
 
 - Origin Domain: Under "Elastic Load Balancer" select the load balancer being used for your Elastic Beanstalk
-environment. If you don't know the name, you can go to the events log on the Elastic Beanstalk environment landing page
-and search for "Created Load Balancer". The name of the load balancer should be included in that log entry.
+  environment. If you don't know the name, you can go to the events log on the Elastic Beanstalk environment landing page
+  and search for "Created Load Balancer". The name of the load balancer should be included in that log entry.
 - Protocol: Select "HTTP only"
 
 After you create the new origin, select "Behaviors" from the distribution landing page. You'll need to create three
 behaviors with the following configurations:
 
 1. SensorThings API
-   - Path Pattern: /api/sensorthings/*
+   - Path Pattern: /api/sensorthings/\*
    - Origin and Origin Groups: Select your load balancer
    - Viewer Protocol Policy: HTTP and HTTPS
    - Allowed HTTP Methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE
    - Cache Policy: CachingDisabled
    - Origin Request Policy: AllViewer
 2. Data Management API
-   - Path Pattern: /api/*
+   - Path Pattern: /api/\*
    - Origin and Origin Groups: Select your load balancer
    - Viewer Protocol Policy: Redirect HTTP to HTTPS
    - Allowed HTTP Methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE
    - Cache Policy: CachingDisabled
    - Origin Request Policy: AllViewer
 3. Admin Dashboard
-   - Path Pattern: /admin/*
+   - Path Pattern: /admin/\*
    - Origin and Origin Groups: Select your load balancer
    - Viewer Protocol Policy: Redirect HTTP to HTTPS
    - Allowed HTTP Methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE
@@ -259,21 +260,21 @@ behaviors with the following configurations:
 
 Once you've created these behaviors, make sure that they appear in the list in the following order by path pattern:
 
-1. /api/sensorthings/*
-2. /api/*
-3. /admin/*
-4. /photos/*
-5. /static/*
-6. Default (*)
+1. /api/sensorthings/\*
+2. /api/\*
+3. /admin/\*
+4. /photos/\*
+5. /static/\*
+6. Default (\*)
 
 #### Additional Deployment Security Settings
 
 Before you can access the Django API on your domain, you need to update some security settings on your load balancer
-to allow traffic to pass between CloudFront and Elastic Beanstalk. 
+to allow traffic to pass between CloudFront and Elastic Beanstalk.
 
 First, from the AWS Console, go to the WAF & Shield
 
- dashboard and select "Web ACLs". Select the Web ACL for your distribution,
+dashboard and select "Web ACLs". Select the Web ACL for your distribution,
 then under "Rules", click "AWS-AWSManagedRulesCommonRuleSet", then "Edit". Under "SizeRestrictions_BODY", select
 "Override to count", then click "Save rule". This is necessary to allow larger POST bodies to the SensorThings API.
 
@@ -287,8 +288,8 @@ following configuration:
 - Health Check Protocol: Select "HTTPS"
 - Targets: Select your HydroServer Elastic Beanstalk instance.
 
-Next, select "Load balancers" from the navigation pane, then select the load balancer associated with the HydroServer 
-Elastic Beanstalk instance. Under "Listeners and rules" click "Add Listener" and create a listener with the following 
+Next, select "Load balancers" from the navigation pane, then select the load balancer associated with the HydroServer
+Elastic Beanstalk instance. Under "Listeners and rules" click "Add Listener" and create a listener with the following
 configuration options:
 
 - Protocol: Select "HTTPS"; the port should be set to 443.
@@ -297,13 +298,13 @@ configuration options:
 
 After you create the listener, select "Security Groups" from the navigation pane. You should see two security groups
 associated with your Elastic Beanstalk environment. Select the security group that only has one permission entry. The
-description should be "Elastic Beanstalk created security group used when no ELB security groups are specified during 
+description should be "Elastic Beanstalk created security group used when no ELB security groups are specified during
 ELB creation." Click "Edit inbound rules", then "Add rule". The type for the new rule should be "HTTPS" and the source
 should be "Anywhere-IPv4"
 
-Finally, return to your Elastic Beanstalk environment page and click "Configuration", then "Edit" under "Updates, 
+Finally, return to your Elastic Beanstalk environment page and click "Configuration", then "Edit" under "Updates,
 monitoring, and logging". Change the PROXY_BASE_URL environment property to your domain with the https protocol, and
-change the ALLOWED_HOSTS environment property to your domain without any protocol, then click "Apply". After your 
+change the ALLOWED_HOSTS environment property to your domain without any protocol, then click "Apply". After your
 environment finishes updating with the new environment properties, you can check that the Django app is accessible
 on your domain by entering the domain with the path /admin/ in a browser. If everything is configured correctly, you
 should see an admin login page.
@@ -314,7 +315,7 @@ HydroServer requires Amazon SES to be able to send account verification and pass
 an account on your deployed HydroServer instance, you'll need to set up SES for your domain.
 
 Log in to the AWS Console and go to the Amazon SES service dashboard. Click "Create identity" and follow the prompts to
-link Amazon SES to your domain. Once you have Amazon SES set up, go back to your Elastic Beanstalk environment page 
+link Amazon SES to your domain. Once you have Amazon SES set up, go back to your Elastic Beanstalk environment page
 and click "Configuration", then "Edit" under "Updates, monitoring, and logging". Add an environment property called
 ADMIN_EMAIL and set it to an address associated with the SES identity you just created, such as "admin@example.com".
 This email address will be used to send account verification and password reset emails to users.
@@ -334,8 +335,8 @@ need to register your HydroServer instance with both Google and ORCID.
 #### Google OAuth
 
 To register HydroServer with Google, visit the [Google API Console](https://console.cloud.google.com/apis/dashboard) and
-log in with a Google account. Create a new project for your deployment, then select "Credentials" and under "Create Credentials", 
-click "OAuth client ID". Select "Web Application" and give a name for your client. Under "Authorized redirect URIs", enter 
+log in with a Google account. Create a new project for your deployment, then select "Credentials" and under "Create Credentials",
+click "OAuth client ID". Select "Web Application" and give a name for your client. Under "Authorized redirect URIs", enter
 the following URL using your HydroServer domain:
 
 ```
@@ -352,9 +353,9 @@ The values of these properties should be the client and secret values you copied
 
 #### ORCID OAuth
 
-To register HydroServer with ORCID, visit the [ORCID Dashboard](https://sandbox.orcid.org/my-orcid) and log in with an ORCID 
-account. ORCID recommends using [sandbox.orcid.org](sandbox.orcid.org) for development and testing. Under "Developer Tools", 
-click "Register for ORCID public API credentials". Enter the name and URL of your HydroServer application. Under "Redirect URIs", 
+To register HydroServer with ORCID, visit the [ORCID Dashboard](https://sandbox.orcid.org/my-orcid) and log in with an ORCID
+account. ORCID recommends using [sandbox.orcid.org](sandbox.orcid.org) for development and testing. Under "Developer Tools",
+click "Register for ORCID public API credentials". Enter the name and URL of your HydroServer application. Under "Redirect URIs",
 enter the following URL using your HydroServer domain:
 
 ```
