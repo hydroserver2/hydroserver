@@ -21,7 +21,7 @@ Before running the commands below, ensure you have a local instance of the Djang
 
 The value should be a connection string linking to your TimescaleDB instance, utilizing the "Service URL" under "Connection info" on your Timescale Cloud Services dashboard. Replace "postgres" with "postgresql". You may need to remove "?sslmode=require" depending on where you're running the commands from. Include the service password after the user in the string. The URL pattern should resemble this:
 
-```plaintext
+```txt
 postgresql://{db_user}:{db_password}@{db_host}:{db_port}/tsdb
 ```
 
