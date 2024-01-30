@@ -82,7 +82,7 @@ Start the development web server:
 python manage.py runserver
 ```
 
-For local development, you can access the server at http://localhost:8000. If you'd like to change that URL, the PROXY_BASE_URL can be found in settings.py
+For local development, you can access the server at `http://localhost:8000`. If you'd like to change that URL, the PROXY_BASE_URL can be found in settings.py
 
 ## Additional helpful commands
 
