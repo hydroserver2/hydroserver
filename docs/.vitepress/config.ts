@@ -66,6 +66,13 @@ export default defineConfig({
           { text: "Timescale Cloud", link: "/deployment/timescale-cloud" },
         ],
       },
+      {
+        text: "Local Development",
+        items: [
+          { text: "Frontend Setup", link: "/development/frontend-setup" },
+          { text: "Backend Setup", link: "/development/backend-setup" },
+        ],
+      },
     ],
 
     socialLinks: [
