@@ -4,3 +4,5 @@ docs/.vitepress/dist/
 
 .idea*
 .DS_Store
+.terraform*
+terraform.tfstate*
