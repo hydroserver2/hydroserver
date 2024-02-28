@@ -3,21 +3,21 @@
 This guide will walk you through how to set up and maintain a HydroServer deployment on AWS and Timescale Cloud services using Terraform and GitHub Actions. We recommend you familiarize yourself with AWS security best practices before setting up HydroServer in AWS.
 
 ## Fork the hydroserver-ops Repository
-1. Fork the hydroserver-ops repository, which contains tools you'll use for managing your HydroServer deployments.
+1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools you'll use for managing your HydroServer deployments.
 2. Go to your forked repository settings and navigate to "Environments".
 3. Create a new environment with a simple name (e.g., beta, prod, dev), which you will use in subsequent steps. This new environment name will be used to identify various AWS and Timescale Cloud services.
 4. Create an environment variable named DEBUG and set its value to 'True'. You can set it to 'False' for production environments.
 5. Create an environment secret called DJANGO_SECRET_KEY and generate and store a Django secret key there.
 
 ## Create an AWS Account
-1. Create an AWS account if you don't already have one.
+1. Create an [AWS](https://aws.amazon.com/) account if you don't already have one.
 2. Create an IAM account to manage HydroServer deployments, granting it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you need additional restrictions.
 3. Generate an Access Key for the IAM user.
 4. Create environment secrets in your GitHub environment called AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the IAM Access Key you just created. 
 5. Manually create an S3 bucket named "hydroserver-terraform-backend" in your AWS account. Use the default settings and make sure it is not publicly accessible. Terraform will use this bucket to manage your deployments and store credentials you'll need to access later. 
 
 ## Set Up Timescale Cloud Account
-1. Create a Timescale Cloud account and project. Take note of your project ID.
+1. Create a [Timescale Cloud](https://www.timescale.com/) account and project. Take note of your project ID.
 2. Under project settings, create a set of client credentials for your project.
 3. Create environment secrets in GitHub called TIMESCALE_PROJECT_ID, TIMESCALE_ACCESS_KEY, and TIMESCALE_SECRET_KEY for the project and credentials you just created.
 
