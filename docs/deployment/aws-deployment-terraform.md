@@ -11,10 +11,10 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 
 ## Create an AWS Account
 1. Create an [AWS](https://aws.amazon.com/) account if you don't already have one.
-2. Create an IAM account to manage HydroServer deployments, granting it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you need additional restrictions.
-3. Generate an Access Key for the IAM user.
-4. Create environment secrets in your GitHub environment called AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the IAM Access Key you just created. 
-5. Manually create an S3 bucket named "hydroserver-terraform-backend" in your AWS account. Use the default settings and make sure it is not publicly accessible. Terraform will use this bucket to manage your deployments and store credentials you'll need to access later. 
+2. Follow [these instruction](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OIDC for your AWS account. All workflows in the github-ops repository are set up to use this authentication method.
+3. Create an IAM role for managing HydroServer deployments with Terraform. You will need to follow the instructions in the previous step to configure a trust policy between AWS and ***your forked hydroserver-ops*** repository and user account or organization. Grant it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you want to enforce additional restrictions.
+4. Create environment variables in your GitHub environment called AWS_ACCOUNT_ID and AWS_IAM_ROLE for your AWS account ID and the name of the IAM role you created in the previous step.
+5. Create an S3 bucket named "hydroserver-terraform-backend" in your AWS account. Use the default settings and make sure it is not publicly accessible. Terraform will use this bucket to manage your deployments and store sensitive credentials you'll need to access later.
 
 ## Set Up Timescale Cloud Account
 1. Create a [Timescale Cloud](https://www.timescale.com/) account and project. Take note of your project ID.
