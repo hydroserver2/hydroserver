@@ -3,7 +3,7 @@
 This guide will walk you through how to set up and maintain a HydroServer deployment on AWS and Timescale Cloud services using Terraform and GitHub Actions. We recommend you familiarize yourself with AWS security best practices before setting up HydroServer in AWS.
 
 ## Fork the hydroserver-ops Repository
-1. Fork the <a href="https://github.com/hydroserver2/hydroserver-ops" target="_blank">hydroserver-ops</a> repository, which contains tools you'll use for managing your HydroServer deployments.
+1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools you'll use for managing your HydroServer deployments.
 2. Go to your forked repository settings and navigate to "Environments".
 3. Create a new environment with a simple name (e.g., beta, prod, dev), which you will use in subsequent steps. This new environment name will be used to identify various AWS and Timescale Cloud services.
 4. Create an environment variable named DEBUG and set its value to 'True'. You can set it to 'False' for production environments.
