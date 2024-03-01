@@ -9,17 +9,20 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 4. Create an environment variable named DEBUG and set its value to 'True'. You can set it to 'False' for production environments.
 5. Create an environment secret called DJANGO_SECRET_KEY and generate and store a Django secret key there.
 
-## Create an AWS Account
+## Create an AWS Account and Configure IAM Roles and Policies
 1. Create an [AWS](https://aws.amazon.com/) account if you don't already have one.
 2. Follow [these instruction](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OIDC for your AWS account. All workflows in the github-ops repository are set up to use this authentication method.
-3. Create an IAM role for managing HydroServer deployments with Terraform. You will need to follow the instructions in the previous step to configure a trust policy between AWS and ***your forked hydroserver-ops*** repository and user account or organization. Grant it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you want to enforce additional restrictions.
-4. Create environment variables in your GitHub environment called AWS_ACCOUNT_ID and AWS_IAM_ROLE for your AWS account ID and the name of the IAM role you created in the previous step.
-5. Create an S3 bucket named "hydroserver-terraform-backend" in your AWS account. Use the default settings and make sure it is not publicly accessible. Terraform will use this bucket to manage your deployments and store sensitive credentials you'll need to access later.
+3. Create an IAM role for managing HydroServer deployments with Terraform. You will need to follow the instructions in the previous step to configure a trust policy between AWS and ***your*** forked hydroserver-ops repository and user account or organization. Grant it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you want to enforce additional restrictions.
+4. You also need to create and grant the IAM role [this policy]() for limited IAM management permissions.
+5. The IAM policy in the previous step references [this permission boundary policy](). Create the policy and name it "HydroServerIAMPermissionBoundary". If you need to modify any of these policies, take care to avoid gaps that could lead to privilege escalation.
+6. Create environment variables in your GitHub environment called AWS_ACCOUNT_ID and AWS_IAM_ROLE for your AWS account ID and the name of the IAM role you created in step 3.
+7. Create an S3 bucket named "hydroserver-terraform-backend" in your AWS account. Use the default settings and make sure it is not publicly accessible. Terraform will use this bucket to manage your deployments and store sensitive credentials you'll need to access later.
 
 ## Set Up Timescale Cloud Account
 1. Create a [Timescale Cloud](https://www.timescale.com/) account and project. Take note of your project ID.
 2. Under project settings, create a set of client credentials for your project.
 3. Create environment secrets in GitHub called TIMESCALE_PROJECT_ID, TIMESCALE_ACCESS_KEY, and TIMESCALE_SECRET_KEY for the project and credentials you just created.
+4. The Timescale client credentials are only needed during the initial setup described in this guide. After you finish setting up HydroServer, you may want to disable these credentials.
 
 ## Terraform Setup for AWS Services
 1. From your hydroserver-ops repository, go to Actions > Workflows and click "Create HydroServer AWS Cloud Deployment".
