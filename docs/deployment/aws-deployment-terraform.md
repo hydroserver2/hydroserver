@@ -22,8 +22,9 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 ## Set Up Timescale Cloud Account
 1. Create a [Timescale Cloud](https://www.timescale.com/) account and project. Take note of your project ID.
 2. Under project settings, create a set of client credentials for your project.
-3. Create environment secrets in GitHub called TIMESCALE_PROJECT_ID, TIMESCALE_ACCESS_KEY, and TIMESCALE_SECRET_KEY for the project and credentials you just created.
-4. The Timescale client credentials are only needed during the initial setup described in this guide. After you finish setting up HydroServer, you may want to disable these credentials.
+3. Create an environment variable in GitHub called TIMESCALE_PROJECT_ID and enter the project ID from step 1. 
+4. Create environment secrets in GitHub called TIMESCALE_ACCESS_KEY, and TIMESCALE_SECRET_KEY for the credentials you just created.
+5. The Timescale client credentials are only needed during the initial setup described in this guide. After you finish setting up HydroServer, you may want to disable these credentials.
 
 ## Terraform Setup for AWS Services
 1. From your hydroserver-ops repository, go to Actions > Workflows and click "Create HydroServer AWS Cloud Deployment".
