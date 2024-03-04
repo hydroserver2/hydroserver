@@ -3,20 +3,20 @@
 This guide will walk you through how to set up and maintain a HydroServer deployment on AWS and Timescale Cloud services using Terraform and GitHub Actions. We recommend you familiarize yourself with AWS security best practices before setting up HydroServer in AWS.
 
 ## Fork the hydroserver-ops Repository
-1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools you'll use for managing your HydroServer deployments.
+1. Create a fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools you'll use for managing your HydroServer deployments. You'll need to enable workflows on your forked repository before you can run them.
 2. Go to your forked repository settings and navigate to "Environments".
-3. Create a new environment with a simple name (e.g., beta, prod, dev), which you will use in subsequent steps. This new environment name will be used to identify various AWS and Timescale Cloud services.
+3. Create a new environment with a simple name (e.g., beta, prod, dev), which you will use in subsequent steps. This new environment name will be used to identify various AWS and Timescale Cloud services. All environment variables and secrets mentioned in this guide should be created under this environment.
 4. Create an environment variable named DEBUG and set its value to 'True'. You can set it to 'False' for production environments.
 5. Create an environment secret called DJANGO_SECRET_KEY and generate and store a Django secret key there.
 
 ## Create an AWS Account and Configure IAM Roles and Policies
 1. Create an [AWS](https://aws.amazon.com/) account if you don't already have one.
-2. Follow [these instruction](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OIDC for your AWS account. All workflows in the github-ops repository are set up to use this authentication method.
+2. Follow [these instruction](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OpenID Connect (OIDC) for your AWS account. All workflows in the github-ops repository are set up to use this authentication method.
 3. Create an IAM role for managing HydroServer deployments with Terraform. You will need to follow the instructions in the previous step to configure a trust policy between AWS and ***your*** forked hydroserver-ops repository and user account or organization. Grant it the following permissions policies: AmazonS3FullAccess, AWSWAFFullAccess, CloudFrontFullAccess, and AdministratorAccess-AWSElasticBeanstalk. You can also create custom permissions policies if you want to enforce additional restrictions.
-4. You also need to create and grant the IAM role [this policy](https://github.com/hydroserver2/hydroserver-ops/blob/main/terraform/aws/terraform-iam-policy.json) for limited IAM management permissions. Replace all instances of YOUR_ACCOUNT_ID with your own AWS account ID.
-5. The IAM policy in the previous step references [this permission boundary policy](https://github.com/hydroserver2/hydroserver-ops/blob/main/terraform/aws/iam-ec2-permissions-boundary.json). Create the policy and name it "HydroServerIAMPermissionBoundary". If you need to modify any of these policies, take care to avoid gaps that could lead to privilege escalation.
+4. Create and grant the IAM role [this policy](https://github.com/hydroserver2/hydroserver-ops/blob/main/terraform/aws/terraform-iam-policy.json) for limited IAM management permissions. Replace all instances of YOUR_ACCOUNT_ID with your own AWS account ID.
+5. The IAM policy in the previous step references [this permission boundary policy](https://github.com/hydroserver2/hydroserver-ops/blob/main/terraform/aws/iam-ec2-permissions-boundary.json). Create the policy and name it "HydroServerIAMPermissionBoundary". If you need to modify any of these policies, take care to avoid gaps that could lead to privilege escalation vulnerabilities.
 6. Create environment variables in your GitHub environment called AWS_ACCOUNT_ID, AWS_REGION, and AWS_IAM_ROLE for your AWS account ID, the region you want to use (e.g. us-east-1), and the name of the IAM role you created in step 3.
-7. Create an S3 bucket in your AWS account for Terraform to use to manage your deployments and store sensitive credentials you'll need to access later. Give it a globally unique name, and use the default settings and make sure it is not publicly accessible. You only need one of these buckets per AWS account; if you have multiple deployments on the same AWS account, they should use the same Terraform bucket.
+7. Create an S3 bucket in your AWS account for Terraform to use to manage your deployments and store sensitive credentials you'll need to access later. Give it a globally unique name, use the default settings, and make sure it is not publicly accessible. You only need one of these buckets per AWS account; if you have multiple deployments on the same AWS account, they should use the same Terraform bucket.
 8. Create a GitHub environment variable called TERRAFORM_BUCKET and enter the name of the bucket you created in the last step.
 
 ## Set Up Timescale Cloud Account
@@ -34,17 +34,17 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 ## Additional Environment Configuration
 1. Retrieve the CloudFront distribution ID and domain name from the AWS CloudFront dashboard.
 2. Create a GitHub environment variable called CLOUDFRONT_ID for the CloudFront ID.
-3. Create an environment variable called ALLOWED_HOSTS and enter the CloudFront domain name. ALLOWED_HOSTS accepts a comma-separated list of domains Django will accept requests from, so you can also enter the autogenerated Elastic Beanstalk domain. If you're attaching a custom domain to your CloudFront distribution, you should enter that domain. For security reasons, you should limit ALLOWED_HOSTS to only domains you intend users to be able to access HydroServer from.
-4. Create an environment variable called PROXY_BASE_URL and enter the CloudFront domain name, including the protocol (e.g. https://). If you're using a custom domain instead of the CloudFront generated domain, use that base URL instead. Some pages and resources, such as the admin dashboard, will only work when accessed through this base URL. 
+3. Create a GitHub environment variable called ALLOWED_HOSTS and enter the CloudFront domain name. ALLOWED_HOSTS accepts a comma-separated list of domains Django will accept requests from, so you can also enter the autogenerated Elastic Beanstalk domain. If you're attaching a custom domain to your CloudFront distribution, you should enter that domain. For security reasons, you should limit ALLOWED_HOSTS to only domains you intend users to be able to access HydroServer from.
+4. Create a GitHub environment variable called PROXY_BASE_URL and enter the CloudFront domain name, including the protocol (e.g. https://). If you're using a custom domain instead of the CloudFront generated domain, use that base URL instead. Some pages and resources, such as the admin dashboard, will only work when accessed through this base URL. 
 5. Using a Google account, follow the instructions [here](https://developers.google.com/maps/documentation/embed/get-api-key) to generate a Google Maps API key and map ID for your HydroServer environment.
 6. Create GitHub environment secrets called GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_MAP_ID for the Google Maps API key and map ID you just created.
    
 ## Timescale Cloud Database Setup
 1. From your hydroserver-ops repo, click Actions > Workflows and select "Create HydroServer Timescale Cloud Database".
-2. Run the workflow, providing your environment name, Django admin account credentials, and partition interval (default: 365 days). The Django credentials you provide will be used to create a superuser you can use to log in to the Django admin dashboard. You can change these later if you wish. The partition interval is used to chunk the HydroServer observations table. Depending on your data needs, you may want to adjust this value. You can read more about Timescale hypertables and paritioning [here](https://docs.timescale.com/use-timescale/latest/hypertables/about-hypertables/). Although Timescale Cloud uses a default partition interval of 7 days, the default used by the hydroserver-ops repo is 365 days.
+2. Run the workflow, providing your environment name, Django admin account credentials, and partition interval (default: 365 days). The Django credentials you provide will be used to create a superuser you can use to log in to the Django admin dashboard. You can change these later if you wish. The partition interval is used to chunk the HydroServer observations table. Depending on your use cases, you may want to adjust this value. You can read more about Timescale hypertables and partitioning [here](https://docs.timescale.com/use-timescale/latest/hypertables/about-hypertables/). Although Timescale Cloud uses a default partition interval of 7 days, the default used by the hydroserver-ops repo is 365 days.
 3. Optionally specify a HydroServer version. If you want to use the latest version of HydroServer, leave this field blank.
-4. After the workflow completes, you should see a new service on your Timescale Cloud dashboard. To connect to this service, retrieve the Timescale database connection details from the output folder in the hydroserver-terraform-backend S3 bucket you created earlier.
-5. Create a GitHub environment secret called DATABASE_URL and store the database connection string from the connection details file.
+4. After the workflow completes, you should see a new service on your Timescale Cloud dashboard. To connect to this service, retrieve the Timescale database connection details from the output folder in the Terraform S3 bucket you created earlier.
+5. Create a GitHub environment secret called DATABASE_URL and store the database connection string from the Timescale connection details file.
 
 ## Google OAuth Settings
 1. To enable Google OAuth for HydroServer account creation, follow the instructions [here](https://developers.google.com/identity/protocols/oauth2) to create client credentials for HydroServer.
@@ -65,14 +65,14 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 1. From the hydroserver-ops repo, click Actions > Workflows and choose "Deploy HydroServer to AWS Cloud Deployment".
 2. Run the workflow, entering the environment name.
 3. Optionally specify a HydroServer version. If you want to use the latest version of HydroServer, leave this field blank.
-4. After completion, your HydroServer instance should be running at the autogenerated CloudFront URL. You can log in to the admin dashboard at /admin/.
+4. After completion, your HydroServer instance should be running at the autogenerated CloudFront URL. You can log in to the admin dashboard at /admin/ using the superuser credentials you entered during the Timescale Cloud setup workflow.
+
+## Updating HydroServer
+1. If you want to update HydroServer, just rerun the workflow from the previous section.
+2. This workflow handles code updates and database migrations, but you should check the release notes for the version you're updating to in case there are any additional steps required for that version.
+3. Updated environment variables and secrets in GitHub will not be automatically applied to your deployment until you run this workflow. If you are redeploying a version of HydroServer you've already deployed, you will need to first delete that application version from Elastic Beanstalk or the deployment will fail. Most of these settings can also be modified through the Elastic Beanstalk dashboard configuration settings if you want to change any settings without redeploying through GitHub.
 
 ## Set Up a Custom HydroServer Domain
 1. If you want to host HydroServer behind a custom domain, you can do so using [Route 53](https://aws.amazon.com/route53/) or another DNS provider.
 2. Follow the instructions [here](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html) to host CloudFront behind your custom domain.
 3. Remember to update your environment's PROXY_BASE_URL and ALLOWED_HOST settings accordingly.
-
-## Updating HydroServer
-1. If you want to update HydroServer, just rerun the workflow from the previous step.
-2. This worflow handles code updates and database migrations, but you should check the release notes for the version you're updating to in case there are any additional steps required for that version.
-3. Updated environment variables and secrets in GitHub will not be automatically applied to your deployment until you run this workflow. If you are redeploying a version of HydroServer you've already deployed, you will need to first delete that application version from Elastic Beanstalk or the deployment will fail. Most of these settings can also be modified through the Elastic Beanstalk dashboard configuration settings if you want to change any settings without redeploying through GitHub.
