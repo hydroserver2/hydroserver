@@ -40,3 +40,11 @@ Repeat this process for as many datastreams you need to accurately define your s
 
 All datastream management is done through the `Actions` column of the `Datastreams Available at this Site Table` on the `Site Details` page of the site you'd like to manage the datastreams for.
 Selecting the actions icon of a specific datastream will allow you to edit or delete the datastream, or download its data in CSV format.
+
+## Visualizing Data
+
+From the main navigation menu, select `Visualize Data.` This will open a page containing all the public sites and datastreams in the database. Use the filter tool on the left of the page to filter down the datastream table, and the time filter components to specify the time range you wish to see. Afterwards, select up to five datastreams to plot.
+
+:::tip Visualization Toolbar
+The plot has a toolbar which will allow you to take actions like viewing summary statistics of your selected datasets, zooming into the plot, and download a png image of the current display.
+:::
