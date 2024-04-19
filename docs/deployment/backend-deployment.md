@@ -241,7 +241,7 @@ The values of these properties should be the client and secret values you copied
 ### ORCID OAuth
 
 To register HydroServer with ORCID, visit the [ORCID Dashboard](https://sandbox.orcid.org/my-orcid) and log in with an ORCID
-account. ORCID recommends using [sandbox.orcid.org](sandbox.orcid.org) for development and testing. Under "Developer Tools",
+account. ORCID recommends using [sandbox.orcid.org](https://sandbox.orcid.org/) for development and testing. Under "Developer Tools",
 click "Register for ORCID public API credentials". Enter the name and URL of your HydroServer application. Under "Redirect URIs",
 enter the following URL using your HydroServer domain:
 
