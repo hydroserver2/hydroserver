@@ -62,3 +62,20 @@ Each time the archival process is triggered for a site, HydroShare will overwrit
 ### Scheduled Archival
 
 The HydroShare archival form on the site details page allows you to automatically archive your site data at specified intervals. Archival occurs at midnight on the first of the month, week, or day, depending on the schedule you select.
+
+### What Gets Archived and How
+
+When a site is archived to HydroShare, the system generates a CSV file for each selected datastream for that site and saves it in a directory with the name specified on the HydroShare archival form (HydroShare by default). The file structure is as follows:
+
+```plaintext
+HydroShare Resource/
+└── Site folder name (default: "HydroServer")/
+    ├── Processing Level 1 ("Raw Data")/
+    │   ├── Datastream 1.csv
+    │   └── Datastream 2.csv
+    └── Processing Level 2 ("Quality Controlled Data")/
+        ├── Datastream 3.csv
+        └── Datastream 4.csv
+```
+
+Each datastream.csv file will contain all metadata related to the datastream in a comment block followed by the time series data of that datastream.
