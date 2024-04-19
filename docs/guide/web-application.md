@@ -14,7 +14,7 @@ Publicly available sites can be found at the [`Browse Monitoring Sites`](https:/
 
 All of the software for HydroServer is free and open source, so creating an account is as simple as inputting and email and password along with some information that allows users to contact one another in order to facilitate better collaboration, and [`organization information`](terminology.md#site-ownership) if the user would like be associated with one.
 
-::: tip
+::: warning Account Data is Public
 All information you put in the account form will be visible to the other users of the system, so make sure you're only disclosing information you're comfortable sharing.
 :::
 
@@ -30,7 +30,7 @@ Once a site is created, you'll be able to navigate to the `Site Details` page ei
 
 From the `Site Details` page of your newly created site, click the `+ Add New Datastream` button. This will open a form allowing you to specify [`the metadata`](terminology.md#1-direct-metadata) for the new [`datastream`](terminology.md#datastreams).
 
-::: tip
+::: tip Manage Metadata Page
 If you plan on creating a large number of sites and datastreams, it may be faster to first navigate to the [`Data Management -> Manage Metadata `](https://beta.hydroserver2.org/metadata) page and define all of the [`Units, Sensors, Observed Properties, etc.`](terminology.md#2-linked-metadata) you plan on using up front.
 :::
 
@@ -48,3 +48,17 @@ From the main navigation menu, select `Visualize Data.` This will open a page co
 :::tip Visualization Toolbar
 The plot has a toolbar which will allow you to take actions like viewing summary statistics of your selected datasets, zooming into the plot, and download a png image of the current display.
 :::
+
+## Archiving Data With HydroShare
+
+Data archival to HydroShare is available at the site level from the details page of each site. By default, all buttons related to HydroShare are disabled. To enable HydroShare archival, first make sure [archival is enabled on your deployment instance](../deployment/aws-deployment-terraform.html#hydoshare-oauth-settings). Next, navigate to the profile page and connect your HydroServer account to HydroShare via OAuth by clicking the `Connect to HydroShare` button. The button will only appear if `VITE_APP_HYDROSHARE_OAUTH_ENABLED=true` is included in the frontend's .env file.
+
+Once your accounts have been linked, you'll see a new `Configure HydroShare Archival` button on the site details page of each site you own just below the site map. Clicking that will open up a form which will allow you to either create a new HydroShare resource or link your site to an existing resource.
+
+::: warning File Overwriting
+Each time the archival process is triggered for a site, HydroShare will overwrite existing resource files with the same names in the HydroServer directory. For example if you archive Datastream_1 and Datastream_2, then go back and only archive Datastream_1 again, the current Datastream_1 file in HydroShare will be overwritten, but the Datastream_2 file will remain as it was.  
+:::
+
+### Scheduled Archival
+
+The HydroShare archival form on the site details page allows you to automatically archive your site data at specified intervals. Archival occurs at midnight on the first of the month, week, or day, depending on the schedule you select.
