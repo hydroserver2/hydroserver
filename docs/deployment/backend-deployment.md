@@ -69,7 +69,7 @@ sufficient for the initial environment setup, but you should pay attention to th
   will create an EC2 Application Load Balancer container that you'll use to connect to CloudFront in a later step.
 - Listeners: These will be updated later, but for now, the default listener on port 80 is sufficient.
 - Environment Properties: Add the following environment properties in addition to the default PYTHONPATH:
-  - DEPLOYED: True
+  - DEPLOYMENT_BACKEND: aws
   - DEBUG: Set this to True for testing and development environments; otherwise, set it to False.
   - AWS_ACCESS_KEY_ID: Enter an access key that will be used to read and write static and media files to AWS S3 and send
     admin emails through Amazon SES for account verification and password reset.
