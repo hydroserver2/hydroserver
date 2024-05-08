@@ -9,7 +9,7 @@ The Data Management API offers suite of endpoints to access both your data and d
 
 For the list of available endpoints and required parameters, check out the interactive docs at:
 
-https://beta.hydroserver2.org/api/data/docs
+https://playground.hydroserver.org/api/data/docs
 
 ## Access Control
 
