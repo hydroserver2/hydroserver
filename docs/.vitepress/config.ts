@@ -27,8 +27,14 @@ export default defineConfig({
           { text: "Introduction", link: "/guide/introduction" },
           { text: "SensorThings", link: "/guide/sensor-things" },
           { text: "Terminology", link: "/guide/terminology" },
-          { text: "HydroServer Web App", link: "/guide/web-application" },
           { text: "Loading Data", link: "/guide/loading-data" },
+        ],
+      },
+      {
+        text: "Apps",
+        items: [
+          { text: "Data Management App", link: "/apps/data-management-app" },
+          { text: "Quality Control App", link: "/apps/quality-control-app" },
         ],
       },
       {
@@ -45,7 +51,10 @@ export default defineConfig({
       {
         text: "Deployment",
         items: [
-          { text: "Automated AWS and Timescale Cloud Deployment", link: "/deployment/aws-deployment-terraform" },
+          {
+            text: "Automated AWS and Timescale Cloud Deployment",
+            link: "/deployment/aws-deployment-terraform",
+          },
           {
             text: "Manual AWS Deployment",
             link: "/deployment/aws-deployment",
@@ -64,13 +73,19 @@ export default defineConfig({
               },
             ],
           },
-          { text: "Manual Timescale Cloud Deployment", link: "/deployment/timescale-cloud" },
+          {
+            text: "Manual Timescale Cloud Deployment",
+            link: "/deployment/timescale-cloud",
+          },
         ],
       },
       {
         text: "Local Development",
         items: [
-          { text: "Frontend Setup", link: "/development/frontend-setup" },
+          {
+            text: "Frontend Apps Setup",
+            link: "/development/frontend-setup",
+          },
           { text: "Backend Setup", link: "/development/backend-setup" },
         ],
       },

@@ -12,7 +12,7 @@ You might want to get a feel for what HydroServer offers before deploying your o
 
 [`https://beta.hydroserver2.org`](https://beta.hydroserver2.org)
 
-For instructions how to navigate the website, go to the [HydroServer Web App](web-application.md) section of this guide.
+For instructions how to navigate the website, go to the [HydroServer Web App](../apps/data-management-app.md) section of this guide.
 
 ## Deploy Your Own Instance
 

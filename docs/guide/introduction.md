@@ -7,7 +7,7 @@ share a diverse range of environmental and water data. It builds on the
 Open Geospatial Consortium (OGC) SensorThings API to provide a standard
 and reliable way for you to handle your data. It consists of three major parts:
 
-- A [web application](web-application.md) where you can register and manage your
+- A [web application](/apps/data-management-app.md) where you can register and manage your
   observational sites, define their metadata, and view and download public hydrological data.
 - A [Streaming Data Loader (SDL)](loading-data.md) desktop application that will take your preferences as specified in the web application
   and automatically transform and upload your data to HydroServer's database. As long as you have an
