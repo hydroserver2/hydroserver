@@ -1,18 +1,18 @@
 # HydroServer Data Management Web Application
 
-The `Data Management App` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer as well as view and download public data provided by other users. This page acts as a guide of how to navigate the website and setup your first [`site.`](terminology.md#sites)
+The `Data Management App` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer as well as view and download public data provided by other users. This page acts as a guide of how to navigate the website and setup your first [`site.`](/guide/terminology.md#sites)
 
-The [playground instance](getting-started.md#explore-our-playground-instance) is live at:
+The [playground instance](/guide/getting-started.md#explore-our-playground-instance) is live at:
 
 https://playground.hydroserver.org
 
 ## Browse Public Sites
 
-Publicly available sites can be found at the [`Browse Monitoring Sites`](https://playground.hydroserver.org/browse) page. There you'll see a map with markers pointing to their locations. Selecting a marker will populate an info window with some basic information and allow you to navigate to the `Site Details` page for that site where you'll see the associated [`metadata`](terminology.md#site-metadata), [`datastreams`](terminology.md#datastreams), and [`observations`](terminology.md#observations) (data) in sparkline plots.
+Publicly available sites can be found at the [`Browse Monitoring Sites`](https://playground.hydroserver.org/browse) page. There you'll see a map with markers pointing to their locations. Selecting a marker will populate an info window with some basic information and allow you to navigate to the `Site Details` page for that site where you'll see the associated [`metadata`](/guide/terminology.md#site-metadata), [`datastreams`](/guide/terminology.md#datastreams), and [`observations`](/guide/terminology.md#observations) (data) in sparkline plots.
 
 ## Creating An Account
 
-All of the software for HydroServer is free and open source, so creating an account is as simple as inputting and email and password along with some information that allows users to contact one another in order to facilitate better collaboration, and [`organization information`](terminology.md#site-ownership) if the user would like be associated with one.
+All of the software for HydroServer is free and open source, so creating an account is as simple as inputting and email and password along with some information that allows users to contact one another in order to facilitate better collaboration, and [`organization information`](/guide/terminology.md#site-ownership) if the user would like be associated with one.
 
 ::: warning Account Data is Public
 All information you put in the account form will be visible to the other users of the system, so make sure you're only disclosing information you're comfortable sharing.
@@ -28,13 +28,13 @@ Once a site is created, you'll be able to navigate to the `Site Details` page ei
 
 ## Adding a Datastream to Your Site
 
-From the `Site Details` page of your newly created site, click the `+ Add New Datastream` button. This will open a form allowing you to specify [`the metadata`](terminology.md#1-direct-metadata) for the new [`datastream`](terminology.md#datastreams).
+From the `Site Details` page of your newly created site, click the `+ Add New Datastream` button. This will open a form allowing you to specify [`the metadata`](/guide/terminology.md#1-direct-metadata) for the new [`datastream`](/guide/terminology.md#datastreams).
 
 ::: tip Manage Metadata Page
-If you plan on creating a large number of sites and datastreams, it may be faster to first navigate to the [`Data Management -> Manage Metadata `](https://playground.hydroserver.org/metadata) page and define all of the [`Units, Sensors, Observed Properties, etc.`](terminology.md#2-linked-metadata) you plan on using up front.
+If you plan on creating a large number of sites and datastreams, it may be faster to first navigate to the [`Data Management -> Manage Metadata `](https://playground.hydroserver.org/metadata) page and define all of the [`Units, Sensors, Observed Properties, etc.`](/guide/terminology.md#2-linked-metadata) you plan on using up front.
 :::
 
-Repeat this process for as many datastreams you need to accurately define your site and as many sites as you need to describe your data. In the following [`Loading Data`](loading-data.md) section, you'll learn how to download and configure the `Streaming Data Loader Desktop App` in order to automatically upload data into your newly created datastreams.
+Repeat this process for as many datastreams you need to accurately define your site and as many sites as you need to describe your data. In the following [`Loading Data`](/guide/loading-data.md) section, you'll learn how to download and configure the `Streaming Data Loader Desktop App` in order to automatically upload data into your newly created datastreams.
 
 ## Managing Your Datastreams
 
