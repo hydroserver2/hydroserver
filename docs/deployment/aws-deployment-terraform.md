@@ -59,6 +59,15 @@ This guide will walk you through how to set up and maintain a HydroServer deploy
 3. After the workflow completes, you should see a new service on your Timescale Cloud dashboard. To connect to this service, retrieve the Timescale database connection details from the output folder in the Terraform S3 bucket you created earlier.
 4. Create the following GitHub environment secret:
    - DATABASE_URL: Use the database connection string from the Timescale connection details file you looked up in step 3.
+  
+## Email Settings
+1. To enable email services for HydroServer (used for account verification and password reset), first set up an SMTP server using a service such as [Amazon SES](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp.html).
+2. Create the following GitHub environment variables:
+   - EMAIL_HOST: The host for your SMTP service.
+   - EMAIL_PORT: The port for your SMTP service.
+3. Create the following GitHub environment secrets:
+   - EMAIL_HOST_USER: The username associated with your SMTP service.
+   - EMAIL_HOST_PASSWORD: The password associated with your SMTP service.
 
 ## Google OAuth Settings
 1. To enable Google OAuth for HydroServer account creation, follow the instructions [here](https://developers.google.com/identity/protocols/oauth2) to create client credentials for HydroServer.
