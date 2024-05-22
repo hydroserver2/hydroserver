@@ -33,7 +33,7 @@ services:
     image: node:latest
     working_dir: /app
     volumes:
-      - {hydroserver-webapp-front}:/app
+      - {hydroserver-data-management-app}:/app
     command: 
       - /bin/sh
       - -c
