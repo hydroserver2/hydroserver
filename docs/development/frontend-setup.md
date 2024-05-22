@@ -14,13 +14,13 @@ This guide is for setting up a local development instance of HydroServer which m
 1. Clone the repository:
 
 ```
-git clone https://github.com/hydroserver2/hydroserver-webapp-front.git
+git clone https://github.com/hydroserver2/hydroserver-data-management-app.git
 ```
 
 2. Navigate to the project directory and install the required packages:
 
 ```
-cd hydroserver-webapp-front
+cd hydroserver-data-management-app
 npm install
 ```
 
