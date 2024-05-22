@@ -4,7 +4,7 @@ Before proceeding, set up an environment capable of running NodeJS to build the 
 
 While the frontend is dependent on the backend application, deploying the frontend first is recommended. This approach uses the CloudFront distribution created for the frontend as a reverse proxy for the backend Elastic Beanstalk deployment.
 
-Start by visiting the [HydroServer frontend GitHub repository](https://github.com/hydroserver2/hydroserver-webapp-front). Download the repository or create a fork for codebase modifications or automated deployment using GitHub Actions.
+Start by visiting the [HydroServer Data Management App GitHub repository](https://github.com/hydroserver2/hydroserver-data-management-app). Download the repository or create a fork for codebase modifications or automated deployment using GitHub Actions.
 
 ## The Environment File
 
