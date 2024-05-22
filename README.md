@@ -9,13 +9,13 @@ HydroServer is a software cyberinfrastructure platform created to support collec
 
 HydroServer consists of the following components:
 
-**HydroServer Management Web Application**: A web application for creating and managing monitoring sites, data streams, and associated metadata.
+**HydroServer Data Management Web Application**: A web application for creating and managing monitoring sites, data streams, and associated metadata.
 * Map interface for browsing data collection sites
 * User interface for registering sites and creating site metadata
 * User interface for creating data streams and associated metadata
 * Fuctionality for linking data loaders and data sources for streaming sensor data
 * A data management API for programmatically managing site and datastream metadata
-* Front-end code repository: [https://github.com/hydroserver2/hydroserver-webapp-front](https://github.com/hydroserver2/hydroserver-webapp-front)
+* Data management app code repository: [https://github.com/hydroserver2/hydroserver-data-management-app](https://github.com/hydroserver2/hydroserver-data-management-app)
 * Back-end code repository: [https://github.com/hydroserver2/hydroserver-webapp-back](https://github.com/hydroserver2/hydroserver-webapp-back)
   
 **HydroServer SensorThings API**: A Python Django implementation of the Open Geospatial Consortium's SensorThings API for HydroServer
