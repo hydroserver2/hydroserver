@@ -1,7 +1,7 @@
 # HydroServer Backend Deployment
 
 This section will cover how to deploy the HydroServer Django API Services application on AWS. First, go to the [HydroServer
-API Services GitHub repository](https://github.com/hydroserver2/hydroserver-api-services) and download the repository, or
+API services GitHub repository](https://github.com/hydroserver2/hydroserver-api-services) and download the repository, or
 create a fork if you want to modify the codebase or use GitHub Actions for automated deployment. You may want to
 follow the instructions to set up a development environment on your local machine before continuing.
 
