@@ -1,6 +1,6 @@
 # HydroServer Timescale Cloud Database
 
-This guide provides step-by-step instructions for setting up a HydroServer database on the Timescale Cloud platform. Before proceeding, ensure you have created a [Timescale Cloud](https://www.timescale.com/) account and set up an instance of the [HydroServer API Services app](https://github.com/hydroserver2/hydroserver-api-services) to execute the required management commands.
+This guide provides step-by-step instructions for setting up a HydroServer database on the Timescale Cloud platform. Before proceeding, ensure you have created a [Timescale Cloud](https://www.timescale.com/) account and set up an instance of the [HydroServer API services app](https://github.com/hydroserver2/hydroserver-api-services) to execute the required management commands.
 
 ## Configuring Timescale Hypertable Partition Interval
 
