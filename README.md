@@ -16,7 +16,7 @@ HydroServer consists of the following components:
 * Fuctionality for linking data loaders and data sources for streaming sensor data
 * A data management API for programmatically managing site and datastream metadata
 * Data management app code repository: [https://github.com/hydroserver2/hydroserver-data-management-app](https://github.com/hydroserver2/hydroserver-data-management-app)
-* Back-end code repository: [https://github.com/hydroserver2/hydroserver-webapp-back](https://github.com/hydroserver2/hydroserver-webapp-back)
+* API services code repository: [https://github.com/hydroserver2/hydroserver-api-services](https://github.com/hydroserver2/hydroserver-api-services)
   
 **HydroServer SensorThings API**: A Python Django implementation of the Open Geospatial Consortium's SensorThings API for HydroServer
 * SensorThings Part 1: Sensing Version 1.1 API implementation in Python using Django
