@@ -370,7 +370,7 @@ if response.status_code == 201:
 import requests
 
 hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
-request_url = f'{hydroserver_sensorthings_api_url}/Observations'
+request_url = f'{hydroserver_sensorthings_api_url}/CreateObservations'
 auth = ('john@example.com', '********')
 
 post_body = [
