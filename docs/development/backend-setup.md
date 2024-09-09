@@ -12,7 +12,7 @@ Before starting, make sure you have the following software installed on your mac
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/hydroserver2/hydroserver.git
+git clone https://github.com/hydroserver2/hydroserver-api-services.git
 cd hydroserver
 ```
 
