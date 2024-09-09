@@ -4,7 +4,7 @@
 
 Before starting, make sure you have the following software installed on your machine:
 
-- Python 3.10+
+- Python 3.11+
 - Docker
 
 ## Installation
