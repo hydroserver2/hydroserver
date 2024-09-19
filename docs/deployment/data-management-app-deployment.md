@@ -1,14 +1,14 @@
-# HydroServer Frontend Deployment
+# HydroServer Data Management App Deployment
 
 Before proceeding, set up an environment capable of running NodeJS to build the application code.
 
-While the frontend is dependent on the backend application, deploying the frontend first is recommended. This approach uses the CloudFront distribution created for the frontend as a reverse proxy for the backend Elastic Beanstalk deployment.
+While the Data Management app is dependent on the backend application, deploying the Data Management app first is recommended. This approach uses the CloudFront distribution created for the app as a reverse proxy for the backend Elastic Beanstalk deployment.
 
 Start by visiting the [HydroServer Data Management App GitHub repository](https://github.com/hydroserver2/hydroserver-data-management-app). Download the repository or create a fork for codebase modifications or automated deployment using GitHub Actions.
 
 ## The Environment File
 
-In the root directory of the local frontend repository, create a file named `.env` and add the following settings:
+In the root directory of the local data-management-app repository, create a file named `.env` and add the following settings:
 
 **- VITE_PROXY_BASE_URL**: Set to the desired deployment base URL, including the protocol (e.g., https://hydroserver.example.com).
 
@@ -29,13 +29,13 @@ This process creates a "dist" directory in the root repository containing the bu
 
 ## S3 Bucket Setup
 
-The frontend repository is placed in an S3 bucket, serving as the source for a CloudFront distribution. Access the AWS Console, navigate to the Amazon S3 service dashboard, and click "Create Bucket." Name the bucket appropriately for the frontend distribution and follow default settings, ensuring public access is blocked.
+The Data Management app repository is placed in an S3 bucket, serving as the source for a CloudFront distribution. Access the AWS Console, navigate to the Amazon S3 service dashboard, and click "Create Bucket." Name the bucket appropriately for the frontend distribution and follow default settings, ensuring public access is blocked.
 
 Once the bucket is created, select it and click "Upload" → "Add Files." Navigate to the "dist" folder within the local frontend repository and upload its contents. Note: Upload only the contents of "dist," not the "dist" folder itself.
 
 ## CloudFront Distribution Setup
 
-Use CloudFront to serve the HydroServer frontend application from the S3 bucket. Before setting up the distribution, you need to create an SPA routing function for Vue to function correctly. In the AWS Console, go to the CloudFront service dashboard, select "Functions," and click "Create function." Name the function "spa-routing" and paste the provided code block into the "Function code" section. Click "Save Changes."
+Use CloudFront to serve the HydroServer Data Management app from the S3 bucket. Before setting up the distribution, you need to create an SPA routing function for Vue to function correctly. In the AWS Console, go to the CloudFront service dashboard, select "Functions," and click "Create function." Name the function "spa-routing" and paste the provided code block into the "Function code" section. Click "Save Changes."
 
 ```javascript
 function handler(event) {

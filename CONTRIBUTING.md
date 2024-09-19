@@ -1,12 +1,12 @@
 # HydroServer - Contributing
 
-HydroServer is open source and released under the [BSD 3-Clause License](LICENSE). You are welcome to send us pull requests to contribute bug fixes or new features. We also invite you to participate in issues, which we use to track and diagnose bugs as well as request features.
+HydroServer is open source and released under the [BSD 3-Clause License](LICENSE). You are welcome to send us pull requests to contribute bug fixes or new features. We also invite you to participate in issues, which we use to track and diagnose bugs as well as request features. For the sake of staying organized and reducing errors, please make sure each issue describes exactly one feature or bug, then only modify or add code that's directly related to that issue in the related feature branch.
 
 If you’d like to contribute to this repository, please follow these steps:
 
 1. [Create an issue](https://github.com/hydroserver2/hydroserver/issues/new/choose)
 2. Discuss issue with moderators to make sure it's something we want to apply to the code base
-3. Fork the frontend and backend repositories
+3. Fork the related repositories
 4. Create a new branch (git checkout -b ISSUE#-my-new-feature) where ISSUE# is the issue id
 5. Make changes and commit (git commit -am ‘Add some feature’)
 6. Push to the branch (git push origin my-new-feature)

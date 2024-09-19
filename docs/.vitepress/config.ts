@@ -45,7 +45,10 @@ export default defineConfig({
       {
         text: "Deployment",
         items: [
-          { text: "Automated AWS and Timescale Cloud Deployment", link: "/deployment/aws-deployment-terraform" },
+          {
+            text: "Automated AWS and Timescale Cloud Deployment",
+            link: "/deployment/aws-deployment-terraform",
+          },
           {
             text: "Manual AWS Deployment",
             link: "/deployment/aws-deployment",
@@ -55,8 +58,8 @@ export default defineConfig({
                 link: "/deployment/aws-deployment",
               },
               {
-                text: "Frontend Deployment",
-                link: "/deployment/frontend-deployment",
+                text: "Data Management App Deployment",
+                link: "/deployment/data-management-app-deployment",
               },
               {
                 text: "Backend Deployment",
@@ -64,7 +67,10 @@ export default defineConfig({
               },
             ],
           },
-          { text: "Manual Timescale Cloud Deployment", link: "/deployment/timescale-cloud" },
+          {
+            text: "Manual Timescale Cloud Deployment",
+            link: "/deployment/timescale-cloud",
+          },
         ],
       },
       {
