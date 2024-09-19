@@ -109,7 +109,7 @@ python manage.py createsuperuser
 
 ## Link CloudFront Distribution to Elastic Beanstalk
 
-Before you continue, you should have already set up a CloudFront distribution to deploy the HydroServer Data Management app. You'll
+Before you continue, you should have already set up a CloudFront distribution to deploy the HydroServer Data Management App. You'll
 use the same distribution to connect to the backend Elastic Beanstalk environment.
 
 Log in to the AWS Console and go to the CloudFront service dashboard. Select the CloudFront distribution you created
@@ -211,7 +211,7 @@ Note: By default, your Amazon SES identity will be set up in sandbox mode, so yo
 you want to send messages to. You need to contact Amazon and go through their verification process to be removed from
 sandbox mode.
 
-At this point, you should have both the Data Management app and backend HydroServer applications deployed. Enter the domain you
+At this point, you should have both the Data Management App and backend HydroServer applications deployed. Enter the domain you
 used to deploy HydroServer into a browser and begin using the site.
 
 ## OAuth Setup

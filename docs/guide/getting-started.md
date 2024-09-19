@@ -1,6 +1,6 @@
 # Getting Started
 
-::: info
+::: info HydroServer is in beta
 HydroServer is currently in a functional beta state, meaning our services more or less work the way they will once we release version 1. There's a small chance we'll make breaking changes to the database before releasing version 1, so any deployed instances might need to reload data stored in a beta instance (though we'll try our very best to avoid that).
 :::
 

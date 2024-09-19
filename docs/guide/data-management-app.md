@@ -1,6 +1,6 @@
-# HydroServer Web Application
+# Data Management Application
 
-The `HydroServer Web Application` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer as well as view and download public data provided by other users. This page acts as a guide of how to navigate the website and setup your first [`site.`](terminology.md#sites)
+The `Data Management App` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer, as well as view and download public data provided by other users. This page acts as a guide on how to navigate the website and set up your first [`site`](terminology.md#sites).
 
 The [playground instance](getting-started.md#explore-our-playground-instance) is live at:
 
@@ -51,7 +51,7 @@ The plot has a toolbar which will allow you to take actions like viewing summary
 
 ## Archiving Data With HydroShare
 
-Data archival to HydroShare is available at the site level from the details page of each site. By default, all buttons related to HydroShare are disabled. To enable HydroShare archival, first make sure [archival is enabled on your deployment instance](../deployment/aws-deployment-terraform.html#hydoshare-oauth-settings). Next, navigate to the profile page and connect your HydroServer account to HydroShare via OAuth by clicking the `Connect to HydroShare` button. The button will only appear if `VITE_APP_HYDROSHARE_OAUTH_ENABLED=true` is included in the Data Management app's .env file.
+Data archival to HydroShare is available at the site level from the details page of each site. By default, all buttons related to HydroShare are disabled. To enable HydroShare archival, first make sure [archival is enabled on your deployment instance](../deployment/aws-deployment-terraform.html#hydoshare-oauth-settings). Next, navigate to the profile page and connect your HydroServer account to HydroShare via OAuth by clicking the `Connect to HydroShare` button. The button will only appear if `VITE_APP_HYDROSHARE_OAUTH_ENABLED=true` is included in the Data Management App's .env file.
 
 Once your accounts have been linked, you'll see a new `Configure HydroShare Archival` button on the site details page of each site you own just below the site map. Clicking that will open up a form which will allow you to either create a new HydroShare resource or link your site to an existing resource.
 
