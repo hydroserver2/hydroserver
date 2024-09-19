@@ -12,7 +12,7 @@ You might want to get a feel for what HydroServer offers before deploying your o
 
 [`https://playground.hydroserver.org`](https://playground.hydroserver.org)
 
-For instructions how to navigate the website, go to the [HydroServer Web App](web-application.md) section of this guide.
+For instructions how to navigate the website, go to the [Data Management App](/applications/data-management-app.md) section of this guide.
 
 ## Deploy Your Own Instance
 

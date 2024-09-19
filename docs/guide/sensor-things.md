@@ -16,7 +16,7 @@ SensorThings is centered around the concept of a datastream, which is a structur
 
 Multiple `Datastreams` belong to a [`Thing`](terminology.md#sites), which for HydroServer this can be something like a groundwater well, stream flow gauge, or Snow Monitoring Site. These `Things` are composed of the geographical location of the monitoring site as well as various metadata [defined here.](terminology.md#site-metadata)
 
-::: tip
+::: tip Thing vs. Site
 It's important to note that SensorThings uses the term `Thing` in order to stay as general as possible. In the field of water data management, more users are more familiar with the term `Site` as in a monitoring site. Therefore, we've opted to refer to a `Thing` as `Site` in all of our user facing applications, but stick with SensorThing's original `Thing` naming for our APIs.
 :::
 

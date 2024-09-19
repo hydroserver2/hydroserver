@@ -1,18 +1,16 @@
-# Loading Data
+# Streaming Data Loader Application
 
-## Streaming Data Loader Application
+The `Streaming Data Loader` desktop app (SDL) is a tool used to automatically load data into HydroServer from local time series data files (such as CSV datalogger output files for example). A file containing data to be loaded to HydroServer is called a [`Data Source.`](/guide/terminology.md#_2-linked-metadata) The app is composed of a user interface for signing in with your HydroServer credentials and logging information back to the user, and a `scheduler` which will routinely check if there's any new data in your data files and push updates to HydroServer via the [`Data Management API.`](../api/data-management-api.md)
 
-`The Streaming Data Loader Desktop App` (SDL App) is a tool used to automatically load data into HydroServer from local time series data files (such as CSV datalogger output files for example). A file containing data to be loaded to HydroServer is called a [`Data Source.`](terminology.md#2-linked-metadata) The app is composed of a `user interface` for signing in with your HydroServer credentials and logging information back to the user, and a `scheduler` which will routinely check if there's any new data in your data files and push updates to HydroServer via the [`Data Management API.`](../api/data-management-api.md)
+You can download the SDL app from [this page.](https://github.com/hydroserver2/streaming-data-loader/releases)
 
-You can download the SDL app from [this page.](http://ciroh-his-dev.us-east-1.elasticbeanstalk.com/hydroloader/download)
-
-::: info
-If you're looking for more control over your data loading than the Streaming Data Loader provides, you can download just the Python scheduler from our [`GitHub repository`](https://github.com/hydroserver2/hydroloader) and implement your own custom solution. Or for even more control, you can directly use the the `Data Management API`. This can be nice for cases where you have hundreds or thousands of datastreams that you'd like to define programmatically rather than manually.
+::: info Python Client
+If you're looking for more control over your data loading than the Streaming Data Loader provides, you can download just the Python scheduler from our [`GitHub repository`](https://github.com/hydroserver2/hydroserverpy) and implement your own custom solution. Or for even more control, you can directly use the the `Data Management API`. This can be nice for cases where you have hundreds or thousands of datastreams that you'd like to define programmatically rather than manually.
 :::
 
 ## Setup a Data Loader
 
-When you install the SDL App, it will ask for the same account credentials you specified when creating your HydroServer account and a name for the computer running the SDL instance. A computer running the SDL application is called a [`Data Loader.`](terminology.md#2-linked-metadata) You'll link your `Data Loaders` to your `Datastreams` by the name you specify so it's recommended you give a unique, descriptive name to each instance so you can easily identify them.
+When you install the SDL App, it will ask for the same account credentials you specified when creating your HydroServer account and a name for the computer running the SDL instance. A computer running the SDL application is called a [`Data Loader.`](/guide/terminology.md#_2-linked-metadata) You'll link your `Data Loaders` to your `Datastreams` by the name you specify so it's recommended you give a unique, descriptive name to each instance so you can easily identify them.
 
 After providing the `Data Loader` name and your credentials, the remaining data loading configuration will be done through the HydroServer website. You can verify the Data Loader was successfully connected to your HydroServer account by navigating to the [`Manage Data Loaders`](https://playground.hydroserver.org/data-loaders) page where you'll see it listed on in the table. If you ever uninstall an SDL instance, you can also delete the record of that Data Loader from this dashboard.
 

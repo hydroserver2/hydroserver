@@ -27,8 +27,19 @@ export default defineConfig({
           { text: "Introduction", link: "/guide/introduction" },
           { text: "SensorThings", link: "/guide/sensor-things" },
           { text: "Terminology", link: "/guide/terminology" },
-          { text: "Data Management App", link: "/guide/data-management-app" },
-          { text: "Loading Data", link: "/guide/loading-data" },
+        ],
+      },
+      {
+        text: "Applications",
+        items: [
+          {
+            text: "Data Management App",
+            link: "/applications/data-management-app",
+          },
+          {
+            text: "Streaming Data Loader",
+            link: "/applications/streaming-data-loader",
+          },
         ],
       },
       {

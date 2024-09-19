@@ -120,7 +120,7 @@ These are pieces of information that the Datastream references but does not own.
 
 **- Result Qualifier** provides additional information about the result of an observation, like its accuracy or reliability. Each Result Qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a Result Qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
 
-**- Data Loader** - The Streaming Data Loader desktop app is a tool used to automatically load data into HydroServer from local data files of a compatible computer. To learn how to install and configure a datastream to use a dataloader, go to the [Loading Data](loading-data.md) section of the documentation. In short, a user can install the desktop app on their system, assign that computer a name, then link that computer to various datastreams.
+**- Data Loader** - The Streaming Data Loader desktop app is a tool used to automatically load data into HydroServer from local data files of a compatible computer. To learn how to install and configure a datastream to use a dataloader, go to the [Streaming Data Loader](/applications/streaming-data-loader.md) section of the documentation. In short, a user can install the desktop app on their system, assign that computer a name, then link that computer to various datastreams.
 
 ::: tip
 Any system which is running the Streaming Data Loader desktop app is referred to as a **Data Loader**.
