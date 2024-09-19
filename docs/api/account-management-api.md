@@ -6,7 +6,7 @@ Authentication is not required for public data access. However, if you require a
 
 Head over to the following page for the list of endpoints:
 
-https://beta.hydroserver2.org/api/account/docs
+https://playground.hydroserver.org/api/account/docs
 
 Note: all these endpoints are available through the HydroServer web application.
 

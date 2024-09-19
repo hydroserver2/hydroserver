@@ -8,7 +8,7 @@ before reading this.
 
 The list of endpoints for this API can be found on our interactive docs page at:
 
-https://beta.hydroserver2.org/api/sensorthings/v1.1/docs
+https://playground.hydroserver.org/api/sensorthings/v1.1/docs
 
 <!-- ## SensorThings Base URL
 
@@ -16,7 +16,7 @@ HydroServer supports version 1.1 of the SensorThings specification. The base URL
 SensorThings is:
 
 ```
-https://beta.hydroserver2.org/api/sensorthings/v1.1/
+https://playground.hydroserver.org/api/sensorthings/v1.1/
 ```
 
 This URL will return a list of capabilities currently supported by this SensorThings implementation. -->

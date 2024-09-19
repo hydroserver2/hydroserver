@@ -14,13 +14,13 @@ If you're looking for more control over your data loading than the Streaming Dat
 
 When you install the SDL App, it will ask for the same account credentials you specified when creating your HydroServer account and a name for the computer running the SDL instance. A computer running the SDL application is called a [`Data Loader.`](terminology.md#2-linked-metadata) You'll link your `Data Loaders` to your `Datastreams` by the name you specify so it's recommended you give a unique, descriptive name to each instance so you can easily identify them.
 
-After providing the `Data Loader` name and your credentials, the remaining data loading configuration will be done through the HydroServer website. You can verify the Data Loader was successfully connected to your HydroServer account by navigating to the [`Manage Data Loaders`](https://beta.hydroserver2.org/data-loaders) page where you'll see it listed on in the table. If you ever uninstall an SDL instance, you can also delete the record of that Data Loader from this dashboard.
+After providing the `Data Loader` name and your credentials, the remaining data loading configuration will be done through the HydroServer website. You can verify the Data Loader was successfully connected to your HydroServer account by navigating to the [`Manage Data Loaders`](https://playground.hydroserver.org/data-loaders) page where you'll see it listed on in the table. If you ever uninstall an SDL instance, you can also delete the record of that Data Loader from this dashboard.
 
 If you need detailed logs from the SDL app, you can access them by clicking on the app icon in your computer's system tray and selecting `View Log Output`.
 
 ## Define a Data Source for your Data loader
 
-From the [`Manage Data Sources`](http://beta.hydroserver2.org/data-sources) page of the HydroServer website, a user can define the expected structure of their `Data Source`, which will include information like which computer(Data Loader) to find the Data Source CSV file on, the local file path to that CSV, which column contains the timestamps, which row contains the headers, which row marks the start of data points, etc.
+From the [`Manage Data Sources`](http://playground.hydroserver.org/data-sources) page of the HydroServer website, a user can define the expected structure of their `Data Source`, which will include information like which computer(Data Loader) to find the Data Source CSV file on, the local file path to that CSV, which column contains the timestamps, which row contains the headers, which row marks the start of data points, etc.
 
 ::: tip **Made by programmers for non-programmers**
 HydroServer uses 1-based indexing for Data Sources and Loaders. So, if your headers are found on the first row of your CSV file, the header row index would be `1`. If the column holding your timestamps is the second column in the file, the column index would be `2`.
