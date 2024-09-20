@@ -16,6 +16,14 @@ In the root directory of the local data-management-app repository, create a file
 
 **- VITE_APP_GOOGLE_MAPS_MAP_ID**: The current version of Google Maps also requires a `MAP ID` in order to style the map to a user's preferences.
 
+**- VITE_APP_GOOGLE_OAUTH_ENABLED**: Set to true or false if you'd like to show or hide the Google OAuth button on the sign in and sign up pages. All this setting does is hide the button. In order to get OAuth working, you'll need to enable it in the hydroserver API services repository as well.
+
+**- VITE_APP_ORCID_OAUTH_ENABLED**: Set to true or false if you'd like to show or hide the ORCID OAuth button on the sign in and sign up pages. Same as Google OAuth, all this setting does is hide the button. In order to get OAuth working, you'll need to enable it in the hydroserver API services repository as well.
+
+**- VITE_APP_HYDROSHARE_OAUTH_ENABLED**: Set to true or false if you'd like to add the frontend functionality of allowing the user to backup their site data to HydroShare. Setting this to true will add a button that links the user's account with a HydroShare account, and various buttons on the Site Details page that will allow them to link a site to a HydroShare resource and schedule archiving.
+
+**- VITE_APP_DISABLE_ACCOUNT_CREATION**: Set to true or false. Setting this to true will completely remove the sign up page, making it so only a system administrator can create accounts through the Django admin panel or command line. Helpful if you'd like your HydroServer instance to be publicly available but you want to restrict who can create an account and add data.
+
 ## Build the Vue Application
 
 Run the following commands to install required Node packages and build the application:
