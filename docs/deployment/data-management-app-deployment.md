@@ -81,3 +81,7 @@ Next, create records in Route 53 or other DNS providers pointing to the new Clou
 Click "Add another record" and configure the second record, selecting "AAAA" as the record type. Click "Create records."
 
 Upon DNS propagation, enter your domain into a browser to view the HydroServer homepage. Note that full functionality requires backend application deployment.
+
+## Configuring a Deployment
+
+The Data Management App repository contains a src/config/ directory with various TypeScript files that allow you to specify instance-specific settings for your deployment. For example, googleMapsConfig.ts enables you to override the default position, zoom level, and any other map settings available in the Google Maps API for freshly loaded maps.
