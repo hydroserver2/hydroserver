@@ -4,11 +4,11 @@ layout: home
 
 hero:
   name: "HydroServer"
-  text: "Advanced Water Data Management"
+  text: "Advanced Sensor Data Management"
   image:
     src: /logo.png
     alt: HydroServer Logo
-  tagline: Empowering Hydrologic Research with Efficient Data Streaming and Sharing
+  tagline: Efficient Data Streaming and Sharing With a Suite of Open Source Tools
   actions:
     - theme: brand
       text: Get Started
@@ -35,8 +35,16 @@ features:
     details: Provide convenient and simple access to the data from your monitoring sites via our web user interface and APIs.
   - icon: 💧
     title: Operational Data for Modeling
-    details: Contribute your streamflow data to NOAA's National Water Model to enhance continental-scale hydrologic predictions and forecasting.
+    details: Use HydroServer to host time series of sensor data for use as inputs to operational models for  predictions and forecasting.
   - icon: ⚙️
     title: Easy Web Configuration
     details: Create new monitoring locations, observed variables, sensors, and data streams through our web user interface.
 ---
+
+<script setup>
+import Contact from '.vitepress/theme/components/Contact.vue'
+import FundingAck from '.vitepress/theme/components/FundingAck.vue'
+</script>
+
+<Contact/>
+<FundingAck/>

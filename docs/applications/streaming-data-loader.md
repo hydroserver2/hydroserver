@@ -1,4 +1,4 @@
-# Streaming Data Loader Application
+# Streaming Data Loader
 
 The `Streaming Data Loader` desktop app (SDL) is a tool used to automatically load data into HydroServer from local time series data files (such as CSV datalogger output files for example). A file containing data to be loaded to HydroServer is called a [`Data Source.`](/guide/terminology.md#_2-linked-metadata) The app is composed of a user interface for signing in with your HydroServer credentials and logging information back to the user, and a `scheduler` which will routinely check if there's any new data in your data files and push updates to HydroServer via the [`Data Management API.`](../api/data-management-api.md)
 

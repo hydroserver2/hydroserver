@@ -11,9 +11,3 @@
     #2196f3
   );
 }
-
-/* Add a background only in dark mode */
-.dark .img-white-bg {
-  background-color: #2196f3;
-  display: inline-block;
-}

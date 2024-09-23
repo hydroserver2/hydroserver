@@ -1,6 +1,6 @@
-# Data Management Application
+# Data Management Web Application
 
-The `Data Management App` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer, as well as view and download public data provided by other users. This page acts as a guide on how to navigate the website and set up your first [`site`](/guide/terminology.md#sites).
+The `Data Management App` is designed to allow a user to conveniently define, load, and manage their hydrologic data stored in HydroServer, as well as view and download public data provided by other users. This page acts as a guide on how to navigate the web app and set up your first [`site`](/guide/terminology.md#sites).
 
 The [playground instance](/guide/getting-started.md#explore-our-playground-instance) is live at:
 
