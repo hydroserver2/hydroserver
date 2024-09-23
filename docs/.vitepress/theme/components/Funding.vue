@@ -13,19 +13,26 @@
     </VPTeamPageTitle>
 
     <div class="image-row">
-      <img :src="DWRILogo" alt="DWRI Logo" class="dwri-logo" />
       <img
-        :src="UWRLLogoBlue"
+        :src="withBase('/DWRi-logo.png')"
+        alt="DWRI Logo"
+        class="dwri-logo"
+      />
+      <img
+        :src="withBase('/UStateVertical_Blue.png')"
         alt="UWRL Logo"
         class="logo uwrl-logo logo-blue img"
       />
       <img
-        :src="UWRLLogoWhite"
+        :src="withBase('/UStateVertical_White.png')"
         alt="UWRL Logo"
         class="logo uwrl-logo logo-white img"
       />
       <div class="ciroh-logo-wrapper">
-        <img :src="CIROHLogo" alt="CIROH Logo" />
+        <img
+          :src="withBase('/CIROH_logo_transparent-min.png')"
+          alt="CIROH Logo"
+        />
       </div>
     </div>
   </VPTeamPage>
@@ -33,10 +40,7 @@
 
 <script setup>
 import { VPTeamPage, VPTeamPageTitle } from "vitepress/theme";
-import CIROHLogo from "../../../public/CIROH_logo_transparent-min.png";
-import DWRILogo from "../../../public/DWRI-logo.png";
-import UWRLLogoBlue from "../../../public/UStateVertical_Blue.png";
-import UWRLLogoWhite from "../../../public/UStateVertical_White.png";
+import { withBase } from "vitepress";
 </script>
 
 <style scoped>

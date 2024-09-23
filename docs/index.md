@@ -43,8 +43,8 @@ features:
 
 <script setup>
 import Contact from '.vitepress/theme/components/Contact.vue'
-import FundingAck from '.vitepress/theme/components/FundingAck.vue'
+import Funding from '.vitepress/theme/components/Funding.vue'
 </script>
 
 <Contact/>
-<FundingAck/>
+<Funding/>
