@@ -18,7 +18,7 @@ For instructions how to navigate the website, go to the [Data Management App](/a
 
 If you're ready to deploy your own instance of HydroServer, please refer to our deployment guide:
 
-[`AWS Deployment`](../deployment/aws-deployment.md)
+[`AWS Deployment`](../deployment/aws-deployment-terraform.md)
 
 This guide will walk you through the process of setting up HydroServer on Amazon Web Services, ensuring you have a smooth and successful deployment.
 
