@@ -30,7 +30,7 @@ The HydroServer SensorThings API provides the following endpoints:
 ### Things
 
 - **GET /Things**: Retrieve a list of Things.
-- **GET /Things({thing_id})**: Retrieve details for a single Thing record using the given Thing ID.
+- **GET /Things('{thing_id}')**: Retrieve details for a single Thing record using the given Thing ID.
 
 **Note:** In HydroServer, "Things" typically refers to monitoring sites where
 one or more sensors have been set up to record observations.
@@ -38,7 +38,7 @@ one or more sensors have been set up to record observations.
 ### Locations
 
 - **GET /Locations**: Retrieve a list of Locations.
-- **GET /Locations({location_id})**: Retrieve details for a single Location record using the given Location ID.
+- **GET /Locations('{location_id}')**: Retrieve details for a single Location record using the given Location ID.
 
 **Note:** In HydroServer, each Location will be associated with only one Thing, but they can still be queried separately
 if needed.
@@ -46,7 +46,7 @@ if needed.
 ### Historical Locations
 
 - **GET /HistoricalLocations**: Retrieve a list of Historical Locations.
-- **GET /HistoricalLocations({historical_location_id})**: Retrieve details for a single Historical Locations using the
+- **GET /HistoricalLocations('{historical_location_id}')**: Retrieve details for a single Historical Locations using the
   given Historical Location ID.
 
 **Note:** HydroServer does not currently support the creation of historical locations of things. These endpoints have
@@ -55,32 +55,32 @@ not been disabled, but be aware that the responses of these endpoints will alway
 ### Sensors
 
 - **GET /Sensors**: Retrieve a list of Sensors.
-- **GET /Sensors({sensor_id})**: Retrieve details for a single Sensor record using the given Sensor ID.
+- **GET /Sensors('{sensor_id}')**: Retrieve details for a single Sensor record using the given Sensor ID.
 
 ### Observed Properties
 
 - **GET /ObservedProperties**: Retrieve a list of Sensors.
-- **GET /ObservedProperties({observed_property_id})**: Retrieve details for a single Observed Property record using the
+- **GET /ObservedProperties('{observed_property_id}')**: Retrieve details for a single Observed Property record using the
   given Observed Property ID.
 
 ### Datastreams
 
 - **GET /Datastreams**: Retrieve a list of Datastreams.
-- **GET /Datastreams({datastream_id})**: Retrieve details for a single Datastream record using the given Datastream ID.
+- **GET /Datastreams('{datastream_id}')**: Retrieve details for a single Datastream record using the given Datastream ID.
 
 ### Observations
 
 - **GET /Observations**: Retrieve a list of Observations.
 - **POST /Observations**: Create one or more new Observations.
-- **GET /Observations({observation_id})**: Retrieve details for a single Observation record using the given Observation
+- **GET /Observations('{observation_id}')**: Retrieve details for a single Observation record using the given Observation
   ID.
-- **PATCH /Observations({observation_id})**: Update an existing Observation record with the given Observation ID.
-- **DELETE /Observations({observation_id})**: Delete an existing Observation record with the given Observation ID.
+- **PATCH /Observations('{observation_id}')**: Update an existing Observation record with the given Observation ID.
+- **DELETE /Observations('{observation_id}')**: Delete an existing Observation record with the given Observation ID.
 
 ### Features of Interest
 
 - **GET /FeaturesOfInterest**: Retrieve a list of Features of Interest.
-- **GET /FeaturesOfInterest({feature_of_interest_id})**: Retrieve details for a single Feature of Interest record using
+- **GET /FeaturesOfInterest('{feature_of_interest_id}')**: Retrieve details for a single Feature of Interest record using
   the given Feature of Interest ID.
 
 **Note:** HydroServer does not currently support the creation of features of interest of observations. These endpoints
@@ -164,7 +164,7 @@ Records can be filtered using nested resource paths to query related records. Fo
 get all Datastream records associated with the given Thing ID.
 
 ```
-/Things(00000000-0000-0000-0000-000000000000)/Datastreams
+/Things('00000000-0000-0000-0000-000000000000')/Datastreams
 ```
 
 ### Observation Data Arrays
@@ -187,7 +187,7 @@ The following is an example of a data array response:
 {
   "values": [
     {
-      "Datastream@iot.navigationLink": "https://www.hydroserver.org/api/sensorthings/v1.1/Datastreams(00000000-0000-0000-0000-000000000000)",
+      "Datastream@iot.navigationLink": "https://www.hydroserver.org/api/sensorthings/v1.1/Datastreams('00000000-0000-0000-0000-000000000000')",
       "components": ["resultTime", "result"],
       "dataArray": [
         ["2022-02-01T10:10:10Z", 32.2],
@@ -263,7 +263,7 @@ import json
 
 hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
 datastream_id = ''
-request_url = f'{hydroserver_sensorthings_api_url}/Datastreams({datastream_id})/Observations'
+request_url = f"{hydroserver_sensorthings_api_url}/Datastreams('{datastream_id}')/Observations"
 
 query_parameters = {
    '$resultFormat': 'dataArray'
