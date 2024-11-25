@@ -30,7 +30,20 @@ export default defineConfig({
         ],
       },
       {
-        text: "Applications",
+        text: "Data Model",
+        items: [
+          {
+            text: "Data Model Intro",
+            link: "/datamodel/data-model",
+          },
+          {
+            text: "Data Dictionary",
+            link: "/datamodel/data-dictionary",
+          },
+        ],
+      },
+      {
+        text: "Software Applications",
         items: [
           {
             text: "Data Management App",

@@ -4,7 +4,7 @@ HydroServer operates on top of a relational database that stores time series dat
 
 The following is an entity relationship diagram illustrating the HydroServer data model design. Primary and foreign keys are specified in the first column of each entity. Mandatory attributes are specified with "(M)" preceding the attribute name. Optional attributes are specified with "(O)" preceding the attribute name. Data types are specified following the attribute name. Given that some attributes were either derived from or mapped to attributes that appear in the Observations Data Model (ODM2, see background section below), the third column shows the the mapping of attributes in HydroServer's data model to ODM attributes. Entities shown with blue title bars are part of the SensorThings API data model (see below). Entities with white title bars were added to the SensorThings data model to accomodate functionality required for the HydroServer software. 
 
-<img src="hydroserver_data_model.png" alt="HydroServer Data Model" width="600"/>
+<img src="hydroserver_data_model.png" alt="HydroServer Data Model" class="img-white-bg" width="600"/>
 
 Click [here](data-dictionary.md) to access a data dictionary for the HydroServer data model. 
 
@@ -12,7 +12,7 @@ Click [here](data-dictionary.md) to access a data dictionary for the HydroServer
 
 The HydroServer software is based on the Open Geospatial Consortium's [SensorThings](https://www.ogc.org/publications/standard/sensorthings/) Application Programming Interface (API) and data model standard specification. In particular, HydroServer implements [OGC SensorThings API Part 1: Sensing Version 1.1](https://docs.ogc.org/is/18-088/18-088.html) and adopts the data model used by SensorThings. The following UML diagram illustrates the entities used by SensorThings to represent sensor data.   
 
-<img src="ogc_sensorthings_data_model.png" alt="OGC SensorThings Data Model" width="600"/>
+<img src="ogc_sensorthings_data_model.png" alt="OGC SensorThings Data Model" class="img-white-bg" width="600"/>
 
 Given that SensorThings is an API standard specification, SensorThings' data model is expressed as UML since it has multiple physical implementations - e.g., as a JSON schema for encoding data for transfer over the Internet and as a database data model for storing data. The SensorThings standard document does not specify how data should be stored on disk for delivery via the API. This is left to the implementers of the API.
 
@@ -33,7 +33,7 @@ Horsburgh, J. S., Aufdenkampe, A. K., Mayorga, E., Lehnert, K. A., Hsu, L., Song
 
 ODM2 was designed for storing and integrating a broad variety of feature-based earth observations. However, for the purpose of HydroServer, only ODM2's representation of fixed point-based time series data was used (i.e., time series of observations from fixed location monitoring sites). For illustration purposes, a UML diagram of the ODM2 information model for time series data derived from the overall ODM2 information model is included below. The ODM2 data model for time series data was blended with the SensorThings data model to produce HydroServer's data model.
 
-<img src="odm_time_series_information_model.png" alt="ODM Time Series Information Model" width="600"/>
+<img src="odm_time_series_information_model.png" alt="ODM Time Series Information Model" class="img-white-bg" width="600"/>
 
 
 
