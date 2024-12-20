@@ -53,6 +53,28 @@ export default defineConfig({
             text: "Streaming Data Loader",
             link: "/applications/streaming-data-loader",
           },
+          {
+            text: "Python Client",
+            link: "/applications/hydroserverpy/overview",
+            items: [
+              {
+                text: "Overview",
+                link: "/applications/hydroserverpy/overview",
+              },
+              {
+                text: "Core",
+                link: "/applications/hydroserverpy/core",
+              },
+              {
+                text: "ETL",
+                link: "/applications/hydroserverpy/etl",
+              },
+              {
+                text: "Quality Control",
+                link: "/applications/hydroserverpy/quality_control",
+              },
+            ],
+          },
         ],
       },
       {
