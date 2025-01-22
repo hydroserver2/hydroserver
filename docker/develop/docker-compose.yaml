@@ -5,7 +5,7 @@ services:
     image: nginx:latest
     container_name: hydroserver_nginx
     ports:
-      - "3030:80" # HydroServer port
+      - "80:80" # HydroServer port
     volumes:
       - ${HS_STATICFILES}:/app/staticfiles:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
