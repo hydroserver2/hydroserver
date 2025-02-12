@@ -13,12 +13,29 @@ services:
       - bridge
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: mailhog
+    container_name: hydroserver_smtp
     ports:
       - "8025:8025"  # Web UI
       - "1025:1025"  # SMTP port
     networks:
       - bridge
+  postgres:
+    image: postgres:17
+    container_name: hydroserver_postgres
+    environment:
+      POSTGRES_USER: hsdbadmin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: hydroserver
+    ports:
+      - "5432:5432"  # Database port
+    volumes:
+      - hydroserver_dev_data:/var/lib/postgresql/data
+    networks:
+      - bridge
+
 networks:
   bridge:
     driver: bridge
+
+volumes:
+  hydroserver_dev_data:
