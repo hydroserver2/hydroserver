@@ -8,6 +8,7 @@ services:
       - "80:80" # HydroServer port
     volumes:
       - ${HS_STATICFILES}:/app/staticfiles:ro
+      - ${HS_MEDIAFILES}:/app/mediafiles:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
     networks:
       - bridge
