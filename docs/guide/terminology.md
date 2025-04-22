@@ -120,13 +120,27 @@ These are pieces of information that the Datastream references but does not own.
 
 **- Result Qualifier** provides additional information about the result of an observation, like its accuracy or reliability. Each Result Qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a Result Qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
 
-**- Data Loader** - The Streaming Data Loader desktop app is a tool used to automatically load data into HydroServer from local data files of a compatible computer. To learn how to install and configure a datastream to use a dataloader, go to the [Streaming Data Loader](/applications/streaming-data-loader.md) section of the documentation. In short, a user can install the desktop app on their system, assign that computer a name, then link that computer to various datastreams.
+## Job Orchestration
 
-::: tip
-Any system which is running the Streaming Data Loader desktop app is referred to as a **Data Loader**.
+The Data Management App provides a Job Orchestration user interface that allows you to link source data to HydroServer datastreams.
+
+**-Orchestration System** - An Orchestration System is any machine that's able to extract data from a source location, transform that data into a standard format, and load that data automatically to HydroServer's API. HydroServer allows remote systems to register themselves as 'Orchestration Systems'. Once a system is registered, various jobs can be configured for it from the Data Management App's 'Job Orchestration' page. This includes mapping the columns of a source CSV file to their related datastreams in HydroServer.
+
+**- Streaming Data Loader** - The Streaming Data Loader is a desktop application that can be downloaded onto compatible computers to easily run orchestration jobs in the background. Installing the SDL and logging in will register your machine as an Orchestration System, where you will then be able to manage your automated data uploads from the Data Management App. To learn how to install and configure the Streaming Data Loader, go to the [Streaming Data Loader](/applications/streaming-data-loader.md) section of the documentation.
+
+::: tip Streaming Data Loaders are Orchestration Systems
+Any machine running the Streaming Data Loader application is an Orchestration System, but not all Orchestration Systems have to run the Streaming Data Loader app. For example, a machine running Apache Airflow in a local or cloud environment could register itself as an Orchestration System.
 :::
 
-**- Data Source** is a CSV file on the user's computer(Data Loader) that the Streaming Data Loader desktop app can read and periodically stream to the HydroServer database automatically. A single Data Source may contains raw time series data for one or more datastreams.
+**- Data Source** is a configuration file saved in the HydroServer database which can be managed through the user interface of the Data Management App's 'Job Orchestration' page. It allows you to:
+
+1. Select the Orchestration System that will run a group of jobs.
+2. Set a schedule for automatically triggering repeating jobs.
+3. Define how and where your data will be extracted from (a local file, an HTTP URL, etc.)
+4. Define the file type the source data will be contained in (a CSV file, JSON object, etc.) and how to transform your data into a HydroServer compatible format. This file is called a 'Payload' in HydroServer.
+5. Define where to load the data (usually HydroServer's database).
+
+**-Payload** is one file or unit of data extracted from a source system. A payload can be a CSV file, JSON payload, or even a TCP response. The Data Management App provides a payload form that allows you to link source identifiers (like CSV file column names) to HydroServer datastreams.
 
 ## Observations
 
