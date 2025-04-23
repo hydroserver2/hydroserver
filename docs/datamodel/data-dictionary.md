@@ -125,6 +125,19 @@ The Location entity locates the Thing. A Thing’s Location entity is defined as
 | O        | country          | The ISO 3166-1 alpha-2 country code (e.g., "US").                                           | String    |
 
 
+## HistoricalLocation
+
+The HistoricalLocation entity describes where a Thing has been located in the past. Note: Currently unused in HydroServer.
+
+
+| Required | Attribute        | Definition                                                                                  | Data Type |
+| -------- | ---------------- | ------------------------------------------------------------------------------------------- | --------- |
+| M        | id               | A primary key unique identifier for the HistoricalLocation.                                 | Integer   |
+| M        | thingId          | A foreign key identifier for the Thing to which this HistoricalLocation belongs.            | UUID      |
+| M        | locationId       | A foreign key identifier for the Location this HistoricalLocation represents.               | UUID      |
+| M        | time             | A timestamp representing the last time the Thing was at the Location.                       | UUID      |
+
+
 ## Tag
 
 A key-value metadata pair associated with a Thing, used to provide additional descriptive or categorical information.
@@ -230,7 +243,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | M        | name                           | A text name for the datastream. Can be auto generated.                                    | String            |
 | M        | description                    | A text description for the datastream. Can be auto generated.                             | Text              |
 | M        | thingId                        | Foreign key referencing the associated Thing.                                             | UUID              |
-| M        | sensor_id                      | Foreign key referencing the Sensor that collected the data.                               | UUID              |
+| M        | sensorId                       | Foreign key referencing the Sensor that collected the data.                               | UUID              |
 | M        | observedPropertyId             | Foreign key referencing the ObservedProperty being measured.                              | UUID              |
 | M        | processingLevelId              | Foreign key referencing the ProcessingLevel of the data.                                  | UUID              |
 | M        | unitId                         | Foreign key referencing the Unit of measurement.                                          | UUID              |
@@ -250,20 +263,39 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | M        | isPrivate                      | Whether the datastream is private.                                                        | Boolean           |
 | M        | isVisible                      | Whether the datastream observations are visible in applications.                          | Boolean           |
 | O        | dataSourceId                   | Foreign key linking to the source from which data was obtained.                           | UUID              |
+| O        | observedArea                   | The spatial area containing all FeaturesOfInterest observed by this Datastream.           | Object            |
+| O        | resultBeginTime                | Timestamp representing when the first observation was recorded.                           | Datetime          |
+| O        | resultEndTime                  | Timestamp representing when the most recnt observation was recorded.                      | Datetime          |
 
 
 ## Observation
 
 An Observation is the act of measuring or otherwise determining the value of a property, including its numeric result and the date/time at which it was observed.
 
-| Required | Attribute        | Definition                                                                    | Data Type |
-| -------- | ---------------- | ----------------------------------------------------------------------------- | --------- |
-| M        | id               | A unique identifier for the Observation.                                      | UUID      |
-| M        | datastreamId     | A foreign key identifier for the Datastream to which the Observation belongs. | UUID      |
-| M        | phenomenonTime   | The time when the observation occurred or was measured.                       | DateTime  |
-| M        | result           | The measured or observed value.                                               | Float     |
-| O        | resultTime       | The time when the result was generated or recorded.                           | DateTime  |
-| O        | qualityCode      | A text code or string indicating the quality of the Observation.              | String    |
+| Required | Attribute           | Definition                                                                     | Data Type |
+| -------- | ------------------- | ------------------------------------------------------------------------------ | --------- |
+| M        | id                  | A unique identifier for the Observation.                                       | UUID      |
+| M        | datastreamId        | A foreign key identifier for the Datastream to which the Observation belongs.  | UUID      |
+| O        | featureOfInterestId | A foreign key identifier for the FeatureOfInterest the Observation represents. | UUID      |
+| M        | phenomenonTime      | The time when the observation occurred or was measured.                        | DateTime  |
+| M        | result              | The measured or observed value.                                                | Float     |
+| O        | resultTime          | The time when the result was generated or recorded.                            | DateTime  |
+| O        | qualityCode         | A text code or string indicating the quality of the Observation.               | String    |
+| O        | validBeginTime      | A timestamp representing when the observation is valid.                        | Datetime  |
+| O        | validEndTime        | A timestamp representing when the observation is valid.                        | Datetime  |
+
+
+## FeatureOfInterest
+
+The geographic feature being observed, if different from the location of the Thing. Note: Currently unused in HydroServer.
+
+| Required | Attribute        | Definition                                                                                           | Data Type |
+| -------- | ---------------- | ---------------------------------------------------------------------------------------------------- | --------- |
+| M        | id               | A unique identifier for the FeatureOfInterest.                                                       | UUID      |
+| M        | name             | A descriptive name for the FeatureOfInterest.                                                        | String    |
+| M        | description      | A longer text description of the FeatureOfInterest.                                                  | String    |
+| M        | encodingType     | A string indicating how the FeatureOfInterest information is encoded by the API - "application/json" | String    |
+| M        | feature          | An object representing the FeatureOfInterest.                                                        | Object    |
 
 
 ## OrchestrationSystem
