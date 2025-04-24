@@ -1,9 +1,5 @@
 # Getting Started
 
-::: info HydroServer is in beta
-HydroServer is currently in a functional beta state, meaning our services more or less work the way they will once we release version 1. There's a small chance we'll make breaking changes to the database before releasing version 1, so any deployed instances might need to reload data stored in a beta instance (though we'll try our very best to avoid that).
-:::
-
 ## Explore Our Playground Instance
 
 You might want to get a feel for what HydroServer offers before deploying your own instance. Our playground instance is an up-to-date demo environment where you can freely experiment with the features and functionalities of HydroServer. Feel free to create an account and load some data.
