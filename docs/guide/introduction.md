@@ -19,8 +19,8 @@ and reliable way for you to handle your data. It consists of three major parts:
 ## Why HydroServer?
 
 The primary motivation behind HydroServer was a desire for a fast and flexible way to manage
-large amounts of data. This is why we built our APIs using TimescaleDB, an extension to PostgreSQL
-specialized in retrieving time series data quickly.
+large amounts of data. This is why we built our APIs using Django and PostgreSQL
+with a focus on retrieving time series data quickly.
 
 We also wanted a system that took a formal approach on how the data was organized so that anyone using the same
 standards could more or less plug and play with our services. HydroServer follows the Open Geospatial Consortium (OGC) SensorThings
