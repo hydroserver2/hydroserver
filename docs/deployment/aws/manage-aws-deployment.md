@@ -21,6 +21,7 @@ This guide walks you through setting up and maintaining a HydroServer deployment
    - `AWSKeyManagementService`
      - `Encrypt`, `Decrypt`, `GenerateDataKey`
    - `AmazonSSMFullAccess`
+   Or see the following [AWS IAM policy](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json)
 4. The policies above provide broad access for initial setup but can be restricted as needed.
 5. Create an S3 bucket in your AWS account for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same AWS account, they should share this Terraform bucket.
 6. Use AWS Certificate Manager (ACM) to create or import a public certificate for the domain HydroServer will use.
@@ -70,13 +71,24 @@ This guide walks you through setting up and maintaining a HydroServer deployment
 1. Log in to the HydroServer admin dashboard.
 2. Go to **Sites** > **example.com** and update the default domain to match your HydroServer domain.
 3. Navigate to **Social Applications** > **Add Social Application** to register identity providers (e.g., Google, HydroShare).
-4. Populate the following models with default data you want available to all users:
+4. Populate the following models with default data you want available to all users, or load the preset defaults by clicking **Load Default Data** for each model:
    - Roles
    - Observed Properties
    - Processing Levels
    - Result Qualifiers
    - Sensors
    - Units
+5. To configure HydroShare archival, do the following:
+   - Configure HydroShare as an identity provider under **Social Applications**.
+   - Add the following settings block to the HydroShare social application record:
+     ```json
+     {
+       "allowSignUp": false, 
+       "allowConnection": true
+     }
+     ```
+   - Navigate to **Orchestration Systems** > **Add Orchestration System** and create a new record with the name "HydroShare Archival Manager" and type "HydroShare".
+     - Note: This HydroShare archival setup method is temporary and will be deprecated in a future release.
 
 ## Updating HydroServer
 
