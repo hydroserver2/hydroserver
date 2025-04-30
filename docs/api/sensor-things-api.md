@@ -401,7 +401,7 @@ if response.status_code == 201:
 
 ## Authentication
 
-See the [Account Management API documentation](/api/account-management-api.md) for instructions on how to send
+See the [Identity and Access Management API documentation](/api/identity-and-access-management-api.md) for instructions on how to send
 authenticated requests.
 
 This API supports requests over both HTTPS and HTTP connections due to limitations of some datalogger devices.
