@@ -18,9 +18,13 @@ All of the software for HydroServer is free and open source, so creating an acco
 All information you put in the account form will be visible to the other users of the system, so make sure you're only disclosing information you're comfortable sharing.
 :::
 
+## Creating a Workspace
+
+All HydroServer data you create will be grouped into one or more workspaces. You can use workspaces to help organize your data, invite other users to collaborate on data in a workspace, and control who can see your data. After creating an account and verifying your email, you'll be able to navigate to the [`Sites`](https://playground.hydroserver.org/sites) page, where you'll see an empty map that will be populated with your sites as you create them. You'll see a button labeled `+ Add workspace` which will allow you to create a workspace. After creating a workspace, you can use this page to edit your workspace details and invite other users to collaborate on data in your workspaces.
+
 ## Registering a New Site
 
-After creating an account and verifying your email, you'll be able to navigate to the [`Sites`](https://playground.hydroserver.org/sites) page, where you'll see an empty map that will be populated with your sites as you create them. You'll see a button labeled `+ REGISTER A NEW SITE` which will open a modal window for inputting the location and details of your site.
+After creating a workspace, you'll see an empty table called `Your registered sites` on the [`Sites`](https://playground.hydroserver.org/sites) page with a button labeled `+ Register a new site` which will open a modal window for inputting the location and details of your site. The created site will be associated with your selected workspace.
 
 ### Manage Your Sites
 

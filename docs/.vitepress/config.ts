@@ -83,8 +83,8 @@ export default defineConfig({
           { text: "SensorThings API", link: "/api/sensor-things-api" },
           { text: "Data Management API", link: "/api/data-management-api" },
           {
-            text: "Account Management API",
-            link: "/api/account-management-api",
+            text: "Identity and Access Management API",
+            link: "/api/identity-and-access-management-api",
           },
         ],
       },
@@ -92,38 +92,19 @@ export default defineConfig({
         text: "Deployment",
         items: [
           {
-            text: "Automated AWS and Timescale Cloud Deployment",
-            link: "/deployment/aws-deployment-terraform",
+            text: "Automated AWS Deployment",
+            link: "/deployment/aws/manage-aws-deployment",
           },
           {
-            text: "Manual AWS Deployment",
-            link: "/deployment/aws-deployment",
-            items: [
-              {
-                text: "Intro and Registration",
-                link: "/deployment/aws-deployment",
-              },
-              {
-                text: "Data Management App Deployment",
-                link: "/deployment/data-management-app-deployment",
-              },
-              {
-                text: "Backend Deployment",
-                link: "/deployment/backend-deployment",
-              },
-            ],
-          },
-          {
-            text: "Manual Timescale Cloud Deployment",
-            link: "/deployment/timescale-cloud",
+            text: "Automated GCP Deployment",
+            link: "/deployment/gcp/manage-gcp-deployment",
           },
         ],
       },
       {
         text: "Local Development",
         items: [
-          { text: "Frontend Setup", link: "/development/frontend-setup" },
-          { text: "Backend Setup", link: "/development/backend-setup" },
+          { text: "Development Setup", link: "/development/development-setup" },
         ],
       },
     ],

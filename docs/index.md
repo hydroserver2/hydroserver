@@ -26,7 +26,7 @@ features:
     details: Stream sensor data directly from your Internet connected datalogger or load data using our Streaming Data Loader software.
   - icon: 💽
     title: Performant Data Storage
-    details: Using TimescaleDB with PostgreSQL, we provide a performant data store for your operational data.
+    details: Using PostgreSQL, we provide a performant data store for your operational data.
   - icon: 🌐
     title: Open Standards Data Sharing
     details: Our services are built in alignment with the latest Open Geospatial Consortium SensorThings standard.

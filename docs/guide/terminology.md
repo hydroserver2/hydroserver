@@ -1,5 +1,21 @@
 # Terminology
 
+## Workspaces
+
+Ownership within the HydroServer system is user-centric, meaning individual user accounts, rather than organizations, own the sites, datastreams, and metadata. Each user's account is the central point of control and responsibility for their associated hydrologic data. Organization information, when present, acts as an extension of the user's information. A user may be associated with an organization, but it is the user's account that maintains ownership and control over the data.
+
+Ownership of all user-managed HydroServer data is handled within the context of a workspace. Users must set up one or more workspaces to organize and manage access to their data. Workspace owners may choose whether a workspace is public or private, invite other HydroServer users to collaborate on their workspaces as editors or viewers, or transfer ownership of a workspace to another user.
+
+The following table is a comparison of permissions for the owners, editors, and viewers of a workspace.
+
+| Permission                                               | Owner      | Editor     | Viewer     |
+| -------------------------------------------------------- | ---------- | ---------- | ---------- |
+| Rename, transfer, edit privacy of workspace              | Yes        | No         | No         |
+| Invite new workspace collaborators                       | Yes        | Yes        | No         |
+| Create, update, delete sites, datastreams, and metadata  | Yes        | Yes        | No         |
+| Set up SDL to stream observations to datastreams         | Yes        | Yes        | No         |
+| View public and private data within workspace            | Yes        | Yes        | Yes        |
+
 ## Sites
 
 A Site as HydroServer defines them refers to a specific hydrologic entity, such as a weather station, stream gauge, or another environmental monitoring location. It encompasses both the physical location and the metadata describing the site. To follow SensorThing's naming convention, sites are called `things` in the Data Management API. However, since more users are familiar with the term `sites`, we've opted for that name in our user facing software like the HydroServer website.
@@ -20,34 +36,13 @@ Below is a list of the metadata available for a Site:
 
 **- Site Code**: An additional identifier, often a concise code or abbreviation, used to reference the site. The purpose of having a code alongside the name and UUID is to allow lossless data migration from an ODM2 database.
 
-**- Privacy**: Determines the accessibility of the site's data to the public. if is_private is false, any guest of the system can access the site and its metadata. If is_private is true, only the owners of this site can
+**- Privacy**: Determines the accessibility of the site's data to the public. if is_private is false, any guest of the system can access the site and its metadata. If is_private is true, only owners and collaborators of the site's workspace can access site data and metadata.
 
 **- Data Disclaimer**: Provides any necessary legal or usage notices related to the site's data.
 
 ### Additional Metadata / Tags
 
 Tags are extra, customizable, key:value pairs that provide more context or categorization to the data, offering flexibility in metadata representation. For example, you might use tags to denote the project a datastream is part of, like `project:River Study`, or to indicate specific conditions during data collection, such as `season:summer`. These tags can be used from the `My Sites` page of the web app to filter and visually represent related sites.
-
-### Site Ownership
-
-Ownership within the HydroServer system is user-centric, meaning individual user accounts, rather than organizations, own the sites, datastreams, and metadata. Each user's account is the central point of control and responsibility for their associated hydrologic data. Organization information, when present, acts as an extension of the user's information. A user may be associated with an organization, but it is the user's account that maintains ownership and control over the data.
-
-HydroServer has the concept of Primary and Secondary Owners. The motivation behind secondary owners is to gracefully handle the case where something happens to the primary owner where the site needs to be transferred to someone else.
-
-The following table is a comparison of permissions for the primary and secondary owners of a site. In order to better understand some of the permissions, you may want to read the datastream section then come back.
-
-| Permission                                          | Primary Owner           | Secondary Owner            |
-| --------------------------------------------------- | ----------------------- | -------------------------- |
-| Own sites, datastreams, linked metadata             | Yes                     | No                         |
-| Add or remove site owners                           | Yes                     | No                         |
-| Transfer primary ownership of a site                | Yes                     | No                         |
-| Create, Update, Delete datastream's linked metadata | Yes                     | No                         |
-| Select datastream's linked metadata                 | Yes                     | Yes (from primary owner's) |
-| Modify datastream's direct metadata                 | Yes                     | Yes                        |
-| Create, Delete datastreams                          | Yes                     | Yes                        |
-| Create, Update, Delete sites                        | Yes                     | Yes                        |
-| Remove self as owner                                | Yes (deletes site data) | Yes                        |
-| Link a Data Loader to a Datastream                  | Yes                     | Yes                        |
 
 ## Datastreams
 
@@ -91,11 +86,9 @@ This is the information that directly relates to a specific datastream that user
 Usually the phenomenon time and result time are the same, but sometimes there's a delay between the event and when it was recorded that needs to be accounted for. Only using phenomenon time will suit most use cases.
 :::
 
-**- Data Source Column** is a string indicating the column index or name of the Data Source CSV file that corresponds to this Datastream's observation values.
+**- Is Visible** is a boolean value (true or false) indicating if the Datastream observations are visible to users in the data management app.
 
-**- Is Visible** is a boolean value (true or false) indicating if the Datastream is visible to users.
-
-**- Is Data Visible** is a boolean value determining whether the actual data of the Datastream is accessible to users.
+**- Is Private** is a boolean value determining whether the Datastream is accessible to the public.
 
 ### 2. Linked Metadata
 
@@ -148,18 +141,18 @@ Observations are the individual data points collected within a datastream. Each 
 
 ## Access Control
 
-Access Control for sites and datastreams is handled through three privacy settings:
+Access Control for sites and datastreams is handled through four levels of granularity:
 
-1. **Site Privacy (thing.is_private)**: This setting determines whether your entire site is private or public. If you set your site to private, it means that only the site owners can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open.
+1. **Workspace Privacy (workspace.is_private)**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accesible to the workspace owner and collaborators.
 
-2. **Datastream Visibility (datastream.is_visible)**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the site owners can view this particular datastream's details and data.
+2. **Site Privacy (thing.is_private)**: This setting determines whether your site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace.
 
-3. **Datastream Data Visibility (datastream.is_data_visible)**: This one is a bit more specific. It allows you to show the metadata (like the name, description, and type) of a datastream to the public but keep the actual observation data private.
+2. **Datastream Privacy (datastream.is_private)**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
+
+3. **Datastream Visibility (datastream.is_visible)**: This is a convenience setting for controlling visibility of data in the data management application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
 
 ### Conditional Settings
 
 These privacy settings work in a hierarchical, conditional manner:
 
 If you set the **Site Privacy** to private (thing.is_private), then both **Datastream Visibility** (datastream.is_visible) and **Datastream Data Visibility** (datastream.is_data_visible) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
-
-It's important to note that with the exception of Data Sources and Data Loaders, **Linked Metadata**, is always public through the API.
