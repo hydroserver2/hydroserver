@@ -38,7 +38,8 @@
 				"wafv2:CreateWebACL",
 				"wafv2:TagResource",
 				"wafv2:ListTagsForResource",
-				"wafv2:DeleteWebACL"
+				"wafv2:DeleteWebACL",
+				"wafv2:UpdateWebACL"
 			],
 			"Resource": "*"
 		},
