@@ -8,13 +8,13 @@ Ownership of all user-managed HydroServer data is handled within the context of 
 
 The following table is a comparison of permissions for the owners, editors, and viewers of a workspace.
 
-| Permission                                               | Owner      | Editor     | Viewer     |
-| -------------------------------------------------------- | ---------- | ---------- | ---------- |
-| Rename, transfer, edit privacy of workspace              | Yes        | No         | No         |
-| Invite new workspace collaborators                       | Yes        | Yes        | No         |
-| Create, update, delete sites, datastreams, and metadata  | Yes        | Yes        | No         |
-| Set up SDL to stream observations to datastreams         | Yes        | Yes        | No         |
-| View public and private data within workspace            | Yes        | Yes        | Yes        |
+| Permission                                              | Owner | Editor | Viewer |
+| ------------------------------------------------------- | ----- | ------ | ------ |
+| Rename, transfer, edit privacy of workspace             | Yes   | No     | No     |
+| Invite new workspace collaborators                      | Yes   | Yes    | No     |
+| Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     |
+| Set up SDL to stream observations to datastreams        | Yes   | Yes    | No     |
+| View public and private data within workspace           | Yes   | Yes    | Yes    |
 
 ## Sites
 
@@ -147,9 +147,9 @@ Access Control for sites and datastreams is handled through four levels of granu
 
 2. **Site Privacy (thing.is_private)**: This setting determines whether your site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace.
 
-2. **Datastream Privacy (datastream.is_private)**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
+3. **Datastream Privacy (datastream.is_private)**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
 
-3. **Datastream Visibility (datastream.is_visible)**: This is a convenience setting for controlling visibility of data in the data management application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
+4. **Datastream Visibility (datastream.is_visible)**: This is a convenience setting for controlling visibility of data in the data management application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
 
 ### Conditional Settings
 

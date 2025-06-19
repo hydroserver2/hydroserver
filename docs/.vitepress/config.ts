@@ -112,5 +112,9 @@ export default defineConfig({
     socialLinks: [
       { icon: "github", link: "https://github.com/hydroserver2/hydroserver" },
     ],
+
+    search: {
+      provider: "local",
+    },
   },
 });
