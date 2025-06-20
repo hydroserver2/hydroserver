@@ -2,7 +2,7 @@
 
 ## Explore Our Playground Instance
 
-You might want to get a feel for what HydroServer offers before deploying your own instance. Our playground instance is an up-to-date demo environment where you can freely experiment with the features and functionalities of HydroServer. Feel free to create an account and load some data.
+You might want to get a feel for what HydroServer offers before deploying your own instance. Our playground instance is an up-to-date demo environment where you can experiment with the features and functionalities of HydroServer. Feel free to create an account and load some data.
 
 **Access the Playground Instance here**:
 

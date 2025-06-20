@@ -38,7 +38,7 @@ From the `Site Details` page of your newly created site, click the `+ Add New Da
 If you plan on creating a large number of sites and datastreams, it may be faster to first navigate to the [`Data Management -> Manage Metadata `](https://playground.hydroserver.org/metadata) page and define all of the [`Units, Sensors, Observed Properties, etc.`](/guide/terminology.md#_2-linked-metadata) you plan on using up front.
 :::
 
-Repeat this process for as many datastreams you need to accurately define your site and as many sites as you need to describe your data. In the following [`Streaming Data Loader`](streaming-data-loader.md) section, you'll learn how to download and configure the `Streaming Data Loader` desktop app in order to automatically upload data into the database for your newly created datastreams.
+Repeat this process for as many datastreams you need to accurately define your site and as many sites as you need to describe your data. In the [`Streaming Data Loader`](/orchestration/streaming-data-loader.md) section, you'll learn how to download and configure the `Streaming Data Loader` desktop app in order to automatically upload data into the database for your newly created datastreams.
 
 ## Managing Your Datastreams
 

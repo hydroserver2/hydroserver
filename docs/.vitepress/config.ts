@@ -30,6 +30,33 @@ export default defineConfig({
         ],
       },
       {
+        text: "Tutorials",
+        items: [
+          {
+            text: "HydroServer 101",
+            link: "/tutorials/hydroserver-101",
+            items: [
+              {
+                text: "Creating Your First Site",
+                link: "/tutorials/creating-your-first-site",
+              },
+              {
+                text: "Creating Your First Datastream",
+                link: "/tutorials/creating-your-first-datastream",
+              },
+              {
+                text: "Creating Your First Orchestration System",
+                link: "/tutorials/creating-your-first-orchestration-system",
+              },
+              {
+                text: "Loading Data",
+                link: "/tutorials/loading-data",
+              },
+            ],
+          },
+        ],
+      },
+      {
         text: "Data Model",
         items: [
           {
@@ -48,10 +75,6 @@ export default defineConfig({
           {
             text: "Data Management App",
             link: "/applications/data-management-app",
-          },
-          {
-            text: "Streaming Data Loader",
-            link: "/applications/streaming-data-loader",
           },
           {
             text: "Python Client",
@@ -74,6 +97,23 @@ export default defineConfig({
                 link: "/applications/hydroserverpy/quality_control",
               },
             ],
+          },
+        ],
+      },
+      {
+        text: "Loading Data",
+        items: [
+          {
+            text: "Overview",
+            link: "/orchestration/orchestration-overview",
+          },
+          {
+            text: "Streaming Data Loader",
+            link: "/orchestration/streaming-data-loader",
+          },
+          {
+            text: "Airflow Orchestrator",
+            link: "/orchestration/airflow-orchestration",
           },
         ],
       },
