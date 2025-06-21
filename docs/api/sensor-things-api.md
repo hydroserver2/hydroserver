@@ -1,8 +1,7 @@
 # HydroServer SensorThings API
 
 The HydroServer SensorThings API is a Django implementation of the Open Geospatial Consortium
-SensorThings specification. We recommend reading the [SensorThings overview](/guide/sensor-things.md)
-before reading this.
+SensorThings specification.
 
 ## Endpoints
 

@@ -1,6 +1,4 @@
-# HydroServer 101
-
-Welcome to HydroServer!
+# Welcome to HydroServer 101!
 
 This is the very first tutorial in our series and is designed for absolute beginners.
 

@@ -33,9 +33,6 @@ best possible data management experience.
 
 ## Next Steps
 
-If you'd like a hands-on tutorial for setting up a monitoring site and streaming data to a playground verison of the Hydroserver database, head over to the
-[Getting Started Guide](getting-started.md)
+If you'd like a hands-on tutorial for setting up a monitoring site and streaming data to a playground instance of Hydroserver, head over to [HydroServer 101.](/tutorials/hydroserver-101.md)
 
-If you'd like to read some more about our system, feel free to skip around the documentation as most of the sections are fairly self-contained.
-We recommend starting with the [SensorThings Overview](/guide/sensor-things.md) which will explain more about HydroServer's architecture, then moving on to
-the other major parts of HydroServer listed at the beginning of this page.
+If you'd like to read more about our system, we recommend starting with [Key Concepts](/guide/key-concepts/sensor-things).

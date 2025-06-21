@@ -21,12 +21,32 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: "Guide",
+        text: "Introduction",
+        collapsed: false,
+        link: "/guide/introduction",
         items: [
-          { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Introduction", link: "/guide/introduction" },
-          { text: "SensorThings", link: "/guide/sensor-things" },
-          { text: "Terminology", link: "/guide/terminology" },
+          { text: "Getting Started", link: "/guide/getting-started" },
+          {
+            text: "Key Concepts",
+            collapsed: true,
+            items: [
+              {
+                text: "SensorThings",
+                link: "/guide/key-concepts/sensor-things",
+              },
+              { text: "Site", link: "/guide/key-concepts/sites" },
+              { text: "Datastream", link: "/guide/key-concepts/datastreams" },
+              {
+                text: "Loading Data",
+                link: "/guide/key-concepts/loading-data",
+              },
+              {
+                text: "Access Control",
+                link: "/guide/key-concepts/access-control",
+              },
+            ],
+          },
         ],
       },
       {
@@ -34,8 +54,13 @@ export default defineConfig({
         items: [
           {
             text: "HydroServer 101",
+            collapsed: true,
             link: "/tutorials/hydroserver-101",
             items: [
+              {
+                text: "Intro",
+                link: "/tutorials/hydroserver-101",
+              },
               {
                 text: "Creating Your First Site",
                 link: "/tutorials/creating-your-first-site",
@@ -57,6 +82,22 @@ export default defineConfig({
         ],
       },
       {
+        text: "How-to Guides",
+        items: [
+          {
+            text: "HydroServer 101",
+            collapsed: true,
+            link: "/tutorials/hydroserver-101",
+            items: [
+              {
+                text: "Intro",
+                link: "/tutorials/hydroserver-101",
+              },
+            ],
+          },
+        ],
+      },
+      {
         text: "Data Model",
         items: [
           {
@@ -70,7 +111,7 @@ export default defineConfig({
         ],
       },
       {
-        text: "Software Applications",
+        text: "Client Applications",
         items: [
           {
             text: "Data Management App",
@@ -78,6 +119,7 @@ export default defineConfig({
           },
           {
             text: "Python Client",
+            collapsed: true,
             link: "/applications/hydroserverpy/overview",
             items: [
               {
@@ -101,7 +143,7 @@ export default defineConfig({
         ],
       },
       {
-        text: "Loading Data",
+        text: "Orchestration Systems",
         items: [
           {
             text: "Overview",
