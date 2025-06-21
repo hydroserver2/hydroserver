@@ -81,22 +81,22 @@ export default defineConfig({
           },
         ],
       },
-      {
-        text: "How-to Guides",
-        items: [
-          {
-            text: "HydroServer 101",
-            collapsed: true,
-            link: "/tutorials/hydroserver-101",
-            items: [
-              {
-                text: "Intro",
-                link: "/tutorials/hydroserver-101",
-              },
-            ],
-          },
-        ],
-      },
+      // {
+      //   text: "How-to Guides",
+      //   items: [
+      //     {
+      //       text: "HydroServer 101",
+      //       collapsed: true,
+      //       link: "/tutorials/hydroserver-101",
+      //       items: [
+      //         {
+      //           text: "Intro",
+      //           link: "/tutorials/hydroserver-101",
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // },
       {
         text: "Data Model",
         items: [
