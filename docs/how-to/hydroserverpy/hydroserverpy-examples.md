@@ -1,8 +1,4 @@
-# Overview of the `hydroserverpy.api` Package
-
-The `hydroserverpy.api` Python package allows HydroServer users to retrieve, create, update, and delete their HydroServer data and metadata. This guide will provide examples on how to manage various types of HydroServer data.
-
-## Data Management Guide with Examples
+# How to Manage Data with Hydroserverpy
 
 To perform data management operations, you must connect to HydroServer.
 
@@ -19,23 +15,24 @@ hs_api = HydroServer(
 
 The hydroserverpy connection instance exposes the following types of core data and metadata you can retrieve or create, either as a collection or by ID using the `list`, `get`, or `create` methods of the associated property:
 
-* workspaces
-* things
-* datastreams
-* sensors
-* units
-* processinglevels
-* observedproperties
-* resultqualifiers
-* orchestrationsystems
-* datasources
-* dataarchives
+- workspaces
+- things
+- datastreams
+- sensors
+- units
+- processinglevels
+- observedproperties
+- resultqualifiers
+- orchestrationsystems
+- datasources
+- dataarchives
 
 ### Workspaces
 
 Workspaces in HydroServer are used to organize and manage access to your data. All user-managed resources in HydroServer are created within the context of a workspace. Each workspace has one owner and can have any number of collaborators with varying levels of access to resources within the workspace. The examples below demonstrate how to use hydroserverpy to manage workspaces.
 
 #### Example: Get Workspaces
+
 ```python
 # Get all visible workspaces
 public_workspaces = hs_api.workspaces.list()
@@ -48,6 +45,7 @@ workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 ```
 
 #### Example: Get Workspace Resources
+
 ```python
 workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 
@@ -83,6 +81,7 @@ workspace_data_archives = workspace.dataarchives
 ```
 
 #### Example: Create a Workspace
+
 ```python
 # Create a new workspace in HydroServer
 new_workspace = hs_api.workspaces.create(
@@ -92,6 +91,7 @@ new_workspace = hs_api.workspaces.create(
 ```
 
 #### Example: Modify a Workspace
+
 ```python
 workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 
@@ -102,6 +102,7 @@ workspace.save()
 ```
 
 #### Example: Manage Workspace Collaborators and Ownership
+
 ```python
 workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 
@@ -139,6 +140,7 @@ workspace.cancel_ownership_transfer()
 Things (or sites) are one of the core data elements managed in HydroServer. Things represent a location or site at which one or more datastreams of observations are collected. All datastreams in HydroServer must be associated with a thing/site. The examples below demonstrate how to use hydroserverpy to manage things in HydroServer.
 
 #### Example: Get Things
+
 ```python
 # Get all visible things
 public_things = hs_api.things.list()
@@ -151,6 +153,7 @@ thing = hs_api.things.get(uid="00000000-0000-0000-0000-000000000000")
 ```
 
 #### Example: Create Thing
+
 ```python
 # Create a new thing in HydroServer
 new_thing = hs_api.things.create(
@@ -175,6 +178,7 @@ new_thing = hs_api.things.create(
 Each of the methods above will return one or more Thing objects. The examples below show the main properties and methods available to a Thing object.
 
 #### Example: Modify a Thing
+
 ```python
 # Get a thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -189,6 +193,7 @@ thing.save()
 ```
 
 #### Example: Manage Thing Tags
+
 ```python
 # Get a thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -213,6 +218,7 @@ thing.delete_tag(key='Region')
 ```
 
 #### Example: Manage Thing Photos
+
 ```python
 # Get a thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -229,6 +235,7 @@ thing.delete_photo(name='photo.png')
 ```
 
 #### Example: Get Datastreams of a Thing
+
 ```python
 # Get a thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -238,6 +245,7 @@ datastreams = thing.datastreams
 ```
 
 #### Example: Refresh Thing data from HydroServer
+
 ```python
 # Get a Thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -247,6 +255,7 @@ thing.refresh()
 ```
 
 #### Example: Delete Thing from HydroServer
+
 ```python
 # Get a Thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
@@ -260,6 +269,7 @@ thing.delete()
 Observed properties are used in HydroServer to represent the physical property being observed and stored in a datastream. The examples below demonstrate the actions you can take to manage observed properties in HydroServer.
 
 #### Example: Get Observed Properties
+
 ```python
 # Get all observed properties
 observed_properties = hs_api.observedproperties.list()
@@ -272,6 +282,7 @@ observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-0
 ```
 
 #### Example: Create Observed Property
+
 ```python
 # Create a new observed property in HydroServer
 new_observed_property = hs_api.observedproperties.create(
@@ -287,6 +298,7 @@ new_observed_property = hs_api.observedproperties.create(
 Each of the methods above will return one or more ObservedProperty objects. The examples below show the main properties and methods available to an ObservedProperty object.
 
 #### Example: Modify an Observed Property
+
 ```python
 # Get an observed property
 observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-000000000000')
@@ -299,6 +311,7 @@ observed_property.save()
 ```
 
 #### Example: Refresh Observed Property data from HydroServer
+
 ```python
 # Get an observed property
 observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-000000000000')
@@ -308,6 +321,7 @@ observed_property.refresh()
 ```
 
 #### Example: Delete Observed Property from HydroServer
+
 ```python
 # Get an observed property
 observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-000000000000')
@@ -321,6 +335,7 @@ observed_property.delete()
 Units are used in HydroServer to describe the physical quantity represented by the result of an observation in a datastream. The examples below demonstrate the actions you can take to manage units in HydroServer.
 
 #### Example: Get Units
+
 ```python
 # Get all units
 units = hs_api.units.list()
@@ -333,6 +348,7 @@ unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
 #### Example: Create Unit
+
 ```python
 # Create a new unit in HydroServer
 new_unit = hs_api.units.create(
@@ -347,6 +363,7 @@ new_unit = hs_api.units.create(
 Each of the methods above will return one or more Unit objects. The examples below show the main properties and methods available to a Unit object.
 
 #### Example: Modify a Unit
+
 ```python
 # Get a unit
 unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
@@ -359,6 +376,7 @@ unit.save()
 ```
 
 #### Example: Refresh Unit data from HydroServer
+
 ```python
 # Get a unit
 unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
@@ -368,6 +386,7 @@ unit.refresh()
 ```
 
 #### Example: Delete Unit from HydroServer
+
 ```python
 # Get a unit
 unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
@@ -381,6 +400,7 @@ unit.delete()
 Sensors are used in HydroServer to describe the sensor/method used to make an environmental observation. The examples below demonstrate the actions you can take to manage sensors in HydroServer.
 
 #### Example: Get Sensors
+
 ```python
 # Get all sensors
 sensors = hs_api.sensors.list()
@@ -393,6 +413,7 @@ sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
 #### Example: Create Sensor
+
 ```python
 # Create a new sensor in HydroServer
 new_sensor = hs_api.sensors.create(
@@ -412,6 +433,7 @@ new_sensor = hs_api.sensors.create(
 Each of the methods above will return one or more sensor objects. The examples below show the main properties and methods available to a sensor object.
 
 #### Example: Modify a Sensor
+
 ```python
 # Get a sensor
 sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
@@ -424,6 +446,7 @@ sensor.save()
 ```
 
 #### Example: Refresh Sensor data from HydroServer
+
 ```python
 # Get a sensor
 sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
@@ -433,6 +456,7 @@ sensor.refresh()
 ```
 
 #### Example: Delete Sensor from HydroServer
+
 ```python
 # Get a sensor
 sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
@@ -446,6 +470,7 @@ sensor.delete()
 Processing levels are used in HydroServer to describe the level of processing observations of a datastream have been subject to. The examples below demonstrate the actions you can take to manage processing levels in HydroServer.
 
 #### Example: Get Processing Levels
+
 ```python
 # Get all processing levels
 processing_levels = hs_api.processinglevels.list()
@@ -458,6 +483,7 @@ processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-0000
 ```
 
 #### Example: Create Processing Level
+
 ```python
 # Create a new processing level in HydroServer
 new_processing_level = hs_api.processinglevels.create(
@@ -471,6 +497,7 @@ new_processing_level = hs_api.processinglevels.create(
 Each of the methods above will return one or more processing level objects. The examples below show the main properties and methods available to a processing level object.
 
 #### Example: Modify a Processing Level
+
 ```python
 # Get a processing level
 processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-000000000000')
@@ -483,6 +510,7 @@ processing_level.save()
 ```
 
 #### Example: Refresh Processing Level data from HydroServer
+
 ```python
 # Get a processing level
 processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-000000000000')
@@ -492,6 +520,7 @@ processing_level.refresh()
 ```
 
 #### Example: Delete Processing Level from HydroServer
+
 ```python
 # Get a processing level
 processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-000000000000')
@@ -505,6 +534,7 @@ processing_level.delete()
 Result qualifiers are used in HydroServer to annotate observations during quality control or other processing steps. The examples below demonstrate the actions you can take to manage result qualifiers in HydroServer.
 
 #### Example: Get Result Qualifiers
+
 ```python
 # Get all result qualifiers
 result_qualifiers = hs_api.resultqualifiers.list()
@@ -517,6 +547,7 @@ result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-0000
 ```
 
 #### Example: Create Result Qualifier
+
 ```python
 # Create a new result qualifier on HydroServer
 new_result_qualifier = hs_api.resultqualifiers.create(
@@ -529,6 +560,7 @@ new_result_qualifier = hs_api.resultqualifiers.create(
 Each of the methods above will return one or more ResultQualifier objects. The examples below show the main properties and methods available to a ResultQualifier object.
 
 #### Example: Modify a Result Qualifier
+
 ```python
 # Get a result qualifier
 result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-000000000000')
@@ -541,6 +573,7 @@ result_qualifier.save()
 ```
 
 #### Example: Refresh Result Qualifier data from HydroServer
+
 ```python
 # Get a result qualifier
 result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-000000000000')
@@ -550,6 +583,7 @@ result_qualifier.refresh()
 ```
 
 #### Example: Delete Result Qualifier from HydroServer
+
 ```python
 # Get a result qualifier
 result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-000000000000')
@@ -563,6 +597,7 @@ result_qualifier.delete()
 Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a sensor at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
 
 #### Example: Get Datastreams
+
 ```python
 # Get all datastreams
 datastreams = hs_api.datastreams.list()
@@ -578,6 +613,7 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
 #### Example: Create Datastream
+
 ```python
 from datetime import datetime
 
@@ -615,6 +651,7 @@ new_datastream = hs_api.datastreams.create(
 Each of the methods above will return one or more Datastream objects. The examples below show the main properties and methods available to a Datastream object.
 
 #### Example: Modify a Datastream
+
 ```python
 # Get a datastream
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
@@ -627,6 +664,7 @@ datastream.save()
 ```
 
 #### Example: Get related properties of a Datastream
+
 ```python
 # Get a datastream
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
@@ -648,6 +686,7 @@ processing_level = datastream.processing_level
 ```
 
 #### Example: Get Observations of a Datastream
+
 ```python
 from datetime import datetime
 
@@ -669,6 +708,7 @@ full_observations_df = datastream.get_observations(
 ```
 
 #### Example: Upload Observations to a Datastream
+
 ```python
 import pandas as pd
 
@@ -693,6 +733,7 @@ datastream.load_observations(new_observations)
 ```
 
 #### Example: Refresh Datastream data from HydroServer
+
 ```python
 # Get a datastream
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
@@ -702,6 +743,7 @@ datastream.refresh()
 ```
 
 #### Example: Delete Datastream from HydroServer
+
 ```python
 # Get a datastream
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
@@ -715,6 +757,7 @@ datastream.delete()
 Orchestration systems are external apps or processes that interact with HydroServer data and perform scheduled automated tasks such as ETL or data archival to external systems. Users can register their own orchestration systems, and site administrators can configure global systems that can be used by any user.
 
 #### Example: Get Orchestration Systems
+
 ```python
 # Get all orchestration systems
 orchestration_systems = hs_api.orchestrationsystems.list()
@@ -727,6 +770,7 @@ orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0
 ```
 
 #### Example: Create Orchestration System
+
 ```python
 # Create a new orchestration system in HydroServer
 new_orchestration_system = hs_api.orchestrationsystems.create(
@@ -739,6 +783,7 @@ new_orchestration_system = hs_api.orchestrationsystems.create(
 Each of the methods above will return one or more OrchestrationSystem objects. The examples below show the main properties and methods available to an OrchestrationSystem object.
 
 #### Example: Modify an Orchestration System
+
 ```python
 # Get an orchestration system
 orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
@@ -751,6 +796,7 @@ orchestration_system.save()
 ```
 
 #### Example: Refresh Orchestration System data from HydroServer
+
 ```python
 # Get an orchestration system
 orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
@@ -760,6 +806,7 @@ orchestration_system.refresh()
 ```
 
 #### Example: Delete Orchestration System from HydroServer
+
 ```python
 # Get a orchestration system
 orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
@@ -773,6 +820,7 @@ orchestration_system.delete()
 Data sources represent where datastream observations are loaded into HydroServer from. They can also contain settings, scheduling, and status information used by orchestration systems responsible for loading the data.
 
 #### Example: Get Data Sources
+
 ```python
 # Get all data sources
 data_sources = hs_api.datasources.list()
@@ -785,6 +833,7 @@ data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
 #### Example: Create Data Source
+
 ```python
 # Create a new data source in HydroServer
 new_data_source = hs_api.datasources.create(
@@ -801,6 +850,7 @@ new_data_source = hs_api.datasources.create(
 Each of the methods above will return one or more DataSource objects. The examples below show the main properties and methods available to an DataSource object.
 
 #### Example: Modify a Data Source
+
 ```python
 # Get a data source
 data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
@@ -813,6 +863,7 @@ data_source.save()
 ```
 
 #### Example: Refresh Data Source data from HydroServer
+
 ```python
 # Get a data source
 data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
@@ -822,6 +873,7 @@ data_source.refresh()
 ```
 
 #### Example: Delete Data Source from HydroServer
+
 ```python
 # Get a data source
 data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
@@ -831,6 +883,7 @@ data_source.delete()
 ```
 
 #### Example: Manage Data Source Datastreams
+
 ```python
 # Get a data source
 data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
@@ -850,6 +903,7 @@ data_source.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
 Data archives represent external systems data from HydroServer can be exported to. They can also contain settings, scheduling, and status information used by orchestration systems responsible for archiving the data.
 
 #### Example: Get Data Archives
+
 ```python
 # Get all data archives
 data_archives = hs_api.dataarchives.list()
@@ -862,6 +916,7 @@ data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000
 ```
 
 #### Example: Create Data Archive
+
 ```python
 # Create a new data archive in HydroServer
 new_data_archive = hs_api.dataarchives.create(
@@ -878,6 +933,7 @@ new_data_archive = hs_api.dataarchives.create(
 Each of the methods above will return one or more DataArchive objects. The examples below show the main properties and methods available to an DataArchive object.
 
 #### Example: Modify a Data Archive
+
 ```python
 # Get a data archive
 data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
@@ -890,6 +946,7 @@ data_archive.save()
 ```
 
 #### Example: Refresh Data Archive data from HydroServer
+
 ```python
 # Get a data archive
 data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
@@ -899,6 +956,7 @@ data_archive.refresh()
 ```
 
 #### Example: Delete Data Archive from HydroServer
+
 ```python
 # Get a data archive
 data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
@@ -908,6 +966,7 @@ data_archive.delete()
 ```
 
 #### Example: Manage Data Archive Datastreams
+
 ```python
 # Get a data archive
 data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')

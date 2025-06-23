@@ -21,7 +21,7 @@ This guide walks you through setting up and maintaining a HydroServer deployment
    - `AWSKeyManagementService`
      - `Encrypt`, `Decrypt`, `GenerateDataKey`
    - `AmazonSSMFullAccess`
-   Or see the following [AWS IAM policy](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json)
+     Or see the following [AWS IAM policy](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json)
 4. The policies above provide broad access for initial setup but can be restricted as needed.
 5. Create an S3 bucket in your AWS account for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same AWS account, they should share this Terraform bucket.
 6. Use AWS Certificate Manager (ACM) to create or import a public certificate for the domain HydroServer will use.
@@ -32,25 +32,26 @@ This guide walks you through setting up and maintaining a HydroServer deployment
 2. In your forked repository, go to **Settings** > **Environments**.
 3. Create a new environment with a simple alphanumeric name (e.g., `beta`, `prod`, `dev`). This name will be used for AWS services. All environment variables and secrets should be created in this environment.
 4. Add the following GitHub **environment variables**:
+
    - **`AWS_ACCOUNT_ID`** – Your AWS account ID.
    - **`AWS_REGION`** – The AWS region for deployment (e.g., `us-east-1`).
    - **`AWS_IAM_ROLE`** – The IAM role name created in step 3.
    - **`AWS_ACM_CERTIFICATE_ARN`** – The ARN of the ACM certificate from step 6.
    - **`TERRAFORM_BUCKET`** – The S3 bucket name from step 5.
    - **`PROXY_BASE_URL`** – The domain name for HydroServer, including the protocol (e.g., `https://yourdomain.com`).
-   - **`DEBUG`** *(Optional, default: `True`)* – Set to `True` for non-production deployments.
-   - **`ACCOUNT_SIGNUP_ENABLED`** *(Optional, default: `False`)* – If `False`, admins must create user accounts.
-   - **`ACCOUNT_OWNERSHIP_ENABLED`** *(Optional, default: `False`)* – If `False`, users cannot create new workspaces.
-   - **`SOCIALACCOUNT_SIGNUP_ONLY`** *(Optional, default: `False`)* – If `True`, only third-party identity providers can be used for signup.
-   - **`ENABLE_AUDITS`** *(Optional, default: `False`)* – If `True`, HydroServer records database audit logs.
+   - **`DEBUG`** _(Optional, default: `True`)_ – Set to `True` for non-production deployments.
+   - **`ACCOUNT_SIGNUP_ENABLED`** _(Optional, default: `False`)_ – If `False`, admins must create user accounts.
+   - **`ACCOUNT_OWNERSHIP_ENABLED`** _(Optional, default: `False`)_ – If `False`, users cannot create new workspaces.
+   - **`SOCIALACCOUNT_SIGNUP_ONLY`** _(Optional, default: `False`)_ – If `True`, only third-party identity providers can be used for signup.
+   - **`ENABLE_AUDITS`** _(Optional, default: `False`)_ – If `True`, HydroServer records database audit logs.
 
 5. Add the following GitHub **environment secrets**:
-   - **`DATABASE_URL`** *(Optional)* – A PostgreSQL or Timescale Cloud database URL. If unset, Terraform provisions a new RDS database.  
-     *Format:* `postgresql://{user}:{password}@{host}:{port}/{database}`
+   - **`DATABASE_URL`** _(Optional)_ – A PostgreSQL or Timescale Cloud database URL. If unset, Terraform provisions a new RDS database.  
+     _Format:_ `postgresql://{user}:{password}@{host}:{port}/{database}`
    - **`SMTP_URL`** – Required for email notifications (account verification, password reset).  
-     *Format:* `smtps://{user}:{password}@{host}:{port}`
+     _Format:_ `smtps://{user}:{password}@{host}:{port}`
    - **`GOOGLE_MAPS_API_KEY`** – A Google Maps API key. [Set up Google Maps](https://developers.google.com/maps/documentation/embed/get-api-key).
-   - **`GOOGLE_MAPS_MAP_ID`** *(Optional)* – A Google Maps Map ID.
+   - **`GOOGLE_MAPS_MAP_ID`** _(Optional)_ – A Google Maps Map ID.
 
 ### Deploy AWS Services with Terraform
 
@@ -63,7 +64,7 @@ This guide walks you through setting up and maintaining a HydroServer deployment
    - Go to **AWS Console** > **CloudFront** > **Distributions** and note the generated CloudFront domain.
    - Create a DNS CNAME record pointing your HydroServer domain to the CloudFront domain.
    - Go to **AWS Console** > **Systems Manager** > **Parameter Store** to retrieve credentials for the auto-generated admin account.
-4. Verify HydroServer is running by visiting your configured domain in a browser.  
+4. Verify HydroServer is running by visiting your configured domain in a browser.
    - The admin dashboard is available at `https://yourdomain.com/admin/`.
 
 ### Configure HydroServer
@@ -83,7 +84,7 @@ This guide walks you through setting up and maintaining a HydroServer deployment
    - Add the following settings block to the HydroShare social application record:
      ```json
      {
-       "allowSignUp": false, 
+       "allowSignUp": false,
        "allowConnection": true
      }
      ```
