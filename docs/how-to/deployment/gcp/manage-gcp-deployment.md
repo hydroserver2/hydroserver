@@ -25,7 +25,7 @@ The HydroServer deployment in this guide will use the following GCP services. De
 1. Create a [GCP account](https://cloud.google.com/) if you don't already have one.
 2. Follow [these instructions](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-google-cloud-platform) to configure GitHub's OpenID Connect (OIDC) for your GCP account. All workflows in the `hydroserver-ops` repository use this authentication method.
 3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between GCP and **your** forked `hydroserver-ops` repository and user account or organization. 
-4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/gcp/manage-gcp-deployment.md) to the role.
+4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/gcp/gcp-terraform-permissions.md) to the role.
 5. Create a Cloud Storage bucket in your GCP project for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same GCP project, they should share this Terraform bucket.
 6. Use GCP Certificate Manager to create or upload a public classic certificate for the domain HydroServer will use.
 
