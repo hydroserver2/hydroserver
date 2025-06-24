@@ -122,7 +122,7 @@ export default defineConfig({
             link: "/how-to/deployment/gcp/manage-gcp-deployment",
             items: [
               {
-                text: "Deploy to GPC",
+                text: "Deploy to GCP",
                 link: "/how-to/deployment/gcp/manage-gcp-deployment",
               },
               {
