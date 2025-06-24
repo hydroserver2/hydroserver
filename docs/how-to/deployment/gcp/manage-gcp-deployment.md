@@ -28,6 +28,12 @@ The HydroServer deployment in this guide will use the following GCP services. De
 4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/gcp/gcp-terraform-permissions.md) to the role.
 5. Create a Cloud Storage bucket in your GCP project for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same GCP project, they should share this Terraform bucket.
 6. Use GCP Certificate Manager to create or upload a public classic certificate for the domain HydroServer will use.
+7. Ensure the following Google APIs are enabled for your project:
+   - Compute Engine API
+   - Artifact Registry API
+   - Secret Manager API
+   - Cloud SQL Admin API
+   - Cloud Run Admin API
 
 ### Define Environment Variables
 
