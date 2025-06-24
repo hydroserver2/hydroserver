@@ -12,10 +12,10 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /introduction/getting-started
     - theme: alt
       text: Introduction
-      link: /guide/introduction
+      link: /introduction/introduction
     - theme: alt
       text: GitHub
       link: https://github.com/hydroserver2/hydroserver

@@ -21,90 +21,204 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: "Guide",
-        items: [
-          { text: "Getting Started", link: "/guide/getting-started" },
-          { text: "Introduction", link: "/guide/introduction" },
-          { text: "SensorThings", link: "/guide/sensor-things" },
-          { text: "Terminology", link: "/guide/terminology" },
-        ],
-      },
-      {
-        text: "Data Model",
+        text: "Introduction",
+        collapsed: true,
+        link: "/introduction/introduction",
         items: [
           {
-            text: "Data Model Intro",
-            link: "/datamodel/data-model",
+            text: "Introduction",
+            link: "/introduction/introduction",
           },
+          { text: "Background", link: "/introduction/background" },
+          { text: "Getting Started", link: "/introduction/getting-started" },
           {
-            text: "Data Dictionary",
-            link: "/datamodel/data-dictionary",
-          },
-        ],
-      },
-      {
-        text: "Software Applications",
-        items: [
-          {
-            text: "Data Management App",
-            link: "/applications/data-management-app",
-          },
-          {
-            text: "Streaming Data Loader",
-            link: "/applications/streaming-data-loader",
-          },
-          {
-            text: "Python Client",
-            link: "/applications/hydroserverpy/overview",
+            text: "Key Concepts",
+            collapsed: true,
+            link: "/introduction/key-concepts/sites",
             items: [
+              { text: "Site", link: "/introduction/key-concepts/sites" },
               {
-                text: "Overview",
-                link: "/applications/hydroserverpy/overview",
+                text: "Datastream",
+                link: "/introduction/key-concepts/datastreams",
               },
               {
-                text: "Core",
-                link: "/applications/hydroserverpy/core",
+                text: "Loading Data",
+                link: "/introduction/key-concepts/loading-data",
               },
               {
-                text: "ETL",
-                link: "/applications/hydroserverpy/etl",
-              },
-              {
-                text: "Quality Control",
-                link: "/applications/hydroserverpy/quality_control",
+                text: "Access Control",
+                link: "/introduction/key-concepts/access-control",
               },
             ],
           },
         ],
       },
       {
-        text: "APIs",
+        text: "Tutorials",
+        collapsed: true,
         items: [
-          { text: "SensorThings API", link: "/api/sensor-things-api" },
-          { text: "Data Management API", link: "/api/data-management-api" },
           {
-            text: "Identity and Access Management API",
-            link: "/api/identity-and-access-management-api",
+            text: "HydroServer 101",
+            collapsed: true,
+            link: "/tutorials/hydroserver-101",
+            items: [
+              {
+                text: "Intro",
+                link: "/tutorials/hydroserver-101",
+              },
+              {
+                text: "Creating Your First Site",
+                link: "/tutorials/creating-your-first-site",
+              },
+              {
+                text: "Creating Your First Datastream",
+                link: "/tutorials/creating-your-first-datastream",
+              },
+              {
+                text: "Creating Your First Orchestration System",
+                link: "/tutorials/creating-your-first-orchestration-system",
+              },
+              {
+                text: "Loading Data",
+                link: "/tutorials/loading-data",
+              },
+            ],
+          },
+          // {
+          //   text: "hydroserverpy 101",
+          //   collapsed: true,
+          //   link: "/tutorials/hydroserverpy/hydroserverpy-101",
+          //   items: [
+          //     {
+          //       text: "Intro",
+          //       link: "/tutorials/hydroserverpy/hydroserverpy-101",
+          //     },
+          //   ],
+          // },
+        ],
+      },
+      {
+        text: "How-to",
+        collapsed: true,
+        items: [
+          {
+            text: "Data Management App",
+            collapsed: true,
+            link: "/how-to/data-management-app/customize.md",
+            items: [
+              {
+                text: "Customize the Data Management App",
+                link: "/how-to/data-management-app/customize.md",
+              },
+              {
+                text: "Archive Data to HydroShare",
+                link: "/how-to/data-management-app/hydroshare-archive.md",
+              },
+            ],
+          },
+          {
+            text: "Deployment",
+            collapsed: true,
+            link: "/how-to/deployment/gcp/manage-gcp-deployment",
+            items: [
+              {
+                text: "Deploy to GPC",
+                link: "/how-to/deployment/gcp/manage-gcp-deployment",
+              },
+              {
+                text: "Deploy to AWS",
+                link: "/how-to/deployment/aws/manage-aws-deployment",
+              },
+              {
+                text: "Setup for Local Development",
+                link: "how-to/development/development-setup",
+              },
+            ],
+          },
+          {
+            text: "Hydroserverpy",
+            collapsed: true,
+            link: "/how-to/hydroserverpy/hydroserverpy-examples",
+            items: [
+              {
+                text: "Manage Data With Hydroserverpy",
+                link: "/how-to/hydroserverpy/hydroserverpy-examples",
+              },
+              {
+                text: "Extract, transform and load with Hydroserverpy",
+                link: "/how-to/hydroserverpy/etl",
+              },
+            ],
+          },
+          {
+            text: "SensorThings API",
+            collapsed: true,
+            link: "/how-to/sensor-things/retrieve-sensor-things",
+            items: [
+              {
+                text: "Retrieve Data With the SensorThings API",
+                link: "/how-to/sensor-things/retrieve-sensor-things",
+              },
+              {
+                text: "Post Data With the SensorThings API",
+                link: "/how-to/sensor-things/post-sensor-things",
+              },
+            ],
           },
         ],
       },
       {
-        text: "Deployment",
+        text: "References",
+        collapsed: true,
         items: [
           {
-            text: "Automated AWS Deployment",
-            link: "/deployment/aws/manage-aws-deployment",
+            text: "API",
+            collapsed: true,
+            link: "/references/api/sensor-things-api",
+            items: [
+              {
+                text: "Data Management API",
+                link: "/references/api/data-management-api",
+              },
+              {
+                text: "Identity and Access Management API",
+                link: "/references/api/identity-and-access-management-api",
+              },
+              {
+                text: "SensorThings API",
+                link: "/references/api/sensor-things-api",
+              },
+            ],
           },
           {
-            text: "Automated GCP Deployment",
-            link: "/deployment/gcp/manage-gcp-deployment",
+            text: "Hydroserverpy",
+            link: "/references/hydroserverpy/hydroserverpy-ref.md",
+          },
+          {
+            text: "Orchestration Systems",
+            collapsed: true,
+            link: "/references/orchestration/sdl-download",
+            items: [
+              {
+                text: "Streaming Data Loader",
+                link: "/references/orchestration/sdl-download",
+              },
+              {
+                text: "Airflow Orchestrator",
+                link: "/references/orchestration/airflow-ref",
+              },
+            ],
           },
         ],
       },
       {
-        text: "Local Development",
+        text: "Discussion Topics",
+        collapsed: true,
         items: [
-          { text: "Development Setup", link: "/development/development-setup" },
+          {
+            text: "Which Orchestration System Should You Use",
+            link: "/topics/which-orchestration-system",
+          },
         ],
       },
     ],
@@ -112,5 +226,9 @@ export default defineConfig({
     socialLinks: [
       { icon: "github", link: "https://github.com/hydroserver2/hydroserver" },
     ],
+
+    search: {
+      provider: "local",
+    },
   },
 });
