@@ -1,51 +1,51 @@
 # Deploying HydroServer to Google Cloud Services
 
-This guide walks you through setting up and maintaining a HydroServer deployment on GCP using Terraform and GitHub Actions.
+This guide provides instructions for setting up and maintaining a HydroServer deployment on GCP using Terraform and GitHub Actions. Before proceeding, we recommend reviewing [GCP security best practices](https://cloud.google.com/security/best-practices) to ensure a secure deployment.
+
+## Google Cloud Platform
+
+The HydroServer deployment in this guide will use the following GCP services. Detailed Terraform service configurations can be found in [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops/tree/main/terraform/gcp). Default compute, memory, and storage resources are set to minimum values by default and can be adjusted as needed after deployment using the Google Cloud Console. Use [Google Cloud's pricing calculator](https://cloud.google.com/products/calculator) to generate cost estimates for your deployment.
+- **[Cloud Run](https://cloud.google.com/run/docs)**: HydroServer's API will be deployed to GCP Cloud Run. The default configuration is one instance with 1 vCPU and 2 GB Memory.
+- **[Network Services](https://cloud.google.com/docs/networking)**: HydroServer web services will be served through Cloud CDN and Load Balancer.
+- **[Cloud Armor](https://cloud.google.com/armor/docs)**: A basic web application firewall will be set up using GCP Cloud Armor.
+- **[Artifact Registry](https://cloud.google.com/artifact-registry/docs)**: HydroServer's Django image will be copied to GCP Artifact Registry for Cloud Run to deploy with.
+- **[Cloud SQL](https://cloud.google.com/sql/docshttps://cloud.google.com/sql/docs) (Optional)**: If not connecting to an external database, HydroServer's PostgreSQL database will be deployed using Cloud SQL. The default machine type is `db-f1-micro` (1 vCPU, 0.614 GB Memory).
+- **[IAM](https://cloud.google.com/iam/docs)**: IAM service accounts will be set up to run HydroServer services.
+- **[Cloud Storage](https://cloud.google.com/storage/docs)**: Static, media, and web app files will be stored and served from GCP Cloud Storage Buckets. Terraform will store the Airflow deployment state in a GCP Cloud Storage Bucket.
 
 ## Initial Setup
+
+### Set Up GitHub Environment
+1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools for managing HydroServer deployments.
+2. In your forked repository, go to **Settings** > **Environments**.
+3. Create a new environment with a simple alphanumeric name (e.g., `beta`, `prod`, `dev`). This name will be used for GCP services. All environment variables and secrets should be created in this environment.
 
 ### Create a GCP Account and Configure IAM Roles and Policies
 
 1. Create a [GCP account](https://cloud.google.com/) if you don't already have one.
 2. Follow [these instructions](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-google-cloud-platform) to configure GitHub's OpenID Connect (OIDC) for your GCP account. All workflows in the `hydroserver-ops` repository use this authentication method.
-3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between GCP and **your** forked `hydroserver-ops` repository and user account or organization. Attach the following permissions policies:
-   - `CloudFrontFullAccess`
-   - `AWSWAFFullAccess`
-   - `AWSAppRunnerFullAccess`
-   - `AmazonS3FullAccess`
-   - `IAMFullAccess`
-   - `AmazonRDSFullAccess`
-   - `AmazonEC2FullAccess`
-   - `AmazonElasticContainerRegistryPublicFullAccess`
-   - `AWSKeyManagementServicePowerUser`
-   - `AWSKeyManagementService`
-     - `Encrypt`, `Decrypt`, `GenerateDataKey`
-   - `AmazonSSMFullAccess`
-   Or see the following [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/gcp/gcp-terraform-permissions.txt)
-4. The policies above provide broad access for initial setup but can be restricted as needed.
+3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between GCP and **your** forked `hydroserver-ops` repository and user account or organization. 
+4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/gcp/gcp-terraform-permissions.md) to the role.
 5. Create a Cloud Storage bucket in your GCP project for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same GCP project, they should share this Terraform bucket.
 6. Use GCP Certificate Manager to create or upload a public classic certificate for the domain HydroServer will use.
 
-### Set Up GitHub Environment
+### Define Environment Variables
 
-1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools for managing HydroServer deployments.
-2. In your forked repository, go to **Settings** > **Environments**.
-3. Create a new environment with a simple alphanumeric name (e.g., `beta`, `prod`, `dev`). This name will be used for GCP services. All environment variables and secrets should be created in this environment.
-4. Add the following GitHub **environment variables**:
+1. In your `hydroserver-ops` repository, go to **Settings** > **Environments**.
+2. Add the following GitHub **environment variables**:
    - **`GCP_PROJECT_ID`** – Your GCP project ID.
    - **`GCP_REGION`** – The GCP region for deployment (e.g., `us-west3`).
    - **`GCP_IDENTITY_PROVIDER`** – The GitHub OIDC provider you created in step 2 of `Create a GCP Account and Configure IAM Roles and Policies` (e.g., `projects/your-project-id/locations/global/workloadIdentityPools/your-workload-identity-pool-id/providers/your-workload-identity-provider-id`).
    - **`GCP_SERVICE_ACCOUNT`** – The email of the service account you created in step 2 of `Create a GCP Account and Configure IAM Roles and Policies`.
    - **`GCP_SSL_CERTIFICATE_NAME`** – The name of the classic certificate from step 6 of `Create a GCP Account and Configure IAM Roles and Policies`.
-   - **`TERRAFORM_BUCKET`** – The Cloud Storage bucket name from step 5.
+   - **`TERRAFORM_BUCKET`** – The Cloud Storage bucket name from step 5 of `Create a GCP Account and Configure IAM Roles and Policies`.
    - **`PROXY_BASE_URL`** – The domain name for HydroServer, including the protocol (e.g., `https://yourdomain.com`).
    - **`DEBUG`** *(Optional, default: `True`)* – Set to `True` for non-production deployments.
    - **`ACCOUNT_SIGNUP_ENABLED`** *(Optional, default: `False`)* – If `False`, admins must create user accounts.
    - **`ACCOUNT_OWNERSHIP_ENABLED`** *(Optional, default: `False`)* – If `False`, users cannot create new workspaces.
    - **`SOCIALACCOUNT_SIGNUP_ONLY`** *(Optional, default: `False`)* – If `True`, only third-party identity providers can be used for signup.
    - **`ENABLE_AUDITS`** *(Optional, default: `False`)* – If `True`, HydroServer records database audit logs.
-
-5. Add the following GitHub **environment secrets**:
+3. Add the following GitHub **environment secrets**:
    - **`DATABASE_URL`** *(Optional)* – A PostgreSQL or Timescale Cloud database URL. If unset, Terraform provisions a new Cloud SQL database.  
      *Format:* `postgresql://{user}:{password}@{host}:{port}/{database}`
    - **`SMTP_URL`** – Required for email notifications (account verification, password reset).  

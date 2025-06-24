@@ -1,50 +1,50 @@
 # Deploying HydroServer to Amazon Web Services
 
-This guide walks you through setting up and maintaining a HydroServer deployment on AWS using Terraform and GitHub Actions. Before proceeding, we recommend reviewing [AWS security best practices](https://aws.amazon.com/security/) to ensure a secure deployment.
+This guide provides instructions for setting up and maintaining a HydroServer deployment on AWS using Terraform and GitHub Actions. Before proceeding, we recommend reviewing [AWS security best practices](https://aws.amazon.com/security/) to ensure a secure deployment.
+
+## Amazon Web Services
+
+The HydroServer deployment in this guide will use the following AWS services. Detailed Terraform service configurations can be found in [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops/tree/main/terraform/aws). Default compute, memory, and storage resources are set to minimum values by default and can be adjusted as needed after deployment using the Amazon Web Services Console. Use [Amazon Web Service's pricing calculator](https://calculator.aws) to generate cost estimates for your deployment.
+- **[App Runner](https://docs.aws.amazon.com/apprunner/latest/dg)**: HydroServer's API will be deployed to AWS App Runner. The default configuration is one instance with 1 vCPU and 2 GB Memory.
+- **[CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide)**: HydroServer web services will be served through CloudFront.
+- **[Virtual Private Cloud](https://docs.aws.amazon.com/vpc/latest/userguide)**: A basic VPC will be set up to manage internal HydroServer networking.
+- **[Elastic Container Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide)**: HydroServer's Django image will be copied to AWS Elastic Container Registry for App Runner to deploy with.
+- **[Relational Database Service](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide) (Optional)**: If not connecting to an external database, HydroServer's PostgreSQL database will be deployed using Amazon's Relational Database Service. The default machine type is `db.t4g.micro` (2 vCPU, 1 GB Memory).
+- **[IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide)**: IAM service accounts will be set up to run HydroServer services.
+- **[Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide)**: Static, media, and web app files will be stored and served from AWS S3 Buckets. Terraform will store the Airflow deployment state in an AWS S3 Bucket.
 
 ## Initial Setup
+
+### Set Up GitHub Environment
+1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools for managing HydroServer deployments.
+2. In your forked repository, go to **Settings** > **Environments**.
+3. Create a new environment with a simple alphanumeric name (e.g., `beta`, `prod`, `dev`). This name will be used for AWS services. All environment variables and secrets should be created in this environment.
 
 ### Create an AWS Account and Configure IAM Roles and Policies
 
 1. Create an [AWS account](https://aws.amazon.com/) if you don't already have one.
 2. Follow [these instructions](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OpenID Connect (OIDC) for your AWS account. All workflows in the `hydroserver-ops` repository use this authentication method.
-3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between AWS and **your** forked `hydroserver-ops` repository and user account or organization. Attach the following permissions policies:
-   - `CloudFrontFullAccess`
-   - `AWSWAFFullAccess`
-   - `AWSAppRunnerFullAccess`
-   - `AmazonS3FullAccess`
-   - `IAMFullAccess`
-   - `AmazonRDSFullAccess`
-   - `AmazonEC2FullAccess`
-   - `AmazonElasticContainerRegistryPublicFullAccess`
-   - `AWSKeyManagementServicePowerUser`
-   - `AWSKeyManagementService`
-     - `Encrypt`, `Decrypt`, `GenerateDataKey`
-   - `AmazonSSMFullAccess`
-   Or see the following [AWS IAM policy](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json)
-4. The policies above provide broad access for initial setup but can be restricted as needed.
+3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between AWS and **your** forked `hydroserver-ops` repository and user account or organization.
+4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json) to the role.
 5. Create an S3 bucket in your AWS account for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same AWS account, they should share this Terraform bucket.
 6. Use AWS Certificate Manager (ACM) to create or import a public certificate for the domain HydroServer will use.
 
-### Set Up GitHub Environment
+### Define Environment Variables
 
-1. Fork the [hydroserver-ops](https://github.com/hydroserver2/hydroserver-ops) repository, which contains tools for managing HydroServer deployments.
-2. In your forked repository, go to **Settings** > **Environments**.
-3. Create a new environment with a simple alphanumeric name (e.g., `beta`, `prod`, `dev`). This name will be used for AWS services. All environment variables and secrets should be created in this environment.
-4. Add the following GitHub **environment variables**:
+1. In your `hydroserver-ops` repository, go to **Settings** > **Environments**.
+2. Add the following GitHub **environment variables**:
    - **`AWS_ACCOUNT_ID`** – Your AWS account ID.
    - **`AWS_REGION`** – The AWS region for deployment (e.g., `us-east-1`).
-   - **`AWS_IAM_ROLE`** – The IAM role name created in step 3.
-   - **`AWS_ACM_CERTIFICATE_ARN`** – The ARN of the ACM certificate from step 6.
-   - **`TERRAFORM_BUCKET`** – The S3 bucket name from step 5.
+   - **`AWS_IAM_ROLE`** – The IAM role name created in step 3 of `Create an AWS Account and Configure IAM Roles and Policies`.
+   - **`AWS_ACM_CERTIFICATE_ARN`** – The ARN of the ACM certificate from step 6 of `Create an AWS Account and Configure IAM Roles and Policies`.
+   - **`TERRAFORM_BUCKET`** – The S3 bucket name from step 5 of `Create an AWS Account and Configure IAM Roles and Policies`.
    - **`PROXY_BASE_URL`** – The domain name for HydroServer, including the protocol (e.g., `https://yourdomain.com`).
    - **`DEBUG`** *(Optional, default: `True`)* – Set to `True` for non-production deployments.
    - **`ACCOUNT_SIGNUP_ENABLED`** *(Optional, default: `False`)* – If `False`, admins must create user accounts.
    - **`ACCOUNT_OWNERSHIP_ENABLED`** *(Optional, default: `False`)* – If `False`, users cannot create new workspaces.
    - **`SOCIALACCOUNT_SIGNUP_ONLY`** *(Optional, default: `False`)* – If `True`, only third-party identity providers can be used for signup.
    - **`ENABLE_AUDITS`** *(Optional, default: `False`)* – If `True`, HydroServer records database audit logs.
-
-5. Add the following GitHub **environment secrets**:
+3. Add the following GitHub **environment secrets**:
    - **`DATABASE_URL`** *(Optional)* – A PostgreSQL or Timescale Cloud database URL. If unset, Terraform provisions a new RDS database.  
      *Format:* `postgresql://{user}:{password}@{host}:{port}/{database}`
    - **`SMTP_URL`** – Required for email notifications (account verification, password reset).  
