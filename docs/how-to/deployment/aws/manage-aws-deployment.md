@@ -25,7 +25,7 @@ The HydroServer deployment in this guide will use the following AWS services. De
 1. Create an [AWS account](https://aws.amazon.com/) if you don't already have one.
 2. Follow [these instructions](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services) to configure GitHub's OpenID Connect (OIDC) for your AWS account. All workflows in the `hydroserver-ops` repository use this authentication method.
 3. Create an IAM role to manage HydroServer deployments with Terraform. Configure a trust policy between AWS and **your** forked `hydroserver-ops` repository and user account or organization.
-4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/deployment/aws/aws-terraform-policy.json) to the role.
+4. Attach these [IAM permissions](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/aws/aws-terraform-policy.json) to the role.
 5. Create an S3 bucket in your AWS account for Terraform to store its state. The bucket must have a globally unique name, default settings, and **must not** be publicly accessible. If you have multiple deployments in the same AWS account, they should share this Terraform bucket.
 6. Use AWS Certificate Manager (ACM) to create or import a public certificate for the domain HydroServer will use.
 
