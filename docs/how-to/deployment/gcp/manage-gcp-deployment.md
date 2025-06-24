@@ -1,4 +1,4 @@
-# Deploying HydroServer to Google Cloud Services
+# Deploying HydroServer to Google Cloud Platform
 
 This guide provides instructions for setting up and maintaining a HydroServer deployment on GCP using Terraform and GitHub Actions. Before proceeding, we recommend reviewing [GCP security best practices](https://cloud.google.com/security/best-practices) to ensure a secure deployment.
 
