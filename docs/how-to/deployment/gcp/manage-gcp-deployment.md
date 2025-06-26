@@ -96,6 +96,23 @@ The HydroServer deployment in this guide will use the following GCP services. De
      ```
    - Navigate to **Orchestration Systems** > **Add Orchestration System** and create a new record with the name "HydroShare Archival Manager" and type "HydroShare".
      - Note: This HydroShare archival setup method is temporary and will be deprecated in a future release.
+    
+### Connect to HydroServer's Database (Optional)
+
+If you need to connect to the HydroServer database, you can do so using [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy)
+
+1. Install the [gcloud CLI](https://cloud.google.com/sdk/docs/install) if you haven't already done so.
+2. Initialize the CLI by logging in to your Google account and selecting the project you deployed HydroServer to:
+   ```bash
+   gcloud init
+   ```
+3. Install [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy#install-proxy)
+4. Start Cloud SQL Auth Proxy:
+   ```bash
+   cloud-sql-proxy your-hydroserver-project:your-hydroserver-region:your-hydroserver-instance --port=5432
+   ```
+5. Using the gcloud CLI or GCP Console, retrieve the database connection URL from the GCP Secret Manager.
+6. Using the credentials in the connection URL, you can now connect to HydroServer's database using your preferred database client.
 
 ## Updating HydroServer
 
