@@ -144,10 +144,10 @@ export default defineConfig({
                 text: "Manage Data With Hydroserverpy",
                 link: "/how-to/hydroserverpy/hydroserverpy-examples",
               },
-              {
-                text: "Extract, transform and load with Hydroserverpy",
-                link: "/how-to/hydroserverpy/etl",
-              },
+              // {
+              //   text: "Extract, transform and load with Hydroserverpy",
+              //   link: "/how-to/hydroserverpy/etl",
+              // },
             ],
           },
           {
