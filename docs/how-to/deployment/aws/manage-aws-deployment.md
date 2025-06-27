@@ -90,6 +90,29 @@ The HydroServer deployment in this guide will use the following AWS services. De
    - Navigate to **Orchestration Systems** > **Add Orchestration System** and create a new record with the name "HydroShare Archival Manager" and type "HydroShare".
      - Note: This HydroShare archival setup method is temporary and will be deprecated in a future release.
 
+### Connect to HydroServer's Database (Optional)
+
+If you need to connect to the HydroServer database, you can do so using AWS Systems Manager (SSM) port forwarding. This method avoids exposing your database to the public internet.
+
+1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide) if you haven't already done so.
+2. Configure the CLI and log in to your AWS account using your IAM user credentials:
+   ```bash
+   aws configure
+   ```
+3. Install the [Session Manager Plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
+4. From the AWS Console or CLI, find and note the following for the next steps:
+   - **EC2** > **Instances** > **hydroserver-your-env-ssm-bastion** > **Instance ID**
+   - **RDS** > **Databases** > **hydroserver-your-env** > **Endpoint**
+   - **Parameter Store** > **/hydroserver-your-env-api/database-url** > **Value**
+5. Start a port forwarding session to the RDS instance via the EC2 bastion host:
+   ```bash
+   aws ssm start-session \
+     --target i-your-bastion-instance-id \
+     --document-name AWS-StartPortForwardingSessionToRemoteHost \
+     --parameters '{"host":["your-db-endpoint.rds.amazonaws.com"],"portNumber":["5432"],"localPortNumber":["5432"]}'
+   ```
+6. Using the credentials in the database connection URL, you can now connect to HydroServer's database using your preferred database client.
+
 ## Updating HydroServer
 
 To update your HydroServer deployment (new release, configuration changes):

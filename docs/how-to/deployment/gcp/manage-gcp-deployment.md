@@ -99,7 +99,7 @@ The HydroServer deployment in this guide will use the following GCP services. De
     
 ### Connect to HydroServer's Database (Optional)
 
-If you need to connect to the HydroServer database, you can do so using [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy)
+If you need to connect to the HydroServer database, you can do so using [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy). This method avoids exposing your database to the public internet.
 
 1. Install the [gcloud CLI](https://cloud.google.com/sdk/docs/install) if you haven't already done so.
 2. Initialize the CLI by logging in to your Google account and selecting the project you where you deployed HydroServer:
@@ -112,7 +112,7 @@ If you need to connect to the HydroServer database, you can do so using [Cloud S
    cloud-sql-proxy your-hydroserver-project:your-hydroserver-region:your-hydroserver-instance --port=5432
    ```
 5. Using the gcloud CLI or GCP Console, retrieve the database connection URL from the GCP Secret Manager.
-6. Using the credentials in the connection URL, you can now connect to HydroServer's database using your preferred database client.
+6. Using the credentials in the database connection URL, you can now connect to HydroServer's database using your preferred database client.
 
 ## Updating HydroServer
 
