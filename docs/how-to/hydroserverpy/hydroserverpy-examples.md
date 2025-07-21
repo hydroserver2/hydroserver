@@ -27,18 +27,83 @@ The hydroserverpy connection instance exposes the following types of core data a
 - datasources
 - dataarchives
 
+### Collections
+
+Many HydroServer endpoints return *collections* of resources. These collections provide access to paginated lists of objects along with convenience methods for navigating and retrieving data.
+
+All resource types listed below have a `list` method that accepts:
+
+- `page`: page number (1-indexed)
+- `page_size`: number of items per page
+- `order_by`: list of fields to order by (prefix with `-` for descending order)
+- `fetch_all`: if `True`, retrieves all items across all pages using a given page size.
+- Additional resource-specific filters
+
+By default, HydroServer returns up to 100 items per page. Most endpoints allow up to 1,000.
+
+Collection data is accessible through the `.items` property on the returned collection object.
+
+---
+
+#### Example: Access Collection Items
+```python
+workspaces = hs_api.workspaces.list()
+
+for workspace in workspaces.items:
+    print(workspace.name)
+```
+
+#### Example: Collection Pagination
+
+```python
+# Fetch all workspaces
+all_workspaces = hs_api.workspaces.list(fetch_all=True)
+
+# Retrieve page 2 of workspaces, 5 per page
+paginated = hs_api.workspaces.list(page_size=5, page=2)
+
+# Navigate between pages
+next_page = paginated.next_page()
+previous_page = paginated.previous_page()
+
+# Fetch all remaining pages for an existing collection
+full_collection = paginated.fetch_all()
+```
+
+#### Example: Collection Ordering
+
+```python
+# Order by name ascending
+ordered = hs_api.workspaces.list(order_by=["name"])
+
+# Order by name descending, then by privacy
+multi_ordered = hs_api.workspaces.list(order_by=["-name", "is_private"])
+```
+
+#### Example: Collection Filtering
+
+```python
+# Filter for public workspaces
+public = hs_api.workspaces.list(is_private=False)
+
+# Filter for private workspaces you're associated with
+private_yours = hs_api.workspaces.list(is_private=True, is_associated=True)
+```
+
 ### Workspaces
 
 Workspaces in HydroServer are used to organize and manage access to your data. All user-managed resources in HydroServer are created within the context of a workspace. Each workspace has one owner and can have any number of collaborators with varying levels of access to resources within the workspace. The examples below demonstrate how to use hydroserverpy to manage workspaces.
 
+---
+
 #### Example: Get Workspaces
 
 ```python
-# Get all visible workspaces
+# Get all available workspaces
 public_workspaces = hs_api.workspaces.list()
 
 # Get all workspaces you are associated with
-your_workspaces = hs_api.workspaces.list(associated_only=True)
+your_workspaces = hs_api.workspaces.list(is_associated=True)
 
 # Get a workspace by ID
 workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
@@ -51,6 +116,9 @@ workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 
 # Get all collaborators for a workspace
 workspace_collaborators = workspace.collaborators
+
+# Get all API keys for a workspace
+workspace_collaborators = workspace.apikeys
 
 # Get all roles that can be assigned for this workspace
 workspace_roles = workspace.roles
@@ -139,6 +207,8 @@ workspace.cancel_ownership_transfer()
 
 Things (or sites) are one of the core data elements managed in HydroServer. Things represent a location or site at which one or more datastreams of observations are collected. All datastreams in HydroServer must be associated with a thing/site. The examples below demonstrate how to use hydroserverpy to manage things in HydroServer.
 
+---
+
 #### Example: Get Things
 
 ```python
@@ -147,6 +217,12 @@ public_things = hs_api.things.list()
 
 # Get things belonging to a workspace
 workspace_things = hs_api.things.list(workspace="00000000-0000-0000-0000-000000000000")
+
+# Fetch things within a bounding box
+bounded_things = hs_api.things.list(bbox=(-112.166,41.369,-111.402,42.999))
+
+# Filter things by custom tag
+filtered_things = hs_api.things.list(tag=("TagKey", "TagValue"))
 
 # Get thing with a given ID
 thing = hs_api.things.get(uid="00000000-0000-0000-0000-000000000000")
@@ -268,6 +344,8 @@ thing.delete()
 
 Observed properties are used in HydroServer to represent the physical property being observed and stored in a datastream. The examples below demonstrate the actions you can take to manage observed properties in HydroServer.
 
+---
+
 #### Example: Get Observed Properties
 
 ```python
@@ -334,6 +412,8 @@ observed_property.delete()
 
 Units are used in HydroServer to describe the physical quantity represented by the result of an observation in a datastream. The examples below demonstrate the actions you can take to manage units in HydroServer.
 
+---
+
 #### Example: Get Units
 
 ```python
@@ -398,6 +478,8 @@ unit.delete()
 ### Sensors
 
 Sensors are used in HydroServer to describe the sensor/method used to make an environmental observation. The examples below demonstrate the actions you can take to manage sensors in HydroServer.
+
+---
 
 #### Example: Get Sensors
 
@@ -469,6 +551,8 @@ sensor.delete()
 
 Processing levels are used in HydroServer to describe the level of processing observations of a datastream have been subject to. The examples below demonstrate the actions you can take to manage processing levels in HydroServer.
 
+---
+
 #### Example: Get Processing Levels
 
 ```python
@@ -533,6 +617,8 @@ processing_level.delete()
 
 Result qualifiers are used in HydroServer to annotate observations during quality control or other processing steps. The examples below demonstrate the actions you can take to manage result qualifiers in HydroServer.
 
+---
+
 #### Example: Get Result Qualifiers
 
 ```python
@@ -595,6 +681,8 @@ result_qualifier.delete()
 ### Datastreams
 
 Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a sensor at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
+
+---
 
 #### Example: Get Datastreams
 
@@ -697,14 +785,14 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Get observations of a datastream between two timestamps
 observations_df = datastream.get_observations(
-    start_time=datetime(year=2023, month=1, day=1),
-    end_time=datetime(year=2023, month=12, day=31)
-)
+    phenomenon_time_min=datetime(year=2023, month=1, day=1),
+    phenomenon_time_max=datetime(year=2023, month=12, day=31)
+).dataframe
 
 # Get observations all observations of a datastream
 full_observations_df = datastream.get_observations(
     fetch_all=True
-)
+).dataframe
 ```
 
 #### Example: Upload Observations to a Datastream
@@ -724,12 +812,29 @@ new_observations = pd.DataFrame(
         ['2023-01-27 00:00:00+00:00', 41.0],
         ['2023-01-28 00:00:00+00:00', 42.0],
     ],
-    columns=['timestamp', 'value']
+    columns=['phenomenon_time', 'result']
 )
-new_observations['timestamp'] = pd.to_datetime(new_observations['timestamp'])
+new_observations['phenomenon_time'] = pd.to_datetime(new_observations['phenomenon_time'])
 
 # Upload the observations to HydroServer
 datastream.load_observations(new_observations)
+```
+
+#### Example: Delete Observations from a Datastream
+
+```python
+from datetime import datetime
+
+...
+
+# Get a datastream
+datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Delete Observations in a time range
+datastream.delete_observations(phenomenon_time_start=datetime(year=2023, month=1, day=1), phenomenon_time_end=datetime(year=2023, month=12, day=31)
+
+# Delete all Observations in the datastream
+datastream.delete_observations()
 ```
 
 #### Example: Refresh Datastream data from HydroServer
@@ -755,6 +860,8 @@ datastream.delete()
 ### Orchestration Systems
 
 Orchestration systems are external apps or processes that interact with HydroServer data and perform scheduled automated tasks such as ETL or data archival to external systems. Users can register their own orchestration systems, and site administrators can configure global systems that can be used by any user.
+
+---
 
 #### Example: Get Orchestration Systems
 
@@ -818,6 +925,8 @@ orchestration_system.delete()
 ### Data Sources
 
 Data sources represent where datastream observations are loaded into HydroServer from. They can also contain settings, scheduling, and status information used by orchestration systems responsible for loading the data.
+
+---
 
 #### Example: Get Data Sources
 
@@ -901,6 +1010,8 @@ data_source.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
 ### Data Archives
 
 Data archives represent external systems data from HydroServer can be exported to. They can also contain settings, scheduling, and status information used by orchestration systems responsible for archiving the data.
+
+---
 
 #### Example: Get Data Archives
 
