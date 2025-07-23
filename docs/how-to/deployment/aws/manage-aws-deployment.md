@@ -45,7 +45,7 @@ The HydroServer deployment in this guide will use the following AWS services. De
    - **`SOCIALACCOUNT_SIGNUP_ONLY`** _(Optional, default: `False`)_ – If `True`, only third-party identity providers can be used for signup.
    - **`ENABLE_AUDITS`** _(Optional, default: `False`)_ – If `True`, HydroServer records database audit logs.
 3. Add the following GitHub **environment secrets**:
-   - **`DATABASE_URL`** _(Optional)_ – A PostgreSQL or Timescale Cloud database URL. If unset, Terraform provisions a new RDS database.  
+   - **`DATABASE_URL`** _(Optional)_ – A PostgreSQL database URL. If unset, Terraform provisions a new RDS database.  
      _Format:_ `postgresql://{user}:{password}@{host}:{port}/{database}`
    - **`SMTP_URL`** – Required for email notifications (account verification, password reset).  
      _Format:_ `smtps://{user}:{password}@{host}:{port}`

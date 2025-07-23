@@ -47,7 +47,7 @@ By combining the flexible API structure of SensorThings with the domain-specific
 
 # HydroServer Data Model
 
-HydroServer operates on top of a relational database that stores time series data using [PostgreSQL](https://www.postgresql.org/). For extremely large database instances, PostgreSQL's [TimescaleDB extension](https://github.com/timescale/timescaledb) can be used to enhance performance, but is not required. Here we document the relational data model used by the HydroServer software for storing time series data.
+HydroServer operates on top of a relational database that stores time series data using [PostgreSQL](https://www.postgresql.org/). Here we document the relational data model used by the HydroServer software for storing time series data.
 
 The following is an entity relationship diagram illustrating the HydroServer data model design. Primary and foreign keys are specified in the first column of each entity. Mandatory attributes are specified with "(M)" preceding the attribute name. Optional attributes are specified with "(O)" preceding the attribute name. Data types are specified following the attribute name. Given that some attributes were derived from the Observations Data Model (ODM2), the third column shows the the mapping of attributes in HydroServer's data model to ODM attributes. Entities shown with blue title bars are part of the SensorThings API data model. Entities with white title bars were added to the SensorThings data model to accommodate functionality required for the HydroServer software.
 
