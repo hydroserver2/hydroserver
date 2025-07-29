@@ -78,6 +78,13 @@ The HydroServer deployment in this guide will use the following GCP services. De
 1. Log in to the HydroServer admin dashboard.
 2. Go to **Sites** > **example.com** and update the default domain to match your HydroServer domain.
 3. Navigate to **Social Applications** > **Add Social Application** to register identity providers (e.g., Google, HydroShare).
+   - Select a provider from the list of supported providers.
+   - Choose a unique ID and name for the provider.
+   - Enter the client ID/key and secret key you receieved from the provider.
+   - Enter optional JSON settings for the provider
+     - **allowSignUp**: (true/false) — Controls whether this provider can be used for user sign up and login.
+     - **allowConnection**: (true/false) — Controls whether users can connect to existing HydroServer accounts.
+   - Select the default site to allow the provider to authenticate users for.
 4. Populate the following models with default data you want available to all users, or load the preset defaults by clicking **Load Default Data** for each model:
    - Roles
    - Observed Properties
