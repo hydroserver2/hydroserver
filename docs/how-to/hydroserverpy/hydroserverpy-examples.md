@@ -834,7 +834,7 @@ from datetime import datetime
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Delete Observations in a time range
-datastream.delete_observations(phenomenon_time_start=datetime(year=2023, month=1, day=1), phenomenon_time_end=datetime(year=2023, month=12, day=31)
+datastream.delete_observations(phenomenon_time_start=datetime(year=2023, month=1, day=1), phenomenon_time_end=datetime(year=2023, month=12, day=31))
 
 # Delete all Observations in the datastream
 datastream.delete_observations()
