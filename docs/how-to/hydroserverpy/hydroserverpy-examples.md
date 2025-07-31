@@ -118,9 +118,9 @@ workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
 workspace_collaborators = workspace.collaborators
 
 # Get all API keys for a workspace
-workspace_collaborators = workspace.apikeys
+workspace_api_keys = workspace.apikeys
 
-# Get all roles that can be assigned for this workspace
+# Get all roles within a workspace
 workspace_roles = workspace.roles
 
 # Get all things within a workspace
@@ -173,6 +173,9 @@ workspace.save()
 
 ```python
 workspace = hs_api.workspaces.get(uid="00000000-0000-0000-0000-000000000000")
+
+# Get roles that can be assigned to workspace collaborators
+roles = hs_api.roles.list(is_user_role=True)
 
 # Add a collaborator to a workspace
 workspace.add_collaborator(
