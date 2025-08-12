@@ -38,6 +38,14 @@ HydroServer consists of the following components:
 
 HydroServer builds on prior efforts and systems established by Utah State University and the Consortium of Universities for the Advancement of Hydrologic Science, Inc. (CUAHSI) [Hydrologic Information System (HIS) project](http://his.cuahsi.org), including the original HydroServer software stack that was created by that project (lovingly referred to a HydroServer 1). The legacy HydroServer (HydroServer 1) software is [archived by CUAHSI](https://github.com/CUAHSI/HydroServer). To acknowledge this legacy, the GitHub organization for this work was called HydroServer 2.
 
+## Cite HydroServer
+
+The following are the recommended citations for HydroServer:
+
+Horsburgh, J. S., Lippold, K., Slaugh, D. L., Ramirez, M. (2024). HydroServer: A software stack supporting collection, communication, storage, management, and sharing of data from in situ environmental sensors, Environmental Modelling & Software, 106637, [https://doi.org/10.1016/j.envsoft.2025.106637](https://doi.org/10.1016/j.envsoft.2025.106637).
+
+Horsburgh, J. S., Lippold, K., Slaugh, D. L. (2025). Adapting OGC’s SensorThings API and data model to support data management and sharing for environmental sensors, Environmental Modelling & Software, 183, 106241, [https://doi.org/10.1016/j.envsoft.2024.106241](https://doi.org/10.1016/j.envsoft.2024.106241).
+
 ## Funding and Acknowledgements
 
-Funding for this project was provided by the National Oceanic & Atmospheric Administration (NOAA), awarded to the Cooperative Institute for Research to Operations in Hydrology (CIROH) through the NOAA Cooperative Agreement with The University of Alabama (NA22NWS4320003). Utah State University is a founding member of CIROH and receives funding under subaward from the University of Alabama. Additional funding and support have been provided by the Utah Water Research laboratory at Utah State University.
+Funding for this project was provided by the National Oceanic & Atmospheric Administration (NOAA), awarded to the Cooperative Institute for Research to Operations in Hydrology (CIROH) through the NOAA Cooperative Agreement with The University of Alabama (NA22NWS4320003). Utah State University is a founding member of CIROH and receives funding under subaward from the University of Alabama. Additional funding and support have been provided by the State of Utah Division of Water Rights, the World Meorological Organization, and the Utah Water Research laboratory at Utah State University.
