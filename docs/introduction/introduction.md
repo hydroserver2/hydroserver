@@ -17,6 +17,14 @@ This is the “server” in HydroServer. Most organizations using HydroServer wi
 
 3. A Python package named hydroserverpy. This is a wrapper around the REST API which makes managing data in HydroServer much easier for those interesting in doing so programmatically.
 
+## Cite HydroServer
+
+The following are the preferred citations for HydroServer:
+
+Horsburgh, J. S., Lippold, K., Slaugh, D. L., Ramirez, M. (2024). HydroServer: A software stack supporting collection, communication, storage, management, and sharing of data from in situ environmental sensors, Environmental Modelling & Software, 106637, [https://doi.org/10.1016/j.envsoft.2025.106637](https://doi.org/10.1016/j.envsoft.2025.106637).
+
+Horsburgh, J. S., Lippold, K., Slaugh, D. L. (2025). Adapting OGC’s SensorThings API and data model to support data management and sharing for environmental sensors, Environmental Modelling & Software, 183, 106241, [https://doi.org/10.1016/j.envsoft.2024.106241](https://doi.org/10.1016/j.envsoft.2024.106241).
+
 ## Next Steps
 
 If you'd like a hands-on tutorial for setting up a monitoring site and streaming data to a playground instance of Hydroserver, head over to [HydroServer 101.](/tutorials/hydroserver-101.md)
