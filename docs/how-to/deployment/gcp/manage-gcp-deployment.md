@@ -75,24 +75,32 @@ The HydroServer deployment in this guide will use the following GCP services. De
 
 ### Configure HydroServer
 
+Once HydroServer is set up and running, there are additional configuration settings you can manage through the admin dashboard.
+
 1. Log in to the HydroServer admin dashboard.
 2. Go to **Sites** > **example.com** and update the default domain to match your HydroServer domain.
-3. Navigate to **Social Applications** > **Add Social Application** to register identity providers (e.g., Google, HydroShare).
+3. Go to **Web** to configure additional website settings.
+   - **Instance Configuration**: Customize the HydroServer `About` page to add information about your organization.
+   - **Analytics Configuration**: Optionally enable [Microsoft Clarity](https://clarity.microsoft.com/) for your instance.
+   - **Map Configuration**: Customize the default map layers, view, geospatial, and elevation services.
+   - **Map Layers**: Add additional map layer options for pages that use maps.
+   - **Contact Information**: Add additional contact information for your organization to be displayed on the `About` page.
+4. Navigate to **Social Applications** > **Add Social Application** to register identity providers (e.g., Google, HydroShare).
    - Select a provider from the list of supported providers.
    - Choose a unique ID and name for the provider.
-   - Enter the client ID/key and secret key you receieved from the provider.
+   - Enter the client ID/key and secret key you received from the provider.
    - Enter optional JSON settings for the provider
      - **allowSignUp**: (true/false) — Controls whether this provider can be used for user sign up and login.
      - **allowConnection**: (true/false) — Controls whether users can connect to existing HydroServer accounts.
    - Select the default site to allow the provider to authenticate users for.
-4. Populate the following models with default data you want available to all users, or load the preset defaults by clicking **Load Default Data** for each model:
+5. Populate the following models with default data you want available to all users, or load the preset defaults by clicking **Load Default Data** for each model:
    - Roles
    - Observed Properties
    - Processing Levels
    - Result Qualifiers
    - Sensors
    - Units
-5. To configure HydroShare archival, do the following:
+6. To configure HydroShare archival, do the following:
    - Configure HydroShare as an identity provider under **Social Applications**.
    - Add the following settings block to the HydroShare social application record:
      ```json
