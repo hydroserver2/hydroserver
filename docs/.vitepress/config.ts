@@ -130,6 +130,10 @@ export default defineConfig({
                 link: "/how-to/deployment/aws/manage-aws-deployment",
               },
               {
+                text: "Deploy with Docker Compose",
+                link: "/how-to/deployment/docker/docker-deployment-guide.md"
+              },
+              {
                 text: "Setup for Local Development",
                 link: "how-to/development/development-setup",
               },
