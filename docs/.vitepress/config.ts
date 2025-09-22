@@ -122,21 +122,13 @@ export default defineConfig({
             link: "/how-to/deployment/gcp/manage-gcp-deployment",
             items: [
               {
-                text: "Deploy to GCP",
-                link: "/how-to/deployment/gcp/manage-gcp-deployment",
-              },
-              {
-                text: "Deploy to AWS",
-                link: "/how-to/deployment/aws/manage-aws-deployment",
-              },
-              {
-                text: "Deploy with Docker Compose",
-                link: "/how-to/deployment/docker/docker-deployment-guide.md"
-              },
-              {
-                text: "Setup for Local Development",
+                text: "Local Development Guide",
                 link: "how-to/development/development-setup",
               },
+              {
+                text: "Production Deployment Guide",
+                link: "how-to/deployment/production-deployment-overview"
+              }
             ],
           },
           {
