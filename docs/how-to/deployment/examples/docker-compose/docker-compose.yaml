@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  hydroserver:
+    image: ghcr.io/hydroserver2/hydroserver-api-services:latest
+    command: python manage.py run_demo
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: django-insecure-!%_&gh8fm2g7*p4g^q8rlh!ookh55)d5v2p%z7cu
+      DEFAULT_SUPERUSER_EMAIL: admin@hydroserver.org
+      DEFAULT_SUPERUSER_PASSWORD: hydroserver
+      PROXY_BASE_URL: http://localhost:8000
+      ALLOWED_HOSTS: localhost,localhost:8000
+      DATABASE_URL: postgres://hydroserver:changeme@postgres:5432/hydroserver
+    volumes:
+      - static:/app/static
+      - media:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hydroserver
+      POSTGRES_USER: hydroserver
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hydroserver"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db:
+  static:
+  media:
