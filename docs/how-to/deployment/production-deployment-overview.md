@@ -156,7 +156,7 @@ To start the services, navigate to the directory containing the `docker-compose.
 docker compose up
 ```
 
-Upon successful completion, HydroServer will be available locally at http://localhost:8000.
+Upon successful completion, HydroServer will be available locally at localhost:8000.
 
 To stop the service, run:
 
