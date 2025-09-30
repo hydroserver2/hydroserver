@@ -4,7 +4,7 @@
 
 Before we take our last step and load some data, we'll need some data to load. Download this CSV file and put in somewhere convenient in your local file system. I'll put mine on my desktop.
 
-<a href="/hydroserver-101/daily_temp.csv" download>Download daily_temp.csv</a>
+<a href="/hydroserver/hydroserver-101/daily_temp.csv" download>Download daily_temp.csv</a>
 
 The CSV file looks like this:
 
