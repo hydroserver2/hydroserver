@@ -823,6 +823,60 @@ new_observations['phenomenon_time'] = pd.to_datetime(new_observations['phenomeno
 datastream.load_observations(new_observations)
 ```
 
+#### Example: Replace Observations in a Datastream
+
+```python
+import pandas as pd
+
+...
+
+# Get a datastream
+datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Create a DataFrame of observations
+new_observations = pd.DataFrame(
+    [
+        ['2023-01-26 00:00:00+00:00', 40.0],
+        ['2023-01-27 00:00:00+00:00', 41.0],
+        ['2023-01-28 00:00:00+00:00', 42.0],
+    ],
+    columns=['phenomenon_time', 'result']
+)
+new_observations['phenomenon_time'] = pd.to_datetime(new_observations['phenomenon_time'])
+
+# Upload the observations to HydroServer using replace mode
+datastream.load_observations(new_observations, mode="replace")
+```
+
+#### Example: Upload Observations with Result Qualifiers in a Datastream
+
+```python
+import pandas as pd
+
+...
+
+# Get a datastream
+datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get result qualifiers
+result_qualifier_1 = hs_api.resultqualifiers.get("00000000-0000-0000-0000-000000000000")
+result_qualifier_2 = hs_api.resultqualifiers.get("11111111-1111-1111-1111-111111111111")
+
+# Create a DataFrame of observations
+new_observations = pd.DataFrame(
+    [
+        ['2023-01-26 00:00:00+00:00', 40.0, [result_qualifier_1.code]],
+        ['2023-01-27 00:00:00+00:00', 41.0, [result_qualifier_1.code, result_qualifier_2.code]],
+        ['2023-01-28 00:00:00+00:00', 42.0, []],
+    ],
+    columns=['phenomenon_time', 'result', 'result_qualifier_codes']  # Note: Result qualifiers are referenced by their code in the DataFrame, not their ID.
+)
+new_observations['phenomenon_time'] = pd.to_datetime(new_observations['phenomenon_time'])
+
+# Upload the observations to HydroServer
+datastream.load_observations(new_observations)
+```
+
 #### Example: Delete Observations from a Datastream
 
 ```python
@@ -1094,3 +1148,4 @@ data_archive.add_datastream(datastream=datastream)
 # Remove a datastream from the data archive
 data_archive.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
 ```
+
