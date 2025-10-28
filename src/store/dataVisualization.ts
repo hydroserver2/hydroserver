@@ -1,10 +1,10 @@
-import { Datastream, ObservedProperty, ProcessingLevel, Thing } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { usePlotlyStore } from './plotly'
 import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
+import { Datastream, ObservedProperty, ProcessingLevel, Thing } from '@hydroserver/client'
 
 export const useDataVisStore = defineStore('dataVisualization', () => {
   const {

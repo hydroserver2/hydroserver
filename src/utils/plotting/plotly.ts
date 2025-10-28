@@ -56,6 +56,15 @@ const selectorOptions = {
   ],
 }
 
+const spikes = {
+  showspikes: true,
+  spikemode: 'toaxis' // or 'across' or 'marker'
+  // spikesnap: 'hovered data',
+  // spikecolor: 'grey',
+  // spikethickness: 2,
+  // spikedash: 'dot',
+}
+
 export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -91,7 +100,7 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
       type: 'scattergl',
       mode: 'lines+markers',
       // https://github.com/plotly/plotly.js/issues/5927
-      hoverinfo: 'skip', // Fixes performance issues, but disables tooltips
+      // hoverinfo: 'skip', // Fixes performance issues, but disables tooltips
       // hoverinfo: 'x+y',
       name: s.name,
       showLegend: false,
@@ -124,6 +133,8 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
         position: 0,
         showline: true,
         linecolor: COLORS[0],
+
+        ...spikes
       }
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
@@ -131,9 +142,11 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
       traces.push(trace)
 
       const yAxis: any = {
-        title: { text: s.yAxisLabel, font: { color, weight: 'bold' } },
+        title: {
+          text: s.yAxisLabel,
+          font: { color, weight: 'bold' }
+        },
         tickfont: { color },
-        // overlaying: 'y',
         side: 'right',
         anchor: 'free',
         position: 1 - axisPlotFraction * counter,
@@ -171,6 +184,7 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
     autorange: false,
     showline: true,
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
+    ...spikes
   }
 
   if (seriesArray.length > 2 || true) {
@@ -183,6 +197,7 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
     path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
   }
 
+  console.log(yaxis)
   const newPlotlyOptions = {
     traces,
     layout: {
@@ -191,8 +206,9 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
       xaxis,
       ...yaxis,
       dragmode: 'pan',
-      hovermode: 'closest', // Disable if hovering is too costly
-      uirevision: true,
+      hovermode: 'x', // Disable if hovering is too costly
+      // hovermode: 'x unified',
+      // uirevision: true,
       title: {
         text: qcTrace?.name,
         font: { color: COLORS[0], weight: 'bold' },
@@ -293,6 +309,9 @@ export const handleNewPlot = async (element?: any) => {
   plotlyRef.value?.on('plotly_deselec', debounce(handleSelected, debounceDelay))
   plotlyRef.value?.on('plotly_click', handleClick)
   plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
+
+  // plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
+  plotlyRef.value?.addEventListener('mousemove', handleMouseMove);
 }
 
 export const handleRelayout = async (eventData: any) => {
@@ -366,7 +385,7 @@ export const handleRelayout = async (eventData: any) => {
         }
 
         await Plotly.restyle(plotlyRef.value, {
-          hoverinfo: newHoverState,
+          // hoverinfo: newHoverState,
           hovertemplate: newHoverTemplate,
         })
       }
@@ -396,6 +415,24 @@ export const handleDoubleClick = async () => {
   selectedData.value = []
 }
 
+
+
+export const handleMouseMove = async (event: MouseEvent) => {
+  const { plotlyRef } = storeToRefs(usePlotlyStore())
+
+  const xaxis = plotlyRef.value?._fullLayout.xaxis;
+  const yaxis = plotlyRef.value?._fullLayout.yaxis;
+  const marginleft = plotlyRef.value?._fullLayout.margin.l;
+  const marginTop = plotlyRef.value?._fullLayout.margin.t;
+
+  const bounds = plotlyRef.value?.getBoundingClientRect()
+  if (bounds) {
+    // console.log(plotlyRef.value?._fullLayout)
+    const xInDataCoord = xaxis.p2c(event.x - marginleft - bounds.x);
+    const yInDataCoord = yaxis.p2c(event.y - marginTop - bounds.y);
+    // console.log(xInDataCoord, yInDataCoord)
+  }
+}
 
 
 export const cropXaxisRange = async () => {

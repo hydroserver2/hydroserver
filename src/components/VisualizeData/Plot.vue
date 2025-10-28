@@ -35,18 +35,16 @@
 
       <div v-if="selectedData?.length" class="d-flex align-center gap-1">
         <v-chip
-          color="grey-darken-2"
-          variant="outlined"
-          class="align-self-center"
-          hide-details
+          :model-value="true"
+          class="ma-2"
+          close-icon="mdi-close"
+          @click:close="clearSelected"
+          color="red"
+          prepend-icon="mdi-checkbox-marked-circle"
+          closable
         >
-          <b class="mr-2 text-red">{{ selectedData?.length }}</b>
-          Data Point{{ selectedData?.length === 1 ? '' : 's' }}
-          selected
+          Selected: <b class="ml-1 mr-2">{{ selectedData?.length }}</b>
         </v-chip>
-        <v-btn @click="clearSelected" size="small" variant="outlined"
-          >Clear Selected</v-btn
-        >
       </div>
     </div>
     <v-divider></v-divider>
