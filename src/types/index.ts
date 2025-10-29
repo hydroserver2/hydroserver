@@ -128,55 +128,55 @@ export interface ThingWithColor extends Thing {
   tagValue?: string
 }
 
-export class Datastream {
-  id: string
-  workspaceId: string
-  name: string
-  description: string
-  thingId: string
-  observationType: string
-  resultType?: string
-  status?: string
-  sampledMedium: string
-  noDataValue: number
-  aggregationStatistic: string
-  unitId: string
-  observedPropertyId: string
-  sensorId: string
-  processingLevelId: string
-  isPrivate: boolean
-  isVisible: boolean
-  phenomenonBeginTime?: string | null
-  phenomenonEndTime?: string | null
-  intendedTimeSpacing?: number
-  intendedTimeSpacingUnit?: TimeSpacingUnit | null
-  timeAggregationInterval: number | null
-  timeAggregationIntervalUnit: TimeSpacingUnit
-  dataSourceId?: string | null
-  valueCount: number
+// export class Datastream {
+//   id: string
+//   workspaceId: string
+//   name: string
+//   description: string
+//   thingId: string
+//   observationType: string
+//   resultType?: string
+//   status?: string
+//   sampledMedium: string
+//   noDataValue: number
+//   aggregationStatistic: string
+//   unitId: string
+//   observedPropertyId: string
+//   sensorId: string
+//   processingLevelId: string
+//   isPrivate: boolean
+//   isVisible: boolean
+//   phenomenonBeginTime?: string | null
+//   phenomenonEndTime?: string | null
+//   intendedTimeSpacing?: number
+//   intendedTimeSpacingUnit?: TimeSpacingUnit | null
+//   timeAggregationInterval: number | null
+//   timeAggregationIntervalUnit: TimeSpacingUnit
+//   dataSourceId?: string | null
+//   valueCount: number
 
-  constructor(thingId?: string) {
-    this.id = ''
-    this.workspaceId = ''
-    this.name = ''
-    this.description = ''
-    this.thingId = thingId || ''
-    this.observationType = 'OM_Measurement'
-    this.resultType = 'Time Series Coverage'
-    this.sampledMedium = ''
-    this.noDataValue = -9999
-    this.aggregationStatistic = ''
-    this.unitId = ''
-    this.observedPropertyId = ''
-    this.sensorId = ''
-    this.processingLevelId = ''
-    this.timeAggregationInterval = null
-    this.timeAggregationIntervalUnit = 'seconds'
-    this.isPrivate = true
-    this.isVisible = true
-    this.valueCount = 0
-  }
-}
+//   constructor(thingId?: string) {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.name = ''
+//     this.description = ''
+//     this.thingId = thingId || ''
+//     this.observationType = 'OM_Measurement'
+//     this.resultType = 'Time Series Coverage'
+//     this.sampledMedium = ''
+//     this.noDataValue = -9999
+//     this.aggregationStatistic = ''
+//     this.unitId = ''
+//     this.observedPropertyId = ''
+//     this.sensorId = ''
+//     this.processingLevelId = ''
+//     this.timeAggregationInterval = null
+//     this.timeAggregationIntervalUnit = 'seconds'
+//     this.isPrivate = true
+//     this.isVisible = true
+//     this.valueCount = 0
+//   }
+// }
 
 export interface DatastreamExtended {
   id: string

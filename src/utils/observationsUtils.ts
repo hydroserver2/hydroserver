@@ -1,5 +1,6 @@
-import { Datastream } from '@/types'
-import { api, getObservationsEndpoint } from '@uwrl/qc-utils'
+import { useHydroServer } from '@/store/hydroserver';
+import { ApiResponse, Datastream } from '@hydroserver/client';
+import { storeToRefs } from 'pinia';
 
 export const fetchObservationsSync = async (
   datastream: Datastream,
@@ -7,64 +8,53 @@ export const fetchObservationsSync = async (
   endTime?: Date
 ): Promise<{ datetimes: number[]; dataValues: number[] }> => {
   const { id, phenomenonBeginTime, phenomenonEndTime, valueCount } = datastream
+  const { hs } = storeToRefs(useHydroServer())
   if (!phenomenonBeginTime || !phenomenonEndTime) {
     return { datetimes: [], dataValues: [] }
   }
 
   const pageSize = 50_000
-  const endpoints: string[] = []
+  const promises: Promise<ApiResponse<any>>[] = []
   let page = 1
   const maxPages = Math.ceil(valueCount / pageSize)
+
   while (page <= maxPages) {
-    endpoints.push(
-      getObservationsEndpoint(
+    // TODO: this endpoint now returns a single array of objects which contain datetime and values, but also more redundant properties.
+    // All endpoints seem to return Promise<ApiResponse<any>>. We need to strongly type each one.
+    promises.push(
+      hs.value.datastreams.getObservations(
         id,
-        pageSize,
-        startTime?.toISOString() ?? phenomenonBeginTime,
-        endTime?.toISOString() ?? phenomenonEndTime,
-        page,
+        {
+          page_size: pageSize,
+          phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
+          phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
+          page: page,
+          order_by: ["phenomenonTime"]
+        }
       )
     )
     page++
   }
 
+
   try {
-    const results: any[] = []
-
-    for (const endpoint of endpoints) {
-      const result = await api.fetchObservations(endpoint)
-      if (!result.phenomenonTime.length) {
-        break
-      }
-      results.push(result)
-    }
-
-    // return (
-    //   results
-    //     // TODO: Unsertain how to map result qualifiers. Ommiting for now.
-
-    //     .map(
-    //       (r) =>
-    //         r.value[0]?.dataArray.map((row: [string, number, any]) => [
-    //           row[0],
-    //           row[1],
-    //         ]) || []
-    //     )
-    //     .flat()
-    // )
-
     let datetimes: number[] = []
     let dataValues: number[] = []
 
-    results.forEach((r) => {
+    for (const p of promises) {
+      const result = await p
+      if (!result.data.length) {
+        break
+      }
+
       datetimes = [
         ...datetimes,
-        ...r.phenomenonTime.map((dateString: string) =>
-          new Date(dateString).getTime()
+        ...result.data.map((r: any) =>
+          new Date(r.phenomenonTime).getTime()
         ),
       ]
-      dataValues = [...dataValues, ...r.result]
-    })
+      dataValues = [...dataValues, ...result.data.map((r: any) => r.result)]
+    }
 
     return {
       datetimes,

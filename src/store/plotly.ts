@@ -2,7 +2,8 @@ import { Datastream, GraphSeries, HistoryItem } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 
-import { api } from '@uwrl/qc-utils'
+// import { api } from '@uwrl/qc-utils'
+
 // import { preProcessData } from '@/utils/observationsUtils'
 import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions
@@ -12,6 +13,7 @@ import Plotly from 'plotly.js-dist'
 // import dataSample from '@/utils/custom-down-sample'
 import { createPlotlyOption, cropXaxisRange } from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
+import { useHydroServer } from './hydroserver'
 
 export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
@@ -104,13 +106,16 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     end: Date
   ) => {
     const { fetchObservationsInRange } = useObservationStore()
+    const { hs } = storeToRefs(useHydroServer())
+
     const observationsPromise = fetchObservationsInRange(datastream, start, end)
-    const fetchUnitPromise = api.getUnit(datastream.unitId).catch((error) => {
-      console.error('Failed to fetch Unit:', error)
-      return null
-    })
-    const fetchObservedPropertyPromise = api
-      .fetchObservedProperty(datastream.observedPropertyId)
+
+    const fetchUnitPromise =
+      hs.value.units.get(datastream.unitId).catch((error) => {
+        console.error('Failed to fetch Unit:', error)
+        return null
+      })
+    const fetchObservedPropertyPromise = hs.value.observedProperties.get(datastream.observedPropertyId)
       .catch((error) => {
         console.error('Failed to fetch ObservedProperty:', error)
         return null
@@ -128,7 +133,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
     const yAxisLabel =
       observedProperty && unit
-        ? `${observedProperty.name} (${unit.symbol})`
+        ? `${observedProperty.data.name} (${unit.data.symbol})`
         : 'Unknown'
 
     return {

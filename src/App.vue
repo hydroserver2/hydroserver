@@ -14,15 +14,11 @@ import Notifications from '@/components/base/Notifications.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
 import { setupRouteGuards } from '@/router/router'
-// import { api } from '@uwrl/qc-utils'
 import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useHydroServer } from '@/store/hydroserver'
 import { storeToRefs } from 'pinia'
 import { HydroServer } from '@hydroserver/client'
-
-const hs = await HydroServer.initialize({
-  host: import.meta.env.VITE_APP_API_URL,
-})
 
 // Use stores
 const isLoading = ref(true)
@@ -30,17 +26,27 @@ const isLoading = ref(true)
 const { things, processingLevels, observedProperties, datastreams } =
   storeToRefs(useDataVisStore())
 
+const { hs } = storeToRefs(useHydroServer())
+
 const initializeHydroServer = async () => {
+  hs.value = await HydroServer.initialize({
+    host: import.meta.env.VITE_APP_API_URL,
+  })
+  await hs.value.session.login(
+    import.meta.env.VITE_APP_HS_USER,
+    import.meta.env.VITE_APP_HS_PW
+  )
+
   const [
     thingsResponse,
     datastreamsResponse,
     processingLevelsResponse,
     observedPropertiesResponse,
   ] = await Promise.all([
-    hs.things.list(),
-    hs.datastreams.list(),
-    hs.processingLevels.list(),
-    hs.observedProperties.list(),
+    hs.value.things.list(),
+    hs.value.datastreams.list(),
+    hs.value.processingLevels.list(),
+    hs.value.observedProperties.list(),
   ])
 
   things.value = thingsResponse.data

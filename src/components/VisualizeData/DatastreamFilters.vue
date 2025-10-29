@@ -133,7 +133,7 @@ const sortedProcessingLevelNames = computed(() => {
   const filteredPLs = processingLevels.value.filter(
     (pl) =>
       pl.definition
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchProcessingLevel.value.toLowerCase()) &&
       datastreams.value.some(
         (ds) =>

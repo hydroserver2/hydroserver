@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { Datastream } from '@/types'
+// import { Datastream } from '@/types'
 import { fetchObservationsSync } from '@/utils/observationsUtils'
 import { ObservationRecord } from "@uwrl/qc-utils"
+import { Datastream } from '@hydroserver/client'
 
 export const useObservationStore = defineStore(
   'observations',
