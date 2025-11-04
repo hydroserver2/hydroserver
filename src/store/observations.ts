@@ -5,6 +5,11 @@ import { fetchObservationsSync } from '@/utils/observationsUtils'
 import { ObservationRecord } from "@uwrl/qc-utils"
 import { Datastream } from '@hydroserver/client'
 
+export type ObservationData = {
+  datetimes: Float64Array<ArrayBuffer>
+  dataValues: Float32Array<ArrayBuffer>
+}
+
 export const useObservationStore = defineStore(
   'observations',
   () => {
@@ -12,10 +17,7 @@ export const useObservationStore = defineStore(
     const observationsRaw = ref<
       Record<
         string,
-        {
-          datetimes: Float64Array<ArrayBuffer>
-          dataValues: Float32Array<ArrayBuffer>
-        }
+        ObservationData
       >
     >({})
 
@@ -39,10 +41,6 @@ export const useObservationStore = defineStore(
     ): Promise<ObservationRecord> => {
       const id = datastream.id
 
-      // If nothing is stored yet, create a new record
-      if (!observations.value[id]) {
-        observations.value[id] = new ObservationRecord(observationsRaw.value[datastream.id])
-      }
 
       let beginDataPromise: Promise<{
         datetimes: number[]
@@ -55,7 +53,7 @@ export const useObservationStore = defineStore(
 
       if (observationsRaw.value[id]?.dataValues.length) {
         const rawBeginDatetime = new Date(
-          observationsRaw.value[id].datetimes[0]
+          observationsRaw.value[id].datetimes[0] as number
         )
 
         // Check if new data before the stored data is needed
@@ -72,7 +70,7 @@ export const useObservationStore = defineStore(
         const rawEndDatetime = new Date(
           observationsRaw.value[id].datetimes[
           observationsRaw.value[id].datetimes.length - 1
-          ]
+          ] as number
         )
 
         // Check if new data after the stored data is needed
@@ -134,7 +132,12 @@ export const useObservationStore = defineStore(
         observationsRaw.value[id].dataValues = newArrayY
       }
 
-      const obsRecord = observations.value[id]
+      // If nothing is stored yet, create a new record
+      if (!observations.value[id] && observationsRaw.value[datastream.id]) {
+        observations.value[id] = new ObservationRecord(observationsRaw.value[datastream.id] as ObservationData)
+      }
+
+      const obsRecord = observations.value[id] as ObservationRecord
       if (beginData.dataValues.length || endData.dataValues.length) {
         obsRecord.loadData(observationsRaw.value[id])
         obsRecord.rawData = observationsRaw.value[id]

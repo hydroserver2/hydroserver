@@ -1,4 +1,4 @@
-import { Datastream, GraphSeries, HistoryItem } from '@/types'
+import { GraphSeries, HistoryItem } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 
@@ -14,6 +14,7 @@ import Plotly from 'plotly.js-dist'
 import { createPlotlyOption, cropXaxisRange } from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
 import { useHydroServer } from './hydroserver'
+import { Datastream } from '@hydroserver/client'
 
 export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)

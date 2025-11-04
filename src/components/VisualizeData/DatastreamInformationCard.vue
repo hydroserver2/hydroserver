@@ -96,11 +96,12 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream, Owner, Unit } from '@/types'
+// import { Datastream, Owner, Unit } from '@/types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '@uwrl/qc-utils'
 import { downloadDatastreamCSV } from '@/utils/CSVDownloadUtils'
+import { Datastream, Unit } from '@hydroserver/client'
 
 const props = defineProps({
   datastream: { type: Object as () => Datastream, required: true },
@@ -141,12 +142,13 @@ const matchingThing = computed(() => {
   return things.value.find((t) => t.id === props.datastream.thingId)
 })
 
-const primaryOwnerOrganizationName = computed(() => {
-  const primaryOwner: Owner | undefined = matchingThing.value?.owners.find(
-    (owner) => owner.isPrimaryOwner
-  )
-  return primaryOwner?.organizationName || 'No primary owner found'
-})
+// TODO
+// const primaryOwnerOrganizationName = computed(() => {
+//   const primaryOwner: Owner | undefined = matchingThing.value?.owners.find(
+//     (owner) => owner.isPrimaryOwner
+//   )
+//   return primaryOwner?.organizationName || 'No primary owner found'
+// })
 
 const generalItems = computed(() => [
   { label: 'Number Of Observations', value: props.datastream.valueCount },
@@ -156,7 +158,7 @@ const generalItems = computed(() => [
   { label: 'Data Type', value: props.datastream.observationType },
   { label: 'Value Type', value: props.datastream.resultType },
   { label: 'Sample Medium', value: props.datastream.sampledMedium },
-  { label: 'Source Organization', value: primaryOwnerOrganizationName.value },
+  // { label: 'Source Organization', value: primaryOwnerOrganizationName.value },
   { label: 'Source Description', value: props.datastream.description },
 ])
 
@@ -167,11 +169,9 @@ const locationItems = computed(() => {
     name,
     samplingFeatureCode,
     siteType,
-    latitude,
-    longitude,
-    state,
-    county,
+    location: { latitude, longitude, state, county },
   } = matchingThing.value
+
   return [
     { label: 'Site Code', value: samplingFeatureCode },
     { label: 'Site Name', value: name },

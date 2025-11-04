@@ -67,9 +67,10 @@
 import { useDataVisStore } from '@/store/dataVisualization'
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { Datastream } from '@/types'
+// import { Datastream } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
 import Plot from '@/components/VisualizeData/Plot.vue'
+import { Datastream } from '@hydroserver/client'
 
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 

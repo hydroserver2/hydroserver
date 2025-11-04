@@ -1,8 +1,9 @@
 import { defineStore, storeToRefs } from 'pinia'
-import { Workspace } from '@/types'
+// import { Workspace } from '@/types'
 import { computed, ref, watch } from 'vue'
 import Storage from '@/utils/storage'
 import { useUserStore } from './user'
+import { Workspace } from '@hydroserver/client'
 
 export const selectedWorkspaceStorage = new Storage<Workspace | null>(
   'selectedWorkspace'

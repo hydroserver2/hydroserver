@@ -1,5 +1,6 @@
+import { Datastream } from '@hydroserver/client'
 import { api } from '@uwrl/qc-utils'
-import { Datastream } from '@/types'
+// import { Datastream } from '@/types'
 import JSZip from 'jszip'
 
 export const downloadDatastreamCSV = async (id: string) => {

@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { User } from '@/types'
+// import { User } from '@/types'
 import { Provider } from '@/models/settings'
 import { api, Snackbar } from '@uwrl/qc-utils'
 import router from '@/router/router'
@@ -9,6 +9,7 @@ import { useUserStore } from './user'
 import { useWorkspaceStore } from './workspaces'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import { settings } from '@/config/settings'
+import { User } from '@hydroserver/client'
 
 export interface AllAuthFlowItem {
   id: string

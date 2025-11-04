@@ -7,7 +7,7 @@
       :active="qcDatastream == datastream"
     >
       <template #title="{ title }">
-        <span :title="`${title}`">{{  title }}</span>
+        <span :title="`${title}`">{{ title }}</span>
       </template>
 
       <template #prepend>
@@ -76,13 +76,14 @@
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { COLORS, handleNewPlot } from '@/utils/plotting/plotly'
-import { Datastream } from '@/types'
+// import { Datastream } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions } = usePlotlyStore()
 const { plotlyRef } = storeToRefs(usePlotlyStore())
 // @ts-ignore no type definitions
 import Plotly from 'plotly.js-dist'
 import { Ref, ref, computed } from 'vue'
+import { Datastream } from '@hydroserver/client'
 
 const { plottedDatastreams, qcDatastream, loadingStates } =
   storeToRefs(useDataVisStore())

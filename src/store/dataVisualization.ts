@@ -225,7 +225,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
           console.error('Failed to fetch observations:', error)
           return null
         })
-        if (obsRecord) {
+        if (obsRecord && graphSeriesArray.value[seriesIndex]) {
           graphSeriesArray.value[seriesIndex].data = obsRecord
         }
       } else {

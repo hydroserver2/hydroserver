@@ -106,12 +106,13 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream } from '@/types'
+// import { Datastream } from '@/types'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import { downloadPlottedDatastreamsCSVs } from '@/utils/CSVDownloadUtils'
 import { useObservationStore } from '@/store/observations'
+import { Datastream } from '@hydroserver/client'
 const { observationsRaw } = storeToRefs(useObservationStore())
 const { loadingStates } = storeToRefs(useDataVisStore())
 

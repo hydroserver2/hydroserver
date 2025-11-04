@@ -32,101 +32,101 @@ export interface GraphSeries {
   seriesOption: any
 }
 
-export type TimeSpacingUnit = 'seconds' | 'minutes' | 'hours' | 'days'
+// export type TimeSpacingUnit = 'seconds' | 'minutes' | 'hours' | 'days'
 
-export interface Tag {
-  key: string
-  value: string
-}
+// export interface Tag {
+//   key: string
+//   value: string
+// }
 
-export type Frequency = 'daily' | 'weekly' | 'monthly' | null
+// export type Frequency = 'daily' | 'weekly' | 'monthly' | null
 
-export class HydroShareArchive {
-  id: string
-  thingId: string
-  link: string
-  frequency: Frequency
-  path: string
-  datastreamIds: string[]
-  publicResource: boolean
+// export class HydroShareArchive {
+//   id: string
+//   thingId: string
+//   link: string
+//   frequency: Frequency
+//   path: string
+//   datastreamIds: string[]
+//   publicResource: boolean
 
-  constructor() {
-    this.id = ''
-    this.thingId = ''
-    this.link = ''
-    this.frequency = null
-    this.path = 'HydroShare'
-    this.datastreamIds = []
-    this.publicResource = false
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.thingId = ''
+//     this.link = ''
+//     this.frequency = null
+//     this.path = 'HydroShare'
+//     this.datastreamIds = []
+//     this.publicResource = false
+//   }
+// }
 
-export class PostHydroShareArchive extends HydroShareArchive {
-  resourceTitle?: string
-  resourceAbstract?: string
-  resourceKeywords?: string[]
+// export class PostHydroShareArchive extends HydroShareArchive {
+//   resourceTitle?: string
+//   resourceAbstract?: string
+//   resourceKeywords?: string[]
 
-  constructor() {
-    super()
-    this.resourceTitle = undefined
-    this.resourceAbstract = undefined
-    this.resourceKeywords = undefined
-  }
-}
+//   constructor() {
+//     super()
+//     this.resourceTitle = undefined
+//     this.resourceAbstract = undefined
+//     this.resourceKeywords = undefined
+//   }
+// }
 
-export class Location {
-  latitude?: number | ''
-  longitude?: number | ''
-  elevation_m?: number | ''
-  elevationDatum: string
-  state: string
-  county: string
-  country: string
+// export class Location {
+//   latitude?: number | ''
+//   longitude?: number | ''
+//   elevation_m?: number | ''
+//   elevationDatum: string
+//   state: string
+//   county: string
+//   country: string
 
-  constructor() {
-    this.elevationDatum = 'WGS84'
-    this.state = ''
-    this.county = ''
-    this.country = ''
-  }
-}
+//   constructor() {
+//     this.elevationDatum = 'WGS84'
+//     this.state = ''
+//     this.county = ''
+//     this.country = ''
+//   }
+// }
 
-export class Thing {
-  id: string
-  workspaceId: string
-  name: string
-  location: Location = new Location()
-  tags: Tag[]
-  hydroShareArchive?: HydroShareArchive | null
-  siteType: string
-  samplingFeatureCode: string
-  isPrivate: boolean
-  description: string
-  samplingFeatureType: string
-  dataDisclaimer: string
+// export class Thing {
+//   id: string
+//   workspaceId: string
+//   name: string
+//   location: Location = new Location()
+//   tags: Tag[]
+//   hydroShareArchive?: HydroShareArchive | null
+//   siteType: string
+//   samplingFeatureCode: string
+//   isPrivate: boolean
+//   description: string
+//   samplingFeatureType: string
+//   dataDisclaimer: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.name = ''
-    this.tags = []
-    this.siteType = ''
-    this.samplingFeatureCode = ''
-    this.isPrivate = false
-    this.description = ''
-    this.samplingFeatureType = 'Site'
-    this.dataDisclaimer = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.name = ''
+//     this.tags = []
+//     this.siteType = ''
+//     this.samplingFeatureCode = ''
+//     this.isPrivate = false
+//     this.description = ''
+//     this.samplingFeatureType = 'Site'
+//     this.dataDisclaimer = ''
+//   }
+// }
 
-export interface ThingWithColor extends Thing {
-  color?: {
-    borderColor: string
-    background: string
-    glyphColor: string
-  }
-  tagValue?: string
-}
+// export interface ThingWithColor extends Thing {
+//   color?: {
+//     borderColor: string
+//     background: string
+//     glyphColor: string
+//   }
+//   tagValue?: string
+// }
 
 // export class Datastream {
 //   id: string
@@ -178,311 +178,311 @@ export interface ThingWithColor extends Thing {
 //   }
 // }
 
-export interface DatastreamExtended {
-  id: string
-  name: string
-  description: string
-  observationType: string
-  resultType?: string
-  status?: string
-  sampledMedium: string
-  noDataValue: number
-  aggregationStatistic: string
-  isPrivate: boolean
-  isVisible: boolean
-  phenomenonBeginTime?: string | null
-  phenomenonEndTime?: string | null
-  intendedTimeSpacing?: number
-  intendedTimeSpacingUnit?: TimeSpacingUnit | null
-  timeAggregationInterval: number | null
-  timeAggregationIntervalUnit: TimeSpacingUnit
-  dataSourceId?: string | null
-  valueCount: number
+// export interface DatastreamExtended {
+//   id: string
+//   name: string
+//   description: string
+//   observationType: string
+//   resultType?: string
+//   status?: string
+//   sampledMedium: string
+//   noDataValue: number
+//   aggregationStatistic: string
+//   isPrivate: boolean
+//   isVisible: boolean
+//   phenomenonBeginTime?: string | null
+//   phenomenonEndTime?: string | null
+//   intendedTimeSpacing?: number
+//   intendedTimeSpacingUnit?: TimeSpacingUnit | null
+//   timeAggregationInterval: number | null
+//   timeAggregationIntervalUnit: TimeSpacingUnit
+//   dataSourceId?: string | null
+//   valueCount: number
 
-  thing: Thing
-  workspace: Workspace
-  unit: Unit
-  observedProperty: ObservedProperty
-  sensor: Sensor
-  processingLevel: ProcessingLevel
-  dataSource: DataSource
-}
+//   thing: Thing
+//   workspace: Workspace
+//   unit: Unit
+//   observedProperty: ObservedProperty
+//   sensor: Sensor
+//   processingLevel: ProcessingLevel
+//   dataSource: DataSource
+// }
 
-export class Unit {
-  id: string
-  workspaceId: string
-  name: string
-  symbol: string
-  definition: string
-  type: string
+// export class Unit {
+//   id: string
+//   workspaceId: string
+//   name: string
+//   symbol: string
+//   definition: string
+//   type: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.name = ''
-    this.symbol = ''
-    this.definition = ''
-    this.type = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.name = ''
+//     this.symbol = ''
+//     this.definition = ''
+//     this.type = ''
+//   }
+// }
 
-export class Sensor {
-  id: string
-  workspaceId: string
-  name: string
-  description: string
-  manufacturer: string
-  model: string
-  methodType: string
-  methodCode: string
-  methodLink: string
-  encodingType: string
-  modelLink: string
+// export class Sensor {
+//   id: string
+//   workspaceId: string
+//   name: string
+//   description: string
+//   manufacturer: string
+//   model: string
+//   methodType: string
+//   methodCode: string
+//   methodLink: string
+//   encodingType: string
+//   modelLink: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.name = ''
-    this.description = ''
-    this.manufacturer = ''
-    this.model = ''
-    this.methodType = 'Instrument Deployment'
-    this.methodCode = ''
-    this.methodLink = ''
-    this.encodingType = 'application/json'
-    this.modelLink = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.name = ''
+//     this.description = ''
+//     this.manufacturer = ''
+//     this.model = ''
+//     this.methodType = 'Instrument Deployment'
+//     this.methodCode = ''
+//     this.methodLink = ''
+//     this.encodingType = 'application/json'
+//     this.modelLink = ''
+//   }
+// }
 
-export class ObservedProperty {
-  id: string
-  workspaceId: string
-  name: string
-  definition: string
-  description: string
-  type: string
-  code: string
+// export class ObservedProperty {
+//   id: string
+//   workspaceId: string
+//   name: string
+//   definition: string
+//   description: string
+//   type: string
+//   code: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.name = ''
-    this.definition = ''
-    this.description = ''
-    this.type = 'Hydrology'
-    this.code = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.name = ''
+//     this.definition = ''
+//     this.description = ''
+//     this.type = 'Hydrology'
+//     this.code = ''
+//   }
+// }
 
-export class ProcessingLevel {
-  id: string
-  workspaceId: string
-  code: string
-  definition: string
-  explanation: string
+// export class ProcessingLevel {
+//   id: string
+//   workspaceId: string
+//   code: string
+//   definition: string
+//   explanation: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.code = ''
-    this.definition = ''
-    this.explanation = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.code = ''
+//     this.definition = ''
+//     this.explanation = ''
+//   }
+// }
 
-export class ResultQualifier {
-  id: string
-  workspaceId: string
-  code: string
-  description: string
+// export class ResultQualifier {
+//   id: string
+//   workspaceId: string
+//   code: string
+//   description: string
 
-  constructor() {
-    this.id = ''
-    this.workspaceId = ''
-    this.code = ''
-    this.description = ''
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.workspaceId = ''
+//     this.code = ''
+//     this.description = ''
+//   }
+// }
 
-export class Organization {
-  name?: string
-  code?: string
-  type?: string
-  description?: string
-  link?: string
+// export class Organization {
+//   name?: string
+//   code?: string
+//   type?: string
+//   description?: string
+//   link?: string
 
-  constructor() { }
-}
+//   constructor() { }
+// }
 
-export class User {
-  id: string
-  email: string
-  password: string
-  firstName: string
-  middleName: string
-  lastName: string
-  phone: string
-  address: string
-  organization?: Organization | null
-  type: string
-  link: string
-  accountType: 'admin' | 'standard' | 'limited'
-  hydroShareConnected: boolean
+// export class User {
+//   id: string
+//   email: string
+//   password: string
+//   firstName: string
+//   middleName: string
+//   lastName: string
+//   phone: string
+//   address: string
+//   organization?: Organization | null
+//   type: string
+//   link: string
+//   accountType: 'admin' | 'standard' | 'limited'
+//   hydroShareConnected: boolean
 
-  constructor() {
-    this.id = ''
-    this.email = ''
-    this.password = ''
-    this.firstName = ''
-    this.middleName = ''
-    this.lastName = ''
-    this.phone = ''
-    this.address = ''
-    this.type = ''
-    this.link = ''
-    this.accountType = 'standard'
-    this.hydroShareConnected = false
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.email = ''
+//     this.password = ''
+//     this.firstName = ''
+//     this.middleName = ''
+//     this.lastName = ''
+//     this.phone = ''
+//     this.address = ''
+//     this.type = ''
+//     this.link = ''
+//     this.accountType = 'standard'
+//     this.hydroShareConnected = false
+//   }
+// }
 
-export interface Photo {
-  name: string
-  link: string
-}
+// export interface Photo {
+//   name: string
+//   link: string
+// }
 
-export class OAuthProvider {
-  id: string
-  name: string
-  iconLink: string
-  signupEnabled: boolean
-  connectEnabled: boolean
+// export class OAuthProvider {
+//   id: string
+//   name: string
+//   iconLink: string
+//   signupEnabled: boolean
+//   connectEnabled: boolean
 
-  constructor() {
-    this.id = ''
-    this.name = ''
-    this.iconLink = ''
-    this.signupEnabled = true
-    this.connectEnabled = true
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.name = ''
+//     this.iconLink = ''
+//     this.signupEnabled = true
+//     this.connectEnabled = true
+//   }
+// }
 
-export enum PermissionAction {
-  Global = '*',
-  View = 'view',
-  Create = 'create',
-  Edit = 'edit',
-  Delete = 'delete',
-}
+// export enum PermissionAction {
+//   Global = '*',
+//   View = 'view',
+//   Create = 'create',
+//   Edit = 'edit',
+//   Delete = 'delete',
+// }
 
-export enum PermissionResource {
-  Global = '*',
-  Workspace = 'Workspace',
-  Collaborator = 'Collaborator',
-  Thing = 'Thing',
-  Datastream = 'Datastream',
-  Sensor = 'Sensor',
-  Unit = 'Unit',
-  ObservedProperty = 'ObservedProperty',
-  ProcessingLevel = 'ProcessingLevel',
-  Observation = 'Observation',
-}
+// export enum PermissionResource {
+//   Global = '*',
+//   Workspace = 'Workspace',
+//   Collaborator = 'Collaborator',
+//   Thing = 'Thing',
+//   Datastream = 'Datastream',
+//   Sensor = 'Sensor',
+//   Unit = 'Unit',
+//   ObservedProperty = 'ObservedProperty',
+//   ProcessingLevel = 'ProcessingLevel',
+//   Observation = 'Observation',
+// }
 
-export interface Permission {
-  action: PermissionAction
-  resource: PermissionResource
-}
+// export interface Permission {
+//   action: PermissionAction
+//   resource: PermissionResource
+// }
 
-export interface CollaboratorRole {
-  name: string
-  description: string
-  id: string
-  workspaceId: string
-  isApikeyRole: boolean
-  isUserRole: boolean
-  permissions: Permission[]
-}
+// export interface CollaboratorRole {
+//   name: string
+//   description: string
+//   id: string
+//   workspaceId: string
+//   isApikeyRole: boolean
+//   isUserRole: boolean
+//   permissions: Permission[]
+// }
 
-export class ApiKey {
-  id = ''
-  key = ''
-  name = ''
-  description = ''
-  isActive = true
-  expiresAt = ''
-  createdAt = ''
-  lastUsed = ''
-  workspaceId = ''
-  role: CollaboratorRole | null = null
+// export class ApiKey {
+//   id = ''
+//   key = ''
+//   name = ''
+//   description = ''
+//   isActive = true
+//   expiresAt = ''
+//   createdAt = ''
+//   lastUsed = ''
+//   workspaceId = ''
+//   role: CollaboratorRole | null = null
 
-  constructor(init?: Partial<ApiKey>) {
-    Object.assign(this, init)
-  }
-}
+//   constructor(init?: Partial<ApiKey>) {
+//     Object.assign(this, init)
+//   }
+// }
 
-export interface WorkspaceData {
-  id: string
-  name: string
-  isPrivate: boolean
-  owner: User
-  collaboratorRole: CollaboratorRole
-  pendingTransferTo?: User | null
-}
+// export interface WorkspaceData {
+//   id: string
+//   name: string
+//   isPrivate: boolean
+//   owner: User
+//   collaboratorRole: CollaboratorRole
+//   pendingTransferTo?: User | null
+// }
 
-export class Workspace {
-  id: string
-  name: string
-  isPrivate: boolean
-  owner: UserInfo | null
-  collaboratorRole: CollaboratorRole | null
-  pendingTransferTo?: UserInfo | null
+// export class Workspace {
+//   id: string
+//   name: string
+//   isPrivate: boolean
+//   owner: UserInfo | null
+//   collaboratorRole: CollaboratorRole | null
+//   pendingTransferTo?: UserInfo | null
 
-  constructor() {
-    this.id = ''
-    this.name = ''
-    this.isPrivate = false
-    this.owner = null
-    this.collaboratorRole = null
-    this.pendingTransferTo = null
-  }
-}
+//   constructor() {
+//     this.id = ''
+//     this.name = ''
+//     this.isPrivate = false
+//     this.owner = null
+//     this.collaboratorRole = null
+//     this.pendingTransferTo = null
+//   }
+// }
 
-export interface UserInfo {
-  name: string
-  email: string
-  phone: string
-  address: string
-  link: string
-  type: string
-  organizationName: string
-}
+// export interface UserInfo {
+//   name: string
+//   email: string
+//   phone: string
+//   address: string
+//   link: string
+//   type: string
+//   organizationName: string
+// }
 
-export class Collaborator {
-  user: UserInfo
-  role: CollaboratorRole
+// export class Collaborator {
+//   user: UserInfo
+//   role: CollaboratorRole
 
-  constructor() {
-    this.user = {
-      phone: '',
-      address: '',
-      link: '',
-      type: '',
-      name: '',
-      email: '',
-      organizationName: '',
-    }
-    this.role = {
-      name: '',
-      description: '',
-      id: '',
-      isApikeyRole: false,
-      isUserRole: false,
-      workspaceId: '',
-      permissions: [],
-    }
-  }
-}
+//   constructor() {
+//     this.user = {
+//       phone: '',
+//       address: '',
+//       link: '',
+//       type: '',
+//       name: '',
+//       email: '',
+//       organizationName: '',
+//     }
+//     this.role = {
+//       name: '',
+//       description: '',
+//       id: '',
+//       isApikeyRole: false,
+//       isUserRole: false,
+//       workspaceId: '',
+//       permissions: [],
+//     }
+//   }
+// }
 
-export interface ApiError {
-  status: number
-  message?: string
-}
+// export interface ApiError {
+//   status: number
+//   message?: string
+// }
