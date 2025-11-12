@@ -1,5 +1,5 @@
 import { useHydroServer } from '@/store/hydroserver';
-import { ApiResponse, Datastream } from '@hydroserver/client';
+import { Datastream } from '@hydroserver/client';
 import { storeToRefs } from 'pinia';
 
 export const fetchObservationsSync = async (
@@ -33,7 +33,7 @@ export const fetchObservationsSync = async (
           phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
           page: page,
           order_by: ["phenomenonTime"],
-          format: 'column'
+          // format: 'column'
         }
       )
 

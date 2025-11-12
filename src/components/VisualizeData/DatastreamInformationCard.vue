@@ -99,9 +99,9 @@ import { useDataVisStore } from '@/store/dataVisualization'
 // import { Datastream, Owner, Unit } from '@/types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
-import { api } from '@uwrl/qc-utils'
-import { downloadDatastreamCSV } from '@/utils/CSVDownloadUtils'
 import { Datastream, Unit } from '@hydroserver/client'
+import { useHydroServer } from '@/store/hydroserver'
+const { hs } = storeToRefs(useHydroServer())
 
 const props = defineProps({
   datastream: { type: Object as () => Datastream, required: true },
@@ -115,13 +115,12 @@ const downloading = ref(false)
 const downloadDatastream = async (id: string) => {
   downloading.value = true
   try {
-    await downloadDatastreamCSV(id)
+    await hs.value.datastreams.downloadCsv(id)
   } catch (error) {
     console.error('Error downloading datastream', error)
   }
   downloading.value = false
 }
-
 const addToPlot = (datastream: Datastream) => {
   const index = plottedDatastreams.value.findIndex(
     (ds) => ds.id === datastream.id
@@ -225,6 +224,6 @@ const processingLevelItems = computed(() => {
 })
 
 onMounted(async () => {
-  unit.value = await api.getUnit(props.datastream.unitId)
+  unit.value = (await hs.value.units.get(props.datastream.unitId)).data
 })
 </script>

@@ -39,9 +39,11 @@ import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { formatDate } from '@uwrl/qc-utils'
+import { useDataSelection } from '@/composables/useDataSelection'
 
 const { isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
+const { dispatchSelection } = useDataSelection()
 
 const headers = [
   { title: '', align: 'start', key: 'actions', width: '50px' },
@@ -67,6 +69,8 @@ const onSelectChange = (isSelected: boolean, index: number) => {
   }
 
   selectedData.value?.sort((a, b) => a - b)
+
+  // dispatchSelection(selectedData.value || [])
 }
 
 const getRowProps = (data: any) => {

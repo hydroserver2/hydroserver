@@ -2,8 +2,6 @@ import { GraphSeries, HistoryItem } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 
-// import { api } from '@uwrl/qc-utils'
-
 // import { preProcessData } from '@/utils/observationsUtils'
 import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions

@@ -49,7 +49,7 @@
           :loading="downloading"
           :disabled="!plottedDatastreams.length"
           prepend-icon="mdi-download"
-          @click="downloadPlotted(plottedDatastreams)"
+          @click="downloadSelected(plottedDatastreams)"
           >Download Selected</v-btn
         >
       </v-toolbar>
@@ -110,11 +110,12 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
-import { downloadPlottedDatastreamsCSVs } from '@/utils/CSVDownloadUtils'
 import { useObservationStore } from '@/store/observations'
 import { Datastream } from '@hydroserver/client'
+import { useHydroServer } from '@/store/hydroserver'
 const { observationsRaw } = storeToRefs(useObservationStore())
 const { loadingStates } = storeToRefs(useDataVisStore())
+const { hs } = storeToRefs(useHydroServer())
 
 const {
   things,
@@ -130,10 +131,10 @@ const openInfoCard = ref(false)
 const downloading = ref(false)
 const selectedDatastream = ref<Datastream | null>(null)
 
-const downloadPlotted = async (plottedDatastreams: Datastream[]) => {
+const downloadSelected = async (plottedDatastreams: Datastream[]) => {
   downloading.value = true
   try {
-    await downloadPlottedDatastreamsCSVs(plottedDatastreams)
+    await hs.value.datastreams.downloadCsvBatchZip(plottedDatastreams)
   } catch (error) {
     console.error('Error downloading selected datastreams', error)
   }
@@ -168,12 +169,14 @@ const displayDatastreams = computed(() => {
 const tableItems = computed(() => {
   return displayDatastreams.value.map((ds) => {
     const thing = things.value.find((t) => t.id === ds.thingId)
+
     const observedProperty = observedProperties.value.find(
-      (p) => p.id === ds.observedPropertyId
+      (p) => p.id == ds.observedPropertyId
     )
     const processingLevel = processingLevels.value.find(
-      (p) => p.id === ds.processingLevelId
+      (p) => p.id == ds.processingLevelId
     )
+
     return {
       ...ds,
       siteCodeName: thing?.samplingFeatureCode,

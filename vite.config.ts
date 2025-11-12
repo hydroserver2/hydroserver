@@ -72,7 +72,6 @@ export default defineConfig(({ mode }) => {
           '**/src/config/**',
           '**/src/utils/mdi-icons.ts',
           '**/src/utils/materialColors.ts',
-          '**/src/utils/CSVDownloadUtils.ts',
           '**/src/utils/observationsUtils.ts',
           '**/src/utils/test/**',
           '**/src/utils/rules.ts',

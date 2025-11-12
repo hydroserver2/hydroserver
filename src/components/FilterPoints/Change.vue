@@ -14,7 +14,7 @@
         return-object
       ></v-select>
       <v-text-field
-        label="Rate of change"
+        label="Change"
         type="number"
         clearable
         step="1"

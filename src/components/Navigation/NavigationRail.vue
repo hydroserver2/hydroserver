@@ -53,16 +53,17 @@ import { ref } from 'vue'
 import HydroServerIcon from '@/assets/favicon-32x32.png'
 import FileDrawer from '@/components/Navigation/FileDrawer.vue'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
-import { useAuthStore } from '@/store/authentication'
 import { useUIStore, DrawerType } from '@/store/userInterface'
 import { Snackbar } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
+import router from '@/router/router'
+import { useHydroServer } from '@/store/hydroserver'
 
-const { logout } = useAuthStore()
 const { onRailItemClicked } = useUIStore()
 const { selectedDrawer, isDrawerOpen } = storeToRefs(useUIStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
+const { hs } = storeToRefs(useHydroServer())
 
 const items = ref([
   { title: 'File', icon: 'mdi-file' },
@@ -70,8 +71,9 @@ const items = ref([
   { title: 'Edit', icon: 'mdi-pencil' },
 ])
 
-function onLogout() {
-  logout()
+async function onLogout() {
+  await hs.value.session.logout()
+  await router.push({ name: 'Login' })
   Snackbar.info('You have logged out')
 }
 </script>

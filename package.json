@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
-    "@hydroserver/client": "^0.0.7",
+    "@hydroserver/client": "^0.0.8",
     "@mdi/js": "^7.4.47",
     "@uwrl/qc-utils": "^0.0.17",
     "dotenv": "^17.2.3",
@@ -27,13 +27,13 @@
     "maska": "^3.2.0",
     "npm": "^11.6.2",
     "p-limit": "^7.2.0",
-    "pinia": "^3.0.3",
+    "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "plotly.js-dist": "^3.2.0",
     "tslib": "^2.8.1",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3",
-    "vuetify": "^3.10.8"
+    "vuetify": "^3.10.9"
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
@@ -52,7 +52,7 @@
     "sass": "^1.93.3",
     "taze": "^19.9.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.12",
+    "vite": "^7.2.0",
     "vite-plugin-vuetify": "^2.1.2",
     "vitest": "^4.0.7",
     "vue-tsc": "^3.1.3"

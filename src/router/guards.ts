@@ -1,4 +1,5 @@
-import { api } from '@uwrl/qc-utils'
+import { useHydroServer } from '@/store/hydroserver'
+import { storeToRefs } from 'pinia'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 
 export type RouteGuard = (
@@ -55,9 +56,11 @@ export const guards: RouteGuard[] = [
 
   // hasThingOwnershipGuard
   async (to, _from, _next) => {
+    const { hs } = storeToRefs(useHydroServer())
     if (to.meta?.hasThingOwnershipGuard) {
-      const thing = await api.fetchThing(to.params.id as string)
-      if (!thing?.ownsThing) return { name: 'PageNotFound' }
+      const thing = (await hs.value.things.get(to.params.id as string)).data
+      // TODO: where to find `ownsThing` property
+      // if (!thing?.ownsThing) return { name: 'PageNotFound' }
     }
     return null
   },

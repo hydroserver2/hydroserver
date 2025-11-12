@@ -33,19 +33,19 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/store/authentication'
-import { api } from '@uwrl/qc-utils'
+import { useHydroServer } from '@/store/hydroserver'
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+const { hs } = storeToRefs(useHydroServer())
 
-const { oAuthProviders } = storeToRefs(useAuthStore())
+const oAuthProviders = ref(hs.value.session.oAuthProviders)
 
 const filteredOAuthProviders = computed(() =>
-  oAuthProviders.value.filter((provider) => provider.signupEnabled)
+  hs.value.session.oAuthProviders.filter((provider) => provider.signupEnabled)
 )
 
 const signupOrLoginWithOAuth = (providerId: string) => {
   const callbackUrl = '/Sites'
-  api.providerRedirect(providerId, callbackUrl, 'login')
+  hs.value.session.providerRedirect(providerId, callbackUrl, 'login')
 }
 </script>
