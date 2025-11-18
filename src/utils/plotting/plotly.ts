@@ -57,8 +57,8 @@ const selectorOptions = {
 }
 
 const spikes = {
-  showspikes: true,
-  spikemode: 'toaxis' // or 'across' or 'marker'
+  // showspikes: true,
+  // spikemode: 'toaxis' // or 'across' or 'marker'
   // spikesnap: 'hovered data',
   // spikecolor: 'grey',
   // spikethickness: 2,
@@ -100,7 +100,7 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
       type: 'scattergl',
       mode: 'lines+markers',
       // https://github.com/plotly/plotly.js/issues/5927
-      // hoverinfo: 'skip', // Fixes performance issues, but disables tooltips
+      hoverinfo: 'skip', // Fixes performance issues, but disables tooltips
       // hoverinfo: 'x+y',
       name: s.name,
       showLegend: false,
@@ -384,7 +384,7 @@ export const handleRelayout = async (eventData: any) => {
         }
 
         await Plotly.restyle(plotlyRef.value, {
-          // hoverinfo: newHoverState,
+          hoverinfo: newHoverState,
           hovertemplate: newHoverTemplate,
         })
       }
