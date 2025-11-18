@@ -27,27 +27,28 @@ export const fetchObservationsSync = async (
         id,
         {
           // TODO: use camelCase
-          // TODO: (bug) All query params are being overridden
           page_size: pageSize,
           phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
           phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
           page: page,
           order_by: ["phenomenonTime"],
-          // format: 'column'
+          format: 'column',
+          // @ts-ignore: should be an optional property
+          result_qualifier_code: null
         }
       )
 
-      if (!result.data.length) {
+      if (!result.data.result.length) {
         break
       }
 
       datetimes = [
         ...datetimes,
-        ...result.data.map((r: any) =>
-          new Date(r.phenomenonTime).getTime()
+        ...result.data.phenomenonTime.map((d: any) =>
+          new Date(d).getTime()
         ),
       ]
-      dataValues = [...dataValues, ...result.data.map((r: any) => r.result)]
+      dataValues = [...dataValues, ...result.data.result]
       page++
     }
 

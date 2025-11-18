@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 // import { Datastream } from '@/types'
-import { fetchObservationsSync } from '@/utils/observationsUtils'
+import { fetchObservationsSync } from '@/utils/observations'
 import { ObservationRecord } from "@uwrl/qc-utils"
 import { Datastream } from '@hydroserver/client'
 
