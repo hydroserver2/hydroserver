@@ -106,7 +106,6 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-// import { Datastream } from '@/types'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'

@@ -1,6 +1,5 @@
 import { User } from '@hydroserver/client'
 import { defineStore } from 'pinia'
-// import { User } from '@/types'
 import { ref } from 'vue'
 
 export const useUserStore = defineStore(

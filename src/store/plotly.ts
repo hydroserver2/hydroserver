@@ -6,8 +6,6 @@ import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions
 import Plotly from 'plotly.js-dist'
 
-// Register custom data sampler
-// import dataSample from '@/utils/custom-down-sample'
 import { createPlotlyOption, cropXaxisRange } from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
 import { useHydroServer } from './hydroserver'

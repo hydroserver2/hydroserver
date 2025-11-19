@@ -1,6 +1,6 @@
 import { usePlotlyStore } from '@/store/plotly'
 import { GraphSeries } from '@/types'
-// @ts-ignore no type definitions
+// @ts-ignore: no type definitions
 import Plotly from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

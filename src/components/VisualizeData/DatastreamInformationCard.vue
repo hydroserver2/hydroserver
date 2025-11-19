@@ -96,7 +96,6 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-// import { Datastream, Owner, Unit } from '@/types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
 import { Datastream, Unit } from '@hydroserver/client'

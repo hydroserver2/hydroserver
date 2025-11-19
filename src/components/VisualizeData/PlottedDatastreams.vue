@@ -76,7 +76,6 @@
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { COLORS, handleNewPlot } from '@/utils/plotting/plotly'
-// import { Datastream } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions } = usePlotlyStore()
 const { plotlyRef } = storeToRefs(usePlotlyStore())
