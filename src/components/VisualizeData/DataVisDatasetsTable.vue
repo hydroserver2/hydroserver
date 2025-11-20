@@ -167,20 +167,11 @@ const displayDatastreams = computed(() => {
 
 const tableItems = computed(() => {
   return displayDatastreams.value.map((ds) => {
-    const thing = things.value.find((t) => t.id === ds.thingId)
-
-    const observedProperty = observedProperties.value.find(
-      (p) => p.id == ds.observedPropertyId
-    )
-    const processingLevel = processingLevels.value.find(
-      (p) => p.id == ds.processingLevelId
-    )
-
     return {
       ...ds,
-      siteCodeName: thing?.samplingFeatureCode,
-      observedPropertyName: observedProperty?.name,
-      qualityControlLevelDefinition: processingLevel?.definition,
+      siteCodeName: ds.thing.samplingFeatureCode,
+      observedPropertyName: ds.observedProperty.name,
+      qualityControlLevelDefinition: ds.processingLevel.definition,
     }
   })
 })

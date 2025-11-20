@@ -44,7 +44,7 @@ const initializeHydroServer = async () => {
     observedPropertiesResponse,
   ] = await Promise.all([
     hs.value.things.list(),
-    hs.value.datastreams.list(),
+    hs.value.datastreams.list({ expand_related: true }), // TODO: get type definitions when using `expand_related`
     hs.value.processingLevels.list(),
     hs.value.observedProperties.list(),
   ])

@@ -19,7 +19,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   // To only fetch these once per page
   const things = ref<Thing[]>([])
-  const datastreams = ref<Datastream[]>([])
+  const datastreams = ref<(Datastream & any)[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
 

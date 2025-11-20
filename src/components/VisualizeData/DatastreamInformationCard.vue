@@ -103,7 +103,7 @@ import { useHydroServer } from '@/store/hydroserver'
 const { hs } = storeToRefs(useHydroServer())
 
 const props = defineProps({
-  datastream: { type: Object as () => Datastream, required: true },
+  datastream: { type: Object as () => Datastream & any, required: true },
 })
 const emit = defineEmits(['close'])
 
@@ -140,14 +140,6 @@ const matchingThing = computed(() => {
   return things.value.find((t) => t.id === props.datastream.thingId)
 })
 
-// TODO
-// const primaryOwnerOrganizationName = computed(() => {
-//   const primaryOwner: Owner | undefined = matchingThing.value?.owners.find(
-//     (owner) => owner.isPrimaryOwner
-//   )
-//   return primaryOwner?.organizationName || 'No primary owner found'
-// })
-
 const generalItems = computed(() => [
   { label: 'Number Of Observations', value: props.datastream.valueCount },
   { label: 'Date Last Updated', value: props.datastream.phenomenonEndTime },
@@ -156,7 +148,7 @@ const generalItems = computed(() => [
   { label: 'Data Type', value: props.datastream.observationType },
   { label: 'Value Type', value: props.datastream.resultType },
   { label: 'Sample Medium', value: props.datastream.sampledMedium },
-  // { label: 'Source Organization', value: primaryOwnerOrganizationName.value },
+  { label: 'Workspace Name', value: props.datastream.workspace.name },
   { label: 'Source Description', value: props.datastream.description },
 ])
 
@@ -167,7 +159,7 @@ const locationItems = computed(() => {
     name,
     samplingFeatureCode,
     siteType,
-    location: { latitude, longitude, state, county },
+    location: { latitude, longitude, country },
   } = matchingThing.value
 
   return [
@@ -175,8 +167,7 @@ const locationItems = computed(() => {
     { label: 'Site Name', value: name },
     { label: 'Latitude', value: latitude },
     { label: 'Longitude', value: longitude },
-    { label: 'State/Province/Region', value: state },
-    { label: 'County/District', value: county },
+    { label: 'Country', value: country },
     { label: 'Site Type', value: siteType },
   ]
 })
