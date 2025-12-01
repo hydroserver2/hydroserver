@@ -296,21 +296,21 @@ thing.update_tag(
 thing.delete_tag(key='Region')
 ```
 
-#### Example: Manage Thing Photos
+#### Example: Manage Thing File Attachments
 
 ```python
 # Get a thing
 thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Get thing photos
-photos = thing.photos
+file_attachments = thing.file_attachments
 
-# Add a photo to a thing
-with open('/path/to/my/photo.png', 'rb') as photo_file:
-    thing.add_photo(file=photo_file)
+# Add a file attachment to a thing
+with open('/path/to/my/myfile.png', 'rb') as file_attachment:
+    thing.add_file_attachment(file=file_attachment)
 
-# Delete a thing's photo
-thing.delete_photo(name='photo.png')
+# Delete a thing's file attachment
+thing.delete_file_attachment(name='myfile.png')
 ```
 
 #### Example: Get Datastreams of a Thing
@@ -754,6 +754,48 @@ datastream.name = 'Updated Datastream Name'
 datastream.save()
 ```
 
+#### Example: Manage Datastream Tags
+
+```python
+# Get a datastream
+datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get datastream tags
+tags = datastream.tags
+
+# Add a tag to a datastream
+datastream.add_tag(
+    key='MaxAllowableResult',
+    value=100
+)
+
+# Modify a datastream's tag
+datastream.update_tag(
+    key='MaxAllowableResult',
+    value=120
+)
+
+# Delete a datastream's tag
+datastream.delete_tag(key='MaxAllowableResult')
+```
+
+#### Example: Manage Datastream File Attachments
+
+```python
+# Get a datastream
+datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get datastream file attachments
+file_attachments = datastream.file_attachments
+
+# Add a file attachment to a datastream
+with open('/path/to/my/myfile.png', 'rb') as file_attachment:
+    datastream.add_file_attachment(file=file_attachment)
+
+# Delete a datastream's file attachment
+datastream.delete_file_attachment(name='myfile.png')
+```
+
 #### Example: Get related properties of a Datastream
 
 ```python
@@ -1148,4 +1190,5 @@ data_archive.add_datastream(datastream=datastream)
 # Remove a datastream from the data archive
 data_archive.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
 ```
+
 
