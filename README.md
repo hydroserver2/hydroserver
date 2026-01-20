@@ -31,8 +31,7 @@ HydroServer consists of the following components:
 - Cross platform app for running on Windows, Mac, or Linux
 - Silent updater for loading data to a HydroServer instance from delimited text files
 - Python package (used by the app) for loading data to HydroServer via the SensorThings API
-- Streaming Data Loader Desktop app repository: [https://github.com/hydroserver2/hydroloader-desktop](https://github.com/hydroserver2/hydroloader-desktop)
-- HydroLoader Python package repository: [https://github.com/hydroserver2/hydroloader](https://github.com/hydroserver2/hydroloader)
+- Streaming Data Loader Desktop app repository: [https://github.com/hydroserver2/streaming-data-loader](https://github.com/hydroserver2/streaming-data-loader)
 
 ## History
 

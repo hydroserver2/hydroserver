@@ -110,10 +110,10 @@ export default defineConfig({
                 text: "Customize the Data Management App",
                 link: "/how-to/data-management-app/customize.md",
               },
-              {
-                text: "Archive Data to HydroShare",
-                link: "/how-to/data-management-app/hydroshare-archive.md",
-              },
+              // {
+              //   text: "Archive Data to HydroShare",
+              //   link: "/how-to/data-management-app/hydroshare-archive.md",
+              // },
             ],
           },
           {

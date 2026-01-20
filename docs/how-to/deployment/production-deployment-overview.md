@@ -332,6 +332,37 @@ When deploying HydroServer in production, you should implement multiple layers o
   unauthorized access attempts, and to track overall system health. HydroServer also provides a `/health-check` 
   endpoint that can be used by external monitoring services.
 
+### Enabling Celery for HydroServer
+
+HydroServer optionally supports Celery for scheduling background tasks. To run Celery, you must set up several 
+additional services, including at least one worker instance, a scheduler, and a broker such as
+[Redis](https://redis.io/docs/latest/).
+
+The following HydroServer settings can be used to configure Celery:
+
+- **CELERY_ENABLED**  
+  Controls whether Celery scheduling is enabled. If not enabled, all data processing will be handled by HydroServer's
+  web server.
+  Example: `True` / `False`
+
+- **CELERY_BROKER_URL** 
+  The URL of the broker service Celery should use to orchestrate tasks.
+  Example: `redis://127.0.0.1:6379/0`
+
+To start a Celery worker, use the following entrypoint command with HydroServer’s Docker image. This container must
+have database and broker access.
+
+```bash
+celery -A hydroserver worker --loglevel=INFO
+```
+
+To start a Celery scheduler, use the following entrypoint command with HydroServer’s Docker image. This container must
+have database and broker access.
+
+```bash
+celery -A hydroserver beat --loglevel=INFO
+```
+
 ### HydroServer Management Commands
 
 After provisioning your infrastructure, but before starting HydroServer’s web server, you must run several management 
@@ -435,17 +466,6 @@ dashboard.
    - Sensors  
    - Units  
 
-6. **Configure HydroShare Archival** (optional / experimental)  
-   - First, configure HydroShare as a social application (see Step 4).  
-   - Update the social application record with the following JSON:  
-     ```json
-     {
-       "allowSignUp": false,
-       "allowConnection": true
-     }
-     ```  
-   - Navigate to **Orchestration Systems** > **Add Orchestration System**.  
-     - Create a new record with:  
-       - **Name**: `HydroShare Archival Manager`  
-       - **Type**: `HydroShare`  
-   - *Note: This archival configuration method is temporary and will be deprecated in a future release.*
+6. **Configure HydroServer ETL** (optional)
+   If you have set up a HydroServer Celery scheduler and worker, you 
+
