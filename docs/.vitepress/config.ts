@@ -127,8 +127,8 @@ export default defineConfig({
               },
               {
                 text: "Production Deployment Guide",
-                link: "how-to/deployment/production-deployment-overview"
-              }
+                link: "how-to/deployment/production-deployment-overview",
+              },
             ],
           },
           {
@@ -191,19 +191,8 @@ export default defineConfig({
             link: "/references/hydroserverpy/hydroserverpy-ref.md",
           },
           {
-            text: "Orchestration Systems",
-            collapsed: true,
+            text: "Streaming Data Loader",
             link: "/references/orchestration/sdl-download",
-            items: [
-              {
-                text: "Streaming Data Loader",
-                link: "/references/orchestration/sdl-download",
-              },
-              {
-                text: "Airflow Orchestrator",
-                link: "/references/orchestration/airflow-ref",
-              },
-            ],
           },
         ],
       },
