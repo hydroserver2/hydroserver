@@ -147,6 +147,17 @@ export default defineConfig({
             ],
           },
           {
+            text: "TypeScript Client",
+            collapsed: true,
+            link: "/how-to/typescript-client/typescript-client-examples",
+            items: [
+              {
+                text: "Manage Data With the TypeScript Client",
+                link: "/how-to/typescript-client/typescript-client-examples",
+              },
+            ],
+          },
+          {
             text: "SensorThings API",
             collapsed: true,
             link: "/how-to/sensor-things/retrieve-sensor-things",
