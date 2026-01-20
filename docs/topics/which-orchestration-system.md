@@ -1,58 +1,39 @@
-# Loading Data
+# Which Orchestration System Should You Use
 
-HydroServer offers four ways to load data:
+HydroServer supports two orchestration systems for scheduled ETL: the Streaming Data Loader (SDL) desktop app and the Django Celery orchestration system that runs alongside your HydroServer instance. This page helps you choose between them.
 
-1. **Direct API calls**
+## Quick guidance
 
-   Send observations straight to HydroServer’s SensorThings API using HTTP requests.
+Choose **Streaming Data Loader (SDL)** if you want:
 
-2. **hydroserverpy Python client**
+- A simple, stand-alone desktop app
+- Minimal infrastructure and ops overhead
+- Local file or small API sources
+- A quick way to get started for a single team or workstation
 
-   A lightweight wrapper around the API that simplifies authentication, request batching, and error handling.
+Choose **Django Celery** if you want:
 
-3. **Streaming Data Loader (SDL) Orchestration System**
+- A server-side, always-on scheduler
+- Centralized logs and monitoring
+- Multiple users and many data connections
+- A production deployment that should run without a desktop app
 
-   A cross-platform desktop app (Windows, macOS, Ubuntu) that reads one or more datasource JSON files, invokes hydroserverpy under the hood, and runs ETL jobs on a schedule. Perfect for simple, stand-alone deployments.
+## Compare at a glance
 
-4. **Airflow Orchestration System**
+| Decision factor      | Streaming Data Loader (SDL)            | Django Celery                          |
+| -------------------- | -------------------------------------- | -------------------------------------- |
+| Runs on              | A desktop or workstation               | Your HydroServer server                |
+| Best for             | Small deployments, pilots, single team | Production, multi-team, high volume    |
+| Ops overhead         | Low                                    | Medium                                 |
+| Availability         | Depends on the desktop being on        | 24/7 with server uptime                |
+| Scaling              | Limited to one machine                 | Scales with server resources           |
+| Typical data sources | Local files, lightweight APIs          | Network-accessible APIs, hosted stores |
+| Admin experience     | Desktop UI                             | Managed from HydroServer               |
 
-   A Docker-deployable extension to Apache Airflow and hydroserverpy that provides advanced scheduling, dependency management, and monitoring.
+## When SDL is the right fit
 
-## Orchestration Systems
+SDL is ideal if you want a lightweight scheduler without additional infrastructure. It shines when data is pulled from local files, you have a small number of data connections, or you want to keep the orchestration layer off the server. It's also a good fit for pilots, training, or field deployments where a desktop app is acceptable.
 
-The APIs and Python Client are discussed in detail in other sections, so here we'll focus on the Streaming Data Loader and Airflow Orchestration System. At their core, both a simply wrappers around the hydroserverpy Client app with the added functionality of scheduling for automated continuous data loading.
+## When Django Celery is the right fit
 
-## main concepts
-
-HydroServer has two main concepts for loading data with an orchestration system:
-
-1. A datasource JSON configuration file defines how data will move from source to target.
-2. An orchestration system reads one or more datasources and creates and runs the appropriate jobs.
-
-## Getting started with orchestration systems
-
-The workflow for getting setup with any orchestration system will be the same:
-
-1. Download the orchestration system.
-
-2. Provide credentials for the workspace you're pushing data to (username and password or API key) and point it at the URL of your HydroServer instance.
-
-3. Once credentials are provided, the system will register itself as an orchestration system in HydroServer, and you'll then be able to view your registered orchestration systems on the 'Job Orchestration' page of the Data Management App.
-
-4. There, you'll be able to create new data sources for your orchestration system by clicking the 'create new data source' button. This will walk you through a form in which you'll define the schedule, the source URI where you're extracting data fromm, and expected format of the returned data.
-
-5. On submission of the data source form, a table row will be created for your orchestration system with that data source. Clicking the row will take you to the details page for that data source. There, you'll define the mapping of your source data identifiers to their associated datastreams. The data source details page provides a 'Payloads' table which represents the mappings for one extracted data file (a CSV file or JSON file).
-
-For example, consider the following CSV file:
-
-```CSV
-timestamp,waterlevel_ft,discharge_cfs
-2023-10-26T01:00:00-07:00,20.5,35.0
-2023-10-26T01:15:00-07:00,21.2,33.1
-2023-10-26T01:30:00-07:00,21.8,37.2
-. . .
-```
-
-Hydroserver needs to know that the data from column 'waterlevel_ft' will be loaded to the datastream with ID 1 and the data from column 'discharge_cfs' will be loaded into the datastream with ID 2. From the payloads form you'll click 'add new payload', then 'add new mapping'. There you'll set you 'source identifier' to 'waterlevel_ft' and 'target identifier to the datastream with ID 1.
-
-6. Once your data source is defined and payloads are mapped, the orchestration system will manage the rest.
+Django Celery is the right choice when you need an always-on orchestration system that lives with HydroServer. If your deployment supports multiple users, has many data connections, or requires centralized scheduling and monitoring, Celery is the better long-term option. It also fits well when data sources are network-accessible and your HydroServer instance is already running in a server environment.
