@@ -65,6 +65,12 @@ const spikes = {
   // spikedash: 'dot',
 }
 
+const iconRescaleY = {
+  width: 500,
+  height: 600,
+  path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
+}
+
 export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -184,17 +190,11 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
     autorange: false,
     showline: true,
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
-    ...spikes
+    // ...spikes
   }
 
-  if (seriesArray.length > 2 || true) {
+  if (seriesArray.length > 2) {
     xaxis.domain = [0, 1 - axisPlotFraction * (seriesArray.length - 2)]
-  }
-
-  const iconRescaleY = {
-    width: 500,
-    height: 600,
-    path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
   }
 
   const newPlotlyOptions = {
@@ -269,7 +269,7 @@ export const handleClick = async (eventData: any) => {
   }
 }
 
-export const handleSelected = async (eventData?: any) => {
+export const handleSelected = async (_eventData?: any) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -307,7 +307,7 @@ export const handleNewPlot = async (element?: any) => {
   )
   plotlyRef.value?.on('plotly_deselec', debounce(handleSelected, debounceDelay))
   plotlyRef.value?.on('plotly_click', handleClick)
-  plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
+  // plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
 
   // plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
   plotlyRef.value?.addEventListener('mousemove', handleMouseMove);
@@ -394,7 +394,7 @@ export const handleRelayout = async (eventData: any) => {
   })
 }
 
-export const handleDoubleClick = async () => {
+export const handleDoubleClick = async (_event: MouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
 
   // Removes selected areas
@@ -416,6 +416,7 @@ export const handleDoubleClick = async () => {
 
 
 
+// TODO: work in progress
 export const handleMouseMove = async (event: MouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
 
