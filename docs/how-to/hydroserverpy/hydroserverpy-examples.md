@@ -24,8 +24,8 @@ The hydroserverpy connection instance exposes the following types of core data a
 - observedproperties
 - resultqualifiers
 - orchestrationsystems
-- datasources
-- dataarchives
+- dataconnections
+- tasks
 
 ### Collections
 
@@ -141,11 +141,11 @@ workspace_sensors = workspace.sensors
 # Get all orchestration systems within a workspace
 workspace_orchestration_systems = workspace.orchestrationsystems
 
-# Get all data sources within a workspace
-workspace_data_sources = workspace.datasources
+# Get all data connections within a workspace
+workspace_data_connections = workspace.dataconnections
 
-# Get all data archives within a workspace
-workspace_data_archives = workspace.dataarchives
+# Get all tasks within a workspace
+workspace_tasks = workspace.tasks
 ```
 
 #### Example: Create a Workspace
@@ -958,7 +958,7 @@ datastream.delete()
 
 ### Orchestration Systems
 
-Orchestration systems are external apps or processes that interact with HydroServer data and perform scheduled automated tasks such as ETL or data archival to external systems. Users can register their own orchestration systems, and site administrators can configure global systems that can be used by any user.
+Orchestration systems are apps or processes that interact with HydroServer data and perform scheduled automated tasks such as ETL or data archival to external systems. Users can register their own orchestration systems, and site administrators can configure global systems that can be used by any user.
 
 ---
 
@@ -1021,174 +1021,221 @@ orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0
 orchestration_system.delete()
 ```
 
-### Data Sources
+### Data Connections
 
-Data sources represent where datastream observations are loaded into HydroServer from. They can also contain settings, scheduling, and status information used by orchestration systems responsible for loading the data.
-
----
-
-#### Example: Get Data Sources
-
-```python
-# Get all data sources
-data_sources = hs_api.datasources.list()
-
-# Get data sources belonging to a workspace
-workspace_data_sources = hs_api.datasources.list(workspace="00000000-0000-0000-0000-000000000000")
-
-# Get data source with a given ID
-data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
-```
-
-#### Example: Create Data Source
-
-```python
-# Create a new data source in HydroServer
-new_data_source = hs_api.datasources.create(
-    name='Example Data Source',
-    workspace='00000000-0000-0000-0000-000000000000',
-    orchestration_system='00000000-0000-0000-0000-000000000000',
-    settings={'link': 'http://www.example.com/mydata'},
-    interval=1,
-    interval_units='days',
-    datastreams=['00000000-0000-0000-0000-000000000000']
-)
-```
-
-Each of the methods above will return one or more DataSource objects. The examples below show the main properties and methods available to an DataSource object.
-
-#### Example: Modify a Data Source
-
-```python
-# Get a data source
-data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Update one or more properties of the data source.
-data_source.name = 'Updated Data Source'
-
-# Save the changes back to HydroServer.
-data_source.save()
-```
-
-#### Example: Refresh Data Source data from HydroServer
-
-```python
-# Get a data source
-data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Refresh data source data from HydroServer
-data_source.refresh()
-```
-
-#### Example: Delete Data Source from HydroServer
-
-```python
-# Get a data source
-data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Delete the data source from HydroServer
-data_source.delete()
-```
-
-#### Example: Manage Data Source Datastreams
-
-```python
-# Get a data source
-data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Get a datastream
-datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Add the datastream to the data source
-data_source.add_datastream(datastream=datastream)
-
-# Remove a datastream from the data source
-data_source.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
-```
-
-### Data Archives
-
-Data archives represent external systems data from HydroServer can be exported to. They can also contain settings, scheduling, and status information used by orchestration systems responsible for archiving the data.
+Data connections represent where datastream observations are loaded to or from in an ETL task. They can also contain settings, scheduling, and status information used by orchestration systems responsible for processing the data. Users can create their own data connections, and site administrators can configure global connections that can be used by any user.
 
 ---
 
-#### Example: Get Data Archives
+#### Example: Get Data Connections
 
 ```python
-# Get all data archives
-data_archives = hs_api.dataarchives.list()
+# Get all data connections
+data_connections = hs_api.dataconnections.list()
 
-# Get data archives belonging to a workspace
-workspace_data_archives = hs_api.dataarchives.list(workspace="00000000-0000-0000-0000-000000000000")
+# Get data connections belonging to a workspace
+workspace_data_connections = hs_api.dataconnections.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get data archive with a given ID
-data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
+# Get data connection with a given ID
+data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
-#### Example: Create Data Archive
+#### Example: Create Data Connection
 
 ```python
-# Create a new data archive in HydroServer
-new_data_archive = hs_api.dataarchives.create(
-    name='Example Data Archive',
+# Create a new data connection in HydroServer
+new_data_connection = hs_api.dataconnections.create(
+    name='Example Data Connection',
+    data_connection_type='ETL',
     workspace='00000000-0000-0000-0000-000000000000',
-    orchestration_system='00000000-0000-0000-0000-000000000000',
-    settings={'link': 'http://www.example.com/mydata'},
-    interval=1,
-    interval_units='days',
-    datastreams=['00000000-0000-0000-0000-000000000000']
+    extractor_type='HTTP',
+    extractor_settings={'url': 'https://www.example.com/data.csv'},
+    transformer_type='CSV',
+    transformer_settings={'header_row': 1, 'data_start_row': 2, 'timestamp_column': 'TIMESTAMP'}, # TODO
+    loader_type='HydroServer',
+    loader_settings={}
 )
 ```
 
-Each of the methods above will return one or more DataArchive objects. The examples below show the main properties and methods available to an DataArchive object.
+Each of the methods above will return one or more DataConnection objects. The examples below show the main properties and methods available to an DataConnection object.
 
-#### Example: Modify a Data Archive
+#### Example: Modify a Data Connection
 
 ```python
-# Get a data archive
-data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a data connection
+data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Update one or more properties of the data archive.
-data_archive.name = 'Updated Data Archive'
+# Update one or more properties of the data connection.
+data_connection.name = 'Updated Data Connection'
 
 # Save the changes back to HydroServer.
-data_archive.save()
+data_connection.save()
 ```
 
-#### Example: Refresh Data Archive data from HydroServer
+#### Example: Refresh Data Connection data from HydroServer
 
 ```python
-# Get a data archive
-data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a data connection
+data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Refresh data archive data from HydroServer
-data_archive.refresh()
+# Refresh data connection data from HydroServer
+data_connection.refresh()
 ```
 
-#### Example: Delete Data Archive from HydroServer
+#### Example: Delete Data Connection from HydroServer
 
 ```python
-# Get a data archive
-data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a data connection
+data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Delete the data archive from HydroServer
-data_archive.delete()
+# Delete the data connection from HydroServer
+data_connection.delete()
 ```
 
-#### Example: Manage Data Archive Datastreams
+### Tasks
+
+Tasks contain specific configuration settings that an orchestration system can use to perform ETL. Tasks can be scheduled to run at specific intervals or setup to be run manually.
+
+---
+
+#### Example: Get Tasks
 
 ```python
-# Get a data archive
-data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000')
+# Get all tasks
+tasks = hs_api.tasks.list()
 
-# Get a datastream
-datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
+# Get tasks belonging to a workspace
+workspace_tasks = hs_api.tasks.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Add the datastream to the data archive
-data_archive.add_datastream(datastream=datastream)
-
-# Remove a datastream from the data archive
-data_archive.remove_datastream(datastream='00000000-0000-0000-0000-000000000000')
+# Get task with a given ID
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
+#### Example: Create Task
 
+```python
+# Create a new task in HydroServer
+new_task = hs_api.tasks.create(
+    name='Example Task',
+    extractor_variables={},
+    transformer_variables={},
+    loader_variables={},
+    workspace='00000000-0000-0000-0000-000000000000',
+    orchestration_system='00000000-0000-0000-0000-000000000000',
+    data_connection='00000000-0000-0000-0000-000000000000',
+    interval=1,
+    interval_period='days',
+    mappings=[{
+        'sourceIdentifier': 'temperature',
+        'paths': [{
+            'targetIdentifier': '00000000-0000-0000-0000-000000000000'
+        }]
+    }]
+)
+```
+
+Each of the methods above will return one or more Task objects. The examples below show the main properties and methods available to a Task object.
+
+#### Example: Modify a Task
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Update one or more properties of the task.
+task.name = 'Updated Task'
+
+# Save the changes back to HydroServer.
+task.save()
+```
+
+#### Example: Refresh Task data from HydroServer
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Refresh task data from HydroServer
+task.refresh()
+```
+
+#### Example: Trigger HydroServer to run an internal Task
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Trigger a task run.
+task.run()
+```
+
+#### Example: Delete Task from HydroServer
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Delete the task from HydroServer
+task.delete()
+```
+
+### Task Runs
+
+HydroServer can store data about specific task runs. Task run information can also be uploaded to HydroServer from external orchestration systems to be reported on the orchestration dashboard.
+
+---
+
+#### Example: Get Task Runs
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get all tasks
+task_runs = task.get_task_runs()
+
+# Get task run with a given ID
+task_run = task.get_task_run(uid='00000000-0000-0000-0000-000000000000')
+```
+
+#### Example: Create Task Run
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Create a new task run in HydroServer
+new_task_run = task.create_task_run(
+    status="SUCCESS",
+    started_at="2026-01-01T00:00:00Z",
+    finished_at="2026-01-01T00:10:00Z",
+    result={
+        "message": "Task executed successfully."
+    }
+)
+```
+
+Each of the methods above will return one or more TaskRun objects. The examples below show the main properties and methods available to a TaskRun object.
+
+#### Example: Modify a Task Run
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get task run with a given ID
+task_run = task.update_task_run(
+    uid='00000000-0000-0000-0000-000000000000',
+    status='SUCCESS'
+)
+```
+
+#### Example: Delete Task Run from HydroServer
+
+```python
+# Get a task
+task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get task run with a given ID
+task_run = task.delete_task_run(uid='00000000-0000-0000-0000-000000000000')
+```
