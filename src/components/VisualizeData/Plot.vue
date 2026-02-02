@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column">
-    <div class="d-flex px-4">
+    <div class="d-flex px-4 justify-space-between align-center">
       <div class="d-flex align-center gap-2">
         <v-switch
           v-model="areTooltipsEnabled"
@@ -31,10 +31,14 @@
         > -->
       </div>
 
-      <v-spacer></v-spacer>
+      <div v-if="showCoordinates" class="text-medium-emphasis text-body-2">
+        <div>{{ hover.y }}</div>
+        <div>{{ formatDate(new Date(hover.x)) }}</div>
+      </div>
 
-      <div v-if="selectedData?.length" class="d-flex align-center gap-1">
+      <div class="d-flex align-center gap-1">
         <v-chip
+          v-if="selectedData?.length"
           :model-value="true"
           class="ma-2"
           close-icon="mdi-close"
@@ -85,10 +89,12 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { handleNewPlot, handleRelayout } from '@/utils/plotting/plotly'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { formatDate } from '@uwrl/qc-utils'
+
 const { dispatchSelection } = useDataSelection()
 const { clearSelected } = useDataSelection()
 const plot = ref<HTMLDivElement>()
-const { isUpdating, areTooltipsEnabled, visiblePoints, tooltipsMaxDataPoints } =
+const { isUpdating, areTooltipsEnabled, visiblePoints, tooltipsMaxDataPoints, hover, showCoordinates } =
   storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
 const tab = ref('plot')

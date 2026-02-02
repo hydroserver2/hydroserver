@@ -55,16 +55,6 @@ const selectorOptions = {
     },
   ],
 }
-
-const spikes = {
-  // showspikes: true,
-  // spikemode: 'toaxis' // or 'across' or 'marker'
-  // spikesnap: 'hovered data',
-  // spikecolor: 'grey',
-  // spikethickness: 2,
-  // spikedash: 'dot',
-}
-
 const iconRescaleY = {
   width: 500,
   height: 600,
@@ -139,8 +129,6 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
         position: 0,
         showline: true,
         linecolor: COLORS[0],
-
-        ...spikes
       }
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
@@ -190,7 +178,6 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
     autorange: false,
     showline: true,
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
-    // ...spikes
   }
 
   if (seriesArray.length > 2) {
@@ -205,9 +192,7 @@ export const createPlotlyOption = (seriesArray: GraphSeries[]) => {
       xaxis,
       ...yaxis,
       dragmode: 'pan',
-      hovermode: 'x', // Disable if hovering is too costly
-      // hovermode: 'x unified',
-      // uirevision: true,
+      hovermode: 'closest', // Disable if hovering is too costly
       title: {
         text: qcTrace?.name,
         font: { color: COLORS[0], weight: 'bold' },
@@ -309,8 +294,9 @@ export const handleNewPlot = async (element?: any) => {
   plotlyRef.value?.on('plotly_click', handleClick)
   // plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
 
-  // plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
+  plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
   plotlyRef.value?.addEventListener('mousemove', handleMouseMove);
+  plotlyRef.value?.addEventListener('mouseout', handleMouseOut);
 }
 
 export const handleRelayout = async (eventData: any) => {
@@ -414,11 +400,9 @@ export const handleDoubleClick = async (_event: MouseEvent) => {
   selectedData.value = []
 }
 
-
-
 // TODO: work in progress
 export const handleMouseMove = async (event: MouseEvent) => {
-  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, hover, showCoordinates } = storeToRefs(usePlotlyStore())
 
   const xaxis = plotlyRef.value?._fullLayout.xaxis;
   const yaxis = plotlyRef.value?._fullLayout.yaxis;
@@ -427,11 +411,17 @@ export const handleMouseMove = async (event: MouseEvent) => {
 
   const bounds = plotlyRef.value?.getBoundingClientRect()
   if (bounds) {
-    // console.log(plotlyRef.value?._fullLayout)
     const xInDataCoord = xaxis.p2c(event.x - marginleft - bounds.x);
     const yInDataCoord = yaxis.p2c(event.y - marginTop - bounds.y);
-    // console.log(xInDataCoord, yInDataCoord)
+    hover.value.x = xInDataCoord
+    hover.value.y = yInDataCoord.toFixed(4)
+    showCoordinates.value = true
   }
+}
+
+export const handleMouseOut = () => {
+  const {showCoordinates} = storeToRefs(usePlotlyStore())
+  showCoordinates.value = false
 }
 
 

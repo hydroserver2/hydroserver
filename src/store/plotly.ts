@@ -18,6 +18,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const tooltipsMaxDataPoints = ref(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
+  const showCoordinates = ref(false)
+  const hover = ref({x: 0, y: 0})
 
   const graphSeriesArray = ref<GraphSeries[]>([])
   /** The index of the series that represents the datastream selected for quality control */
@@ -157,5 +159,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     tooltipsMaxDataPoints,
     visiblePoints,
     areTooltipsEnabled,
+    showCoordinates,
+    hover
   }
 })
