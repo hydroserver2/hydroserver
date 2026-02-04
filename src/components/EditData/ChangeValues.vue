@@ -95,7 +95,7 @@ const onChangeValues = async () => {
 
   isUpdating.value = true
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.CHANGE_VALUES,
       selectedData.value,
       operator,

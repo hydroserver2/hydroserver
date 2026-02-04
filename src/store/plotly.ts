@@ -1,6 +1,7 @@
-import { GraphSeries, HistoryItem } from '@/types'
+import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
+import { HistoryItem } from '@uwrl/qc-utils'
 
 import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions
@@ -19,7 +20,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
   const showCoordinates = ref(false)
-  const hover = ref({x: 0, y: 0})
+  const hover = ref({ x: 0, y: 0 })
 
   const graphSeriesArray = ref<GraphSeries[]>([])
   /** The index of the series that represents the datastream selected for quality control */
@@ -108,12 +109,14 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
     const observationsPromise = fetchObservationsInRange(datastream, start, end)
 
-    const fetchUnitPromise =
-      hs.value.units.get(datastream.unitId).catch((error) => {
+    const fetchUnitPromise = hs.value.units
+      .get(datastream.unitId)
+      .catch((error) => {
         console.error('Failed to fetch Unit:', error)
         return null
       })
-    const fetchObservedPropertyPromise = hs.value.observedProperties.get(datastream.observedPropertyId)
+    const fetchObservedPropertyPromise = hs.value.observedProperties
+      .get(datastream.observedPropertyId)
       .catch((error) => {
         console.error('Failed to fetch ObservedProperty:', error)
         return null
@@ -160,6 +163,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     visiblePoints,
     areTooltipsEnabled,
     showCoordinates,
-    hover
+    hover,
   }
 })

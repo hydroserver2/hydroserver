@@ -62,7 +62,7 @@ const onShiftDatetimes = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.SHIFT_DATETIMES,
       selectedData.value,
       +shiftAmount.value,
