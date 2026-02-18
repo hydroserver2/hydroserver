@@ -45,10 +45,12 @@ class UnitService(HydroServerBaseService):
         definition: str,
         unit_type: str,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None
     ) -> "Unit":
         """Create a new unit."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "symbol": symbol,
             "definition": definition,

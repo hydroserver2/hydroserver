@@ -54,10 +54,12 @@ class SensorService(HydroServerBaseService):
         method_link: Optional[str] = None,
         method_code: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None
     ) -> "Sensor":
         """Create a new sensor."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "description": description,
             "encodingType": encoding_type,

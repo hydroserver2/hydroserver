@@ -51,10 +51,12 @@ class DataConnectionService(HydroServerBaseService):
         transformer_settings: dict = ...,
         loader_type: str = ...,
         loader_settings: dict = ...,
+        uid: Optional[UUID] = None
     ) -> "DataConnection":
         """Create a new data connection."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "type": data_connection_type,
             "workspaceId": normalize_uuid(workspace),

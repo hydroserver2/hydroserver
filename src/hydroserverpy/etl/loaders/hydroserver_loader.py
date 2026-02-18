@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING
 
 from .base import Loader
 import logging
@@ -72,7 +72,6 @@ class HydroServerLoader(Loader):
                 .rename(columns={col: "value"})
                 .dropna(subset=["value"])
             )
-            pre_count = len(base_df)
             if ds_cutoff:
                 base_df = base_df.loc[base_df["timestamp"] > ds_cutoff]
 

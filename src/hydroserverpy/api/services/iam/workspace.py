@@ -37,10 +37,17 @@ class WorkspaceService(HydroServerBaseService):
             is_associated=is_associated,
         )
 
-    def create(self, name: str, is_private: bool, **_) -> "Workspace":
+    def create(
+        self,
+        name: str,
+        is_private: bool,
+        uid: Optional[UUID] = None,
+        **_
+    ) -> "Workspace":
         """Create a new workspace."""
 
         return super().create(
+            id=normalize_uuid(uid),
             name=name,
             is_private=is_private,
         )

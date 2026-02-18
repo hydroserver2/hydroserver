@@ -37,10 +37,12 @@ class ResultQualifierService(HydroServerBaseService):
         code: str,
         description: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None,
     ) -> "ResultQualifier":
         """Create a new result qualifier."""
 
         body = {
+            "id": normalize_uuid(uid),
             "code": code,
             "description": description,
             "workspaceId": normalize_uuid(workspace),

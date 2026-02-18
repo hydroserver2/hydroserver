@@ -42,10 +42,12 @@ class ProcessingLevelService(HydroServerBaseService):
         definition: Optional[str] = None,
         explanation: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None,
     ) -> "ProcessingLevel":
         """Create a new processing level."""
 
         body = {
+            "id": normalize_uuid(uid),
             "code": code,
             "definition": definition,
             "explanation": explanation,

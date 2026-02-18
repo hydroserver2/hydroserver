@@ -68,10 +68,12 @@ class ThingService(HydroServerBaseService):
         county: Optional[str] = None,
         country: Optional[str] = None,
         data_disclaimer: Optional[str] = None,
+        uid: Optional[UUID] = None,
     ) -> "Thing":
         """Create a new thing."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "description": description,
             "samplingFeatureType": sampling_feature_type,

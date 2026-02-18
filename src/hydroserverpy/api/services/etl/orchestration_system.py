@@ -39,10 +39,12 @@ class OrchestrationSystemService(HydroServerBaseService):
         name: str,
         orchestration_system_type: str,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None
     ) -> "OrchestrationSystem":
         """Create a new orchestration system."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "type": orchestration_system_type,
             "workspaceId": normalize_uuid(workspace),

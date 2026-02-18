@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-from typing import Union, Optional, Literal, List, Dict, IO, TYPE_CHECKING
+from typing import Union, Optional, Literal, List, Dict, Tuple, IO, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
 from pydantic.alias_generators import to_camel
@@ -40,6 +40,7 @@ class DatastreamService(HydroServerBaseService):
         sampled_medium: str = ...,
         status: Optional[str] = ...,
         result_type: str = ...,
+        tag: Tuple[str, str] = ...,
         is_private: bool = ...,
         value_count_max: int = ...,
         value_count_min: int = ...,
@@ -69,6 +70,7 @@ class DatastreamService(HydroServerBaseService):
             sampled_medium=sampled_medium,
             status=status,
             result_type=result_type,
+            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
             value_count_max=value_count_max,
             value_count_min=value_count_min,
@@ -111,10 +113,12 @@ class DatastreamService(HydroServerBaseService):
         result_end_time: Optional[datetime] = None,
         is_private: bool = False,
         is_visible: bool = True,
+        uid: Optional[UUID] = None,
     ) -> "Datastream":
         """Create a new datastream."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "description": description,
             "thingId": normalize_uuid(thing),

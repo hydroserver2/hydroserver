@@ -46,10 +46,12 @@ class ObservedPropertyService(HydroServerBaseService):
         observed_property_type: str,
         code: str,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
+        uid: Optional[UUID] = None
     ) -> "ObservedProperty":
         """Create a new observed property."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "definition": definition,
             "description": description,

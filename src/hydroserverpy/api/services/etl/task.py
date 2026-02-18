@@ -88,10 +88,12 @@ class TaskService(HydroServerBaseService):
         interval: Optional[int] = None,
         interval_period: Optional[str] = None,
         mappings: Optional[List[dict]] = None,
+        uid: Optional[UUID] = None,
     ) -> "Task":
         """Create a new ETL task."""
 
         body = {
+            "id": normalize_uuid(uid),
             "name": name,
             "workspaceId": normalize_uuid(workspace),
             "dataConnectionId": normalize_uuid(data_connection),
