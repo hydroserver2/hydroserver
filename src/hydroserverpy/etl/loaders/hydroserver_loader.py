@@ -151,11 +151,11 @@ class HydroServerLoader(Loader):
                     else p.target_identifier
                 )
                 datastream = self.client.datastreams.get(datastream_id)
-                raw = datastream.phenomenon_end_time or "1970-01-01"
+                raw = datastream.phenomenon_end_time or "1880-01-01"
                 ts = pd.to_datetime(raw, utc=True)
                 timestamps.append(ts)
         earliest = (
-            min(timestamps) if timestamps else pd.Timestamp("1970-01-01", tz="UTC")
+            min(timestamps) if timestamps else pd.Timestamp("1880-01-01", tz="UTC")
         )
         logger.debug("Found earliest begin date: %s", earliest)
         return earliest
