@@ -2,7 +2,6 @@ import json
 from typing import Literal, Union, Optional, List, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
-from pydantic import Field
 from hydroserverpy.api.models import DataConnection, Task, TaskRun, TaskMapping, OrchestrationSystem
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseService
@@ -79,17 +78,17 @@ class TaskService(HydroServerBaseService):
         workspace: Union["Workspace", UUID, str],
         data_connection: Union["DataConnection", UUID, str],
         orchestration_system: Union["OrchestrationSystem", UUID, str],
-        extractor_variables: dict = Field(default_factory=dict),
-        transformer_variables: dict = Field(default_factory=dict),
-        loader_variables: dict = Field(default_factory=dict),
+        extractor_variables: Optional[dict] = None,
+        transformer_variables: Optional[dict] = None,
+        loader_variables: Optional[dict] = None,
         paused: bool = False,
         start_time: Optional[datetime] = None,
         next_run_at: Optional[datetime] = None,
         crontab: Optional[str] = None,
         interval: Optional[int] = None,
         interval_period: Optional[str] = None,
-        mappings: List[dict] = Field(default_factory=list),
-        uid: Optional[UUID] = None
+        mappings: Optional[List[dict]] = None,
+        uid: Optional[UUID] = None,
     ) -> "Task":
         """Create a new ETL task."""
 
@@ -99,19 +98,23 @@ class TaskService(HydroServerBaseService):
             "workspaceId": normalize_uuid(workspace),
             "dataConnectionId": normalize_uuid(data_connection),
             "orchestrationSystemId": normalize_uuid(orchestration_system),
-            "extractorVariables": extractor_variables,
-            "transformerVariables": transformer_variables,
-            "loaderVariables": loader_variables,
-            "schedule": {
+            "extractorVariables": extractor_variables or {},
+            "transformerVariables": transformer_variables or {},
+            "loaderVariables": loader_variables or {},
+            "mappings": mappings or [],
+        }
+
+        # Only include schedule if the caller provided scheduling information.
+        # Using Ellipsis here breaks JSON serialization.
+        if interval or crontab:
+            body["schedule"] = {
                 "paused": paused,
                 "startTime": start_time,
                 "nextRunAt": next_run_at,
                 "crontab": crontab,
                 "interval": interval,
                 "intervalPeriod": interval_period,
-            } if interval or crontab else ...,
-            "mappings": mappings if mappings else []
-        }
+            }
 
         return super().create(**body)
 

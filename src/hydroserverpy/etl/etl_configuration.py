@@ -2,6 +2,7 @@ import uuid
 from typing import Annotated, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+from zoneinfo import ZoneInfo
 
 WorkflowType = Literal["ETL", "Aggregation", "Virtual", "SDL"]
 CSVDelimiterType = Literal[",", "|", "\t", ";", " "]
@@ -76,12 +77,28 @@ class Timestamp(BaseModel):
 
     class Config:
         populate_by_name = True
+        validate_default = True
 
-    @field_validator("timezone")
+    @field_validator("timezone", mode="after")
     def check_timezone(cls, timezone_value, info):
         mode = info.data.get("timezone_mode")
-        if mode == TimezoneMode.fixedOffset and timezone_value is None:
-            raise ValueError("`timezone` must be set when timezoneMode is fixedOffset")
+        if mode == TimezoneMode.fixedOffset:
+            if timezone_value is None:
+                raise ValueError(
+                    "`timezone` must be set when timezoneMode is fixedOffset (e.g. '-0700')"
+                )
+        if mode == TimezoneMode.daylightSavings:
+            if timezone_value is None or str(timezone_value).strip() == "":
+                raise ValueError(
+                    "Task configuration is missing required daylight savings offset (when using daylightSavings mode)."
+                )
+            # Validate it's a real IANA tz name early to avoid cryptic ZoneInfo errors later.
+            try:
+                ZoneInfo(str(timezone_value))
+            except Exception:
+                raise ValueError(
+                    f"Invalid timezone {timezone_value!r}. Use an IANA timezone like 'America/Denver'."
+                )
         return timezone_value
 
 
@@ -177,15 +194,15 @@ class ExpressionDataTransformation(BaseModel):
         populate_by_name = True
 
 
-class LookupTableDataTransformation(BaseModel):
-    type: Literal["lookup"]
-    lookup_table_id: str = Field(..., alias="lookupTableId")
+class RatingCurveDataTransformation(BaseModel):
+    type: Literal["rating_curve"]
+    rating_curve_url: str = Field(..., alias="ratingCurveUrl")
 
     class Config:
         populate_by_name = True
 
 
-DataTransformation = Union[ExpressionDataTransformation, LookupTableDataTransformation]
+DataTransformation = Union[ExpressionDataTransformation, RatingCurveDataTransformation]
 
 
 class MappingPath(BaseModel):

@@ -7,6 +7,9 @@ import jmespath
 from ..etl_configuration import TransformerConfig, SourceTargetMapping
 
 
+logger = logging.getLogger(__name__)
+
+
 class JSONTransformer(Transformer):
     def __init__(self, transformer_config: TransformerConfig):
         super().__init__(transformer_config)
@@ -30,11 +33,24 @@ class JSONTransformer(Transformer):
             )
 
         json_data = json.load(data_file)
-        data_points = self.extract_data_points(json_data)
-        if not data_points:
-            logging.warning("No data points found in the JSON data.")
-            return None
+        logger.debug("Loaded JSON payload (type=%s).", type(json_data).__name__)
+        if not isinstance(json_data, (dict, list)):
+            raise ValueError("The payload's expected fields were not found.")
 
+        data_points = self.extract_data_points(json_data)
+        if data_points is None:
+            # JMESPath returned null: this usually means the expected field/path was not present.
+            raise ValueError(
+                "The timestamp or value key could not be found with the specified query."
+            )
+        if len(data_points) == 0:
+            # Treat an empty result list as "no data" (not a configuration error).
+            # Build an empty frame with the expected columns so standardization can proceed cleanly.
+            cols = [self.timestamp.key] + [m.source_identifier for m in mappings]
+            df = pd.DataFrame(columns=cols)
+            return self.standardize_dataframe(df, mappings)
+
+        logger.debug("Extracted %s JSON data point(s).", len(data_points))
         df = pd.DataFrame(data_points)
 
         return self.standardize_dataframe(df, mappings)
@@ -42,7 +58,12 @@ class JSONTransformer(Transformer):
     def extract_data_points(self, json_data: Any) -> Optional[List[dict]]:
         """Extracts data points from the JSON data using the data_path."""
         data_points = jmespath.search(self.jmespath, json_data)
+        if data_points is None:
+            return None
 
         if isinstance(data_points, dict):
             data_points = [data_points]
-        return data_points
+        if isinstance(data_points, list):
+            return data_points
+        # Unexpected output type; surface it as a configuration issue.
+        return None

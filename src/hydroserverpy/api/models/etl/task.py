@@ -8,6 +8,7 @@ from typing import ClassVar, TYPE_CHECKING, List, Optional, Literal, Union
 from datetime import datetime, timedelta, timezone
 from pydantic import Field, AliasPath, AliasChoices, TypeAdapter
 from hydroserverpy.etl.factories import extractor_factory, transformer_factory, loader_factory
+from hydroserverpy.etl.loaders.hydroserver_loader import LoadSummary
 from hydroserverpy.etl.etl_configuration import ExtractorConfig, TransformerConfig, LoaderConfig, SourceTargetMapping, MappingPath
 from ..base import HydroServerBaseModel
 from .orchestration_system import OrchestrationSystem
@@ -183,6 +184,7 @@ class Task(HydroServerBaseModel):
 
         task_run = self.create_task_run(status="RUNNING", started_at=datetime.now(timezone.utc))
 
+        runtime_source_uri: Optional[str] = None
         try:
             logging.info("Starting extract")
 
@@ -199,9 +201,13 @@ class Task(HydroServerBaseModel):
             ]
 
             data = extractor_cls.extract(self, loader_cls)
+            runtime_source_uri = getattr(extractor_cls, "runtime_source_uri", None)
             if self.is_empty(data):
                 self._update_status(
-                    loader_cls, True, "No data returned from the extractor"
+                    task_run,
+                    True,
+                    "No data returned from the extractor",
+                    runtime_source_uri=runtime_source_uri,
                 )
                 return
 
@@ -209,15 +215,25 @@ class Task(HydroServerBaseModel):
             data = transformer_cls.transform(data, task_mappings)
             if self.is_empty(data):
                 self._update_status(
-                    loader_cls, True, "No data returned from the transformer"
+                    task_run,
+                    True,
+                    "No data returned from the transformer",
+                    runtime_source_uri=runtime_source_uri,
                 )
                 return
 
             logging.info("Starting load")
-            loader_cls.load(data, self)
-            self._update_status(task_run, True, "OK")
+            load_summary = loader_cls.load(data, self)
+            self._update_status(
+                task_run,
+                True,
+                self._success_message(load_summary),
+                runtime_source_uri=runtime_source_uri,
+            )
         except Exception as e:
-            self._update_status(task_run, False, str(e))
+            self._update_status(
+                task_run, False, str(e), runtime_source_uri=runtime_source_uri
+            )
 
     @staticmethod
     def is_empty(data):
@@ -229,14 +245,55 @@ class Task(HydroServerBaseModel):
 
         return False
 
-    def _update_status(self, task_run: TaskRun, success: bool, msg: str):
+    def _update_status(
+        self,
+        task_run: TaskRun,
+        success: bool,
+        msg: str,
+        runtime_source_uri: Optional[str] = None,
+    ):
+        result = {"message": msg}
+        if runtime_source_uri:
+            result.update(
+                {
+                    "runtimeSourceUri": runtime_source_uri,
+                    "runtime_source_uri": runtime_source_uri,
+                    "runtimeUrl": runtime_source_uri,
+                    "runtime_url": runtime_source_uri,
+                }
+            )
+
         self.update_task_run(
             task_run.id,
             status="SUCCESS" if success else "FAILURE",
-            result={"message": msg}
+            result=result
         )
         self.next_run_at = self._next_run()
         self.save()
+
+    @staticmethod
+    def _success_message(load: Optional[LoadSummary]) -> str:
+        if not load:
+            return "OK"
+
+        loaded = load.observations_loaded
+        if loaded == 0:
+            if load.timestamps_total and load.timestamps_after_cutoff == 0:
+                if load.cutoff:
+                    return (
+                        "Already up to date - no new observations loaded "
+                        f"(all timestamps were at or before {load.cutoff})."
+                    )
+                return "Already up to date - no new observations loaded (all timestamps were at or before the cutoff)."
+            if load.observations_available == 0:
+                return "Already up to date - no new observations loaded."
+            return "No new observations were loaded."
+
+        if load.datastreams_loaded:
+            return (
+                f"Load completed successfully ({loaded} rows across {load.datastreams_loaded} datastreams)."
+            )
+        return f"Load completed successfully ({loaded} rows loaded)."
 
     def _next_run(self) -> Optional[str]:
         now = datetime.now(timezone.utc)

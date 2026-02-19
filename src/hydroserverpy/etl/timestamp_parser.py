@@ -12,6 +12,8 @@ ALLOWED_TIMESTAMP_FORMATS = {m.lower() for m in get_args(TimestampFormat)}
 TimezoneMode = Literal["utc", "daylightSavings", "fixedOffset", "embeddedOffset"]
 ALLOWED_TIMEZONE_MODES = {m.lower() for m in get_args(TimezoneMode)}
 
+logger = logging.getLogger(__name__)
+
 
 class Timestamp(BaseModel):
     format: TimestampFormat
@@ -42,6 +44,10 @@ class TimestampParser:
     @cached_property
     def tz(self):
         if self.tz_mode == "fixedoffset":
+            if not self.timestamp.timezone:
+                raise ValueError(
+                    "`timezone` must be set when timezoneMode is fixedOffset (e.g. '-0700')"
+                )
             offset = self.timestamp.timezone.strip()
             if len(offset) != 5 or offset[0] not in "+-":
                 raise ValueError(f"Invalid timezone: {offset}")
@@ -49,7 +55,16 @@ class TimestampParser:
             hrs, mins = int(offset[1:3]), int(offset[3:5])
             return timezone(timedelta(minutes=sign * (hrs * 60 + mins)))
         if self.tz_mode == "daylightsavings":
-            return ZoneInfo(self.timestamp.timezone)
+            if not self.timestamp.timezone:
+                raise ValueError(
+                    "Task configuration is missing required daylight savings offset (when using daylightSavings mode)."
+                )
+            try:
+                return ZoneInfo(self.timestamp.timezone)
+            except Exception as e:
+                raise ValueError(
+                    f"Invalid timezone {self.timestamp.timezone!r}. Use an IANA timezone like 'America/Denver'."
+                ) from e
         if self.tz_mode == "utc":
             return timezone.utc
 
@@ -81,9 +96,14 @@ class TimestampParser:
 
         if parsed.isna().any():
             bad_rows = s[parsed.isna()].head(2).tolist()
-            logging.warning(
-                f"{parsed.isna().sum()} timestamps failed to parse. "
-                f"Sample bad values: {bad_rows}"
+            logger.warning(
+                "%s timestamps failed to parse (format=%r, timezoneMode=%r, timezone=%r, customFormat=%r). Sample bad values: %s",
+                parsed.isna().sum(),
+                self.timestamp.format,
+                self.timestamp.timezone_mode,
+                self.timestamp.timezone,
+                self.timestamp.custom_format,
+                bad_rows,
             )
 
         return parsed
@@ -106,7 +126,12 @@ class TimestampParser:
             return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
         if tz_format == "custom":
-            logging.info(f"custom timestamp: ... {self.timestamp}")
+            logger.debug(
+                "Formatting runtime timestamp using custom format (customFormat=%r, timezoneMode=%r, timezone=%r).",
+                self.timestamp.custom_format,
+                self.timestamp.timezone_mode,
+                self.timestamp.timezone,
+            )
             return dt.astimezone(self.tz).strftime(self.timestamp.custom_format)
 
         raise ValueError(f"Unknown timestamp.format: {self.timestamp.format!r}")

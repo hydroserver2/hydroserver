@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Union, List, Tuple, Optional
+from typing import TYPE_CHECKING, Optional, Union, List, Tuple
 from pydantic import EmailStr
 from uuid import UUID
 from datetime import datetime
