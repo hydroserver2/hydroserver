@@ -331,7 +331,9 @@ class TaskService(ServiceUtils):
         task = self.update_scheduling(task, data.schedule.dict() if data.schedule else None)
         task = self.update_mapping(
             task,
-            [mapping.dict() for mapping in data.mappings] if data.mappings else None,
+            [mapping.dict() for mapping in data.mappings]
+            if data.mappings is not None
+            else None,
         )
         task.save()
 
