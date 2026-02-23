@@ -480,34 +480,39 @@ async function onSubmit() {
   if (!valid.value) return
 
   submitLoading.value = true
+  try {
+    task.value.workspaceId = taskWorkspaceId.value || ''
+    task.value.orchestrationSystemId =
+      props.orchestrationSystem?.id || task.value.orchestrationSystemId
+    if (!task.value.schedule) task.value.schedule = defaultSchedule()
+    if (isAggregationTask.value) {
+      task.value.dataConnectionId = null as any
+      syncAggregationConfigToMappings()
+    }
 
-  task.value.workspaceId = taskWorkspaceId.value || ''
-  task.value.orchestrationSystemId =
-    props.orchestrationSystem?.id || task.value.orchestrationSystemId
-  if (!task.value.schedule) task.value.schedule = defaultSchedule()
-  if (isAggregationTask.value) {
-    task.value.dataConnectionId = null as any
-    syncAggregationConfigToMappings()
-  }
+    const res = isEdit.value
+      ? await hs.tasks.update(task.value)
+      : await hs.tasks.create(task.value)
 
-  const res = isEdit.value
-    ? await hs.tasks.update(task.value)
-    : await hs.tasks.create(task.value)
+    if (!res.ok) {
+      Snackbar.error(res.message)
+      console.error(res)
+      return
+    }
 
-  if (!res.ok) {
-    Snackbar.error(res.message)
-    console.error(res)
-  } else {
     const saved = res.data
     upsertTaskList(tasks, saved)
     upsertTaskList(workspaceTasks as unknown as Ref<Task[]>, saved)
     hydrateTask(saved)
 
     emit(isEdit.value ? 'updated' : 'created', saved)
+    emit('close')
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to save task.')
+    console.error(error)
+  } finally {
+    submitLoading.value = false
   }
-
-  submitLoading.value = false
-  emit('close')
 }
 </script>
 

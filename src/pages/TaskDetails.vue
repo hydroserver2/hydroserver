@@ -459,7 +459,7 @@
       >
         <Swimlanes
           :task="task"
-          :show-actions="true"
+          :show-actions="canEditTask"
           @edit="openEdit = true"
           @delete="openDelete = true"
         />
