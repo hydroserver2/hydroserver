@@ -105,8 +105,10 @@ defineEmits<{
 
 function sourceDatastreamLabel(sourceIdentifier: string | number) {
   const id = String(sourceIdentifier)
-  const match = workspaceDatastreams.value.find((d) => d.id === id)
-  return match ? `${match.name} (${id})` : id
+  const match =
+    linkedDatastreams.value.find((d) => d.id === id) ||
+    workspaceDatastreams.value.find((d) => d.id === id)
+  return match?.name ? `${id} - ${match.name}` : id
 }
 </script>
 

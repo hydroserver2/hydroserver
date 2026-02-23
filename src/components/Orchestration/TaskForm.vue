@@ -356,16 +356,13 @@ function syncAggregationConfigToMappings() {
     ]
   }
 
-  if (task.value.mappings.length > 1) {
-    task.value.mappings = [task.value.mappings[0] as any]
-  }
-
-  const mapping = task.value.mappings[0] as any
-  if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-    mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
-  }
-  if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
-  ensureAggregationTransformation(mapping.paths[0])
+  task.value.mappings.forEach((mapping: any) => {
+    if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
+      mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
+    }
+    if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
+    ensureAggregationTransformation(mapping.paths[0])
+  })
 }
 
 const startInput = computed({

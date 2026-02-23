@@ -278,7 +278,7 @@
             </template>
           </div>
         </template>
-        <div v-if="!isAggregationTask" class="mapping-actions">
+        <div class="mapping-actions">
           <v-btn
             size="small"
             variant="text"
@@ -317,7 +317,7 @@
 
     <div
       class="mapping-actions"
-      v-if="!isAggregationTask && task.mappings.length === 0"
+      v-if="task.mappings.length === 0"
     >
       <v-btn
         size="small"
@@ -482,16 +482,13 @@ function enforceAggregationShape() {
     ]
   }
 
-  if (task.value.mappings.length > 1) {
-    task.value.mappings = [task.value.mappings[0]]
-  }
-
-  const mapping = task.value.mappings[0] as any
-  if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-    mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
-  }
-  if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
-  ensureAggregationTransformation(mapping.paths[0])
+  task.value.mappings.forEach((mapping: any) => {
+    if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
+      mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
+    }
+    if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
+    ensureAggregationTransformation(mapping.paths[0])
+  })
 }
 
 async function validate() {
@@ -504,14 +501,20 @@ async function validate() {
 
   if (isAggregationTask.value) {
     enforceAggregationShape()
-    const mapping = task.value.mappings?.[0] as any
-    const path = mapping?.paths?.[0] as any
-    const statistic = path?.dataTransformations?.[0]?.aggregationStatistic
+    aggregationSourceMissing.value = false
+    aggregationTargetMissing.value = false
+    aggregationStatisticMissing.value = false
 
-    aggregationSourceMissing.value = !mapping?.sourceIdentifier
-    aggregationTargetMissing.value = !path?.targetIdentifier
-    aggregationStatisticMissing.value =
-      typeof statistic !== 'string' || statistic.trim().length === 0
+    task.value.mappings.forEach((mapping: any) => {
+      const path = mapping?.paths?.[0] as any
+      const statistic = path?.dataTransformations?.[0]?.aggregationStatistic
+
+      if (!mapping?.sourceIdentifier) aggregationSourceMissing.value = true
+      if (!path?.targetIdentifier) aggregationTargetMissing.value = true
+      if (typeof statistic !== 'string' || statistic.trim().length === 0) {
+        aggregationStatisticMissing.value = true
+      }
+    })
 
     if (
       aggregationSourceMissing.value ||
@@ -745,7 +748,6 @@ function onAddPath(mi: number) {
 
 function onAddMapping() {
   if (!task.value.mappings) (task.value as any).mappings = []
-  if (isAggregationTask.value && task.value.mappings.length >= 1) return
 
   const newMapping: Mapping = {
     sourceIdentifier: '',
