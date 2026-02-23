@@ -500,7 +500,7 @@ class TaskService(ServiceUtils):
                     task.periodic_task.crontab.hour = hour
                     task.periodic_task.crontab.day_of_month = day
                     task.periodic_task.crontab.month_of_year = month
-                    task.periodic_task.crontab.weekday = weekday
+                    task.periodic_task.crontab.day_of_week = weekday
                     task.periodic_task.crontab.save()
                 else:
                     crontab_schedule = CrontabSchedule.objects.create(
