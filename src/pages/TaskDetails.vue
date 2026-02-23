@@ -405,13 +405,13 @@
         color="cyan-darken-3"
         rounded="t-lg"
         class="section-toolbar mt-6"
-        v-if="pipelineRows.length"
+        v-if="showDataConnectionSection"
       >
         <h6 class="text-h6 ml-4">Data connection</h6>
       </v-toolbar>
       <v-data-table
         v-show="activePanel === 'details'"
-        v-if="pipelineRows.length"
+        v-if="showDataConnectionSection"
         :headers="pipelineHeaders"
         :items="pipelineRows"
         :items-per-page="-1"
@@ -1087,6 +1087,19 @@ const scheduleString = computed(() => {
   return description
 })
 
+const taskTypeLabel = computed(() => {
+  return (
+    (task.value as any)?.type ??
+    (task.value as any)?.taskType ??
+    (task.value as any)?.task_type ??
+    '–'
+  )
+})
+
+const isAggregationTask = computed(() => {
+  return `${taskTypeLabel.value}`.trim().toUpperCase() === 'AGGREGATION'
+})
+
 const taskHeaders = [
   { key: 'label', title: 'Label' },
   { key: 'value', title: 'Value' },
@@ -1113,6 +1126,11 @@ const taskInformation = computed(() => {
       icon: mdiCardAccountDetails,
       label: 'ID',
       value: task.value.id,
+    },
+    {
+      icon: mdiInformationOutline,
+      label: 'Task type',
+      value: taskTypeLabel.value,
     },
     {
       icon: mdiCalendarClock,
@@ -1287,6 +1305,10 @@ const pipelineRows = computed(() => {
   }
 
   return rows
+})
+
+const showDataConnectionSection = computed(() => {
+  return !isAggregationTask.value && pipelineRows.value.length > 0
 })
 
 const transformerInformation = computed(() => {
