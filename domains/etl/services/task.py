@@ -595,14 +595,13 @@ class TaskService(ServiceUtils):
         workspace_id: uuid.UUID,
         mapping_data: List[dict],
     ):
-        if len(mapping_data) != 1:
+        if len(mapping_data) < 1:
             raise HttpError(
                 400,
-                "Aggregation tasks currently support exactly one mapping.",
+                "Aggregation tasks must include at least one mapping.",
             )
 
         datastream_ids: set[uuid.UUID] = set()
-
         for mapping in mapping_data:
             try:
                 source_identifier = str(uuid.UUID(str(mapping["source_identifier"])))

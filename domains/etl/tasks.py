@@ -341,13 +341,12 @@ def _parse_datastream_uuid(raw_value: Any, field_name: str) -> UUID:
 
 def _extract_aggregation_mappings(task: Task) -> list[AggregationMapping]:
     task_mappings = list(task.mappings.all())
-    if len(task_mappings) != 1:
+    if len(task_mappings) < 1:
         raise EtlUserFacingError(
-            "Aggregation tasks currently support exactly one mapping."
+            "Aggregation tasks must include at least one mapping."
         )
 
     mappings: list[AggregationMapping] = []
-
     for task_mapping in task_mappings:
         paths = list(task_mapping.paths.all())
         if len(paths) != 1:

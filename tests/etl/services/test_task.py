@@ -285,10 +285,10 @@ def test_create_aggregation_task_without_data_connection(get_principal):
         ),
         mappings=[
             TaskMappingPostBody(
-                source_identifier="27c70b41-e845-40ea-8cc7-d1b40f89816b",
+                source_identifier="dd1f9293-ce29-4b6a-88e6-d65110d1be65",
                 paths=[
                     TaskMappingPathPostBody(
-                        target_identifier="e0506cac-3e50-4d0a-814d-7ae0146705b2",
+                        target_identifier="1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2",
                         data_transformations=[
                             {
                                 "type": "aggregation",
@@ -340,7 +340,7 @@ def test_create_etl_task_requires_data_connection(get_principal):
     assert exc_info.value.message == "ETL tasks require a data connection."
 
 
-def test_create_aggregation_task_requires_single_mapping(get_principal):
+def test_create_aggregation_task_supports_multiple_source_target_mappings(get_principal):
     aggregation_transform = {
         "type": "aggregation",
         "aggregationStatistic": "simple_mean",
@@ -349,7 +349,7 @@ def test_create_aggregation_task_requires_single_mapping(get_principal):
     }
 
     task_data = TaskPostBody(
-        name="Aggregation Task With Two Mappings",
+        name="Aggregation Task With Multiple Mappings",
         task_type="Aggregation",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=None,
@@ -360,21 +360,65 @@ def test_create_aggregation_task_requires_single_mapping(get_principal):
         ),
         mappings=[
             TaskMappingPostBody(
-                source_identifier="27c70b41-e845-40ea-8cc7-d1b40f89816b",
+                source_identifier="dd1f9293-ce29-4b6a-88e6-d65110d1be65",
                 paths=[
                     TaskMappingPathPostBody(
-                        target_identifier="e0506cac-3e50-4d0a-814d-7ae0146705b2",
+                        target_identifier="1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2",
                         data_transformations=[aggregation_transform],
                     )
                 ],
             ),
             TaskMappingPostBody(
-                source_identifier="6c0e4b78-13d7-43f6-b64e-f980f90db86f",
+                source_identifier="42e08eea-27bb-4ea3-8ced-63acff0f3334",
                 paths=[
                     TaskMappingPathPostBody(
-                        target_identifier="df8e6b4d-3e4e-4ac0-b421-fe6f8bbd1e98",
+                        target_identifier="9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
                         data_transformations=[aggregation_transform],
                     )
+                ],
+            ),
+        ],
+    )
+
+    task_create = task_service.create(
+        principal=get_principal("owner"),
+        data=task_data,
+    )
+    assert task_create["task_type"] == "Aggregation"
+    assert len(task_create["mappings"]) == 2
+    assert TaskDetailResponse.from_orm(task_create)
+
+
+def test_create_aggregation_task_rejects_multiple_paths_per_mapping(get_principal):
+    aggregation_transform = {
+        "type": "aggregation",
+        "aggregationStatistic": "simple_mean",
+        "timezoneMode": "fixedOffset",
+        "timezone": "-0700",
+    }
+
+    task_data = TaskPostBody(
+        name="Aggregation Task With Branched Mapping",
+        task_type="Aggregation",
+        workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
+        data_connection_id=None,
+        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
+        schedule=TaskSchedulePostBody(
+            paused=True,
+            crontab="* * * * *",
+        ),
+        mappings=[
+            TaskMappingPostBody(
+                source_identifier="dd1f9293-ce29-4b6a-88e6-d65110d1be65",
+                paths=[
+                    TaskMappingPathPostBody(
+                        target_identifier="1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2",
+                        data_transformations=[aggregation_transform],
+                    ),
+                    TaskMappingPathPostBody(
+                        target_identifier="9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
+                        data_transformations=[aggregation_transform],
+                    ),
                 ],
             ),
         ],
@@ -388,7 +432,7 @@ def test_create_aggregation_task_requires_single_mapping(get_principal):
     assert exc_info.value.status_code == 400
     assert (
         exc_info.value.message
-        == "Aggregation tasks currently support exactly one mapping."
+        == "Aggregation mappings currently support exactly one target path per source."
     )
 
 
