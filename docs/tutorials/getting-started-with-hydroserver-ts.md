@@ -172,4 +172,4 @@ Open the local Vite URL (usually `http://localhost:5173`) and you should see the
 
 ## Next step
 
-Ready for more client patterns? Continue with the hydroserver.ts how-to guide: [Manage Data With the TypeScript Client](/how-to/typescript-client/typescript-client-examples).
+For more examples of how to use hydroserver.ts, head over the how-to guide: [Manage Data With the TypeScript Client](/how-to/typescript-client/typescript-client-examples).
