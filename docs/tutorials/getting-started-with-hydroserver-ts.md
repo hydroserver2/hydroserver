@@ -1,6 +1,6 @@
 # Getting Started with hydroserver.ts
 
-This tutorial is for developers who want to build HydroServer-powered apps without hand-writing raw API calls.
+This simple demo is for developers who want to build HydroServer-powered apps without hand-writing raw API calls.
 
 We’ll use the hydroserver.ts API client to build a small browser app that will:
 
@@ -8,6 +8,10 @@ We’ll use the hydroserver.ts API client to build a small browser app that will
 - Print each Thing with a location
 
 The API client is written in TypeScript and gives you typed models and typed API methods end-to-end, but of course using the typing features is optional so vanilla JavaScript will work along side the client just fine, along with your choice of frontend framework.
+
+## Preview
+
+![HydroServer TypeScript demo app screenshot](/hydroserver-ts-demo.png)
 
 ## Prerequisites
 
@@ -152,19 +156,7 @@ With this setup, the client uses `host: ""` so requests go through the local `/a
 4. Error handling style  
    Calls returning `ApiResponse` should check `response.ok` and display `response.message` on failure.
 
-## 3. Preview the final app in docs
-
-The embedded preview below shows the final app layout and interaction flow with sample data:
-
-<iframe
-  src="/hydroserver/tutorial-previews/custom-hydroserver-app.html"
-  title="Custom HydroServer App Preview"
-  scrolling="no"
-  onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight + 8) + 'px'"
-  style="width: 100%; min-height: 760px; border: 1px solid #dbeafe; border-radius: 12px; background: #f6fbff; overflow: hidden;"
-></iframe>
-
-## 4. Run the app
+## 3. Run the app
 
 ```bash
 npm run dev
@@ -177,3 +169,7 @@ Open the local Vite URL (usually `http://localhost:5173`) and you should see the
 - If your frontend is served by HydroServer itself, keep `host: ""` and remove the dev proxy.
 - If your frontend and HydroServer are on different origins, configure CORS and CSRF/session cookie settings on the HydroServer deployment.
 - If you prefer explicit API client instances (instead of the shared `hs` export), you can use `HydroServer.initialize(...)` and pass the instance through your app.
+
+## Next step
+
+Ready for more client patterns? Continue with the hydroserver.ts how-to guide: [Manage Data With the TypeScript Client](/how-to/typescript-client/typescript-client-examples).
