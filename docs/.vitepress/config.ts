@@ -84,6 +84,10 @@ export default defineConfig({
               },
             ],
           },
+          {
+            text: "Getting Started with hydroserver.ts",
+            link: "/tutorials/getting-started-with-hydroserver-ts",
+          },
           // {
           //   text: "hydroserverpy 101",
           //   collapsed: true,
