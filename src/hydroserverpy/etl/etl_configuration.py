@@ -202,7 +202,27 @@ class RatingCurveDataTransformation(BaseModel):
         populate_by_name = True
 
 
-DataTransformation = Union[ExpressionDataTransformation, RatingCurveDataTransformation]
+class AggregationDataTransformation(BaseModel):
+    type: Literal["aggregation"]
+    aggregation_statistic: Literal[
+        "simple_mean",
+        "time_weighted_daily_mean",
+        "last_value_of_day",
+    ] = Field(..., alias="aggregationStatistic")
+    timezone_mode: Literal["fixedOffset", "daylightSavings"] = Field(
+        ..., alias="timezoneMode"
+    )
+    timezone: str
+
+    class Config:
+        populate_by_name = True
+
+
+DataTransformation = Union[
+    ExpressionDataTransformation,
+    RatingCurveDataTransformation,
+    AggregationDataTransformation,
+]
 
 
 class MappingPath(BaseModel):

@@ -22,6 +22,7 @@ class TaskService(HydroServerBaseService):
         page_size: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
+        task_type: str = ...,
         orchestration_system: Optional[Union["OrchestrationSystem", UUID, str]] = ...,
         orchestration_system_type: str = ...,
         data_connection: Union["Workspace", UUID, str] = ...,
@@ -50,6 +51,7 @@ class TaskService(HydroServerBaseService):
             page_size=page_size,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
+            type=task_type,
             orchestration_system_id=normalize_uuid(orchestration_system),
             orchestration_system_type=orchestration_system_type,
             data_connection_id=normalize_uuid(data_connection),
@@ -76,8 +78,9 @@ class TaskService(HydroServerBaseService):
         self,
         name: str,
         workspace: Union["Workspace", UUID, str],
-        data_connection: Union["DataConnection", UUID, str],
         orchestration_system: Union["OrchestrationSystem", UUID, str],
+        data_connection: Optional[Union["DataConnection", UUID, str]] = None,
+        task_type: str = "ETL",
         extractor_variables: Optional[dict] = None,
         transformer_variables: Optional[dict] = None,
         loader_variables: Optional[dict] = None,
@@ -95,6 +98,7 @@ class TaskService(HydroServerBaseService):
         body = {
             "id": normalize_uuid(uid),
             "name": name,
+            "type": task_type,
             "workspaceId": normalize_uuid(workspace),
             "dataConnectionId": normalize_uuid(data_connection),
             "orchestrationSystemId": normalize_uuid(orchestration_system),
@@ -121,8 +125,9 @@ class TaskService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
+        task_type: str = ...,
         name: str = ...,
-        data_connection: Union["DataConnection", UUID, str] = ...,
+        data_connection: Optional[Union["DataConnection", UUID, str]] = ...,
         orchestration_system: Union["OrchestrationSystem", UUID, str] = ...,
         extractor_variables: dict = ...,
         transformer_variables: dict = ...,
@@ -138,6 +143,7 @@ class TaskService(HydroServerBaseService):
         """Update an ETL task."""
 
         body: Dict[str, Any] = {
+            "type": task_type,
             "name": name,
             "dataConnectionId": normalize_uuid(data_connection),
             "orchestrationSystemId": normalize_uuid(orchestration_system),

@@ -253,7 +253,7 @@ class DatastreamService(HydroServerBaseService):
         collection = ObservationCollection(
             datastream=datastream,
             response=response,
-            order_by=params.get("order_by"),
+            order_by=order_by if order_by is not ... else None,
             filters={k: v for k, v in params.items() if k not in ["page", "page_size", "order_by", "format"]},
         )
         if fetch_all is True:

@@ -10,6 +10,14 @@ from pydantic import Field, AliasPath, AliasChoices, TypeAdapter
 from hydroserverpy.etl.factories import extractor_factory, transformer_factory, loader_factory
 from hydroserverpy.etl.loaders.hydroserver_loader import LoadSummary
 from hydroserverpy.etl.etl_configuration import ExtractorConfig, TransformerConfig, LoaderConfig, SourceTargetMapping, MappingPath
+from hydroserverpy.etl.aggregation import (
+    aggregate_daily_window,
+    closed_window_end_utc,
+    first_window_start_utc,
+    iter_daily_windows_utc,
+    next_window_start_utc,
+    parse_aggregation_transformation,
+)
 from ..base import HydroServerBaseModel
 from .orchestration_system import OrchestrationSystem
 from .data_connection import DataConnection
@@ -23,10 +31,11 @@ if TYPE_CHECKING:
 
 class Task(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
+    task_type: Literal["ETL", "Aggregation"] = Field("ETL", alias="type")
     extractor_settings: dict = Field(default_factory=dict, alias="extractorSettings")
     transformer_settings: dict = Field(default_factory=dict, alias="transformerSettings")
     loader_settings: dict = Field(default_factory=dict, alias="loaderSettings")
-    data_connection_id: uuid.UUID = Field(
+    data_connection_id: Optional[uuid.UUID] = Field(
         None, validation_alias=AliasChoices("dataConnectionId", AliasPath("dataConnection", "id"))
     )
     orchestration_system_id: uuid.UUID = Field(
@@ -48,6 +57,7 @@ class Task(HydroServerBaseModel):
 
     _editable_fields: ClassVar[set[str]] = {
         "name",
+        "task_type",
         "extractor_settings",
         "transformer_settings",
         "loader_settings",
@@ -79,6 +89,8 @@ class Task(HydroServerBaseModel):
 
     @cached_property
     def data_connection(self) -> Optional[DataConnection]:
+        if not self.data_connection_id:
+            return None
         return self.client.dataconnections.get(uid=self.data_connection_id)
 
     def get_task_runs(
@@ -169,23 +181,45 @@ class Task(HydroServerBaseModel):
         if self.paused is True:
             return
 
-        extractor_cls = extractor_factory(TypeAdapter(ExtractorConfig).validate_python({
-            "type": self.data_connection.extractor_type,
-            **self.data_connection.extractor_settings
-        }))
-        transformer_cls = transformer_factory(TypeAdapter(TransformerConfig).validate_python({
-            "type": self.data_connection.transformer_type,
-            **self.data_connection.transformer_settings
-        }))
-        loader_cls = loader_factory(TypeAdapter(LoaderConfig).validate_python({
-            "type": self.data_connection.loader_type,
-            **self.data_connection.loader_settings
-        }), self.client, str(self.uid))
-
         task_run = self.create_task_run(status="RUNNING", started_at=datetime.now(timezone.utc))
-
         runtime_source_uri: Optional[str] = None
+
         try:
+            if self.task_type == "Aggregation":
+                summary = self._run_local_aggregation()
+                if summary["rows_loaded"] == 0:
+                    self._update_status(
+                        task_run,
+                        True,
+                        "No new closed daily windows were available for aggregation.",
+                    )
+                else:
+                    self._update_status(
+                        task_run,
+                        True,
+                        (
+                            f"Aggregated {summary['days_loaded']} day(s) and loaded "
+                            f"{summary['rows_loaded']} observation(s) across {summary['mappings_loaded']} mapping(s)."
+                        ),
+                    )
+                return
+
+            if not self.data_connection:
+                raise ValueError("ETL tasks require a data connection.")
+
+            extractor_cls = extractor_factory(TypeAdapter(ExtractorConfig).validate_python({
+                "type": self.data_connection.extractor_type,
+                **self.data_connection.extractor_settings
+            }))
+            transformer_cls = transformer_factory(TypeAdapter(TransformerConfig).validate_python({
+                "type": self.data_connection.transformer_type,
+                **self.data_connection.transformer_settings
+            }))
+            loader_cls = loader_factory(TypeAdapter(LoaderConfig).validate_python({
+                "type": self.data_connection.loader_type,
+                **self.data_connection.loader_settings
+            }), self.client, str(self.uid))
+
             logging.info("Starting extract")
 
             task_mappings = [
@@ -245,6 +279,157 @@ class Task(HydroServerBaseModel):
 
         return False
 
+    def _fetch_observation_points(
+        self,
+        source_datastream_id: str,
+        query_start_utc: datetime,
+        query_end_utc: datetime,
+    ) -> tuple[list[datetime], list[float]]:
+        observations = self.client.datastreams.get_observations(
+            uid=source_datastream_id,
+            order_by=["phenomenonTime"],
+            phenomenon_time_min=query_start_utc,
+            phenomenon_time_max=query_end_utc,
+            fetch_all=True,
+        ).dataframe
+
+        prev_df = self.client.datastreams.get_observations(
+            uid=source_datastream_id,
+            order_by=["-phenomenonTime"],
+            page=1,
+            page_size=1,
+            phenomenon_time_max=query_start_utc,
+            fetch_all=False,
+        ).dataframe
+        next_df = self.client.datastreams.get_observations(
+            uid=source_datastream_id,
+            order_by=["phenomenonTime"],
+            page=1,
+            page_size=1,
+            phenomenon_time_min=query_end_utc,
+            fetch_all=False,
+        ).dataframe
+
+        frames = [df for df in [prev_df, observations, next_df] if not df.empty]
+        if not frames:
+            return [], []
+
+        merged = pd.concat(frames, ignore_index=True)
+        merged = merged[["phenomenon_time", "result"]].dropna(subset=["phenomenon_time", "result"])
+        merged["phenomenon_time"] = pd.to_datetime(
+            merged["phenomenon_time"], utc=True, errors="coerce"
+        )
+        merged["result"] = pd.to_numeric(merged["result"], errors="coerce")
+        merged = merged.dropna(subset=["phenomenon_time", "result"])
+        merged = merged.sort_values("phenomenon_time")
+        merged = merged.drop_duplicates(subset=["phenomenon_time"], keep="last")
+
+        timestamps = [
+            ts.to_pydatetime() for ts in merged["phenomenon_time"].tolist()
+        ]
+        values = merged["result"].astype(float).tolist()
+        return timestamps, values
+
+    def _run_local_aggregation(self) -> dict[str, int]:
+        mappings = self.mappings or []
+        if len(mappings) < 1:
+            raise ValueError(
+                "Aggregation tasks must include at least one mapping."
+            )
+
+        rows_loaded = 0
+        mappings_loaded = 0
+        days_loaded = 0
+
+        for mapping in mappings:
+            source_id = str(mapping["sourceIdentifier"])
+            paths = mapping.get("paths", []) or []
+            if len(paths) != 1:
+                raise ValueError(
+                    "Aggregation mappings must include exactly one target path per source."
+                )
+
+            path = paths[0]
+            target_id = str(path["targetIdentifier"])
+            transformations = path.get("dataTransformations", []) or []
+            if not isinstance(transformations, list) or len(transformations) != 1:
+                raise ValueError(
+                    "Aggregation mappings must include exactly one aggregation transformation."
+                )
+            transformation = parse_aggregation_transformation(transformations[0])
+
+            source_datastream = self.client.datastreams.get(uid=source_id)
+            target_datastream = self.client.datastreams.get(uid=target_id)
+
+            source_end = source_datastream.phenomenon_end_time
+            if source_end is None:
+                continue
+
+            closed_end = closed_window_end_utc(source_end, transformation)
+            destination_end = target_datastream.phenomenon_end_time
+            source_begin = source_datastream.phenomenon_begin_time
+            if source_begin is None:
+                continue
+
+            query_start = first_window_start_utc(source_begin, transformation)
+            if destination_end is None:
+                start_window = query_start
+            else:
+                start_window = next_window_start_utc(destination_end, transformation)
+
+            if start_window >= closed_end:
+                continue
+
+            timestamps, values = self._fetch_observation_points(
+                source_datastream_id=source_id,
+                query_start_utc=query_start,
+                query_end_utc=closed_end,
+            )
+            if not timestamps:
+                continue
+
+            output_rows: list[dict[str, object]] = []
+            for day_start, day_end, _ in iter_daily_windows_utc(
+                start_window,
+                closed_end,
+                transformation,
+            ):
+                value = aggregate_daily_window(
+                    timestamps=timestamps,
+                    values=values,
+                    window_start_utc=day_start,
+                    window_end_utc=day_end,
+                    statistic=transformation.aggregation_statistic,
+                )
+                if value is None:
+                    continue
+                output_rows.append(
+                    {
+                        "phenomenon_time": day_start,
+                        "result": float(value),
+                    }
+                )
+
+            if not output_rows:
+                continue
+
+            output_df = pd.DataFrame(output_rows)
+            self.client.datastreams.load_observations(
+                uid=target_id,
+                observations=output_df,
+                mode="append",
+            )
+
+            rows_loaded += len(output_rows)
+            days_loaded += len(output_rows)
+            mappings_loaded += 1
+
+        return {
+            "rows_loaded": rows_loaded,
+            "days_loaded": days_loaded,
+            "mappings_loaded": mappings_loaded,
+        }
+
     def _update_status(
         self,
         task_run: TaskRun,
@@ -266,6 +451,7 @@ class Task(HydroServerBaseModel):
         self.update_task_run(
             task_run.id,
             status="SUCCESS" if success else "FAILURE",
+            finished_at=datetime.now(timezone.utc),
             result=result
         )
         self.next_run_at = self._next_run()

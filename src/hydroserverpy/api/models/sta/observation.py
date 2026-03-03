@@ -25,11 +25,21 @@ class ObservationCollection:
         **data
     ):
         self.filters = data.get("filters")
-        self.order_by = data.get("order_by")
-        self.page = data.get("page") or (int(response.headers.get("X-Page")) if response else None)
-        self.page_size = data.get("page_size") or (int(response.headers.get("X-Page-Size")) if response else None)
-        self.total_pages = data.get("total_pages") or (int(response.headers.get("X-Total-Pages")) if response else None)
-        self.total_count = data.get("total_count") or (int(response.headers.get("X-Total-Count")) if response else None)
+        raw_order_by = data.get("order_by")
+        if isinstance(raw_order_by, str):
+            self.order_by = [item for item in raw_order_by.split(",") if item]
+        else:
+            self.order_by = raw_order_by
+        self.page = self._resolve_int_metadata("page", "X-Page", response, data)
+        self.page_size = self._resolve_int_metadata(
+            "page_size", "X-Page-Size", response, data
+        )
+        self.total_pages = self._resolve_int_metadata(
+            "total_pages", "X-Total-Pages", response, data
+        )
+        self.total_count = self._resolve_int_metadata(
+            "total_count", "X-Total-Count", response, data
+        )
         self.datastream = datastream
 
         if "dataframe" in data:
@@ -43,6 +53,24 @@ class ObservationCollection:
                 )
         else:
             self.dataframe = pd.DataFrame()
+
+    @staticmethod
+    def _resolve_int_metadata(
+        field_name: str,
+        header_name: str,
+        response: Optional[Response],
+        data: dict,
+    ) -> Optional[int]:
+        field_value = data.get(field_name)
+        if field_value is not None:
+            return int(field_value)
+
+        if response:
+            header_value = response.headers.get(header_name)
+            if header_value is not None:
+                return int(header_value)
+
+        return None
 
     def next_page(self):
         """Fetches the next page of data from HydroServer."""
@@ -89,7 +117,10 @@ class ObservationCollection:
 
             page_num += 1
 
-        merged_dataframe = pd.concat(all_dataframes, ignore_index=True)
+        if not all_dataframes:
+            merged_dataframe = self.dataframe.iloc[0:0].copy()
+        else:
+            merged_dataframe = pd.concat(all_dataframes, ignore_index=True)
 
         return self.__class__(
             dataframe=merged_dataframe,
