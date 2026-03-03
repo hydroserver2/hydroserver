@@ -13,9 +13,6 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from django.core.management import call_command
 from domains.etl.models import Task, TaskRun
-from domains.sta.models import Datastream, Observation
-from domains.sta.services import ObservationService
-from interfaces.api.schemas.observation import ObservationBulkPostBody
 from .loader import HydroServerInternalLoader, LoadSummary
 from .etl_errors import (
     EtlUserFacingError,
@@ -23,15 +20,6 @@ from .etl_errors import (
     user_facing_error_from_validation_error,
 )
 from .run_result_normalizer import normalize_task_run_result, task_transformer_raw
-from .aggregation import (
-    AggregationTransformation,
-    aggregate_daily_window,
-    closed_window_end_utc,
-    first_window_start_utc,
-    iter_daily_windows_utc,
-    next_window_start_utc,
-    parse_aggregation_transformation,
-)
 from hydroserverpy.etl.factories import extractor_factory, transformer_factory
 from hydroserverpy.etl.etl_configuration import (
     ExtractorConfig,
@@ -47,13 +35,6 @@ class TaskRunContext:
     runtime_source_uri: Optional[str] = None
     log_handler: Optional["TaskLogHandler"] = None
     task_meta: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class AggregationMapping:
-    source_datastream_id: UUID
-    target_datastream_id: UUID
-    transformation: AggregationTransformation
 
 
 class TaskLogFilter(logging.Filter):
@@ -118,7 +99,6 @@ class TaskLogHandler(logging.Handler):
 
 
 TASK_RUN_CONTEXT: dict[str, TaskRunContext] = {}
-observation_service = ObservationService()
 
 
 @contextmanager
@@ -330,337 +310,6 @@ def _validate_component_config(
         raise user_facing_error_from_validation_error(component, ve, raw=raw) from ve
 
 
-def _parse_datastream_uuid(raw_value: Any, field_name: str) -> UUID:
-    try:
-        return UUID(str(raw_value))
-    except (TypeError, ValueError) as exc:
-        raise EtlUserFacingError(
-            f"Aggregation mapping {field_name} must be a valid datastream UUID."
-        ) from exc
-
-
-def _extract_aggregation_mappings(task: Task) -> list[AggregationMapping]:
-    task_mappings = list(task.mappings.all())
-    if len(task_mappings) < 1:
-        raise EtlUserFacingError(
-            "Aggregation tasks must include at least one mapping."
-        )
-
-    mappings: list[AggregationMapping] = []
-    for task_mapping in task_mappings:
-        paths = list(task_mapping.paths.all())
-        if len(paths) != 1:
-            raise EtlUserFacingError(
-                "Aggregation mappings must include exactly one target path per source."
-            )
-
-        path = paths[0]
-        source_id = _parse_datastream_uuid(
-            task_mapping.source_identifier, "sourceIdentifier"
-        )
-        target_id = _parse_datastream_uuid(
-            path.target_identifier, "targetIdentifier"
-        )
-
-        transformations = path.data_transformations or []
-        if not isinstance(transformations, list) or len(transformations) != 1:
-            raise EtlUserFacingError(
-                "Aggregation mappings must include exactly one aggregation transformation."
-            )
-        if not isinstance(transformations[0], dict):
-            raise EtlUserFacingError("Invalid aggregation transformation payload.")
-
-        try:
-            transformation = parse_aggregation_transformation(transformations[0])
-        except ValueError as exc:
-            raise EtlUserFacingError(str(exc)) from exc
-
-        mappings.append(
-            AggregationMapping(
-                source_datastream_id=source_id,
-                target_datastream_id=target_id,
-                transformation=transformation,
-            )
-        )
-
-    return mappings
-
-
-def _fetch_observation_points(
-    source_datastream_id: UUID,
-    query_start_utc: datetime,
-    query_end_utc: datetime,
-) -> tuple[list[datetime], list[float]]:
-    points = list(
-        Observation.objects.filter(
-            datastream_id=source_datastream_id,
-            phenomenon_time__gte=query_start_utc,
-            phenomenon_time__lt=query_end_utc,
-        )
-        .order_by("phenomenon_time")
-        .values_list("phenomenon_time", "result")
-    )
-
-    previous_point = (
-        Observation.objects.filter(
-            datastream_id=source_datastream_id,
-            phenomenon_time__lt=query_start_utc,
-        )
-        .order_by("-phenomenon_time")
-        .values_list("phenomenon_time", "result")
-        .first()
-    )
-    if previous_point:
-        points.insert(0, previous_point)
-
-    next_point = (
-        Observation.objects.filter(
-            datastream_id=source_datastream_id,
-            phenomenon_time__gte=query_end_utc,
-        )
-        .order_by("phenomenon_time")
-        .values_list("phenomenon_time", "result")
-        .first()
-    )
-    if next_point:
-        points.append(next_point)
-
-    cleaned: list[tuple[datetime, float]] = []
-    for phenomenon_time, result in points:
-        try:
-            result_float = float(result)
-        except (TypeError, ValueError):
-            continue
-        if not pd.notna(result_float):
-            continue
-        if cleaned and cleaned[-1][0] == phenomenon_time:
-            cleaned[-1] = (phenomenon_time, result_float)
-        else:
-            cleaned.append((phenomenon_time, result_float))
-
-    timestamps = [point[0] for point in cleaned]
-    values = [point[1] for point in cleaned]
-    return timestamps, values
-
-
-def _load_aggregated_rows(task: Task, target_datastream_id: UUID, rows: list[list[Any]]):
-    chunk_size = 5000
-    for offset in range(0, len(rows), chunk_size):
-        chunk = rows[offset:offset + chunk_size]
-        payload = ObservationBulkPostBody(
-            fields=["phenomenonTime", "result"],
-            data=chunk,
-        )
-        observation_service.bulk_create(
-            principal=task.workspace.owner,
-            data=payload,
-            datastream_id=target_datastream_id,
-            mode="append",
-        )
-
-
-def _run_aggregation_task(task: Task, context: TaskRunContext) -> dict[str, Any]:
-    context.stage = "aggregate"
-
-    if not task.workspace.owner:
-        raise EtlUserFacingError("Task workspace does not have an owner account.")
-
-    mappings = _extract_aggregation_mappings(task)
-    if not mappings:
-        return _build_task_result(
-            "Aggregation task has no mappings. Nothing to do.",
-            context,
-            stage=context.stage,
-        )
-
-    datastream_ids = {
-        mapping.source_datastream_id for mapping in mappings
-    } | {mapping.target_datastream_id for mapping in mappings}
-    datastreams = Datastream.objects.filter(
-        id__in=datastream_ids,
-        thing__workspace_id=task.workspace_id,
-    ).only("id", "name", "phenomenon_begin_time", "phenomenon_end_time")
-    datastream_map = {datastream.id: datastream for datastream in datastreams}
-
-    loaded_rows = 0
-    loaded_mappings = 0
-    loaded_days = 0
-    mapping_summaries: list[dict[str, Any]] = []
-
-    for mapping in mappings:
-        source = datastream_map.get(mapping.source_datastream_id)
-        target = datastream_map.get(mapping.target_datastream_id)
-
-        if not source or not target:
-            raise EtlUserFacingError(
-                "Aggregation source and target datastreams must exist in the task workspace."
-            )
-
-        source_end = source.phenomenon_end_time
-        if not source_end:
-            logging.info(
-                "Skipping mapping source=%s target=%s: source has no observations yet.",
-                source.id,
-                target.id,
-            )
-            mapping_summaries.append(
-                {
-                    "sourceDatastreamId": str(source.id),
-                    "targetDatastreamId": str(target.id),
-                    "status": "skipped",
-                    "reason": "Source datastream has no observations.",
-                    "rowsLoaded": 0,
-                    "daysLoaded": 0,
-                }
-            )
-            continue
-
-        closed_end = closed_window_end_utc(source_end, mapping.transformation)
-        destination_end = target.phenomenon_end_time
-
-        source_begin = source.phenomenon_begin_time
-        if not source_begin:
-            logging.info(
-                "Skipping mapping source=%s target=%s: source has no phenomenon_begin_time.",
-                source.id,
-                target.id,
-            )
-            mapping_summaries.append(
-                {
-                    "sourceDatastreamId": str(source.id),
-                    "targetDatastreamId": str(target.id),
-                    "status": "skipped",
-                    "reason": "Source datastream has no observation history.",
-                    "rowsLoaded": 0,
-                    "daysLoaded": 0,
-                }
-            )
-            continue
-
-        query_start = first_window_start_utc(source_begin, mapping.transformation)
-        if destination_end is None:
-            start_window = query_start
-        else:
-            start_window = next_window_start_utc(destination_end, mapping.transformation)
-
-        if start_window >= closed_end:
-            logging.info(
-                "Skipping mapping source=%s target=%s: no new closed daily windows.",
-                source.id,
-                target.id,
-            )
-            mapping_summaries.append(
-                {
-                    "sourceDatastreamId": str(source.id),
-                    "targetDatastreamId": str(target.id),
-                    "status": "up_to_date",
-                    "reason": "No new closed daily windows.",
-                    "rowsLoaded": 0,
-                    "daysLoaded": 0,
-                }
-            )
-            continue
-
-        timestamps, values = _fetch_observation_points(
-            source_datastream_id=source.id,
-            query_start_utc=query_start,
-            query_end_utc=closed_end,
-        )
-        if not timestamps:
-            logging.info(
-                "Skipping mapping source=%s target=%s: no source observations in query range.",
-                source.id,
-                target.id,
-            )
-            mapping_summaries.append(
-                {
-                    "sourceDatastreamId": str(source.id),
-                    "targetDatastreamId": str(target.id),
-                    "status": "skipped",
-                    "reason": "No source observations available for aggregation.",
-                    "rowsLoaded": 0,
-                    "daysLoaded": 0,
-                }
-            )
-            continue
-
-        rows: list[list[Any]] = []
-        for day_start, day_end, _ in iter_daily_windows_utc(
-            start_window,
-            closed_end,
-            mapping.transformation,
-        ):
-            value = aggregate_daily_window(
-                timestamps=timestamps,
-                values=values,
-                window_start_utc=day_start,
-                window_end_utc=day_end,
-                statistic=mapping.transformation.aggregation_statistic,
-            )
-            if value is None:
-                continue
-            rows.append([day_start, float(value)])
-
-        if not rows:
-            mapping_summaries.append(
-                {
-                    "sourceDatastreamId": str(source.id),
-                    "targetDatastreamId": str(target.id),
-                    "status": "up_to_date",
-                    "reason": "No complete daily windows contained source observations.",
-                    "rowsLoaded": 0,
-                    "daysLoaded": 0,
-                }
-            )
-            continue
-
-        _load_aggregated_rows(task=task, target_datastream_id=target.id, rows=rows)
-
-        loaded_rows += len(rows)
-        loaded_days += len(rows)
-        loaded_mappings += 1
-
-        logging.info(
-            "Aggregated %s day(s) for mapping source=%s target=%s statistic=%s.",
-            len(rows),
-            source.id,
-            target.id,
-            mapping.transformation.aggregation_statistic,
-        )
-        mapping_summaries.append(
-            {
-                "sourceDatastreamId": str(source.id),
-                "targetDatastreamId": str(target.id),
-                "status": "loaded",
-                "rowsLoaded": len(rows),
-                "daysLoaded": len(rows),
-                "statistic": mapping.transformation.aggregation_statistic,
-            }
-        )
-
-    if loaded_rows == 0:
-        result = _build_task_result(
-            "No new closed daily windows were available for aggregation.",
-            context,
-            stage=context.stage,
-        )
-    else:
-        result = _build_task_result(
-            f"Aggregated {loaded_days} day(s) and loaded {loaded_rows} observation(s) across {loaded_mappings} mapping(s).",
-            context,
-            stage=context.stage,
-        )
-
-    result["aggregation"] = {
-        "mappingsProcessed": len(mappings),
-        "mappingsLoaded": loaded_mappings,
-        "daysLoaded": loaded_days,
-        "rowsLoaded": loaded_rows,
-        "mappings": mapping_summaries,
-    }
-    return result
-
-
 @shared_task(bind=True, expires=10, name="etl.tasks.run_etl_task")
 def run_etl_task(self, task_id: str):
     """
@@ -674,7 +323,7 @@ def run_etl_task(self, task_id: str):
     with capture_task_logs(context):
         try:
             task = (
-                Task.objects.select_related("data_connection", "workspace")
+                Task.objects.select_related("data_connection")
                 .prefetch_related("mappings", "mappings__paths")
                 .get(pk=UUID(task_id))
             )
@@ -682,20 +331,11 @@ def run_etl_task(self, task_id: str):
             context.task_meta = {
                 "id": str(task.id),
                 "name": task.name,
-                "type": task.task_type,
+                "data_connection_id": str(task.data_connection_id),
+                "data_connection_name": task.data_connection.name,
             }
-            if task.data_connection_id:
-                context.task_meta["data_connection_id"] = str(task.data_connection_id)
-                context.task_meta["data_connection_name"] = task.data_connection.name
 
             context.stage = "setup"
-            if task.task_type == "Aggregation":
-                logging.info("Starting aggregation task")
-                return _run_aggregation_task(task, context)
-
-            if not task.data_connection:
-                raise EtlUserFacingError("ETL tasks require a data connection.")
-
             extractor_raw = {
                 "type": task.data_connection.extractor_type,
                 **(task.data_connection.extractor_settings or {}),
