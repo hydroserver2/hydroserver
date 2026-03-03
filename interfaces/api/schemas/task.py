@@ -12,6 +12,7 @@ from .run import TaskRunResponse
 
 _order_by_fields = (
     "name",
+    "type",
     "orchestrationSystemType",
     "latestRunStatus",
     "latestRunStartedAt",
@@ -37,6 +38,7 @@ class TaskQueryParameters(CollectionQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter by workspace ID."
     )
+    task_type: list[str] = Query([], description="Filter by task type.", alias="type")
     data_connection_id: list[uuid.UUID] = Query([], description="Filter by data connection ID.")
     orchestration_system_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter by orchestration system ID."
@@ -151,6 +153,7 @@ class TaskMappingPostBody(BasePostBody, TaskMappingFields):
 
 class TaskFields(Schema):
     name: str
+    task_type: Literal["ETL", "Aggregation"] = Field("ETL", alias="type")
     extractor_variables: dict[str, Any] = Field(default_factory=dict)
     transformer_variables: dict[str, Any] = Field(default_factory=dict)
     loader_variables: dict[str, Any] = Field(default_factory=dict)
@@ -159,7 +162,7 @@ class TaskFields(Schema):
 class TaskSummaryResponse(BaseGetResponse, TaskFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
-    data_connection_id: uuid.UUID
+    data_connection_id: uuid.UUID | None = None
     orchestration_system_id: uuid.UUID
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
@@ -169,7 +172,7 @@ class TaskSummaryResponse(BaseGetResponse, TaskFields):
 class TaskDetailResponse(BaseGetResponse, TaskFields):
     id: uuid.UUID
     workspace: WorkspaceSummaryResponse
-    data_connection: DataConnectionSummaryResponse
+    data_connection: DataConnectionSummaryResponse | None = None
     orchestration_system: OrchestrationSystemSummaryResponse
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
@@ -179,7 +182,7 @@ class TaskDetailResponse(BaseGetResponse, TaskFields):
 class TaskPostBody(BasePostBody, TaskFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
-    data_connection_id: uuid.UUID
+    data_connection_id: uuid.UUID | None = None
     orchestration_system_id: uuid.UUID
     schedule: TaskSchedulePostBody | None = None
     mappings: list[TaskMappingPostBody]
