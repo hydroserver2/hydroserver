@@ -18,8 +18,7 @@ from domains.etl.models import (
     TaskMappingPath,
     TaskRun,
 )
-from domains.sta.models import ThingFileAttachment, Datastream
-from domains.etl.aggregation import normalize_aggregation_transformation
+from domains.sta.models import ThingFileAttachment
 from interfaces.api.schemas import (
     TaskFields,
     TaskPostBody,
@@ -79,7 +78,6 @@ class TaskService(ServiceUtils):
         response = {
             "id": task.id,
             "name": task.name,
-            "task_type": task.task_type,
             "schedule": {
                 "start_time": task.periodic_task.start_time,
                 "paused": task.paused,
@@ -120,26 +118,24 @@ class TaskService(ServiceUtils):
                 "name": task.workspace.name,
                 "is_private": task.workspace.is_private,
             }
-            response["data_connection"] = (
-                {
-                    "id": task.data_connection.id,
-                    "name": task.data_connection.name,
-                    "data_connection_type": task.data_connection.data_connection_type,
-                    "workspace_id": task.data_connection.workspace_id,
-                    "extractor": {
-                        "settings_type": task.data_connection.extractor_type,
-                        "settings": task.data_connection.extractor_settings,
-                    } if task.data_connection.extractor_type else None,
-                    "transformer": {
-                        "settings_type": task.data_connection.transformer_type,
-                        "settings": task.data_connection.transformer_settings,
-                    } if task.data_connection.transformer_type else None,
-                    "loader": {
-                        "settings_type": task.data_connection.loader_type,
-                        "settings": task.data_connection.loader_settings,
-                    } if task.data_connection.loader_type else None,
-                } if task.data_connection else None
-            )
+            response["data_connection"] = {
+                "id": task.data_connection.id,
+                "name": task.data_connection.name,
+                "data_connection_type": task.data_connection.data_connection_type,
+                "workspace_id": task.data_connection.workspace.id,
+                "extractor": {
+                    "settings_type": task.data_connection.extractor_type,
+                    "settings": task.data_connection.extractor_settings
+                } if task.data_connection.extractor_type else None,
+                "transformer": {
+                    "settings_type": task.data_connection.transformer_type,
+                    "settings": task.data_connection.transformer_settings
+                } if task.data_connection.transformer_type else None,
+                "loader": {
+                    "settings_type": task.data_connection.loader_type,
+                    "settings": task.data_connection.loader_settings
+                } if task.data_connection.loader_type else None
+            }
             response["orchestration_system"] = {
                 "id": task.orchestration_system.id,
                 "name": task.orchestration_system.name,
@@ -203,7 +199,6 @@ class TaskService(ServiceUtils):
 
         for field in [
             "workspace_id",
-            "task_type",
             "data_connection_id",
             "orchestration_system_id",
             "orchestration_system__type",
@@ -229,7 +224,6 @@ class TaskService(ServiceUtils):
 
         if order_by:
             order_by_aliases = {
-                "type": "task_type",
                 "orchestrationSystemType": "orchestration_system__type",
                 "startTime": "periodic_task__start_time",
                 "dataConnectionType": "data_connection__data_connection_type",
@@ -237,15 +231,11 @@ class TaskService(ServiceUtils):
                 "dataConnectionTransformerType": "data_connection__transformer_type",
                 "dataConnectionLoaderType": "data_connection__loader_type",
             }
-            order_by_aliases.update(
-                {f"-{key}": f"-{value}" for key, value in order_by_aliases.items()}
-            )
 
             queryset = self.apply_ordering(
                 queryset,
                 order_by,
-                list(get_args(TaskOrderByFields)),
-                field_aliases=order_by_aliases,
+                [order_by_aliases.get(field, field) for field in list(get_args(TaskOrderByFields))]
             )
         else:
             queryset = queryset.order_by("id")
@@ -287,24 +277,15 @@ class TaskService(ServiceUtils):
             principal=principal, workspace=workspace
         ):
             raise HttpError(
-                403, "You do not have permission to create this task"
+                403, "You do not have permission to create this ETL task"
             )
 
-        task_type = data.task_type or "ETL"
+        data_connection = data_connection_service.get_data_connection_for_action(
+            principal=principal, uid=data.data_connection_id, action="edit", raise_400=True, expand_related=True
+        )
 
-        data_connection = None
-        if task_type == "Aggregation":
-            if data.data_connection_id is not None:
-                raise HttpError(400, "Aggregation tasks cannot define a data connection.")
-        else:
-            if data.data_connection_id is None:
-                raise HttpError(400, "ETL tasks require a data connection.")
-            data_connection = data_connection_service.get_data_connection_for_action(
-                principal=principal, uid=data.data_connection_id, action="edit", raise_400=True, expand_related=True
-            )
-
-            if data_connection.workspace and data_connection.workspace_id != workspace.id:
-                raise HttpError(400, "Task and data connection must belong to the same workspace.")
+        if data_connection.workspace and data_connection.workspace_id != workspace.id:
+            raise HttpError(400, "Task and data connection must belong to the same workspace.")
 
         orchestration_system = orchestration_system_service.get_orchestration_system_for_action(
             principal=principal, uid=data.orchestration_system_id, action="view", raise_400=True
@@ -317,7 +298,6 @@ class TaskService(ServiceUtils):
             task = Task.objects.create(
                 pk=data.id,
                 name=data.name,
-                task_type=task_type,
                 workspace=workspace,
                 data_connection=data_connection,
                 orchestration_system=orchestration_system,
@@ -328,12 +308,10 @@ class TaskService(ServiceUtils):
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
 
-        task = self.update_scheduling(task, data.schedule.dict() if data.schedule else None)
+        task = self.update_scheduling(task, data.schedule.dict())
         task = self.update_mapping(
             task,
-            [mapping.dict() for mapping in data.mappings]
-            if data.mappings is not None
-            else None,
+            [mapping.dict() for mapping in data.mappings] if data.mappings else None,
         )
         task.save()
 
@@ -355,24 +333,13 @@ class TaskService(ServiceUtils):
             exclude_unset=True,
         )
 
-        next_task_type = task_data.get("task_type", task.task_type)
+        if "data_connection_id" in task_data:
+            data_connection = data_connection_service.get_data_connection_for_action(
+                principal=principal, uid=data.data_connection_id, action="edit", raise_400=True, expand_related=True
+            )
 
-        if next_task_type == "Aggregation":
-            if "data_connection_id" in task_data and task_data["data_connection_id"] is not None:
-                raise HttpError(400, "Aggregation tasks cannot define a data connection.")
-            task_data["data_connection_id"] = None
-        else:
-            next_data_connection_id = task_data.get("data_connection_id", task.data_connection_id)
-            if not next_data_connection_id:
-                raise HttpError(400, "ETL tasks require a data connection.")
-
-            if "data_connection_id" in task_data and task_data["data_connection_id"] is not None:
-                data_connection = data_connection_service.get_data_connection_for_action(
-                    principal=principal, uid=data.data_connection_id, action="edit", raise_400=True, expand_related=True
-                )
-
-                if data_connection.workspace_id != task.workspace_id:
-                    raise HttpError(400, "Task and data connection must belong to the same workspace.")
+            if data_connection.workspace_id != task.workspace_id:
+                raise HttpError(400, f"Task and data connection must belong to the same workspace.")
 
         if "orchestration_system_id" in task_data:
             orchestration_system = orchestration_system_service.get_orchestration_system_for_action(
@@ -381,8 +348,6 @@ class TaskService(ServiceUtils):
 
             if orchestration_system.workspace and orchestration_system.workspace_id != task.workspace_id:
                 raise HttpError(400, "Task and orchestration system must belong to the same workspace.")
-
-        task.task_type = next_task_type
 
         if "schedule" in task_data:
             task = self.update_scheduling(task, task_data["schedule"])
@@ -500,7 +465,7 @@ class TaskService(ServiceUtils):
                     task.periodic_task.crontab.hour = hour
                     task.periodic_task.crontab.day_of_month = day
                     task.periodic_task.crontab.month_of_year = month
-                    task.periodic_task.crontab.day_of_week = weekday
+                    task.periodic_task.crontab.weekday = weekday
                     task.periodic_task.crontab.save()
                 else:
                     crontab_schedule = CrontabSchedule.objects.create(
@@ -591,93 +556,6 @@ class TaskService(ServiceUtils):
             normalized["ratingCurveUrl"] = rating_curve_url
 
         return normalized
-
-    @staticmethod
-    def _validate_aggregation_mapping_constraints(
-        workspace_id: uuid.UUID,
-        mapping_data: List[dict],
-    ):
-        if len(mapping_data) < 1:
-            raise HttpError(
-                400,
-                "Aggregation tasks must include at least one mapping.",
-            )
-
-        datastream_ids: set[uuid.UUID] = set()
-        for mapping in mapping_data:
-            try:
-                source_identifier = str(uuid.UUID(str(mapping["source_identifier"])))
-            except (KeyError, ValueError, TypeError):
-                raise HttpError(400, "Aggregation mappings require a valid source datastream UUID.")
-
-            paths = mapping.get("paths", []) or []
-            if len(paths) != 1:
-                raise HttpError(
-                    400,
-                    "Aggregation mappings currently support exactly one target path per source.",
-                )
-
-            mapping["source_identifier"] = source_identifier
-            datastream_ids.add(uuid.UUID(source_identifier))
-
-            path = paths[0]
-            try:
-                target_identifier = str(uuid.UUID(str(path["target_identifier"])))
-            except (KeyError, ValueError, TypeError):
-                raise HttpError(400, "Aggregation mappings require a valid target datastream UUID.")
-
-            path["target_identifier"] = target_identifier
-            datastream_ids.add(uuid.UUID(target_identifier))
-
-            transformations = path.get("data_transformations", []) or []
-            if not isinstance(transformations, list) or len(transformations) != 1:
-                raise HttpError(
-                    400,
-                    "Aggregation mappings require exactly one aggregation transformation per path.",
-                )
-
-            if not isinstance(transformations[0], dict):
-                raise HttpError(400, "Invalid aggregation data transformation payload.")
-
-            try:
-                path["data_transformations"] = [
-                    normalize_aggregation_transformation(transformations[0])
-                ]
-            except ValueError as exc:
-                raise HttpError(400, str(exc)) from exc
-
-        existing_datastream_ids = set(
-            Datastream.objects.filter(
-                thing__workspace_id=workspace_id,
-                id__in=datastream_ids,
-            ).values_list("id", flat=True)
-        )
-        missing = sorted(str(uid) for uid in (datastream_ids - existing_datastream_ids))
-        if missing:
-            raise HttpError(
-                400,
-                "Aggregation mapping datastreams must exist in the task workspace.",
-            )
-
-    @staticmethod
-    def _reject_aggregation_transformations(mapping_data: List[dict]):
-        for mapping in mapping_data:
-            for path in mapping.get("paths", []) or []:
-                transformations = path.get("data_transformations", []) or []
-                if not isinstance(transformations, list):
-                    raise HttpError(
-                        400,
-                        "Path data_transformations must be an array of transformation objects",
-                    )
-
-                for transformation in transformations:
-                    if not isinstance(transformation, dict):
-                        raise HttpError(400, "Invalid data transformation payload")
-                    if transformation.get("type") == "aggregation":
-                        raise HttpError(
-                            400,
-                            "Aggregation transformations are only valid when task type is Aggregation.",
-                        )
 
     @staticmethod
     def _thing_attachment_rating_curve_references(
@@ -772,15 +650,9 @@ class TaskService(ServiceUtils):
         if mapping_data is None:
             return task
 
-        if task.task_type == "Aggregation":
-            TaskService._validate_aggregation_mapping_constraints(
-                workspace_id=task.workspace_id, mapping_data=mapping_data
-            )
-        else:
-            TaskService._reject_aggregation_transformations(mapping_data)
-            TaskService._validate_rating_curve_transformation_references(
-                workspace_id=task.workspace_id, mapping_data=mapping_data
-            )
+        TaskService._validate_rating_curve_transformation_references(
+            workspace_id=task.workspace_id, mapping_data=mapping_data
+        )
 
         task.mappings.all().delete()
 
