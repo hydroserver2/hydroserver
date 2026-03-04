@@ -59,10 +59,17 @@ class TaskQuerySet(models.QuerySet):
 class Task(models.Model, PermissionChecker):
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     name = models.CharField(max_length=255)
+    task_type = models.CharField(max_length=32, default="ETL")
     workspace = models.ForeignKey(
         "iam.Workspace", related_name="tasks", on_delete=models.CASCADE
     )
-    data_connection = models.ForeignKey(DataConnection, on_delete=models.CASCADE, related_name="tasks")
+    data_connection = models.ForeignKey(
+        DataConnection,
+        on_delete=models.CASCADE,
+        related_name="tasks",
+        null=True,
+        blank=True,
+    )
     orchestration_system = models.ForeignKey(
         OrchestrationSystem, on_delete=models.CASCADE, related_name="tasks"
     )
@@ -92,7 +99,7 @@ class Task(models.Model, PermissionChecker):
         self, principal: Union["User", "APIKey", None]
     ) -> list[Literal["edit", "delete", "view"]]:
         permissions = self.check_object_permissions(
-            principal=principal, workspace=self.data_connection.workspace, resource_type="Task"
+            principal=principal, workspace=self.workspace, resource_type="Task"
         )
 
         return permissions
