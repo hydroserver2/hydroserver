@@ -10,7 +10,7 @@
   pk: 1000000
   fields:
     name: Test ETL Data Connection — 019adb4f-856c-745a-a996-708a2b2d33bd
-    task: etl.tasks.run_etl_task
+    task: domains.etl.tasks.run_etl_task
     args: []
     kwargs: {"task_id": "019adb4f-856c-745a-a996-708a2b2d33bd"}
     enabled: False

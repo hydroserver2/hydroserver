@@ -65,6 +65,8 @@ def run_etl_task(self, task_id: str):
             ],
             **etl_classes
         )
+    except ETLError as e:
+        raise e
     except Exception as e:
         raise ETLError(
             "Encountered an unexpected ETL configuration error. "
@@ -89,7 +91,7 @@ def run_etl_task(self, task_id: str):
         if isinstance(context.exception, ETLError):
             context.exception.result = {
                 "runtime_variables": context.runtime_variables,
-                **context.results
+                **(context.results.dict() if context.results is not None else {})
             }
             raise context.exception
         else:

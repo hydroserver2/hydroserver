@@ -540,7 +540,7 @@ class TaskService(ServiceUtils):
         if not task.periodic_task:
             task.periodic_task = PeriodicTask.objects.create(
                 name=f"{task.name} — {task.id}",
-                task="etl.tasks.run_etl_task",
+                task="domains.etl.tasks.run_etl_task",
                 kwargs=f'{{"task_id": "{str(task.id)}"}}',
                 enabled=True,
                 date_changed=timezone.now(),
