@@ -10,7 +10,7 @@ export namespace EtlTaskContract {
   export type PostBody        = Data.components['schemas']['TaskPostBody']
   export type PatchBody       = Data.components['schemas']['TaskPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["name","extractorVariables","transformerVariables","loaderVariables","dataConnectionId","orchestrationSystemId","schedule","mappings"] as const
+  export const writableKeys = ["name","type","extractorVariables","transformerVariables","loaderVariables","dataConnectionId","orchestrationSystemId","schedule","mappings"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

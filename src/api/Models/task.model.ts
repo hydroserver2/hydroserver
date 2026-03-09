@@ -2,9 +2,12 @@ import type { Workspace } from '../../types'
 import type { OrchestrationSystem } from '../services'
 import type { DataConnection } from './data-connection.model'
 
+export type TaskType = 'ETL' | 'Aggregation'
+
 export class Task {
   id = ''
   name = ''
+  type: TaskType = 'ETL'
   paused = true
   nextRunAt?: TaskRun = undefined
   latestRun?: TaskRun = undefined
@@ -13,7 +16,7 @@ export class Task {
   loaderVariables = {}
   mappings: Mapping[] = []
   workspaceId = ''
-  dataConnectionId = ''
+  dataConnectionId: string | null = ''
   orchestrationSystemId = ''
   schedule: TaskSchedule | null = null
 
@@ -25,6 +28,7 @@ export class Task {
 export interface TaskExpanded {
   id: string
   name: string
+  type: TaskType
   paused: boolean
   extractorVariables: Record<string, any>
   transformerVariables: Record<string, any>
@@ -32,7 +36,7 @@ export interface TaskExpanded {
   mappings: Mapping[]
   latestRun?: TaskRun
   workspace: Workspace
-  dataConnection: DataConnection
+  dataConnection: DataConnection | null
   orchestrationSystem: OrchestrationSystem
   schedule: TaskSchedule | null
 }
@@ -66,9 +70,20 @@ export interface RatingCurveDataTransformation {
   type: 'rating_curve'
 }
 
+export interface AggregationDataTransformation {
+  type: 'aggregation'
+  aggregationStatistic:
+    | 'simple_mean'
+    | 'time_weighted_daily_mean'
+    | 'last_value_of_day'
+  timezoneMode: 'fixedOffset' | 'daylightSavings'
+  timezone: string
+}
+
 export type DataTransformation =
   | ExpressionDataTransformation
   | RatingCurveDataTransformation
+  | AggregationDataTransformation
 
 export interface MappingPath {
   targetIdentifier: string | number
