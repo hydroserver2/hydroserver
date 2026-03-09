@@ -115,7 +115,7 @@ class TaskMappingPath(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     task_mapping = models.ForeignKey(TaskMapping, on_delete=models.CASCADE, related_name="paths")
     target_identifier = models.CharField(max_length=255)
-    data_transformations = models.JSONField(default=dict)
+    data_transformations = models.JSONField(default=list, blank=True)
 
 
 @receiver(pre_delete, sender=Task)

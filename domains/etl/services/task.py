@@ -19,7 +19,6 @@ from domains.etl.models import (
     TaskRun,
 )
 from domains.sta.models import ThingFileAttachment, Datastream
-from domains.etl.aggregation import normalize_aggregation_transformation
 from interfaces.api.schemas import (
     TaskFields,
     TaskPostBody,
@@ -541,7 +540,7 @@ class TaskService(ServiceUtils):
         if not task.periodic_task:
             task.periodic_task = PeriodicTask.objects.create(
                 name=f"{task.name} — {task.id}",
-                task="etl.tasks.run_etl_task",
+                task="domains.etl.tasks.run_etl_task",
                 kwargs=f'{{"task_id": "{str(task.id)}"}}',
                 enabled=True,
                 date_changed=timezone.now(),
@@ -641,7 +640,7 @@ class TaskService(ServiceUtils):
 
             try:
                 path["data_transformations"] = [
-                    normalize_aggregation_transformation(transformations[0])
+                    transformations[0]
                 ]
             except ValueError as exc:
                 raise HttpError(400, str(exc)) from exc

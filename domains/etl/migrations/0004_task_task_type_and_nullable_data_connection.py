@@ -25,4 +25,9 @@ class Migration(migrations.Migration):
                 to="etl.dataconnection",
             ),
         ),
+        migrations.AlterField(
+            model_name='taskmappingpath',
+            name='data_transformations',
+            field=models.JSONField(blank=True, default=list),
+        ),
     ]

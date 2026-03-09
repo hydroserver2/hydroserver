@@ -80,9 +80,9 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_task_runs": {
-        "task": "etl.tasks.cleanup_etl_task_runs",
+        "task": "domains.etl.tasks.cleanup_etl_task_runs",
         "schedule": crontab(hour=3, minute=0),
-        "args": (14,),
+        "args": (7,),
     },
 }
 

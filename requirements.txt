@@ -15,7 +15,7 @@ gunicorn==23.0.0
 celery==5.5.3
 redis==7.0.1
 hydroserver-sensorthings==0.4.2
-hydroserverpy==1.9.0b1
+hydroserverpy==1.9.0b3
 pandas==2.2.3
 orjson==3.10.15
 uuid6==2024.7.10
