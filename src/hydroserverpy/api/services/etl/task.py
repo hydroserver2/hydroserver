@@ -2,7 +2,7 @@ import json
 from typing import Literal, Union, Optional, List, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
-from hydroserverpy.api.models import DataConnection, Task, TaskRun, TaskMapping, OrchestrationSystem
+from hydroserverpy.api.models import DataConnection, Task, TaskRun, OrchestrationSystem
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseService
 
