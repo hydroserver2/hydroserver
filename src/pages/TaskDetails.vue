@@ -105,21 +105,24 @@
               </template>
               <span>{{ runNowDisabledReason }}</span>
             </v-tooltip>
-            <v-tooltip location="top" :disabled="canEditTask">
+            <v-tooltip
+              location="top"
+              :disabled="!pauseToggleDisabledReason"
+            >
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
                   <v-btn
                     variant="text"
                     color="black"
                     :prepend-icon="task.schedule?.paused ? mdiPlay : mdiPause"
-                    :disabled="!canEditTask"
+                    :disabled="!!pauseToggleDisabledReason"
                     @click.stop="togglePaused(task)"
                   >
                     Pause/Run
                   </v-btn>
                 </span>
               </template>
-              <span>{{ readOnlyTooltip }}</span>
+              <span>{{ pauseToggleDisabledReason }}</span>
             </v-tooltip>
           </v-col>
         </v-row>
@@ -402,13 +405,13 @@
         color="cyan-darken-3"
         rounded="t-lg"
         class="section-toolbar mt-6"
-        v-if="pipelineRows.length"
+        v-if="showDataConnectionSection"
       >
         <h6 class="text-h6 ml-4">Data connection</h6>
       </v-toolbar>
       <v-data-table
         v-show="activePanel === 'details'"
-        v-if="pipelineRows.length"
+        v-if="showDataConnectionSection"
         :headers="pipelineHeaders"
         :items="pipelineRows"
         :items-per-page="-1"
@@ -456,7 +459,7 @@
       >
         <Swimlanes
           :task="task"
-          :show-actions="true"
+          :show-actions="canEditTask"
           @edit="openEdit = true"
           @delete="openDelete = true"
         />
@@ -617,6 +620,12 @@ const runNowDisabledReason = computed(() => {
   return ''
 })
 
+const pauseToggleDisabledReason = computed(() => {
+  if (!canEditTask.value) return readOnlyTooltip
+  if (!task.value?.schedule) return 'This task has no schedule to pause.'
+  return ''
+})
+
 const effectiveTaskId = computed(() => {
   const propId = props.taskId
   if (typeof propId === 'string' && propId.trim()) return propId
@@ -639,7 +648,28 @@ const effectiveRunId = computed(() => {
 const isTaskExpandedPayload = (value: unknown): value is TaskExpanded => {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<TaskExpanded>
-  return !!candidate.id && !!candidate.workspace && !!candidate.dataConnection
+  const hasId = typeof candidate.id === 'string' && candidate.id.length > 0
+  const hasWorkspace =
+    !!candidate.workspace &&
+    typeof candidate.workspace === 'object' &&
+    typeof (candidate.workspace as any).id === 'string' &&
+    (candidate.workspace as any).id.length > 0
+  const hasOrchestrationSystem =
+    !!candidate.orchestrationSystem &&
+    typeof candidate.orchestrationSystem === 'object' &&
+    typeof (candidate.orchestrationSystem as any).id === 'string' &&
+    (candidate.orchestrationSystem as any).id.length > 0
+  const hasMappings = Array.isArray(candidate.mappings)
+  const hasTaskType =
+    candidate.type === 'ETL' || candidate.type === 'Aggregation'
+
+  return (
+    hasId &&
+    hasWorkspace &&
+    hasOrchestrationSystem &&
+    hasMappings &&
+    hasTaskType
+  )
 }
 
 const routeToAccessDenied = async () => {
@@ -1057,6 +1087,19 @@ const scheduleString = computed(() => {
   return description
 })
 
+const taskTypeLabel = computed(() => {
+  return (
+    (task.value as any)?.type ??
+    (task.value as any)?.taskType ??
+    (task.value as any)?.task_type ??
+    '–'
+  )
+})
+
+const isAggregationTask = computed(() => {
+  return `${taskTypeLabel.value}`.trim().toUpperCase() === 'AGGREGATION'
+})
+
 const taskHeaders = [
   { key: 'label', title: 'Label' },
   { key: 'value', title: 'Value' },
@@ -1085,6 +1128,11 @@ const taskInformation = computed(() => {
       value: task.value.id,
     },
     {
+      icon: mdiInformationOutline,
+      label: 'Task type',
+      value: taskTypeLabel.value,
+    },
+    {
       icon: mdiCalendarClock,
       label: 'Schedule',
       value: scheduleString,
@@ -1095,9 +1143,21 @@ const taskInformation = computed(() => {
 
 const taskTemplateInformation = computed(() => {
   const dataConnection: any = task.value?.dataConnection
-  if (!dataConnection) return []
+  const taskType = (task.value as any)?.type ?? dataConnection?.type ?? '–'
+
+  const rows: any[] = [
+    {
+      icon: mdiInformationOutline,
+      label: 'Template',
+      name: 'Workflow type',
+      value: taskType,
+    },
+  ]
+
+  if (!dataConnection) return rows
 
   return [
+    ...rows,
     {
       icon: mdiCardAccountDetails,
       label: 'Data connection ID',
@@ -1109,12 +1169,6 @@ const taskTemplateInformation = computed(() => {
       label: 'Data connection',
       name: 'Data connection name',
       value: dataConnection.name,
-    },
-    {
-      icon: mdiInformationOutline,
-      label: 'Template',
-      name: 'Workflow type',
-      value: dataConnection.type ?? '–',
     },
   ].filter((row) => row.value !== undefined && row.value !== null)
 })
@@ -1251,6 +1305,10 @@ const pipelineRows = computed(() => {
   }
 
   return rows
+})
+
+const showDataConnectionSection = computed(() => {
+  return !isAggregationTask.value && pipelineRows.value.length > 0
 })
 
 const transformerInformation = computed(() => {

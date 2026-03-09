@@ -22,18 +22,67 @@
           density="comfortable"
         />
 
-        <p class="font-weight-bold mb-2 required-label">
-          Select data connection
-        </p>
+        <p class="font-weight-bold mb-2 required-label">Task type</p>
         <v-select
-          v-model="task.dataConnectionId"
-          :items="workspaceDataConnections"
-          item-title="name"
-          item-value="id"
-          label="Data connection"
-          :rules="rules.requiredAndMaxLength255"
+          v-model="(task as any).type"
+          :items="taskTypeOptions"
+          item-title="title"
+          item-value="value"
+          label="Task type"
           density="comfortable"
         />
+
+        <template v-if="!isAggregationTask">
+          <p class="font-weight-bold mb-2 required-label">
+            Select data connection
+          </p>
+          <v-select
+            v-model="task.dataConnectionId"
+            :items="workspaceDataConnections"
+            item-title="name"
+            item-value="id"
+            label="Data connection"
+            :rules="rules.requiredAndMaxLength255"
+            density="comfortable"
+          />
+        </template>
+
+        <div v-else class="mb-4">
+          <p class="font-weight-bold mb-2 required-label">Aggregation timezone</p>
+          <v-btn-toggle
+            class="mb-3"
+            v-model="aggregationTimezoneMode"
+            mandatory
+            variant="outlined"
+            density="compact"
+            color="blue"
+          >
+            <v-btn value="fixedOffset">Fixed offset</v-btn>
+            <v-btn value="daylightSavings">Daylight savings aware</v-btn>
+          </v-btn-toggle>
+
+          <v-autocomplete
+            v-if="aggregationTimezoneMode === 'fixedOffset'"
+            v-model="aggregationTimezone"
+            :items="FIXED_OFFSET_TIMEZONES"
+            item-title="title"
+            item-value="value"
+            label="Fixed timezone offset"
+            :rules="rules.required"
+            density="comfortable"
+          />
+
+          <v-autocomplete
+            v-else
+            v-model="aggregationTimezone"
+            :items="DST_AWARE_TIMEZONES"
+            item-title="title"
+            item-value="value"
+            label="Daylight savings aware timezone"
+            :rules="rules.required"
+            density="comfortable"
+          />
+        </div>
 
         <div v-if="perTaskPlaceholders.length" class="mb-4">
           <p class="font-weight-bold mb-2">Template variables</p>
@@ -145,6 +194,10 @@ import StickyForm from '@/components/Forms/StickyForm.vue'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Snackbar } from '@/utils/notifications'
+import {
+  DST_AWARE_TIMEZONES,
+  FIXED_OFFSET_TIMEZONES,
+} from '@/models/timestamp'
 
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id)
@@ -178,10 +231,17 @@ const swimlanesRef = ref<any>(null)
 const submitLoading = ref(false)
 const task = ref<Task>(new Task())
 const scheduleMode = ref<'interval' | 'crontab'>('interval')
+const aggregationTimezoneMode = ref<'fixedOffset' | 'daylightSavings'>(
+  'fixedOffset'
+)
+const aggregationTimezone = ref<string>('-0700')
 const selectedDataConnection = computed<DataConnection | undefined>(() =>
   workspaceDataConnections.value.find(
     (j) => j.id === task.value.dataConnectionId
   )
+)
+const isAggregationTask = computed(
+  () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
 )
 const taskWorkspaceId = computed(() => {
   return (
@@ -193,11 +253,16 @@ const taskWorkspaceId = computed(() => {
   )
 })
 const perTaskPlaceholders = computed<PlaceholderVariable[]>(() => {
+  if (isAggregationTask.value) return []
   const placeholders =
     (selectedDataConnection.value as any)?.extractor?.settings
       ?.placeholderVariables || []
   return placeholders.filter((v: PlaceholderVariable) => v?.type === 'perTask')
 })
+const taskTypeOptions = [
+  { title: 'ETL', value: 'ETL' },
+  { title: 'Aggregation', value: 'Aggregation' },
+]
 
 const intervalUnitOptions = [
   { value: 'minutes', title: 'Minutes' },
@@ -241,6 +306,65 @@ function inputToIso(str = ''): string {
   return parsed.toISOString()
 }
 
+function ensureAggregationTransformation(path: any) {
+  if (!Array.isArray(path.dataTransformations)) path.dataTransformations = []
+  const existing = path.dataTransformations.find(
+    (t: any) => t?.type === 'aggregation'
+  )
+  const transform = existing || {
+    type: 'aggregation',
+    aggregationStatistic: 'simple_mean',
+    timezoneMode: aggregationTimezoneMode.value,
+    timezone: aggregationTimezone.value,
+  }
+  transform.aggregationStatistic ||= 'simple_mean'
+  transform.timezoneMode = aggregationTimezoneMode.value
+  transform.timezone = aggregationTimezone.value
+  path.dataTransformations = [transform]
+}
+
+function hydrateAggregationTimezoneFromMappings() {
+  const first = task.value.mappings?.[0]?.paths?.[0]?.dataTransformations?.find(
+    (t: any) => t?.type === 'aggregation'
+  ) as any
+  if (!first) {
+    aggregationTimezoneMode.value = 'fixedOffset'
+    aggregationTimezone.value = '-0700'
+    return
+  }
+  aggregationTimezoneMode.value =
+    first.timezoneMode === 'daylightSavings'
+      ? 'daylightSavings'
+      : 'fixedOffset'
+  aggregationTimezone.value =
+    typeof first.timezone === 'string' && first.timezone
+      ? first.timezone
+      : aggregationTimezoneMode.value === 'daylightSavings'
+        ? 'America/Denver'
+        : '-0700'
+}
+
+function syncAggregationConfigToMappings() {
+  if (!isAggregationTask.value) return
+
+  if (!task.value.mappings?.length) {
+    task.value.mappings = [
+      {
+        sourceIdentifier: '',
+        paths: [{ targetIdentifier: '', dataTransformations: [] }],
+      } as any,
+    ]
+  }
+
+  task.value.mappings.forEach((mapping: any) => {
+    if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
+      mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
+    }
+    if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
+    ensureAggregationTransformation(mapping.paths[0])
+  })
+}
+
 const startInput = computed({
   get: () => isoToInput(task.value.schedule?.startTime ?? ''),
   set: (v: string) => {
@@ -254,18 +378,22 @@ function hydrateTask(source?: TaskExpanded) {
     ? new Task(JSON.parse(JSON.stringify(source)))
     : new Task()
 
+  ;(base as any).type = (base as any).type || 'ETL'
   if (!base.schedule) base.schedule = defaultSchedule()
   if (!base.mappings) base.mappings = []
   if (!base.workspaceId && (base as any).workspace?.id)
     base.workspaceId = String((base as any).workspace.id)
   if (!base.dataConnectionId && (base as any).dataConnection?.id)
     base.dataConnectionId = String((base as any).dataConnection.id)
+  if ((base as any).type === 'Aggregation') base.dataConnectionId = null as any
   ;(['startTime', 'nextRunAt'] as const).forEach((k) => {
     if (base.schedule && base.schedule[k])
       base.schedule[k] = ensureIsoUtc(base.schedule[k])
   })
 
   task.value = base
+  hydrateAggregationTimezoneFromMappings()
+  syncAggregationConfigToMappings()
   scheduleMode.value = base.schedule?.crontab ? 'crontab' : 'interval'
 }
 
@@ -294,6 +422,50 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => (task.value as any)?.type,
+  (nextType) => {
+    if (nextType === 'Aggregation') {
+      task.value.dataConnectionId = null as any
+      syncAggregationConfigToMappings()
+    } else if (!task.value.dataConnectionId) {
+      task.value.dataConnectionId = ''
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  aggregationTimezoneMode,
+  (mode) => {
+    if (mode === 'daylightSavings') {
+      if (
+        !aggregationTimezone.value ||
+        !DST_AWARE_TIMEZONES.some((tz) => tz.value === aggregationTimezone.value)
+      ) {
+        aggregationTimezone.value = 'America/Denver'
+      }
+    } else if (
+      !aggregationTimezone.value ||
+      !FIXED_OFFSET_TIMEZONES.some((tz) => tz.value === aggregationTimezone.value)
+    ) {
+      aggregationTimezone.value = '-0700'
+    }
+    syncAggregationConfigToMappings()
+  },
+  { immediate: true }
+)
+
+watch(aggregationTimezone, () => syncAggregationConfigToMappings())
+
+watch(
+  () =>
+    (task.value.mappings || [])
+      .map((m: any) => `${m.sourceIdentifier}:${m.paths?.length || 0}`)
+      .join('|'),
+  () => syncAggregationConfigToMappings()
+)
+
 function upsertTaskList(listRef: { value: Task[] }, saved: Task) {
   const index = listRef.value.findIndex((p) => p.id === saved.id)
   if (index !== -1) listRef.value[index] = saved
@@ -308,30 +480,39 @@ async function onSubmit() {
   if (!valid.value) return
 
   submitLoading.value = true
+  try {
+    task.value.workspaceId = taskWorkspaceId.value || ''
+    task.value.orchestrationSystemId =
+      props.orchestrationSystem?.id || task.value.orchestrationSystemId
+    if (!task.value.schedule) task.value.schedule = defaultSchedule()
+    if (isAggregationTask.value) {
+      task.value.dataConnectionId = null as any
+      syncAggregationConfigToMappings()
+    }
 
-  task.value.workspaceId = taskWorkspaceId.value || ''
-  task.value.orchestrationSystemId =
-    props.orchestrationSystem?.id || task.value.orchestrationSystemId
-  if (!task.value.schedule) task.value.schedule = defaultSchedule()
+    const res = isEdit.value
+      ? await hs.tasks.update(task.value)
+      : await hs.tasks.create(task.value)
 
-  const res = isEdit.value
-    ? await hs.tasks.update(task.value)
-    : await hs.tasks.create(task.value)
+    if (!res.ok) {
+      Snackbar.error(res.message)
+      console.error(res)
+      return
+    }
 
-  if (!res.ok) {
-    Snackbar.error(res.message)
-    console.error(res)
-  } else {
     const saved = res.data
     upsertTaskList(tasks, saved)
     upsertTaskList(workspaceTasks as unknown as Ref<Task[]>, saved)
     hydrateTask(saved)
 
     emit(isEdit.value ? 'updated' : 'created', saved)
+    emit('close')
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to save task.')
+    console.error(error)
+  } finally {
+    submitLoading.value = false
   }
-
-  submitLoading.value = false
-  emit('close')
 }
 </script>
 

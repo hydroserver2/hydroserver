@@ -17,16 +17,27 @@
         />
       </div>
     </div>
-    <div class="head">Source</div>
-    <div class="head">Data transformations</div>
-    <div class="head">Target</div>
+    <div class="head">
+      {{ isAggregationTask ? 'Source datastream' : 'Source' }}
+    </div>
+    <div class="head">
+      {{ isAggregationTask ? 'Aggregation statistic' : 'Data transformations' }}
+    </div>
+    <div class="head">
+      {{ isAggregationTask ? 'Target datastream' : 'Target' }}
+    </div>
 
     <template v-for="(m, mi) in task.mappings" :key="mi">
       <template v-for="(p, pi) in m.paths" :key="pi">
         <div class="cell source" :class="{ 'source-empty': pi !== 0 }">
           <template v-if="pi === 0">
             <v-chip size="small" color="primary" variant="flat" class="mr-2">
-              {{ String(m.sourceIdentifier) }}
+              <template v-if="isAggregationTask">
+                {{ sourceDatastreamLabel(m.sourceIdentifier) }}
+              </template>
+              <template v-else>
+                {{ String(m.sourceIdentifier) }}
+              </template>
             </v-chip>
           </template>
         </div>
@@ -70,6 +81,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 import TransformChip from './TransformChip.vue'
 import type { Task, TaskExpanded } from '@hydroserver/client'
 import { mdiDelete, mdiPencil } from '@mdi/js'
@@ -80,11 +92,24 @@ const props = defineProps<{
   showActions?: boolean
 }>()
 
-const { linkedDatastreams } = storeToRefs(useOrchestrationStore())
+const { linkedDatastreams, workspaceDatastreams } = storeToRefs(
+  useOrchestrationStore()
+)
+const isAggregationTask = computed(
+  () => ((props.task as any)?.type ?? 'ETL') === 'Aggregation'
+)
 defineEmits<{
   (e: 'edit', task: TaskExpanded): void
   (e: 'delete', task: TaskExpanded): void
 }>()
+
+function sourceDatastreamLabel(sourceIdentifier: string | number) {
+  const id = String(sourceIdentifier)
+  const match =
+    linkedDatastreams.value.find((d) => d.id === id) ||
+    workspaceDatastreams.value.find((d) => d.id === id)
+  return match?.name ? `${id} - ${match.name}` : id
+}
 </script>
 
 <style scoped>
