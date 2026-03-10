@@ -121,7 +121,7 @@ const runTimeOptions = [
     title: 'Latest observation timestamp',
     value: 'latestObservationTimestamp',
   },
-  { title: 'Job execution time', value: 'dExecutionTime' },
+  { title: 'Job execution time', value: 'jobExecutionTime' },
 ]
 
 type HTTPSettings = {
