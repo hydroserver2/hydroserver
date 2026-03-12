@@ -1,0 +1,70 @@
+name: Build and Upload Data Management App
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Data Management App Repo
+        uses: actions/checkout@v4
+        with:
+          repository: hydroserver2/hydroserver-data-management-app
+          ref: ${{ github.event.release.tag_name }}
+          path: data_mgmt
+
+      - name: Setup Node 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: data_mgmt/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./data_mgmt
+        run: npm ci
+
+      - name: Configure Environment Variables
+        working-directory: ./data_mgmt
+        run: |
+          cat << EOF > .env
+          VITE_APP_VERSION=${{ github.event.release.tag_name }}
+          EOF
+
+      - name: Build Data Management App
+        working-directory: ./data_mgmt
+        run: npm run django-build
+
+      - name: Create ZIP archive of build
+        working-directory: ./data_mgmt
+        run: |
+          zip -r data-management-app-${{ github.event.release.tag_name }}.zip dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-management-app-${{ github.event.release.tag_name }}
+          path: ./data_mgmt/data-management-app-${{ github.event.release.tag_name }}.zip
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-management-app-${{ github.event.release.tag_name }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: 'data-management-app-${{ github.event.release.tag_name }}.zip'
+          asset_name: 'data-management-app-${{ github.event.release.tag_name }}.zip'
+          asset_content_type: application/zip
