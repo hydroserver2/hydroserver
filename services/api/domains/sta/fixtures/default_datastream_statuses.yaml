@@ -1,0 +1,17 @@
+---
+- model: sta.datastreamstatus
+  pk: 1
+  fields:
+    name: Complete
+- model: sta.datastreamstatus
+  pk: 2
+  fields:
+    name: Ongoing
+- model: sta.datastreamstatus
+  pk: 3
+  fields:
+    name: Planned
+- model: sta.datastreamstatus
+  pk: 4
+  fields:
+    name: Unknown

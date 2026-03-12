@@ -1,0 +1,57 @@
+# System Unit
+- model: sta.unit
+  pk: 2ca850fa-ce19-4d8a-9dfd-8d54a261778d
+  fields:
+    name: System Unit
+    symbol: Sy
+    definition: System Unit
+    unit_type: System Unit
+
+# System Assigned Unit
+- model: sta.unit
+  pk: 383f9663-6003-4baf-b606-7e9937b96298
+  fields:
+    name: System Assigned Unit
+    symbol: Sy
+    definition: System Assigned Unit
+    unit_type: System Assigned Unit
+
+# Public Unit
+- model: sta.unit
+  pk: fe3799b7-f061-42f2-b012-b569303f8a41
+  fields:
+    name: Public Unit
+    symbol: Pu
+    definition: Public Unit
+    unit_type: Public Unit
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Assigned Unit
+- model: sta.unit
+  pk: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
+  fields:
+    name: Public Assigned Unit
+    symbol: Pu
+    definition: Public Assigned Unit
+    unit_type: Public Assigned Unit
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Unit
+- model: sta.unit
+  pk: 98a74429-2be2-44c0-8f7f-2df2ca12893d
+  fields:
+    name: Private Unit
+    symbol: Pr
+    definition: Private Unit
+    unit_type: Private Unit
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Assigned Unit
+- model: sta.unit
+  pk: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+  fields:
+    name: Private Assigned Unit
+    symbol: Pr
+    definition: Private Assigned Unit
+    unit_type: Private Assigned Unit
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

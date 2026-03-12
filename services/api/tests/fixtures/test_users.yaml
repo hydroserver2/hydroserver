@@ -1,0 +1,175 @@
+# Owner User
+- model: iam.user
+  pk: 1000000010
+  fields:
+    is_superuser: false
+    username: owner@example.com
+    password: pbkdf2_sha256$1000000$5hlTouS1PExEFnezs4ux79$Hqf+Qtoqs7f4F1FbzUxy51UHHLwxiKmLefz1pvEaqUo=
+    first_name: Owner
+    last_name: Johnson
+    is_staff: false
+    is_active: true
+    email: owner@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000010
+  fields:
+    email: owner@example.com
+    verified: True
+    primary: True
+    user: 1000000010
+
+# Editor User
+- model: iam.user
+  pk: 1000000011
+  fields:
+    is_superuser: false
+    username: editor@example.com
+    password: pbkdf2_sha256$1000000$qUOZEK7xbv3w0U5L5XBt3A$Nzwxa9Kbe0jP1OgksrtMRLIObZT9I3mig37xyDWQYZg=
+    first_name: Editor
+    last_name: Smith
+    is_staff: false
+    is_active: true
+    email: editor@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000011
+  fields:
+    email: editor@example.com
+    verified: True
+    primary: True
+    user: 1000000011
+
+# Viewer User
+- model: iam.user
+  pk: 1000000012
+  fields:
+    is_superuser: false
+    username: viewer@example.com
+    password: pbkdf2_sha256$1000000$ZymYcCtlW67vvLnmYmbw4q$O2mDQSJ1Mtfq6AbxeMOYFxHQTDVYlrVnojBGyXk5sW0=
+    first_name: Viewer
+    last_name: Davis
+    is_staff: false
+    is_active: true
+    email: viewer@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000012
+  fields:
+    email: viewer@example.com
+    verified: True
+    primary: True
+    user: 1000000012
+
+# Unaffiliated User
+- model: iam.user
+  pk: 1000000013
+  fields:
+    is_superuser: false
+    username: unaffiliated@example.com
+    password: pbkdf2_sha256$1000000$A8KhP3kiM7tvnFfoAKF0uu$B0iS+o7eanH7nDF0coOzwA0DHo/VFii4DJd1szBRJP4=
+    first_name: Unaffiliated
+    last_name: Anderson
+    is_staff: false
+    is_active: true
+    email: unaffiliated@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000013
+  fields:
+    email: anonymous@example.com
+    verified: True
+    primary: True
+    user: 1000000013
+
+# Limited User
+- model: iam.user
+  pk: 1000000015
+  fields:
+    is_superuser: false
+    username: limited@example.com
+    password: pbkdf2_sha256$1000000$pN5OkI15omzBE2tSYTLMJh$R3yhQzzQw7ZcuLNybOyqqqdu0ChS3tOmltnSUAFCHek=
+    first_name: Limited
+    last_name: Taylor
+    is_staff: false
+    is_active: true
+    email: limited@example.com
+    user_type: Other
+    is_ownership_allowed: false
+- model: account.emailaddress
+  pk: 1000000015
+  fields:
+    email: limited@example.com
+    verified: True
+    primary: True
+    user: 1000000015
+
+# Inactive User
+- model: iam.user
+  pk: 1000000016
+  fields:
+    is_superuser: false
+    username: inactive@example.com
+    password: pbkdf2_sha256$1000000$AmmDeIdyFTBzWdri65ZszV$aEEhAv4djrnvNqDZbvlM3OYBK29ec8LRbMHgK3bacg0=
+    first_name: Inactive
+    last_name: Wilson
+    is_staff: false
+    is_active: false
+    email: inactive@example.com
+    user_type: Other
+    is_ownership_allowed: false
+- model: account.emailaddress
+  pk: 1000000016
+  fields:
+    email: inactive@example.com
+    verified: True
+    primary: True
+    user: 1000000016
+
+# Admin User
+- model: iam.user
+  pk: 1000000017
+  fields:
+    is_superuser: true
+    username: admin@example.com
+    password: pbkdf2_sha256$1000000$suwpesjNpOTFLtVFN30dQo$cHt4NhKPhuQtHRxEG9Hf2Z79I6z/QM3GqPNh3aFT6V0=
+    first_name: Admin
+    last_name: Thomas
+    is_staff: true
+    is_active: true
+    email: admin@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000017
+  fields:
+    email: admin@example.com
+    verified: True
+    primary: True
+    user: 1000000017
+
+# Staff User
+- model: iam.user
+  pk: 1000000018
+  fields:
+    is_superuser: false
+    username: staff@example.com
+    password: pbkdf2_sha256$1000000$k273KDCDWv31eObH1RqR6f$FDPzSvsBBfVWLo+tnh+x31mxvsf9tIZzHsqpKQ1SNJY=
+    first_name: Staff
+    last_name: Lee
+    is_staff: true
+    is_active: true
+    email: staff@example.com
+    user_type: Other
+    is_ownership_allowed: true
+- model: account.emailaddress
+  pk: 1000000018
+  fields:
+    email: staff@example.com
+    verified: True
+    primary: True
+    user: 1000000018

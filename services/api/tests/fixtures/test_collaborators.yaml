@@ -1,0 +1,31 @@
+# Public Workspace Editor
+- model: iam.collaborator
+  pk: 1000000010
+  fields:
+    user: 1000000011
+    role: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Workspace Viewer
+- model: iam.collaborator
+  pk: 1000000011
+  fields:
+    user: 1000000012
+    role: 1d91bff7-edf6-4b69-bb26-674436335725
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Workspace Editor
+- model: iam.collaborator
+  pk: 1000000012
+  fields:
+    user: 1000000011
+    role: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Workspace Viewer
+- model: iam.collaborator
+  pk: 1000000013
+  fields:
+    user: 1000000012
+    role: 1d91bff7-edf6-4b69-bb26-674436335725
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

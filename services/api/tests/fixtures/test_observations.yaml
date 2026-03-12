@@ -1,0 +1,145 @@
+# Public Datastream / Public Thing / Public Workspace Observations
+- model: sta.observation
+  pk: 2e4e9d87-ae23-4017-894a-b29e4883f350
+  fields:
+    datastream_id: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.1
+    quality_code: Public
+- model: sta.observation
+  pk: fc5ccf90-f0f9-466a-a192-f819064f8731
+  fields:
+    datastream_id: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.1
+    quality_code: Public
+    result_qualifiers:
+      - 667b63fb-e7a9-4b10-b6d8-9a4bafdf11bf
+
+# Private Datastream / Public Thing / Public Workspace
+- model: sta.observation
+  pk: c2784042-ea28-4f15-91ed-8e3452199576
+  fields:
+    datastream_id: e0506cac-3e50-4d0a-814d-7ae0146705b2
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.2
+    quality_code: Private
+- model: sta.observation
+  pk: 3c933ab1-ddc7-4436-9718-c9e2d821926e
+  fields:
+    datastream_id: e0506cac-3e50-4d0a-814d-7ae0146705b2
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.2
+    quality_code: Private
+
+# Public Datastream / Private Thing / Public Workspace
+- model: sta.observation
+  pk: 040430a0-db2f-4458-87d0-aa3ebd327fc9
+  fields:
+    datastream_id: cad40a75-99ca-4317-b534-0fc7880c905f
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.3
+    quality_code: Private
+- model: sta.observation
+  pk: 2299c634-4d0d-4436-ac47-fd395c613012
+  fields:
+    datastream_id: cad40a75-99ca-4317-b534-0fc7880c905f
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.3
+    quality_code: Private
+
+# Private Datastream / Private Thing / Public Workspace
+- model: sta.observation
+  pk: 1f4064cc-c61e-42c4-b92c-8c795691b2e5
+  fields:
+    datastream_id: fcd47d93-4cae-411a-9e1e-26ef473840ed
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.4
+    quality_code: Private
+- model: sta.observation
+  pk: 3cd3823b-d002-4914-8290-62f4b7bbb885
+  fields:
+    datastream_id: fcd47d93-4cae-411a-9e1e-26ef473840ed
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.4
+    quality_code: Private
+
+# Public Datastream / Public Thing / Private Workspace
+- model: sta.observation
+  pk: d7b48f89-9b5b-476c-8e03-9b991ce2d294
+  fields:
+    datastream_id: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.5
+    quality_code: Private
+- model: sta.observation
+  pk: 1b88e0be-1cb3-4d09-8499-ef07f9a5ae85
+  fields:
+    datastream_id: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.5
+    quality_code: Private
+
+# Private Datastream / Public Thing / Private Workspace
+- model: sta.observation
+  pk: ed024a1c-fc3a-424f-a1f6-007fa7b26d5c
+  fields:
+    datastream_id: 1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.6
+    quality_code: Private
+- model: sta.observation
+  pk: f668956d-e6f8-4ebc-b4d3-0f68fbfc443f
+  fields:
+    datastream_id: 1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.6
+    quality_code: Private
+
+# Public Datastream / Private Thing / Private Workspace
+- model: sta.observation
+  pk: 5e358710-665b-44df-9a18-8fc8a8a6795d
+  fields:
+    datastream_id: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.7
+    quality_code: Private
+- model: sta.observation
+  pk: b6415ab8-56c7-4e24-a322-8468e42e7b60
+  fields:
+    datastream_id: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.7
+    quality_code: Private
+
+# Private Datastream / Private Thing / Private Workspace
+- model: sta.observation
+  pk: 3bfba7fa-c1ae-4f9e-bc6d-5d258d0f076a
+  fields:
+    datastream_id: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.8
+    quality_code: Private
+- model: sta.observation
+  pk: 4175b4b3-70f4-4a5a-af5e-e12c41ac01dc
+  fields:
+    datastream_id: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.8
+    quality_code: Private
+
+# Public Datastream with System Metadata
+- model: sta.observation
+  pk: d4c16a86-e355-44ea-b4fa-079b2d36d377
+  fields:
+    datastream_id: dd5c60c2-a631-4e27-9aec-a59e1183861c
+    phenomenon_time: 2025-02-10 01:00:00.000 -0700
+    result: 1.9
+    quality_code: Public
+- model: sta.observation
+  pk: 3125a40a-294d-4177-aa2c-6ba8dc39fb8d
+  fields:
+    datastream_id: dd5c60c2-a631-4e27-9aec-a59e1183861c
+    phenomenon_time: 2025-02-10 02:00:00.000 -0700
+    result: 3.9
+    quality_code: Public

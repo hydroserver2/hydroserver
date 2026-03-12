@@ -1,0 +1,73 @@
+---
+- model: sta.datastreamaggregation
+  pk: 1
+  fields:
+    name: Average
+- model: sta.datastreamaggregation
+  pk: 2
+  fields:
+    name: Best easy systematic estimator
+- model: sta.datastreamaggregation
+  pk: 3
+  fields:
+    name: Categorical
+- model: sta.datastreamaggregation
+  pk: 4
+  fields:
+    name: Confidence Interval
+- model: sta.datastreamaggregation
+  pk: 5
+  fields:
+    name: Constant over interval
+- model: sta.datastreamaggregation
+  pk: 6
+  fields:
+    name: Continuous
+- model: sta.datastreamaggregation
+  pk: 7
+  fields:
+    name: Cumulative
+- model: sta.datastreamaggregation
+  pk: 8
+  fields:
+    name: Incremental
+- model: sta.datastreamaggregation
+  pk: 9
+  fields:
+    name: Maximum
+- model: sta.datastreamaggregation
+  pk: 10
+  fields:
+    name: Median
+- model: sta.datastreamaggregation
+  pk: 11
+  fields:
+    name: Minimum
+- model: sta.datastreamaggregation
+  pk: 12
+  fields:
+    name: Mode
+- model: sta.datastreamaggregation
+  pk: 13
+  fields:
+    name: Sporadic
+- model: sta.datastreamaggregation
+  pk: 14
+  fields:
+    name: Standard deviation
+- model: sta.datastreamaggregation
+  pk: 15
+  fields:
+    name: Standard error of mean
+- model: sta.datastreamaggregation
+  pk: 16
+  fields:
+    name: Standard error of the mean
+- model: sta.datastreamaggregation
+  pk: 17
+  fields:
+    name: Unknown
+- model: sta.datastreamaggregation
+  pk: 18
+  fields:
+    name: Variance

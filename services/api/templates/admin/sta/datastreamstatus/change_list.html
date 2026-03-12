@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="{% url 'admin:datastream_status_load_default_data' %}" class="addlink">
+      Load Default Datastream Statuses
+    </a>
+  </li>
+  {{ block.super }}
+{% endblock %}

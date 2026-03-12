@@ -1,0 +1,65 @@
+---
+- model: sta.processinglevel
+  pk: d3fca6a6-a576-40a4-9360-0a855e0e8d24
+  fields:
+    code: '0'
+    definition: Raw data
+    explanation: >-
+      Raw and unprocessed data and data products that have not undergone quality
+      control. Depending on the variable, data type, and data transmission
+      system, raw data may be available within seconds or minutes after the
+      measurements have been made. Examples include real-time precipitation,
+      streamflow, and water quality measurements.
+    workspace_id: null
+- model: sta.processinglevel
+  pk: fa49811b-d8e8-44db-872a-94cbb5ef5740
+  fields:
+    code: '3'
+    definition: Interpreted products
+    explanation: >-
+      Interpreted products that require researcher driven analysis and
+      interpretation, model-based interpretation using other data and/or strong
+      prior assumptions. An example is basin average precipitation derived from
+      the combination of rain gauges and radar return data.
+    workspace_id: null
+- model: sta.processinglevel
+  pk: f24fbde3-5b19-40ad-b36e-d28f60aa36c4
+  fields:
+    code: '-9999'
+    definition: Unknown
+    explanation: The quality control level is unknown
+    workspace_id: null
+- model: sta.processinglevel
+  pk: ede66c0c-7752-4306-80b0-139e732c6f9d
+  fields:
+    code: '4'
+    definition: Knowledge products
+    explanation: >-
+      Knowledge products that require researcher driven scientific
+      interpretation and multidisciplinary data integration and include
+      model-based interpretation using other data and/or strong prior
+      assumptions. An example is percentages of old or new water in a hydrograph
+      inferred from an isotope analysis.
+    workspace_id: null
+- model: sta.processinglevel
+  pk: 5efef0da-ba32-4ae6-8d68-709a37c4a8dd
+  fields:
+    code: '1'
+    definition: Quality controlled data
+    explanation: >-
+      Quality controlled data that have passed quality assurance procedures such
+      as routine estimation of timing and sensor calibration or visual
+      inspection and removal of obvious errors. An example is USGS published
+      streamflow records following parsing through USGS quality control
+      procedures.
+    workspace_id: null
+- model: sta.processinglevel
+  pk: b292e0de-3ba8-4b0b-842e-9add4dc99792
+  fields:
+    code: '2'
+    definition: Derived products
+    explanation: >-
+      Derived products that require scientific and technical interpretation and
+      may include multiple-sensor data. An example is basin average
+      precipitation derived from rain gauges using an interpolation procedure.
+    workspace_id: null

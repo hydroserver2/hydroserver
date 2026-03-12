@@ -1,0 +1,66 @@
+# Thing
+- model: sta.thing
+  pk: 97d08ec5-0c29-49e4-906a-9b3f7a09e5ac
+  fields:
+    name: Observations Test
+    description: A thing used to store testing datastreams with varying numbers of observations.
+    sampling_feature_type: Site
+    sampling_feature_code: TEST
+    site_type: Test
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Location
+- model: sta.location
+  pk: 2c648e8c-84b2-446b-b308-18b240dbf5ab
+  fields:
+    name: Location for Observations Test
+    description: A test location used to store testing datastreams with varying numbers of observations.
+    encoding_type: application/geo+json
+    latitude: 0
+    longitude: 0
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: NA
+    admin_area_2: NA
+    thing: 97d08ec5-0c29-49e4-906a-9b3f7a09e5ac
+
+# Observed Property
+- model: sta.observedproperty
+  pk: ebc5664e-0e1c-48a0-8fe0-c64dae472e30
+  fields:
+    name: Test Observed Property
+    definition: Test Observed Property
+    description: Test Observed Property
+    observed_property_type: Test
+    code: Test
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Sensor
+- model: sta.sensor
+  pk: c830a6b5-cb53-4596-90d9-b4d99bdc314d
+  fields:
+    name: Test Sensor
+    description: Test Sensor
+    encoding_type: application/json
+    method_type: Test Method
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Processing Level
+- model: sta.processinglevel
+  pk: 9ce74667-e709-416d-96e2-bf54db2025ed
+  fields:
+    code: TEST
+    definition: Test Processing Level
+    explanation: Test Processing Level
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Unit
+- model: sta.unit
+  pk: 41afe53b-2c81-499b-bab3-94cad15b0bd1
+  fields:
+    name: Test Unit
+    symbol: TEST
+    definition: Test Unit
+    unit_type: Test Unit
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f

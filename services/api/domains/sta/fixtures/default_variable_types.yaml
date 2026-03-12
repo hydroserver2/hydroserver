@@ -1,0 +1,93 @@
+---
+- model: sta.variabletype
+  pk: 1
+  fields:
+    name: Age
+- model: sta.variabletype
+  pk: 2
+  fields:
+    name: Biota
+- model: sta.variabletype
+  pk: 3
+  fields:
+    name: Chemistry
+- model: sta.variabletype
+  pk: 4
+  fields:
+    name: Climate
+- model: sta.variabletype
+  pk: 5
+  fields:
+    name: End-Member
+- model: sta.variabletype
+  pk: 6
+  fields:
+    name: Geology
+- model: sta.variabletype
+  pk: 7
+  fields:
+    name: Hydrology
+- model: sta.variabletype
+  pk: 8
+  fields:
+    name: Instrumentation
+- model: sta.variabletype
+  pk: 9
+  fields:
+    name: Major oxide or element
+- model: sta.variabletype
+  pk: 10
+  fields:
+    name: Model data
+- model: sta.variabletype
+  pk: 11
+  fields:
+    name: Noble gas
+- model: sta.variabletype
+  pk: 12
+  fields:
+    name: Radiogenic isotopes
+- model: sta.variabletype
+  pk: 13
+  fields:
+    name: Rare earth element
+- model: sta.variabletype
+  pk: 14
+  fields:
+    name: Ratio
+- model: sta.variabletype
+  pk: 15
+  fields:
+    name: Rock mode
+- model: sta.variabletype
+  pk: 16
+  fields:
+    name: Soil
+- model: sta.variabletype
+  pk: 17
+  fields:
+    name: Speciation ratio
+- model: sta.variabletype
+  pk: 18
+  fields:
+    name: Stable isotopes
+- model: sta.variabletype
+  pk: 19
+  fields:
+    name: Trace element
+- model: sta.variabletype
+  pk: 20
+  fields:
+    name: Unknown
+- model: sta.variabletype
+  pk: 21
+  fields:
+    name: Uranium series
+- model: sta.variabletype
+  pk: 22
+  fields:
+    name: Volatile
+- model: sta.variabletype
+  pk: 23
+  fields:
+    name: Water quality

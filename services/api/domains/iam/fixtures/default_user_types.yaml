@@ -1,0 +1,61 @@
+---
+- model: iam.usertype
+  pk: 1
+  fields:
+    name: Admin
+    public: false
+- model: iam.usertype
+  pk: 2
+  fields:
+    name: University Faculty
+    public: true
+- model: iam.usertype
+  pk: 3
+  fields:
+    name: University Professional or Research Staff
+    public: true
+- model: iam.usertype
+  pk: 4
+  fields:
+    name: Post-Doctoral Fellow
+    public: true
+- model: iam.usertype
+  pk: 5
+  fields:
+    name: University Graduate Student
+    public: true
+- model: iam.usertype
+  pk: 6
+  fields:
+    name: University Undergraduate Student
+    public: true
+- model: iam.usertype
+  pk: 7
+  fields:
+    name: Commercial/Professional
+    public: true
+- model: iam.usertype
+  pk: 8
+  fields:
+    name: Government Official
+    public: true
+- model: iam.usertype
+  pk: 9
+  fields:
+    name: School Student Kindergarten to 12th Grade
+    public: true
+- model: iam.usertype
+  pk: 10
+  fields:
+    name: School Teacher Kindergarten to 12th Grade
+    public: true
+- model: iam.usertype
+  pk: 11
+  fields:
+    name: Organization
+    public: true
+- model: iam.usertype
+  pk: 12
+  fields:
+    name: Other
+    public: true

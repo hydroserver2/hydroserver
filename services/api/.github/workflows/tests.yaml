@@ -1,0 +1,64 @@
+name: Testing
+run-name: Running HydroServer API services tests
+
+on: [push, pull_request]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  Run-Tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    strategy:
+      matrix:
+        # Run in all these versions of Python
+        python-version: [ "3.11" ]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+          pip install pytest-django
+          pip install pytest-cov
+
+      - name: Run tests
+        run: |
+          python -m pytest \
+            --cov=core \
+            --cov=accounts \
+            --cov=stapi \
+            --cov-config=.coveragerc \
+            --cov-report=term > coverage.txt
+        env:
+          DJANGO_SETTINGS_MODULE: hydroserver.settings
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    
+      - name: Parse coverage report
+        id: coverage
+        run: |
+          coverage=$(awk '/TOTAL/ {print $4}' coverage.txt | sed 's/%//')
+          if (( $(echo "$coverage < 50" | bc -l) )); then
+            echo "Test Coverage is below 50%: $coverage%"
+            exit 1
+          fi
+          echo "Test Coverage is $coverage%"

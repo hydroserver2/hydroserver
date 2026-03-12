@@ -1,0 +1,51 @@
+# System Processing Level
+- model: sta.processinglevel
+  pk: 1cb782af-6097-4a3f-9988-5fcbfcb5a327
+  fields:
+    code: SystemProcessingLevel
+    definition: System Processing Level
+    explanation: System Processing Level
+
+# System Assigned Processing Level
+- model: sta.processinglevel
+  pk: 90777619-9d5c-44a5-87f0-ccd5844f9cc0
+  fields:
+    code: SystemAssignedProcessingLevel
+    definition: System Assigned Processing Level
+    explanation: System Assigned Processing Level
+
+# Public Processing Level
+- model: sta.processinglevel
+  pk: aa2d8fa4-461f-48a4-8bfe-13b6ae6fa575
+  fields:
+    code: PublicProcessingLevel
+    definition: Public Processing Level
+    explanation: Public Processing Level
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Assigned Processing Level
+- model: sta.processinglevel
+  pk: a7ff1528-e485-4def-b325-45330c1c448c
+  fields:
+    code: PublicAssignedProcessingLevel
+    definition: Public Assigned Processing Level
+    explanation: Public Assigned Processing Level
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Processing Level
+- model: sta.processinglevel
+  pk: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
+  fields:
+    code: PrivateProcessingLevel
+    definition: Private Processing Level
+    explanation: Private Processing Level
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Assigned Processing Level
+- model: sta.processinglevel
+  pk: 712eebc4-1f07-452d-8d48-64a1ab2022a3
+  fields:
+    code: PrivateAssignedProcessingLevel
+    definition: Private Assigned Processing Level
+    explanation: Private Assigned Processing Level
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

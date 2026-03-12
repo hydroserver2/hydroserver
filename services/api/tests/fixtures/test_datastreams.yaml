@@ -1,0 +1,296 @@
+# Public Datastream / Public Thing / Public Workspace
+- model: sta.datastream
+  pk: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+  fields:
+    name: Public Datastream 1
+    description: Public Datastream; Public Thing; Public Workspace
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    sensor: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+    observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
+    processing_level: a7ff1528-e485-4def-b325-45330c1c448c
+    unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: False
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000010
+  fields:
+    datastream: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    key: Test Public Key
+    value: Test Public Value
+
+# Private Datastream / Public Thing / Public Workspace
+- model: sta.datastream
+  pk: e0506cac-3e50-4d0a-814d-7ae0146705b2
+  fields:
+    name: Private Datastream 1
+    description: Private Datastream; Public Thing; Public Workspace
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    sensor: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+    observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
+    processing_level: a7ff1528-e485-4def-b325-45330c1c448c
+    unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Air
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: True
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000011
+  fields:
+    datastream: e0506cac-3e50-4d0a-814d-7ae0146705b2
+    key: Test Private Key
+    value: Test Private Value
+
+# Public Datastream / Private Thing / Public Workspace
+- model: sta.datastream
+  pk: cad40a75-99ca-4317-b534-0fc7880c905f
+  fields:
+    name: Private Datastream 2
+    description: Public Datastream; Private Thing; Public Workspace
+    thing: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+    sensor: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+    observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
+    processing_level: a7ff1528-e485-4def-b325-45330c1c448c
+    unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: False
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000012
+  fields:
+    datastream: cad40a75-99ca-4317-b534-0fc7880c905f
+    key: Test Private Key
+    value: Test Private Value
+
+# Private Datastream / Private Thing / Public Workspace
+- model: sta.datastream
+  pk: fcd47d93-4cae-411a-9e1e-26ef473840ed
+  fields:
+    name: Private Datastream 3
+    description: Private Datastream; Private Thing; Public Workspace
+    thing: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+    sensor: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+    observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
+    processing_level: a7ff1528-e485-4def-b325-45330c1c448c
+    unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Air
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: True
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000013
+  fields:
+    datastream: fcd47d93-4cae-411a-9e1e-26ef473840ed
+    key: Test Private Key
+    value: Test Private Value
+
+# Public Datastream / Public Thing / Private Workspace
+- model: sta.datastream
+  pk: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+  fields:
+    name: Private Datastream 4
+    description: Public Datastream; Public Thing; Private Workspace
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: False
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000014
+  fields:
+    datastream: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    key: Test Private Key
+    value: Test Private Value
+
+# Private Datastream / Public Thing / Private Workspace
+- model: sta.datastream
+  pk: 1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2
+  fields:
+    name: Private Datastream 5
+    description: Private Datastream; Public Thing; Private Workspace
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: True
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000015
+  fields:
+    datastream: 1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2
+    key: Test Private Key
+    value: Test Private Value
+
+# Public Datastream / Private Thing / Private Workspace
+- model: sta.datastream
+  pk: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+  fields:
+    name: Private Datastream 6
+    description: Public Datastream; Private Thing; Private Workspace
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: False
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000016
+  fields:
+    datastream: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    key: Test Private Key
+    value: Test Private Value
+
+# Private Datastream / Private Thing / Private Workspace
+- model: sta.datastream
+  pk: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+  fields:
+    name: Private Datastream 7
+    description: Private Datastream; Private Thing; Private Workspace
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: True
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000017
+  fields:
+    datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    key: Test Private Key
+    value: Test Private Value
+
+# Public Datastream with System Metadata
+- model: sta.datastream
+  pk: dd5c60c2-a631-4e27-9aec-a59e1183861c
+  fields:
+    name: Public Datastream 2
+    description: Public Datastream with System Metadata
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    sensor: 41e44514-b52f-4788-94e1-93c7587aa84a
+    observed_property: a5746e4e-f479-4476-a462-6a8f7874794d
+    processing_level: 90777619-9d5c-44a5-87f0-ccd5844f9cc0
+    unit: 383f9663-6003-4baf-b606-7e9937b96298
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 2
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
+    phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
+    is_private: False
+    is_visible: True
+- model: sta.datastreamtag
+  pk: 1000000018
+  fields:
+    datastream: dd5c60c2-a631-4e27-9aec-a59e1183861c
+    key: Test Private Key
+    value: Test Private Value

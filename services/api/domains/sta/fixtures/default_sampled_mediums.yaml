@@ -1,0 +1,81 @@
+---
+- model: sta.sampledmedium
+  pk: 1
+  fields:
+    name: Air
+- model: sta.sampledmedium
+  pk: 2
+  fields:
+    name: Equipment
+- model: sta.sampledmedium
+  pk: 3
+  fields:
+    name: Gas
+- model: sta.sampledmedium
+  pk: 4
+  fields:
+    name: Habitat
+- model: sta.sampledmedium
+  pk: 5
+  fields:
+    name: Ice
+- model: sta.sampledmedium
+  pk: 6
+  fields:
+    name: Liquid aqueous
+- model: sta.sampledmedium
+  pk: 7
+  fields:
+    name: Liquid organic
+- model: sta.sampledmedium
+  pk: 8
+  fields:
+    name: Mineral
+- model: sta.sampledmedium
+  pk: 9
+  fields:
+    name: Not applicable
+- model: sta.sampledmedium
+  pk: 10
+  fields:
+    name: Organism
+- model: sta.sampledmedium
+  pk: 11
+  fields:
+    name: Other
+- model: sta.sampledmedium
+  pk: 12
+  fields:
+    name: Particulate
+- model: sta.sampledmedium
+  pk: 13
+  fields:
+    name: Regolith
+- model: sta.sampledmedium
+  pk: 14
+  fields:
+    name: Rock
+- model: sta.sampledmedium
+  pk: 15
+  fields:
+    name: Sediment
+- model: sta.sampledmedium
+  pk: 16
+  fields:
+    name: Snow
+- model: sta.sampledmedium
+  pk: 17
+  fields:
+    name: Soil
+- model: sta.sampledmedium
+  pk: 18
+  fields:
+    name: Tissue
+- model: sta.sampledmedium
+  pk: 19
+  fields:
+    name: Unknown
+- model: sta.sampledmedium
+  pk: 20
+  fields:
+    name: Vegetation

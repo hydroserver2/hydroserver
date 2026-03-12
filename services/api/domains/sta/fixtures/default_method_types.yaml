@@ -1,0 +1,29 @@
+---
+- model: sta.methodtype
+  pk: 1
+  fields:
+    name: Derivation
+- model: sta.methodtype
+  pk: 2
+  fields:
+    name: Estimation
+- model: sta.methodtype
+  pk: 3
+  fields:
+    name: Instrument Deployment
+- model: sta.methodtype
+  pk: 4
+  fields:
+    name: Observation
+- model: sta.methodtype
+  pk: 5
+  fields:
+    name: Simulation
+- model: sta.methodtype
+  pk: 6
+  fields:
+    name: Specimen Analysis
+- model: sta.methodtype
+  pk: 7
+  fields:
+    name: Unknown
