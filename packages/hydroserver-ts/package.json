@@ -1,0 +1,55 @@
+{
+  "name": "@hydroserver/client",
+  "version": "0.3.5",
+  "description": "HydroServer TypeScript client",
+  "type": "module",
+  "main": "dist/@hydroserver-client.umd.cjs",
+  "module": "dist/@hydroserver-client.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/@hydroserver-client.js",
+      "require": "./dist/@hydroserver-client.umd.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "test": "vitest",
+    "coverage": "vitest run --coverage --environment jsdom",
+    "gen:data-types": "npx --yes openapi-typescript@7.13.0 ./schemas/data.openapi.json --output ./src/generated/data.types.d.ts",
+    "gen:auth-types": "npx --yes openapi-typescript@7.13.0 ./schemas/auth.openapi.json --output ./src/generated/auth.types.d.ts",
+    "gen:types": "npm run gen:data-types && npm run gen:auth-types",
+    "gen:data-contracts": "tsx ./scripts/generate-contracts.data.ts",
+    "gen:auth-contracts": "tsx ./scripts/generate-contracts.auth.ts",
+    "gen:contracts": "npm run gen:data-contracts && npm run gen:auth-contracts",
+    "gen": "npm run gen:types && npm run gen:contracts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hydroserver2/hydroserver-ts.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cross-fetch": "^4.1.0",
+    "jszip": "^3.10.1",
+    "p-limit": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "openapi-zod-client": "^1.18.3",
+    "tsx": "^4.16.2",
+    "typescript": "^5.8.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}
