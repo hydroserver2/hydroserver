@@ -1,0 +1,9 @@
+PySide6==6.6.1
+appdirs==1.4.4
+hydroserverpy==1.8.0
+pandas==2.2.3
+numpy==2.2.4
+APScheduler==3.10.1
+pytz>=2023.3
+requests >= 2.27.1
+Pillow==9.5.0

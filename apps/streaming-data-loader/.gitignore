@@ -1,0 +1,8 @@
+build
+dist
+.DS_Store
+.idea
+*.dmg
+*.pyc
+*.spec
+__pycache__/
