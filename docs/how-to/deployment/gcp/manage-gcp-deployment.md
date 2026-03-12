@@ -11,7 +11,7 @@ The HydroServer deployment in this guide will use the following GCP services. De
 - **[Artifact Registry](https://cloud.google.com/artifact-registry/docs)**: HydroServer's Django image will be copied to GCP Artifact Registry for Cloud Run to deploy with.
 - **[Cloud SQL](https://cloud.google.com/sql/docshttps://cloud.google.com/sql/docs) _(Optional)_**: If not connecting to an external database, HydroServer's PostgreSQL database will be deployed using Cloud SQL. The default machine type is `db-f1-micro` (1 vCPU, 0.614 GB Memory).
 - **[IAM](https://cloud.google.com/iam/docs)**: IAM service accounts will be set up to run HydroServer services.
-- **[Cloud Storage](https://cloud.google.com/storage/docs)**: Static, media, and web app files will be stored and served from GCP Cloud Storage Buckets. Terraform will store the Airflow deployment state in a GCP Cloud Storage Bucket.
+- **[Cloud Storage](https://cloud.google.com/storage/docs)**: Static, media, and web app files will be stored and served from GCP Cloud Storage Buckets. Terraform will store deployment state in a GCP Cloud Storage bucket.
 
 ## Initial Setup
 

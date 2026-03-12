@@ -4,7 +4,7 @@ The main use case for HydroServer is continuously streaming ongoing data from a 
 
 ## Via an Orchestration System
 
-The first option is to download our orchestration software onto a computer to allow it to function as an Orchestration System - a machine that's able to interpret a configuration file that tells it how to extract data from a source location, transform that data into a standard format, and load that data automatically to HydroServer's API. In HydroServer, these configurations are called data connections and are executed on a schedule as tasks. HydroServer allows a wide range of remote systems to register themselves as 'Orchestration Systems'. Once a system is registered, various jobs can be configured for it from the Data Management App's 'Job Orchestration' page or via the API.
+HydroServer provides two built-in orchestration options for scheduled ETL: the Streaming Data Loader (SDL) desktop app and the Django Celery orchestration system that runs with your HydroServer deployment. Both use data connections and tasks to define how data is extracted, transformed into a standard format, and loaded automatically through the HydroServer API. Once an orchestration system is registered, its jobs can be configured from the Data Management App's `Job Orchestration` page or via the API.
 
 ## Via a Client
 

@@ -11,7 +11,7 @@ The HydroServer deployment in this guide will use the following AWS services. De
 - **[Elastic Container Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide)**: HydroServer's Django image will be copied to AWS Elastic Container Registry for App Runner to deploy with.
 - **[Relational Database Service](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide) (Optional)**: If not connecting to an external database, HydroServer's PostgreSQL database will be deployed using Amazon's Relational Database Service. The default machine type is `db.t4g.micro` (2 vCPU, 1 GB Memory).
 - **[IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide)**: IAM service accounts will be set up to run HydroServer services.
-- **[Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide)**: Static, media, and web app files will be stored and served from AWS S3 Buckets. Terraform will store the Airflow deployment state in an AWS S3 Bucket.
+- **[Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide)**: Static, media, and web app files will be stored and served from AWS S3 Buckets. Terraform will store deployment state in an AWS S3 bucket.
 
 ## Initial Setup
 

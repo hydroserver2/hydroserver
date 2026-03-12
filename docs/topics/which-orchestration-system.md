@@ -1,6 +1,6 @@
 # Which Orchestration System Should You Use
 
-HydroServer supports two orchestration systems for scheduled ETL: the Streaming Data Loader (SDL) desktop app and the Django Celery orchestration system that runs alongside your HydroServer instance. This page helps you choose between them.
+HydroServer currently supports two orchestration systems for scheduled ETL: the Streaming Data Loader (SDL) desktop app and the Django Celery orchestration system that runs alongside your HydroServer instance. This page helps you choose between them.
 
 ## Quick guidance
 
