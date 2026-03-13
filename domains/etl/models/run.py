@@ -59,3 +59,11 @@ class TaskRun(models.Model):
     @property
     def failure_count(self) -> int | None:
         return self.extract_failure_count(self.result)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["task", "-started_at"],
+                name="etl_taskrun_task_started_idx",
+            ),
+        ]

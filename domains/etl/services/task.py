@@ -139,6 +139,22 @@ class TaskService(ServiceUtils):
         include_latest_run_result: bool = True,
         include_data_connection_settings: bool = True,
     ) -> dict:
+        latest_task_run = getattr(task, "latest_task_run", None)
+        latest_run_message = None
+        latest_run_failure_count = None
+
+        if latest_task_run:
+            latest_run_message = getattr(latest_task_run, "message_text", None)
+            latest_run_failure_count = getattr(
+                latest_task_run, "failure_count_value", None
+            )
+
+            if include_latest_run_result:
+                if latest_run_message is None:
+                    latest_run_message = latest_task_run.message
+                if latest_run_failure_count is None:
+                    latest_run_failure_count = latest_task_run.failure_count
+
         response = {
             "id": task.id,
             "name": task.name,
@@ -155,18 +171,33 @@ class TaskService(ServiceUtils):
                 "intervalPeriod": task.periodic_task.interval.period if task.periodic_task.interval else None,
             } if task.periodic_task else None,
             "latest_run": {
-                "id": getattr(task, "latest_run_id", None),
-                "status": getattr(task, "latest_run_status", None),
-                "message": getattr(task, "latest_run_message", None),
-                "failure_count": getattr(task, "latest_run_failure_count", None),
-                "result": (
-                    getattr(task, "latest_run_result", None)
-                    if include_latest_run_result
-                    else None
+                "id": latest_task_run.id if latest_task_run else getattr(task, "latest_run_id", None),
+                "status": latest_task_run.status if latest_task_run else getattr(task, "latest_run_status", None),
+                "message": latest_run_message if latest_task_run else getattr(task, "latest_run_message", None),
+                "failure_count": (
+                    latest_run_failure_count
+                    if latest_task_run
+                    else getattr(task, "latest_run_failure_count", None)
                 ),
-                "started_at": getattr(task, "latest_run_started_at", None),
-                "finished_at": getattr(task, "latest_run_finished_at", None),
-            } if getattr(task, "latest_run_id", None) else None,
+                "result": (
+                    (
+                        latest_task_run.result
+                        if latest_task_run
+                        else getattr(task, "latest_run_result", None)
+                    )
+                    if include_latest_run_result else None
+                ),
+                "started_at": (
+                    latest_task_run.started_at
+                    if latest_task_run
+                    else getattr(task, "latest_run_started_at", None)
+                ),
+                "finished_at": (
+                    latest_task_run.finished_at
+                    if latest_task_run
+                    else getattr(task, "latest_run_finished_at", None)
+                ),
+            } if latest_task_run or getattr(task, "latest_run_id", None) else None,
             "extractor_variables": task.extractor_variables,
             "transformer_variables": task.transformer_variables,
             "loader_variables": task.loader_variables,
@@ -266,6 +297,72 @@ class TaskService(ServiceUtils):
         )
 
     @staticmethod
+    def annotate_latest_task_run_fields(queryset: QuerySet) -> QuerySet:
+        task_result_queryset = (
+            TaskRun.objects
+            .filter(task_id=OuterRef("pk"))
+            .order_by("-started_at", "-id")
+        )
+        return queryset.annotate(
+            latest_run_id=Subquery(
+                task_result_queryset.values("id")[:1]
+            ),
+            latest_run_status=Subquery(
+                task_result_queryset.values("status")[:1]
+            ),
+            latest_run_started_at=Subquery(
+                task_result_queryset.values("started_at")[:1]
+            ),
+            latest_run_finished_at=Subquery(
+                task_result_queryset.values("finished_at")[:1]
+            ),
+        )
+
+    @staticmethod
+    def get_latest_runs_for_tasks(
+        task_ids: list[uuid.UUID],
+        include_result: bool = True,
+    ) -> dict[uuid.UUID, TaskRun]:
+        if not task_ids:
+            return {}
+
+        latest_runs = (
+            TaskRun.objects
+            .filter(task_id__in=task_ids)
+            .annotate(
+                message_text=Coalesce(
+                    KeyTextTransform("message", "result"),
+                    KeyTextTransform("summary", "result"),
+                    KeyTextTransform("statusMessage", "result"),
+                    KeyTextTransform("status_message", "result"),
+                    KeyTextTransform("failureReason", "result"),
+                    KeyTextTransform("failure_reason", "result"),
+                    KeyTextTransform("error", "result"),
+                ),
+                failure_count_value=Coalesce(
+                    Cast(
+                        KeyTextTransform("failure_count", "result"),
+                        IntegerField(),
+                    ),
+                    Cast(
+                        KeyTextTransform("failureCount", "result"),
+                        IntegerField(),
+                    ),
+                    output_field=IntegerField(),
+                ),
+            )
+            .order_by("task_id", "-started_at", "-id")
+        )
+
+        if not include_result:
+            latest_runs = latest_runs.defer("result")
+
+        return {
+            task_run.task_id: task_run
+            for task_run in latest_runs.distinct("task_id")
+        }
+
+    @staticmethod
     def annotate_latest_task_result(
         queryset: QuerySet,
         include_result: bool = True,
@@ -273,7 +370,7 @@ class TaskService(ServiceUtils):
         task_result_queryset = (
             TaskRun.objects
             .filter(task_id=OuterRef("pk"))
-            .order_by("-started_at")
+            .order_by("-started_at", "-id")
         )
         annotations = {
             "latest_run_id": Subquery(
@@ -349,12 +446,34 @@ class TaskService(ServiceUtils):
             if include_data_connection_settings is None
             else include_data_connection_settings
         )
+        filtering = filtering or {}
+        order_by = order_by or []
         queryset = Task.objects
 
-        queryset = self.annotate_latest_task_result(
-            queryset,
-            include_result=include_latest_run_result,
-        )
+        if (
+            any(
+                field in filtering
+                for field in [
+                    "latest_run_status",
+                    "latest_run_started_at__lte",
+                    "latest_run_started_at__gte",
+                    "latest_run_finished_at__lte",
+                    "latest_run_finished_at__gte",
+                ]
+            )
+            or any(
+                field.lstrip("-")
+                in {
+                    "latestRunStatus",
+                    "latestRunStartedAt",
+                    "latestRunFinishedAt",
+                }
+                for field in order_by
+            )
+        ):
+            queryset = self.annotate_latest_task_run_fields(
+                queryset
+            )
 
         for field in [
             "workspace_id",
@@ -425,6 +544,14 @@ class TaskService(ServiceUtils):
         queryset = queryset.visible(principal=principal).distinct()  # noqa
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
+        queryset = list(queryset.all())
+        latest_runs_by_task_id = self.get_latest_runs_for_tasks(
+            [task.id for task in queryset],
+            include_result=include_latest_run_result,
+        )
+        for task in queryset:
+            task.latest_task_run = latest_runs_by_task_id.get(task.id)
+
         return [
             self.build_task_response(
                 task,
@@ -432,7 +559,7 @@ class TaskService(ServiceUtils):
                 include_mappings=include_mappings,
                 include_latest_run_result=include_latest_run_result,
                 include_data_connection_settings=include_data_connection_settings,
-            ) for task in queryset.all()
+            ) for task in queryset
         ]
 
     def get(

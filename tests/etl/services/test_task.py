@@ -1,5 +1,6 @@
 import pytest
 import uuid
+from datetime import datetime
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
@@ -231,6 +232,57 @@ def test_list_task_can_expose_failure_count_without_latest_run_result(get_princi
     assert lean_task["latest_run"]["message"] == "Loaded with issues"
     assert lean_task["latest_run"]["failure_count"] == 2
     assert lean_task["latest_run"]["result"] is None
+
+
+def test_list_task_can_filter_and_order_by_latest_run_fields(get_principal):
+    task = Task.objects.create(
+        name="Later Task",
+        workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
+        data_connection_id=uuid.UUID("019adb5c-da8b-7970-877d-c3b4ca37cc60"),
+        orchestration_system_id=uuid.UUID("7cb900d2-eb11-4a59-a05b-dd02d95af312"),
+        extractor_variables={},
+        transformer_variables={},
+        loader_variables={},
+    )
+    latest_run = TaskRun.objects.create(
+        task=task,
+        status="FAILURE",
+        result={
+            "summary": "Later failed",
+            "failure_count": 3,
+        },
+    )
+    TaskRun.objects.filter(pk=latest_run.pk).update(
+        started_at=timezone.make_aware(datetime(2025, 1, 3, 1, 0, 0)),
+        finished_at=timezone.make_aware(datetime(2025, 1, 3, 2, 0, 0)),
+    )
+
+    filtered = task_service.list(
+        principal=get_principal("owner"),
+        response=HttpResponse(),
+        page=1,
+        page_size=100,
+        order_by=["-latestRunStartedAt"],
+        filtering={"latest_run_status": ["FAILURE"]},
+        include_latest_run_result=False,
+    )
+
+    assert [task["name"] for task in filtered] == ["Later Task"]
+    assert filtered[0]["latest_run"]["status"] == "FAILURE"
+    assert filtered[0]["latest_run"]["message"] == "Later failed"
+    assert filtered[0]["latest_run"]["failure_count"] == 3
+    assert filtered[0]["latest_run"]["result"] is None
+
+    ordered = task_service.list(
+        principal=get_principal("owner"),
+        response=HttpResponse(),
+        page=1,
+        page_size=100,
+        order_by=["-latestRunStartedAt"],
+        filtering={},
+    )
+
+    assert [task["name"] for task in ordered[:2]] == ["Later Task", "Test ETL Task"]
 
 
 def test_run_task_returns_a_new_running_run(get_principal, monkeypatch, settings):
