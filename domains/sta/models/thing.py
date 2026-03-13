@@ -16,6 +16,12 @@ if typing.TYPE_CHECKING:
 
 
 class ThingQuerySet(models.QuerySet):
+    def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
+        return super().delete(*args, **kwargs)
+
     def visible(self, principal: Optional[Union["User", "APIKey"]]):
         if hasattr(principal, "account_type"):
             if principal.account_type == "admin":
@@ -111,6 +117,9 @@ class Thing(models.Model, PermissionChecker):
         return permissions
 
     def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
         self.delete_contents(filter_arg=self, filter_suffix="")
         super().delete(*args, **kwargs)
 

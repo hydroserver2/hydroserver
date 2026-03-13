@@ -12,6 +12,12 @@ if typing.TYPE_CHECKING:
 
 
 class WorkspaceQueryset(models.QuerySet):
+    def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
+        return super().delete(*args, **kwargs)
+
     def get_queryset(self):
         return self.select_related("transfer_confirmation", "delete_confirmation")
 
@@ -118,6 +124,9 @@ class Workspace(models.Model):
                 return []
 
     def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
         self.delete_contents(filter_arg=self, filter_suffix="")
         super().delete(*args, **kwargs)
 
