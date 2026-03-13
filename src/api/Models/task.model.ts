@@ -14,6 +14,7 @@ export class Task {
   extractorVariables = {}
   transformerVariables = {}
   loaderVariables = {}
+  targetIdentifiers: string[] = []
   mappings: Mapping[] = []
   workspaceId = ''
   dataConnectionId: string | null = ''
@@ -33,6 +34,7 @@ export interface TaskExpanded {
   extractorVariables: Record<string, any>
   transformerVariables: Record<string, any>
   loaderVariables: Record<string, any>
+  targetIdentifiers?: string[]
   mappings: Mapping[]
   latestRun?: TaskRun
   workspace: Workspace
@@ -47,6 +49,8 @@ export type TaskRunResult = Record<string, unknown>
 
 export type TaskRun = {
   status: string
+  message?: string | null
+  failureCount?: number | null
   result: TaskRunResult | null
   startedAt?: string
   finishedAt?: string
