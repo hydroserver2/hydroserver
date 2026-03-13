@@ -526,7 +526,6 @@
   >
     <DeleteOrchestrationSystemCard
       :orchestration-system="selectedOrchestrationSystem"
-      :tasks="workspaceTasks"
       @close="openDelete = false"
       @delete="refreshTable"
     />
@@ -617,8 +616,10 @@ const ROW_HEIGHT = 80
 const OVERSCAN = 6
 const POLL_INTERVAL_MS = 4000
 const POLL_MAX_ATTEMPTS = 150
+const GLOBAL_WORKSPACE_FILTER = 'null'
 
 const taskPollTimeouts = new Map<string, number>()
+let orchestrationFetchRequestId = 0
 
 const workspaceForPage = computed(() =>
   workspaces.value.find((workspace) => workspace.id === props.workspaceId)
@@ -738,10 +739,13 @@ const groupHealthSummary = (rows: readonly any[]) => {
 }
 
 const fetchOrchestrationData = async (newId: string) => {
+  const requestId = ++orchestrationFetchRequestId
   loading.value = true
   try {
     const [orchestrationSystemResponse, taskItems] = await Promise.all([
-      hs.orchestrationSystems.listAllItems(),
+      hs.orchestrationSystems.listAllItems({
+        workspace_id: [newId, GLOBAL_WORKSPACE_FILTER] as any,
+      }),
       hs.tasks.listAllItems({
         expand_related: true,
         workspace_id: [newId],
@@ -751,17 +755,20 @@ const fetchOrchestrationData = async (newId: string) => {
       } as any),
     ])
 
+    if (requestId !== orchestrationFetchRequestId) return
+
     // TODO: Allow HydroShare as an option once we have archival functionality in the orchestration system
     orchestrationSystems.value = orchestrationSystemResponse.filter(
-      (os) =>
-        (os.workspaceId === newId || !os.workspaceId) &&
-        os.type !== 'HydroShare'
+      (os) => os.type !== 'HydroShare'
     )
     workspaceTasks.value = taskItems as any
   } catch (error) {
+    if (requestId !== orchestrationFetchRequestId) return
     console.error('Error fetching orchestration data', error)
   } finally {
-    loading.value = false
+    if (requestId === orchestrationFetchRequestId) {
+      loading.value = false
+    }
   }
 }
 
@@ -773,6 +780,7 @@ watch(
   () => props.workspaceId,
   async (newId) => {
     if (newId == null) return
+    stopAllTaskPolling()
     await fetchOrchestrationData(newId)
   },
   { immediate: true }
@@ -1047,6 +1055,14 @@ const upsertWorkspaceTask = (t: TaskExpanded | null) => {
   workspaceTasks.value = next as any
 }
 
+function stopAllTaskPolling() {
+  taskPollTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId))
+  taskPollTimeouts.clear()
+  for (const taskId of Object.keys(runNowTriggeredByTaskId)) {
+    delete runNowTriggeredByTaskId[taskId]
+  }
+}
+
 const syncTaskLatestRun = (taskId: string, run: TaskRun) => {
   const existingTask = workspaceTasks.value.find((item) => item.id === taskId)
   if (!existingTask) return
@@ -1081,7 +1097,8 @@ const scheduleTaskPoll = (
   taskId: string,
   requestedRunId: string | null,
   previousRunId: string | null,
-  attempt = 0
+  attempt = 0,
+  workspaceId = props.workspaceId
 ) => {
   stopTaskPolling(taskId)
   if (attempt > POLL_MAX_ATTEMPTS) {
@@ -1090,10 +1107,22 @@ const scheduleTaskPoll = (
   }
 
   const timeoutId = window.setTimeout(async () => {
+    if (workspaceId !== props.workspaceId) {
+      runNowTriggeredByTaskId[taskId] = false
+      stopTaskPolling(taskId)
+      return
+    }
+
     try {
       if (requestedRunId) {
         const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
+
+        if (workspaceId !== props.workspaceId) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopTaskPolling(taskId)
+          return
+        }
 
         if (updatedRun?.id) {
           syncTaskLatestRun(taskId, updatedRun)
@@ -1109,6 +1138,13 @@ const scheduleTaskPoll = (
         const updated = (await hs.tasks.getItem(taskId, {
           expand_related: true,
         })) as unknown as TaskExpanded | null
+
+        if (workspaceId !== props.workspaceId) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopTaskPolling(taskId)
+          return
+        }
+
         if (updated) {
           upsertWorkspaceTask(updated)
           const latestRunId = updated.latestRun?.id ?? null
@@ -1132,7 +1168,13 @@ const scheduleTaskPoll = (
     } catch (error) {
       console.error('Error polling task status', error)
     }
-    scheduleTaskPoll(taskId, requestedRunId, previousRunId, attempt + 1)
+    scheduleTaskPoll(
+      taskId,
+      requestedRunId,
+      previousRunId,
+      attempt + 1,
+      workspaceId
+    )
   }, POLL_INTERVAL_MS)
 
   taskPollTimeouts.set(taskId, timeoutId)
@@ -1153,7 +1195,13 @@ async function runTaskNow(task: Partial<Task> & Pick<Task, 'id'>) {
     if (requestedRun?.id) {
       syncTaskLatestRun(task.id, requestedRun)
     }
-    scheduleTaskPoll(task.id, requestedRun?.id ?? null, previousRunId, 0)
+    scheduleTaskPoll(
+      task.id,
+      requestedRun?.id ?? null,
+      previousRunId,
+      0,
+      props.workspaceId
+    )
   } catch (error) {
     runNowTriggeredByTaskId[task.id] = false
     console.error('Error running task now', error)
@@ -1217,8 +1265,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (resizeObserver) resizeObserver.disconnect()
-  taskPollTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId))
-  taskPollTimeouts.clear()
+  stopAllTaskPolling()
 })
 
 const isInternalSystem = (item: any) => {

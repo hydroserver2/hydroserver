@@ -17,8 +17,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
+  let workspaceDatastreamRequestId = 0
 
   const resetWorkspaceDatastreams = () => {
+    workspaceDatastreamRequestId += 1
     workspaceDatastreams.value = []
     loadedWorkspaceDatastreamId.value = null
   }
@@ -64,9 +66,13 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       return workspaceDatastreams.value
     }
 
+    const requestId = ++workspaceDatastreamRequestId
     const list = await hs.datastreams.listAllItems({
       workspace_id: [requestedWorkspaceId],
     })
+    if (requestId !== workspaceDatastreamRequestId) {
+      return workspaceDatastreams.value
+    }
     workspaceDatastreams.value = list ?? []
     loadedWorkspaceDatastreamId.value = requestedWorkspaceId
     return workspaceDatastreams.value
