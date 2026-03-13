@@ -1,6 +1,6 @@
 {
   "name": "@hydroserver/client",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "HydroServer TypeScript client",
   "type": "module",
   "main": "dist/@hydroserver-client.umd.cjs",
