@@ -43,9 +43,11 @@ export interface TaskExpanded {
 
 export type IntervalPeriod = 'minutes' | 'hours' | 'days'
 
+export type TaskRunResult = Record<string, unknown>
+
 export type TaskRun = {
   status: string
-  result: {}
+  result: TaskRunResult | null
   startedAt?: string
   finishedAt?: string
   id: string
