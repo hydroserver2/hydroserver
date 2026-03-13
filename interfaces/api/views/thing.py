@@ -8,6 +8,8 @@ from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymo
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
+    ThingMarkerResponse,
+    ThingMarkerQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -53,6 +55,29 @@ def get_things(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
+    )
+
+
+@thing_router.get(
+    "/markers",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: list[ThingMarkerResponse],
+        401: str,
+    },
+    by_alias=True,
+)
+def get_thing_markers(
+    request: HydroServerHttpRequest,
+    query: Query[ThingMarkerQueryParameters],
+):
+    """
+    Get lean marker data for public Things plus private Things visible to the authenticated user.
+    """
+
+    return 200, thing_service.list_markers(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
     )
 
 

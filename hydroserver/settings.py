@@ -291,9 +291,14 @@ AUTH_PASSWORD_VALIDATORS = [
 if DEBUG:
     CACHES = {
         "default": {
-            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "hydroserver-dev-cache",
         }
     }
+
+PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
+    "PUBLIC_THING_MARKERS_CACHE_TIMEOUT", default=300, cast=int
+)
 
 # Storage settings
 

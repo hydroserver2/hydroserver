@@ -7,6 +7,7 @@ from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
 )
 from .attachment import TagGetResponse, FileAttachmentGetResponse
@@ -133,6 +134,27 @@ class ThingQueryParameters(CollectionQueryParameters):
         None,
         description="Controls whether the returned things should be private or public.",
     )
+
+
+class ThingMarkerQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter markers by workspace ID."
+    )
+    bbox: list[str] = Query(
+        [],
+        description="Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+    )
+    site_type: list[str] = Query([], description="Filter markers by site type.")
+
+
+class ThingMarkerResponse(BaseGetResponse):
+    id: uuid.UUID
+    workspace_id: uuid.UUID
+    name: str = Field(..., max_length=200)
+    site_type: str = Field(..., max_length=200)
+    is_private: bool
+    latitude: float
+    longitude: float
 
 
 class ThingSummaryResponse(BaseGetResponse, ThingFields):

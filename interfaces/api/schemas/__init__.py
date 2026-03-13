@@ -27,6 +27,8 @@ from .api_key import (
 from .role import RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters
 
 from .thing import (
+    ThingMarkerResponse,
+    ThingMarkerQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,

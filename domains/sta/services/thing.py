@@ -5,8 +5,13 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import IntegrityError
-from django.db.models import QuerySet, F, Q
+from django.db.models import QuerySet, F, Q, FloatField
+from django.db.models.functions import Cast
 from domains.iam.models import APIKey
+from domains.sta.cache import (
+    get_public_thing_markers_cache,
+    set_public_thing_markers_cache,
+)
 from domains.sta.models import (
     Thing,
     Location,
@@ -33,6 +38,11 @@ User = get_user_model()
 
 
 class ThingService(ServiceUtils):
+    MARKER_PUBLIC_FILTER = {
+        "thing__workspace__is_private": False,
+        "thing__is_private": False,
+    }
+
     def get_thing_for_action(
         self,
         principal: User | APIKey,
@@ -118,6 +128,187 @@ class ThingService(ServiceUtils):
             queryset = queryset.filter(thing_tags__key=key, thing_tags__value=value)
 
         return queryset.distinct()
+
+    @staticmethod
+    def parse_bbox_filters(bbox: Optional[list[str]]) -> list[tuple[float, float, float, float]]:
+        parsed_bbox_filters: list[tuple[float, float, float, float]] = []
+
+        if not bbox:
+            return parsed_bbox_filters
+
+        for bbox_str in bbox:
+            try:
+                parts = [float(x) for x in bbox_str.split(",")]
+            except ValueError:
+                raise ValueError("Bounding box must contain only numeric values")
+
+            if len(parts) != 4:
+                raise ValueError(
+                    "Bounding box must have exactly 4 comma-separated values: min_lon,min_lat,max_lon,max_lat"
+                )
+
+            min_lon, min_lat, max_lon, max_lat = parts
+
+            if min_lon > max_lon or min_lat > max_lat:
+                raise ValueError(
+                    "Invalid bounding box coordinates: min must be less than or equal to max"
+                )
+
+            parsed_bbox_filters.append((min_lon, min_lat, max_lon, max_lat))
+
+        return parsed_bbox_filters
+
+    @classmethod
+    def apply_marker_bbox_filter(
+        cls,
+        queryset: QuerySet,
+        bbox: Optional[list[str]],
+    ) -> QuerySet:
+        parsed_bbox_filters = cls.parse_bbox_filters(bbox)
+
+        if not parsed_bbox_filters:
+            return queryset
+
+        bbox_filter = Q()
+        for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters:
+            bbox_filter |= Q(
+                longitude__gte=min_lon,
+                longitude__lte=max_lon,
+                latitude__gte=min_lat,
+                latitude__lte=max_lat,
+            )
+
+        return queryset.filter(bbox_filter)
+
+    @staticmethod
+    def apply_marker_filters(queryset: QuerySet, filtering: Optional[dict] = None) -> QuerySet:
+        filtering = filtering or {}
+
+        if "workspace_id" in filtering:
+            queryset = ServiceUtils.apply_filters(
+                queryset, "thing__workspace_id", filtering["workspace_id"]
+            )
+
+        if "site_type" in filtering:
+            queryset = ServiceUtils.apply_filters(
+                queryset, "thing__site_type", filtering["site_type"]
+            )
+
+        return queryset
+
+    @staticmethod
+    def serialize_marker_rows(marker_rows) -> list[dict]:
+        return [
+            {
+                "id": str(marker["thing_id"]),
+                "workspace_id": str(marker["thing__workspace_id"]),
+                "name": marker["thing__name"],
+                "site_type": marker["thing__site_type"],
+                "is_private": marker["thing__is_private"],
+                "latitude": marker["latitude_value"],
+                "longitude": marker["longitude_value"],
+            }
+            for marker in marker_rows
+        ]
+
+    @staticmethod
+    def get_marker_values(queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "thing_id",
+            "thing__workspace_id",
+            "thing__name",
+            "thing__site_type",
+            "thing__is_private",
+            "latitude_value",
+            "longitude_value",
+        )
+
+    @classmethod
+    def filter_cached_markers(
+        cls, markers: list[dict], filtering: Optional[dict] = None
+    ) -> list[dict]:
+        filtering = filtering or {}
+        filtered_markers = markers
+
+        if filtering.get("workspace_id"):
+            workspace_ids = {str(workspace_id) for workspace_id in filtering["workspace_id"]}
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["workspace_id"] in workspace_ids
+            ]
+
+        if filtering.get("site_type"):
+            site_types = set(filtering["site_type"])
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["site_type"] in site_types
+            ]
+
+        parsed_bbox_filters = cls.parse_bbox_filters(filtering.get("bbox"))
+        if parsed_bbox_filters:
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if any(
+                    min_lon <= marker["longitude"] <= max_lon
+                    and min_lat <= marker["latitude"] <= max_lat
+                    for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters
+                )
+            ]
+
+        return filtered_markers
+
+    def get_public_markers(self, filtering: Optional[dict] = None) -> list[dict]:
+        public_markers = get_public_thing_markers_cache()
+
+        if public_markers is None:
+            public_marker_queryset = self.get_marker_values(
+                Location.objects.filter(**self.MARKER_PUBLIC_FILTER).order_by("thing_id")
+            )
+            public_markers = self.serialize_marker_rows(public_marker_queryset)
+            set_public_thing_markers_cache(public_markers)
+
+        return self.filter_cached_markers(public_markers, filtering=filtering)
+
+    def get_private_markers(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ) -> list[dict]:
+        if not principal:
+            return []
+
+        private_marker_queryset = Location.objects.visible(principal=principal).exclude(
+            **self.MARKER_PUBLIC_FILTER
+        )
+        private_marker_queryset = self.apply_marker_filters(
+            private_marker_queryset,
+            filtering=filtering,
+        )
+        private_marker_queryset = self.apply_marker_bbox_filter(
+            private_marker_queryset,
+            filtering.get("bbox") if filtering else None,
+        )
+
+        return self.serialize_marker_rows(
+            self.get_marker_values(private_marker_queryset.order_by("thing_id").distinct())
+        )
+
+    def list_markers(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ):
+        public_markers = self.get_public_markers(filtering=filtering)
+        private_markers = self.get_private_markers(principal=principal, filtering=filtering)
+        markers = public_markers + private_markers
+        markers.sort(key=lambda marker: marker["id"])
+        return markers
 
     def list(
         self,
