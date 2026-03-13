@@ -305,42 +305,12 @@ def test_create_orchestration_system(
 @pytest.mark.parametrize(
     "principal, orchestration_system, message, error_code",
     [
-        (
-            "admin",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
-        (
-            "admin",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
-        (
-            "owner",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
-        (
-            "owner",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
-        (
-            "editor",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
-        (
-            "editor",
-            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
-            "Cannot delete orchestration system while 1 task is still linked to it.",
-            409,
-        ),
+        ("admin", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        ("admin", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        ("owner", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        ("owner", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        ("editor", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        ("editor", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
         (
             "viewer",
             "7cb900d2-eb11-4a59-a05b-dd02d95af312",

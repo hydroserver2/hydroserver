@@ -1,7 +1,9 @@
+import re
 import uuid
 from urllib.parse import parse_qs, urlparse
 from typing import List, Literal, Optional, get_args
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from croniter import croniter
 from ninja.errors import HttpError
 from django.http import HttpResponse
@@ -37,6 +39,16 @@ User = get_user_model()
 
 data_connection_service = DataConnectionService()
 orchestration_system_service = OrchestrationSystemService()
+AGGREGATION_STATISTICS = (
+    "last_value_of_day",
+    "simple_mean",
+    "time_weighted_daily_mean",
+)
+AGGREGATION_TIMEZONE_MODES = (
+    "daylightSavings",
+    "fixedOffset",
+)
+FIXED_OFFSET_PATTERN = re.compile(r"^[+-]\d{4}$")
 
 
 class TaskService(ServiceUtils):
@@ -821,12 +833,9 @@ class TaskService(ServiceUtils):
             if not isinstance(transformations[0], dict):
                 raise HttpError(400, "Invalid aggregation data transformation payload.")
 
-            try:
-                path["data_transformations"] = [
-                    transformations[0]
-                ]
-            except ValueError as exc:
-                raise HttpError(400, str(exc)) from exc
+            path["data_transformations"] = [
+                TaskService._validate_aggregation_transformation(transformations[0])
+            ]
 
         existing_datastream_ids = set(
             Datastream.objects.filter(
@@ -840,6 +849,43 @@ class TaskService(ServiceUtils):
                 400,
                 "Aggregation mapping datastreams must exist in the task workspace.",
             )
+
+    @staticmethod
+    def _validate_aggregation_transformation(transformation: dict) -> dict:
+        normalized = dict(transformation or {})
+
+        if normalized.get("type") != "aggregation":
+            raise HttpError(400, "Aggregation transformation must set type='aggregation'")
+
+        aggregation_statistic = normalized.get("aggregationStatistic")
+        if aggregation_statistic not in AGGREGATION_STATISTICS:
+            allowed = ", ".join(AGGREGATION_STATISTICS)
+            raise HttpError(400, f"aggregationStatistic must be one of: {allowed}")
+
+        timezone_mode = normalized.get("timezoneMode")
+        if timezone_mode not in AGGREGATION_TIMEZONE_MODES:
+            allowed = ", ".join(AGGREGATION_TIMEZONE_MODES)
+            raise HttpError(400, f"timezoneMode must be one of: {allowed}")
+
+        timezone_value = normalized.get("timezone")
+        if not isinstance(timezone_value, str) or not timezone_value.strip():
+            raise HttpError(400, "timezone is required for aggregation transformations")
+
+        timezone_value = timezone_value.strip()
+        if timezone_mode == "fixedOffset":
+            if not FIXED_OFFSET_PATTERN.fullmatch(timezone_value):
+                raise HttpError(400, "fixedOffset timezone must match +/-HHMM")
+            if int(timezone_value[-2:]) > 59:
+                raise HttpError(400, "fixedOffset timezone minutes must be between 00 and 59")
+        else:
+            try:
+                ZoneInfo(timezone_value)
+            except ZoneInfoNotFoundError as exc:
+                raise HttpError(400, "daylightSavings timezone must be a valid IANA timezone") from exc
+
+        normalized["timezone"] = timezone_value
+
+        return normalized
 
     @staticmethod
     def _reject_aggregation_transformations(mapping_data: List[dict]):

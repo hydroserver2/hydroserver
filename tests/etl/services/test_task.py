@@ -237,6 +237,9 @@ def test_run_task_returns_a_new_running_run(get_principal, monkeypatch, settings
     settings.CELERY_ENABLED = True
     principal = get_principal("owner")
     task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
+    Task.objects.filter(pk=task_id).update(
+        orchestration_system_id="019aead4-df4e-7a08-a609-dbc96df6befe"
+    )
     previous_run = TaskRun.objects.filter(task_id=task_id).order_by("-started_at").first()
 
     recorded: dict[str, str] = {}
@@ -264,6 +267,9 @@ def test_run_task_returns_completed_run_state_in_eager_mode(get_principal, monke
     settings.CELERY_ENABLED = False
     principal = get_principal("owner")
     task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
+    Task.objects.filter(pk=task_id).update(
+        orchestration_system_id="019aead4-df4e-7a08-a609-dbc96df6befe"
+    )
 
     def fake_apply(*args, **kwargs):
         task_run = TaskRun.objects.get(id=kwargs["task_id"])

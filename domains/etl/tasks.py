@@ -6,9 +6,65 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from django.core.management import call_command
 from domains.etl.models import Task, TaskRun
+from domains.sta.models import Datastream
 from hydroserverpy.etl.hydroserver import build_hydroserver_pipeline
 from hydroserverpy.etl.exceptions import ETLError
 from .internal import HydroServerInternalExtractor, HydroServerInternalTransformer, HydroServerInternalLoader
+
+
+def _raise_aggregation_error(message: str):
+    raise ETLError(message)
+
+
+def _validate_aggregation_task_runtime(task: Task):
+    mappings = list(task.mappings.all())
+    if not mappings:
+        _raise_aggregation_error("Aggregation tasks must include at least one mapping.")
+
+    datastream_ids = set()
+    for mapping in mappings:
+        try:
+            datastream_ids.add(UUID(str(mapping.source_identifier)))
+        except (TypeError, ValueError):
+            _raise_aggregation_error(
+                "Aggregation mapping sourceIdentifier must be a valid datastream UUID."
+            )
+
+        paths = list(mapping.paths.all())
+        if len(paths) != 1:
+            _raise_aggregation_error(
+                "Aggregation mappings must include exactly one target path per source."
+            )
+
+        path = paths[0]
+        transformations = path.data_transformations or []
+        if (
+            not isinstance(transformations, list)
+            or len(transformations) != 1
+            or not isinstance(transformations[0], dict)
+            or transformations[0].get("type") != "aggregation"
+        ):
+            _raise_aggregation_error(
+                "Aggregation mappings must include exactly one aggregation transformation per path."
+            )
+
+        try:
+            datastream_ids.add(UUID(str(path.target_identifier)))
+        except (TypeError, ValueError):
+            _raise_aggregation_error(
+                "Aggregation mapping targetIdentifier must be a valid datastream UUID."
+            )
+
+    existing_datastream_ids = set(
+        Datastream.objects.filter(
+            thing__workspace_id=task.workspace_id,
+            id__in=datastream_ids,
+        ).values_list("id", flat=True)
+    )
+    if datastream_ids - existing_datastream_ids:
+        _raise_aggregation_error(
+            "Aggregation source and target datastreams must exist in the task workspace."
+        )
 
 
 @shared_task(bind=True, expires=10)
@@ -39,6 +95,7 @@ def run_etl_task(self, task_id: str):
 
     try:
         if task.task_type == "Aggregation":
+            _validate_aggregation_task_runtime(task)
             etl_classes = {
                 "extractor_cls": HydroServerInternalExtractor,
                 "transformer_cls": HydroServerInternalTransformer,
@@ -127,11 +184,15 @@ def mark_etl_task_started(sender, task_id, kwargs, **extra):
         return
 
     try:
-        TaskRun.objects.create(
+        TaskRun.objects.update_or_create(
             id=task_id,
-            task_id=kwargs["task_id"],
-            status="RUNNING",
-            started_at=timezone.now(),
+            defaults={
+                "task_id": kwargs["task_id"],
+                "status": "RUNNING",
+                "started_at": timezone.now(),
+                "finished_at": None,
+                "result": None,
+            },
         )
     except IntegrityError:
         return
@@ -198,13 +259,16 @@ def mark_etl_task_failure(sender, task_id, einfo, exception, **extra):
     except TaskRun.DoesNotExist:
         return
 
-    task_run.status = "FAILURE"
-    task_run.finished_at = timezone.now()
-    task_run.result = {
+    result = {
+        "message": str(exception),
         "error": str(exception),
         "traceback": einfo.traceback,
-        **(getattr(exception, "results", None) or {}),
     }
+    result.update(getattr(exception, "results", None) or {})
+
+    task_run.status = "FAILURE"
+    task_run.finished_at = timezone.now()
+    task_run.result = result
 
     task_run.save(update_fields=["status", "finished_at", "result"])
 
