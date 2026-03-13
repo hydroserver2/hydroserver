@@ -1,8 +1,26 @@
 import { Thing } from '@hydroserver/client'
-import { MapThing, ThingMarker } from '@/types'
+import { MapThing, ThingMarker, ThingSiteSummary } from '@/types'
 import { mapMarkerColors } from '@/utils/materialColors'
 
-export const addColorToMarkers = (things: Thing[], key: string) => {
+type ColorableThing = Thing | ThingSiteSummary
+
+type ColorizedThing<T extends ColorableThing> = T & {
+  color?: {
+    borderColor: string
+    background: string
+    glyphColor: string
+  }
+  tagValue?: string
+}
+
+export function hasThingTags(thing: MapThing): thing is ColorableThing {
+  return 'tags' in thing && Array.isArray(thing.tags)
+}
+
+export const addColorToMarkers = <T extends ColorableThing>(
+  things: T[],
+  key: string
+): Array<ColorizedThing<T>> => {
   let colorIndex = 0
   const colorMap = new Map()
 

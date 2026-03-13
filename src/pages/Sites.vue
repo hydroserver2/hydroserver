@@ -141,10 +141,10 @@ import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import hs, {
   PermissionResource,
   PermissionAction,
-  Thing,
 } from '@hydroserver/client'
+import { listThingSiteSummaries } from '@/api/thingSiteSummaries'
 import { addColorToMarkers } from '@/utils/maps/markers'
-import { ThingWithColor } from '@/types'
+import { ThingSiteSummary, ThingSiteSummaryWithColor } from '@/types'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -162,14 +162,18 @@ const { selectedWorkspace, hasWorkspaces } = storeToRefs(useWorkspaceStore())
 const { setWorkspaces } = useWorkspaceStore()
 const { hasPermission } = useWorkspacePermissions()
 
-const workspaceThings = ref<Thing[]>([])
+const workspaceThings = ref<ThingSiteSummary[]>([])
 const useColors = ref(true)
 const isFiltered = ref(false)
 const isPageLoaded = ref(false)
 const filterCriteria = ref({ key: '', values: [] as string[] })
 const search = ref()
 
-const matchesFilterCriteria = (thing: Thing, key: string, values: string[]) => {
+const matchesFilterCriteria = (
+  thing: ThingSiteSummary,
+  key: string,
+  values: string[]
+) => {
   if (values.length > 0)
     return thing.tags.some(
       (tag) => tag.key === key && values.includes(tag.value)
@@ -178,7 +182,7 @@ const matchesFilterCriteria = (thing: Thing, key: string, values: string[]) => {
   return thing.tags.some((tag) => tag.key === key)
 }
 
-const matchesSearchCriteria = (thing: Thing) => {
+const matchesSearchCriteria = (thing: ThingSiteSummary) => {
   if (!search.value) return true
   const searchLower = search.value.toLowerCase()
   return (
@@ -215,7 +219,7 @@ const filteredThings = computed(() => {
   })
 })
 
-const coloredThings = computed<ThingWithColor[]>(() =>
+const coloredThings = computed<ThingSiteSummaryWithColor[]>(() =>
   addColorToMarkers(filteredThings.value, filterCriteria.value.key)
 )
 
@@ -250,9 +254,7 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const loadThings = async () => {
-  workspaceThings.value = await hs.things.listAllItems({
-    workspace_id: [selectedWorkspace.value!.id],
-  })
+  workspaceThings.value = await listThingSiteSummaries(selectedWorkspace.value!.id)
 }
 
 onMounted(async () => {
@@ -263,7 +265,7 @@ onMounted(async () => {
     setWorkspaces(workspaceRes)
   } else {
     const [things, workspaceRes] = await Promise.all([
-      hs.things.listAllItems({ workspace_id: [selectedWorkspace.value.id] }),
+      listThingSiteSummaries(selectedWorkspace.value.id),
       hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
     ])
     setWorkspaces(workspaceRes)

@@ -47,6 +47,7 @@ import { MapThing, MapThingWithColor } from '@/types'
 import {
   addColorToMarkers,
   generateMarkerContent,
+  hasThingTags,
   isThingMarker,
 } from '@/utils/maps/markers'
 import OlMap from 'ol/Map'
@@ -187,7 +188,9 @@ const getPopupThing = async (thing: MapThing): Promise<MapThing> => {
 async function updateFeatures() {
   // 1) Rebuild features
   coloredThings.value = props.colorKey
-    ? addColorToMarkers(props.things as Thing[], props.colorKey)
+    ? props.things.every(hasThingTags)
+      ? addColorToMarkers(props.things, props.colorKey)
+      : props.things
     : props.things
 
   const features = coloredThings.value
