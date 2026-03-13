@@ -82,7 +82,7 @@ import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { useSidebarStore } from '@/store/useSidebar'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import hs, { Workspace } from '@hydroserver/client'
-import { Thing } from '@hydroserver/client'
+import type { ThingMarker } from '@/types'
 import { mdiClose, mdiDomain, mdiWaterPump } from '@mdi/js'
 
 const { smAndDown } = useDisplay()
@@ -95,7 +95,7 @@ const workspaces = ref<Workspace[]>([])
 const emit = defineEmits(['filter'])
 const props = defineProps({
   things: {
-    type: Array as () => Thing[],
+    type: Array as () => ThingMarker[],
     required: true,
   },
 })
@@ -103,11 +103,11 @@ const props = defineProps({
 const sidebar = useSidebarStore()
 sidebar.isOpen = !!smAndDown
 
-const inSelectedWorkspaces = (thing: Thing) =>
+const inSelectedWorkspaces = (thing: ThingMarker) =>
   selectedWorkspaces.value.length === 0 ||
   selectedWorkspaces.value.find((ws) => ws.id === thing.workspaceId)
 
-const isTypeValid = (thing: Thing) =>
+const isTypeValid = (thing: ThingMarker) =>
   selectedSiteTypes.value.length === 0 ||
   selectedSiteTypes.value.includes(thing.siteType)
 

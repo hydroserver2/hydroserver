@@ -41,10 +41,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
-import { Thing } from '@hydroserver/client'
-import { ThingWithColor } from '@/types'
-import { addColorToMarkers, generateMarkerContent } from '@/utils/maps/markers'
+import { ref, onMounted, watch, computed, type PropType } from 'vue'
+import hs, { Thing } from '@hydroserver/client'
+import { MapThing, MapThingWithColor } from '@/types'
+import {
+  addColorToMarkers,
+  generateMarkerContent,
+  isThingMarker,
+} from '@/utils/maps/markers'
 import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
@@ -61,7 +65,10 @@ import { OSM, XYZ } from 'ol/source'
 import { mdiMapMarker } from '@mdi/js'
 
 const props = defineProps({
-  things: { type: Array<Thing>, default: [] },
+  things: {
+    type: Array as PropType<MapThing[]>,
+    default: () => [],
+  },
   colorKey: { type: String, default: '' },
   startInSatellite: Boolean,
   singleMarkerMode: Boolean,
@@ -114,8 +121,9 @@ const popupContainer = ref<HTMLElement>()
 const popupContent = ref<HTMLElement>()
 const popupCloser = ref<HTMLElement>()
 
-const coloredThings = ref<ThingWithColor[]>([])
+const coloredThings = ref<MapThingWithColor[]>([])
 const selectedTileSourceName = ref<string>(basemapTileSources[0].name)
+const detailedThingCache = new Map<string, Thing>()
 
 let map: OlMap
 let rasterLayer: TileLayer
@@ -134,22 +142,52 @@ const uniqueColoredThings = computed(() => {
   })
 })
 
-const createFeature = (thing: ThingWithColor) => {
-  if (!thing.location.latitude || !thing.location.longitude) return null
+const getThingCoordinates = (thing: MapThingWithColor) => {
+  if (isThingMarker(thing)) {
+    return [thing.longitude, thing.latitude] as const
+  }
+
+  return [thing.location.longitude, thing.location.latitude] as const
+}
+
+const createFeature = (thing: MapThingWithColor) => {
+  const [longitude, latitude] = getThingCoordinates(thing)
+  if (
+    latitude == null ||
+    longitude == null ||
+    latitude === '' ||
+    longitude === ''
+  )
+    return null
   const f = new Feature({
-    geometry: new Point(
-      fromLonLat([thing.location.longitude, thing.location.latitude])
-    ),
+    geometry: new Point(fromLonLat([longitude, latitude])),
   })
   f.set('markerColor', thing?.color?.background || '#D32F2F')
   f.set('thing', thing)
   return f
 }
 
+const getPopupThing = async (thing: MapThing): Promise<MapThing> => {
+  if (!isThingMarker(thing)) return thing
+
+  const cachedThing = detailedThingCache.get(thing.id)
+  if (cachedThing) return cachedThing
+
+  try {
+    const detailedThing = await hs.things.getItem(thing.id)
+    if (!detailedThing) return thing
+    detailedThingCache.set(thing.id, detailedThing)
+    return detailedThing
+  } catch (error) {
+    console.error('Error fetching marker details', error)
+    return thing
+  }
+}
+
 async function updateFeatures() {
   // 1) Rebuild features
   coloredThings.value = props.colorKey
-    ? addColorToMarkers(props.things, props.colorKey)
+    ? addColorToMarkers(props.things as Thing[], props.colorKey)
     : props.things
 
   const features = coloredThings.value
@@ -252,7 +290,7 @@ const initializeMap = () => {
       ? rawFeatures.get('features')[0]
       : rawFeatures
 
-    const thing = clicked.get('thing')
+    const thing = await getPopupThing(clicked.get('thing') as MapThing)
     popupContent.value!.innerHTML = generateMarkerContent(thing)
     overlay.setPosition(evt.coordinate)
   })
