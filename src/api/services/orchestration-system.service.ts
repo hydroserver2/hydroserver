@@ -4,8 +4,9 @@ import { EtlOrchestrationSystemContract as C } from '../../generated/contracts'
 export interface OrchestrationSystem {
   name: string
   id: string
-  workspaceId: string
+  workspaceId: string | null
   type: string
+  taskCount?: number
 }
 
 export class OrchestrationSystemService extends HydroServerBaseService<

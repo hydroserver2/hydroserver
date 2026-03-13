@@ -122,6 +122,13 @@ export abstract class HydroServerBaseService<
     const url = new URL(base, globalThis.location?.origin ?? undefined)
     for (const [key, value] of Object.entries(params)) {
       if (value === undefined) continue
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          if (entry === undefined) continue
+          url.searchParams.append(key, String(entry))
+        }
+        continue
+      }
       url.searchParams.set(key, String(value))
     }
     return url.toString()

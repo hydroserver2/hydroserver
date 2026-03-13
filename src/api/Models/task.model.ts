@@ -9,7 +9,7 @@ export class Task {
   name = ''
   type: TaskType = 'ETL'
   paused = true
-  nextRunAt?: TaskRun = undefined
+  nextRunAt: string | null = null
   latestRun?: TaskRun = undefined
   extractorVariables = {}
   transformerVariables = {}
