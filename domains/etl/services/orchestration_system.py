@@ -4,7 +4,7 @@ from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
 from domains.iam.models import APIKey
 from domains.etl.models import OrchestrationSystem
 from interfaces.api.schemas import (
@@ -23,6 +23,9 @@ User = get_user_model()
 
 
 class OrchestrationSystemService(ServiceUtils):
+    @staticmethod
+    def annotate_task_count(queryset: QuerySet) -> QuerySet:
+        return queryset.annotate(task_count=Count("tasks", distinct=True))
 
     def get_orchestration_system_for_action(
         self,
@@ -33,7 +36,9 @@ class OrchestrationSystemService(ServiceUtils):
         raise_400: bool = False,
     ):
         try:
-            orchestration_system = OrchestrationSystem.objects
+            orchestration_system = self.annotate_task_count(
+                OrchestrationSystem.objects
+            )
             if expand_related:
                 orchestration_system = self.select_expanded_fields(orchestration_system)
             orchestration_system = orchestration_system.get(pk=uid)
@@ -73,7 +78,7 @@ class OrchestrationSystemService(ServiceUtils):
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
     ):
-        queryset = OrchestrationSystem.objects
+        queryset = self.annotate_task_count(OrchestrationSystem.objects)
 
         for field in [
             "workspace_id",
@@ -197,6 +202,15 @@ class OrchestrationSystemService(ServiceUtils):
         orchestration_system = self.get_orchestration_system_for_action(
             principal=principal, uid=uid, action="delete", expand_related=True
         )
+
+        linked_task_count = orchestration_system.tasks.count()
+        if linked_task_count > 0:
+            task_label = "task" if linked_task_count == 1 else "tasks"
+            verb = "is" if linked_task_count == 1 else "are"
+            raise HttpError(
+                409,
+                f"Cannot delete orchestration system while {linked_task_count} {task_label} {verb} still linked to it.",
+            )
 
         orchestration_system.delete()
 
