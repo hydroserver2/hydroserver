@@ -7,6 +7,7 @@ from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
 )
 from .attachment import TagGetResponse, FileAttachmentGetResponse
@@ -162,6 +163,54 @@ class DatastreamQueryParameters(CollectionQueryParameters):
         description="Sets the minimum result end time of filtered datastreams.",
         alias="result_end_time_min",
     )
+
+
+class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
+    thing__workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspace_id"
+    )
+
+
+class VisualizationThingResponse(BaseGetResponse):
+    id: uuid.UUID
+    workspace_id: uuid.UUID
+    name: str = Field(..., max_length=200)
+    sampling_feature_code: str = Field(..., max_length=200)
+
+
+class VisualizationObservedPropertyResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str = Field(..., max_length=255)
+    code: str = Field(..., max_length=255)
+
+
+class VisualizationProcessingLevelResponse(BaseGetResponse):
+    id: uuid.UUID
+    definition: Optional[str] = None
+
+
+class VisualizationDatastreamResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str = Field(..., max_length=255)
+    thing_id: uuid.UUID
+    observed_property_id: uuid.UUID
+    processing_level_id: uuid.UUID
+    unit_id: uuid.UUID
+    no_data_value: float
+    value_count: Optional[int] = Field(None, ge=0)
+    phenomenon_begin_time: Optional[ISODatetime] = None
+    phenomenon_end_time: Optional[ISODatetime] = None
+    intended_time_spacing: Optional[float] = None
+    intended_time_spacing_unit: Optional[
+        Literal["seconds", "minutes", "hours", "days"]
+    ] = None
+
+
+class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
+    things: list[VisualizationThingResponse]
+    datastreams: list[VisualizationDatastreamResponse]
+    observed_properties: list[VisualizationObservedPropertyResponse]
+    processing_levels: list[VisualizationProcessingLevelResponse]
 
 
 class DatastreamSummaryResponse(

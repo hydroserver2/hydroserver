@@ -8,6 +8,8 @@ from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymo
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
+    DatastreamVisualizationBootstrapQueryParameters,
+    DatastreamVisualizationBootstrapResponse,
     DatastreamSummaryResponse,
     DatastreamDetailResponse,
     DatastreamQueryParameters,
@@ -52,6 +54,29 @@ def get_datastreams(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
+    )
+
+
+@datastream_router.get(
+    "/visualization-bootstrap",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: DatastreamVisualizationBootstrapResponse,
+        401: str,
+    },
+    by_alias=True,
+)
+def get_datastream_visualization_bootstrap(
+    request: HydroServerHttpRequest,
+    query: Query[DatastreamVisualizationBootstrapQueryParameters],
+):
+    """
+    Get the lean metadata required to bootstrap the visualization page.
+    """
+
+    return 200, datastream_service.list_visualization_bootstrap(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
     )
 
 

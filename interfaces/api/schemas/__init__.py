@@ -77,6 +77,8 @@ from .unit import (
     UnitPatchBody,
 )
 from .datastream import (
+    DatastreamVisualizationBootstrapQueryParameters,
+    DatastreamVisualizationBootstrapResponse,
     DatastreamSummaryResponse,
     DatastreamDetailResponse,
     DatastreamQueryParameters,
