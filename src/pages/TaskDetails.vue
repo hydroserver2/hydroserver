@@ -510,7 +510,6 @@ import TaskDetailsNavRail, {
 import hs, {
   PermissionAction,
   PermissionResource,
-  StatusType,
   TaskExpanded,
   TaskRun,
   WORKFLOW_TYPES,
@@ -518,6 +517,12 @@ import hs, {
 import router from '@/router/router'
 import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
 import { formatTimeWithZone } from '@/utils/time'
+import {
+  buildTaskRunDetailSections,
+  getTaskRunMessage,
+  getTaskRunStatusText as getRunStatusText,
+  getTaskRunRuntimeUrl,
+} from '@/utils/orchestration/taskRunDetails'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -808,38 +813,8 @@ const showRunHistoryLoading = computed(() => {
   return false
 })
 
-const asResult = (run?: TaskRun | null) => {
-  const value = run?.result as any
-  return value && typeof value === 'object' ? value : {}
-}
-
-const getRunMessage = (run?: TaskRun | null) => {
-  if (!run) return '–'
-  const result = asResult(run)
-  return (
-    (run as any).failureReason ||
-    result.summary ||
-    result.status_message ||
-    result.statusMessage ||
-    result.failure_reason ||
-    result.failureReason ||
-    result.error ||
-    result.message ||
-    '–'
-  )
-}
-
 const getRuntimeUrl = (run?: TaskRun | null) => {
-  if (!run) return null
-  const result = asResult(run)
-  return (
-    (run as any).runtimeUrl ||
-    result.runtime_source_uri ||
-    result.runtimeSourceUri ||
-    result.runtime_url ||
-    result.runtimeUrl ||
-    null
-  )
+  return getTaskRunRuntimeUrl(run)
 }
 
 const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
@@ -881,39 +856,20 @@ const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
   )
 }
 
-const getRunStatusText = (run?: TaskRun | null): StatusType => {
-  if (!run) return 'Unknown'
-  if (run.status === 'FAILURE') return 'Needs attention'
-  if (run.status === 'SUCCESS') return 'OK'
-  if (run.status === 'RUNNING') return 'Pending'
-  return 'Unknown'
-}
-
-type LogEntry = {
-  timestamp?: string
-  level?: string
-  message: string
-}
-
-type LogSection =
-  | {
-      title: string
-      type: 'lines'
-      entries: LogEntry[]
-    }
-  | {
-      title: string
-      type: 'text'
-      text: string
-    }
-
 const logLevelClass = (level?: string) => {
   const value = (level || '').toLowerCase()
-  if (value.includes('error') || value.includes('critical')) {
+  if (
+    value.includes('error') ||
+    value.includes('critical') ||
+    value.includes('fail')
+  ) {
     return 'bg-rose-50 text-rose-700 border-rose-200'
   }
-  if (value.includes('warn')) {
+  if (value.includes('warn') || value.includes('skip')) {
     return 'bg-amber-50 text-amber-700 border-amber-200'
+  }
+  if (value.includes('success') || value.includes('ok')) {
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
   }
   if (value.includes('debug')) {
     return 'bg-slate-100 text-slate-600 border-slate-200'
@@ -921,127 +877,8 @@ const logLevelClass = (level?: string) => {
   return 'bg-sky-50 text-sky-700 border-sky-200'
 }
 
-const prettyJson = (value: any) => {
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch (error) {
-    return String(value)
-  }
-}
-
-const normalizeLogEntries = (result: any): LogEntry[] => {
-  if (Array.isArray(result?.log_entries) || Array.isArray(result?.logEntries)) {
-    const entries = (result.log_entries || result.logEntries) as any[]
-    return entries.map((entry) => ({
-      timestamp: entry.timestamp || entry.time || '',
-      level: entry.level || entry.levelname || '',
-      message: entry.message || entry.msg || String(entry),
-    }))
-  }
-
-  if (typeof result?.logs === 'string') {
-    return result.logs
-      .split('\n')
-      .map((line: string) => line.trim())
-      .filter(Boolean)
-      .map((line: string) => {
-        const match = line.match(/^(\S+)\s+([A-Z]+)\s+(.*)$/)
-        if (match) {
-          return {
-            timestamp: match[1],
-            level: match[2],
-            message: match[3],
-          }
-        }
-        return { message: line }
-      })
-  }
-
-  return []
-}
-
-const stageFromMessage = (message: string) => {
-  const lower = message.toLowerCase()
-  // Treat setup + extractor-related messages as part of the Extract stage so the
-  // run history doesn't show an extra "Logs" section above "Extract".
-  if (lower.startsWith('etl task')) return 'Extract'
-  if (lower.startsWith('transformer timestamp')) return 'Extract'
-  if (lower.startsWith('runtime variables resolved')) return 'Extract'
-  if (lower.startsWith('task variables resolved')) return 'Extract'
-  if (lower.startsWith('resolved runtime source uri')) return 'Extract'
-  if (lower.startsWith('extractor returned payload')) return 'Extract'
-  if (lower.includes('starting extract')) return 'Extract'
-  if (lower.includes('starting transform')) return 'Transform'
-  if (lower.includes('starting load')) return 'Load'
-  if (lower.includes('resolving runtime var')) return 'Extract'
-  if (lower.includes('requesting data from')) return 'Extract'
-  if (lower.includes('standardized dataframe')) return 'Transform'
-  if (lower.includes('uploading')) return 'Load'
-  return null
-}
-
-const buildLogSections = (run?: TaskRun | null): LogSection[] => {
-  if (!run) return [{ title: 'Logs', type: 'text', text: '–' }]
-  const result = asResult(run)
-  const sections: LogSection[] = []
-
-  const entries = normalizeLogEntries(result)
-  if (entries.length) {
-    const grouped: LogSection[] = []
-    let currentTitle = stageFromMessage(entries[0]?.message || '') || 'Logs'
-    let currentEntries: LogEntry[] = []
-
-    const pushSection = () => {
-      if (currentEntries.length) {
-        grouped.push({
-          title: currentTitle,
-          type: 'lines',
-          entries: currentEntries,
-        })
-      }
-    }
-
-    entries.forEach((entry) => {
-      const nextStage = stageFromMessage(entry.message || '')
-      if (nextStage && nextStage !== currentTitle) {
-        pushSection()
-        currentTitle = nextStage
-        currentEntries = []
-      }
-      currentEntries.push(entry)
-    })
-    pushSection()
-
-    sections.push(...grouped)
-  }
-
-  if (result?.traceback) {
-    sections.push({
-      title: 'Traceback',
-      type: 'text',
-      text: String(result.traceback),
-    })
-  }
-
-  if (!sections.length && result) {
-    const detail = { ...result }
-    delete detail.logs
-    delete detail.log_entries
-    delete detail.logEntries
-    delete detail.stats
-    if (Object.keys(detail).length) {
-      sections.push({
-        title: 'Details',
-        type: 'text',
-        text: prettyJson(detail),
-      })
-    }
-  }
-
-  return sections.length
-    ? sections
-    : [{ title: 'Logs', type: 'text', text: '–' }]
-}
+const buildLogSections = (run?: TaskRun | null) =>
+  buildTaskRunDetailSections(run)
 
 const toggleRunLogs = (runId: string) => {
   openRunLogs.value[runId] = !openRunLogs.value[runId]
@@ -1463,7 +1300,7 @@ const runHistoryRows = computed(() => {
       id: run.id,
       startedAt: formatTimeWithZone(run.startedAt),
       finishedAt: formatTimeWithZone(run.finishedAt),
-      message: getRunMessage(run),
+      message: getTaskRunMessage(run),
       runtimeUrl: getRuntimeUrl(run) ?? resolveRuntimeUrlFromTask(run),
       raw: run,
     }))

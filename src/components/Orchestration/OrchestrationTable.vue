@@ -547,6 +547,10 @@ import TaskForm from '@/components/Orchestration/TaskForm.vue'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import DeleteOrchestrationSystemCard from '@/components/Orchestration/DeleteOrchestrationSystemCard.vue'
 import router from '@/router/router'
+import {
+  getTaskRunMessage,
+  getTaskStatusText,
+} from '@/utils/orchestration/taskRunDetails'
 import { formatTime } from '@/utils/time'
 import hs, {
   OrchestrationSystem,
@@ -709,7 +713,7 @@ const groupHealthSummary = (rows: readonly any[]) => {
       if (!task || task.isPlaceholder) return summary
 
       const displayedStatus = getDisplayedStatus({
-        statusName: task.statusName ?? hs.tasks.getStatusText(task),
+        statusName: task.statusName ?? getTaskStatusText(task),
         schedule: task.schedule,
       })
 
@@ -794,36 +798,20 @@ const resolveOrchestrationSystem = (task: any) => {
   )
 }
 
-const getRunMessage = (run?: any) => {
-  const result =
-    run?.result && typeof run.result === 'object' ? run.result : {}
-  return (
-    run?.failureReason ||
-    result.summary ||
-    result.status_message ||
-    result.statusMessage ||
-    result.failure_reason ||
-    result.failureReason ||
-    result.error ||
-    result.message ||
-    ''
-  )
-}
-
 const taskRows = computed(() =>
   workspaceTasks.value.map((t) => ({
     ...t,
     schedule: t.schedule ?? null,
-    statusName: hs.tasks.getStatusText(t),
+    statusName: getTaskStatusText(t),
     statusSort: getDisplayedStatus({
-      statusName: hs.tasks.getStatusText(t),
+      statusName: getTaskStatusText(t),
       schedule: t.schedule ?? null,
     }),
     lastRun: !!t.latestRun?.startedAt ? formatTime(t.latestRun.startedAt) : '-',
     nextRun: t.schedule?.nextRunAt ? formatTime(t.schedule?.nextRunAt) : '-',
     lastRunAt: t.latestRun?.startedAt ?? null,
     nextRunAt: t.schedule?.nextRunAt ?? null,
-    lastRunMessage: getRunMessage(t.latestRun as any),
+    lastRunMessage: getTaskRunMessage(t.latestRun as any),
     orchestrationSystemName: resolveGroupName(t),
     isPlaceholder: false,
     userClickedRunNow: !!runNowTriggeredByTaskId[t.id],
