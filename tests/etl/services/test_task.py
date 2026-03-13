@@ -3,7 +3,10 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
+from django.utils import timezone
+from domains.etl.models import Task, TaskRun
 from domains.etl.services import TaskService
+from domains.etl.tasks import run_etl_task
 from interfaces.api.schemas import (
     TaskPostBody,
     TaskPatchBody,
@@ -166,6 +169,117 @@ def test_get_task(
         )
         assert task_get["name"] == message
         assert TaskSummaryResponse.from_orm(task_get)
+
+
+def test_list_task_can_skip_heavy_fields(get_principal):
+    http_response = HttpResponse()
+    result = task_service.list(
+        principal=get_principal("owner"),
+        response=http_response,
+        page=1,
+        page_size=100,
+        order_by=[],
+        filtering={},
+        expand_related=True,
+        include_mappings=False,
+        include_latest_run_result=False,
+        include_data_connection_settings=False,
+    )
+
+    assert result
+    task = result[0]
+    assert task["mappings"] == []
+    assert task["latest_run"]["message"] == "OK"
+    assert task["latest_run"]["failure_count"] is None
+    assert task["latest_run"]["result"] is None
+    assert task["target_identifiers"] == ["27c70b41-e845-40ea-8cc7-d1b40f89816b"]
+    assert task["data_connection"]["extractor"] is None
+    assert task["data_connection"]["transformer"] is None
+    assert task["data_connection"]["loader"] is None
+
+
+def test_list_task_can_expose_failure_count_without_latest_run_result(get_principal):
+    task = Task.objects.get(pk="019adbc3-35e8-7f25-bc68-171fb66d446e")
+    TaskRun.objects.create(
+        task=task,
+        status="SUCCESS",
+        result={
+            "message": "Loaded with issues",
+            "failure_count": 2,
+        },
+    )
+
+    http_response = HttpResponse()
+    result = task_service.list(
+        principal=get_principal("owner"),
+        response=http_response,
+        page=1,
+        page_size=100,
+        order_by=[],
+        filtering={},
+        expand_related=True,
+        include_mappings=False,
+        include_latest_run_result=False,
+        include_data_connection_settings=False,
+    )
+
+    assert result
+    lean_task = next(
+        task for task in result
+        if task["id"] == uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
+    )
+    assert lean_task["latest_run"]["message"] == "Loaded with issues"
+    assert lean_task["latest_run"]["failure_count"] == 2
+    assert lean_task["latest_run"]["result"] is None
+
+
+def test_run_task_returns_a_new_running_run(get_principal, monkeypatch, settings):
+    settings.CELERY_ENABLED = True
+    principal = get_principal("owner")
+    task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
+    previous_run = TaskRun.objects.filter(task_id=task_id).order_by("-started_at").first()
+
+    recorded: dict[str, str] = {}
+
+    def fake_apply_async(*args, **kwargs):
+        recorded["task_id"] = kwargs["task_id"]
+
+    monkeypatch.setattr(run_etl_task, "apply_async", fake_apply_async)
+
+    result = task_service.run(principal=principal, task_id=task_id)
+
+    assert result["status"] == "RUNNING"
+    assert result["message"] is None
+    assert result["failure_count"] is None
+    assert result["id"] is not None
+    assert str(result["id"]) != str(previous_run.id)
+    assert recorded["task_id"] == str(result["id"])
+
+    created_run = TaskRun.objects.get(id=result["id"])
+    assert created_run.task_id == task_id
+    assert created_run.status == "RUNNING"
+
+
+def test_run_task_returns_completed_run_state_in_eager_mode(get_principal, monkeypatch, settings):
+    settings.CELERY_ENABLED = False
+    principal = get_principal("owner")
+    task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
+
+    def fake_apply(*args, **kwargs):
+        task_run = TaskRun.objects.get(id=kwargs["task_id"])
+        task_run.status = "SUCCESS"
+        task_run.finished_at = timezone.now()
+        task_run.result = {"message": "Run completed."}
+        task_run.save(update_fields=["status", "finished_at", "result"])
+
+    monkeypatch.setattr(run_etl_task, "apply", fake_apply)
+
+    result = task_service.run(principal=principal, task_id=task_id)
+
+    assert result["status"] == "SUCCESS"
+    assert result["message"] == "Run completed."
+    assert result["result"] == {"message": "Run completed."}
+    assert result["finished_at"] is not None
 
 
 @pytest.mark.parametrize(
