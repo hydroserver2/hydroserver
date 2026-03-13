@@ -35,7 +35,7 @@ import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import hs from '@hydroserver/client'
+import { getVisualizationBootstrap } from '@/api/visualizationBootstrap'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useSidebarStore } from '@/store/useSidebar'
 import { storeToRefs } from 'pinia'
@@ -366,22 +366,19 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [
-      thingsResponse,
-      datastreamsResponse,
-      processingLevelsResponse,
-      observedPropertiesResponse,
-    ] = await Promise.all([
-      hs.things.listAllItems(),
-      hs.datastreams.listAllItems(),
-      hs.processingLevels.listAllItems(),
-      hs.observedProperties.listAllItems(),
-    ])
+    const hasBootstrapData =
+      things.value.length > 0 ||
+      datastreams.value.length > 0 ||
+      processingLevels.value.length > 0 ||
+      observedProperties.value.length > 0
 
-    things.value = thingsResponse
-    datastreams.value = datastreamsResponse
-    processingLevels.value = processingLevelsResponse
-    observedProperties.value = observedPropertiesResponse
+    if (!hasBootstrapData) {
+      const bootstrap = await getVisualizationBootstrap()
+      things.value = bootstrap.things
+      datastreams.value = bootstrap.datastreams
+      processingLevels.value = bootstrap.processingLevels
+      observedProperties.value = bootstrap.observedProperties
+    }
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')
     console.error('Unable to fetch data from the API:', error)

@@ -197,6 +197,7 @@ const {
   matchesSelectedThing,
   matchesSelectedWorkspace,
 } = useDataVisStore()
+const dataVisStore = useDataVisStore()
 const {
   things,
   datastreams,
@@ -215,15 +216,11 @@ const searchThing = ref('')
 const searchObservedProperty = ref('')
 const searchProcessingLevel = ref('')
 const totalWorkspacesCount = computed(() => {
-  const thingIds = new Set<string>()
-  datastreams.value.forEach((ds) => {
-    if (ds.thingId) thingIds.add(ds.thingId)
-  })
-
   const workspaceIds = new Set<string>()
-  things.value.forEach((thing) => {
-    if (thingIds.has(thing.id) && thing.workspaceId) {
-      workspaceIds.add(thing.workspaceId)
+  datastreams.value.forEach((ds) => {
+    const workspaceId = dataVisStore.thingById.get(ds.thingId)?.workspaceId
+    if (workspaceId) {
+      workspaceIds.add(workspaceId)
     }
   })
 
@@ -240,25 +237,17 @@ const totalThingsCount = computed(() => {
 })
 
 const totalObservedPropertyNamesCount = computed(() => {
-  const ids = new Set<string>()
-  datastreams.value.forEach((ds) => {
-    if (ds.observedPropertyId) ids.add(ds.observedPropertyId)
-  })
   const names = new Set<string>()
   observedProperties.value.forEach((op) => {
-    if (ids.has(op.id) && op.name) names.add(op.name)
+    if (op.name) names.add(op.name)
   })
   return names.size
 })
 
 const totalProcessingLevelNamesCount = computed(() => {
-  const ids = new Set<string>()
-  datastreams.value.forEach((ds) => {
-    if (ds.processingLevelId) ids.add(ds.processingLevelId)
-  })
   const names = new Set<string>()
   processingLevels.value.forEach((pl) => {
-    if (ids.has(pl.id) && pl.definition) names.add(pl.definition)
+    if (pl.definition) names.add(pl.definition)
   })
   return names.size
 })
@@ -266,7 +255,6 @@ const totalProcessingLevelNamesCount = computed(() => {
 // Only show list items that are referenced by at least one datastream
 // Then mutually filter the lists by selected filters.
 const sortedWorkspaces = computed(() => {
-  const thingById = new Map(things.value.map((thing) => [thing.id, thing]))
   const workspaceIds = new Set<string>()
 
   datastreams.value.forEach((ds) => {
@@ -278,7 +266,7 @@ const sortedWorkspaces = computed(() => {
       return
     }
 
-    const workspaceId = thingById.get(ds.thingId)?.workspaceId
+    const workspaceId = dataVisStore.thingById.get(ds.thingId)?.workspaceId
     if (workspaceId) workspaceIds.add(workspaceId)
   })
 
@@ -288,47 +276,65 @@ const sortedWorkspaces = computed(() => {
 })
 
 const sortedProcessingLevelNames = computed(() => {
-  const filteredPLs = processingLevels.value.filter((pl) => {
-    const definition = pl.definition ?? ''
-    return datastreams.value.some(
-      (ds) =>
-        ds.processingLevelId === pl.id &&
-        matchesSelectedThing(ds) &&
-        matchesSelectedObservedProperty(ds) &&
-        matchesSelectedWorkspace(ds)
-    )
+  const names = new Set<string>()
+
+  datastreams.value.forEach((ds) => {
+    if (
+      !matchesSelectedThing(ds) ||
+      !matchesSelectedObservedProperty(ds) ||
+      !matchesSelectedWorkspace(ds)
+    ) {
+      return
+    }
+
+    const definition = dataVisStore.processingLevelById.get(ds.processingLevelId)?.definition
+    if (definition) {
+      names.add(definition)
+    }
   })
-  const names = filteredPLs.map((pl) => pl.definition)
-  return [...new Set(names)].sort()
+
+  return [...names].sort()
 })
 
 const sortedThings = computed(() => {
+  const thingIds = new Set<string>()
+
+  datastreams.value.forEach((ds) => {
+    if (
+      !matchesSelectedObservedProperty(ds) ||
+      !matchesSelectedProcessingLevel(ds) ||
+      !matchesSelectedWorkspace(ds)
+    ) {
+      return
+    }
+
+    thingIds.add(ds.thingId)
+  })
+
   return things.value
-    .filter((thing) =>
-      datastreams.value.some(
-        (ds) =>
-          ds.thingId === thing.id &&
-          matchesSelectedObservedProperty(ds) &&
-          matchesSelectedProcessingLevel(ds) &&
-          matchesSelectedWorkspace(ds)
-      )
-    )
+    .filter((thing) => thingIds.has(thing.id))
     .sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const sortedObservedPropertyNames = computed(() => {
-  const filteredProperties = observedProperties.value.filter((op) =>
-    datastreams.value.some(
-      (ds) =>
-        ds.observedPropertyId === op.id &&
-        matchesSelectedThing(ds) &&
-        matchesSelectedProcessingLevel(ds) &&
-        matchesSelectedWorkspace(ds)
-    )
-  )
+  const names = new Set<string>()
 
-  const names = filteredProperties.map((pl) => pl.name)
-  return [...new Set(names)].sort()
+  datastreams.value.forEach((ds) => {
+    if (
+      !matchesSelectedThing(ds) ||
+      !matchesSelectedProcessingLevel(ds) ||
+      !matchesSelectedWorkspace(ds)
+    ) {
+      return
+    }
+
+    const name = dataVisStore.observedPropertyById.get(ds.observedPropertyId)?.name
+    if (name) {
+      names.add(name)
+    }
+  })
+
+  return [...names].sort()
 })
 
 const emit = defineEmits<{

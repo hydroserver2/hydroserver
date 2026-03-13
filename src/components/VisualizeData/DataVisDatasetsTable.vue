@@ -240,14 +240,12 @@ import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import { formatTime } from '@/utils/time'
 import { mdiDownload, mdiMagnify, mdiTableColumnWidth } from '@mdi/js'
 
+const dataVisStore = useDataVisStore()
 const {
-  things,
   filteredDatastreams,
   plottedDatastreams,
-  observedProperties,
-  processingLevels,
   tableHeaders: headers,
-} = storeToRefs(useDataVisStore())
+} = storeToRefs(dataVisStore)
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -272,7 +270,7 @@ const onRowClick = (event: Event, item: any) => {
   let targetElement = event.target as HTMLElement
   if (targetElement.id && targetElement.id.startsWith('checkbox-')) return
 
-  const foundThing = things.value.find((t) => t.id === item.item.thingId)
+  const foundThing = dataVisStore.thingById.get(item.item.thingId)
   if (foundThing) selectedThing.value = foundThing
 
   const selectedDatastreamId = item.item.id
@@ -286,7 +284,7 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const openMetadata = (item: Datastream) => {
-  const foundThing = things.value.find((t) => t.id === item.thingId)
+  const foundThing = dataVisStore.thingById.get(item.thingId)
   if (foundThing) selectedThing.value = foundThing
 
   const foundDatastream = filteredDatastreams.value.find(
@@ -310,9 +308,9 @@ const displayDatastreams = computed(() => {
 
 const tableItems = computed(() => {
   return displayDatastreams.value.map((ds) => {
-    const thing = things.value.find((t) => t.id === ds.thingId)
-    const observedProperty = observedProperties.value.find(
-      (p) => p.id === ds.observedPropertyId
+    const thing = dataVisStore.thingById.get(ds.thingId)
+    const observedProperty = dataVisStore.observedPropertyById.get(
+      ds.observedPropertyId
     )
     const observedPropertyCode =
       typeof observedProperty?.code === 'string'
@@ -325,8 +323,8 @@ const tableItems = computed(() => {
     const observedPropertyDisplay = observedPropertyCode
       ? `${observedPropertyName} (${observedPropertyCode})`
       : observedPropertyName
-    const processingLevel = processingLevels.value.find(
-      (p) => p.id === ds.processingLevelId
+    const processingLevel = dataVisStore.processingLevelById.get(
+      ds.processingLevelId
     )
     return {
       ...ds,
