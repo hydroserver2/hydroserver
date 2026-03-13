@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from typing import Optional, Literal, List, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
@@ -22,6 +23,7 @@ from domains.sta.models import (
     FileAttachmentType,
 )
 from interfaces.api.schemas import (
+    TagGetResponse,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -227,6 +229,67 @@ class ThingService(ServiceUtils):
         )
 
     @classmethod
+    def get_site_summary_values(cls, queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "thing_id",
+            "thing__workspace_id",
+            "thing__name",
+            "thing__sampling_feature_code",
+            "thing__site_type",
+            "thing__is_private",
+            "latitude_value",
+            "longitude_value",
+        )
+
+    @staticmethod
+    def get_tags_by_thing_id(
+        principal: Optional[User | APIKey],
+        thing_ids: list[uuid.UUID],
+    ) -> dict[str, list[TagGetResponse]]:
+        if not thing_ids:
+            return {}
+
+        tags_by_thing_id: dict[str, list[TagGetResponse]] = defaultdict(list)
+        tag_rows = (
+            ThingTag.objects.visible(principal=principal)
+            .filter(thing_id__in=thing_ids)
+            .values("thing_id", "key", "value")
+            .order_by("thing_id", "key", "value")
+            .distinct()
+        )
+        for tag in tag_rows:
+            tags_by_thing_id[str(tag["thing_id"])].append(
+                {
+                    "key": tag["key"],
+                    "value": tag["value"],
+                }
+            )
+        return tags_by_thing_id
+
+    @staticmethod
+    def serialize_site_summary_rows(
+        site_rows,
+        tags_by_thing_id: dict[str, list[TagGetResponse]],
+    ) -> list[dict]:
+        return [
+            {
+                "id": str(site["thing_id"]),
+                "workspace_id": str(site["thing__workspace_id"]),
+                "name": site["thing__name"],
+                "sampling_feature_code": site["thing__sampling_feature_code"],
+                "site_type": site["thing__site_type"],
+                "is_private": site["thing__is_private"],
+                "latitude": site["latitude_value"],
+                "longitude": site["longitude_value"],
+                "tags": tags_by_thing_id.get(str(site["thing_id"]), []),
+            }
+            for site in site_rows
+        ]
+
+    @classmethod
     def filter_cached_markers(
         cls, markers: list[dict], filtering: Optional[dict] = None
     ) -> list[dict]:
@@ -309,6 +372,24 @@ class ThingService(ServiceUtils):
         markers = public_markers + private_markers
         markers.sort(key=lambda marker: marker["id"])
         return markers
+
+    def list_site_summaries(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ) -> list[dict]:
+        site_queryset = Location.objects.visible(principal=principal)
+        site_queryset = self.apply_marker_filters(site_queryset, filtering=filtering)
+        site_rows = list(
+            self.get_site_summary_values(
+                site_queryset.order_by("thing_id").distinct()
+            )
+        )
+        tags_by_thing_id = self.get_tags_by_thing_id(
+            principal=principal,
+            thing_ids=[site["thing_id"] for site in site_rows],
+        )
+        return self.serialize_site_summary_rows(site_rows, tags_by_thing_id)
 
     def list(
         self,

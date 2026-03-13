@@ -29,6 +29,8 @@ from .role import RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters
 from .thing import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
+    ThingSiteSummaryResponse,
+    ThingSiteSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,

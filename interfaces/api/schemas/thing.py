@@ -157,6 +157,25 @@ class ThingMarkerResponse(BaseGetResponse):
     longitude: float
 
 
+class ThingSiteSummaryQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter site summaries by workspace ID."
+    )
+    site_type: list[str] = Query([], description="Filter site summaries by site type.")
+
+
+class ThingSiteSummaryResponse(BaseGetResponse):
+    id: uuid.UUID
+    workspace_id: uuid.UUID
+    name: str = Field(..., max_length=200)
+    sampling_feature_code: str = Field(..., max_length=200)
+    site_type: str = Field(..., max_length=200)
+    is_private: bool
+    latitude: float
+    longitude: float
+    tags: list[TagGetResponse]
+
+
 class ThingSummaryResponse(BaseGetResponse, ThingFields):
     id: uuid.UUID
     workspace_id: uuid.UUID

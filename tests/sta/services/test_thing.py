@@ -185,6 +185,57 @@ def test_list_thing_markers_invalidates_public_cache_on_update():
     assert [marker["name"] for marker in markers] == ["Updated Public Thing"]
 
 
+def test_list_thing_site_summaries_returns_lean_payload_with_tags():
+    site_summaries = thing_service.list_site_summaries(principal=None)
+
+    assert site_summaries == [
+        {
+            "id": "3b7818af-eff7-4149-8517-e5cad9dc22e1",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "Public Thing",
+            "sampling_feature_code": "UWRL",
+            "site_type": "Public",
+            "is_private": False,
+            "latitude": 41.739742,
+            "longitude": -111.793766,
+            "tags": [
+                {
+                    "key": "Test Public Key",
+                    "value": "Test Public Value",
+                }
+            ],
+        }
+    ]
+
+
+def test_list_thing_site_summaries_filters_by_workspace(get_principal):
+    site_summaries = thing_service.list_site_summaries(
+        principal=get_principal("owner"),
+        filtering={"workspace_id": ["6e0deaf2-a92b-421b-9ece-86783265596f"]},
+    )
+
+    assert Counter(site["name"] for site in site_summaries) == Counter(
+        [
+            "Public Thing",
+            "Private Thing Public Workspace",
+        ]
+    )
+    assert all(
+        set(site) == {
+            "id",
+            "workspace_id",
+            "name",
+            "sampling_feature_code",
+            "site_type",
+            "is_private",
+            "latitude",
+            "longitude",
+            "tags",
+        }
+        for site in site_summaries
+    )
+
+
 @pytest.mark.parametrize(
     "principal, thing, message, error_code",
     [

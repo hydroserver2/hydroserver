@@ -10,6 +10,8 @@ from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
+    ThingSiteSummaryResponse,
+    ThingSiteSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -76,6 +78,29 @@ def get_thing_markers(
     """
 
     return 200, thing_service.list_markers(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
+    )
+
+
+@thing_router.get(
+    "/site-summaries",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: list[ThingSiteSummaryResponse],
+        401: str,
+    },
+    by_alias=True,
+)
+def get_thing_site_summaries(
+    request: HydroServerHttpRequest,
+    query: Query[ThingSiteSummaryQueryParameters],
+):
+    """
+    Get lean site summary data for public Things and Things associated with the authenticated user.
+    """
+
+    return 200, thing_service.list_site_summaries(
         principal=request.principal,
         filtering=query.dict(exclude_unset=True),
     )
