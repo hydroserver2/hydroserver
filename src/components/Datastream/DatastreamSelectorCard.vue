@@ -162,7 +162,7 @@ import { mdiAlert, mdiMagnify } from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
 
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
-const { linkedDatastreams } = storeToRefs(useOrchestrationStore())
+const { linkedDatastreamIds } = storeToRefs(useOrchestrationStore())
 
 const router = useRouter()
 const route = useRoute()
@@ -254,11 +254,6 @@ const selectAndClose = (ds: DatastreamExtended) => {
   emit('selectedDatastream', ds)
   emit('close')
 }
-
-// TODO: Use updated API to check against Task targetIdentifiers
-const linkedDatastreamIds = computed(
-  () => new Set(linkedDatastreams.value.map((d) => String(d.id)))
-)
 
 const isLinked = (item: DatastreamExtended) => {
   const id = String(item.id)

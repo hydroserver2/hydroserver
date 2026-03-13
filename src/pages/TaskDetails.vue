@@ -186,7 +186,7 @@
       <!-- Run history cards float directly on the page background (no surrounding container). -->
       <div v-show="activePanel === 'runs'" class="flex flex-col gap-1">
         <v-toolbar color="cyan-darken-3" rounded="lg" class="section-toolbar">
-          <h6 class="text-h6 ml-4">Run history</h6>
+          <h6 class="ml-4 text-h6">Run history</h6>
           <v-spacer />
           <v-btn
             variant="text"
@@ -389,6 +389,17 @@
               </v-expand-transition>
             </v-card>
           </template>
+
+          <div v-if="runHistoryHasMore" class="flex justify-center py-2">
+            <v-btn
+              variant="outlined"
+              color="blue-grey-darken-2"
+              :loading="loadingMoreTaskRuns"
+              @click="loadMoreRunHistory"
+            >
+              Load older runs
+            </v-btn>
+          </div>
         </template>
 
         <v-card
@@ -498,12 +509,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onBeforeUnmount, toRaw } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  toRaw,
+  watch,
+} from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@/utils/notifications'
-import TaskForm from '@/components/Orchestration/TaskForm.vue'
-import Swimlanes from '@/components/Orchestration/Swimlanes.vue'
 import TaskDetailsNavRail, {
   type TaskDetailsPanel,
 } from '@/components/Orchestration/TaskDetailsNavRail.vue'
@@ -550,6 +567,13 @@ import {
   mdiDownload,
 } from '@mdi/js'
 
+const TaskForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/TaskForm.vue')
+)
+const Swimlanes = defineAsyncComponent(
+  () => import('@/components/Orchestration/Swimlanes.vue')
+)
+
 const props = withDefaults(
   defineProps<{
     taskId?: string | null
@@ -574,13 +598,16 @@ const openRunLogs = ref<Record<string, boolean>>({})
 const task = ref<TaskExpanded | null>(null)
 const taskRuns = ref<TaskRun[]>([])
 const loadingTaskRuns = ref(false)
+const loadingMoreTaskRuns = ref(false)
 const runHistoryFetchFinished = ref(false)
+const runHistoryHasMore = ref(false)
+const runHistoryPage = ref(1)
 const runNowRequested = ref(false)
 const highlightedRunId = ref<string | null>(null)
 let highlightTimeoutId: number | null = null
-const { workspaceTasks, workspaceDatastreams } = storeToRefs(
-  useOrchestrationStore()
-)
+const orchestrationStore = useOrchestrationStore()
+const { workspaceTasks } = storeToRefs(orchestrationStore)
+const { ensureWorkspaceDatastreams } = orchestrationStore
 
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { setSelectedWorkspaceById } = useWorkspaceStore()
@@ -1306,8 +1333,9 @@ const runHistoryRows = computed(() => {
     }))
 })
 
+const RUN_HISTORY_PAGE_SIZE = 15
 const RUN_POLL_INTERVAL_MS = 4000
-const RUN_POLL_MAX_ATTEMPTS = 20
+const RUN_POLL_MAX_ATTEMPTS = 150
 let runNowPollTimeoutId: number | null = null
 
 const stopRunNowPolling = () => {
@@ -1317,7 +1345,51 @@ const stopRunNowPolling = () => {
   }
 }
 
-const scheduleRunNowPoll = (taskId: string, attempt = 0) => {
+const upsertTaskRun = (run: TaskRun) => {
+  const next = [...taskRuns.value]
+  const index = next.findIndex((item) => item.id === run.id)
+  if (index !== -1) next[index] = run
+  else next.unshift(run)
+  taskRuns.value = next
+}
+
+const syncLatestRun = (run: TaskRun) => {
+  if (!task.value) return
+  task.value = {
+    ...task.value,
+    latestRun: run,
+  }
+  upsertWorkspaceTask(task.value)
+}
+
+const refreshTaskAfterRunCompletion = async (taskId: string, runId: string) => {
+  try {
+    const updated = (await hs.tasks.getItem(taskId, {
+      expand_related: true,
+    })) as unknown as TaskExpanded
+
+    if (updated) {
+      task.value = updated
+      upsertWorkspaceTask(updated)
+    }
+
+    if (activePanel.value === 'runs') {
+      await fetchTaskRuns({ page: 1, background: true })
+      if (effectiveRunId.value === runId) {
+        await openRunHistoryAndScroll(runId)
+      }
+    }
+  } catch (error) {
+    console.error('Error refreshing task after run completion', error)
+  }
+}
+
+const scheduleRunNowPoll = (
+  taskId: string,
+  requestedRunId: string | null,
+  previousRunId: string | null,
+  attempt = 0
+) => {
   stopRunNowPolling()
   if (attempt > RUN_POLL_MAX_ATTEMPTS) {
     runNowRequested.value = false
@@ -1326,29 +1398,55 @@ const scheduleRunNowPoll = (taskId: string, attempt = 0) => {
 
   runNowPollTimeoutId = window.setTimeout(async () => {
     try {
-      const updated = (await hs.tasks.getItem(taskId, {
-        expand_related: true,
-      })) as unknown as TaskExpanded
+      if (requestedRunId) {
+        const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
+        const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
 
-      if (updated) {
-        task.value = updated
-        upsertWorkspaceTask(updated)
-        if (activePanel.value === 'runs') {
-          await fetchTaskRuns()
+        if (updatedRun?.id) {
+          upsertTaskRun(updatedRun)
+          syncLatestRun(updatedRun)
+
+          if (updatedRun.status && updatedRun.status !== 'RUNNING') {
+            runNowRequested.value = false
+            stopRunNowPolling()
+            await refreshTaskAfterRunCompletion(taskId, updatedRun.id)
+            return
+          }
         }
+      } else {
+        const updated = (await hs.tasks.getItem(taskId, {
+          expand_related: true,
+        })) as unknown as TaskExpanded
 
-        const status = updated.latestRun?.status
-        if (status && status !== 'RUNNING') {
-          runNowRequested.value = false
-          stopRunNowPolling()
-          return
+        if (updated) {
+          task.value = updated
+          upsertWorkspaceTask(updated)
+
+          const latestRunId = updated.latestRun?.id ?? null
+          const status = updated.latestRun?.status
+          const sawRequestedRun = previousRunId
+            ? !!latestRunId && latestRunId !== previousRunId
+            : !!latestRunId
+          if (sawRequestedRun && status) {
+            if (updated.latestRun) {
+              upsertTaskRun(updated.latestRun)
+            }
+            if (status !== 'RUNNING') {
+              runNowRequested.value = false
+              stopRunNowPolling()
+              if (latestRunId) {
+                await refreshTaskAfterRunCompletion(taskId, latestRunId)
+              }
+              return
+            }
+          }
         }
       }
     } catch (error) {
       console.error('Error polling task after run-now', error)
     }
 
-    scheduleRunNowPoll(taskId, attempt + 1)
+    scheduleRunNowPoll(taskId, requestedRunId, previousRunId, attempt + 1)
   }, RUN_POLL_INTERVAL_MS)
 }
 
@@ -1360,9 +1458,23 @@ const runTaskNow = async () => {
 
   runNowRequested.value = true
   try {
-    await hs.tasks.runTask(task.value.id)
+    const previousRunId = task.value.latestRun?.id ?? null
+    const response = await hs.tasks.runTask(task.value.id)
+    if (!response.ok) {
+      throw new Error(response.message || 'Unable to run task now.')
+    }
+    const requestedRun = response.ok ? (response.data as TaskRun | null) : null
+    if (requestedRun?.id) {
+      syncLatestRun(requestedRun)
+      upsertTaskRun(requestedRun)
+    }
     Snackbar.success('Run requested.')
-    scheduleRunNowPoll(task.value.id, 0)
+    scheduleRunNowPoll(
+      task.value.id,
+      requestedRun?.id ?? null,
+      previousRunId,
+      0
+    )
   } catch (error: any) {
     runNowRequested.value = false
     Snackbar.error(error?.message || 'Unable to run task now.')
@@ -1388,11 +1500,14 @@ function upsertWorkspaceTask(t: TaskExpanded | null) {
   workspaceTasks.value = next
 }
 
-async function refreshDatastreams(workspaceId?: string | null) {
+async function ensureMappingDatastreams() {
+  const workspaceId = task.value?.workspace?.id
   if (!workspaceId) return
-  const list =
-    (await hs.datastreams.listAllItems({ workspace_id: [workspaceId] })) ?? []
-  workspaceDatastreams.value = list
+  try {
+    await ensureWorkspaceDatastreams(workspaceId)
+  } catch (error) {
+    console.error('Error fetching workspace datastreams', error)
+  }
 }
 
 const onDelete = async () => {
@@ -1407,31 +1522,66 @@ const onDelete = async () => {
   }
 }
 
-const fetchTaskRuns = async () => {
+const fetchTaskRuns = async ({
+  page = 1,
+  append = false,
+  background = false,
+}: {
+  page?: number
+  append?: boolean
+  background?: boolean
+} = {}) => {
   if (!task.value) return
 
-  loadingTaskRuns.value = true
-  runHistoryFetchFinished.value = false
+  if (append) {
+    loadingMoreTaskRuns.value = true
+  } else if (!background) {
+    loadingTaskRuns.value = true
+    runHistoryFetchFinished.value = false
+  }
   try {
     const response = await hs.tasks.getTaskRuns(task.value.id, {
       order_by: ['-startedAt'],
-    })
-    taskRuns.value = (response.data as TaskRun[]) || []
+      page,
+      page_size: RUN_HISTORY_PAGE_SIZE,
+    } as any)
+    const nextRuns = (response.data as TaskRun[]) || []
+    taskRuns.value = append ? [...taskRuns.value, ...nextRuns] : nextRuns
+    runHistoryPage.value = page
+    runHistoryHasMore.value = nextRuns.length === RUN_HISTORY_PAGE_SIZE
   } catch (error: any) {
     Snackbar.error(error.message || 'Unable to fetch run history.')
     console.error('Error fetching task runs', error)
   } finally {
-    loadingTaskRuns.value = false
-    runHistoryFetchFinished.value = true
+    if (append) {
+      loadingMoreTaskRuns.value = false
+    } else if (!background) {
+      loadingTaskRuns.value = false
+      runHistoryFetchFinished.value = true
+    } else {
+      runHistoryFetchFinished.value = true
+    }
   }
 }
 
 const refreshRunHistory = async () => {
   if (!task.value) return
-  await fetchTaskRuns()
+  await fetchTaskRuns({ page: 1 })
   if (effectiveRunId.value) {
     await openRunHistoryAndScroll(effectiveRunId.value)
   }
+}
+
+const loadMoreRunHistory = async () => {
+  if (
+    !task.value ||
+    loadingTaskRuns.value ||
+    loadingMoreTaskRuns.value ||
+    !runHistoryHasMore.value
+  ) {
+    return
+  }
+  await fetchTaskRuns({ page: runHistoryPage.value + 1, append: true })
 }
 
 const openRunHistoryAndScroll = async (runId: string) => {
@@ -1440,7 +1590,15 @@ const openRunHistoryAndScroll = async (runId: string) => {
     (!runHistoryFetchFinished.value || !taskRuns.value.length) &&
     !loadingTaskRuns.value
   ) {
-    await fetchTaskRuns()
+    await fetchTaskRuns({ page: 1 })
+  }
+
+  while (
+    !taskRuns.value.some((run) => run.id === runId) &&
+    runHistoryHasMore.value &&
+    !loadingMoreTaskRuns.value
+  ) {
+    await loadMoreRunHistory()
   }
 
   await scrollToRunAnchor(runId)
@@ -1493,9 +1651,15 @@ const fetchData = async () => {
   task.value = fetchedTask
 
   upsertWorkspaceTask(task.value)
-  await refreshDatastreams(task.value?.workspace.id)
   if (activePanel.value === 'runs') {
-    await fetchTaskRuns()
+    if (effectiveRunId.value) {
+      await fetchTaskRuns({ page: 1 })
+    } else {
+      void fetchTaskRuns({ page: 1 })
+    }
+  }
+  if (activePanel.value === 'mappings') {
+    void ensureMappingDatastreams()
   }
 
   // If the user deep-linked to a task/run in a different workspace, select it so the list matches.
@@ -1512,7 +1676,6 @@ const onTaskUpdated = async (updated: TaskExpanded) => {
   // Keep UI responsive with the returned task, then refresh to ensure relations are expanded
   task.value = updated
   upsertWorkspaceTask(updated)
-  await refreshDatastreams(updated.workspace.id)
   await fetchData()
   openEdit.value = false
 }
@@ -1528,6 +1691,9 @@ watch(
     openRunLogs.value = {}
     taskRuns.value = []
     runHistoryFetchFinished.value = false
+    runHistoryHasMore.value = false
+    runHistoryPage.value = 1
+    loadingMoreTaskRuns.value = false
     runNowRequested.value = false
     if (props.embedded && !effectiveRunId.value) {
       activePanel.value = 'runs'
@@ -1578,9 +1744,12 @@ watch(
         !loadingTaskRuns.value &&
         (!runHistoryFetchFinished.value || taskRuns.value.length === 0)
       ) {
-        await fetchTaskRuns()
+        await fetchTaskRuns({ page: 1 })
       }
       return
+    }
+    if (panel === 'mappings') {
+      await ensureMappingDatastreams()
     }
   },
   { immediate: true }

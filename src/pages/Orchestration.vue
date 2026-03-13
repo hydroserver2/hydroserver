@@ -56,9 +56,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 import OrchestrationTable from '@/components/Orchestration/OrchestrationTable.vue'
-import TaskDetails from '@/pages/TaskDetails.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import hs from '@hydroserver/client'
@@ -68,6 +74,8 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { mdiChevronRight } from '@mdi/js'
 import { useRoute } from 'vue-router'
 import router from '@/router/router'
+
+const TaskDetails = defineAsyncComponent(() => import('@/pages/TaskDetails.vue'))
 
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
@@ -196,11 +204,18 @@ const afterDetailsLeave = () => {
 }
 
 onMounted(async () => {
+  if (workspaces.value.length) {
+    workspaceFetchCompleted.value = true
+    await applyWorkspaceFromQuery()
+    return
+  }
+
   if (!(await applyWorkspaceFromQuery())) return
 
   try {
     const workspacesResponse = await hs.workspaces.listAllItems({
       is_associated: true,
+      expand_related: true,
     })
     workspaceFetchCompleted.value = true
     setWorkspaces(workspacesResponse)

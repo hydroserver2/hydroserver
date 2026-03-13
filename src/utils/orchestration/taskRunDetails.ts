@@ -5,6 +5,9 @@ type TaskStatusLike = {
   schedule?: {
     paused?: boolean | null
     nextRunAt?: string | null
+    startTime?: string | null
+    interval?: number | null
+    intervalPeriod?: string | null
   } | null
 }
 
@@ -53,6 +56,34 @@ const getRuntimeVariables = (result: TaskRunResultLike) =>
 const getTargetResults = (result: TaskRunResultLike) =>
   asObject(result.targetResults ?? result.target_results)
 
+const parseDate = (value?: string | null) => {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.valueOf()) ? null : date
+}
+
+const inferIntervalNextRunAt = (task?: TaskStatusLike | null) => {
+  const schedule = task?.schedule
+  if (!schedule?.interval || !schedule.intervalPeriod) return null
+
+  const intervalMsByPeriod: Record<string, number> = {
+    minutes: 60_000,
+    hours: 3_600_000,
+    days: 86_400_000,
+  }
+  const unitMs = intervalMsByPeriod[schedule.intervalPeriod]
+  if (!unitMs) return null
+
+  const latestRun = task?.latestRun
+  const baseDate =
+    parseDate(latestRun?.startedAt) ??
+    parseDate(latestRun?.finishedAt) ??
+    parseDate(schedule.startTime)
+  if (!baseDate) return null
+
+  return new Date(baseDate.getTime() + schedule.interval * unitMs)
+}
+
 export const prettyJson = (value: unknown) => {
   try {
     return JSON.stringify(value, null, 2)
@@ -70,6 +101,7 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
 
   return (
     firstString(
+      run.message,
       result.message,
       result.summary,
       result.statusMessage,
@@ -77,7 +109,14 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
       result.failureReason,
       result.failure_reason,
       result.error
-    ) ?? '–'
+    ) ??
+    (run.status === 'SUCCESS'
+      ? 'Run completed successfully.'
+      : run.status === 'RUNNING'
+        ? 'Run in progress.'
+        : run.status === 'FAILURE' || run.status === 'INCOMPLETE'
+          ? 'Run failed.'
+          : '–')
   )
 }
 
@@ -102,7 +141,11 @@ export const taskRunHasFailures = (run?: TaskRun | null) => {
   if (run.status === 'FAILURE' || run.status === 'INCOMPLETE') return true
 
   const result = getTaskRunResult(run)
-  const failureCount = firstNumber(result.failureCount, result.failure_count)
+  const failureCount = firstNumber(
+    run.failureCount,
+    result.failureCount,
+    result.failure_count
+  )
   if (failureCount !== undefined) return failureCount > 0
 
   const targetResults = getTargetResults(result)
@@ -131,16 +174,26 @@ export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType => {
     return taskRunHasFailures(latestRun) ? 'Needs attention' : 'OK'
   }
 
-  if (schedule.paused) return 'Loading paused'
   if (!latestRun) return 'Pending'
   if (taskRunHasFailures(latestRun)) return 'Needs attention'
+  if (latestRun.status === 'RUNNING') return 'Pending'
 
-  const next = schedule.nextRunAt ? new Date(schedule.nextRunAt) : undefined
-  if (next && !Number.isNaN(next.valueOf())) {
+  const next = parseDate(schedule.nextRunAt) ?? inferIntervalNextRunAt(task)
+  if (next) {
     return next.getTime() < Date.now() ? 'Behind schedule' : 'OK'
   }
 
   return 'Unknown'
+}
+
+export const getDisplayedTaskStatus = (
+  task?: TaskStatusLike | null
+): StatusType => {
+  const status = getTaskStatusText(task)
+  if (task?.schedule?.paused && status !== 'Needs attention') {
+    return 'Loading paused'
+  }
+  return status
 }
 
 const normalizeLogEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] => {

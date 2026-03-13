@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TaskRun } from '@hydroserver/client'
 import {
   buildTaskRunDetailSections,
+  getDisplayedTaskStatus,
   getTaskRunMessage,
   getTaskRunResult,
   getTaskRunRuntimeUrl,
@@ -24,6 +25,7 @@ describe('task run detail helpers', () => {
     expect(taskRunHasFailures()).toBe(false)
     expect(getTaskRunStatusText()).toBe('Unknown')
     expect(getTaskStatusText()).toBe('Unknown')
+    expect(getDisplayedTaskStatus()).toBe('Unknown')
     expect(buildTaskRunDetailSections()).toEqual([
       { title: 'Logs', type: 'text', text: '–' },
     ])
@@ -50,6 +52,37 @@ describe('task run detail helpers', () => {
 
     expect(getTaskRunMessage(run)).toBe('Summary text')
     expect(getTaskRunRuntimeUrl(run)).toBe('https://example.com/runtime.csv')
+  })
+
+  it('prefers a direct run message before reading the result payload', () => {
+    const run: TaskRun = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      message: 'Values loaded: 42',
+      result: {
+        summary: 'Summary text',
+      },
+    }
+
+    expect(getTaskRunMessage(run)).toBe('Values loaded: 42')
+  })
+
+  it('falls back to status text when run messages are unavailable', () => {
+    expect(
+      getTaskRunMessage({
+        id: 'run-1',
+        status: 'SUCCESS',
+        result: null,
+      })
+    ).toBe('Run completed successfully.')
+
+    expect(
+      getTaskRunMessage({
+        id: 'run-2',
+        status: 'RUNNING',
+        result: null,
+      })
+    ).toBe('Run in progress.')
   })
 
   it('reads the runtime source URI from nested runtime variables', () => {
@@ -89,6 +122,13 @@ describe('task run detail helpers', () => {
   })
 
   it('uses failure counts and target status to detect failed runs', () => {
+    const leanFailure: TaskRun = {
+      id: 'run-0',
+      status: 'SUCCESS',
+      failureCount: 2,
+      result: null,
+    }
+
     const countedFailure: TaskRun = {
       id: 'run-1',
       status: 'SUCCESS',
@@ -128,6 +168,7 @@ describe('task run detail helpers', () => {
       },
     }
 
+    expect(taskRunHasFailures(leanFailure)).toBe(true)
     expect(taskRunHasFailures(countedFailure)).toBe(true)
     expect(taskRunHasFailures(targetFailure)).toBe(true)
     expect(taskRunHasFailures(success)).toBe(false)
@@ -185,9 +226,12 @@ describe('task run detail helpers', () => {
 
     expect(getTaskStatusText({})).toBe('Pending')
     expect(getTaskStatusText({ latestRun: okRun })).toBe('OK')
-    expect(getTaskStatusText({ schedule: { paused: true }, latestRun: okRun })).toBe(
-      'Loading paused'
-    )
+    expect(
+      getDisplayedTaskStatus({
+        schedule: { paused: true, nextRunAt: '2026-03-13T13:00:00Z' },
+        latestRun: okRun,
+      })
+    ).toBe('Loading paused')
     expect(getTaskStatusText({ schedule: { paused: false } })).toBe('Pending')
     expect(
       getTaskStatusText({
@@ -217,6 +261,35 @@ describe('task run detail helpers', () => {
         },
       })
     ).toBe('Needs attention')
+    expect(
+      getTaskStatusText({
+        schedule: {
+          paused: false,
+          nextRunAt: null,
+          interval: 1,
+          intervalPeriod: 'days',
+        },
+        latestRun: {
+          id: 'run-3',
+          status: 'SUCCESS',
+          startedAt: '2026-02-23T12:00:00Z',
+          result: { failureCount: 0 },
+        },
+      })
+    ).toBe('Behind schedule')
+    expect(
+      getTaskStatusText({
+        schedule: {
+          paused: false,
+          nextRunAt: '2026-03-13T11:00:00Z',
+        },
+        latestRun: {
+          id: 'run-4',
+          status: 'RUNNING',
+          result: null,
+        },
+      })
+    ).toBe('Pending')
 
     vi.useRealTimers()
   })

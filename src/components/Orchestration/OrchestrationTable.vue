@@ -536,6 +536,7 @@
 <script setup lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   reactive,
   ref,
   watch,
@@ -543,11 +544,10 @@ import {
   onMounted,
   onBeforeUnmount,
 } from 'vue'
-import TaskForm from '@/components/Orchestration/TaskForm.vue'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
-import DeleteOrchestrationSystemCard from '@/components/Orchestration/DeleteOrchestrationSystemCard.vue'
 import router from '@/router/router'
 import {
+  getDisplayedTaskStatus,
   getTaskRunMessage,
   getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
@@ -556,9 +556,9 @@ import hs, {
   OrchestrationSystem,
   PermissionAction,
   PermissionResource,
-  StatusType,
   Task,
   TaskExpanded,
+  TaskRun,
 } from '@hydroserver/client'
 import {
   mdiFilterVariant,
@@ -578,6 +578,13 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
+
+const TaskForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/TaskForm.vue')
+)
+const DeleteOrchestrationSystemCard = defineAsyncComponent(
+  () => import('@/components/Orchestration/DeleteOrchestrationSystemCard.vue')
+)
 
 const props = defineProps<{
   workspaceId: string
@@ -609,12 +616,15 @@ let resizeObserver: ResizeObserver | null = null
 const ROW_HEIGHT = 80
 const OVERSCAN = 6
 const POLL_INTERVAL_MS = 4000
-const POLL_MAX_ATTEMPTS = 20
+const POLL_MAX_ATTEMPTS = 150
 
 const taskPollTimeouts = new Map<string, number>()
 
 const workspaceForPage = computed(() =>
   workspaces.value.find((workspace) => workspace.id === props.workspaceId)
+)
+const orchestrationSystemsById = computed(
+  () => new Map(orchestrationSystems.value.map((os) => [os.id, os]))
 )
 
 const canEditOrchestration = computed(() => {
@@ -679,11 +689,9 @@ const statusOptions = [
   { title: 'Unknown', value: 'Unknown' },
 ] as const
 
-const classifyTask = (task: {
-  statusName: StatusType
-  schedule?: { paused?: boolean } | null
-}) => {
-  const displayedStatus = getDisplayedStatus(task)
+const classifyTask = (task: any) => {
+  const displayedStatus =
+    task?.statusSort ?? task?.displayedStatus ?? getDisplayedTaskStatus(task)
   if (
     displayedStatus === 'OK' ||
     displayedStatus === 'Needs attention' ||
@@ -696,26 +704,14 @@ const classifyTask = (task: {
   return 'Unknown'
 }
 
-const getDisplayedStatus = (task: {
-  statusName: StatusType
-  schedule?: { paused?: boolean } | null
-}) => {
-  if (task.schedule?.paused && task.statusName !== 'Needs attention') {
-    return 'Loading paused' as StatusType
-  }
-  return task.statusName
-}
-
 const groupHealthSummary = (rows: readonly any[]) => {
   return rows.reduce(
     (summary, row) => {
       const task = row?.raw ?? row
       if (!task || task.isPlaceholder) return summary
 
-      const displayedStatus = getDisplayedStatus({
-        statusName: task.statusName ?? getTaskStatusText(task),
-        schedule: task.schedule,
-      })
+      const displayedStatus =
+        task.statusSort ?? task.displayedStatus ?? getDisplayedTaskStatus(task)
 
       if (displayedStatus === 'OK') summary.ok += 1
       else if (displayedStatus === 'Needs attention')
@@ -746,7 +742,13 @@ const fetchOrchestrationData = async (newId: string) => {
   try {
     const [orchestrationSystemResponse, taskItems] = await Promise.all([
       hs.orchestrationSystems.listAllItems(),
-      hs.tasks.listAllItems({ expand_related: true, workspace_id: [newId] }),
+      hs.tasks.listAllItems({
+        expand_related: true,
+        workspace_id: [newId],
+        include_mappings: false,
+        include_latest_run_result: false,
+        include_data_connection_settings: false,
+      } as any),
     ])
 
     // TODO: Allow HydroShare as an option once we have archival functionality in the orchestration system
@@ -781,16 +783,14 @@ const searchText = computed(() => `${search.value || ''}`.trim().toLowerCase())
 const resolveGroupName = (task: any) => {
   const directName = task?.orchestrationSystem?.name
   if (directName) return directName
-  const matched = orchestrationSystems.value.find(
-    (os) => os.id === task?.orchestrationSystemId
-  )
+  const matched = orchestrationSystemsById.value.get(task?.orchestrationSystemId)
   return matched?.name ?? 'Unknown'
 }
 
 const resolveOrchestrationSystem = (task: any) => {
   if (task?.orchestrationSystem) return task.orchestrationSystem
-  const matchedById = orchestrationSystems.value.find(
-    (os) => os.id === task?.orchestrationSystemId
+  const matchedById = orchestrationSystemsById.value.get(
+    task?.orchestrationSystemId
   )
   if (matchedById) return matchedById
   return orchestrationSystems.value.find(
@@ -803,10 +803,7 @@ const taskRows = computed(() =>
     ...t,
     schedule: t.schedule ?? null,
     statusName: getTaskStatusText(t),
-    statusSort: getDisplayedStatus({
-      statusName: getTaskStatusText(t),
-      schedule: t.schedule ?? null,
-    }),
+    statusSort: getDisplayedTaskStatus(t),
     lastRun: !!t.latestRun?.startedAt ? formatTime(t.latestRun.startedAt) : '-',
     nextRun: t.schedule?.nextRunAt ? formatTime(t.schedule?.nextRunAt) : '-',
     lastRunAt: t.latestRun?.startedAt ?? null,
@@ -823,7 +820,7 @@ const matchesSearch = (task: any, term: string) => {
   const haystack = [
     task.name,
     task.dataConnection?.name,
-    task.statusName,
+    task.statusSort ?? task.statusName,
     task.lastRun,
     task.nextRun,
     task.orchestrationSystemName,
@@ -1050,6 +1047,28 @@ const upsertWorkspaceTask = (t: TaskExpanded | null) => {
   workspaceTasks.value = next as any
 }
 
+const syncTaskLatestRun = (taskId: string, run: TaskRun) => {
+  const existingTask = workspaceTasks.value.find((item) => item.id === taskId)
+  if (!existingTask) return
+  upsertWorkspaceTask({
+    ...existingTask,
+    latestRun: run,
+  } as TaskExpanded)
+}
+
+const refreshTaskAfterRunCompletion = async (taskId: string) => {
+  try {
+    const updated = (await hs.tasks.getItem(taskId, {
+      expand_related: true,
+    })) as unknown as TaskExpanded | null
+    if (updated) {
+      upsertWorkspaceTask(updated)
+    }
+  } catch (error) {
+    console.error('Error refreshing task after run completion', error)
+  }
+}
+
 const stopTaskPolling = (taskId: string) => {
   const timeoutId = taskPollTimeouts.get(taskId)
   if (timeoutId) {
@@ -1058,7 +1077,12 @@ const stopTaskPolling = (taskId: string) => {
   taskPollTimeouts.delete(taskId)
 }
 
-const scheduleTaskPoll = (taskId: string, attempt = 0) => {
+const scheduleTaskPoll = (
+  taskId: string,
+  requestedRunId: string | null,
+  previousRunId: string | null,
+  attempt = 0
+) => {
   stopTaskPolling(taskId)
   if (attempt > POLL_MAX_ATTEMPTS) {
     runNowTriggeredByTaskId[taskId] = false
@@ -1067,22 +1091,48 @@ const scheduleTaskPoll = (taskId: string, attempt = 0) => {
 
   const timeoutId = window.setTimeout(async () => {
     try {
-      const updated = await hs.tasks.getItem(taskId, {
-        expand_related: true,
-      })
-      if (updated) {
-        upsertWorkspaceTask(updated as any)
-        const status = updated.latestRun?.status
-        if (status && status !== 'RUNNING') {
-          runNowTriggeredByTaskId[taskId] = false
-          stopTaskPolling(taskId)
-          return
+      if (requestedRunId) {
+        const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
+        const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
+
+        if (updatedRun?.id) {
+          syncTaskLatestRun(taskId, updatedRun)
+
+          if (updatedRun.status && updatedRun.status !== 'RUNNING') {
+            runNowTriggeredByTaskId[taskId] = false
+            stopTaskPolling(taskId)
+            await refreshTaskAfterRunCompletion(taskId)
+            return
+          }
+        }
+      } else {
+        const updated = (await hs.tasks.getItem(taskId, {
+          expand_related: true,
+        })) as unknown as TaskExpanded | null
+        if (updated) {
+          upsertWorkspaceTask(updated)
+          const latestRunId = updated.latestRun?.id ?? null
+          const status = updated.latestRun?.status
+          const sawRequestedRun = previousRunId
+            ? !!latestRunId && latestRunId !== previousRunId
+            : !!latestRunId
+          if (sawRequestedRun && status) {
+            if (updated.latestRun) {
+              syncTaskLatestRun(taskId, updated.latestRun)
+            }
+            if (status !== 'RUNNING') {
+              runNowTriggeredByTaskId[taskId] = false
+              stopTaskPolling(taskId)
+              await refreshTaskAfterRunCompletion(taskId)
+              return
+            }
+          }
         }
       }
     } catch (error) {
       console.error('Error polling task status', error)
     }
-    scheduleTaskPoll(taskId, attempt + 1)
+    scheduleTaskPoll(taskId, requestedRunId, previousRunId, attempt + 1)
   }, POLL_INTERVAL_MS)
 
   taskPollTimeouts.set(taskId, timeoutId)
@@ -1090,10 +1140,20 @@ const scheduleTaskPoll = (taskId: string, attempt = 0) => {
 
 async function runTaskNow(task: Partial<Task> & Pick<Task, 'id'>) {
   if (!canEditOrchestration.value) return
+  const previousRunId =
+    workspaceTasks.value.find((item) => item.id === task.id)?.latestRun?.id ??
+    null
   runNowTriggeredByTaskId[task.id] = true
   try {
-    await hs.tasks.runTask(task.id)
-    scheduleTaskPoll(task.id, 0)
+    const response = await hs.tasks.runTask(task.id)
+    if (!response.ok) {
+      throw new Error(response.message || 'Unable to run task now.')
+    }
+    const requestedRun = response.ok ? ((response.data as TaskRun) ?? null) : null
+    if (requestedRun?.id) {
+      syncTaskLatestRun(task.id, requestedRun)
+    }
+    scheduleTaskPoll(task.id, requestedRun?.id ?? null, previousRunId, 0)
   } catch (error) {
     runNowTriggeredByTaskId[task.id] = false
     console.error('Error running task now', error)
@@ -1174,7 +1234,7 @@ const isInternalSystem = (item: any) => {
   if (isInternalType(directType)) return true
 
   const systemId = item?.orchestrationSystemId ?? item?.orchestrationSystem?.id
-  const matched = orchestrationSystems.value.find((os) => os.id === systemId)
+  const matched = orchestrationSystemsById.value.get(systemId)
   return isInternalType((matched as any)?.type)
 }
 

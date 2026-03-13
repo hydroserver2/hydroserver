@@ -407,8 +407,15 @@ const task = defineModel<Task>('task', { required: true })
 const props = defineProps<{
   workspaceId?: string | null
 }>()
-const { linkedDatastreams, draftDatastreams, workspaceDatastreams } =
-  storeToRefs(useOrchestrationStore())
+const orchestrationStore = useOrchestrationStore()
+const {
+  linkedDatastreamIds,
+  linkedDatastreams,
+  draftDatastreams,
+  workspaceDatastreams,
+} =
+  storeToRefs(orchestrationStore)
+const { ensureWorkspaceDatastreams } = orchestrationStore
 const isAggregationTask = computed(
   () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
 )
@@ -610,8 +617,9 @@ function referencedTargetIds(): Set<string> {
 
 function syncDraftDatastreams() {
   const refIds = referencedTargetIds()
-  const linkedIds = new Set(linkedDatastreams.value.map((d) => String(d.id)))
-  const keepIds = new Set([...refIds].filter((id) => !linkedIds.has(id)))
+  const keepIds = new Set(
+    [...refIds].filter((id) => !linkedDatastreamIds.value.has(id))
+  )
 
   const byId = new Map<string, DatastreamExtended>()
   for (const ds of draftDatastreams.value) {
@@ -769,6 +777,19 @@ watch(
   isAggregationTask,
   () => {
     enforceAggregationShape()
+  },
+  { immediate: true }
+)
+
+watch(
+  resolvedWorkspaceId,
+  async (workspaceId) => {
+    if (!workspaceId) return
+    try {
+      await ensureWorkspaceDatastreams(workspaceId)
+    } catch (error) {
+      console.error('Error fetching workspace datastreams', error)
+    }
   },
   { immediate: true }
 )
