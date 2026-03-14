@@ -101,9 +101,9 @@ from .attachment import (
     TagGetResponse,
     TagPostBody,
     TagDeleteBody,
-    FileAttachmentDeleteBody,
-    FileAttachmentPatchBody,
     FileAttachmentGetResponse,
+    FileAttachmentPostBody,
+    FileAttachmentDeleteBody,
 )
 
 from .data_connection import (DataConnectionSummaryResponse, DataConnectionDetailResponse, DataConnectionPostBody,

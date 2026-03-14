@@ -25,6 +25,7 @@ from interfaces.api.schemas import (
     DatastreamPatchBody,
     TagPostBody,
     TagDeleteBody,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
 from interfaces.api.schemas.datastream import (
@@ -582,15 +583,25 @@ class DatastreamService(ServiceUtils):
 
         return f"{deleted_count} tag(s) deleted"
 
-    def get_file_attachments(self, principal: Optional[User | APIKey], uid: uuid.UUID):
+    def get_file_attachments(
+        self,
+        principal: Optional[User | APIKey],
+        uid: uuid.UUID,
+        filtering: Optional[dict] = None,
+    ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="view"
         )
 
-        return datastream.datastream_file_attachments.all()
+        queryset = datastream.datastream_file_attachments
+
+        if filtering.get("file_attachment_type"):
+            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
+
+        return queryset.all()
 
     def add_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, file_attachment_type: str
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
@@ -604,8 +615,20 @@ class DatastreamService(ServiceUtils):
         return DatastreamFileAttachment.objects.create(
             datastream=datastream,
             name=file.name,
+            description=data.description,
             file_attachment=file,
-            file_attachment_type=file_attachment_type,
+            file_attachment_type=data.file_attachment_type,
+        )
+
+    def replace_file_attachment(
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    ):
+        self.remove_file_attachment(
+            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
+        )
+
+        return self.add_file_attachment(
+            principal=principal, uid=uid, file=file, data=data
         )
 
     def remove_file_attachment(
@@ -624,8 +647,6 @@ class DatastreamService(ServiceUtils):
 
         file_attachment.file_attachment.delete()
         file_attachment.delete()
-
-        return "File attachment deleted"
 
     def list_aggregation_statistics(
         self,

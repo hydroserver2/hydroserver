@@ -1,6 +1,5 @@
 import re
 import uuid
-from urllib.parse import parse_qs, urlparse
 from typing import List, Literal, Optional, get_args
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -23,7 +22,7 @@ from domains.etl.models import (
     TaskMappingPath,
     TaskRun,
 )
-from domains.sta.models import ThingFileAttachment, Datastream
+from domains.sta.models import Datastream
 from interfaces.api.schemas import (
     TaskFields,
     TaskPostBody,
@@ -1035,94 +1034,6 @@ class TaskService(ServiceUtils):
                         )
 
     @staticmethod
-    def _thing_attachment_rating_curve_references(
-        workspace_id: uuid.UUID,
-    ) -> set[tuple[uuid.UUID, int, uuid.UUID]]:
-        return set(
-            ThingFileAttachment.objects.filter(
-                thing__workspace_id=workspace_id,
-                file_attachment_type="rating_curve",
-            ).values_list("thing_id", "id", "download_token")
-        )
-
-    @staticmethod
-    def _parse_thing_attachment_reference(
-        rating_curve_url: str,
-    ) -> tuple[uuid.UUID, int, uuid.UUID] | None:
-        parsed = urlparse(rating_curve_url)
-        path_segments = [segment for segment in parsed.path.split("/") if segment]
-        if len(path_segments) < 5:
-            return None
-
-        if path_segments[-1] != "download":
-            return None
-        if path_segments[-3] != "file-attachments":
-            return None
-        if path_segments[-5] != "things":
-            return None
-
-        try:
-            thing_id = uuid.UUID(path_segments[-4])
-        except ValueError:
-            return None
-
-        try:
-            attachment_id = int(path_segments[-2])
-        except ValueError:
-            return None
-
-        query = parse_qs(parsed.query)
-        token = (query.get("token") or [None])[0]
-        if not token:
-            return None
-
-        try:
-            download_token = uuid.UUID(token)
-        except ValueError:
-            return None
-
-        return thing_id, attachment_id, download_token
-
-    @staticmethod
-    def _validate_rating_curve_transformation_references(
-        workspace_id: uuid.UUID, mapping_data: List[dict]
-    ):
-        valid_references = TaskService._thing_attachment_rating_curve_references(
-            workspace_id
-        )
-
-        for mapping in mapping_data:
-            for path in mapping.get("paths", []):
-                transformations = path.get("data_transformations", []) or []
-                if not isinstance(transformations, list):
-                    raise HttpError(
-                        400,
-                        "Path data_transformations must be an array of transformation objects",
-                    )
-
-                normalized_transformations = []
-                for transformation in transformations:
-                    if not isinstance(transformation, dict):
-                        raise HttpError(400, "Invalid data transformation payload")
-
-                    normalized = TaskService._normalize_transformation(transformation)
-
-                    if normalized.get("type") == "rating_curve":
-                        rating_curve_url = TaskService._extract_rating_curve_url(normalized)
-                        reference = TaskService._parse_thing_attachment_reference(
-                            rating_curve_url
-                        )
-                        if not reference or reference not in valid_references:
-                            raise HttpError(
-                                400,
-                                "ratingCurveUrl must reference an existing thing rating curve attachment in the task workspace",
-                            )
-
-                    normalized_transformations.append(normalized)
-
-                path["data_transformations"] = normalized_transformations
-
-    @staticmethod
     def update_mapping(task: Task, mapping_data: List[dict] | None = None):
         if mapping_data is None:
             return task
@@ -1133,9 +1044,6 @@ class TaskService(ServiceUtils):
             )
         else:
             TaskService._reject_aggregation_transformations(mapping_data)
-            TaskService._validate_rating_curve_transformation_references(
-                workspace_id=task.workspace_id, mapping_data=mapping_data
-            )
 
         task.mappings.all().delete()
 

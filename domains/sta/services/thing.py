@@ -1,6 +1,6 @@
 import uuid
 from collections import defaultdict
-from typing import Optional, Literal, List, get_args
+from typing import Optional, Literal, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
@@ -30,8 +30,8 @@ from interfaces.api.schemas import (
     ThingPatchBody,
     TagPostBody,
     TagDeleteBody,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
-    FileAttachmentPatchBody,
 )
 from interfaces.api.schemas.thing import ThingFields, LocationFields, ThingOrderByFields
 from interfaces.api.service import ServiceUtils
@@ -626,127 +626,53 @@ class ThingService(ServiceUtils):
 
         return f"{deleted_count} tag(s) deleted"
 
-    @staticmethod
-    def _normalize_attachment_type(attachment_type: str) -> str:
-        normalized = (attachment_type or "").strip()
-        if not normalized:
-            raise HttpError(400, "File attachment type is required")
-        return normalized
-
-    @staticmethod
-    def _normalize_name(name: str) -> str:
-        normalized = (name or "").strip()
-        if not normalized:
-            raise HttpError(400, "File attachment name is required")
-        return normalized
-
     def get_file_attachments(
         self,
         principal: Optional[User | APIKey],
         uid: uuid.UUID,
-        attachment_types: Optional[List[str]] = None,
+        filtering: Optional[dict] = None,
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="view")
-        queryset = thing.thing_file_attachments.all()
+        thing = self.get_thing_for_action(
+            principal=principal, uid=uid, action="view"
+        )
 
-        if attachment_types:
-            normalized_types = [
-                self._normalize_attachment_type(item) for item in attachment_types if item
-            ]
-            if normalized_types:
-                queryset = queryset.filter(file_attachment_type__in=normalized_types)
+        queryset = thing.thing_file_attachments
 
-        return queryset.order_by("file_attachment_type", "name")
+        if filtering.get("file_attachment_type"):
+            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
 
-    def get_file_attachment_for_action(
-        self,
-        principal: Optional[User | APIKey],
-        uid: uuid.UUID,
-        attachment_id: int,
-        action: Literal["view", "edit", "delete"],
-    ) -> ThingFileAttachment:
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action=action)
-
-        try:
-            return ThingFileAttachment.objects.get(pk=attachment_id, thing=thing)
-        except ThingFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
+        return queryset.all()
 
     def add_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        file,
-        file_attachment_type: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
-        normalized_name = self._normalize_name(name or file.name)
-        normalized_type = self._normalize_attachment_type(file_attachment_type)
-        normalized_description = (description or "").strip()
+        thing = self.get_thing_for_action(
+            principal=principal, uid=uid, action="edit"
+        )
 
-        if ThingFileAttachment.objects.filter(thing=thing, name=normalized_name).exists():
+        if ThingFileAttachment.objects.filter(
+            thing=thing, name=file.name
+        ).exists():
             raise HttpError(400, "File attachment already exists")
 
         return ThingFileAttachment.objects.create(
             thing=thing,
-            name=normalized_name,
-            description=normalized_description,
+            name=file.name,
+            description=data.description,
             file_attachment=file,
-            file_attachment_type=normalized_type,
+            file_attachment_type=data.file_attachment_type,
         )
-
-    def update_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        attachment_id: int,
-        data: FileAttachmentPatchBody,
-    ) -> ThingFileAttachment:
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
-        )
-        body = data.dict(exclude_unset=True)
-
-        if "name" in body:
-            new_name = self._normalize_name(body["name"])
-            if (
-                new_name != file_attachment.name
-                and ThingFileAttachment.objects.filter(
-                    thing_id=file_attachment.thing_id,
-                    name=new_name,
-                ).exists()
-            ):
-                raise HttpError(400, "File attachment already exists")
-            file_attachment.name = new_name
-
-        if "description" in body:
-            file_attachment.description = (body["description"] or "").strip()
-
-        file_attachment.save()
-        return file_attachment
 
     def replace_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        attachment_id: int,
-        file,
-    ) -> ThingFileAttachment:
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    ):
+        self.remove_file_attachment(
+            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
         )
 
-        old_name = file_attachment.file_attachment.name
-        file_attachment.file_attachment = file
-        file_attachment.save()
-
-        new_name = file_attachment.file_attachment.name
-        if old_name and old_name != new_name:
-            file_attachment.file_attachment.storage.delete(old_name)
-
-        return file_attachment
+        return self.add_file_attachment(
+            principal=principal, uid=uid, file=file, data=data
+        )
 
     def remove_file_attachment(
         self, principal: User | APIKey, uid: uuid.UUID, data: FileAttachmentDeleteBody
@@ -760,39 +686,6 @@ class ThingService(ServiceUtils):
 
         file_attachment.file_attachment.delete()
         file_attachment.delete()
-
-        return "File attachment deleted"
-
-    def delete_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, attachment_id: int
-    ):
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
-        )
-        file_attachment.file_attachment.delete(save=False)
-        file_attachment.delete()
-
-        return "File attachment deleted"
-
-    def get_file_attachment_for_download(
-        self,
-        principal: Optional[User | APIKey],
-        uid: uuid.UUID,
-        attachment_id: int,
-        token: Optional[str] = None,
-    ) -> ThingFileAttachment:
-        try:
-            file_attachment = ThingFileAttachment.objects.get(
-                pk=attachment_id, thing_id=uid
-            )
-        except ThingFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
-
-        if token and token == str(file_attachment.download_token):
-            return file_attachment
-
-        self.get_thing_for_action(principal=principal, uid=uid, action="view")
-        return file_attachment
 
     def list_site_types(
         self,
