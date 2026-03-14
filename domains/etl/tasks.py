@@ -1,11 +1,17 @@
+import logging
 from uuid import UUID
 from datetime import timedelta
 from celery import shared_task
 from celery.signals import task_prerun, task_success, task_failure, task_postrun
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.db.models import Prefetch
 from django.db.utils import IntegrityError
 from django.core.management import call_command
-from domains.etl.models import Task, TaskRun
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
+from domains.etl.models import Task, TaskRun, DataConnection
 from domains.sta.models import Datastream
 from hydroserverpy.etl.hydroserver import build_hydroserver_pipeline
 from hydroserverpy.etl.exceptions import ETLError
@@ -280,3 +286,88 @@ def cleanup_etl_task_runs(self, days=14):
     """
 
     call_command("cleanup_etl_task_runs", f"--days={days}")
+
+
+@shared_task(bind=True, expires=10)
+def send_orchestration_notifications(self):
+    """
+    Celery task to run the send_orchestration_notifications management command.
+    """
+
+    task_run_queryset = TaskRun.objects.filter(
+        started_at__gte=timezone.now() - timedelta(days=1)
+    ).order_by("-started_at")
+
+    data_connections = DataConnection.objects.prefetch_related(
+        "notification_recipients", "tasks", Prefetch(
+            "tasks__taskrun_set",
+            queryset=task_run_queryset,
+            to_attr="daily_task_runs",
+        ),
+    ).all()
+
+    for data_connection in data_connections:
+        subject = f"Job Orchestration Status: {data_connection.name}"
+        recipients = [
+            notification_recipient.email
+            for notification_recipient in data_connection.notification_recipients.all()
+        ]
+
+        task_summaries = []
+
+        for task in data_connection.tasks.all():
+            task_summaries.append({
+                "id": task.id,
+                "name": task.name,
+                "run_count": len(task.daily_task_runs),
+                "failure_count": sum(1 for run in task.daily_task_runs if run.status == "FAILURE"),
+                "last_run_message": task.daily_task_runs[0].result.get("message", "") if task.daily_task_runs else "",
+                "link": f"{settings.PROXY_BASE_URL}/orchestration?taskId={task.id}"
+            })
+
+        if not task_summaries:
+            logging.info(
+                "Skipping email for DataConnection %s because there are no tasks today.",
+                data_connection.name
+            )
+            continue
+
+        if not recipients:
+            logging.info(
+                "Skipping email for DataConnection %s because there are no notification recipients.",
+                data_connection.name
+            )
+            continue
+
+        context = {
+            "data_connection_name": data_connection.name,
+            "tasks": task_summaries
+        }
+
+        html_content = render_to_string("orchestration/email/orchestration_notification.html", context)
+        text_content = strip_tags(html_content)
+
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=None,
+                to=recipients,
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+
+            logging.info(
+                "Sent orchestration summary email for DataConnection %s to: %s",
+                data_connection.name,
+                recipients
+            )
+
+        except Exception as e:
+            logging.error(
+                "Failed to send email for DataConnection %s to %s: %s",
+                data_connection.name,
+                recipients,
+                str(e),
+                exc_info=True
+            )

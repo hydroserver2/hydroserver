@@ -4,9 +4,9 @@ from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Prefetch
 from domains.iam.models import APIKey
-from domains.etl.models import DataConnection
+from domains.etl.models import DataConnection, DataConnectionNotificationRecipient
 from interfaces.api.schemas import (
     DataConnectionSummaryResponse,
     DataConnectionDetailResponse,
@@ -36,7 +36,17 @@ class DataConnectionService(ServiceUtils):
             data_connection = DataConnection.objects
             if expand_related:
                 data_connection = self.select_expanded_fields(data_connection)
+            data_connection = data_connection.prefetch_related(
+                Prefetch(
+                    "notification_recipients",
+                    queryset=DataConnectionNotificationRecipient.objects.only("email", "data_connection_id"),
+                    to_attr="prefetched_recipients"
+                )
+            )
             data_connection = data_connection.get(pk=uid)
+            data_connection.notification_recipient_emails = [
+                recipient.email for recipient in data_connection.prefetched_recipients
+            ]
         except DataConnection.DoesNotExist:
             raise HttpError(
                 404 if not raise_400 else 400, "ETL Data Connection does not exist"
@@ -98,9 +108,24 @@ class DataConnectionService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
+        queryset = queryset.prefetch_related(
+            Prefetch(
+                "notification_recipients",
+                queryset=DataConnectionNotificationRecipient.objects.only("email", "data_connection_id"),
+                to_attr="prefetched_recipients"
+            )
+        )
+
         queryset = queryset.visible(principal=principal).distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
+
+        data_connections = queryset.all()
+
+        for data_connection in data_connections:
+            data_connection.notification_recipient_emails = [
+                recipient.email for recipient in data_connection.prefetched_recipients
+            ]
 
         return [
             (
@@ -110,7 +135,7 @@ class DataConnectionService(ServiceUtils):
                     data_connection
                 )
             )
-            for data_connection in queryset.all()
+            for data_connection in data_connections
         ]
 
     def get(
@@ -151,6 +176,8 @@ class DataConnectionService(ServiceUtils):
             )
 
         try:
+            data_connection_payload = data.dict(include=set(DataConnectionFields.model_fields.keys()))
+            notification_recipients = data_connection_payload.pop("notification_recipient_emails", [])
             data_connection = DataConnection.objects.create(
                 pk=data.id,
                 workspace=workspace,
@@ -160,8 +187,13 @@ class DataConnectionService(ServiceUtils):
                 transformer_settings=data.transformer.settings if data.transformer else {},
                 loader_type=data.loader.settings_type if data.loader else None,
                 loader_settings=data.loader.settings if data.loader else {},
-                **data.dict(include=set(DataConnectionFields.model_fields.keys())),
+                **data_connection_payload,
             )
+            for notification_recipient in notification_recipients:
+                DataConnectionNotificationRecipient.objects.create(
+                    data_connection=data_connection,
+                    email=notification_recipient,
+                )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
 
@@ -191,6 +223,13 @@ class DataConnectionService(ServiceUtils):
                     setattr(data_connection, f"{field}_type", value["settings_type"])
                 if "settings" in value:
                     setattr(data_connection, f"{field}_settings", value["settings"] or {})
+            elif field == "notification_recipient_emails":
+                data_connection.notification_recipients.all().delete()
+                for notification_recipient in value:
+                    DataConnectionNotificationRecipient.objects.create(
+                        data_connection=data_connection,
+                        email=notification_recipient,
+                    )
             else:
                 setattr(data_connection, field, value)
 

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Daily ETL Task Summary: {{ data_connection_name }}</title>
+    <style>
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+      a.button {
+        display: inline-block;
+        background-color: #377ef9;
+        color: #ffffff;
+        padding: 6px 12px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Hello,</p>
+
+    <p>Here is a summary of ETL tasks that ran today for the {{ data_connection_name }} data connection:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Task ID</th>
+          <th>Task Name</th>
+          <th>Run Count</th>
+          <th>Failure Count</th>
+          <th>Last Run Message</th>
+          <th>HydroServer Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.id }}</td>
+          <td>{{ task.name }}</td>
+          <td>{{ task.run_count }}</td>
+          <td>{{ task.failure_count }}</td>
+          <td>{{ task.last_run_message }}</td>
+          <td>
+            <a href="{{ task.link }}" class="button" target="_blank">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>This is an automated message. Do not reply to this email.</p>
+  </body>
+</html>

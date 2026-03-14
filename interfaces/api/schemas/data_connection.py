@@ -56,6 +56,7 @@ class DataConnectionSettingsPatchBody(BasePatchBody, DataConnectionSettingsField
 class DataConnectionFields(Schema):
     name: str
     data_connection_type: str = Field(..., alias="type")
+    notification_recipient_emails: list[str] = Field(default_factory=list)
 
 
 class DataConnectionSummaryResponse(BaseGetResponse, DataConnectionFields):

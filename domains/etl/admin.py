@@ -3,6 +3,7 @@ from django.contrib import admin
 from domains.etl.models import (
     OrchestrationSystem,
     DataConnection,
+    DataConnectionNotificationRecipient,
     Task,
     TaskMapping,
     TaskMappingPath,
@@ -38,6 +39,10 @@ class DataConnectionAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "data_connection_type", "workspace__name")
 
 
+class DataConnectionNotificationRecipientAdmin(admin.ModelAdmin):
+    list_display = ("id", "data_connection__name", "email")
+
+
 class TaskAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "data_connection__name", "orchestration_system__name",
                     "data_connection__workspace__name")
@@ -59,6 +64,7 @@ class TaskRunAdmin(admin.ModelAdmin):
 
 admin.site.register(OrchestrationSystem, OrchestrationSystemAdmin)
 admin.site.register(DataConnection, DataConnectionAdmin)
+admin.site.register(DataConnectionNotificationRecipient, DataConnectionNotificationRecipientAdmin)
 admin.site.register(Task, TaskAdmin)
 admin.site.register(TaskMapping, TaskMappingAdmin)
 admin.site.register(TaskMappingPath, TaskMappingPathAdmin)
