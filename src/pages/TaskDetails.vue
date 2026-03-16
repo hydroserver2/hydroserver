@@ -558,6 +558,7 @@ import {
   getTaskRunStatusText as getRunStatusText,
   getTaskRunRuntimeUrl,
 } from '@/utils/orchestration/taskRunDetails'
+import { getRunNowPollDecision } from '@/utils/orchestration/runNowPolling'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -1371,12 +1372,18 @@ const RUN_HISTORY_PAGE_SIZE = 15
 const RUN_POLL_INTERVAL_MS = 4000
 const RUN_POLL_MAX_ATTEMPTS = 150
 let runNowPollTimeoutId: number | null = null
+let runNowPollSessionId = 0
 
-const stopRunNowPolling = () => {
+const clearRunNowPollingTimeout = () => {
   if (runNowPollTimeoutId != null) {
     window.clearTimeout(runNowPollTimeoutId)
     runNowPollTimeoutId = null
   }
+}
+
+const stopRunNowPolling = () => {
+  clearRunNowPollingTimeout()
+  runNowPollSessionId += 1
 }
 
 const upsertTaskRun = (run: TaskRun) => {
@@ -1418,69 +1425,93 @@ const refreshTaskAfterRunCompletion = async (taskId: string, runId: string) => {
   }
 }
 
+const publishQueuedRunUpdate = (updatedTask: TaskExpanded, observedRun: TaskRun) => {
+  task.value = updatedTask
+  upsertWorkspaceTask(updatedTask)
+  upsertTaskRun(observedRun)
+}
+
 const scheduleRunNowPoll = (
   taskId: string,
   requestedRunId: string | null,
   previousRunId: string | null,
-  attempt = 0
+  attempt = 0,
+  hasPublishedQueuedRun = false,
+  pollSessionId = runNowPollSessionId
 ) => {
-  stopRunNowPolling()
+  clearRunNowPollingTimeout()
   if (attempt > RUN_POLL_MAX_ATTEMPTS) {
     runNowRequested.value = false
     return
   }
 
   runNowPollTimeoutId = window.setTimeout(async () => {
+    if (pollSessionId !== runNowPollSessionId) return
+
     try {
       if (requestedRunId) {
         const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
+        const decision = getRunNowPollDecision({
+          requestedRunId,
+          observedRunId: updatedRun?.id ?? null,
+          observedStatus: updatedRun?.status,
+          hasPublishedQueuedRun,
+        })
 
-        if (updatedRun?.id) {
-          upsertTaskRun(updatedRun)
-          syncLatestRun(updatedRun)
+        if (pollSessionId !== runNowPollSessionId) return
 
-          if (updatedRun.status && updatedRun.status !== 'RUNNING') {
-            runNowRequested.value = false
-            stopRunNowPolling()
-            await refreshTaskAfterRunCompletion(taskId, updatedRun.id)
-            return
-          }
+        if (decision.publishTerminalRun && updatedRun?.id) {
+          runNowRequested.value = false
+          stopRunNowPolling()
+          await refreshTaskAfterRunCompletion(taskId, updatedRun.id)
+          return
         }
+
+        hasPublishedQueuedRun = decision.hasPublishedQueuedRun
       } else {
         const updated = (await hs.tasks.getItem(taskId, {
           expand_related: true,
         })) as unknown as TaskExpanded
 
-        if (updated) {
-          task.value = updated
-          upsertWorkspaceTask(updated)
+        if (pollSessionId !== runNowPollSessionId) return
 
-          const latestRunId = updated.latestRun?.id ?? null
-          const status = updated.latestRun?.status
-          const sawRequestedRun = previousRunId
-            ? !!latestRunId && latestRunId !== previousRunId
-            : !!latestRunId
-          if (sawRequestedRun && status) {
-            if (updated.latestRun) {
-              upsertTaskRun(updated.latestRun)
-            }
-            if (status !== 'RUNNING') {
-              runNowRequested.value = false
-              stopRunNowPolling()
-              if (latestRunId) {
-                await refreshTaskAfterRunCompletion(taskId, latestRunId)
-              }
-              return
-            }
+        if (updated?.latestRun) {
+          const decision = getRunNowPollDecision({
+            previousRunId,
+            observedRunId: updated.latestRun.id ?? null,
+            observedStatus: updated.latestRun.status,
+            hasPublishedQueuedRun,
+          })
+
+          if (decision.publishQueuedRun) {
+            publishQueuedRunUpdate(updated, updated.latestRun)
           }
+
+          if (decision.publishTerminalRun && updated.latestRun.id) {
+            runNowRequested.value = false
+            stopRunNowPolling()
+            await refreshTaskAfterRunCompletion(taskId, updated.latestRun.id)
+            return
+          }
+
+          hasPublishedQueuedRun = decision.hasPublishedQueuedRun
         }
       }
     } catch (error) {
       console.error('Error polling task after run-now', error)
     }
 
-    scheduleRunNowPoll(taskId, requestedRunId, previousRunId, attempt + 1)
+    if (pollSessionId !== runNowPollSessionId) return
+
+    scheduleRunNowPoll(
+      taskId,
+      requestedRunId,
+      previousRunId,
+      attempt + 1,
+      hasPublishedQueuedRun,
+      pollSessionId
+    )
   }, RUN_POLL_INTERVAL_MS)
 }
 
@@ -1492,8 +1523,11 @@ const runTaskNow = async () => {
 
   runNowRequested.value = true
   try {
+    const taskId = task.value.id
     const previousRunId = task.value.latestRun?.id ?? null
-    const response = await hs.tasks.runTask(task.value.id)
+    stopRunNowPolling()
+    const pollSessionId = runNowPollSessionId
+    const response = await hs.tasks.runTask(taskId)
     if (!response.ok) {
       throw new Error(response.message || 'Unable to run task now.')
     }
@@ -1504,10 +1538,12 @@ const runTaskNow = async () => {
     }
     Snackbar.success('Run requested.')
     scheduleRunNowPoll(
-      task.value.id,
+      taskId,
       requestedRun?.id ?? null,
       previousRunId,
-      0
+      0,
+      !!requestedRun?.id,
+      pollSessionId
     )
   } catch (error: any) {
     runNowRequested.value = false
