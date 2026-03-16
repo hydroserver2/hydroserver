@@ -401,6 +401,21 @@
         >
           Validating rating curve CSV...
         </div>
+        <div
+          v-else-if="editPreviewLoading"
+          class="text-caption text-medium-emphasis mb-3"
+        >
+          Loading current preview...
+        </div>
+        <v-alert
+          v-else-if="editPreviewError"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-3"
+        >
+          {{ editPreviewError }}
+        </v-alert>
 
         <div v-if="editPreviewPath" class="rating-curve-edit-preview">
           <div class="text-caption text-medium-emphasis mb-1">Preview</div>
@@ -579,7 +594,10 @@ let createValidationRunId = 0
 const editFileValidationError = ref('')
 const editFileValidationPending = ref(false)
 let editValidationRunId = 0
+let editPreviewRunId = 0
 const editPreviewRows = ref<RatingCurvePreviewRow[]>([])
+const editPreviewLoading = ref(false)
+const editPreviewError = ref('')
 
 const PREVIEW_SVG_WIDTH = 132
 const PREVIEW_SVG_HEIGHT = 38
@@ -718,12 +736,15 @@ function resetCreateState() {
 
 function resetEditState() {
   editValidationRunId += 1
+  editPreviewRunId += 1
   editFileValidationError.value = ''
   editFileValidationPending.value = false
   editAttachmentFile.value = null
   editAttachmentName.value = ''
   editAttachmentDescription.value = ''
   editPreviewRows.value = []
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
   if (editFileInput.value) {
     editFileInput.value.value = ''
   }
@@ -759,7 +780,6 @@ function clearCreateFile() {
 
 function clearEditFile() {
   editAttachmentFile.value = null
-  editPreviewRows.value = []
   if (editFileInput.value) {
     editFileInput.value.value = ''
   }
@@ -845,6 +865,7 @@ function openEditDialog(item: DisplayRatingCurve) {
   editAttachmentName.value = item.name
   editAttachmentDescription.value = item.description || ''
   openEdit.value = true
+  void hydrateEditPreview(item)
 }
 
 function openDeleteDialog(item: DisplayRatingCurve) {
@@ -1298,6 +1319,68 @@ async function loadPreviewForAttachment(attachment: ThingFileAttachment) {
   }
 }
 
+function resolveThingAttachment(item: DisplayRatingCurve) {
+  if (props.deferPersist) {
+    return (
+      ratingCurveStore.existingRatingCurves.find(
+        (attachment) => String(attachment.id) === String(item.id)
+      ) ?? null
+    )
+  }
+
+  return (
+    backendAttachments.value.find(
+      (attachment) => String(attachment.id) === String(item.id)
+    ) ?? null
+  )
+}
+
+async function hydrateEditPreview(item: DisplayRatingCurve) {
+  const runId = ++editPreviewRunId
+  const key = String(item.id)
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
+
+  const cachedRows = previewRowsByAttachmentId.value[key]
+  if (cachedRows?.length) {
+    if (runId !== editPreviewRunId) return
+    editPreviewRows.value = [...cachedRows]
+    return
+  }
+
+  if (item.pending) {
+    if (runId !== editPreviewRunId) return
+    editPreviewRows.value = []
+    return
+  }
+
+  const attachment = resolveThingAttachment(item)
+  if (!attachment?.link) {
+    editPreviewRows.value = []
+    return
+  }
+
+  editPreviewLoading.value = true
+  try {
+    await loadPreviewForAttachment(attachment)
+    if (
+      runId !== editPreviewRunId ||
+      String(editAttachment.value?.id ?? '') !== key ||
+      !!selectedEditFile.value
+    ) {
+      return
+    }
+    editPreviewRows.value = [
+      ...(previewRowsByAttachmentId.value[key] ?? []),
+    ]
+    editPreviewError.value = previewErrorByAttachmentId.value[key] ?? ''
+  } finally {
+    if (runId === editPreviewRunId) {
+      editPreviewLoading.value = false
+    }
+  }
+}
+
 function getPreviewRows(attachmentId: string | number): RatingCurvePreviewRow[] {
   return previewRowsByAttachmentId.value[String(attachmentId)] ?? []
 }
@@ -1574,10 +1657,21 @@ watch(selectedEditFile, (file) => {
     editValidationRunId += 1
     editFileValidationError.value = ''
     editFileValidationPending.value = false
-    editPreviewRows.value = []
+    const item = editAttachment.value
+    if (!item) {
+      editPreviewRows.value = []
+      editPreviewLoading.value = false
+      editPreviewError.value = ''
+      return
+    }
+
+    void hydrateEditPreview(item)
     return
   }
 
+  editPreviewRunId += 1
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
   void validateEditFile(file)
 })
 

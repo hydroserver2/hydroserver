@@ -340,6 +340,8 @@ import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import {
   getRatingCurveReference,
+  isSameRatingCurveReference,
+  parseRatingCurveReference,
   setRatingCurveReference,
 } from '@/utils/orchestration/ratingCurve'
 import {
@@ -518,21 +520,7 @@ const previewSparklinePath = computed(() =>
 )
 
 function extractThingIdFromRatingCurveUrl(reference: string): string | null {
-  if (!reference) return null
-
-  try {
-    const parsed = new URL(reference, globalThis.location?.origin ?? undefined)
-    const pathSegments = parsed.pathname.split('/').filter(Boolean)
-    if (pathSegments.length < 5) return null
-    if (pathSegments[pathSegments.length - 5] !== 'things') return null
-    if (pathSegments[pathSegments.length - 3] !== 'file-attachments')
-      return null
-    if (pathSegments[pathSegments.length - 1] !== 'download') return null
-
-    return pathSegments[pathSegments.length - 4] ?? null
-  } catch {
-    return null
-  }
+  return parseRatingCurveReference(reference).thingId || null
 }
 
 function clearRatingCurveSelection() {
@@ -576,7 +564,7 @@ function syncSelectedAttachmentWithReference() {
 
   const currentReference = getRatingCurveReference(local.value)
   const selected = attachments.value.find(
-    (attachment) => attachment.link === currentReference
+    (attachment) => isSameRatingCurveReference(attachment.link, currentReference)
   )
 
   selectedAttachmentId.value = selected?.id ?? null
@@ -991,7 +979,10 @@ watch(
 watch(selectedAttachment, (attachment) => {
   if (!attachment || local.value.type !== 'rating_curve') return
   if (
-    getRatingCurveReference(local.value) === attachment.link &&
+    isSameRatingCurveReference(
+      getRatingCurveReference(local.value),
+      attachment.link
+    ) &&
     previewRows.value.length
   ) {
     return
