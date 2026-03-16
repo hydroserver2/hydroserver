@@ -28,6 +28,8 @@ export type UploadThingFileAttachmentOptions = {
   description?: string
 }
 
+export type ReplaceThingFileAttachmentOptions = UploadThingFileAttachmentOptions
+
 export type ThingFileAttachmentPatchBody = {
   name?: string
   description?: string
@@ -70,9 +72,9 @@ export class ThingFileAttachmentService {
     options: UploadThingFileAttachmentOptions = {}
   ) {
     const data = new FormData()
-    data.append('file', file, file instanceof File ? file.name : 'attachment.csv')
+    const uploadFile = toNamedUploadFile(file, options.name)
+    data.append('file', uploadFile, uploadFile.name)
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
-    if (options.name) data.append('name', options.name)
     if (options.description) data.append('description', options.description)
 
     const res = (await apiMethods.post(
@@ -94,52 +96,107 @@ export class ThingFileAttachmentService {
     body: ThingFileAttachmentPatchBody,
     originalBody?: ThingFileAttachmentPatchBody
   ) {
-    const url = `${this.baseAttachmentRoute(thingId)}/${fileAttachmentId}`
-    const res = (await apiMethods.patch(
-      url,
-      body,
-      originalBody ?? null
+    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+    if (!attachment) {
+      return {
+        data: undefined,
+        status: 404,
+        message: 'File attachment does not exist.',
+        ok: false,
+      } as unknown as ApiResponse<ThingFileAttachment>
+    }
+
+    const nextName = body.name?.trim() ?? attachment.name
+    if (nextName !== attachment.name) {
+      return {
+        data: attachment,
+        status: 400,
+        message: 'Renaming existing thing file attachments is not supported.',
+        ok: false,
+      } as ApiResponse<ThingFileAttachment>
+    }
+
+    try {
+      const file = await this.fetchAttachmentBlob(attachment.link)
+      return this.replace(thingId, file, {
+        name: attachment.name,
+        type: attachment.fileAttachmentType,
+        description:
+          body.description ?? originalBody?.description ?? attachment.description,
+      })
+    } catch (error: any) {
+      return {
+        data: attachment,
+        status: 0,
+        message: error?.message || 'Unable to load existing file attachment.',
+        ok: false,
+      } as ApiResponse<ThingFileAttachment>
+    }
+  }
+
+  async replace(
+    thingId: string,
+    file: File | Blob,
+    options: ReplaceThingFileAttachmentOptions = {}
+  ) {
+    const uploadFile = toNamedUploadFile(file, options.name)
+    const data = new FormData()
+    data.append('file', uploadFile, uploadFile.name)
+    data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
+    if (options.description) data.append('description', options.description)
+
+    const res = (await apiMethods.put(
+      this.baseAttachmentRoute(thingId),
+      data
     )) as ApiResponse<ThingFileAttachment>
+
+    if (!res.ok) {
+      return {
+        ...res,
+        data: normalizeAttachmentRecord(
+          res.data,
+          this._client.host
+        ) as ThingFileAttachment,
+      }
+    }
+
+    const attachment = await this.findAttachment(thingId, uploadFile.name)
     return {
       ...res,
-      data: normalizeAttachmentRecord(
-        res.data,
-        this._client.host
-      ) as ThingFileAttachment,
+      data: attachment ?? (res.data
+        ? (normalizeAttachmentRecord(res.data, this._client.host) as ThingFileAttachment)
+        : undefined),
     }
   }
 
   async replaceFile(
     thingId: string,
     fileAttachmentId: string | number,
-    file: File | Blob
+    file: File | Blob,
+    options: ReplaceThingFileAttachmentOptions = {}
   ) {
-    const url = `${this.baseAttachmentRoute(thingId)}/${fileAttachmentId}/file`
-    const makeData = () => {
-      const data = new FormData()
-      data.append('file', file, file instanceof File ? file.name : 'attachment.csv')
-      return data
+    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+    if (!attachment && !options.name) {
+      return {
+        data: undefined,
+        status: 404,
+        message: 'File attachment does not exist.',
+        ok: false,
+      } as unknown as ApiResponse<ThingFileAttachment>
     }
 
-    // Prefer POST for multipart file replace; some backend stacks do not
-    // reliably parse multipart payloads on PUT.
-    let res = (await apiMethods.post(url, makeData())) as ApiResponse<ThingFileAttachment>
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      res = (await apiMethods.put(url, makeData())) as ApiResponse<ThingFileAttachment>
-    }
-
-    return {
-      ...res,
-      data: normalizeAttachmentRecord(
-        res.data,
-        this._client.host
-      ) as ThingFileAttachment,
-    }
+    return this.replace(thingId, file, {
+      ...options,
+      name: options.name ?? attachment?.name,
+      type: options.type ?? attachment?.fileAttachmentType,
+      description: options.description ?? attachment?.description,
+    })
   }
 
-  delete(thingId: string, fileAttachmentId: string | number) {
-    const url = `${this.baseAttachmentRoute(thingId)}/${fileAttachmentId}`
-    return apiMethods.delete(url)
+  async delete(thingId: string, fileAttachmentId: string | number) {
+    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+    const name = attachment?.name ?? String(fileAttachmentId)
+    return apiMethods.delete(this.baseAttachmentRoute(thingId), { name })
   }
 
   async fetchRatingCurvePreview(
@@ -261,6 +318,29 @@ export class ThingFileAttachmentService {
     return `${this._client.baseRoute}/things/${thingId}/file-attachments`
   }
 
+  private async findAttachment(thingId: string, attachmentIdOrName: string | number) {
+    const target = String(attachmentIdOrName)
+    const items = await this.listItems(thingId)
+    return (
+      items.find((item) => String(item.id) === target) ??
+      items.find((item) => item.name === target)
+    )
+  }
+
+  private async fetchAttachmentBlob(link: string) {
+    const response = await apiMethods.fetch(link, {
+      headers: {
+        Accept: 'text/csv, text/plain, application/octet-stream',
+      },
+    })
+
+    if (!response.ok || !(response.data instanceof Blob)) {
+      throw new Error(response.message || 'Unable to load existing file attachment.')
+    }
+
+    return response.data
+  }
+
   private resolveAttachmentPreviewUrls(link: string) {
     const urls: string[] = []
     try {
@@ -332,6 +412,19 @@ export class ThingFileAttachmentService {
 
     return url.toString()
   }
+}
+
+function toNamedUploadFile(file: File | Blob, name?: string) {
+  const resolvedName =
+    name?.trim() || (file instanceof File ? file.name : 'attachment.csv')
+  if (file instanceof File && file.name === resolvedName) {
+    return file
+  }
+
+  return new File([file], resolvedName, {
+    type: file.type || 'application/octet-stream',
+    lastModified: file instanceof File ? file.lastModified : Date.now(),
+  })
 }
 
 function isThingAttachmentDownloadPath(pathname: string) {

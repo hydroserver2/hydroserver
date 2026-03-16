@@ -1,11 +1,6 @@
 import { HydroServerBaseService } from './base'
 import { EtlTaskContract as C, RunContract } from '../../generated/contracts'
-import {
-  Task as M,
-  StatusType,
-  TaskExpanded,
-  TaskRun,
-} from '../Models/task.model'
+import { Task as M } from '../Models/task.model'
 import { apiMethods } from '../apiMethods'
 
 export class TaskService extends HydroServerBaseService<typeof C, M> {
@@ -14,44 +9,22 @@ export class TaskService extends HydroServerBaseService<typeof C, M> {
   static Model = M
 
   runTask(taskId: string) {
-    const url = `${this._route}/${taskId}`
-    return apiMethods.post(url)
+    return apiMethods.post(`${this._route}/${taskId}`)
   }
 
-  /* ----------------------- Sub-resources: Task Runs ----------------------- */
-
   getTaskRuns(taskId: string, params?: RunContract.QueryParameters) {
-    const url = this.withQuery(`${this._route}/${taskId}/runs`, params)
-    return apiMethods.paginatedFetch(url)
+    return apiMethods.paginatedFetch(
+      this.withQuery(`${this._route}/${taskId}/runs`, params)
+    )
   }
 
   createTaskRun(taskId: string, body: RunContract.PostBody) {
-    const url = `${this._route}/${taskId}/runs`
-    return apiMethods.post(url, body)
+    return apiMethods.post(`${this._route}/${taskId}/runs`, body)
   }
 
   getTaskRun(taskId: string, runId: string) {
-    const url = `${this._route}/${taskId}/runs/${runId}`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch(`${this._route}/${taskId}/runs/${runId}`)
   }
-
-  // Task runs are generated and never touched by users & devs
-  // updateTaskRun(
-  //   taskId: string,
-  //   runId: string,
-  //   body: RunContract.PatchBody,
-  //   originalBody?: RunContract.PatchBody
-  // ) {
-  //   const url = `${this._route}/${taskId}/runs/${runId}`
-  //   return apiMethods.patch(url, body, originalBody ?? null)
-  // }
-
-  // deleteTaskRun(taskId: string, runId: string) {
-  //   const url = `${this._route}/${taskId}/runs/${runId}`
-  //   return apiMethods.delete(url)
-  // }
-
-  /* ----------------------- Convenience Functions  ----------------------- */
 
   addMapping(task: M) {
     task.mappings.push({
@@ -60,48 +33,13 @@ export class TaskService extends HydroServerBaseService<typeof C, M> {
     })
   }
 
-  /**  Remove mapping path if datastream id is targetId. Remove mappings that now have no paths. */
   removeTarget(task: M, id: string | number): void {
     const key = String(id)
-    for (const m of task.mappings) {
-      m.paths = m.paths.filter((p) => String(p.targetIdentifier) !== key)
+    for (const mapping of task.mappings) {
+      mapping.paths = mapping.paths.filter(
+        (path) => String(path.targetIdentifier) !== key
+      )
     }
-    task.mappings = task.mappings.filter((m) => m.paths.length > 0)
-  }
-
-  getStatusText(task: TaskExpanded): StatusType {
-    const { latestRun, schedule } = task
-    // Don't crash the UI if a task isn't scheduled.
-    if (!schedule) {
-      if (!latestRun) return 'Pending'
-      return latestRun.status === 'FAILURE' ? 'Needs attention' : 'OK'
-    }
-
-    if (schedule.paused) return 'Loading paused'
-    if (!latestRun) return 'Pending'
-    if (latestRun.status === 'FAILURE') return 'Needs attention'
-
-    const { nextRunAt } = schedule
-    const next = nextRunAt ? new Date(nextRunAt) : undefined
-    if (next && !Number.isNaN(next.valueOf())) {
-      return next.getTime() < Date.now() ? 'Behind schedule' : 'OK'
-    }
-
-    return 'Unknown'
-  }
-
-  getBadCountText(statusArray: TaskRun[]) {
-    const badCount = statusArray.filter((s) => s.status === 'FAILED').length
-    if (!badCount) return ''
-    if (badCount === 1) return '1 error'
-    return `${badCount} errors`
-  }
-
-  getBehindScheduleCountText(statusArray: TaskRun[]) {
-    const behindCount = statusArray.filter(
-      (s) => s.status === 'Behind schedule'
-    ).length
-    if (!behindCount) return ''
-    return `${behindCount} behind schedule`
+    task.mappings = task.mappings.filter((mapping) => mapping.paths.length > 0)
   }
 }

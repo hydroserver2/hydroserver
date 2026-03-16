@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "HydroServer Data Management API",
-    "version": "1.3.0",
+    "version": "1.8.0",
     "description": ""
   },
   "paths": {
@@ -1810,573 +1810,6 @@
         ]
       }
     },
-    "/api/data/workspaces/{workspace_id}/file-attachments": {
-      "get": {
-        "operationId": "interfaces_api_views_workspace_file_attachment_get_workspace_file_attachments",
-        "summary": "Get Workspace File Attachments",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Page number (1-based).",
-              "title": "Page"
-            },
-            "required": false,
-            "description": "Page number (1-based)."
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            },
-            "required": false,
-            "description": "The number of items per page."
-          },
-          {
-            "in": "query",
-            "name": "type",
-            "schema": {
-              "default": [],
-              "description": "Filter by file attachment type.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Type",
-              "type": "array"
-            },
-            "required": false,
-            "description": "Filter by file attachment type."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/WorkspaceFileAttachmentGetResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "description": "Get file attachments associated with a workspace.",
-        "tags": [
-          "Workspace File Attachments"
-        ],
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ]
-      },
-      "post": {
-        "operationId": "interfaces_api_views_workspace_file_attachment_add_workspace_file_attachment",
-        "summary": "Add Workspace File Attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkspaceFileAttachmentGetResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Request Entity Too Large",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "description": "Add a file attachment to a workspace.",
-        "tags": [
-          "Workspace File Attachments"
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "title": "MultiPartBodyParams",
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "title": "Type",
-                    "type": "string"
-                  },
-                  "name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Name"
-                  },
-                  "description": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Description"
-                  },
-                  "file": {
-                    "format": "binary",
-                    "title": "File",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "type",
-                  "file"
-                ]
-              }
-            }
-          },
-          "required": true
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/api/data/workspaces/{workspace_id}/file-attachments/{file_attachment_id}": {
-      "patch": {
-        "operationId": "interfaces_api_views_workspace_file_attachment_update_workspace_file_attachment",
-        "summary": "Update Workspace File Attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "file_attachment_id",
-            "schema": {
-              "format": "uuid",
-              "title": "File Attachment Id",
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkspaceFileAttachmentGetResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "description": "Update a workspace file attachment's metadata.",
-        "tags": [
-          "Workspace File Attachments"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/WorkspaceFileAttachmentPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "interfaces_api_views_workspace_file_attachment_remove_workspace_file_attachment",
-        "summary": "Remove Workspace File Attachment",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "file_attachment_id",
-            "schema": {
-              "format": "uuid",
-              "title": "File Attachment Id",
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "description": "Remove a file attachment from a workspace.",
-        "tags": [
-          "Workspace File Attachments"
-        ],
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/api/data/workspaces/{workspace_id}/file-attachments/{file_attachment_id}/download": {
-      "get": {
-        "operationId": "interfaces_api_views_workspace_file_attachment_get_workspace_file_attachment_download",
-        "summary": "Get Workspace File Attachment Download",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "file_attachment_id",
-            "schema": {
-              "format": "uuid",
-              "title": "File Attachment Id",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "token",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Token"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "description": "Download a workspace file attachment.",
-        "tags": [
-          "Workspace File Attachments"
-        ],
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ]
-      }
-    },
     "/api/data/roles": {
       "get": {
         "operationId": "interfaces_api_views_role_get_roles",
@@ -3065,6 +2498,183 @@
           },
           "required": true
         },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/data/things/markers": {
+      "get": {
+        "operationId": "interfaces_api_views_thing_get_thing_markers",
+        "summary": "Get Thing Markers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "schema": {
+              "default": [],
+              "description": "Filter markers by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter markers by workspace ID."
+          },
+          {
+            "in": "query",
+            "name": "bbox",
+            "schema": {
+              "default": [],
+              "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+              "items": {
+                "type": "string"
+              },
+              "title": "Bbox",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}"
+          },
+          {
+            "in": "query",
+            "name": "site_type",
+            "schema": {
+              "default": [],
+              "description": "Filter markers by site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Site Type",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter markers by site type."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ThingMarkerResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get lean marker data for public Things plus private Things visible to the authenticated user.",
+        "tags": [
+          "Things"
+        ],
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/data/things/site-summaries": {
+      "get": {
+        "operationId": "interfaces_api_views_thing_get_thing_site_summaries",
+        "summary": "Get Thing Site Summaries",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "schema": {
+              "default": [],
+              "description": "Filter site summaries by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter site summaries by workspace ID."
+          },
+          {
+            "in": "query",
+            "name": "site_type",
+            "schema": {
+              "default": [],
+              "description": "Filter site summaries by site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Site Type",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter site summaries by site type."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ThingSiteSummaryResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get lean site summary data for public Things and Things associated with the authenticated user.",
+        "tags": [
+          "Things"
+        ],
         "security": [
           {
             "SessionAuth": []
@@ -4062,6 +3672,60 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Page number (1-based).",
+              "title": "Page"
+            },
+            "required": false,
+            "description": "Page number (1-based)."
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            },
+            "required": false,
+            "description": "The number of items per page."
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "default": [],
+              "description": "Filter by file attachment type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter by file attachment type."
           }
         ],
         "responses": {
@@ -4208,23 +3872,162 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "title": "MultiPartBodyParams",
-                "type": "object",
                 "properties": {
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
-                  },
                   "file": {
                     "format": "binary",
                     "title": "File",
                     "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Description"
+                  },
+                  "file_attachment_type": {
+                    "title": "File Attachment Type",
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "file_attachment_type",
-                  "file"
-                ]
+                  "file",
+                  "file_attachment_type"
+                ],
+                "title": "MultiPartBodyParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "interfaces_api_views_thing_replace_thing_file_attachment",
+        "summary": "Replace Thing File Attachment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thing_id",
+            "schema": {
+              "format": "uuid",
+              "title": "Thing Id",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Replace a file attachment for a thing.",
+        "tags": [
+          "Things"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Description"
+                  },
+                  "file_attachment_type": {
+                    "title": "File Attachment Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file",
+                  "file_attachment_type"
+                ],
+                "title": "MultiPartBodyParams",
+                "type": "object"
               }
             }
           },
@@ -5009,6 +4812,68 @@
           },
           "required": true
         },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/data/datastreams/visualization-bootstrap": {
+      "get": {
+        "operationId": "interfaces_api_views_datastream_get_datastream_visualization_bootstrap",
+        "summary": "Get Datastream Visualization Bootstrap",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "schema": {
+              "default": [],
+              "description": "Filter visualization bootstrap datastreams by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter visualization bootstrap datastreams by workspace ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatastreamVisualizationBootstrapResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get the lean metadata required to bootstrap the visualization page.",
+        "tags": [
+          "Datastreams"
+        ],
         "security": [
           {
             "SessionAuth": []
@@ -6092,6 +5957,60 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Page number (1-based).",
+              "title": "Page"
+            },
+            "required": false,
+            "description": "Page number (1-based)."
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            },
+            "required": false,
+            "description": "The number of items per page."
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "default": [],
+              "description": "Filter by file attachment type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter by file attachment type."
           }
         ],
         "responses": {
@@ -6238,23 +6157,162 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "title": "MultiPartBodyParams",
-                "type": "object",
                 "properties": {
-                  "file_attachment_type": {
-                    "title": "File Attachment Type",
-                    "type": "string"
-                  },
                   "file": {
                     "format": "binary",
                     "title": "File",
                     "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Description"
+                  },
+                  "file_attachment_type": {
+                    "title": "File Attachment Type",
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "file_attachment_type",
-                  "file"
-                ]
+                  "file",
+                  "file_attachment_type"
+                ],
+                "title": "MultiPartBodyParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "interfaces_api_views_datastream_replace_datastream_file_attachment",
+        "summary": "Replace Datastream File Attachment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "datastream_id",
+            "schema": {
+              "format": "uuid",
+              "title": "Datastream Id",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Replace a file attachment for a datastream.",
+        "tags": [
+          "Datastreams"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Description"
+                  },
+                  "file_attachment_type": {
+                    "title": "File Attachment Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file",
+                  "file_attachment_type"
+                ],
+                "title": "MultiPartBodyParams",
+                "type": "object"
               }
             }
           },
@@ -11266,6 +11324,7 @@
                   "items": {
                     "enum": [
                       "name",
+                      "type",
                       "orchestrationSystemType",
                       "latestRunStatus",
                       "latestRunStartedAt",
@@ -11278,6 +11337,7 @@
                       "dataConnectionTransformerType",
                       "dataConnectionLoaderType",
                       "-name",
+                      "-type",
                       "-orchestrationSystemType",
                       "-latestRunStatus",
                       "-latestRunStartedAt",
@@ -11320,6 +11380,21 @@
             },
             "required": false,
             "description": "Filter by workspace ID."
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "default": [],
+              "description": "Filter by task type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            },
+            "required": false,
+            "description": "Filter by task type."
           },
           {
             "in": "query",
@@ -11759,6 +11834,60 @@
               "title": "Expand Related"
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "include_mappings",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Whether to include mapping details in task responses.",
+              "title": "Include Mappings"
+            },
+            "required": false,
+            "description": "Whether to include mapping details in task responses."
+          },
+          {
+            "in": "query",
+            "name": "include_latest_run_result",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Whether to include the full latest run result payload in task responses.",
+              "title": "Include Latest Run Result"
+            },
+            "required": false,
+            "description": "Whether to include the full latest run result payload in task responses."
+          },
+          {
+            "in": "query",
+            "name": "include_data_connection_settings",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Whether to include extractor, transformer, and loader settings when data connections are expanded.",
+              "title": "Include Data Connection Settings"
+            },
+            "required": false,
+            "description": "Whether to include extractor, transformer, and loader settings when data connections are expanded."
           }
         ],
         "responses": {
@@ -13781,6 +13910,18 @@
           "isPrivate": {
             "title": "Isprivate",
             "type": "boolean"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           }
         },
         "required": [
@@ -14455,6 +14596,18 @@
             ],
             "title": "Expiresat"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "roleId": {
             "format": "uuid",
             "title": "Roleid",
@@ -14520,143 +14673,6 @@
           }
         },
         "title": "APIKeyPatchBody",
-        "type": "object"
-      },
-      "WorkspaceFileAttachmentQueryParameters": {
-        "properties": {
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The number of items per page.",
-            "title": "Page Size"
-          },
-          "type": {
-            "default": [],
-            "description": "Filter by file attachment type.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Type",
-            "type": "array"
-          }
-        },
-        "title": "WorkspaceFileAttachmentQueryParameters",
-        "type": "object"
-      },
-      "WorkspaceFileAttachmentGetResponse": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "contentType": {
-            "title": "Contenttype",
-            "type": "string"
-          },
-          "sizeBytes": {
-            "title": "Sizebytes",
-            "type": "integer"
-          },
-          "link": {
-            "title": "Link",
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "title": "Createdat",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "title": "Updatedat",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "name",
-          "description",
-          "contentType",
-          "sizeBytes",
-          "link",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "WorkspaceFileAttachmentGetResponse",
-        "type": "object"
-      },
-      "WorkspaceFileAttachmentPatchBody": {
-        "properties": {
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "title": "WorkspaceFileAttachmentPatchBody",
         "type": "object"
       },
       "RoleQueryParameters": {
@@ -14945,9 +14961,24 @@
       },
       "FileAttachmentGetResponse": {
         "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "link": {
             "title": "Link",
@@ -14959,6 +14990,7 @@
           }
         },
         "required": [
+          "id",
           "name",
           "link",
           "fileAttachmentType"
@@ -15359,6 +15391,18 @@
             "title": "Isprivate",
             "type": "boolean"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "format": "uuid",
             "title": "Workspaceid",
@@ -15379,6 +15423,173 @@
           "location"
         ],
         "title": "ThingPostBody",
+        "type": "object"
+      },
+      "ThingMarkerQueryParameters": {
+        "properties": {
+          "workspace_id": {
+            "default": [],
+            "description": "Filter markers by workspace ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          },
+          "bbox": {
+            "default": [],
+            "description": "Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
+            "items": {
+              "type": "string"
+            },
+            "title": "Bbox",
+            "type": "array"
+          },
+          "site_type": {
+            "default": [],
+            "description": "Filter markers by site type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Site Type",
+            "type": "array"
+          }
+        },
+        "title": "ThingMarkerQueryParameters",
+        "type": "object"
+      },
+      "ThingMarkerResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string"
+          },
+          "siteType": {
+            "maxLength": 200,
+            "title": "Sitetype",
+            "type": "string"
+          },
+          "isPrivate": {
+            "title": "Isprivate",
+            "type": "boolean"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "siteType",
+          "isPrivate",
+          "latitude",
+          "longitude"
+        ],
+        "title": "ThingMarkerResponse",
+        "type": "object"
+      },
+      "ThingSiteSummaryQueryParameters": {
+        "properties": {
+          "workspace_id": {
+            "default": [],
+            "description": "Filter site summaries by workspace ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          },
+          "site_type": {
+            "default": [],
+            "description": "Filter site summaries by site type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Site Type",
+            "type": "array"
+          }
+        },
+        "title": "ThingSiteSummaryQueryParameters",
+        "type": "object"
+      },
+      "ThingSiteSummaryResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string"
+          },
+          "samplingFeatureCode": {
+            "maxLength": 200,
+            "title": "Samplingfeaturecode",
+            "type": "string"
+          },
+          "siteType": {
+            "maxLength": 200,
+            "title": "Sitetype",
+            "type": "string"
+          },
+          "isPrivate": {
+            "title": "Isprivate",
+            "type": "boolean"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagGetResponse"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "samplingFeatureCode",
+          "siteType",
+          "isPrivate",
+          "latitude",
+          "longitude",
+          "tags"
+        ],
+        "title": "ThingSiteSummaryResponse",
         "type": "object"
       },
       "VocabularyQueryParameters": {
@@ -15601,6 +15812,48 @@
           "key"
         ],
         "title": "TagDeleteBody",
+        "type": "object"
+      },
+      "FileAttachmentQueryParameters": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "type": {
+            "default": [],
+            "description": "Filter by file attachment type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Type",
+            "type": "array"
+          }
+        },
+        "title": "FileAttachmentQueryParameters",
         "type": "object"
       },
       "FileAttachmentDeleteBody": {
@@ -16576,16 +16829,23 @@
             "type": "string"
           },
           "encodingType": {
-            "enum": [
-              "application/pdf",
-              "http://www.opengis.net/doc/IS/SensorML/2.0",
-              "text/html",
-              "text/plain",
-              "application/json"
+            "anyOf": [
+              {
+                "enum": [
+                  "application/pdf",
+                  "http://www.opengis.net/doc/IS/SensorML/2.0",
+                  "text/html",
+                  "text/plain",
+                  "application/json"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
             ],
             "maxLength": 255,
-            "title": "Encodingtype",
-            "type": "string"
+            "title": "Encodingtype"
           },
           "manufacturer": {
             "anyOf": [
@@ -16926,6 +17186,18 @@
               }
             ],
             "title": "Intendedtimespacingunit"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           }
         },
         "required": [
@@ -16945,6 +17217,264 @@
           "timeAggregationIntervalUnit"
         ],
         "title": "DatastreamPostBody",
+        "type": "object"
+      },
+      "DatastreamVisualizationBootstrapQueryParameters": {
+        "properties": {
+          "workspace_id": {
+            "default": [],
+            "description": "Filter visualization bootstrap datastreams by workspace ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          }
+        },
+        "title": "DatastreamVisualizationBootstrapQueryParameters",
+        "type": "object"
+      },
+      "DatastreamVisualizationBootstrapResponse": {
+        "properties": {
+          "things": {
+            "items": {
+              "$ref": "#/components/schemas/VisualizationThingResponse"
+            },
+            "title": "Things",
+            "type": "array"
+          },
+          "datastreams": {
+            "items": {
+              "$ref": "#/components/schemas/VisualizationDatastreamResponse"
+            },
+            "title": "Datastreams",
+            "type": "array"
+          },
+          "observedProperties": {
+            "items": {
+              "$ref": "#/components/schemas/VisualizationObservedPropertyResponse"
+            },
+            "title": "Observedproperties",
+            "type": "array"
+          },
+          "processingLevels": {
+            "items": {
+              "$ref": "#/components/schemas/VisualizationProcessingLevelResponse"
+            },
+            "title": "Processinglevels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "things",
+          "datastreams",
+          "observedProperties",
+          "processingLevels"
+        ],
+        "title": "DatastreamVisualizationBootstrapResponse",
+        "type": "object"
+      },
+      "VisualizationDatastreamResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "thingId": {
+            "format": "uuid",
+            "title": "Thingid",
+            "type": "string"
+          },
+          "observedPropertyId": {
+            "format": "uuid",
+            "title": "Observedpropertyid",
+            "type": "string"
+          },
+          "processingLevelId": {
+            "format": "uuid",
+            "title": "Processinglevelid",
+            "type": "string"
+          },
+          "unitId": {
+            "format": "uuid",
+            "title": "Unitid",
+            "type": "string"
+          },
+          "noDataValue": {
+            "title": "Nodatavalue",
+            "type": "number"
+          },
+          "valueCount": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuecount"
+          },
+          "phenomenonBeginTime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenonbegintime"
+          },
+          "phenomenonEndTime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenonendtime"
+          },
+          "intendedTimeSpacing": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intendedtimespacing"
+          },
+          "intendedTimeSpacingUnit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "seconds",
+                  "minutes",
+                  "hours",
+                  "days"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intendedtimespacingunit"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "thingId",
+          "observedPropertyId",
+          "processingLevelId",
+          "unitId",
+          "noDataValue"
+        ],
+        "title": "VisualizationDatastreamResponse",
+        "type": "object"
+      },
+      "VisualizationObservedPropertyResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "code": {
+            "maxLength": 255,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code"
+        ],
+        "title": "VisualizationObservedPropertyResponse",
+        "type": "object"
+      },
+      "VisualizationProcessingLevelResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "VisualizationProcessingLevelResponse",
+        "type": "object"
+      },
+      "VisualizationThingResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string"
+          },
+          "samplingFeatureCode": {
+            "maxLength": 200,
+            "title": "Samplingfeaturecode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "samplingFeatureCode"
+        ],
+        "title": "VisualizationThingResponse",
         "type": "object"
       },
       "DatastreamPatchBody": {
@@ -17448,6 +17978,18 @@
             },
             "title": "Resultqualifiercodes",
             "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           }
         },
         "required": [
@@ -17765,6 +18307,18 @@
             "title": "Code",
             "type": "string"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -18027,6 +18581,18 @@
             "title": "Type",
             "type": "string"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -18250,16 +18816,23 @@
             "type": "string"
           },
           "encodingType": {
-            "enum": [
-              "application/pdf",
-              "http://www.opengis.net/doc/IS/SensorML/2.0",
-              "text/html",
-              "text/plain",
-              "application/json"
+            "anyOf": [
+              {
+                "enum": [
+                  "application/pdf",
+                  "http://www.opengis.net/doc/IS/SensorML/2.0",
+                  "text/html",
+                  "text/plain",
+                  "application/json"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
             ],
             "maxLength": 255,
-            "title": "Encodingtype",
-            "type": "string"
+            "title": "Encodingtype"
           },
           "manufacturer": {
             "anyOf": [
@@ -18365,16 +18938,23 @@
             "type": "string"
           },
           "encodingType": {
-            "enum": [
-              "application/pdf",
-              "http://www.opengis.net/doc/IS/SensorML/2.0",
-              "text/html",
-              "text/plain",
-              "application/json"
+            "anyOf": [
+              {
+                "enum": [
+                  "application/pdf",
+                  "http://www.opengis.net/doc/IS/SensorML/2.0",
+                  "text/html",
+                  "text/plain",
+                  "application/json"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
             ],
             "maxLength": 255,
-            "title": "Encodingtype",
-            "type": "string"
+            "title": "Encodingtype"
           },
           "manufacturer": {
             "anyOf": [
@@ -18441,6 +19021,18 @@
             ],
             "title": "Methodcode"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -18475,16 +19067,23 @@
             "type": "string"
           },
           "encodingType": {
-            "enum": [
-              "application/pdf",
-              "http://www.opengis.net/doc/IS/SensorML/2.0",
-              "text/html",
-              "text/plain",
-              "application/json"
+            "anyOf": [
+              {
+                "enum": [
+                  "application/pdf",
+                  "http://www.opengis.net/doc/IS/SensorML/2.0",
+                  "text/html",
+                  "text/plain",
+                  "application/json"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
             ],
             "maxLength": 255,
-            "title": "Encodingtype",
-            "type": "string"
+            "title": "Encodingtype"
           },
           "manufacturer": {
             "anyOf": [
@@ -18764,6 +19363,18 @@
             ],
             "title": "Explanation"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -19028,6 +19639,18 @@
             "title": "Description",
             "type": "string"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "anyOf": [
               {
@@ -19235,6 +19858,13 @@
             "title": "Type",
             "type": "string"
           },
+          "notificationRecipientEmails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notificationrecipientemails",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -19317,6 +19947,13 @@
             "title": "Type",
             "type": "string"
           },
+          "notificationRecipientEmails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notificationrecipientemails",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -19382,6 +20019,25 @@
           "type": {
             "title": "Type",
             "type": "string"
+          },
+          "notificationRecipientEmails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notificationrecipientemails",
+            "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           },
           "workspaceId": {
             "anyOf": [
@@ -19460,6 +20116,13 @@
           "type": {
             "title": "Type",
             "type": "string"
+          },
+          "notificationRecipientEmails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notificationrecipientemails",
+            "type": "array"
           },
           "extractor": {
             "anyOf": [
@@ -19544,6 +20207,7 @@
                 "items": {
                   "enum": [
                     "name",
+                    "type",
                     "orchestrationSystemType",
                     "latestRunStatus",
                     "latestRunStartedAt",
@@ -19556,6 +20220,7 @@
                     "dataConnectionTransformerType",
                     "dataConnectionLoaderType",
                     "-name",
+                    "-type",
                     "-orchestrationSystemType",
                     "-latestRunStatus",
                     "-latestRunStartedAt",
@@ -19588,6 +20253,15 @@
               "type": "string"
             },
             "title": "Workspace Id",
+            "type": "array"
+          },
+          "type": {
+            "default": [],
+            "description": "Filter by task type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Type",
             "type": "array"
           },
           "data_connection_id": {
@@ -19909,6 +20583,42 @@
               }
             ],
             "title": "Expand Related"
+          },
+          "include_mappings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether to include mapping details in task responses.",
+            "title": "Include Mappings"
+          },
+          "include_latest_run_result": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether to include the full latest run result payload in task responses.",
+            "title": "Include Latest Run Result"
+          },
+          "include_data_connection_settings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether to include extractor, transformer, and loader settings when data connections are expanded.",
+            "title": "Include Data Connection Settings"
           }
         },
         "title": "TaskQueryParameters",
@@ -19942,6 +20652,11 @@
               }
             ],
             "title": "Workspaceid"
+          },
+          "taskCount": {
+            "default": 0,
+            "title": "Taskcount",
+            "type": "integer"
           }
         },
         "required": [
@@ -19956,6 +20671,15 @@
         "properties": {
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "default": "ETL",
+            "enum": [
+              "ETL",
+              "Aggregation"
+            ],
+            "title": "Type",
             "type": "string"
           },
           "extractorVariables": {
@@ -19979,7 +20703,14 @@
             "$ref": "#/components/schemas/WorkspaceSummaryResponse"
           },
           "dataConnection": {
-            "$ref": "#/components/schemas/DataConnectionSummaryResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataConnectionSummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "orchestrationSystem": {
             "$ref": "#/components/schemas/OrchestrationSystemSummaryResponse"
@@ -20004,6 +20735,13 @@
               }
             ]
           },
+          "targetIdentifiers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Targetidentifiers",
+            "type": "array"
+          },
           "mappings": {
             "items": {
               "$ref": "#/components/schemas/TaskMappingResponse"
@@ -20016,7 +20754,6 @@
           "name",
           "id",
           "workspace",
-          "dataConnection",
           "orchestrationSystem",
           "mappings"
         ],
@@ -20105,6 +20842,28 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "failureCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurecount"
           }
         },
         "required": [
@@ -20197,6 +20956,15 @@
             "title": "Name",
             "type": "string"
           },
+          "type": {
+            "default": "ETL",
+            "enum": [
+              "ETL",
+              "Aggregation"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
           "extractorVariables": {
             "title": "Extractorvariables",
             "type": "object"
@@ -20220,9 +20988,16 @@
             "type": "string"
           },
           "dataConnectionId": {
-            "format": "uuid",
-            "title": "Dataconnectionid",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataconnectionid"
           },
           "orchestrationSystemId": {
             "format": "uuid",
@@ -20249,6 +21024,13 @@
               }
             ]
           },
+          "targetIdentifiers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Targetidentifiers",
+            "type": "array"
+          },
           "mappings": {
             "items": {
               "$ref": "#/components/schemas/TaskMappingResponse"
@@ -20261,7 +21043,6 @@
           "name",
           "id",
           "workspaceId",
-          "dataConnectionId",
           "orchestrationSystemId",
           "mappings"
         ],
@@ -20313,6 +21094,15 @@
             "title": "Name",
             "type": "string"
           },
+          "type": {
+            "default": "ETL",
+            "enum": [
+              "ETL",
+              "Aggregation"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
           "extractorVariables": {
             "title": "Extractorvariables",
             "type": "object"
@@ -20325,15 +21115,34 @@
             "title": "Loadervariables",
             "type": "object"
           },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "workspaceId": {
             "format": "uuid",
             "title": "Workspaceid",
             "type": "string"
           },
           "dataConnectionId": {
-            "format": "uuid",
-            "title": "Dataconnectionid",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataconnectionid"
           },
           "orchestrationSystemId": {
             "format": "uuid",
@@ -20361,7 +21170,6 @@
         "required": [
           "name",
           "workspaceId",
-          "dataConnectionId",
           "orchestrationSystemId",
           "mappings"
         ],
@@ -20448,6 +21256,14 @@
         "properties": {
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "ETL",
+              "Aggregation"
+            ],
+            "title": "Type",
             "type": "string"
           },
           "extractorVariables": {
@@ -20766,6 +21582,18 @@
               }
             ],
             "title": "Finishedat"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           }
         },
         "required": [
@@ -20940,6 +21768,11 @@
                 "type": "null"
               }
             ]
+          },
+          "taskCount": {
+            "default": 0,
+            "title": "Taskcount",
+            "type": "integer"
           }
         },
         "required": [
@@ -20961,6 +21794,18 @@
             "maxLength": 255,
             "title": "Type",
             "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
           },
           "workspaceId": {
             "anyOf": [

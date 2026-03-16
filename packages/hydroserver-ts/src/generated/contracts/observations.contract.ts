@@ -10,7 +10,7 @@ export namespace ObservationContract {
   export type PostBody        = Data.components['schemas']['ObservationPostBody']
   export type PatchBody       = Partial<Data.components['schemas']['ObservationPostBody']>
   export type DeleteBody      = never
-  export const writableKeys = ["phenomenonTime","result","resultQualifierCodes"] as const
+  export const writableKeys = ["phenomenonTime","result","resultQualifierCodes","id"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

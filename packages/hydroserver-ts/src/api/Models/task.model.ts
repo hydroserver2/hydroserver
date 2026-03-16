@@ -9,11 +9,12 @@ export class Task {
   name = ''
   type: TaskType = 'ETL'
   paused = true
-  nextRunAt?: TaskRun = undefined
+  nextRunAt: string | null = null
   latestRun?: TaskRun = undefined
   extractorVariables = {}
   transformerVariables = {}
   loaderVariables = {}
+  targetIdentifiers: string[] = []
   mappings: Mapping[] = []
   workspaceId = ''
   dataConnectionId: string | null = ''
@@ -33,6 +34,7 @@ export interface TaskExpanded {
   extractorVariables: Record<string, any>
   transformerVariables: Record<string, any>
   loaderVariables: Record<string, any>
+  targetIdentifiers?: string[]
   mappings: Mapping[]
   latestRun?: TaskRun
   workspace: Workspace
@@ -43,9 +45,13 @@ export interface TaskExpanded {
 
 export type IntervalPeriod = 'minutes' | 'hours' | 'days'
 
+export type TaskRunResult = Record<string, unknown>
+
 export type TaskRun = {
   status: string
-  result: {}
+  message?: string | null
+  failureCount?: number | null
+  result: TaskRunResult | null
   startedAt?: string
   finishedAt?: string
   id: string

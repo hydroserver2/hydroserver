@@ -5,6 +5,7 @@ export class DataConnection {
   name = ''
   id = ''
   type = 'ETL'
+  notificationRecipientEmails: string[] = []
   workspace: Workspace | null = null
   extractor: ExtractorConfig = JSON.parse(
     JSON.stringify(extractorDefaults['local'])
