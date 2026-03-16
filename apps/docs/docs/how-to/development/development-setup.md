@@ -21,7 +21,7 @@ Before starting, make sure you have the following software installed on your mac
 1. Clone the repository:
    ```bash
    git clone https://github.com/hydroserver2/hydroserver.git
-   cd hydroserver/docker/develop
+   cd hydroserver/deploy/dev
    ```
 2. Create environment variables for static and media file paths. The default locations of these folders should be `/static` and `/media` within the `hydroserver-api-services` project folder.
    Mac/Linux:

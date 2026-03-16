@@ -1,38 +1,40 @@
 # HydroServer
 
-This repository now serves as the HydroServer monorepo. It contains the user-facing apps, backend services, and shared packages that make up the core HydroServer product.
+This repository now serves as the HydroServer monorepo. It contains the core HydroServer apps, services, deployment assets, and shared packages in one release boundary.
 
 - Access the [HydroServer issue tracker](https://github.com/hydroserver2/hydroserver/issues)
 - Access [HydroServer documentation](https://hydroserver2.github.io/hydroserver/)
 
 HydroServer is a software cyberinfrastructure platform created to support collection, management, and sharing of time series of observations from hydrologic and evironmental monitoring sites. Under development at the [Utah Water Research Laboratory](https://uwrl.usu.edu/) at [Utah State University](https://www.usu.edu/), HydroServer is designed to be an open platform that enables research groups, agencies, organizations, and practitioners to more easily collect and manage streaming observations from environmental sensors.
 
-HydroServer consists of the following components:
+HydroServer is organized as follows:
 
-**Documentation App** (`apps/docs`): The VitePress documentation site for HydroServer.
+**Apps** (`apps/`)
 
-**HydroServer Data Management Web Application** (`apps/data-management`): A web application for creating and managing monitoring sites, data streams, and associated metadata.
+- `apps/docs`: the VitePress documentation site for HydroServer.
+- `apps/data-management`: the end-user web application for creating and managing monitoring sites, datastreams, metadata, and orchestration settings.
 
-- Map interface for browsing data collection sites
-- User interface for registering sites and creating site metadata
-- User interface for creating data streams and associated metadata
-- An job orchestration user interface for configuring the automated extraction, transformation, and loading of source data to their destinations.
-- A data management API for programmatically managing site and datastream metadata
+**Services** (`services/`)
 
-**HydroServer API Service** (`services/api`): A Python Django implementation of the Open Geospatial Consortium's SensorThings API for HydroServer along with HydroServer's data management and orchestration backend.
+- `services/api`: the Django backend that owns the HydroServer API contract and runtime behavior, including SensorThings, data management, and orchestration.
 
-- SensorThings Part 1: Sensing Version 1.1 API implementation in Python using Django
-- Data ingest to HydroServer from any device capable of HTTP POST requests
-- Data querying via a REST API
+**Packages** (`packages/`)
 
-**HydroServer Streaming Data Loader** (`apps/streaming-data-loader`): A desktop/server app for loading streaming data into a HydroServer instance.
+- `packages/hydroserver-ts`: the shared TypeScript client used by browser-based HydroServer applications.
+- `packages/hydroserverpy`: the shared Python client used by HydroServer Python integrations and tooling.
+- `packages/etl-core`: the reserved package boundary for the ETL framework that will be extracted from `hydroserverpy` in a later migration step.
 
-- Cross platform app for running on Windows, Mac, or Linux
-- Silent updater for loading data to a HydroServer instance from delimited text files
+**Deployment** (`deploy/`)
 
-**HydroServer TypeScript Client** (`packages/hydroserver-ts`): The shared TypeScript client used by browser-based HydroServer applications.
+- `deploy/dev`: local development deployment assets.
+- `deploy/prod`: production deployment assets.
+- `deploy/gcp`: Google Cloud deployment assets.
 
-**HydroServer Python Client** (`packages/hydroserverpy`): The shared Python client used by HydroServer Python integrations and tooling.
+**System Tests** (`tests/`)
+
+- `tests/e2e`: end-to-end tests for the HydroServer product as a whole.
+
+Per the monorepo proposal, the QC App and Streaming Data Loader remain outside this core repository for now and continue to live in their own GitHub repositories.
 
 ## History
 

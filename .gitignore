@@ -1,9 +1,13 @@
 node_modules
+**/node_modules/
 **/.vitepress/cache/
 **/.vitepress/dist/
+**/__pycache__/
+**/*.pyc
 
 .idea*
 .DS_Store
 .terraform*
 terraform.tfstate*
 .env
+.venv

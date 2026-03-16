@@ -33,11 +33,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 20
           cache: npm
+          cache-dependency-path: apps/docs/package-lock.json
       - name: Install dependencies
+        working-directory: apps/docs
         run: npm install --also=dev
       - name: Build
+        working-directory: apps/docs
         run: npm run docs:build
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -45,7 +48,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload the dist folder
-          path: docs/.vitepress/dist
+          path: apps/docs/docs/.vitepress/dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
