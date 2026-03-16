@@ -305,18 +305,20 @@ describe('task run detail helpers', () => {
           {
             time: '2026-03-12T12:00:00Z',
             levelname: 'INFO',
-            msg: 'ETL task started',
+            stage: 'EXTRACT',
+            msg: 'Starting extract',
           },
           {
             timestamp: '2026-03-12T12:01:00Z',
             level: 'INFO',
-            message: 'starting transform step',
+            stage: 'TRANSFORM',
+            message: 'Starting transform',
           },
-          'plain log line',
           {
             timestamp: '2026-03-12T12:02:00Z',
             level: 'INFO',
-            message: 'starting load step',
+            stage: 'LOAD',
+            message: 'Starting load',
           },
         ],
         error: 'Top-level error',
@@ -331,9 +333,6 @@ describe('task run detail helpers', () => {
       'Extract',
       'Transform',
       'Load',
-      'Error',
-      'Traceback',
-      'Details',
     ])
 
     const extractSection = sections[0]
@@ -342,29 +341,45 @@ describe('task run detail helpers', () => {
       expect(extractSection.entries[0]).toEqual({
         timestamp: '2026-03-12T12:00:00Z',
         level: 'INFO',
-        message: 'ETL task started',
+        stage: 'EXTRACT',
+        message: 'Starting extract',
       })
-    }
-
-    const detailsSection = sections[5]
-    expect(detailsSection?.type).toBe('text')
-    if (detailsSection?.type === 'text') {
-      expect(detailsSection.text).toContain('extra_context')
     }
   })
 
-  it('parses string logs, summary metrics, runtime context, and target results', () => {
+  it('prefers staged ETL sections over summary when structured logs exist', () => {
     const run: TaskRun = {
       id: 'run-1',
       status: 'SUCCESS',
       startedAt: '2026-03-12T12:00:00Z',
       finishedAt: '2026-03-12T12:05:00Z',
       result: {
-        logs: [
-          '2026-03-12T12:00:00Z INFO starting extract step',
-          'unstructured line',
-          '2026-03-12T12:01:00Z INFO starting load step',
-        ].join('\n'),
+        log_entries: [
+          {
+            timestamp: '2026-03-12T12:00:00Z',
+            level: 'INFO',
+            stage: 'EXTRACT',
+            message: 'Starting extract',
+          },
+          {
+            timestamp: '2026-03-12T12:00:10Z',
+            level: 'INFO',
+            stage: 'EXTRACT',
+            message: 'Requesting data from source URI',
+          },
+          {
+            timestamp: '2026-03-12T12:01:00Z',
+            level: 'INFO',
+            stage: 'TRANSFORM',
+            message: 'Starting transform',
+          },
+          {
+            timestamp: '2026-03-12T12:02:00Z',
+            level: 'WARNING',
+            stage: 'LOAD',
+            message: 'No new observations for target-1 after filtering; skipping.',
+          },
+        ],
         success_count: 1,
         failure_count: 1,
         skipped_count: 0,
@@ -396,46 +411,52 @@ describe('task run detail helpers', () => {
     expect(sections.map((section) => section.title)).toEqual(
       expect.arrayContaining([
         'Extract',
+        'Transform',
         'Load',
-        'Summary',
-        'Runtime context',
-        'Target results',
       ])
     )
+    expect(sections.map((section) => section.title)).toEqual([
+      'Extract',
+      'Transform',
+      'Load',
+    ])
 
     const summarySection = sections.find((section) => section.title === 'Summary')
-    expect(summarySection?.type).toBe('lines')
-    if (summarySection?.type === 'lines') {
-      expect(summarySection.entries).toEqual(
-        expect.arrayContaining([
+    expect(summarySection).toBeUndefined()
+    expect(
+      sections.find((section) => section.title === 'Target results')
+    ).toBeUndefined()
+    expect(
+      sections.find((section) => section.title === 'Runtime context')
+    ).toBeUndefined()
+  })
+
+  it('shows summary only when no staged ETL logs exist', () => {
+    const run: TaskRun = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      result: {
+        success_count: 1,
+        failure_count: 1,
+        skipped_count: 0,
+        values_loaded_total: 12,
+      },
+    }
+
+    const sections = buildTaskRunDetailSections(run)
+
+    expect(sections).toEqual([
+      {
+        title: 'Summary',
+        type: 'lines',
+        entries: expect.arrayContaining([
           { level: undefined, message: 'Values loaded: 12' },
           { level: undefined, message: 'Successful targets: 1' },
           { level: 'FAILED', message: 'Failed targets: 1' },
           { level: undefined, message: 'Skipped targets: 0' },
-        ])
-      )
-    }
-
-    const targetSection = sections.find(
-      (section) => section.title === 'Target results'
-    )
-    expect(targetSection?.type).toBe('lines')
-    if (targetSection?.type === 'lines') {
-      expect(
-        targetSection.entries.some(
-          (entry) =>
-            entry.level === 'FAILED' &&
-            entry.message.includes('Unable to load target-1')
-        )
-      ).toBe(true)
-      expect(
-        targetSection.entries.some(
-          (entry) =>
-            entry.level === 'SUCCESS' &&
-            entry.message.includes('12 loaded')
-        )
-      ).toBe(true)
-    }
+        ]),
+      },
+    ])
   })
 
   it('returns the default logs section when no displayable details exist', () => {

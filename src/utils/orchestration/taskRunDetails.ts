@@ -17,6 +17,7 @@ export type TaskRunDetailEntry = {
   timestamp?: string
   level?: string
   message: string
+  stage?: string
 }
 
 export type TaskRunDetailSection =
@@ -206,6 +207,7 @@ const normalizeLogEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] =>
       return {
         timestamp: firstString(record.timestamp, record.time) ?? '',
         level: firstString(record.level, record.levelname) ?? '',
+        stage: firstString(record.stage) ?? '',
         message:
           firstString(record.message, record.msg) ?? prettyJson(record),
       }
@@ -235,20 +237,78 @@ const normalizeLogEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] =>
 
 const stageFromMessage = (message: string) => {
   const lower = message.toLowerCase()
-  if (lower.startsWith('etl task')) return 'Extract'
-  if (lower.startsWith('transformer timestamp')) return 'Extract'
-  if (lower.startsWith('runtime variables resolved')) return 'Extract'
-  if (lower.startsWith('task variables resolved')) return 'Extract'
-  if (lower.startsWith('resolved runtime source uri')) return 'Extract'
-  if (lower.startsWith('extractor returned payload')) return 'Extract'
-  if (lower.includes('starting extract')) return 'Extract'
-  if (lower.includes('starting transform')) return 'Transform'
-  if (lower.includes('starting load')) return 'Load'
-  if (lower.includes('resolving runtime var')) return 'Extract'
-  if (lower.includes('requesting data from')) return 'Extract'
-  if (lower.includes('standardized dataframe')) return 'Transform'
-  if (lower.includes('uploading')) return 'Load'
+  if (lower.startsWith('etl task')) return 'EXTRACT'
+  if (lower.startsWith('transformer timestamp')) return 'EXTRACT'
+  if (lower.startsWith('runtime variables resolved')) return 'EXTRACT'
+  if (lower.startsWith('task variables resolved')) return 'EXTRACT'
+  if (lower.startsWith('resolved runtime source uri')) return 'EXTRACT'
+  if (lower.startsWith('extractor returned payload')) return 'EXTRACT'
+  if (lower.includes('starting extract')) return 'EXTRACT'
+  if (lower.includes('starting transform')) return 'TRANSFORM'
+  if (lower.includes('starting load')) return 'LOAD'
+  if (lower.includes('resolving runtime var')) return 'EXTRACT'
+  if (lower.includes('requesting data from')) return 'EXTRACT'
+  if (lower.includes('standardized dataframe')) return 'TRANSFORM'
+  if (lower.includes('uploading')) return 'LOAD'
   return null
+}
+
+const normalizeStage = (stage?: string | null) => {
+  const normalized = `${stage || ''}`.trim().toUpperCase()
+  if (normalized === 'SETUP') return 'EXTRACT'
+  if (normalized === 'EXTRACT') return 'EXTRACT'
+  if (normalized === 'TRANSFORM') return 'TRANSFORM'
+  if (normalized === 'LOAD') return 'LOAD'
+  return null
+}
+
+const sectionTitleFromStage = (stage?: string | null) => {
+  const normalized = normalizeStage(stage)
+  if (normalized === 'EXTRACT') return 'Extract'
+  if (normalized === 'TRANSFORM') return 'Transform'
+  if (normalized === 'LOAD') return 'Load'
+  return null
+}
+
+const buildEtlLogSections = (
+  logEntries: TaskRunDetailEntry[]
+): TaskRunDetailSection[] => {
+  const entriesByStage: Record<'EXTRACT' | 'TRANSFORM' | 'LOAD', TaskRunDetailEntry[]> = {
+    EXTRACT: [],
+    TRANSFORM: [],
+    LOAD: [],
+  }
+  let currentStage: 'EXTRACT' | 'TRANSFORM' | 'LOAD' | null = null
+  let foundStage = false
+
+  logEntries.forEach((entry) => {
+    const explicitStage = normalizeStage(entry.stage)
+    const inferredStage = normalizeStage(stageFromMessage(entry.message || ''))
+    const nextStage =
+      explicitStage ??
+      inferredStage ??
+      currentStage ??
+      (foundStage ? null : 'EXTRACT')
+
+    if (!nextStage) return
+
+    currentStage = nextStage as 'EXTRACT' | 'TRANSFORM' | 'LOAD'
+    foundStage = true
+    entriesByStage[currentStage].push({
+      ...entry,
+      stage: currentStage,
+    })
+  })
+
+  if (!foundStage) return []
+
+  return (['EXTRACT', 'TRANSFORM', 'LOAD'] as const)
+    .filter((stage) => entriesByStage[stage].length > 0)
+    .map((stage) => ({
+      title: sectionTitleFromStage(stage) || 'Logs',
+      type: 'lines' as const,
+      entries: entriesByStage[stage],
+    }))
 }
 
 const buildSummaryEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] => {
@@ -320,33 +380,17 @@ export const buildTaskRunDetailSections = (
   const sections: TaskRunDetailSection[] = []
 
   const logEntries = normalizeLogEntries(result)
+  const etlLogSections = buildEtlLogSections(logEntries)
+  if (etlLogSections.length) {
+    return etlLogSections
+  }
+
   if (logEntries.length) {
-    const grouped: TaskRunDetailSection[] = []
-    let currentTitle = stageFromMessage(logEntries[0]?.message || '') || 'Logs'
-    let currentEntries: TaskRunDetailEntry[] = []
-
-    const pushSection = () => {
-      if (currentEntries.length) {
-        grouped.push({
-          title: currentTitle,
-          type: 'lines',
-          entries: currentEntries,
-        })
-      }
-    }
-
-    logEntries.forEach((entry) => {
-      const nextStage = stageFromMessage(entry.message || '')
-      if (nextStage && nextStage !== currentTitle) {
-        pushSection()
-        currentTitle = nextStage
-        currentEntries = []
-      }
-      currentEntries.push(entry)
+    sections.push({
+      title: 'Logs',
+      type: 'lines',
+      entries: logEntries,
     })
-
-    pushSection()
-    sections.push(...grouped)
   }
 
   const summaryEntries = buildSummaryEntries(result)
