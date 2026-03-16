@@ -84,7 +84,18 @@ class Transformer(ETLComponent, Timestamp, ABC):
         )
 
         df = df.copy()
-        df["timestamp"] = self.parse_series_to_utc(df["timestamp"])
+        raw_timestamps = df["timestamp"]
+        parsed_timestamps = self.parse_series_to_utc(raw_timestamps)
+
+        raw_strings = raw_timestamps.astype("string", copy=False).str.strip()
+        invalid_mask = parsed_timestamps.isna() & raw_strings.notna() & (raw_strings != "")
+        if invalid_mask.any():
+            raise ETLError(
+                "One or more timestamps could not be read using the current format and timezone settings. "
+                "Confirm how dates appear in the source file and update the transformer configuration to match."
+            )
+
+        df["timestamp"] = parsed_timestamps
 
         # Build target_id → ETLTargetPath lookup for operation dispatch
         target_path_map: dict[str, ETLTargetPath] = {
