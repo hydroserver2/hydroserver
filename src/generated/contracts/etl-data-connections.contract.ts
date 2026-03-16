@@ -10,7 +10,7 @@ export namespace EtlDataConnectionContract {
   export type PostBody        = Data.components['schemas']['DataConnectionPostBody']
   export type PatchBody       = Data.components['schemas']['DataConnectionPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["name","type","extractor","transformer","loader"] as const
+  export const writableKeys = ["name","type","notificationRecipientEmails","extractor","transformer","loader"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

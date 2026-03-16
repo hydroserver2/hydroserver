@@ -188,74 +188,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/file-attachments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Workspace File Attachments
-         * @description Get file attachments associated with a workspace.
-         */
-        get: operations["interfaces_api_views_workspace_file_attachment_get_workspace_file_attachments"];
-        put?: never;
-        /**
-         * Add Workspace File Attachment
-         * @description Add a file attachment to a workspace.
-         */
-        post: operations["interfaces_api_views_workspace_file_attachment_add_workspace_file_attachment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/workspaces/{workspace_id}/file-attachments/{file_attachment_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove Workspace File Attachment
-         * @description Remove a file attachment from a workspace.
-         */
-        delete: operations["interfaces_api_views_workspace_file_attachment_remove_workspace_file_attachment"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Workspace File Attachment
-         * @description Update a workspace file attachment's metadata.
-         */
-        patch: operations["interfaces_api_views_workspace_file_attachment_update_workspace_file_attachment"];
-        trace?: never;
-    };
-    "/api/data/workspaces/{workspace_id}/file-attachments/{file_attachment_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Workspace File Attachment Download
-         * @description Download a workspace file attachment.
-         */
-        get: operations["interfaces_api_views_workspace_file_attachment_get_workspace_file_attachment_download"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/roles": {
         parameters: {
             query?: never;
@@ -314,6 +246,46 @@ export interface paths {
          * @description Create a new Thing.
          */
         post: operations["interfaces_api_views_thing_create_thing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/things/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Thing Markers
+         * @description Get lean marker data for public Things plus private Things visible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_thing_get_thing_markers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/things/site-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Thing Site Summaries
+         * @description Get lean site summary data for public Things and Things associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_thing_get_thing_site_summaries"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -472,7 +444,11 @@ export interface paths {
          * @description Get all file attachments associated with a Thing.
          */
         get: operations["interfaces_api_views_thing_get_thing_file_attachments"];
-        put?: never;
+        /**
+         * Replace Thing File Attachment
+         * @description Replace a file attachment for a thing.
+         */
+        put: operations["interfaces_api_views_thing_replace_thing_file_attachment"];
         /**
          * Add Thing File Attachment
          * @description Add a file attachment to a thing.
@@ -506,6 +482,26 @@ export interface paths {
          * @description Create a new Datastream.
          */
         post: operations["interfaces_api_views_datastream_create_datastream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/datastreams/visualization-bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Datastream Visualization Bootstrap
+         * @description Get the lean metadata required to bootstrap the visualization page.
+         */
+        get: operations["interfaces_api_views_datastream_get_datastream_visualization_bootstrap"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -684,7 +680,11 @@ export interface paths {
          * @description Get all file attachments associated with a Datastream.
          */
         get: operations["interfaces_api_views_datastream_get_datastream_file_attachments"];
-        put?: never;
+        /**
+         * Replace Datastream File Attachment
+         * @description Replace a file attachment for a datastream.
+         */
+        put: operations["interfaces_api_views_datastream_replace_datastream_file_attachment"];
         /**
          * Add Datastream File Attachment
          * @description Add a file attachment to a datastream.
@@ -1480,6 +1480,8 @@ export interface components {
             name: string;
             /** Isprivate */
             isPrivate: boolean;
+            /** Id */
+            id?: string | null;
         };
         /** WorkspacePatchBody */
         WorkspacePatchBody: {
@@ -1706,6 +1708,8 @@ export interface components {
             isActive: boolean;
             /** Expiresat */
             expiresAt?: string | null;
+            /** Id */
+            id?: string | null;
             /**
              * Roleid
              * Format: uuid
@@ -1724,64 +1728,6 @@ export interface components {
             expiresAt?: string | null;
             /** Roleid */
             roleId?: string | null;
-        };
-        /** WorkspaceFileAttachmentQueryParameters */
-        WorkspaceFileAttachmentQueryParameters: {
-            /**
-             * Page
-             * @description Page number (1-based).
-             */
-            page?: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             */
-            page_size?: number | null;
-            /**
-             * Type
-             * @description Filter by file attachment type.
-             * @default []
-             */
-            type: string[];
-        };
-        /** WorkspaceFileAttachmentGetResponse */
-        WorkspaceFileAttachmentGetResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Type */
-            type: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Contenttype */
-            contentType: string;
-            /** Sizebytes */
-            sizeBytes: number;
-            /** Link */
-            link: string;
-            /**
-             * Createdat
-             * Format: date-time
-             */
-            createdAt: string;
-            /**
-             * Updatedat
-             * Format: date-time
-             */
-            updatedAt: string;
-        };
-        /** WorkspaceFileAttachmentPatchBody */
-        WorkspaceFileAttachmentPatchBody: {
-            /** Type */
-            type?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
         };
         /** RoleQueryParameters */
         RoleQueryParameters: {
@@ -1896,8 +1842,12 @@ export interface components {
         };
         /** FileAttachmentGetResponse */
         FileAttachmentGetResponse: {
+            /** Id */
+            id: number;
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
             /** Link */
             link: string;
             /** Fileattachmenttype */
@@ -2020,12 +1970,100 @@ export interface components {
             dataDisclaimer?: string | null;
             /** Isprivate */
             isPrivate: boolean;
+            /** Id */
+            id?: string | null;
             /**
              * Workspaceid
              * Format: uuid
              */
             workspaceId: string;
             location: components["schemas"]["LocationPostBody"];
+        };
+        /** ThingMarkerQueryParameters */
+        ThingMarkerQueryParameters: {
+            /**
+             * Workspace Id
+             * @description Filter markers by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+            /**
+             * Bbox
+             * @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
+             * @default []
+             */
+            bbox: string[];
+            /**
+             * Site Type
+             * @description Filter markers by site type.
+             * @default []
+             */
+            site_type: string[];
+        };
+        /** ThingMarkerResponse */
+        ThingMarkerResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+            /** Name */
+            name: string;
+            /** Sitetype */
+            siteType: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /** ThingSiteSummaryQueryParameters */
+        ThingSiteSummaryQueryParameters: {
+            /**
+             * Workspace Id
+             * @description Filter site summaries by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+            /**
+             * Site Type
+             * @description Filter site summaries by site type.
+             * @default []
+             */
+            site_type: string[];
+        };
+        /** ThingSiteSummaryResponse */
+        ThingSiteSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+            /** Name */
+            name: string;
+            /** Samplingfeaturecode */
+            samplingFeatureCode: string;
+            /** Sitetype */
+            siteType: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Tags */
+            tags: components["schemas"]["TagGetResponse"][];
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
@@ -2094,6 +2132,25 @@ export interface components {
             key: string;
             /** Value */
             value?: string | null;
+        };
+        /** FileAttachmentQueryParameters */
+        FileAttachmentQueryParameters: {
+            /**
+             * Page
+             * @description Page number (1-based).
+             */
+            page?: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             */
+            page_size?: number | null;
+            /**
+             * Type
+             * @description Filter by file attachment type.
+             * @default []
+             */
+            type: string[];
         };
         /** FileAttachmentDeleteBody */
         FileAttachmentDeleteBody: {
@@ -2444,11 +2501,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Encodingtype
-             * @enum {string}
-             */
-            encodingType: "application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json";
+            /** Encodingtype */
+            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
             /** Manufacturer */
             manufacturer?: string | null;
             /** Model */
@@ -2561,6 +2615,109 @@ export interface components {
             intendedTimeSpacing?: number | null;
             /** Intendedtimespacingunit */
             intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
+            /** Id */
+            id?: string | null;
+        };
+        /** DatastreamVisualizationBootstrapQueryParameters */
+        DatastreamVisualizationBootstrapQueryParameters: {
+            /**
+             * Workspace Id
+             * @description Filter visualization bootstrap datastreams by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** DatastreamVisualizationBootstrapResponse */
+        DatastreamVisualizationBootstrapResponse: {
+            /** Things */
+            things: components["schemas"]["VisualizationThingResponse"][];
+            /** Datastreams */
+            datastreams: components["schemas"]["VisualizationDatastreamResponse"][];
+            /** Observedproperties */
+            observedProperties: components["schemas"]["VisualizationObservedPropertyResponse"][];
+            /** Processinglevels */
+            processingLevels: components["schemas"]["VisualizationProcessingLevelResponse"][];
+        };
+        /** VisualizationDatastreamResponse */
+        VisualizationDatastreamResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+            /**
+             * Observedpropertyid
+             * Format: uuid
+             */
+            observedPropertyId: string;
+            /**
+             * Processinglevelid
+             * Format: uuid
+             */
+            processingLevelId: string;
+            /**
+             * Unitid
+             * Format: uuid
+             */
+            unitId: string;
+            /** Nodatavalue */
+            noDataValue: number;
+            /** Valuecount */
+            valueCount?: number | null;
+            /** Phenomenonbegintime */
+            phenomenonBeginTime?: string | null;
+            /** Phenomenonendtime */
+            phenomenonEndTime?: string | null;
+            /** Intendedtimespacing */
+            intendedTimeSpacing?: number | null;
+            /** Intendedtimespacingunit */
+            intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
+        };
+        /** VisualizationObservedPropertyResponse */
+        VisualizationObservedPropertyResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+        };
+        /** VisualizationProcessingLevelResponse */
+        VisualizationProcessingLevelResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Definition */
+            definition?: string | null;
+        };
+        /** VisualizationThingResponse */
+        VisualizationThingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+            /** Name */
+            name: string;
+            /** Samplingfeaturecode */
+            samplingFeatureCode: string;
         };
         /** DatastreamPatchBody */
         DatastreamPatchBody: {
@@ -2746,6 +2903,8 @@ export interface components {
              * @default []
              */
             resultQualifierCodes: string[];
+            /** Id */
+            id?: string | null;
         };
         /** ObservationBulkPostQueryParameters */
         ObservationBulkPostQueryParameters: {
@@ -2845,6 +3004,8 @@ export interface components {
             type: string;
             /** Code */
             code: string;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId: string | null;
         };
@@ -2933,6 +3094,8 @@ export interface components {
             definition: string;
             /** Type */
             type: string;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -3010,11 +3173,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Encodingtype
-             * @enum {string}
-             */
-            encodingType: "application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json";
+            /** Encodingtype */
+            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
             /** Manufacturer */
             manufacturer?: string | null;
             /** Model */
@@ -3040,11 +3200,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Encodingtype
-             * @enum {string}
-             */
-            encodingType: "application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json";
+            /** Encodingtype */
+            encodingType: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
             /** Manufacturer */
             manufacturer?: string | null;
             /** Model */
@@ -3057,6 +3214,8 @@ export interface components {
             methodLink?: string | null;
             /** Methodcode */
             methodCode?: string | null;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -3066,11 +3225,8 @@ export interface components {
             name?: string;
             /** Description */
             description?: string;
-            /**
-             * Encodingtype
-             * @enum {string}
-             */
-            encodingType?: "application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json";
+            /** Encodingtype */
+            encodingType?: ("application/pdf" | "http://www.opengis.net/doc/IS/SensorML/2.0" | "text/html" | "text/plain" | "application/json") | string;
             /** Manufacturer */
             manufacturer?: string | null;
             /** Model */
@@ -3146,6 +3302,8 @@ export interface components {
             definition?: string | null;
             /** Explanation */
             explanation?: string | null;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -3230,6 +3388,8 @@ export interface components {
             code: string;
             /** Description */
             description: string;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -3297,6 +3457,8 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+            /** Notificationrecipientemails */
+            notificationRecipientEmails?: string[];
             /**
              * Id
              * Format: uuid
@@ -3320,6 +3482,8 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+            /** Notificationrecipientemails */
+            notificationRecipientEmails?: string[];
             /**
              * Id
              * Format: uuid
@@ -3337,6 +3501,10 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+            /** Notificationrecipientemails */
+            notificationRecipientEmails?: string[];
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
             extractor?: components["schemas"]["DataConnectionSettingsPostBody"] | null;
@@ -3356,6 +3524,8 @@ export interface components {
             name?: string;
             /** Type */
             type?: string;
+            /** Notificationrecipientemails */
+            notificationRecipientEmails?: string[];
             extractor?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
             transformer?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
             loader?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
@@ -3384,13 +3554,19 @@ export interface components {
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("name" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
+            order_by: ("name" | "type" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-type" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
             /**
              * Workspace Id
              * @description Filter by workspace ID.
              * @default []
              */
             workspace_id: string[];
+            /**
+             * Type
+             * @description Filter by task type.
+             * @default []
+             */
+            type: string[];
             /**
              * Data Connection Id
              * @description Filter by data connection ID.
@@ -3498,6 +3674,21 @@ export interface components {
             target_identifier: (string | "null")[];
             /** Expand Related */
             expand_related?: boolean | null;
+            /**
+             * Include Mappings
+             * @description Whether to include mapping details in task responses.
+             */
+            include_mappings?: boolean | null;
+            /**
+             * Include Latest Run Result
+             * @description Whether to include the full latest run result payload in task responses.
+             */
+            include_latest_run_result?: boolean | null;
+            /**
+             * Include Data Connection Settings
+             * @description Whether to include extractor, transformer, and loader settings when data connections are expanded.
+             */
+            include_data_connection_settings?: boolean | null;
         };
         /** OrchestrationSystemSummaryResponse */
         OrchestrationSystemSummaryResponse: {
@@ -3512,11 +3703,22 @@ export interface components {
             id: string;
             /** Workspaceid */
             workspaceId?: string | null;
+            /**
+             * Taskcount
+             * @default 0
+             */
+            taskCount: number;
         };
         /** TaskDetailResponse */
         TaskDetailResponse: {
             /** Name */
             name: string;
+            /**
+             * Type
+             * @default ETL
+             * @enum {string}
+             */
+            type: "ETL" | "Aggregation";
             /** Extractorvariables */
             extractorVariables?: Record<string, never>;
             /** Transformervariables */
@@ -3529,10 +3731,12 @@ export interface components {
              */
             id: string;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
-            dataConnection: components["schemas"]["DataConnectionSummaryResponse"];
+            dataConnection?: components["schemas"]["DataConnectionSummaryResponse"] | null;
             orchestrationSystem: components["schemas"]["OrchestrationSystemSummaryResponse"];
             schedule?: components["schemas"]["TaskScheduleResponse"] | null;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Targetidentifiers */
+            targetIdentifiers?: string[];
             /** Mappings */
             mappings: components["schemas"]["TaskMappingResponse"][];
         };
@@ -3571,6 +3775,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Message */
+            message?: string | null;
+            /** Failurecount */
+            failureCount?: number | null;
         };
         /** TaskScheduleResponse */
         TaskScheduleResponse: {
@@ -3591,6 +3799,12 @@ export interface components {
         TaskSummaryResponse: {
             /** Name */
             name: string;
+            /**
+             * Type
+             * @default ETL
+             * @enum {string}
+             */
+            type: "ETL" | "Aggregation";
             /** Extractorvariables */
             extractorVariables?: Record<string, never>;
             /** Transformervariables */
@@ -3607,11 +3821,8 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
-            /**
-             * Dataconnectionid
-             * Format: uuid
-             */
-            dataConnectionId: string;
+            /** Dataconnectionid */
+            dataConnectionId?: string | null;
             /**
              * Orchestrationsystemid
              * Format: uuid
@@ -3619,6 +3830,8 @@ export interface components {
             orchestrationSystemId: string;
             schedule?: components["schemas"]["TaskScheduleResponse"] | null;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Targetidentifiers */
+            targetIdentifiers?: string[];
             /** Mappings */
             mappings: components["schemas"]["TaskMappingResponse"][];
         };
@@ -3640,22 +3853,27 @@ export interface components {
         TaskPostBody: {
             /** Name */
             name: string;
+            /**
+             * Type
+             * @default ETL
+             * @enum {string}
+             */
+            type: "ETL" | "Aggregation";
             /** Extractorvariables */
             extractorVariables?: Record<string, never>;
             /** Transformervariables */
             transformerVariables?: Record<string, never>;
             /** Loadervariables */
             loaderVariables?: Record<string, never>;
+            /** Id */
+            id?: string | null;
             /**
              * Workspaceid
              * Format: uuid
              */
             workspaceId: string;
-            /**
-             * Dataconnectionid
-             * Format: uuid
-             */
-            dataConnectionId: string;
+            /** Dataconnectionid */
+            dataConnectionId?: string | null;
             /**
              * Orchestrationsystemid
              * Format: uuid
@@ -3684,6 +3902,11 @@ export interface components {
         TaskPatchBody: {
             /** Name */
             name?: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type?: "ETL" | "Aggregation";
             /** Extractorvariables */
             extractorVariables?: Record<string, never>;
             /** Transformervariables */
@@ -3774,6 +3997,8 @@ export interface components {
             startedAt: string;
             /** Finishedat */
             finishedAt?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** TaskRunPatchBody */
         TaskRunPatchBody: {
@@ -3837,6 +4062,11 @@ export interface components {
              */
             id: string;
             workspace?: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            /**
+             * Taskcount
+             * @default 0
+             */
+            taskCount: number;
         };
         /** OrchestrationSystemPostBody */
         OrchestrationSystemPostBody: {
@@ -3844,6 +4074,8 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+            /** Id */
+            id?: string | null;
             /** Workspaceid */
             workspaceId?: string | null;
         };
@@ -4733,306 +4965,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_file_attachment_get_workspace_file_attachments: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Filter by file attachment type. */
-                type?: string[];
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceFileAttachmentGetResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_workspace_file_attachment_add_workspace_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Type */
-                    type: string;
-                    /** Name */
-                    name?: string | null;
-                    /** Description */
-                    description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceFileAttachmentGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Request Entity Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_workspace_file_attachment_remove_workspace_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                file_attachment_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_workspace_file_attachment_update_workspace_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                file_attachment_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkspaceFileAttachmentPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceFileAttachmentGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_workspace_file_attachment_get_workspace_file_attachment_download: {
-        parameters: {
-            query?: {
-                token?: string | null;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-                file_attachment_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_role_get_roles: {
         parameters: {
             query?: {
@@ -5217,6 +5149,76 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_thing_get_thing_markers: {
+        parameters: {
+            query?: {
+                /** @description Filter markers by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
+                bbox?: string[];
+                /** @description Filter markers by site type. */
+                site_type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThingMarkerResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_thing_get_thing_site_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter site summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter site summaries by site type. */
+                site_type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThingSiteSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5711,7 +5713,14 @@ export interface operations {
     };
     interfaces_api_views_thing_get_thing_file_attachments: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Filter by file attachment type. */
+                type?: string[];
+            };
             header?: never;
             path: {
                 thing_id: string;
@@ -5749,6 +5758,85 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_thing_replace_thing_file_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** Description */
+                    description?: string | null;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_thing_add_thing_file_attachment: {
         parameters: {
             query?: never;
@@ -5761,13 +5849,15 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": {
-                    /** File Attachment Type */
-                    file_attachment_type: string;
                     /**
                      * File
                      * Format: binary
                      */
                     file: string;
+                    /** Description */
+                    description?: string | null;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
                 };
             };
         };
@@ -6024,6 +6114,38 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_datastream_get_datastream_visualization_bootstrap: {
+        parameters: {
+            query?: {
+                /** @description Filter visualization bootstrap datastreams by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatastreamVisualizationBootstrapResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6545,7 +6667,14 @@ export interface operations {
     };
     interfaces_api_views_datastream_get_datastream_file_attachments: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Filter by file attachment type. */
+                type?: string[];
+            };
             header?: never;
             path: {
                 datastream_id: string;
@@ -6583,6 +6712,85 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_datastream_replace_datastream_file_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datastream_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** Description */
+                    description?: string | null;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_datastream_add_datastream_file_attachment: {
         parameters: {
             query?: never;
@@ -6595,13 +6803,15 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": {
-                    /** File Attachment Type */
-                    file_attachment_type: string;
                     /**
                      * File
                      * Format: binary
                      */
                     file: string;
+                    /** Description */
+                    description?: string | null;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
                 };
             };
         };
@@ -8696,9 +8906,11 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
+                order_by?: ("name" | "type" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-type" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
                 /** @description Filter by workspace ID. */
                 workspace_id?: string[];
+                /** @description Filter by task type. */
+                type?: string[];
                 /** @description Filter by data connection ID. */
                 data_connection_id?: string[];
                 /** @description Filter by orchestration system ID. */
@@ -8738,6 +8950,12 @@ export interface operations {
                 /** @description Filters by target identifiers associated with the task. */
                 target_identifier?: (string | "null")[];
                 expand_related?: boolean | null;
+                /** @description Whether to include mapping details in task responses. */
+                include_mappings?: boolean | null;
+                /** @description Whether to include the full latest run result payload in task responses. */
+                include_latest_run_result?: boolean | null;
+                /** @description Whether to include extractor, transformer, and loader settings when data connections are expanded. */
+                include_data_connection_settings?: boolean | null;
             };
             header?: never;
             path?: never;

@@ -40,6 +40,7 @@ export class DataConnectionService extends HydroServerBaseService<typeof C, M> {
     return {
       name: m.name,
       type: m.type,
+      notificationRecipientEmails: m.notificationRecipientEmails,
       extractor: m.extractor,
       transformer: m.transformer,
       loader: m.loader,
