@@ -25,7 +25,7 @@ class HTTPExtractor(Extractor):
         source_uri = runtime_data['source_uri']
 
         timeout_seconds = 120
-        logger.info(f"Requesting data from {source_uri}")
+        logger.info("Requesting data from source URI")
 
         try:
             response = requests.get(source_uri, timeout=timeout_seconds)
@@ -78,18 +78,5 @@ class HTTPExtractor(Extractor):
                 "or the request parameters may not match any available data. "
                 "Verify the URL, check the server status, and ensure your request is correct."
             )
-
-        # Keep payload-level details at DEBUG; hydroserver-api-services already logs
-        # a concise "Extractor returned payload" line for the end user.
-        logger.debug(
-            "Extractor returned payload (status=%s, content_type=%r, bytes=%s).",
-            getattr(response, "status_code", None),
-            (
-                response.headers.get("Content-Type")
-                if hasattr(response, "headers")
-                else None
-            ),
-            total_bytes,
-        )
 
         return data

@@ -117,7 +117,6 @@ class CSVTransformer(Transformer):
             ]
             dtype = {self.timestamp_key: "string"}
 
-        logger.info("Reading CSV data.")
         logger.debug(
             "Parsing CSV (identifierType=%r, delimiter=%r, headerRow=%r, dataStartRow=%r, usecols=%r).",
             self.identifier_type, self.delimiter, self.header_row, self.data_start_row, columns,

@@ -1,12 +1,19 @@
+import logging
 from datetime import datetime, timezone
 from pydantic.alias_generators import to_snake
 from typing import Optional
 from hydroserverpy.api.models import Task, DataConnection
 from hydroserverpy.etl import extractors, transformers, loaders, ETLPipeline
 from hydroserverpy.etl.transformers import ETLDataMapping, ETLTargetPath
-from hydroserverpy.etl.operations import (DataOperation, RatingCurveDataOperation, ArithmeticExpressionOperation,
-                                          TemporalAggregationOperation)
+from hydroserverpy.etl.operations import (
+    DataOperation,
+    RatingCurveDataOperation,
+    ArithmeticExpressionOperation,
+    TemporalAggregationOperation,
+)
 from hydroserverpy.etl.models import Timestamp
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_timestamp_kwargs(**kwargs) -> dict:
@@ -24,10 +31,8 @@ def normalize_timestamp_kwargs(**kwargs) -> dict:
     return {
         "timestamp_type": "custom" if kwargs["format"] == "custom" else "iso",
         "timestamp_format": kwargs.get("customFormat"),
-        "timezone_type": timezone_map.get(  # noqa
-            kwargs["timezoneMode"], "utc"
-        ),
-        "timezone": kwargs.get("timezone")
+        "timezone_type": timezone_map.get(kwargs["timezoneMode"], "utc"),  # noqa
+        "timezone": kwargs.get("timezone"),
     }
 
 
@@ -52,14 +57,23 @@ def resolve_runtime_variables(
             )
 
             if placeholder_variable["runTimeValue"] == "latestObservationTimestamp":
-                dt = earliest_loaded_through if earliest_loaded_through is not None \
+                dt = (
+                    earliest_loaded_through
+                    if earliest_loaded_through is not None
                     else datetime(1970, 1, 1, tzinfo=timezone.utc)
-                runtime_variables[placeholder_variable["name"]] = timestamp_parser.to_string(dt)
+                )
+                runtime_variables[placeholder_variable["name"]] = (
+                    timestamp_parser.to_string(dt)
+                )
             else:
-                runtime_variables[placeholder_variable["name"]] = timestamp_parser.to_string(execution_time)
+                runtime_variables[placeholder_variable["name"]] = (
+                    timestamp_parser.to_string(execution_time)
+                )
 
         else:
-            runtime_variables[placeholder_variable["name"]] = etl_variables[placeholder_variable["name"]]
+            runtime_variables[placeholder_variable["name"]] = etl_variables[
+                placeholder_variable["name"]
+            ]
 
     return runtime_variables
 
@@ -74,15 +88,19 @@ def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
 
     for data_operation in raw_etl_target_path.get("dataTransformations", []):
         if data_operation["type"] == "expression":
-            resolved_data_operations.append(ArithmeticExpressionOperation(
-                target_identifier=raw_etl_target_path["targetIdentifier"],
-                expression=data_operation["expression"],
-            ))
+            resolved_data_operations.append(
+                ArithmeticExpressionOperation(
+                    target_identifier=raw_etl_target_path["targetIdentifier"],
+                    expression=data_operation["expression"],
+                )
+            )
         elif data_operation["type"] == "rating_curve":
-            resolved_data_operations.append(RatingCurveDataOperation(
-                target_identifier=raw_etl_target_path["targetIdentifier"],
-                rating_curve_url=data_operation["ratingCurveUrl"],
-            ))
+            resolved_data_operations.append(
+                RatingCurveDataOperation(
+                    target_identifier=raw_etl_target_path["targetIdentifier"],
+                    rating_curve_url=data_operation["ratingCurveUrl"],
+                )
+            )
         elif data_operation["type"] == "aggregation":
             timezone_kwargs = normalize_timestamp_kwargs(format="iso", **data_operation)
             aggregation_mapping = {
@@ -90,12 +108,16 @@ def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
                 "time_weighted_daily_mean": "time_weighted_mean",
                 "last_value_of_day": "last_value_of_period",
             }
-            resolved_data_operations.append(TemporalAggregationOperation(
-                target_identifier=raw_etl_target_path["targetIdentifier"],
-                aggregation_statistic=aggregation_mapping[data_operation["aggregationStatistic"]],
-                timezone_type=timezone_kwargs.get("timezone_type"),
-                timezone=timezone_kwargs.get("timezone"),
-            ))
+            resolved_data_operations.append(
+                TemporalAggregationOperation(
+                    target_identifier=raw_etl_target_path["targetIdentifier"],
+                    aggregation_statistic=aggregation_mapping[
+                        data_operation["aggregationStatistic"]
+                    ],
+                    timezone_type=timezone_kwargs.get("timezone_type"),
+                    timezone=timezone_kwargs.get("timezone"),
+                )
+            )
 
     return resolved_data_operations
 
@@ -103,7 +125,7 @@ def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
 def build_hydroserver_pipeline(
     task: Task,
     data_connection: DataConnection,
-    data_mappings:  list[dict],
+    data_mappings: list[dict],
     extractor_cls: Optional[type[extractors.Extractor]] = None,
     transformer_cls: Optional[type[transformers.Transformer]] = None,
     loader_cls: Optional[type[loaders.Loader]] = None,
@@ -132,26 +154,40 @@ def build_hydroserver_pipeline(
     """
 
     if extractor_cls is None:
-        extractor_cls = getattr(extractors, f"{data_connection.extractor_type}Extractor")
+        extractor_cls = getattr(
+            extractors, f"{data_connection.extractor_type}Extractor"
+        )
 
     if transformer_cls is None:
-        transformer_cls = getattr(transformers, f"{data_connection.transformer_type}Transformer")
+        transformer_cls = getattr(
+            transformers, f"{data_connection.transformer_type}Transformer"
+        )
 
     if loader_cls is None:
         loader_cls = getattr(loaders, f"{data_connection.loader_type}Loader")
 
-    extractor_settings = dict(data_connection.extractor_settings) if data_connection else {}
-    transformer_settings = dict(data_connection.transformer_settings) if data_connection else {}
+    extractor_settings = (
+        dict(data_connection.extractor_settings) if data_connection else {}
+    )
+    transformer_settings = (
+        dict(data_connection.transformer_settings) if data_connection else {}
+    )
     loader_settings = dict(data_connection.loader_settings) if data_connection else {}
 
     extractor_placeholders = extractor_settings.pop("placeholderVariables", [])
-    extractor_variables = getattr(task, "extractor_settings", None) or getattr(task, "extractor_variables", {})
+    extractor_variables = getattr(task, "extractor_settings", None) or getattr(
+        task, "extractor_variables", {}
+    )
 
     transformer_placeholders = transformer_settings.pop("placeholderVariables", [])
-    transformer_variables = getattr(task, "transformer_settings", None) or getattr(task, "transformer_variables", {})
+    transformer_variables = getattr(task, "transformer_settings", None) or getattr(
+        task, "transformer_variables", {}
+    )
 
     loader_placeholders = loader_settings.pop("placeholderVariables", [])
-    loader_variables = getattr(task, "loader_settings", None) or getattr(task, "loader_variables", {})
+    loader_variables = getattr(task, "loader_settings", None) or getattr(
+        task, "loader_variables", {}
+    )
 
     extractor: extractors.Extractor = extractor_cls(
         **{to_snake(k): v for k, v in extractor_settings.items()}
@@ -161,7 +197,7 @@ def build_hydroserver_pipeline(
         timestamp_settings = {
             "key": "phenomenon_time",
             "format": "iso",
-            "timezoneMode": "utc"
+            "timezoneMode": "utc",
         }
     else:
         timestamp_settings = transformer_settings.pop("timestamp", {})
@@ -174,7 +210,7 @@ def build_hydroserver_pipeline(
     transformer: transformers.Transformer = transformer_cls(
         timestamp_key=timestamp_settings["key"],
         **transformer_settings,
-        **normalize_timestamp_kwargs(**timestamp_settings)
+        **normalize_timestamp_kwargs(**timestamp_settings),
     )
 
     loader: loaders.Loader = loader_cls(
@@ -184,11 +220,15 @@ def build_hydroserver_pipeline(
     etl_data_mappings = [
         ETLDataMapping(
             source_identifier=mapping["sourceIdentifier"],
-            target_paths=[ETLTargetPath(
-                target_identifier=path["targetIdentifier"],
-                data_operations=resolve_data_operations(path)
-            ) for path in mapping["paths"]]
-        ) for mapping in data_mappings
+            target_paths=[
+                ETLTargetPath(
+                    target_identifier=path["targetIdentifier"],
+                    data_operations=resolve_data_operations(path),
+                )
+                for path in mapping["paths"]
+            ],
+        )
+        for mapping in data_mappings
     ]
 
     execution_time = datetime.now(timezone.utc)
@@ -225,6 +265,7 @@ def build_hydroserver_pipeline(
         extractor=extractor,
         transformer=transformer,
         loader=loader,
+        pre_extract_messages=pre_extract_messages,
     )
 
     return etl_pipeline, etl_data_mappings, runtime_variables
