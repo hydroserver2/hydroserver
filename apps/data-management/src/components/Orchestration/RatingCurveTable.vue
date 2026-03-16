@@ -345,6 +345,13 @@
           v-model="editAttachmentName"
           label="Rating curve name *"
           class="mb-3"
+          :readonly="isEditingExistingAttachment"
+          :hint="
+            isEditingExistingAttachment
+              ? 'Existing rating curve names are fixed because task references use the attachment filename.'
+              : undefined
+          "
+          persistent-hint
         />
         <v-textarea
           v-model="editAttachmentDescription"
@@ -394,6 +401,21 @@
         >
           Validating rating curve CSV...
         </div>
+        <div
+          v-else-if="editPreviewLoading"
+          class="text-caption text-medium-emphasis mb-3"
+        >
+          Loading current preview...
+        </div>
+        <v-alert
+          v-else-if="editPreviewError"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-3"
+        >
+          {{ editPreviewError }}
+        </v-alert>
 
         <div v-if="editPreviewPath" class="rating-curve-edit-preview">
           <div class="text-caption text-medium-emphasis mb-1">Preview</div>
@@ -499,7 +521,11 @@ import {
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
 import { getRatingCurveReference } from '@/utils/orchestration/ratingCurve'
-import { useRatingCurveStore } from '@/store/ratingCurves'
+import {
+  EXISTING_RATING_CURVE_RENAME_MESSAGE,
+  replaceExistingRatingCurveAttachment,
+  useRatingCurveStore,
+} from '@/store/ratingCurves'
 
 const props = withDefaults(
   defineProps<{
@@ -568,7 +594,10 @@ let createValidationRunId = 0
 const editFileValidationError = ref('')
 const editFileValidationPending = ref(false)
 let editValidationRunId = 0
+let editPreviewRunId = 0
 const editPreviewRows = ref<RatingCurvePreviewRow[]>([])
+const editPreviewLoading = ref(false)
+const editPreviewError = ref('')
 
 const PREVIEW_SVG_WIDTH = 132
 const PREVIEW_SVG_HEIGHT = 38
@@ -664,6 +693,9 @@ const canSaveEditAttachment = computed(
     !editFileValidationError.value &&
     hasEditChanges.value
 )
+const isEditingExistingAttachment = computed(
+  () => !!editAttachment.value && !editAttachment.value.pending
+)
 const hasEditMetadataChanges = computed(() => {
   const item = editAttachment.value
   if (!item) return false
@@ -704,12 +736,15 @@ function resetCreateState() {
 
 function resetEditState() {
   editValidationRunId += 1
+  editPreviewRunId += 1
   editFileValidationError.value = ''
   editFileValidationPending.value = false
   editAttachmentFile.value = null
   editAttachmentName.value = ''
   editAttachmentDescription.value = ''
   editPreviewRows.value = []
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
   if (editFileInput.value) {
     editFileInput.value.value = ''
   }
@@ -745,7 +780,6 @@ function clearCreateFile() {
 
 function clearEditFile() {
   editAttachmentFile.value = null
-  editPreviewRows.value = []
   if (editFileInput.value) {
     editFileInput.value.value = ''
   }
@@ -831,6 +865,7 @@ function openEditDialog(item: DisplayRatingCurve) {
   editAttachmentName.value = item.name
   editAttachmentDescription.value = item.description || ''
   openEdit.value = true
+  void hydrateEditPreview(item)
 }
 
 function openDeleteDialog(item: DisplayRatingCurve) {
@@ -960,9 +995,9 @@ async function deleteAttachment() {
 
   saving.value = true
   try {
-    const res = await hs.thingFileAttachments.delete(
+    const res = await hs.things.deleteAttachment(
       props.thingId,
-      activeAttachment.value.id
+      activeAttachment.value.name
     )
 
     if (!res.ok) {
@@ -1135,6 +1170,10 @@ async function saveEditAttachment() {
   const trimmedName = editAttachmentName.value.trim()
   const trimmedDescription = editAttachmentDescription.value.trim()
   if (!trimmedName) return
+  if (!item.pending && trimmedName !== item.name) {
+    Snackbar.error(EXISTING_RATING_CURVE_RENAME_MESSAGE)
+    return
+  }
 
   const metadataChanged =
     trimmedName !== item.name || trimmedDescription !== (item.description || '')
@@ -1213,39 +1252,29 @@ async function saveEditAttachment() {
 
   saving.value = true
   try {
-    let updatedAttachment =
+    const currentAttachment =
       backendAttachments.value.find(
         (attachment) => String(attachment.id) === String(item.id)
       ) || null
-
-    if (metadataChanged) {
-      const metaRes = await hs.thingFileAttachments.update(props.thingId, item.id, {
-        name: trimmedName,
-        description: trimmedDescription,
-      })
-      if (!metaRes.ok || !metaRes.data) {
-        Snackbar.error(metaRes.message || 'Unable to update rating curve.')
-        return
-      }
-      updatedAttachment = metaRes.data
+    if (!currentAttachment) {
+      Snackbar.error('Unable to find rating curve attachment.')
+      return
     }
 
-    if (fileChanged && file) {
-      const fileRes = await hs.thingFileAttachments.replaceFile(
-        props.thingId,
-        item.id,
-        file
-      )
-      if (!fileRes.ok || !fileRes.data) {
-        Snackbar.error(fileRes.message || 'Unable to update rating curve file.')
-        return
-      }
-      updatedAttachment = fileRes.data
+    const res = await replaceExistingRatingCurveAttachment({
+      thingId: props.thingId,
+      attachment: currentAttachment,
+      description: trimmedDescription,
+      file: fileChanged ? file : undefined,
+    })
+    if (!res.ok || !res.data) {
+      Snackbar.error(res.message || 'Unable to update rating curve.')
+      return
     }
 
     backendAttachments.value = backendAttachments.value.map((attachment) =>
       String(attachment.id) === String(item.id)
-        ? updatedAttachment || attachment
+        ? res.data || attachment
         : attachment
     )
     emitAttachmentsChanged()
@@ -1287,6 +1316,68 @@ async function loadPreviewForAttachment(attachment: ThingFileAttachment) {
     previewErrorByAttachmentId.value[key] = 'Unable to load preview.'
   } finally {
     previewLoadingByAttachmentId.value[key] = false
+  }
+}
+
+function resolveThingAttachment(item: DisplayRatingCurve) {
+  if (props.deferPersist) {
+    return (
+      ratingCurveStore.existingRatingCurves.find(
+        (attachment) => String(attachment.id) === String(item.id)
+      ) ?? null
+    )
+  }
+
+  return (
+    backendAttachments.value.find(
+      (attachment) => String(attachment.id) === String(item.id)
+    ) ?? null
+  )
+}
+
+async function hydrateEditPreview(item: DisplayRatingCurve) {
+  const runId = ++editPreviewRunId
+  const key = String(item.id)
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
+
+  const cachedRows = previewRowsByAttachmentId.value[key]
+  if (cachedRows?.length) {
+    if (runId !== editPreviewRunId) return
+    editPreviewRows.value = [...cachedRows]
+    return
+  }
+
+  if (item.pending) {
+    if (runId !== editPreviewRunId) return
+    editPreviewRows.value = []
+    return
+  }
+
+  const attachment = resolveThingAttachment(item)
+  if (!attachment?.link) {
+    editPreviewRows.value = []
+    return
+  }
+
+  editPreviewLoading.value = true
+  try {
+    await loadPreviewForAttachment(attachment)
+    if (
+      runId !== editPreviewRunId ||
+      String(editAttachment.value?.id ?? '') !== key ||
+      !!selectedEditFile.value
+    ) {
+      return
+    }
+    editPreviewRows.value = [
+      ...(previewRowsByAttachmentId.value[key] ?? []),
+    ]
+    editPreviewError.value = previewErrorByAttachmentId.value[key] ?? ''
+  } finally {
+    if (runId === editPreviewRunId) {
+      editPreviewLoading.value = false
+    }
   }
 }
 
@@ -1566,10 +1657,21 @@ watch(selectedEditFile, (file) => {
     editValidationRunId += 1
     editFileValidationError.value = ''
     editFileValidationPending.value = false
-    editPreviewRows.value = []
+    const item = editAttachment.value
+    if (!item) {
+      editPreviewRows.value = []
+      editPreviewLoading.value = false
+      editPreviewError.value = ''
+      return
+    }
+
+    void hydrateEditPreview(item)
     return
   }
 
+  editPreviewRunId += 1
+  editPreviewLoading.value = false
+  editPreviewError.value = ''
   void validateEditFile(file)
 })
 

@@ -26,6 +26,45 @@
           :rules="rules.requiredAndMaxLength255"
           density="compact"
         />
+        <v-combobox
+          v-model="notificationRecipientEmails"
+          v-model:search="notificationRecipientInput"
+          :items="[]"
+          label="Notification recipients"
+          placeholder="Type an email address and press Enter"
+          multiple
+          clearable
+          hide-no-data
+          hide-selected
+          density="compact"
+          :rules="notificationRecipientRules"
+          :error-messages="
+            notificationRecipientInputError
+              ? [notificationRecipientInputError]
+              : []
+          "
+          @keydown.enter.prevent="addNotificationRecipient"
+          @keydown.tab="addNotificationRecipient"
+          @blur="addNotificationRecipient"
+        >
+          <template #selection="{ item, index }">
+            <v-chip
+              size="small"
+              color="blue-grey"
+              variant="tonal"
+              rounded
+              closable
+              class="mr-1 mb-1 max-w-full"
+              @click:close="removeNotificationRecipient(index)"
+            >
+              <span class="truncate">{{ item.title }}</span>
+            </v-chip>
+          </template>
+        </v-combobox>
+        <p class="mb-4 text-sm text-medium-emphasis">
+          Add the email recipients who should receive daily orchestration
+          summary notifications for this data connection.
+        </p>
 
         <ExtractorForm ref="extractorRef" />
         <TransformerForm ref="transformerRef" />
@@ -42,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 import { storeToRefs } from 'pinia'
 import StickyForm from '@/components/Forms/StickyForm.vue'
@@ -52,7 +91,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import ExtractorForm from './Extractor/ExtractorForm.vue'
 import TransformerForm from './Transformer/TransformerForm.vue'
 import LoaderForm from './Loader/LoaderForm.vue'
-import hs, { OrchestrationSystem, DataConnection } from '@hydroserver/client'
+import hs, { DataConnection } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 
 const props = defineProps<{
@@ -79,7 +118,87 @@ const loaderRef = ref<any>(null)
 
 const loaded = ref(false)
 const isSubmitting = ref(false)
+const notificationRecipientInput = ref('')
+const notificationRecipientInputError = ref('')
 // const scheduleType = ref('interval')
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const toRecipientString = (value: unknown) => {
+  if (typeof value === 'string') return value.trim()
+  if (value && typeof value === 'object' && 'title' in value) {
+    return `${(value as { title?: string }).title ?? ''}`.trim()
+  }
+  return `${value ?? ''}`.trim()
+}
+
+const normalizeNotificationRecipients = (values: readonly unknown[]) => {
+  const normalized: string[] = []
+  const seen = new Set<string>()
+
+  for (const value of values) {
+    const email = toRecipientString(value)
+    if (!email) continue
+
+    const dedupeKey = email.toLowerCase()
+    if (seen.has(dedupeKey)) continue
+
+    seen.add(dedupeKey)
+    normalized.push(email)
+  }
+
+  return normalized
+}
+
+const isValidNotificationRecipient = (value: string) => emailPattern.test(value)
+
+const notificationRecipientEmails = computed<string[]>({
+  get: () => formDataConnection.value.notificationRecipientEmails ?? [],
+  set: (value) => {
+    formDataConnection.value.notificationRecipientEmails =
+      normalizeNotificationRecipients(value)
+  },
+})
+
+const notificationRecipientRules = [
+  (value: string[] = []) =>
+    value.every(isValidNotificationRecipient) ||
+    'All notification recipient emails must be valid.',
+]
+
+function addNotificationRecipient() {
+  const email = notificationRecipientInput.value.trim().replace(/,+$/, '')
+  if (!email) {
+    notificationRecipientInputError.value = ''
+    notificationRecipientInput.value = ''
+    return true
+  }
+
+  if (!isValidNotificationRecipient(email)) {
+    notificationRecipientInputError.value = 'Email must be valid.'
+    return false
+  }
+
+  notificationRecipientEmails.value = [
+    ...notificationRecipientEmails.value,
+    email,
+  ]
+  notificationRecipientInput.value = ''
+  notificationRecipientInputError.value = ''
+  return true
+}
+
+function removeNotificationRecipient(index: number) {
+  notificationRecipientEmails.value = notificationRecipientEmails.value.filter(
+    (_, recipientIndex) => recipientIndex !== index
+  )
+}
+
+watch(notificationRecipientInput, () => {
+  if (notificationRecipientInputError.value) {
+    notificationRecipientInputError.value = ''
+  }
+})
 
 // let prevDataConnection = undefined
 // if (props.isEdit) prevDataConnection = JSON.parse(JSON.stringify(toRaw(dataConnection.value)))
@@ -143,10 +262,15 @@ async function onSubmit() {
   const etlValid = await validate()
   if (!etlValid) return
 
+  if (!addNotificationRecipient()) return
+
   isSubmitting.value = true
 
   await myForm.value?.validate()
-  if (!valid.value) return false
+  if (!valid.value) {
+    isSubmitting.value = false
+    return false
+  }
 
   formDataConnection.value.workspace = selectedWorkspace.value
   const res = isEdit.value
@@ -166,6 +290,7 @@ async function onSubmit() {
     console.error(res)
   }
 
+  isSubmitting.value = false
   emit('close')
 }
 

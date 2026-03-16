@@ -6,6 +6,9 @@ import hs, {
   type ThingFileAttachment,
 } from '@hydroserver/client'
 
+export const EXISTING_RATING_CURVE_RENAME_MESSAGE =
+  'Renaming existing rating curves is not supported. Create a new rating curve instead.'
+
 export type PendingRatingCurveCreate = {
   tempId: string
   file: File
@@ -33,6 +36,144 @@ export type UpdateRatingCurvesResult = {
   failedMetadataUpdates: Array<{ id: string | number; message: string }>
   failedReplaces: Array<{ id: string | number; message: string }>
   failedDeletes: Array<{ id: string | number; message: string }>
+}
+
+type ReplaceExistingRatingCurveOptions = {
+  thingId: string
+  attachment: ThingFileAttachment
+  description: string
+  file?: File | Blob | null
+}
+
+type ReplaceExistingRatingCurveResult = {
+  ok: boolean
+  message: string
+  data?: ThingFileAttachment
+}
+
+function getCsrfToken() {
+  if (typeof document === 'undefined') return ''
+
+  const decodedCookies = decodeURIComponent(document.cookie || '')
+  for (const part of decodedCookies.split(';')) {
+    const cookie = part.trim()
+    if (cookie.startsWith('csrftoken=')) {
+      return cookie.substring('csrftoken='.length)
+    }
+  }
+
+  return ''
+}
+
+function toNamedUploadFile(file: File | Blob, name: string) {
+  if (file instanceof File && file.name === name) {
+    return file
+  }
+
+  return new File([file], name, {
+    type: file.type || 'application/octet-stream',
+    lastModified: file instanceof File ? file.lastModified : Date.now(),
+  })
+}
+
+function extractResponseMessage(body: unknown, fallback: string) {
+  if (!body) return fallback
+  if (typeof body === 'string') return body.trim() || fallback
+  if (typeof body !== 'object') return fallback
+
+  const possibleKeys = ['message', 'detail', 'error']
+  for (const key of possibleKeys) {
+    const value = (body as Record<string, unknown>)[key]
+    if (typeof value === 'string' && value.trim()) {
+      return value
+    }
+  }
+
+  const errors = (body as Record<string, unknown>).errors
+  if (Array.isArray(errors) && errors.length > 0) {
+    return extractResponseMessage(errors[0], fallback)
+  }
+
+  return fallback
+}
+
+async function readResponseBody(response: Response) {
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => null)
+  }
+
+  return response.text().catch(() => '')
+}
+
+async function fetchExistingAttachmentBlob(attachment: ThingFileAttachment) {
+  const response = await fetch(attachment.link, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'text/csv, text/plain, application/octet-stream',
+    },
+  })
+
+  if (!response.ok) {
+    const body = await readResponseBody(response)
+    throw new Error(
+      extractResponseMessage(body, 'Unable to load rating curve file.')
+    )
+  }
+
+  return response.blob()
+}
+
+export async function replaceExistingRatingCurveAttachment({
+  thingId,
+  attachment,
+  description,
+  file,
+}: ReplaceExistingRatingCurveOptions): Promise<ReplaceExistingRatingCurveResult> {
+  const uploadFile = toNamedUploadFile(
+    file ?? (await fetchExistingAttachmentBlob(attachment)),
+    attachment.name
+  )
+  const formData = new FormData()
+  formData.append('file', uploadFile, uploadFile.name)
+  formData.append(
+    'file_attachment_type',
+    attachment.fileAttachmentType || RATING_CURVE_ATTACHMENT_TYPE
+  )
+  if (description) {
+    formData.append('description', description)
+  }
+
+  const response = await fetch(`${hs.baseRoute}/things/${thingId}/file-attachments`, {
+    method: 'PUT',
+    body: formData,
+    credentials: 'include',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+    },
+  })
+  const body = await readResponseBody(response)
+  const message = extractResponseMessage(body, response.statusText || 'OK')
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      message,
+    }
+  }
+
+  const attachmentItems = await hs.thingFileAttachments.listItems(thingId, {
+    type: RATING_CURVE_ATTACHMENT_TYPE,
+  })
+  const updatedAttachment =
+    attachmentItems.find((item) => item.name === attachment.name) ?? attachment
+
+  return {
+    ok: true,
+    message,
+    data: updatedAttachment,
+  }
 }
 
 export const useRatingCurveStore = defineStore('ratingCurves', () => {
@@ -202,12 +343,23 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     const appliedMetadataUpdateIds = new Set<string>()
     const appliedReplaceIds = new Set<string>()
     const appliedDeleteIds = new Set<string>()
+    const metadataUpdatesById = new Map(
+      pendingMetadataUpdates.value.map((item) => [String(item.attachmentId), item])
+    )
+    const replacesById = new Map(
+      pendingReplaces.value.map((item) => [String(item.attachmentId), item])
+    )
 
     try {
       if (pendingDeleteIds.value.length) {
         for (const id of pendingDeleteIds.value) {
           try {
-            const res = await hs.thingFileAttachments.delete(thingId, id)
+            const attachment = existingRatingCurves.value.find(
+              (item) => String(item.id) === String(id)
+            )
+            const res = attachment
+              ? await hs.things.deleteAttachment(thingId, attachment.name)
+              : await hs.thingFileAttachments.delete(thingId, id)
             if (!res.ok) {
               failedDeletes.push({
                 id,
@@ -225,65 +377,90 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
         }
       }
 
-      if (pendingMetadataUpdates.value.length) {
-        for (const item of pendingMetadataUpdates.value) {
-          const key = String(item.attachmentId)
-          if (appliedDeleteIds.has(key)) {
-            appliedMetadataUpdateIds.add(key)
+      const updateIds = new Set([
+        ...metadataUpdatesById.keys(),
+        ...replacesById.keys(),
+      ])
+
+      for (const key of updateIds) {
+        if (appliedDeleteIds.has(key)) {
+          if (metadataUpdatesById.has(key)) appliedMetadataUpdateIds.add(key)
+          if (replacesById.has(key)) appliedReplaceIds.add(key)
+          continue
+        }
+
+        const metadataUpdate = metadataUpdatesById.get(key)
+        const replace = replacesById.get(key)
+        const attachment = existingRatingCurves.value.find(
+          (item) => String(item.id) === key
+        )
+
+        if (!attachment) {
+          if (metadataUpdate) {
+            failedMetadataUpdates.push({
+              id: metadataUpdate.attachmentId,
+              message: 'Unable to find rating curve attachment.',
+            })
+          }
+          if (replace) {
+            failedReplaces.push({
+              id: replace.attachmentId,
+              message: 'Unable to find rating curve attachment.',
+            })
+          }
+          continue
+        }
+
+        if (metadataUpdate && metadataUpdate.name !== attachment.name) {
+          failedMetadataUpdates.push({
+            id: metadataUpdate.attachmentId,
+            message: EXISTING_RATING_CURVE_RENAME_MESSAGE,
+          })
+          if (replace) {
+            failedReplaces.push({
+              id: replace.attachmentId,
+              message: EXISTING_RATING_CURVE_RENAME_MESSAGE,
+            })
+          }
+          continue
+        }
+
+        try {
+          const res = await replaceExistingRatingCurveAttachment({
+            thingId,
+            attachment,
+            description: metadataUpdate?.description ?? (attachment.description || ''),
+            file: replace?.file,
+          })
+
+          if (!res.ok || !res.data) {
+            if (metadataUpdate) {
+              failedMetadataUpdates.push({
+                id: metadataUpdate.attachmentId,
+                message: res.message || 'Unable to update rating curve metadata.',
+              })
+            }
+            if (replace) {
+              failedReplaces.push({
+                id: replace.attachmentId,
+                message: res.message || 'Unable to replace rating curve file.',
+              })
+            }
             continue
           }
 
-          try {
-            const res = await hs.thingFileAttachments.update(
-              thingId,
-              item.attachmentId,
-              {
-                name: item.name,
-                description: item.description,
-              }
-            )
-            if (!res.ok || !res.data) {
-              failedMetadataUpdates.push({
-                id: item.attachmentId,
-                message: res.message || 'Unable to update rating curve metadata.',
-              })
-              continue
-            }
-            appliedMetadataUpdateIds.add(key)
-          } catch (error: any) {
+          if (metadataUpdate) appliedMetadataUpdateIds.add(key)
+          if (replace) appliedReplaceIds.add(key)
+        } catch (error: any) {
+          if (metadataUpdate) {
             failedMetadataUpdates.push({
-              id: item.attachmentId,
+              id: metadataUpdate.attachmentId,
               message: error?.message || 'Unable to update rating curve metadata.',
             })
           }
-        }
-      }
-
-      if (pendingReplaces.value.length) {
-        for (const item of pendingReplaces.value) {
-          const replaceKey = String(item.attachmentId)
-          if (appliedDeleteIds.has(replaceKey)) {
-            appliedReplaceIds.add(replaceKey)
-            continue
-          }
-
-          try {
-            const res = await hs.thingFileAttachments.replaceFile(
-              thingId,
-              item.attachmentId,
-              item.file
-            )
-            if (!res.ok || !res.data) {
-              failedReplaces.push({
-                id: item.attachmentId,
-                message: res.message || 'Unable to replace rating curve file.',
-              })
-              continue
-            }
-            appliedReplaceIds.add(replaceKey)
-          } catch (error: any) {
+          if (replace) {
             failedReplaces.push({
-              id: item.attachmentId,
+              id: replace.attachmentId,
               message: error?.message || 'Unable to replace rating curve file.',
             })
           }

@@ -7,10 +7,15 @@
       </v-card-title>
     </v-toolbar>
 
-    <v-card-text v-if="relatedSources.length > 0">
+    <v-card-text v-if="hasLinkedTasks">
       <v-alert>
-        Before you remove <strong> {{ orchestrationSystem.name }} </strong> as
-        an orchestration system, you must delete all of its related tasks.
+        Before you remove <strong>{{ orchestrationSystem.name }}</strong
+        >, you must delete its {{ linkedTaskCount }}
+        {{ linkedTaskCount === 1 ? 'linked task' : 'linked tasks' }}
+        <template v-if="orchestrationSystem.workspaceId == null">
+          across all workspaces
+        </template>
+        first.
       </v-alert>
     </v-card-text>
 
@@ -55,11 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import hs, {
-  Task,
-  OrchestrationSystem,
-  TaskExpanded,
-} from '@hydroserver/client'
+import hs, { OrchestrationSystem } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { computed, ref } from 'vue'
 import { mdiAlert } from '@mdi/js'
@@ -70,20 +71,19 @@ const props = defineProps({
     type: Object as () => OrchestrationSystem,
     required: true,
   },
-  tasks: { type: Object as () => TaskExpanded[], required: true },
 })
 
 const deleteInput = ref('')
 
-const relatedSources = computed(() =>
-  props.tasks.filter(
-    (ds) => ds.orchestrationSystem?.id === props.orchestrationSystem.id
-  )
-)
+const linkedTaskCount = computed(() => {
+  const count = Number(props.orchestrationSystem.taskCount ?? 0)
+  return Number.isFinite(count) && count > 0 ? count : 0
+})
+const hasLinkedTasks = computed(() => linkedTaskCount.value > 0)
 
 const canDelete = computed(
   () =>
-    relatedSources.value.length === 0 &&
+    !hasLinkedTasks.value &&
     deleteInput.value.trim().toLowerCase() ===
       props.orchestrationSystem.name.toLowerCase()
 )
@@ -96,9 +96,9 @@ const onDelete = async () => {
     Snackbar.warn('Name does not match.')
     return
   }
-  if (relatedSources.value.length > 0) {
+  if (hasLinkedTasks.value) {
     Snackbar.warn(
-      `Before you remove ${props.orchestrationSystem.name} as an orchestration system, you must delete all of its related tasks.`
+      `Before you remove ${props.orchestrationSystem.name}, you must delete its linked tasks first.`
     )
     return
   }

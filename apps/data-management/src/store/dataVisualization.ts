@@ -80,6 +80,39 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const dataZoomEnd = ref(100)
   const xAxisRange = ref<{ start: number; end: number } | null>(null)
   const yAxisRanges = ref<Record<string, [number, number]>>({})
+  const thingById = computed(
+    () => new Map(things.value.map((thing) => [thing.id, thing]))
+  )
+  const observedPropertyById = computed(
+    () =>
+      new Map(
+        observedProperties.value.map((observedProperty) => [
+          observedProperty.id,
+          observedProperty,
+        ])
+      )
+  )
+  const processingLevelById = computed(
+    () =>
+      new Map(
+        processingLevels.value.map((processingLevel) => [
+          processingLevel.id,
+          processingLevel,
+        ])
+      )
+  )
+  const selectedThingIds = computed(
+    () => new Set(selectedThings.value.map((thing) => thing.id))
+  )
+  const selectedWorkspaceIds = computed(
+    () => new Set(selectedWorkspaces.value.map((workspace) => workspace.id))
+  )
+  const selectedObservedPropertyNameSet = computed(
+    () => new Set(selectedObservedPropertyNames.value)
+  )
+  const selectedProcessingLevelNameSet = computed(
+    () => new Set(selectedProcessingLevelNames.value)
+  )
 
   function resetState() {
     selectedThings.value = []
@@ -104,50 +137,44 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   function matchesSelectedObservedProperty(datastream: Datastream) {
-    if (selectedObservedPropertyNames.value.length === 0) return true
+    if (selectedObservedPropertyNameSet.value.size === 0) return true
 
-    const OPName = observedProperties.value.find(
-      (op) => op.id === datastream.observedPropertyId
+    const OPName = observedPropertyById.value.get(
+      datastream.observedPropertyId
     )?.name
     return (
       OPName !== undefined &&
-      selectedObservedPropertyNames.value.includes(OPName)
+      selectedObservedPropertyNameSet.value.has(OPName)
     )
   }
 
   function matchesSelectedProcessingLevel(datastream: Datastream) {
-    if (selectedProcessingLevelNames.value.length === 0) return true
+    if (selectedProcessingLevelNameSet.value.size === 0) return true
 
-    const PLName = processingLevels.value.find(
-      (pl) => pl.id === datastream.processingLevelId
+    const PLName = processingLevelById.value.get(
+      datastream.processingLevelId
     )?.definition
     return (
       PLName !== undefined &&
-      selectedProcessingLevelNames.value.includes(PLName)
+      selectedProcessingLevelNameSet.value.has(PLName)
     )
   }
 
   function matchesSelectedThing(datastream: Datastream) {
-    if (selectedThings.value.length === 0) return true
-
     return (
-      selectedThings.value.length === 0 ||
-      selectedThings.value.some((thing) => thing.id === datastream.thingId)
+      selectedThingIds.value.size === 0 ||
+      selectedThingIds.value.has(datastream.thingId)
     )
   }
 
   function matchesSelectedWorkspace(datastream: Datastream) {
-    if (selectedWorkspaces.value.length === 0) return true
+    if (selectedWorkspaceIds.value.size === 0) return true
 
-    const thingWorkspaceId = things.value.find(
-      (thing) => thing.id === datastream.thingId
-    )?.workspaceId
+    const thingWorkspaceId = thingById.value.get(datastream.thingId)?.workspaceId
 
     if (!thingWorkspaceId) return false
 
-    return selectedWorkspaces.value.some(
-      (workspace) => workspace.id === thingWorkspaceId
-    )
+    return selectedWorkspaceIds.value.has(thingWorkspaceId)
   }
 
   const filteredDatastreams = computed(() => {
@@ -431,6 +458,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastreams,
     processingLevels,
     observedProperties,
+    thingById,
+    observedPropertyById,
+    processingLevelById,
     selectedThings,
     selectedWorkspaces,
     selectedObservedPropertyNames,

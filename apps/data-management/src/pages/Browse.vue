@@ -11,18 +11,19 @@ import { onMounted, ref } from 'vue'
 import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import BrowseFilterTool from '@/components/Browse/BrowseFilterTool.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
-import hs, { Thing } from '@hydroserver/client'
+import { listThingMarkers } from '@/api/thingMarkers'
+import type { ThingMarker } from '@/types'
 
-const things = ref<Thing[]>([])
-const filteredThings = ref<Thing[]>([])
+const things = ref<ThingMarker[]>([])
+const filteredThings = ref<ThingMarker[]>([])
 const loaded = ref(false)
 
-const updateFilteredThings = (updatedThings: Thing[]) => {
+const updateFilteredThings = (updatedThings: ThingMarker[]) => {
   filteredThings.value = updatedThings
 }
 
 onMounted(async () => {
-  filteredThings.value = things.value = await hs.things.listAllItems()
+  filteredThings.value = things.value = await listThingMarkers()
 
   // The BroseFilterTool changes the Canvas size of the Map, making it zoom too close.
   // Wait until we're sure the drawer has opened, then render map
