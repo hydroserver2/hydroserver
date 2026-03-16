@@ -1,6 +1,6 @@
 # HydroServer
 
-This repository now serves as the HydroServer monorepo. It contains the core HydroServer apps, services, deployment assets, and shared packages in one release boundary.
+This repository contains the core HydroServer apps, services, deployment assets, and shared packages.
 
 - Access the [HydroServer issue tracker](https://github.com/hydroserver2/hydroserver/issues)
 - Access [HydroServer documentation](https://hydroserver2.github.io/hydroserver/)
@@ -28,13 +28,10 @@ HydroServer is organized as follows:
 
 - `deploy/dev`: local development deployment assets.
 - `deploy/prod`: production deployment assets.
-- `deploy/gcp`: Google Cloud deployment assets.
 
 **System Tests** (`tests/`)
 
 - `tests/e2e`: end-to-end tests for the HydroServer product as a whole.
-
-Per the monorepo proposal, the QC App and Streaming Data Loader remain outside this core repository for now and continue to live in their own GitHub repositories.
 
 ## History
 
