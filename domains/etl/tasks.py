@@ -18,6 +18,31 @@ from hydroserverpy.etl.exceptions import ETLError
 from .internal import HydroServerInternalExtractor, HydroServerInternalTransformer, HydroServerInternalLoader
 
 
+def _serialize_log_entries(context) -> list[dict]:
+    entries = getattr(context, "log_entries", None) or []
+    serialized = []
+
+    for entry in entries:
+        if hasattr(entry, "model_dump"):
+            serialized.append(entry.model_dump(mode="json"))
+        elif isinstance(entry, dict):
+            serialized.append(entry)
+
+    return serialized
+
+
+def _build_context_result_payload(context) -> dict:
+    payload = {
+        "runtime_variables": context.runtime_variables,
+        "log_entries": _serialize_log_entries(context),
+    }
+
+    if context.results is not None:
+        payload.update(context.results.dict())
+
+    return payload
+
+
 def _raise_aggregation_error(message: str):
     raise ETLError(message)
 
@@ -152,17 +177,15 @@ def run_etl_task(self, task_id: str):
 
     if context.exception:
         if isinstance(context.exception, ETLError):
-            context.exception.result = {
-                "runtime_variables": context.runtime_variables,
-                **(context.results.dict() if context.results is not None else {})
-            }
+            context.exception.result = _build_context_result_payload(context)
+            context.exception.results = context.exception.result
             raise context.exception
         else:
             error = ETLError(
                 "Encountered an unexpected ETL execution error. "
                 "See task logs for additional details."
             )
-            error.results = context.results.dict()
+            error.results = _build_context_result_payload(context)
             raise error from context.exception
 
     if context.results.values_loaded_total == 0:
@@ -175,8 +198,7 @@ def run_etl_task(self, task_id: str):
 
     return {
         "message": message,
-        "runtime_variables": context.runtime_variables,
-        **context.results.dict(),
+        **_build_context_result_payload(context),
     }
 
 
@@ -270,7 +292,11 @@ def mark_etl_task_failure(sender, task_id, einfo, exception, **extra):
         "error": str(exception),
         "traceback": einfo.traceback,
     }
-    result.update(getattr(exception, "results", None) or {})
+    result.update(
+        getattr(exception, "results", None)
+        or getattr(exception, "result", None)
+        or {}
+    )
 
     task_run.status = "FAILURE"
     task_run.finished_at = timezone.now()

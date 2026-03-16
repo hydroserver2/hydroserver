@@ -2,12 +2,14 @@ import pytest
 import uuid
 from datetime import datetime
 from collections import Counter
+from types import SimpleNamespace
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.utils import timezone
 from domains.etl.models import Task, TaskRun
 from domains.etl.services import TaskService
-from domains.etl.tasks import run_etl_task
+from domains.etl.tasks import mark_etl_task_failure, run_etl_task
+from hydroserverpy.etl.exceptions import ETLError
 from interfaces.api.schemas import (
     TaskPostBody,
     TaskPatchBody,
@@ -338,6 +340,55 @@ def test_run_task_returns_completed_run_state_in_eager_mode(get_principal, monke
     assert result["message"] == "Run completed."
     assert result["result"] == {"message": "Run completed."}
     assert result["finished_at"] is not None
+
+
+def test_mark_etl_task_failure_keeps_structured_log_entries_from_exception_result():
+    task = Task.objects.get(pk="019adbc3-35e8-7f25-bc68-171fb66d446e")
+    task_run = TaskRun.objects.create(
+        task=task,
+        status="RUNNING",
+        started_at=timezone.now(),
+    )
+    exception = ETLError("Run failed.")
+    exception.result = {
+        "runtime_variables": {
+            "extractor": {
+                "source_uri": "https://example.com/runtime.csv",
+            }
+        },
+        "log_entries": [
+            {
+                "timestamp": "2026-03-16T00:00:00Z",
+                "level": "INFO",
+                "message": "Starting extract step.",
+            }
+        ],
+        "failure_count": 1,
+    }
+
+    mark_etl_task_failure(
+        sender=run_etl_task,
+        task_id=task_run.id,
+        einfo=SimpleNamespace(traceback="Traceback body"),
+        exception=exception,
+    )
+
+    task_run.refresh_from_db()
+
+    assert task_run.status == "FAILURE"
+    assert task_run.result["message"] == "Run failed."
+    assert task_run.result["traceback"] == "Traceback body"
+    assert task_run.result["failure_count"] == 1
+    assert task_run.result["runtime_variables"]["extractor"]["source_uri"] == (
+        "https://example.com/runtime.csv"
+    )
+    assert task_run.result["log_entries"] == [
+        {
+            "timestamp": "2026-03-16T00:00:00Z",
+            "level": "INFO",
+            "message": "Starting extract step.",
+        }
+    ]
 
 
 @pytest.mark.parametrize(
