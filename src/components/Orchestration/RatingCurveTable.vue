@@ -345,6 +345,13 @@
           v-model="editAttachmentName"
           label="Rating curve name *"
           class="mb-3"
+          :readonly="isEditingExistingAttachment"
+          :hint="
+            isEditingExistingAttachment
+              ? 'Existing rating curve names are fixed because task references use the attachment filename.'
+              : undefined
+          "
+          persistent-hint
         />
         <v-textarea
           v-model="editAttachmentDescription"
@@ -499,7 +506,11 @@ import {
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
 import { getRatingCurveReference } from '@/utils/orchestration/ratingCurve'
-import { useRatingCurveStore } from '@/store/ratingCurves'
+import {
+  EXISTING_RATING_CURVE_RENAME_MESSAGE,
+  replaceExistingRatingCurveAttachment,
+  useRatingCurveStore,
+} from '@/store/ratingCurves'
 
 const props = withDefaults(
   defineProps<{
@@ -663,6 +674,9 @@ const canSaveEditAttachment = computed(
     !editFileValidationPending.value &&
     !editFileValidationError.value &&
     hasEditChanges.value
+)
+const isEditingExistingAttachment = computed(
+  () => !!editAttachment.value && !editAttachment.value.pending
 )
 const hasEditMetadataChanges = computed(() => {
   const item = editAttachment.value
@@ -960,9 +974,9 @@ async function deleteAttachment() {
 
   saving.value = true
   try {
-    const res = await hs.thingFileAttachments.delete(
+    const res = await hs.things.deleteAttachment(
       props.thingId,
-      activeAttachment.value.id
+      activeAttachment.value.name
     )
 
     if (!res.ok) {
@@ -1135,6 +1149,10 @@ async function saveEditAttachment() {
   const trimmedName = editAttachmentName.value.trim()
   const trimmedDescription = editAttachmentDescription.value.trim()
   if (!trimmedName) return
+  if (!item.pending && trimmedName !== item.name) {
+    Snackbar.error(EXISTING_RATING_CURVE_RENAME_MESSAGE)
+    return
+  }
 
   const metadataChanged =
     trimmedName !== item.name || trimmedDescription !== (item.description || '')
@@ -1213,39 +1231,29 @@ async function saveEditAttachment() {
 
   saving.value = true
   try {
-    let updatedAttachment =
+    const currentAttachment =
       backendAttachments.value.find(
         (attachment) => String(attachment.id) === String(item.id)
       ) || null
-
-    if (metadataChanged) {
-      const metaRes = await hs.thingFileAttachments.update(props.thingId, item.id, {
-        name: trimmedName,
-        description: trimmedDescription,
-      })
-      if (!metaRes.ok || !metaRes.data) {
-        Snackbar.error(metaRes.message || 'Unable to update rating curve.')
-        return
-      }
-      updatedAttachment = metaRes.data
+    if (!currentAttachment) {
+      Snackbar.error('Unable to find rating curve attachment.')
+      return
     }
 
-    if (fileChanged && file) {
-      const fileRes = await hs.thingFileAttachments.replaceFile(
-        props.thingId,
-        item.id,
-        file
-      )
-      if (!fileRes.ok || !fileRes.data) {
-        Snackbar.error(fileRes.message || 'Unable to update rating curve file.')
-        return
-      }
-      updatedAttachment = fileRes.data
+    const res = await replaceExistingRatingCurveAttachment({
+      thingId: props.thingId,
+      attachment: currentAttachment,
+      description: trimmedDescription,
+      file: fileChanged ? file : undefined,
+    })
+    if (!res.ok || !res.data) {
+      Snackbar.error(res.message || 'Unable to update rating curve.')
+      return
     }
 
     backendAttachments.value = backendAttachments.value.map((attachment) =>
       String(attachment.id) === String(item.id)
-        ? updatedAttachment || attachment
+        ? res.data || attachment
         : attachment
     )
     emitAttachmentsChanged()
