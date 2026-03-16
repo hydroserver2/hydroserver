@@ -60,6 +60,55 @@ class CSVTransformer(Transformer):
             )
         return self
 
+    def _missing_header_message(self, clean_payload: StringIO, data_mappings: list[ETLDataMapping]) -> str:
+        if self.identifier_type == "index":
+            return (
+                "A required column was not found in the file header. "
+                "The source file may have changed or the header row may be set incorrectly. "
+                "Confirm the file layout and update the column mappings if needed."
+            )
+
+        try:
+            clean_payload.seek(0)
+            header_idx = (self.header_row - 1) if self.header_row is not None else -1
+            data_start_idx = self.data_start_row - 1
+            header_df = read_csv(
+                clean_payload,
+                sep=self.delimiter,
+                header=0,
+                skiprows=[i for i in range(data_start_idx) if i != header_idx],
+                nrows=0,
+            )
+            available_columns = [str(column) for column in header_df.columns]
+        except Exception:
+            available_columns = []
+
+        missing_timestamp = self.timestamp_key not in available_columns
+        missing_sources = [
+            str(mapping.source_identifier)
+            for mapping in data_mappings
+            if str(mapping.source_identifier) not in available_columns
+        ]
+
+        if missing_timestamp and not missing_sources:
+            return (
+                "The configured timestamp column was not found in the file header. "
+                "Confirm the timestamp mapping and verify the delimiter/headerRow settings match the source file."
+            )
+
+        if missing_timestamp and missing_sources:
+            return (
+                "Configured CSV columns were not found in the file header. "
+                "This often means the delimiter or headerRow setting is incorrect. "
+                "Verify the delimiter and headerRow settings, then run the job again."
+            )
+
+        return (
+            "A required column was not found in the file header. "
+            "The source file may have changed or the header row may be set incorrectly. "
+            "Confirm the file layout and update the column mappings if needed."
+        )
+
     def transform(
         self,
         payload: Union[str, TextIO, BytesIO],
@@ -146,10 +195,7 @@ class CSVTransformer(Transformer):
                     "Ensure the provided source file contains valid CSV data."
                 ) from e
             elif "Usecols do not match columns" in exc_message or "not in list" in exc_message:
-                raise ETLError(
-                    "The CSV transformer received an invalid CSV payload. "
-                    "One or more configured CSV columns were not found in the header row."
-                ) from e
+                raise ETLError(self._missing_header_message(clean_payload, data_mappings)) from e
             else:
                 raise ETLError(
                     "The CSV transformer encountered an unexpected error while parsing the CSV payload. "

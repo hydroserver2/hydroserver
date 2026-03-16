@@ -9,6 +9,7 @@ from io import BytesIO
 from ..extractors import Extractor
 from ..transformers import Transformer, ETLDataMapping
 from ..loaders import Loader, ETLLoaderResult
+from ..user_facing_errors import coerce_known_etl_error
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +179,7 @@ class ETLPipeline(BaseModel):
 
         with self._capture_logs(context):
             context.status = ETLStatus.RUNNING
+            context.stage = ETLStage.EXTRACT
 
             try:
                 context.runtime_variables["extractor"] = self.extractor.render_runtime_data(
@@ -192,13 +194,14 @@ class ETLPipeline(BaseModel):
                 extractor_runtime = context.runtime_variables.get("extractor") or {}
                 source_uri = extractor_runtime.get("source_uri") or extractor_runtime.get("sourceUri")
             except Exception as e:
-                logger.error("Pipeline setup failed: %s", e)
+                coerced = coerce_known_etl_error(e)
+                logger.error("%s", coerced)
                 if raise_on_error:
-                    raise
-                context.mark_failed(e)
+                    if coerced is e:
+                        raise
+                    raise coerced from e
+                context.mark_failed(coerced)
                 return context
-
-            context.stage = ETLStage.EXTRACT
 
             try:
                 logger.info("Starting extract")
@@ -214,10 +217,13 @@ class ETLPipeline(BaseModel):
                     self._summarize_payload(extracted_payload),
                 )
             except Exception as e:
-                logger.error("Extract step failed: %s", e)
+                coerced = coerce_known_etl_error(e)
+                logger.error("Extract step failed: %s", coerced)
                 if raise_on_error:
-                    raise
-                context.mark_failed(e)
+                    if coerced is e:
+                        raise
+                    raise coerced from e
+                context.mark_failed(coerced)
                 return context
 
             context.stage = ETLStage.TRANSFORM
@@ -234,10 +240,13 @@ class ETLPipeline(BaseModel):
                     self._summarize_payload(transformed_payload),
                 )
             except Exception as e:
-                logger.error("Transform step failed: %s", e)
+                coerced = coerce_known_etl_error(e)
+                logger.error("Transform step failed: %s", coerced)
                 if raise_on_error:
-                    raise
-                context.mark_failed(e)
+                    if coerced is e:
+                        raise
+                    raise coerced from e
+                context.mark_failed(coerced)
                 return context
 
             context.stage = ETLStage.LOAD
@@ -249,10 +258,13 @@ class ETLPipeline(BaseModel):
                     **kwargs
                 )
             except Exception as e:
-                logger.error("Load step failed: %s", e)
+                coerced = coerce_known_etl_error(e)
+                logger.error("Load step failed: %s", coerced)
                 if raise_on_error:
-                    raise
-                context.mark_failed(e)
+                    if coerced is e:
+                        raise
+                    raise coerced from e
+                context.mark_failed(coerced)
                 return context
 
             if context.results.failure_count == 0:
