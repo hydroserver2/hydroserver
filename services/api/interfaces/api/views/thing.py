@@ -3,11 +3,15 @@ from typing import Optional
 from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.db import transaction
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse
 from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
+    ThingMarkerResponse,
+    ThingMarkerQueryParameters,
+    ThingSiteSummaryResponse,
+    ThingSiteSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -18,7 +22,7 @@ from interfaces.api.schemas import (
     TagDeleteBody,
     FileAttachmentQueryParameters,
     FileAttachmentGetResponse,
-    FileAttachmentPatchBody,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
 from domains.sta.services import ThingService
@@ -53,6 +57,52 @@ def get_things(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
+    )
+
+
+@thing_router.get(
+    "/markers",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: list[ThingMarkerResponse],
+        401: str,
+    },
+    by_alias=True,
+)
+def get_thing_markers(
+    request: HydroServerHttpRequest,
+    query: Query[ThingMarkerQueryParameters],
+):
+    """
+    Get lean marker data for public Things plus private Things visible to the authenticated user.
+    """
+
+    return 200, thing_service.list_markers(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
+    )
+
+
+@thing_router.get(
+    "/site-summaries",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: list[ThingSiteSummaryResponse],
+        401: str,
+    },
+    by_alias=True,
+)
+def get_thing_site_summaries(
+    request: HydroServerHttpRequest,
+    query: Query[ThingSiteSummaryQueryParameters],
+):
+    """
+    Get lean site summary data for public Things and Things associated with the authenticated user.
+    """
+
+    return 200, thing_service.list_site_summaries(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
     )
 
 
@@ -356,7 +406,7 @@ def get_thing_file_attachments(
     return 200, thing_service.get_file_attachments(
         principal=request.principal,
         uid=thing_id,
-        attachment_types=query.type,
+        filtering=query.dict(exclude_unset=True),
     )
 
 
@@ -376,10 +426,9 @@ def get_thing_file_attachments(
 def add_thing_file_attachment(
     request: HydroServerHttpRequest,
     thing_id: Path[uuid.UUID],
-    file_attachment_type: str = Form(...),
-    name: Optional[str] = Form(None),
-    description: Optional[str] = Form(None),
     file: UploadedFile = File(...),
+    description: Optional[str] = Form(None),
+    file_attachment_type: str = Form(...),
 ):
     """
     Add a file attachment to a thing.
@@ -389,142 +438,47 @@ def add_thing_file_attachment(
         principal=request.principal,
         uid=thing_id,
         file=file,
-        file_attachment_type=file_attachment_type,
-        name=name,
-        description=description,
-    )
-
-
-@thing_router.patch(
-    "/{thing_id}/file-attachments/{attachment_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
-    response={
-        200: FileAttachmentGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        404: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def update_thing_file_attachment(
-    request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
-    data: FileAttachmentPatchBody,
-):
-    """
-    Update a thing file attachment's metadata.
-    """
-
-    return 200, thing_service.update_file_attachment(
-        principal=request.principal,
-        uid=thing_id,
-        attachment_id=attachment_id,
-        data=data,
-    )
-
-
-def _replace_thing_file_attachment(
-    request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
-    file: UploadedFile = File(...),
-):
-    """
-    Replace the file content for an existing thing file attachment.
-    """
-
-    return 200, thing_service.replace_file_attachment(
-        principal=request.principal,
-        uid=thing_id,
-        attachment_id=attachment_id,
-        file=file,
+        data=FileAttachmentPostBody(
+            name=file.name,
+            description=description,
+            file_attachment_type=file_attachment_type
+        )
     )
 
 
 @thing_router.put(
-    "/{thing_id}/file-attachments/{attachment_id}/file",
-    auth=[session_auth, bearer_auth, apikey_auth],
-    response={
-        200: FileAttachmentGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        404: str,
-        413: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def replace_thing_file_attachment_put(
-    request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
-    file: UploadedFile = File(...),
-):
-    return _replace_thing_file_attachment(
-        request=request,
-        thing_id=thing_id,
-        attachment_id=attachment_id,
-        file=file,
-    )
-
-
-@thing_router.post(
-    "/{thing_id}/file-attachments/{attachment_id}/file",
-    auth=[session_auth, bearer_auth, apikey_auth],
-    response={
-        200: FileAttachmentGetResponse,
-        400: str,
-        401: str,
-        403: str,
-        404: str,
-        413: str,
-        422: str,
-    },
-    by_alias=True,
-)
-def replace_thing_file_attachment_post(
-    request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
-    file: UploadedFile = File(...),
-):
-    return _replace_thing_file_attachment(
-        request=request,
-        thing_id=thing_id,
-        attachment_id=attachment_id,
-        file=file,
-    )
-
-
-@thing_router.delete(
-    "/{thing_id}/file-attachments/{attachment_id}",
+    "/{thing_id}/file-attachments",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         204: None,
         400: str,
         401: str,
         403: str,
-        404: str,
+        413: str,
+        422: str,
     },
     by_alias=True,
 )
-def delete_thing_file_attachment(
+def replace_thing_file_attachment(
     request: HydroServerHttpRequest,
     thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
+    file: UploadedFile = File(...),
+    description: Optional[str] = Form(None),
+    file_attachment_type: str = Form(...),
 ):
     """
-    Remove a file attachment from a thing by id.
+    Replace a file attachment for a thing.
     """
 
-    return 204, thing_service.delete_file_attachment(
+    return 204, thing_service.replace_file_attachment(
         principal=request.principal,
         uid=thing_id,
-        attachment_id=attachment_id,
+        file=file,
+        data=FileAttachmentPostBody(
+            name=file.name,
+            description=description,
+            file_attachment_type=file_attachment_type
+        )
     )
 
 
@@ -553,39 +507,4 @@ def remove_thing_file_attachment(
         principal=request.principal,
         uid=thing_id,
         data=data,
-    )
-
-
-@thing_router.get(
-    "/{thing_id}/file-attachments/{attachment_id}/download",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
-    response={200: None, 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def download_thing_file_attachment(
-    request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    attachment_id: Path[int],
-    token: Optional[str] = None,
-):
-    """
-    Download a thing file attachment.
-    """
-
-    file_attachment = thing_service.get_file_attachment_for_download(
-        principal=request.principal,
-        uid=thing_id,
-        attachment_id=attachment_id,
-        token=token,
-    )
-
-    if not file_attachment.file_attachment:
-        return 404, "File attachment does not exist"
-
-    file_obj = file_attachment.file_attachment.open("rb")
-    return FileResponse(
-        file_obj,
-        as_attachment=True,
-        filename=file_attachment.name,
-        content_type="application/octet-stream",
     )

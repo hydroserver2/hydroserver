@@ -82,6 +82,14 @@ def test_list_orchestration_system(
         assert Counter(
             str(orchestration_system.name) for orchestration_system in result
         ) == Counter(orchestration_system_names)
+        task_counts = {
+            str(orchestration_system.name): orchestration_system.task_count
+            for orchestration_system in result
+        }
+        if "HydroServer" in orchestration_system_names:
+            assert task_counts["HydroServer"] == 0
+        if "Test Streaming Data Loader" in orchestration_system_names:
+            assert task_counts["Test Streaming Data Loader"] == 1
         assert (
             OrchestrationSystemSummaryResponse.from_orm(orchestration_system)
             for orchestration_system in result
@@ -162,6 +170,7 @@ def test_get_orchestration_system(
             principal=get_principal(principal), uid=uuid.UUID(orchestration_system)
         )
         assert orchestration_system_get.name == message
+        assert orchestration_system_get.task_count == 1
         assert OrchestrationSystemSummaryResponse.from_orm(orchestration_system_get)
 
 
@@ -392,12 +401,42 @@ def test_edit_orchestration_system(
 @pytest.mark.parametrize(
     "principal, orchestration_system, message, error_code",
     [
-        ("admin", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
-        ("admin", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
-        ("owner", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
-        ("owner", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
-        ("editor", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
-        ("editor", "7cb900d2-eb11-4a59-a05b-dd02d95af312", None, None),
+        (
+            "admin",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
+        (
+            "admin",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
+        (
+            "owner",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
+        (
+            "owner",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
+        (
+            "editor",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
+        (
+            "editor",
+            "7cb900d2-eb11-4a59-a05b-dd02d95af312",
+            "Cannot delete orchestration system while 1 task is still linked to it.",
+            409,
+        ),
         (
             "viewer",
             "7cb900d2-eb11-4a59-a05b-dd02d95af312",
@@ -475,3 +514,21 @@ def test_delete_orchestration_system(
             principal=get_principal(principal), uid=uuid.UUID(orchestration_system)
         )
         assert orchestration_system_delete == "Orchestration system deleted"
+
+
+def test_delete_unlinked_orchestration_system(get_principal):
+    orchestration_system = orchestration_system_service.create(
+        principal=get_principal("owner"),
+        data=OrchestrationSystemPostBody(
+            name="Temporary",
+            workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
+            orchestration_system_type="SDL",
+        ),
+    )
+
+    result = orchestration_system_service.delete(
+        principal=get_principal("owner"),
+        uid=orchestration_system.id,
+    )
+
+    assert result == "Orchestration system deleted"

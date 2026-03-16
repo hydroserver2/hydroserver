@@ -103,6 +103,18 @@ class TaskQueryParameters(CollectionQueryParameters):
         alias="target_identifier"
     )
     expand_related: bool | None = None
+    include_mappings: bool | None = Query(
+        None,
+        description="Whether to include mapping details in task responses.",
+    )
+    include_latest_run_result: bool | None = Query(
+        None,
+        description="Whether to include the full latest run result payload in task responses.",
+    )
+    include_data_connection_settings: bool | None = Query(
+        None,
+        description="Whether to include extractor, transformer, and loader settings when data connections are expanded.",
+    )
 
 
 class TaskScheduleFields(Schema):
@@ -166,6 +178,7 @@ class TaskSummaryResponse(BaseGetResponse, TaskFields):
     orchestration_system_id: uuid.UUID
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
+    target_identifiers: list[str] = Field(default_factory=list)
     mappings: list[TaskMappingResponse]
 
 
@@ -176,6 +189,7 @@ class TaskDetailResponse(BaseGetResponse, TaskFields):
     orchestration_system: OrchestrationSystemSummaryResponse
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
+    target_identifiers: list[str] = Field(default_factory=list)
     mappings: list[TaskMappingResponse]
 
 

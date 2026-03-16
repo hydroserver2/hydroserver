@@ -1,8 +1,10 @@
 import pytest
 import uuid
 from collections import Counter
+from django.core.cache import cache
 from ninja.errors import HttpError
 from django.http import HttpResponse
+from domains.sta.models import Thing
 from domains.sta.services import ThingService
 from interfaces.api.schemas import (
     ThingPostBody,
@@ -118,6 +120,120 @@ def test_list_thing(
         )
         assert Counter(str(thing.name) for thing in result) == Counter(thing_names)
         assert (ThingSummaryResponse.from_orm(thing) for thing in result)
+
+
+def test_list_thing_markers_returns_lean_payload_with_site_type(get_principal):
+    cache.clear()
+
+    anonymous_markers = thing_service.list_markers(principal=None)
+    owner_markers = thing_service.list_markers(principal=get_principal("owner"))
+
+    assert anonymous_markers == [
+        {
+            "id": "3b7818af-eff7-4149-8517-e5cad9dc22e1",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "Public Thing",
+            "site_type": "Public",
+            "is_private": False,
+            "latitude": 41.739742,
+            "longitude": -111.793766,
+        }
+    ]
+    assert Counter(marker["name"] for marker in owner_markers) == Counter(
+        [
+            "Public Thing",
+            "Private Thing",
+            "Private Thing Public Workspace",
+            "Public Thing Private Workspace",
+        ]
+    )
+    assert all(
+        set(marker) == {
+            "id",
+            "workspace_id",
+            "name",
+            "site_type",
+            "is_private",
+            "latitude",
+            "longitude",
+        }
+        for marker in owner_markers
+    )
+
+
+def test_list_thing_markers_uses_public_cache(django_assert_num_queries):
+    cache.clear()
+
+    thing_service.list_markers(principal=None)
+
+    with django_assert_num_queries(0):
+        cached_markers = thing_service.list_markers(principal=None)
+
+    assert cached_markers[0]["name"] == "Public Thing"
+
+
+def test_list_thing_markers_invalidates_public_cache_on_update():
+    cache.clear()
+    thing_service.list_markers(principal=None)
+
+    public_thing = Thing.objects.get(pk="3b7818af-eff7-4149-8517-e5cad9dc22e1")
+    public_thing.name = "Updated Public Thing"
+    public_thing.save()
+
+    markers = thing_service.list_markers(principal=None)
+
+    assert [marker["name"] for marker in markers] == ["Updated Public Thing"]
+
+
+def test_list_thing_site_summaries_returns_lean_payload_with_tags():
+    site_summaries = thing_service.list_site_summaries(principal=None)
+
+    assert site_summaries == [
+        {
+            "id": "3b7818af-eff7-4149-8517-e5cad9dc22e1",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "Public Thing",
+            "sampling_feature_code": "UWRL",
+            "site_type": "Public",
+            "is_private": False,
+            "latitude": 41.739742,
+            "longitude": -111.793766,
+            "tags": [
+                {
+                    "key": "Test Public Key",
+                    "value": "Test Public Value",
+                }
+            ],
+        }
+    ]
+
+
+def test_list_thing_site_summaries_filters_by_workspace(get_principal):
+    site_summaries = thing_service.list_site_summaries(
+        principal=get_principal("owner"),
+        filtering={"workspace_id": ["6e0deaf2-a92b-421b-9ece-86783265596f"]},
+    )
+
+    assert Counter(site["name"] for site in site_summaries) == Counter(
+        [
+            "Public Thing",
+            "Private Thing Public Workspace",
+        ]
+    )
+    assert all(
+        set(site) == {
+            "id",
+            "workspace_id",
+            "name",
+            "sampling_feature_code",
+            "site_type",
+            "is_private",
+            "latitude",
+            "longitude",
+            "tags",
+        }
+        for site in site_summaries
+    )
 
 
 @pytest.mark.parametrize(

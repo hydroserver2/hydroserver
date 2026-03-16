@@ -8,6 +8,8 @@ from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymo
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
+    DatastreamVisualizationBootstrapQueryParameters,
+    DatastreamVisualizationBootstrapResponse,
     DatastreamSummaryResponse,
     DatastreamDetailResponse,
     DatastreamQueryParameters,
@@ -16,7 +18,9 @@ from interfaces.api.schemas import (
     TagGetResponse,
     TagPostBody,
     TagDeleteBody,
+    FileAttachmentQueryParameters,
     FileAttachmentGetResponse,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
 from domains.sta.services import DatastreamService
@@ -52,6 +56,29 @@ def get_datastreams(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
+    )
+
+
+@datastream_router.get(
+    "/visualization-bootstrap",
+    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    response={
+        200: DatastreamVisualizationBootstrapResponse,
+        401: str,
+    },
+    by_alias=True,
+)
+def get_datastream_visualization_bootstrap(
+    request: HydroServerHttpRequest,
+    query: Query[DatastreamVisualizationBootstrapQueryParameters],
+):
+    """
+    Get the lean metadata required to bootstrap the visualization page.
+    """
+
+    return 200, datastream_service.list_visualization_bootstrap(
+        principal=request.principal,
+        filtering=query.dict(exclude_unset=True),
     )
 
 
@@ -371,7 +398,9 @@ def remove_datastream_tag(
     by_alias=True,
 )
 def get_datastream_file_attachments(
-    request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]
+    request: HydroServerHttpRequest,
+    datastream_id: Path[uuid.UUID],
+    query: Query[FileAttachmentQueryParameters],
 ):
     """
     Get all file attachments associated with a Datastream.
@@ -380,6 +409,7 @@ def get_datastream_file_attachments(
     return 200, datastream_service.get_file_attachments(
         principal=request.principal,
         uid=datastream_id,
+        filtering=query.dict(exclude_unset=True),
     )
 
 
@@ -399,8 +429,9 @@ def get_datastream_file_attachments(
 def add_datastream_file_attachment(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
-    file_attachment_type: str = Form(...),
     file: UploadedFile = File(...),
+    description: Optional[str] = Form(None),
+    file_attachment_type: str = Form(...),
 ):
     """
     Add a file attachment to a datastream.
@@ -410,7 +441,47 @@ def add_datastream_file_attachment(
         principal=request.principal,
         uid=datastream_id,
         file=file,
-        file_attachment_type=file_attachment_type,
+        data=FileAttachmentPostBody(
+            name=file.name,
+            description=description,
+            file_attachment_type=file_attachment_type
+        )
+    )
+
+
+@datastream_router.put(
+    "/{datastream_id}/file-attachments",
+    auth=[session_auth, bearer_auth, apikey_auth],
+    response={
+        204: None,
+        400: str,
+        401: str,
+        403: str,
+        413: str,
+        422: str,
+    },
+    by_alias=True,
+)
+def replace_datastream_file_attachment(
+    request: HydroServerHttpRequest,
+    datastream_id: Path[uuid.UUID],
+    file: UploadedFile = File(...),
+    description: Optional[str] = Form(None),
+    file_attachment_type: str = Form(...),
+):
+    """
+    Replace a file attachment for a datastream.
+    """
+
+    return 204, datastream_service.replace_file_attachment(
+        principal=request.principal,
+        uid=datastream_id,
+        file=file,
+        data=FileAttachmentPostBody(
+            name=file.name,
+            description=description,
+            file_attachment_type=file_attachment_type
+        )
     )
 
 

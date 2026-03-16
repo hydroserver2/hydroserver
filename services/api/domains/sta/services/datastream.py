@@ -25,6 +25,7 @@ from interfaces.api.schemas import (
     DatastreamPatchBody,
     TagPostBody,
     TagDeleteBody,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
 from interfaces.api.schemas.datastream import (
@@ -203,6 +204,105 @@ class DatastreamService(ServiceUtils):
             )
             for datastream in queryset.all()
         ]
+
+    def list_visualization_bootstrap(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ) -> dict[str, Sequence[dict]]:
+        filtering = filtering or {}
+        queryset = Datastream.objects.visible(principal=principal)
+
+        if "thing__workspace_id" in filtering:
+            queryset = self.apply_filters(
+                queryset,
+                "thing__workspace_id",
+                filtering["thing__workspace_id"],
+            )
+
+        datastream_rows = list(
+            queryset.select_related("thing", "observed_property", "processing_level")
+            .order_by("id")
+            .values(
+                "id",
+                "name",
+                "thing_id",
+                "thing__workspace_id",
+                "thing__name",
+                "thing__sampling_feature_code",
+                "observed_property_id",
+                "observed_property__name",
+                "observed_property__code",
+                "processing_level_id",
+                "processing_level__definition",
+                "unit_id",
+                "no_data_value",
+                "value_count",
+                "phenomenon_begin_time",
+                "phenomenon_end_time",
+                "intended_time_spacing",
+                "intended_time_spacing_unit",
+            )
+            .distinct()
+        )
+
+        things_by_id: dict[str, dict] = {}
+        observed_properties_by_id: dict[str, dict] = {}
+        processing_levels_by_id: dict[str, dict] = {}
+        datastreams: list[dict] = []
+
+        for row in datastream_rows:
+            thing_id = str(row["thing_id"])
+            observed_property_id = str(row["observed_property_id"])
+            processing_level_id = str(row["processing_level_id"])
+
+            things_by_id.setdefault(
+                thing_id,
+                {
+                    "id": thing_id,
+                    "workspace_id": str(row["thing__workspace_id"]),
+                    "name": row["thing__name"],
+                    "sampling_feature_code": row["thing__sampling_feature_code"],
+                },
+            )
+            observed_properties_by_id.setdefault(
+                observed_property_id,
+                {
+                    "id": observed_property_id,
+                    "name": row["observed_property__name"],
+                    "code": row["observed_property__code"],
+                },
+            )
+            processing_levels_by_id.setdefault(
+                processing_level_id,
+                {
+                    "id": processing_level_id,
+                    "definition": row["processing_level__definition"],
+                },
+            )
+            datastreams.append(
+                {
+                    "id": str(row["id"]),
+                    "name": row["name"],
+                    "thing_id": thing_id,
+                    "observed_property_id": observed_property_id,
+                    "processing_level_id": processing_level_id,
+                    "unit_id": str(row["unit_id"]),
+                    "no_data_value": row["no_data_value"],
+                    "value_count": row["value_count"],
+                    "phenomenon_begin_time": row["phenomenon_begin_time"],
+                    "phenomenon_end_time": row["phenomenon_end_time"],
+                    "intended_time_spacing": row["intended_time_spacing"],
+                    "intended_time_spacing_unit": row["intended_time_spacing_unit"],
+                }
+            )
+
+        return {
+            "things": list(things_by_id.values()),
+            "datastreams": datastreams,
+            "observed_properties": list(observed_properties_by_id.values()),
+            "processing_levels": list(processing_levels_by_id.values()),
+        }
 
     def get(
         self,
@@ -483,15 +583,25 @@ class DatastreamService(ServiceUtils):
 
         return f"{deleted_count} tag(s) deleted"
 
-    def get_file_attachments(self, principal: Optional[User | APIKey], uid: uuid.UUID):
+    def get_file_attachments(
+        self,
+        principal: Optional[User | APIKey],
+        uid: uuid.UUID,
+        filtering: Optional[dict] = None,
+    ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="view"
         )
 
-        return datastream.datastream_file_attachments.all()
+        queryset = datastream.datastream_file_attachments
+
+        if filtering.get("file_attachment_type"):
+            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
+
+        return queryset.all()
 
     def add_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, file_attachment_type: str
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
@@ -505,8 +615,20 @@ class DatastreamService(ServiceUtils):
         return DatastreamFileAttachment.objects.create(
             datastream=datastream,
             name=file.name,
+            description=data.description,
             file_attachment=file,
-            file_attachment_type=file_attachment_type,
+            file_attachment_type=data.file_attachment_type,
+        )
+
+    def replace_file_attachment(
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    ):
+        self.remove_file_attachment(
+            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
+        )
+
+        return self.add_file_attachment(
+            principal=principal, uid=uid, file=file, data=data
         )
 
     def remove_file_attachment(
@@ -525,8 +647,6 @@ class DatastreamService(ServiceUtils):
 
         file_attachment.file_attachment.delete()
         file_attachment.delete()
-
-        return "File attachment deleted"
 
     def list_aggregation_statistics(
         self,

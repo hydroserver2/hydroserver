@@ -6,3 +6,6 @@ class StaConfig(AppConfig):
     name = "domains.sta"
     label = "sta"
     verbose_name = "Measurement Data"
+
+    def ready(self):
+        import domains.sta.signals  # noqa: F401

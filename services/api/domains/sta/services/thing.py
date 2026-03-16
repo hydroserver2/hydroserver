@@ -1,12 +1,18 @@
 import uuid
-from typing import Optional, Literal, List, get_args
+from collections import defaultdict
+from typing import Optional, Literal, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import IntegrityError
-from django.db.models import QuerySet, F, Q
+from django.db.models import QuerySet, F, Q, FloatField
+from django.db.models.functions import Cast
 from domains.iam.models import APIKey
+from domains.sta.cache import (
+    get_public_thing_markers_cache,
+    set_public_thing_markers_cache,
+)
 from domains.sta.models import (
     Thing,
     Location,
@@ -17,14 +23,15 @@ from domains.sta.models import (
     FileAttachmentType,
 )
 from interfaces.api.schemas import (
+    TagGetResponse,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
     ThingPatchBody,
     TagPostBody,
     TagDeleteBody,
+    FileAttachmentPostBody,
     FileAttachmentDeleteBody,
-    FileAttachmentPatchBody,
 )
 from interfaces.api.schemas.thing import ThingFields, LocationFields, ThingOrderByFields
 from interfaces.api.service import ServiceUtils
@@ -33,6 +40,11 @@ User = get_user_model()
 
 
 class ThingService(ServiceUtils):
+    MARKER_PUBLIC_FILTER = {
+        "thing__workspace__is_private": False,
+        "thing__is_private": False,
+    }
+
     def get_thing_for_action(
         self,
         principal: User | APIKey,
@@ -118,6 +130,266 @@ class ThingService(ServiceUtils):
             queryset = queryset.filter(thing_tags__key=key, thing_tags__value=value)
 
         return queryset.distinct()
+
+    @staticmethod
+    def parse_bbox_filters(bbox: Optional[list[str]]) -> list[tuple[float, float, float, float]]:
+        parsed_bbox_filters: list[tuple[float, float, float, float]] = []
+
+        if not bbox:
+            return parsed_bbox_filters
+
+        for bbox_str in bbox:
+            try:
+                parts = [float(x) for x in bbox_str.split(",")]
+            except ValueError:
+                raise ValueError("Bounding box must contain only numeric values")
+
+            if len(parts) != 4:
+                raise ValueError(
+                    "Bounding box must have exactly 4 comma-separated values: min_lon,min_lat,max_lon,max_lat"
+                )
+
+            min_lon, min_lat, max_lon, max_lat = parts
+
+            if min_lon > max_lon or min_lat > max_lat:
+                raise ValueError(
+                    "Invalid bounding box coordinates: min must be less than or equal to max"
+                )
+
+            parsed_bbox_filters.append((min_lon, min_lat, max_lon, max_lat))
+
+        return parsed_bbox_filters
+
+    @classmethod
+    def apply_marker_bbox_filter(
+        cls,
+        queryset: QuerySet,
+        bbox: Optional[list[str]],
+    ) -> QuerySet:
+        parsed_bbox_filters = cls.parse_bbox_filters(bbox)
+
+        if not parsed_bbox_filters:
+            return queryset
+
+        bbox_filter = Q()
+        for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters:
+            bbox_filter |= Q(
+                longitude__gte=min_lon,
+                longitude__lte=max_lon,
+                latitude__gte=min_lat,
+                latitude__lte=max_lat,
+            )
+
+        return queryset.filter(bbox_filter)
+
+    @staticmethod
+    def apply_marker_filters(queryset: QuerySet, filtering: Optional[dict] = None) -> QuerySet:
+        filtering = filtering or {}
+
+        if "workspace_id" in filtering:
+            queryset = ServiceUtils.apply_filters(
+                queryset, "thing__workspace_id", filtering["workspace_id"]
+            )
+
+        if "site_type" in filtering:
+            queryset = ServiceUtils.apply_filters(
+                queryset, "thing__site_type", filtering["site_type"]
+            )
+
+        return queryset
+
+    @staticmethod
+    def serialize_marker_rows(marker_rows) -> list[dict]:
+        return [
+            {
+                "id": str(marker["thing_id"]),
+                "workspace_id": str(marker["thing__workspace_id"]),
+                "name": marker["thing__name"],
+                "site_type": marker["thing__site_type"],
+                "is_private": marker["thing__is_private"],
+                "latitude": marker["latitude_value"],
+                "longitude": marker["longitude_value"],
+            }
+            for marker in marker_rows
+        ]
+
+    @staticmethod
+    def get_marker_values(queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "thing_id",
+            "thing__workspace_id",
+            "thing__name",
+            "thing__site_type",
+            "thing__is_private",
+            "latitude_value",
+            "longitude_value",
+        )
+
+    @classmethod
+    def get_site_summary_values(cls, queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "thing_id",
+            "thing__workspace_id",
+            "thing__name",
+            "thing__sampling_feature_code",
+            "thing__site_type",
+            "thing__is_private",
+            "latitude_value",
+            "longitude_value",
+        )
+
+    @staticmethod
+    def get_tags_by_thing_id(
+        principal: Optional[User | APIKey],
+        thing_ids: list[uuid.UUID],
+    ) -> dict[str, list[TagGetResponse]]:
+        if not thing_ids:
+            return {}
+
+        tags_by_thing_id: dict[str, list[TagGetResponse]] = defaultdict(list)
+        tag_rows = (
+            ThingTag.objects.visible(principal=principal)
+            .filter(thing_id__in=thing_ids)
+            .values("thing_id", "key", "value")
+            .order_by("thing_id", "key", "value")
+            .distinct()
+        )
+        for tag in tag_rows:
+            tags_by_thing_id[str(tag["thing_id"])].append(
+                {
+                    "key": tag["key"],
+                    "value": tag["value"],
+                }
+            )
+        return tags_by_thing_id
+
+    @staticmethod
+    def serialize_site_summary_rows(
+        site_rows,
+        tags_by_thing_id: dict[str, list[TagGetResponse]],
+    ) -> list[dict]:
+        return [
+            {
+                "id": str(site["thing_id"]),
+                "workspace_id": str(site["thing__workspace_id"]),
+                "name": site["thing__name"],
+                "sampling_feature_code": site["thing__sampling_feature_code"],
+                "site_type": site["thing__site_type"],
+                "is_private": site["thing__is_private"],
+                "latitude": site["latitude_value"],
+                "longitude": site["longitude_value"],
+                "tags": tags_by_thing_id.get(str(site["thing_id"]), []),
+            }
+            for site in site_rows
+        ]
+
+    @classmethod
+    def filter_cached_markers(
+        cls, markers: list[dict], filtering: Optional[dict] = None
+    ) -> list[dict]:
+        filtering = filtering or {}
+        filtered_markers = markers
+
+        if filtering.get("workspace_id"):
+            workspace_ids = {str(workspace_id) for workspace_id in filtering["workspace_id"]}
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["workspace_id"] in workspace_ids
+            ]
+
+        if filtering.get("site_type"):
+            site_types = set(filtering["site_type"])
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["site_type"] in site_types
+            ]
+
+        parsed_bbox_filters = cls.parse_bbox_filters(filtering.get("bbox"))
+        if parsed_bbox_filters:
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if any(
+                    min_lon <= marker["longitude"] <= max_lon
+                    and min_lat <= marker["latitude"] <= max_lat
+                    for min_lon, min_lat, max_lon, max_lat in parsed_bbox_filters
+                )
+            ]
+
+        return filtered_markers
+
+    def get_public_markers(self, filtering: Optional[dict] = None) -> list[dict]:
+        public_markers = get_public_thing_markers_cache()
+
+        if public_markers is None:
+            public_marker_queryset = self.get_marker_values(
+                Location.objects.filter(**self.MARKER_PUBLIC_FILTER).order_by("thing_id")
+            )
+            public_markers = self.serialize_marker_rows(public_marker_queryset)
+            set_public_thing_markers_cache(public_markers)
+
+        return self.filter_cached_markers(public_markers, filtering=filtering)
+
+    def get_private_markers(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ) -> list[dict]:
+        if not principal:
+            return []
+
+        private_marker_queryset = Location.objects.visible(principal=principal).exclude(
+            **self.MARKER_PUBLIC_FILTER
+        )
+        private_marker_queryset = self.apply_marker_filters(
+            private_marker_queryset,
+            filtering=filtering,
+        )
+        private_marker_queryset = self.apply_marker_bbox_filter(
+            private_marker_queryset,
+            filtering.get("bbox") if filtering else None,
+        )
+
+        return self.serialize_marker_rows(
+            self.get_marker_values(private_marker_queryset.order_by("thing_id").distinct())
+        )
+
+    def list_markers(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ):
+        public_markers = self.get_public_markers(filtering=filtering)
+        private_markers = self.get_private_markers(principal=principal, filtering=filtering)
+        markers = public_markers + private_markers
+        markers.sort(key=lambda marker: marker["id"])
+        return markers
+
+    def list_site_summaries(
+        self,
+        principal: Optional[User | APIKey],
+        filtering: Optional[dict] = None,
+    ) -> list[dict]:
+        site_queryset = Location.objects.visible(principal=principal)
+        site_queryset = self.apply_marker_filters(site_queryset, filtering=filtering)
+        site_rows = list(
+            self.get_site_summary_values(
+                site_queryset.order_by("thing_id").distinct()
+            )
+        )
+        tags_by_thing_id = self.get_tags_by_thing_id(
+            principal=principal,
+            thing_ids=[site["thing_id"] for site in site_rows],
+        )
+        return self.serialize_site_summary_rows(site_rows, tags_by_thing_id)
 
     def list(
         self,
@@ -354,127 +626,53 @@ class ThingService(ServiceUtils):
 
         return f"{deleted_count} tag(s) deleted"
 
-    @staticmethod
-    def _normalize_attachment_type(attachment_type: str) -> str:
-        normalized = (attachment_type or "").strip()
-        if not normalized:
-            raise HttpError(400, "File attachment type is required")
-        return normalized
-
-    @staticmethod
-    def _normalize_name(name: str) -> str:
-        normalized = (name or "").strip()
-        if not normalized:
-            raise HttpError(400, "File attachment name is required")
-        return normalized
-
     def get_file_attachments(
         self,
         principal: Optional[User | APIKey],
         uid: uuid.UUID,
-        attachment_types: Optional[List[str]] = None,
+        filtering: Optional[dict] = None,
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="view")
-        queryset = thing.thing_file_attachments.all()
+        thing = self.get_thing_for_action(
+            principal=principal, uid=uid, action="view"
+        )
 
-        if attachment_types:
-            normalized_types = [
-                self._normalize_attachment_type(item) for item in attachment_types if item
-            ]
-            if normalized_types:
-                queryset = queryset.filter(file_attachment_type__in=normalized_types)
+        queryset = thing.thing_file_attachments
 
-        return queryset.order_by("file_attachment_type", "name")
+        if filtering.get("file_attachment_type"):
+            queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
 
-    def get_file_attachment_for_action(
-        self,
-        principal: Optional[User | APIKey],
-        uid: uuid.UUID,
-        attachment_id: int,
-        action: Literal["view", "edit", "delete"],
-    ) -> ThingFileAttachment:
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action=action)
-
-        try:
-            return ThingFileAttachment.objects.get(pk=attachment_id, thing=thing)
-        except ThingFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
+        return queryset.all()
 
     def add_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        file,
-        file_attachment_type: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
-        normalized_name = self._normalize_name(name or file.name)
-        normalized_type = self._normalize_attachment_type(file_attachment_type)
-        normalized_description = (description or "").strip()
+        thing = self.get_thing_for_action(
+            principal=principal, uid=uid, action="edit"
+        )
 
-        if ThingFileAttachment.objects.filter(thing=thing, name=normalized_name).exists():
+        if ThingFileAttachment.objects.filter(
+            thing=thing, name=file.name
+        ).exists():
             raise HttpError(400, "File attachment already exists")
 
         return ThingFileAttachment.objects.create(
             thing=thing,
-            name=normalized_name,
-            description=normalized_description,
+            name=file.name,
+            description=data.description,
             file_attachment=file,
-            file_attachment_type=normalized_type,
+            file_attachment_type=data.file_attachment_type,
         )
-
-    def update_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        attachment_id: int,
-        data: FileAttachmentPatchBody,
-    ) -> ThingFileAttachment:
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
-        )
-        body = data.dict(exclude_unset=True)
-
-        if "name" in body:
-            new_name = self._normalize_name(body["name"])
-            if (
-                new_name != file_attachment.name
-                and ThingFileAttachment.objects.filter(
-                    thing_id=file_attachment.thing_id,
-                    name=new_name,
-                ).exists()
-            ):
-                raise HttpError(400, "File attachment already exists")
-            file_attachment.name = new_name
-
-        if "description" in body:
-            file_attachment.description = (body["description"] or "").strip()
-
-        file_attachment.save()
-        return file_attachment
 
     def replace_file_attachment(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        attachment_id: int,
-        file,
-    ) -> ThingFileAttachment:
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
+        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+    ):
+        self.remove_file_attachment(
+            principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
         )
 
-        old_name = file_attachment.file_attachment.name
-        file_attachment.file_attachment = file
-        file_attachment.save()
-
-        new_name = file_attachment.file_attachment.name
-        if old_name and old_name != new_name:
-            file_attachment.file_attachment.storage.delete(old_name)
-
-        return file_attachment
+        return self.add_file_attachment(
+            principal=principal, uid=uid, file=file, data=data
+        )
 
     def remove_file_attachment(
         self, principal: User | APIKey, uid: uuid.UUID, data: FileAttachmentDeleteBody
@@ -488,39 +686,6 @@ class ThingService(ServiceUtils):
 
         file_attachment.file_attachment.delete()
         file_attachment.delete()
-
-        return "File attachment deleted"
-
-    def delete_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, attachment_id: int
-    ):
-        file_attachment = self.get_file_attachment_for_action(
-            principal=principal, uid=uid, attachment_id=attachment_id, action="edit"
-        )
-        file_attachment.file_attachment.delete(save=False)
-        file_attachment.delete()
-
-        return "File attachment deleted"
-
-    def get_file_attachment_for_download(
-        self,
-        principal: Optional[User | APIKey],
-        uid: uuid.UUID,
-        attachment_id: int,
-        token: Optional[str] = None,
-    ) -> ThingFileAttachment:
-        try:
-            file_attachment = ThingFileAttachment.objects.get(
-                pk=attachment_id, thing_id=uid
-            )
-        except ThingFileAttachment.DoesNotExist:
-            raise HttpError(404, "File attachment does not exist")
-
-        if token and token == str(file_attachment.download_token):
-            return file_attachment
-
-        self.get_thing_for_action(principal=principal, uid=uid, action="view")
-        return file_attachment
 
     def list_site_types(
         self,

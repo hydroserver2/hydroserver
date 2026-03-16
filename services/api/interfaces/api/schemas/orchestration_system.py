@@ -41,11 +41,13 @@ class OrchestrationSystemQueryParameters(CollectionQueryParameters):
 class OrchestrationSystemSummaryResponse(BaseGetResponse, OrchestrationSystemFields):
     id: uuid.UUID
     workspace_id: Optional[uuid.UUID] = None
+    task_count: int = 0
 
 
 class OrchestrationSystemDetailResponse(BaseGetResponse, OrchestrationSystemFields):
     id: uuid.UUID
     workspace: Optional[WorkspaceSummaryResponse] = None
+    task_count: int = 0
 
 
 class OrchestrationSystemPostBody(BasePostBody, OrchestrationSystemFields):

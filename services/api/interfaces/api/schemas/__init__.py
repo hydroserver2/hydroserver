@@ -27,6 +27,10 @@ from .api_key import (
 from .role import RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters
 
 from .thing import (
+    ThingMarkerResponse,
+    ThingMarkerQueryParameters,
+    ThingSiteSummaryResponse,
+    ThingSiteSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -73,6 +77,8 @@ from .unit import (
     UnitPatchBody,
 )
 from .datastream import (
+    DatastreamVisualizationBootstrapQueryParameters,
+    DatastreamVisualizationBootstrapResponse,
     DatastreamSummaryResponse,
     DatastreamDetailResponse,
     DatastreamQueryParameters,
@@ -95,9 +101,9 @@ from .attachment import (
     TagGetResponse,
     TagPostBody,
     TagDeleteBody,
-    FileAttachmentDeleteBody,
-    FileAttachmentPatchBody,
     FileAttachmentGetResponse,
+    FileAttachmentPostBody,
+    FileAttachmentDeleteBody,
 )
 
 from .data_connection import (DataConnectionSummaryResponse, DataConnectionDetailResponse, DataConnectionPostBody,

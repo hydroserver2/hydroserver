@@ -14,6 +14,12 @@ if typing.TYPE_CHECKING:
 
 
 class LocationQuerySet(models.QuerySet):
+    def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
+        return super().delete(*args, **kwargs)
+
     def visible(self, principal: Optional[Union["User", "APIKey"]]):
         if hasattr(principal, "account_type"):
             if principal.account_type == "admin":
@@ -77,3 +83,9 @@ class Location(models.Model, PermissionChecker):
 
     def __str__(self):
         return f"{self.name} - {self.id}"
+
+    def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
+        return super().delete(*args, **kwargs)

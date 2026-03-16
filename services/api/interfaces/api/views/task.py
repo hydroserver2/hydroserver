@@ -39,6 +39,9 @@ def get_tasks(
         order_by=query.order_by,
         filtering=query.dict(exclude_unset=True),
         expand_related=query.expand_related,
+        include_mappings=query.include_mappings,
+        include_latest_run_result=query.include_latest_run_result,
+        include_data_connection_settings=query.include_data_connection_settings,
     )
 
 

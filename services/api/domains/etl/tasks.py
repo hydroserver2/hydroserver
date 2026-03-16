@@ -1,14 +1,101 @@
+import logging
 from uuid import UUID
 from datetime import timedelta
 from celery import shared_task
 from celery.signals import task_prerun, task_success, task_failure, task_postrun
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.db.models import Prefetch
 from django.db.utils import IntegrityError
 from django.core.management import call_command
-from domains.etl.models import Task, TaskRun
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
+from domains.etl.models import Task, TaskRun, DataConnection
+from domains.sta.models import Datastream
 from hydroserverpy.etl.hydroserver import build_hydroserver_pipeline
 from hydroserverpy.etl.exceptions import ETLError
 from .internal import HydroServerInternalExtractor, HydroServerInternalTransformer, HydroServerInternalLoader
+
+
+def _serialize_log_entries(context) -> list[dict]:
+    entries = getattr(context, "log_entries", None) or []
+    serialized = []
+
+    for entry in entries:
+        if hasattr(entry, "model_dump"):
+            serialized.append(entry.model_dump(mode="json"))
+        elif isinstance(entry, dict):
+            serialized.append(entry)
+
+    return serialized
+
+
+def _build_context_result_payload(context) -> dict:
+    payload = {
+        "runtime_variables": context.runtime_variables,
+        "log_entries": _serialize_log_entries(context),
+    }
+
+    if context.results is not None:
+        payload.update(context.results.dict())
+
+    return payload
+
+
+def _raise_aggregation_error(message: str):
+    raise ETLError(message)
+
+
+def _validate_aggregation_task_runtime(task: Task):
+    mappings = list(task.mappings.all())
+    if not mappings:
+        _raise_aggregation_error("Aggregation tasks must include at least one mapping.")
+
+    datastream_ids = set()
+    for mapping in mappings:
+        try:
+            datastream_ids.add(UUID(str(mapping.source_identifier)))
+        except (TypeError, ValueError):
+            _raise_aggregation_error(
+                "Aggregation mapping sourceIdentifier must be a valid datastream UUID."
+            )
+
+        paths = list(mapping.paths.all())
+        if len(paths) != 1:
+            _raise_aggregation_error(
+                "Aggregation mappings must include exactly one target path per source."
+            )
+
+        path = paths[0]
+        transformations = path.data_transformations or []
+        if (
+            not isinstance(transformations, list)
+            or len(transformations) != 1
+            or not isinstance(transformations[0], dict)
+            or transformations[0].get("type") != "aggregation"
+        ):
+            _raise_aggregation_error(
+                "Aggregation mappings must include exactly one aggregation transformation per path."
+            )
+
+        try:
+            datastream_ids.add(UUID(str(path.target_identifier)))
+        except (TypeError, ValueError):
+            _raise_aggregation_error(
+                "Aggregation mapping targetIdentifier must be a valid datastream UUID."
+            )
+
+    existing_datastream_ids = set(
+        Datastream.objects.filter(
+            thing__workspace_id=task.workspace_id,
+            id__in=datastream_ids,
+        ).values_list("id", flat=True)
+    )
+    if datastream_ids - existing_datastream_ids:
+        _raise_aggregation_error(
+            "Aggregation source and target datastreams must exist in the task workspace."
+        )
 
 
 @shared_task(bind=True, expires=10)
@@ -39,6 +126,7 @@ def run_etl_task(self, task_id: str):
 
     try:
         if task.task_type == "Aggregation":
+            _validate_aggregation_task_runtime(task)
             etl_classes = {
                 "extractor_cls": HydroServerInternalExtractor,
                 "transformer_cls": HydroServerInternalTransformer,
@@ -89,17 +177,15 @@ def run_etl_task(self, task_id: str):
 
     if context.exception:
         if isinstance(context.exception, ETLError):
-            context.exception.result = {
-                "runtime_variables": context.runtime_variables,
-                **(context.results.dict() if context.results is not None else {})
-            }
+            context.exception.result = _build_context_result_payload(context)
+            context.exception.results = context.exception.result
             raise context.exception
         else:
             error = ETLError(
                 "Encountered an unexpected ETL execution error. "
                 "See task logs for additional details."
             )
-            error.results = context.results.dict()
+            error.results = _build_context_result_payload(context)
             raise error from context.exception
 
     if context.results.values_loaded_total == 0:
@@ -112,8 +198,7 @@ def run_etl_task(self, task_id: str):
 
     return {
         "message": message,
-        "runtime_variables": context.runtime_variables,
-        **context.results.dict(),
+        **_build_context_result_payload(context),
     }
 
 
@@ -127,11 +212,15 @@ def mark_etl_task_started(sender, task_id, kwargs, **extra):
         return
 
     try:
-        TaskRun.objects.create(
+        TaskRun.objects.update_or_create(
             id=task_id,
-            task_id=kwargs["task_id"],
-            status="RUNNING",
-            started_at=timezone.now(),
+            defaults={
+                "task_id": kwargs["task_id"],
+                "status": "RUNNING",
+                "started_at": timezone.now(),
+                "finished_at": None,
+                "result": None,
+            },
         )
     except IntegrityError:
         return
@@ -198,13 +287,20 @@ def mark_etl_task_failure(sender, task_id, einfo, exception, **extra):
     except TaskRun.DoesNotExist:
         return
 
-    task_run.status = "FAILURE"
-    task_run.finished_at = timezone.now()
-    task_run.result = {
+    result = {
+        "message": str(exception),
         "error": str(exception),
         "traceback": einfo.traceback,
-        **(getattr(exception, "results", None) or {}),
     }
+    result.update(
+        getattr(exception, "results", None)
+        or getattr(exception, "result", None)
+        or {}
+    )
+
+    task_run.status = "FAILURE"
+    task_run.finished_at = timezone.now()
+    task_run.result = result
 
     task_run.save(update_fields=["status", "finished_at", "result"])
 
@@ -216,3 +312,88 @@ def cleanup_etl_task_runs(self, days=14):
     """
 
     call_command("cleanup_etl_task_runs", f"--days={days}")
+
+
+@shared_task(bind=True, expires=10)
+def send_orchestration_notifications(self):
+    """
+    Celery task to run the send_orchestration_notifications management command.
+    """
+
+    task_run_queryset = TaskRun.objects.filter(
+        started_at__gte=timezone.now() - timedelta(days=1)
+    ).order_by("-started_at")
+
+    data_connections = DataConnection.objects.prefetch_related(
+        "notification_recipients", "tasks", Prefetch(
+            "tasks__taskrun_set",
+            queryset=task_run_queryset,
+            to_attr="daily_task_runs",
+        ),
+    ).all()
+
+    for data_connection in data_connections:
+        subject = f"Job Orchestration Status: {data_connection.name}"
+        recipients = [
+            notification_recipient.email
+            for notification_recipient in data_connection.notification_recipients.all()
+        ]
+
+        task_summaries = []
+
+        for task in data_connection.tasks.all():
+            task_summaries.append({
+                "id": task.id,
+                "name": task.name,
+                "run_count": len(task.daily_task_runs),
+                "failure_count": sum(1 for run in task.daily_task_runs if run.status == "FAILURE"),
+                "last_run_message": task.daily_task_runs[0].result.get("message", "") if task.daily_task_runs else "",
+                "link": f"{settings.PROXY_BASE_URL}/orchestration?taskId={task.id}"
+            })
+
+        if not task_summaries:
+            logging.info(
+                "Skipping email for DataConnection %s because there are no tasks today.",
+                data_connection.name
+            )
+            continue
+
+        if not recipients:
+            logging.info(
+                "Skipping email for DataConnection %s because there are no notification recipients.",
+                data_connection.name
+            )
+            continue
+
+        context = {
+            "data_connection_name": data_connection.name,
+            "tasks": task_summaries
+        }
+
+        html_content = render_to_string("orchestration/email/orchestration_notification.html", context)
+        text_content = strip_tags(html_content)
+
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=None,
+                to=recipients,
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+
+            logging.info(
+                "Sent orchestration summary email for DataConnection %s to: %s",
+                data_connection.name,
+                recipients
+            )
+
+        except Exception as e:
+            logging.error(
+                "Failed to send email for DataConnection %s to %s: %s",
+                data_connection.name,
+                recipients,
+                str(e),
+                exc_info=True
+            )

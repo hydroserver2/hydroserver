@@ -1,4 +1,3 @@
-import uuid
 import uuid6
 import typing
 from typing import Literal, Optional, Union
@@ -16,6 +15,12 @@ if typing.TYPE_CHECKING:
 
 
 class ThingQuerySet(models.QuerySet):
+    def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
+        return super().delete(*args, **kwargs)
+
     def visible(self, principal: Optional[Union["User", "APIKey"]]):
         if hasattr(principal, "account_type"):
             if principal.account_type == "admin":
@@ -111,6 +116,9 @@ class Thing(models.Model, PermissionChecker):
         return permissions
 
     def delete(self, *args, **kwargs):
+        from domains.sta.cache import invalidate_public_thing_markers_cache
+
+        invalidate_public_thing_markers_cache()
         self.delete_contents(filter_arg=self, filter_suffix="")
         super().delete(*args, **kwargs)
 
@@ -196,35 +204,26 @@ class ThingFileAttachment(models.Model, PermissionChecker):
         Thing, related_name="thing_file_attachments", on_delete=models.DO_NOTHING
     )
     name = models.CharField(max_length=255)
-    description = models.TextField(default="", blank=True)
+    description = models.TextField(blank=True, null=True)
     file_attachment = models.FileField(upload_to=thing_file_attachment_storage_path)
     file_attachment_type = models.CharField(max_length=200)
-    download_token = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     @property
     def link(self):
-        if self.file_attachment_type != "rating_curve":
-            storage = self.file_attachment.storage
+        storage = self.file_attachment.storage
 
-            try:
-                file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
-            except TypeError:
-                file_attachment_link = storage.url(self.file_attachment.name)
+        try:
+            file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
+        except TypeError:
+            file_attachment_link = storage.url(self.file_attachment.name)
 
-            if settings.DEPLOYMENT_BACKEND == "local":
-                file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
+        if settings.DEPLOYMENT_BACKEND == "local":
+            file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
 
-            return file_attachment_link
-
-        base = getattr(settings, "PROXY_BASE_URL", "").rstrip("/")
-        path = (
-            f"/api/data/things/{self.thing_id}/file-attachments/{self.id}/download"
-        )
-        token_qs = f"?token={self.download_token}"
-        return f"{base}{path}{token_qs}" if base else f"{path}{token_qs}"
+        return file_attachment_link
 
     class Meta:
         unique_together = ("thing", "name")

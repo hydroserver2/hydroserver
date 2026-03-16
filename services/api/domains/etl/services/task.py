@@ -1,13 +1,17 @@
+import re
 import uuid
-from urllib.parse import parse_qs, urlparse
 from typing import List, Literal, Optional, get_args
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from croniter import croniter
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import IntegrityError
-from django.db.models import QuerySet, Subquery, OuterRef
+from django.db.models import IntegerField, Q, QuerySet, Subquery, OuterRef
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 from django.conf import settings
 from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
@@ -18,7 +22,7 @@ from domains.etl.models import (
     TaskMappingPath,
     TaskRun,
 )
-from domains.sta.models import ThingFileAttachment, Datastream
+from domains.sta.models import Datastream
 from interfaces.api.schemas import (
     TaskFields,
     TaskPostBody,
@@ -34,6 +38,16 @@ User = get_user_model()
 
 data_connection_service = DataConnectionService()
 orchestration_system_service = OrchestrationSystemService()
+AGGREGATION_STATISTICS = (
+    "last_value_of_day",
+    "simple_mean",
+    "time_weighted_daily_mean",
+)
+AGGREGATION_TIMEZONE_MODES = (
+    "daylightSavings",
+    "fixedOffset",
+)
+FIXED_OFFSET_PATTERN = re.compile(r"^[+-]\d{4}$")
 
 
 class TaskService(ServiceUtils):
@@ -43,16 +57,32 @@ class TaskService(ServiceUtils):
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
+        include_mappings: bool = True,
+        include_latest_run_result: bool = True,
         raise_400: bool = False,
     ):
         try:
             task = Task.objects
-            task = self.annotate_latest_task_result(task)
+            task = self.annotate_latest_task_result(
+                task,
+                include_result=include_latest_run_result,
+            )
+            if not include_mappings:
+                task = self.annotate_target_identifiers(task)
 
             if expand_related:
-                task = self.select_expanded_fields(task)
+                task = self.select_expanded_fields(
+                    task,
+                    include_mappings=include_mappings,
+                )
             else:
-                task = task.select_related("periodic_task")
+                task = task.select_related(
+                    "periodic_task",
+                    "periodic_task__crontab",
+                    "periodic_task__interval",
+                )
+                if include_mappings:
+                    task = task.prefetch_related("mappings", "mappings__paths")
 
             task = task.get(pk=uid)
         except Task.DoesNotExist:
@@ -74,7 +104,56 @@ class TaskService(ServiceUtils):
         return task
 
     @staticmethod
-    def build_task_response(task: Task, expand: bool = True) -> dict:
+    def extract_target_identifiers(
+        task: Task,
+        include_mappings: bool = True,
+    ) -> list[str]:
+        if include_mappings:
+            values = [
+                path.target_identifier
+                for mapping in task.mappings.all()
+                for path in mapping.paths.all()
+            ]
+        else:
+            values = getattr(task, "target_identifiers", None) or []
+
+        target_identifiers: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            if value is None:
+                continue
+            normalized = str(value).strip()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            target_identifiers.append(normalized)
+
+        return target_identifiers
+
+    @staticmethod
+    def build_task_response(
+        task: Task,
+        expand: bool = True,
+        include_mappings: bool = True,
+        include_latest_run_result: bool = True,
+        include_data_connection_settings: bool = True,
+    ) -> dict:
+        latest_task_run = getattr(task, "latest_task_run", None)
+        latest_run_message = None
+        latest_run_failure_count = None
+
+        if latest_task_run:
+            latest_run_message = getattr(latest_task_run, "message_text", None)
+            latest_run_failure_count = getattr(
+                latest_task_run, "failure_count_value", None
+            )
+
+            if include_latest_run_result:
+                if latest_run_message is None:
+                    latest_run_message = latest_task_run.message
+                if latest_run_failure_count is None:
+                    latest_run_failure_count = latest_task_run.failure_count
+
         response = {
             "id": task.id,
             "name": task.name,
@@ -91,26 +170,55 @@ class TaskService(ServiceUtils):
                 "intervalPeriod": task.periodic_task.interval.period if task.periodic_task.interval else None,
             } if task.periodic_task else None,
             "latest_run": {
-                "id": getattr(task, "latest_run_id", None),
-                "status": getattr(task, "latest_run_status", None),
-                "result": getattr(task, "latest_run_result", None),
-                "started_at": getattr(task, "latest_run_started_at", None),
-                "finished_at": getattr(task, "latest_run_finished_at", None),
-            } if getattr(task, "latest_run_id", None) else None,
+                "id": latest_task_run.id if latest_task_run else getattr(task, "latest_run_id", None),
+                "status": latest_task_run.status if latest_task_run else getattr(task, "latest_run_status", None),
+                "message": latest_run_message if latest_task_run else getattr(task, "latest_run_message", None),
+                "failure_count": (
+                    latest_run_failure_count
+                    if latest_task_run
+                    else getattr(task, "latest_run_failure_count", None)
+                ),
+                "result": (
+                    (
+                        latest_task_run.result
+                        if latest_task_run
+                        else getattr(task, "latest_run_result", None)
+                    )
+                    if include_latest_run_result else None
+                ),
+                "started_at": (
+                    latest_task_run.started_at
+                    if latest_task_run
+                    else getattr(task, "latest_run_started_at", None)
+                ),
+                "finished_at": (
+                    latest_task_run.finished_at
+                    if latest_task_run
+                    else getattr(task, "latest_run_finished_at", None)
+                ),
+            } if latest_task_run or getattr(task, "latest_run_id", None) else None,
             "extractor_variables": task.extractor_variables,
             "transformer_variables": task.transformer_variables,
             "loader_variables": task.loader_variables,
-            "mappings": [
-                {
-                    "source_identifier": mapping.source_identifier,
-                    "paths": [
-                        {
-                            "target_identifier": path.target_identifier,
-                            "data_transformations": path.data_transformations
-                        } for path in mapping.paths.all()
-                    ]
-                } for mapping in task.mappings.all()
-            ]
+            "target_identifiers": TaskService.extract_target_identifiers(
+                task,
+                include_mappings=include_mappings,
+            ),
+            "mappings": (
+                [
+                    {
+                        "source_identifier": mapping.source_identifier,
+                        "paths": [
+                            {
+                                "target_identifier": path.target_identifier,
+                                "data_transformations": path.data_transformations
+                            } for path in mapping.paths.all()
+                        ]
+                    } for mapping in task.mappings.all()
+                ]
+                if include_mappings
+                else []
+            )
         }
 
         if expand:
@@ -128,15 +236,24 @@ class TaskService(ServiceUtils):
                     "extractor": {
                         "settings_type": task.data_connection.extractor_type,
                         "settings": task.data_connection.extractor_settings,
-                    } if task.data_connection.extractor_type else None,
+                    } if (
+                        include_data_connection_settings
+                        and task.data_connection.extractor_type
+                    ) else None,
                     "transformer": {
                         "settings_type": task.data_connection.transformer_type,
                         "settings": task.data_connection.transformer_settings,
-                    } if task.data_connection.transformer_type else None,
+                    } if (
+                        include_data_connection_settings
+                        and task.data_connection.transformer_type
+                    ) else None,
                     "loader": {
                         "settings_type": task.data_connection.loader_type,
                         "settings": task.data_connection.loader_settings,
-                    } if task.data_connection.loader_type else None,
+                    } if (
+                        include_data_connection_settings
+                        and task.data_connection.loader_type
+                    ) else None,
                 } if task.data_connection else None
             )
             response["orchestration_system"] = {
@@ -153,20 +270,37 @@ class TaskService(ServiceUtils):
         return response
 
     @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(
+    def select_expanded_fields(
+        queryset: QuerySet,
+        include_mappings: bool = True,
+    ) -> QuerySet:
+        queryset = queryset.select_related(
             "data_connection", "workspace", "orchestration_system", "periodic_task", "periodic_task__crontab",
             "periodic_task__interval"
-        ).prefetch_related(
-            "mappings", "mappings__paths"
+        )
+        if include_mappings:
+            queryset = queryset.prefetch_related("mappings", "mappings__paths")
+        return queryset
+
+    @staticmethod
+    def annotate_target_identifiers(queryset: QuerySet) -> QuerySet:
+        return queryset.annotate(
+            target_identifiers=ArrayAgg(
+                "mappings__paths__target_identifier",
+                distinct=True,
+                filter=(
+                    Q(mappings__paths__target_identifier__isnull=False)
+                    & ~Q(mappings__paths__target_identifier="")
+                ),
+            )
         )
 
     @staticmethod
-    def annotate_latest_task_result(queryset: QuerySet) -> QuerySet:
+    def annotate_latest_task_run_fields(queryset: QuerySet) -> QuerySet:
         task_result_queryset = (
             TaskRun.objects
             .filter(task_id=OuterRef("pk"))
-            .order_by("-started_at")
+            .order_by("-started_at", "-id")
         )
         return queryset.annotate(
             latest_run_id=Subquery(
@@ -175,15 +309,116 @@ class TaskService(ServiceUtils):
             latest_run_status=Subquery(
                 task_result_queryset.values("status")[:1]
             ),
-            latest_run_result=Subquery(
-                task_result_queryset.values("result")[:1]
-            ),
             latest_run_started_at=Subquery(
                 task_result_queryset.values("started_at")[:1]
             ),
             latest_run_finished_at=Subquery(
                 task_result_queryset.values("finished_at")[:1]
             ),
+        )
+
+    @staticmethod
+    def get_latest_runs_for_tasks(
+        task_ids: list[uuid.UUID],
+        include_result: bool = True,
+    ) -> dict[uuid.UUID, TaskRun]:
+        if not task_ids:
+            return {}
+
+        latest_runs = (
+            TaskRun.objects
+            .filter(task_id__in=task_ids)
+            .annotate(
+                message_text=Coalesce(
+                    KeyTextTransform("message", "result"),
+                    KeyTextTransform("summary", "result"),
+                    KeyTextTransform("statusMessage", "result"),
+                    KeyTextTransform("status_message", "result"),
+                    KeyTextTransform("failureReason", "result"),
+                    KeyTextTransform("failure_reason", "result"),
+                    KeyTextTransform("error", "result"),
+                ),
+                failure_count_value=Coalesce(
+                    Cast(
+                        KeyTextTransform("failure_count", "result"),
+                        IntegerField(),
+                    ),
+                    Cast(
+                        KeyTextTransform("failureCount", "result"),
+                        IntegerField(),
+                    ),
+                    output_field=IntegerField(),
+                ),
+            )
+            .order_by("task_id", "-started_at", "-id")
+        )
+
+        if not include_result:
+            latest_runs = latest_runs.defer("result")
+
+        return {
+            task_run.task_id: task_run
+            for task_run in latest_runs.distinct("task_id")
+        }
+
+    @staticmethod
+    def annotate_latest_task_result(
+        queryset: QuerySet,
+        include_result: bool = True,
+    ) -> QuerySet:
+        task_result_queryset = (
+            TaskRun.objects
+            .filter(task_id=OuterRef("pk"))
+            .order_by("-started_at", "-id")
+        )
+        annotations = {
+            "latest_run_id": Subquery(
+                task_result_queryset.values("id")[:1]
+            ),
+            "latest_run_status": Subquery(
+                task_result_queryset.values("status")[:1]
+            ),
+            "latest_run_message": Subquery(
+                task_result_queryset.annotate(
+                    message_text=Coalesce(
+                        KeyTextTransform("message", "result"),
+                        KeyTextTransform("summary", "result"),
+                        KeyTextTransform("statusMessage", "result"),
+                        KeyTextTransform("status_message", "result"),
+                        KeyTextTransform("failureReason", "result"),
+                        KeyTextTransform("failure_reason", "result"),
+                        KeyTextTransform("error", "result"),
+                    )
+                ).values("message_text")[:1]
+            ),
+            "latest_run_failure_count": Subquery(
+                task_result_queryset.annotate(
+                    failure_count_value=Coalesce(
+                        Cast(
+                            KeyTextTransform("failure_count", "result"),
+                            IntegerField(),
+                        ),
+                        Cast(
+                            KeyTextTransform("failureCount", "result"),
+                            IntegerField(),
+                        ),
+                        output_field=IntegerField(),
+                    )
+                ).values("failure_count_value")[:1]
+            ),
+            "latest_run_started_at": Subquery(
+                task_result_queryset.values("started_at")[:1]
+            ),
+            "latest_run_finished_at": Subquery(
+                task_result_queryset.values("finished_at")[:1]
+            ),
+        }
+        if include_result:
+            annotations["latest_run_result"] = Subquery(
+                task_result_queryset.values("result")[:1]
+            )
+        return queryset.annotate(
+            **annotations
         )
 
     def list(
@@ -195,10 +430,49 @@ class TaskService(ServiceUtils):
         order_by: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
+        include_mappings: Optional[bool] = None,
+        include_latest_run_result: Optional[bool] = None,
+        include_data_connection_settings: Optional[bool] = None,
     ):
+        include_mappings = True if include_mappings is None else include_mappings
+        include_latest_run_result = (
+            True
+            if include_latest_run_result is None
+            else include_latest_run_result
+        )
+        include_data_connection_settings = (
+            True
+            if include_data_connection_settings is None
+            else include_data_connection_settings
+        )
+        filtering = filtering or {}
+        order_by = order_by or []
         queryset = Task.objects
 
-        queryset = self.annotate_latest_task_result(queryset)
+        if (
+            any(
+                field in filtering
+                for field in [
+                    "latest_run_status",
+                    "latest_run_started_at__lte",
+                    "latest_run_started_at__gte",
+                    "latest_run_finished_at__lte",
+                    "latest_run_finished_at__gte",
+                ]
+            )
+            or any(
+                field.lstrip("-")
+                in {
+                    "latestRunStatus",
+                    "latestRunStartedAt",
+                    "latestRunFinishedAt",
+                }
+                for field in order_by
+            )
+        ):
+            queryset = self.annotate_latest_task_run_fields(
+                queryset
+            )
 
         for field in [
             "workspace_id",
@@ -226,6 +500,9 @@ class TaskService(ServiceUtils):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
+        if not include_mappings:
+            queryset = self.annotate_target_identifiers(queryset)
+
         if order_by:
             order_by_aliases = {
                 "type": "task_type",
@@ -250,15 +527,38 @@ class TaskService(ServiceUtils):
             queryset = queryset.order_by("id")
 
         if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+            queryset = self.select_expanded_fields(
+                queryset,
+                include_mappings=include_mappings,
+            )
         else:
-            queryset = queryset.select_related("periodic_task")
+            queryset = queryset.select_related(
+                "periodic_task",
+                "periodic_task__crontab",
+                "periodic_task__interval",
+            )
+            if include_mappings:
+                queryset = queryset.prefetch_related("mappings", "mappings__paths")
 
         queryset = queryset.visible(principal=principal).distinct()  # noqa
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
+        queryset = list(queryset.all())
+        latest_runs_by_task_id = self.get_latest_runs_for_tasks(
+            [task.id for task in queryset],
+            include_result=include_latest_run_result,
+        )
+        for task in queryset:
+            task.latest_task_run = latest_runs_by_task_id.get(task.id)
+
         return [
-            self.build_task_response(task, expand=expand_related) for task in queryset.all()
+            self.build_task_response(
+                task,
+                expand=expand_related,
+                include_mappings=include_mappings,
+                include_latest_run_result=include_latest_run_result,
+                include_data_connection_settings=include_data_connection_settings,
+            ) for task in queryset
         ]
 
     def get(
@@ -268,7 +568,10 @@ class TaskService(ServiceUtils):
         expand_related: Optional[bool] = None,
     ):
         task = self.get_task_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
+            principal=principal,
+            uid=uid,
+            action="view",
+            expand_related=expand_related,
         )
 
         return self.build_task_response(task, expand=expand_related)
@@ -423,21 +726,39 @@ class TaskService(ServiceUtils):
         if task.orchestration_system.orchestration_system_type != "INTERNAL":
             raise HttpError(400, "Cannot run task managed by external orchestration system")
 
-        if settings.CELERY_ENABLED is True:
-            run_etl_task.delay(task_id=str(task.id))
-        else:
-            run_etl_task.apply(kwargs={"task_id": str(task.id)})
-
-        task = self.get_task_for_action(
-            principal=principal, uid=task_id, action="view"
+        run_id = uuid.uuid4()
+        task_run = TaskRun.objects.create(
+            id=run_id,
+            task=task,
+            status="RUNNING",
+            started_at=timezone.now(),
         )
 
+        try:
+            if settings.CELERY_ENABLED is True:
+                run_etl_task.apply_async(
+                    kwargs={"task_id": str(task.id)},
+                    task_id=str(run_id),
+                )
+            else:
+                run_etl_task.apply(
+                    kwargs={"task_id": str(task.id)},
+                    task_id=str(run_id),
+                )
+        except Exception:
+            task_run.delete()
+            raise
+
+        task_run.refresh_from_db()
+
         return {
-            "id": getattr(task, "latest_run_id", None),
-            "status": getattr(task, "latest_run_status", None),
-            "result": getattr(task, "latest_run_result", None),
-            "started_at": getattr(task, "latest_run_started_at", None),
-            "finished_at": getattr(task, "latest_run_finished_at", None),
+            "id": task_run.id,
+            "status": task_run.status,
+            "message": task_run.message,
+            "failure_count": task_run.failure_count,
+            "result": task_run.result,
+            "started_at": task_run.started_at,
+            "finished_at": task_run.finished_at,
         }
 
     @staticmethod
@@ -638,12 +959,9 @@ class TaskService(ServiceUtils):
             if not isinstance(transformations[0], dict):
                 raise HttpError(400, "Invalid aggregation data transformation payload.")
 
-            try:
-                path["data_transformations"] = [
-                    transformations[0]
-                ]
-            except ValueError as exc:
-                raise HttpError(400, str(exc)) from exc
+            path["data_transformations"] = [
+                TaskService._validate_aggregation_transformation(transformations[0])
+            ]
 
         existing_datastream_ids = set(
             Datastream.objects.filter(
@@ -657,6 +975,43 @@ class TaskService(ServiceUtils):
                 400,
                 "Aggregation mapping datastreams must exist in the task workspace.",
             )
+
+    @staticmethod
+    def _validate_aggregation_transformation(transformation: dict) -> dict:
+        normalized = dict(transformation or {})
+
+        if normalized.get("type") != "aggregation":
+            raise HttpError(400, "Aggregation transformation must set type='aggregation'")
+
+        aggregation_statistic = normalized.get("aggregationStatistic")
+        if aggregation_statistic not in AGGREGATION_STATISTICS:
+            allowed = ", ".join(AGGREGATION_STATISTICS)
+            raise HttpError(400, f"aggregationStatistic must be one of: {allowed}")
+
+        timezone_mode = normalized.get("timezoneMode")
+        if timezone_mode not in AGGREGATION_TIMEZONE_MODES:
+            allowed = ", ".join(AGGREGATION_TIMEZONE_MODES)
+            raise HttpError(400, f"timezoneMode must be one of: {allowed}")
+
+        timezone_value = normalized.get("timezone")
+        if not isinstance(timezone_value, str) or not timezone_value.strip():
+            raise HttpError(400, "timezone is required for aggregation transformations")
+
+        timezone_value = timezone_value.strip()
+        if timezone_mode == "fixedOffset":
+            if not FIXED_OFFSET_PATTERN.fullmatch(timezone_value):
+                raise HttpError(400, "fixedOffset timezone must match +/-HHMM")
+            if int(timezone_value[-2:]) > 59:
+                raise HttpError(400, "fixedOffset timezone minutes must be between 00 and 59")
+        else:
+            try:
+                ZoneInfo(timezone_value)
+            except ZoneInfoNotFoundError as exc:
+                raise HttpError(400, "daylightSavings timezone must be a valid IANA timezone") from exc
+
+        normalized["timezone"] = timezone_value
+
+        return normalized
 
     @staticmethod
     def _reject_aggregation_transformations(mapping_data: List[dict]):
@@ -679,94 +1034,6 @@ class TaskService(ServiceUtils):
                         )
 
     @staticmethod
-    def _thing_attachment_rating_curve_references(
-        workspace_id: uuid.UUID,
-    ) -> set[tuple[uuid.UUID, int, uuid.UUID]]:
-        return set(
-            ThingFileAttachment.objects.filter(
-                thing__workspace_id=workspace_id,
-                file_attachment_type="rating_curve",
-            ).values_list("thing_id", "id", "download_token")
-        )
-
-    @staticmethod
-    def _parse_thing_attachment_reference(
-        rating_curve_url: str,
-    ) -> tuple[uuid.UUID, int, uuid.UUID] | None:
-        parsed = urlparse(rating_curve_url)
-        path_segments = [segment for segment in parsed.path.split("/") if segment]
-        if len(path_segments) < 5:
-            return None
-
-        if path_segments[-1] != "download":
-            return None
-        if path_segments[-3] != "file-attachments":
-            return None
-        if path_segments[-5] != "things":
-            return None
-
-        try:
-            thing_id = uuid.UUID(path_segments[-4])
-        except ValueError:
-            return None
-
-        try:
-            attachment_id = int(path_segments[-2])
-        except ValueError:
-            return None
-
-        query = parse_qs(parsed.query)
-        token = (query.get("token") or [None])[0]
-        if not token:
-            return None
-
-        try:
-            download_token = uuid.UUID(token)
-        except ValueError:
-            return None
-
-        return thing_id, attachment_id, download_token
-
-    @staticmethod
-    def _validate_rating_curve_transformation_references(
-        workspace_id: uuid.UUID, mapping_data: List[dict]
-    ):
-        valid_references = TaskService._thing_attachment_rating_curve_references(
-            workspace_id
-        )
-
-        for mapping in mapping_data:
-            for path in mapping.get("paths", []):
-                transformations = path.get("data_transformations", []) or []
-                if not isinstance(transformations, list):
-                    raise HttpError(
-                        400,
-                        "Path data_transformations must be an array of transformation objects",
-                    )
-
-                normalized_transformations = []
-                for transformation in transformations:
-                    if not isinstance(transformation, dict):
-                        raise HttpError(400, "Invalid data transformation payload")
-
-                    normalized = TaskService._normalize_transformation(transformation)
-
-                    if normalized.get("type") == "rating_curve":
-                        rating_curve_url = TaskService._extract_rating_curve_url(normalized)
-                        reference = TaskService._parse_thing_attachment_reference(
-                            rating_curve_url
-                        )
-                        if not reference or reference not in valid_references:
-                            raise HttpError(
-                                400,
-                                "ratingCurveUrl must reference an existing thing rating curve attachment in the task workspace",
-                            )
-
-                    normalized_transformations.append(normalized)
-
-                path["data_transformations"] = normalized_transformations
-
-    @staticmethod
     def update_mapping(task: Task, mapping_data: List[dict] | None = None):
         if mapping_data is None:
             return task
@@ -777,9 +1044,6 @@ class TaskService(ServiceUtils):
             )
         else:
             TaskService._reject_aggregation_transformations(mapping_data)
-            TaskService._validate_rating_curve_transformation_references(
-                workspace_id=task.workspace_id, mapping_data=mapping_data
-            )
 
         task.mappings.all().delete()
 

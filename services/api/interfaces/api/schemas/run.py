@@ -49,6 +49,8 @@ class TaskRunFields(Schema):
 
 class TaskRunResponse(BaseGetResponse, TaskRunFields):
     id: uuid.UUID
+    message: str | None = None
+    failure_count: int | None = None
 
 
 class TaskRunPostBody(BasePostBody, TaskRunFields):

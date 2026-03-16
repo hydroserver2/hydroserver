@@ -78,12 +78,24 @@ CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
+
 CELERY_BEAT_SCHEDULE = {
     "cleanup_task_runs": {
         "task": "domains.etl.tasks.cleanup_etl_task_runs",
         "schedule": crontab(hour=3, minute=0),
         "args": (7,),
     },
+    "send_orchestration_notifications": {
+        "task": "domains.etl.tasks.send_orchestration_notifications",
+        "schedule": crontab(
+            minute=DATA_CONNECTION_NOTIFICATION_CRONTAB[0],
+            hour=DATA_CONNECTION_NOTIFICATION_CRONTAB[1],
+            day_of_month=DATA_CONNECTION_NOTIFICATION_CRONTAB[2],
+            month_of_year=DATA_CONNECTION_NOTIFICATION_CRONTAB[3],
+            day_of_week=DATA_CONNECTION_NOTIFICATION_CRONTAB[4],
+        ),
+    }
 }
 
 # Application definition
@@ -243,7 +255,7 @@ SOCIALACCOUNT_STORE_TOKENS = True
 
 EMAIL_CONFIG = dj_email_url.parse(config("SMTP_URL", default="smtp://127.0.0.1:1025"))
 
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="webmaster@127.0.0.1:8000")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 EMAIL_BACKEND = EMAIL_CONFIG["EMAIL_BACKEND"]
 EMAIL_HOST = EMAIL_CONFIG["EMAIL_HOST"]
 EMAIL_PORT = EMAIL_CONFIG["EMAIL_PORT"]
@@ -291,9 +303,14 @@ AUTH_PASSWORD_VALIDATORS = [
 if DEBUG:
     CACHES = {
         "default": {
-            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "hydroserver-dev-cache",
         }
     }
+
+PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
+    "PUBLIC_THING_MARKERS_CACHE_TIMEOUT", default=300, cast=int
+)
 
 # Storage settings
 

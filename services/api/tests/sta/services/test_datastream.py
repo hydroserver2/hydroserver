@@ -170,6 +170,83 @@ def test_list_datastream(
         assert (DatastreamSummaryResponse.from_orm(thing) for thing in result)
 
 
+def test_list_datastream_visualization_bootstrap_returns_lean_metadata():
+    bootstrap = datastream_service.list_visualization_bootstrap(principal=None)
+
+    assert bootstrap["things"] == [
+        {
+            "id": "3b7818af-eff7-4149-8517-e5cad9dc22e1",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "Public Thing",
+            "sampling_feature_code": "UWRL",
+        }
+    ]
+    assert Counter(datastream["name"] for datastream in bootstrap["datastreams"]) == Counter(
+        ["Public Datastream 1", "Public Datastream 2"]
+    )
+    assert bootstrap["observed_properties"] == [
+        {
+            "id": "d66414cc-ff33-4e12-bbe0-2c048abd1f40",
+            "name": "Public Assigned Observed Property",
+            "code": "Public",
+        },
+        {
+            "id": "a5746e4e-f479-4476-a462-6a8f7874794d",
+            "name": "System Assigned Observed Property",
+            "code": "System",
+        },
+    ]
+    assert bootstrap["processing_levels"] == [
+        {
+            "id": "a7ff1528-e485-4def-b325-45330c1c448c",
+            "definition": "Public Assigned Processing Level",
+        },
+        {
+            "id": "90777619-9d5c-44a5-87f0-ccd5844f9cc0",
+            "definition": "System Assigned Processing Level",
+        },
+    ]
+    assert all(
+        set(datastream) == {
+            "id",
+            "name",
+            "thing_id",
+            "observed_property_id",
+            "processing_level_id",
+            "unit_id",
+            "no_data_value",
+            "value_count",
+            "phenomenon_begin_time",
+            "phenomenon_end_time",
+            "intended_time_spacing",
+            "intended_time_spacing_unit",
+        }
+        for datastream in bootstrap["datastreams"]
+    )
+
+
+def test_list_datastream_visualization_bootstrap_filters_by_workspace(get_principal):
+    bootstrap = datastream_service.list_visualization_bootstrap(
+        principal=get_principal("owner"),
+        filtering={"thing__workspace_id": ["b27c51a0-7374-462d-8a53-d97d47176c10"]},
+    )
+
+    assert Counter(datastream["name"] for datastream in bootstrap["datastreams"]) == Counter(
+        [
+            "Private Datastream 4",
+            "Private Datastream 5",
+            "Private Datastream 6",
+            "Private Datastream 7",
+        ]
+    )
+    assert Counter(thing["name"] for thing in bootstrap["things"]) == Counter(
+        [
+            "Private Thing",
+            "Public Thing Private Workspace",
+        ]
+    )
+
+
 @pytest.mark.parametrize(
     "principal, datastream, message, error_code",
     [

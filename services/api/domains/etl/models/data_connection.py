@@ -123,3 +123,20 @@ class DataConnection(models.Model, PermissionChecker):
         )
 
         return permissions
+
+
+class DataConnectionNotificationRecipient(models.Model):
+    data_connection = models.ForeignKey(
+        DataConnection,
+        on_delete=models.CASCADE,
+        related_name="notification_recipients"
+    )
+    email = models.EmailField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["data_connection", "email"],
+                name="unique_notification_recipient_per_data_connection"
+            )
+        ]

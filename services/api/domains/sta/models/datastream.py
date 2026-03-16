@@ -251,6 +251,7 @@ class DatastreamFileAttachment(models.Model, PermissionChecker):
         on_delete=models.DO_NOTHING,
     )
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
     file_attachment = models.FileField(
         upload_to=datastream_file_attachment_storage_path
     )

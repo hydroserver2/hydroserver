@@ -109,6 +109,10 @@ class HydroServerInternalLoader(Loader):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    @staticmethod
+    def _format_cutoff(value: Optional[datetime]) -> str:
+        return value.isoformat() if value is not None else "None"
+
     def load(
         self,
         payload: pd.DataFrame,
@@ -145,12 +149,12 @@ class HydroServerInternalLoader(Loader):
                 f"Missing datastream IDs: {', '.join(sorted(missing_datastreams))}."
             )
 
-        earliest_phenomenon_end_time = min(
-            (
+        if any(datastream.phenomenon_end_time is None for datastream in datastreams.values()):
+            earliest_phenomenon_end_time = None
+        else:
+            earliest_phenomenon_end_time = min(
                 datastream.phenomenon_end_time for datastream in datastreams.values()
-                if datastream.phenomenon_end_time is not None
-            ), default=None,
-        )
+            )
 
         if earliest_phenomenon_end_time is not None:
             payload = payload[payload["timestamp"] > earliest_phenomenon_end_time]
@@ -174,11 +178,19 @@ class HydroServerInternalLoader(Loader):
             if datastream_df.empty:
                 etl_results.skipped_count += 1
                 etl_results.target_results[target_id].status = "skipped"
+                logger.warning(
+                    "No new observations for %s after filtering; skipping.",
+                    target_id,
+                )
+                logger.info(
+                    "Load result: loaded=0 available=0 cutoff=%s",
+                    self._format_cutoff(datastream.phenomenon_end_time),
+                )
                 continue
 
             datastream_observations_to_load = len(datastream_df)
 
-            logger.info(
+            logger.debug(
                 "Uploading %s observation(s) to datastream %s (%s chunk(s), chunk_size=%s)",
                 datastream_observations_to_load,
                 target_id,
@@ -212,6 +224,13 @@ class HydroServerInternalLoader(Loader):
 
             if etl_results.target_results[target_id].status not in ["skipped", "failed"]:
                 etl_results.target_results[target_id].status = "success"
+
+            logger.info(
+                "Load result: loaded=%s available=%s cutoff=%s",
+                etl_results.target_results[target_id].values_loaded,
+                datastream_observations_to_load,
+                self._format_cutoff(datastream.phenomenon_end_time),
+            )
 
         etl_results.aggregate_results()
 

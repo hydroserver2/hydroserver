@@ -42,7 +42,7 @@ data_connection_service = DataConnectionService()
             ["Test ETL Data Connection", "Test Global ETL Data Connection"],
             4,
         ),
-        ("apikey", {}, ["Test Global ETL Data Connection"], 4),
+        ("apikey", {}, ["Test Global ETL Data Connection"], 5),
         ("unaffiliated", {}, ["Test Global ETL Data Connection"], 4),
         ("anonymous", {}, ["Test Global ETL Data Connection"], 4),
         # Test pagination and order_by
