@@ -450,7 +450,25 @@
               />
               <strong>{{ item.name || '–' }}</strong>
             </td>
-            <td class="text-body-2">{{ item.value ?? '–' }}</td>
+            <td class="text-body-2">
+              <template v-if="item.chips?.length">
+                <div class="flex flex-wrap gap-1 py-1">
+                  <v-chip
+                    v-for="chip in item.chips"
+                    :key="chip"
+                    size="small"
+                    color="blue-grey"
+                    variant="tonal"
+                    rounded
+                  >
+                    {{ chip }}
+                  </v-chip>
+                </div>
+              </template>
+              <template v-else>
+                {{ item.value ?? '–' }}
+              </template>
+            </td>
           </tr>
         </template>
       </v-data-table>
@@ -558,6 +576,7 @@ import {
   mdiContentCopy,
   mdiPause,
   mdiCogOutline,
+  mdiEmailOutline,
   mdiPencil,
   mdiPlay,
   mdiTable,
@@ -1008,6 +1027,11 @@ const taskInformation = computed(() => {
 const taskTemplateInformation = computed(() => {
   const dataConnection: any = task.value?.dataConnection
   const taskType = (task.value as any)?.type ?? dataConnection?.type ?? '–'
+  const notificationRecipientEmails = Array.isArray(
+    dataConnection?.notificationRecipientEmails
+  )
+    ? dataConnection.notificationRecipientEmails
+    : []
 
   const rows: any[] = [
     {
@@ -1034,7 +1058,17 @@ const taskTemplateInformation = computed(() => {
       name: 'Data connection name',
       value: dataConnection.name,
     },
-  ].filter((row) => row.value !== undefined && row.value !== null)
+    {
+      icon: mdiEmailOutline,
+      label: 'Data connection recipients',
+      name: 'Notification recipients',
+      value: notificationRecipientEmails.length ? null : '–',
+      chips: notificationRecipientEmails,
+    },
+  ].filter(
+    (row) =>
+      (row.value !== undefined && row.value !== null) || 'chips' in row
+  )
 })
 
 const extractorInformation = computed(() => {
