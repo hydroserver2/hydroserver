@@ -24,6 +24,10 @@ HydroServer is organized as follows:
 - `packages/hydroserverpy`: the shared Python client used by HydroServer Python integrations and tooling.
 - `packages/etl-core`: the reserved package boundary for the ETL framework that will be extracted from `hydroserverpy` in a later migration step.
 
+**Specifications** (`specs/`)
+
+- `specs/functional`: Markdown copies of HydroServer functional specification documents kept in the repo for planning, implementation, and review.
+
 **Deployment** (`deploy/`)
 
 - `deploy/dev`: local development deployment assets.
