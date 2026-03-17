@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'node:fs'
 import path from 'node:path'
+import { DATA_OPENAPI_FILE } from './openapi-paths'
 
 type OAS = {
   servers?: any[]
@@ -9,7 +10,7 @@ type OAS = {
 }
 
 const ROOT = process.cwd()
-const SCHEMA_FILE = path.resolve('schemas/data.openapi.json')
+const SCHEMA_FILE = DATA_OPENAPI_FILE
 const OUT_DIR = path.resolve('src/generated/services')
 fs.mkdirSync(OUT_DIR, { recursive: true })
 

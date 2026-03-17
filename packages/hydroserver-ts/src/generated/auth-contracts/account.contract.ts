@@ -1,5 +1,5 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from schemas/auth.openapi.json */
+   Generated from ../../services/api/contracts/openapi/auth.openapi.json */
 import type * as Data from '../auth.types'
 
 export namespace AccountContract {
@@ -10,7 +10,7 @@ export namespace AccountContract {
   export type PostBody        = Data.components['schemas']['AccountPostBody']
   export type PatchBody       = Data.components['schemas']['AccountPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["firstName","middleName","lastName","phone","address","link","type","organization"] as const
+  export const writableKeys = ["address","firstName","lastName","link","middleName","organization","phone","type"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

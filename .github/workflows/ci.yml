@@ -50,9 +50,25 @@ jobs:
           cache: npm
           cache-dependency-path: packages/hydroserver-ts/package-lock.json
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install API dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/api/requirements.txt
+          pip install -e packages/hydroserverpy
+
       - name: Install client dependencies
         working-directory: packages/hydroserver-ts
         run: npm ci
+
+      - name: Verify TypeScript client contract artifacts
+        working-directory: packages/hydroserver-ts
+        run: npm run check:contract
 
       - name: Run TypeScript client tests
         working-directory: packages/hydroserver-ts

@@ -1,5 +1,5 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from schemas/data.openapi.json */
+   Generated from ../../services/api/contracts/openapi/data.openapi.json */
 import type * as Data from '../data.types'
 
 export namespace EtlTaskContract {
@@ -10,7 +10,7 @@ export namespace EtlTaskContract {
   export type PostBody        = Data.components['schemas']['TaskPostBody']
   export type PatchBody       = Data.components['schemas']['TaskPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["name","type","extractorVariables","transformerVariables","loaderVariables","dataConnectionId","orchestrationSystemId","schedule","mappings"] as const
+  export const writableKeys = ["dataConnectionId","extractorVariables","loaderVariables","mappings","name","orchestrationSystemId","schedule","transformerVariables","type"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

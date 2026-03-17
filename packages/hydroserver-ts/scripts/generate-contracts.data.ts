@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import path from 'node:path'
 import { generateContracts } from './generate-contracts.shared'
+import { DATA_OPENAPI_FILE } from './openapi-paths'
 
-const SCHEMA_FILE = path.resolve('schemas/data.openapi.json')
+const SCHEMA_FILE = DATA_OPENAPI_FILE
 const OUT_DIR = path.resolve('src/generated/contracts')
 
 const resources = [

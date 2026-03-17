@@ -1,5 +1,5 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from schemas/data.openapi.json */
+   Generated from ../../services/api/contracts/openapi/data.openapi.json */
 import type * as Data from '../data.types'
 
 export namespace UnitContract {
@@ -10,7 +10,7 @@ export namespace UnitContract {
   export type PostBody        = Data.components['schemas']['UnitPostBody']
   export type PatchBody       = Data.components['schemas']['UnitPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["name","symbol","definition","type"] as const
+  export const writableKeys = ["definition","name","symbol","type"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse
