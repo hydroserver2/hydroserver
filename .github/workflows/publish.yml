@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+
+  build-data-management-app:
+    name: Build Data Management App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Node 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: apps/data-management/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/data-management
+        run: npm ci
+
+      - name: Configure environment variables
+        working-directory: apps/data-management
+        run: |
+          cat << EOF > .env
+          VITE_APP_VERSION=${{ github.event.release.tag_name }}
+          EOF
+
+      - name: Build
+        working-directory: apps/data-management
+        run: npm run django-build
+
+      - name: Create ZIP archive
+        working-directory: apps/data-management
+        run: zip -r data-management-app-${{ github.event.release.tag_name }}.zip dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-management-app-${{ github.event.release.tag_name }}
+          path: apps/data-management/data-management-app-${{ github.event.release.tag_name }}.zip
+
+  publish-hydroserverpy:
+    name: Publish hydroserverpy to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine build
+
+      - name: Check version matches release tag
+        run: |
+          CFG_VERSION=$(python -c "
+          import configparser
+          cfg = configparser.ConfigParser()
+          cfg.read('packages/hydroserverpy/setup.cfg')
+          print(cfg['metadata']['version'])
+          ")
+          TAG=${{ github.event.release.tag_name }}
+          TAG_VERSION=${TAG#v}
+          if [ "$CFG_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ setup.cfg version ($CFG_VERSION) does not match release tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✅ Version check passed: $CFG_VERSION"
+
+      - name: Build and publish package
+        working-directory: packages/hydroserverpy
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m build
+          twine upload dist/*
+
+  build-and-push-docker-image:
+    name: Build and Push Docker Image to GHCR
+    runs-on: ubuntu-latest
+    needs: [build-data-management-app, publish-hydroserverpy]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Download data management app artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-management-app-${{ github.event.release.tag_name }}
+          path: .
+
+      - name: Rename artifact for Docker build
+        run: mv data-management-app-${{ github.event.release.tag_name }}.zip data_mgmt_app.zip
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: django/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            RELEASE=${{ github.event.release.tag_name }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
+            ${{ github.event.release.prerelease != true && format('ghcr.io/{0}:latest', github.repository) || '' }}
