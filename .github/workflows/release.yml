@@ -1,8 +1,15 @@
 name: Release
 
 on:
-  release:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag name
+        required: true
+      prerelease:
+        description: Whether this is a prerelease
+        required: true
+        default: 'false'
 
 jobs:
 
@@ -14,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
 
       - name: Set up Node 22.x
         uses: actions/setup-node@v4
@@ -31,7 +38,7 @@ jobs:
         working-directory: apps/data-management
         run: |
           cat << EOF > .env
-          VITE_APP_VERSION=${{ github.event.release.tag_name }}
+          VITE_APP_VERSION=${{ inputs.tag }}
           EOF
 
       - name: Build
@@ -40,13 +47,13 @@ jobs:
 
       - name: Create ZIP archive
         working-directory: apps/data-management
-        run: zip -r data-management-app-${{ github.event.release.tag_name }}.zip dist
+        run: zip -r data-management-app-${{ inputs.tag }}.zip dist
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: data-management-app-${{ github.event.release.tag_name }}
-          path: apps/data-management/data-management-app-${{ github.event.release.tag_name }}.zip
+          name: data-management-app-${{ inputs.tag }}
+          path: apps/data-management/data-management-app-${{ inputs.tag }}.zip
 
   publish-hydroserverpy:
     name: Publish hydroserverpy to PyPI
@@ -56,7 +63,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
@@ -77,7 +84,7 @@ jobs:
           cfg.read('packages/hydroserverpy/setup.cfg')
           print(cfg['metadata']['version'])
           ")
-          TAG=${{ github.event.release.tag_name }}
+          TAG=${{ inputs.tag }}
           TAG_VERSION=${TAG#v}
           if [ "$CFG_VERSION" != "$TAG_VERSION" ]; then
             echo "❌ setup.cfg version ($CFG_VERSION) does not match release tag ($TAG_VERSION)"
@@ -110,16 +117,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
 
       - name: Download data management app artifact
         uses: actions/download-artifact@v4
         with:
-          name: data-management-app-${{ github.event.release.tag_name }}
+          name: data-management-app-${{ inputs.tag }}
           path: .
 
       - name: Rename artifact for Docker build
-        run: mv data-management-app-${{ github.event.release.tag_name }}.zip data_mgmt_app.zip
+        run: mv data-management-app-${{ inputs.tag }}.zip data_mgmt_app.zip
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -139,7 +146,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           build-args: |
-            RELEASE=${{ github.event.release.tag_name }}
+            RELEASE=${{ inputs.tag }}
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
-            ${{ github.event.release.prerelease != true && format('ghcr.io/{0}:latest', github.repository) || '' }}
+            ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+            ${{ inputs.prerelease != 'true' && format('ghcr.io/{0}:latest', github.repository) || '' }}
