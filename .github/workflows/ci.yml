@@ -325,7 +325,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'release.yml',
-              ref: context.ref,
+              ref: context.payload.release.target_commitish,
               inputs: {
                 tag: context.payload.release.tag_name,
                 prerelease: String(context.payload.release.prerelease),
