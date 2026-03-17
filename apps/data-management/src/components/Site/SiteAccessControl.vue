@@ -34,6 +34,7 @@
             label="Make site private"
             color="primary"
             hide-details
+            data-testid="site-privacy-checkbox"
             @change="toggleSitePrivacy"
           />
         </v-col>

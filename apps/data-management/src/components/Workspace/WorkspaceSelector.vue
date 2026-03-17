@@ -1,6 +1,7 @@
 <template>
   <v-select
     v-model="selectedWorkspace"
+    data-testid="workspace-selector"
     hint="Selected Workspace"
     :items="workspaces"
     item-title="name"

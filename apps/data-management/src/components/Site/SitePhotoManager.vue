@@ -5,6 +5,7 @@
     @dragover.prevent
     @drop="handleDrop"
     class="drop-area text-subtitle-2 text-medium-emphasis d-flex mb-6"
+    data-testid="site-photo-drop-area"
   >
     <v-icon :icon="mdiPaperclip" class="mr-1" />
     Drag and drop your photos here, or
@@ -15,6 +16,7 @@
       ref="fileInput"
       id="fileInput"
       multiple
+      data-testid="site-photo-input"
       @change="previewPhotos(($event.target as HTMLInputElement).files)"
       accept="image/jpeg, image/png"
       style="display: none"
@@ -24,9 +26,10 @@
   <div class="photo-container">
     <div
       v-if="thingId && photos"
-      v-for="photo in photos"
+      v-for="(photo, index) in photos"
       :key="photo.name"
       class="photo-wrapper"
+      :data-testid="`site-photo-existing-${index}`"
     >
       <img
         v-if="!photosToDelete.includes(photo.name)"
@@ -39,6 +42,7 @@
         class="delete-icon"
         @click="photosToDelete.push(photo.name)"
         :icon="mdiCloseCircle"
+        :data-testid="`delete-existing-photo-${index}`"
       />
     </div>
 
@@ -46,6 +50,7 @@
       v-for="(photo, index) in previewedPhotos"
       :key="index"
       class="photo-wrapper"
+      :data-testid="`site-photo-preview-${index}`"
     >
       <img :src="photo" class="photo" />
       <v-icon
@@ -53,6 +58,7 @@
         class="delete-icon"
         @click="removePhoto(index)"
         :icon="mdiCloseCircle"
+        :data-testid="`delete-preview-photo-${index}`"
       />
     </div>
   </div>

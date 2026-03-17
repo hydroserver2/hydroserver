@@ -15,6 +15,7 @@
             "
             class="max-[600px]:self-start"
             color="red-darken-3"
+            data-testid="delete-site-button"
             @click="isDeleteModalOpen = true"
           >
             Delete site
@@ -106,6 +107,7 @@
         <v-btn
           v-if="hasPermission(PermissionResource.Thing, PermissionAction.Edit)"
           class="max-[600px]:self-start"
+          data-testid="site-access-control-button"
           @click="isAccessControlModalOpen = true"
         >
           Access control
@@ -125,6 +127,7 @@
           class="max-[600px]:self-start"
           @click="isRegisterModalOpen = true"
           color="secondary"
+          data-testid="edit-site-button"
         >
           Edit site information
         </v-btn>

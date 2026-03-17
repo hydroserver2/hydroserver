@@ -39,6 +39,7 @@
           "
           color="white"
           :prependIcon="mdiPlus"
+          data-testid="add-datastream-button"
           @click="openCreate = true"
           >Add new datastream</v-btn-add
         >
@@ -241,7 +242,11 @@
 
             <v-menu v-else>
               <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" :icon="mdiDotsVertical" />
+                <v-icon
+                  v-bind="props"
+                  :icon="mdiDotsVertical"
+                  :data-testid="`datastream-actions-${item.id}`"
+                />
               </template>
               <v-list>
                 <v-list-item
@@ -254,6 +259,7 @@
                   "
                   :prepend-icon="mdiPencil"
                   title="Edit datastream metadata"
+                  :data-testid="`edit-datastream-${item.id}`"
                   @click="openDialog(item, 'edit')"
                 />
                 <div
@@ -268,6 +274,7 @@
                   <v-list-item
                     :prepend-icon="mdiDelete"
                     title="Delete datastream"
+                    :data-testid="`delete-datastream-${item.id}`"
                     @click="openDialog(item, 'delete')"
                   />
                 </div>
@@ -281,11 +288,13 @@
                   "
                   :prepend-icon="mdiDeleteOutline"
                   title="Delete data from datastream"
+                  :data-testid="`delete-datastream-data-${item.id}`"
                   @click="openObservationDialog(item)"
                 />
                 <v-list-item
                   :prepend-icon="mdiChartLine"
                   title="Visualize data"
+                  :data-testid="`visualize-datastream-${item.id}`"
                   :to="{
                     name: 'VisualizeData',
                     query: { sites: item.thingId, datastreams: item.id },
@@ -294,6 +303,7 @@
                 <v-list-item
                   :prepend-icon="mdiDownload"
                   title="Download data"
+                  :data-testid="`download-datastream-${item.id}`"
                   @click="onDownload(item.id)"
                 />
               </v-list>
@@ -302,6 +312,7 @@
           <v-btn
             variant="outlined"
             class="datastream-card__meta-btn"
+            :data-testid="`datastream-metadata-${item.id}`"
             @click="openInfoCardFor(item)"
           >
             View Full Metadata
@@ -525,7 +536,11 @@
 
             <v-menu v-else>
               <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" :icon="mdiDotsVertical" />
+                <v-icon
+                  v-bind="props"
+                  :icon="mdiDotsVertical"
+                  :data-testid="`datastream-actions-${item.id}`"
+                />
               </template>
               <v-list>
                 <v-list-item
@@ -538,6 +553,7 @@
                   "
                   :prepend-icon="mdiPencil"
                   title="Edit datastream metadata"
+                  :data-testid="`edit-datastream-${item.id}`"
                   @click="openDialog(item, 'edit')"
                 />
                 <div
@@ -552,6 +568,7 @@
                   <v-list-item
                     :prepend-icon="mdiDelete"
                     title="Delete datastream"
+                    :data-testid="`delete-datastream-${item.id}`"
                     @click="openDialog(item, 'delete')"
                   />
                 </div>
@@ -565,11 +582,13 @@
                   "
                   :prepend-icon="mdiDeleteOutline"
                   title="Delete data from datastream"
+                  :data-testid="`delete-datastream-data-${item.id}`"
                   @click="openObservationDialog(item)"
                 />
                 <v-list-item
                   :prepend-icon="mdiChartLine"
                   title="Visualize data"
+                  :data-testid="`visualize-datastream-${item.id}`"
                   :to="{
                     name: 'VisualizeData',
                     query: { sites: item.thingId, datastreams: item.id },
@@ -578,6 +597,7 @@
                 <v-list-item
                   :prepend-icon="mdiDownload"
                   title="Download data"
+                  :data-testid="`download-datastream-${item.id}`"
                   @click="onDownload(item.id)"
                 />
               </v-list>
@@ -586,6 +606,7 @@
           <v-btn
             variant="outlined"
             class="mt-2 datastream-meta-btn"
+            :data-testid="`datastream-metadata-${item.id}`"
             @click="openInfoCardFor(item)"
           >
             View Full Metadata

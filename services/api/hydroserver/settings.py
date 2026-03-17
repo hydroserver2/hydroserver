@@ -41,10 +41,16 @@ LOAD_DEFAULT_DATA = config("LOAD_DEFAULT_DATA", default=False, cast=bool)
 
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
+proxy_hostname = urlparse(PROXY_BASE_URL).hostname
+default_allowed_hosts = ",".join(
+    host
+    for host in ["127.0.0.1", "localhost", proxy_hostname]
+    if host
+)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=urlparse(PROXY_BASE_URL).netloc).split(
-    ","
-) + [local_ip]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=default_allowed_hosts).split(",") + [
+    local_ip
+]
 TRUSTED_ORIGINS = config("TRUSTED_ORIGINS", None)
 
 if TRUSTED_ORIGINS:

@@ -30,6 +30,7 @@
           variant="text"
           :prepend-icon="mdiPlus"
           class="mr-4"
+          data-testid="add-collaborator-button"
           @click="showAddCollaborator = true"
           >Add collaborator</v-btn
         >
@@ -41,6 +42,7 @@
           variant="text"
           :prepend-icon="mdiPlus"
           class="mr-4"
+          data-testid="add-collaborator-button"
           @click="showAddCollaborator = true"
           >Add collaborator</v-btn
         >
@@ -59,6 +61,7 @@
     <v-text-field
       v-model="newCollaboratorEmail"
       label="New collaborator's email"
+      data-testid="new-collaborator-email"
     />
     <v-select
       v-model="selectedRole"
@@ -67,6 +70,7 @@
       item-title="name"
       :return-object="true"
       variant="outlined"
+      data-testid="new-collaborator-role"
     />
     <v-card-actions>
       <v-spacer />
@@ -85,6 +89,7 @@
               :title="item.name"
               :value="item.value"
               active-class="text-red"
+              :data-testid="`collaborator-row-${item.email}`"
             >
               <v-list-item-subtitle
                 v-if="item.isBeingEdited"
@@ -104,7 +109,11 @@
                   <v-btn-cancel class="mr-2" @click="onCancelEdit(item)"
                     >Cancel</v-btn-cancel
                   >
-                  <v-btn @click="onSaveRole(item)">Save</v-btn>
+                  <v-btn
+                    :data-testid="`save-collaborator-${item.email}`"
+                    @click="onSaveRole(item)"
+                    >Save</v-btn
+                  >
                 </div>
               </v-list-item-subtitle>
               <v-list-item-subtitle
@@ -126,12 +135,14 @@
                 variant="outlined"
                 class="mr-2"
                 :disabled="item.isOwner || item.isBeingEdited"
+                :data-testid="`edit-collaborator-${item.email}`"
                 @click="item.isBeingEdited = true"
                 >Edit role</v-btn
               >
               <v-btn-delete
                 variant="outlined"
                 :disabled="item.isOwner || item.isBeingEdited"
+                :data-testid="`remove-collaborator-${item.email}`"
                 @click="onRemoveCollaborator(item.email)"
                 >Remove collaborator</v-btn-delete
               >

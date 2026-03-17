@@ -40,6 +40,7 @@
         color="primary"
         :append-icon="mdiContentCopy"
         class="copy-state-btn"
+        data-testid="copy-visualization-state"
         @click="copyStateToClipboard"
       >
         Copy State as URL

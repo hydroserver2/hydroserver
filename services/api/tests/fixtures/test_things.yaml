@@ -125,3 +125,35 @@
     thing: 819260c8-2543-4046-b8c4-7431243ed7c5
     key: Test Private Key
     value: Test Private Value
+
+# Mutable Public Thing for E2E CRUD
+- model: sta.thing
+  pk: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+  fields:
+    name: E2E Mutable Thing
+    description: Deterministic mutable site reserved for browser CRUD tests
+    sampling_feature_type: Public
+    sampling_feature_code: E2E-MUTABLE
+    site_type: Public
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.location
+  pk: 7f7054ca-e4f6-432c-ad81-f5bda9eeab42
+  fields:
+    name: Location for E2E Mutable Thing
+    description: Location for the mutable browser test thing
+    encoding_type: application/geo+json
+    latitude: 41.741111
+    longitude: -111.805555
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+- model: sta.thingtag
+  pk: 1000000014
+  fields:
+    thing: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+    key: E2E
+    value: Mutable

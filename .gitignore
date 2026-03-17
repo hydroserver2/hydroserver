@@ -11,3 +11,6 @@ node_modules
 terraform.tfstate*
 .env
 .venv
+playwright-report/
+test-results/
+tests/e2e/.auth/

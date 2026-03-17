@@ -7,6 +7,7 @@
         :loading="downloading"
         :prepend-icon="mdiDownload"
         color="blue-lighten-5"
+        data-testid="download-datastream-csv"
         @click="downloadDatastream(datastream.id)"
         >Download</v-btn
       >
@@ -15,12 +16,19 @@
     <DatastreamInformationPanels :datastream-id="datastream.id" />
 
     <v-card-actions>
-      <v-btn-primary color="blue" variant="text" @click="addToPlot(datastream)"
+      <v-btn-primary
+        color="blue"
+        variant="text"
+        data-testid="add-datastream-to-plot"
+        @click="addToPlot(datastream)"
         >Add to Current Plot</v-btn-primary
       >
       <v-spacer />
       <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary type="submit" @click="clearAndPlot(datastream)"
+      <v-btn-primary
+        type="submit"
+        data-testid="clear-and-plot-datastream"
+        @click="clearAndPlot(datastream)"
         >Clear and Plot</v-btn-primary
       >
     </v-card-actions>

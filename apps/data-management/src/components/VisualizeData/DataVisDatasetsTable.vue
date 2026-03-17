@@ -31,6 +31,7 @@
               <v-btn
                 class="max-[600px]:w-full"
                 color="white"
+                data-testid="clear-selected-datastreams"
                 @click="clearSelected"
               >
                 Clear Selected
@@ -40,6 +41,7 @@
                 class="max-[600px]:w-full"
                 color="white"
                 variant="outlined"
+                data-testid="toggle-selected-datastreams"
                 @click="showOnlySelected = !showOnlySelected"
               >
                 {{ showOnlySelected ? 'Show All' : 'Show Selected' }}
@@ -50,6 +52,7 @@
                 color="white"
                 :loading="downloading"
                 :prepend-icon="mdiDownload"
+                data-testid="download-selected-datastreams"
                 @click="downloadSelected(plottedDatastreams)"
                 >Download Selected</v-btn
               >
@@ -133,16 +136,17 @@
                 <div class="pt-1 text-base font-semibold leading-snug">
                   {{ item.name }}
                 </div>
-                <v-checkbox
-                  :model-value="isChecked(item)"
-                  :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-                  density="compact"
-                  label="Plot"
-                  hide-details
-                  class="plot-checkbox"
-                  @click.stop
-                  @change="() => updatePlottedDatastreams(item)"
-                />
+              <v-checkbox
+                :model-value="isChecked(item)"
+                :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+                density="compact"
+                label="Plot"
+                hide-details
+                class="plot-checkbox"
+                :data-testid="`plot-datastream-${item.id}`"
+                @click.stop
+                @change="() => updatePlottedDatastreams(item)"
+              />
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
                 <span class="text-xs uppercase tracking-[0.04em] text-black/55"
@@ -178,6 +182,7 @@
                 class="mt-3 mb-1 min-h-[36px] w-full"
                 variant="outlined"
                 color="primary"
+                :data-testid="`datavis-metadata-${item.id}`"
                 @click="openMetadata(item)"
               >
                 Show Full Metadata
@@ -206,6 +211,7 @@
               :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
               class="d-flex align-self-center plot-checkbox"
               density="compact"
+              :data-testid="`plot-datastream-${item.id}`"
               @click.stop
               @change="() => updatePlottedDatastreams(item)"
             />

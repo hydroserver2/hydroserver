@@ -6,6 +6,7 @@ import {
 } from '@hydroserver/client'
 
 const apiHost = import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''
+const apiBaseUrl = import.meta.env.VITE_APP_PROXY_BASE_URL || apiHost
 
 interface VisualizationThingPayload {
   id: string
@@ -48,12 +49,15 @@ interface VisualizationBootstrapPayload {
 }
 
 export async function getVisualizationBootstrap() {
-  const response = await fetch(`${apiHost}/api/data/datastreams/visualization-bootstrap`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
+  const response = await fetch(
+    `${apiBaseUrl}/api/data/datastreams/visualization-bootstrap`,
+    {
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to load visualization bootstrap: ${response.status}`)

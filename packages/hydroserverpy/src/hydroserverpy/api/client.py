@@ -68,15 +68,19 @@ class HydroServer:
                     **kwargs,
                 )
                 self._raise_for_hs_status(response)
-            except (
-                requests.exceptions.HTTPError,
-                requests.exceptions.ConnectionError,
-            ) as e:
+            except requests.exceptions.ConnectionError as e:
                 if attempt == 0:
                     self._init_session()
                     continue
-                else:
-                    raise e
+                raise e
+            except requests.exceptions.HTTPError as e:
+                should_refresh_session = (
+                    getattr(e.response, "status_code", None) in {401, 403}
+                )
+                if attempt == 0 and should_refresh_session:
+                    self._init_session()
+                    continue
+                raise e
 
             return response
 

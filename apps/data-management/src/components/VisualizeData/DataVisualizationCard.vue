@@ -30,6 +30,8 @@
                   size="small"
                   block
                   rounded="0"
+                  aria-label="Show plot"
+                  data-testid="show-plot-view"
                   @click="viewMode = 'plot'"
                 />
               </template>
@@ -46,6 +48,8 @@
                   size="small"
                   block
                   rounded="0"
+                  aria-label="Show summary statistics"
+                  data-testid="show-summary-view"
                   @click="viewMode = 'summary'"
                 />
               </template>

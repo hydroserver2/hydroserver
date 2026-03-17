@@ -244,6 +244,7 @@
                 color="primary-darken-2"
                 @click="openDialog(item, 'accessControl')"
                 :icon="mdiLockPlusOutline"
+                :data-testid="`workspace-access-control-${item.id}`"
                 rounded="xl"
               />
 
@@ -259,6 +260,7 @@
                 color="grey-darken-2"
                 @click="openDialog(item, 'edit')"
                 :icon="mdiPencil"
+                :data-testid="`workspace-edit-${item.id}`"
                 rounded="xl"
               />
 
@@ -274,6 +276,7 @@
                 color="red-darken-2"
                 @click="openDialog(item, 'delete')"
                 :icon="mdiDelete"
+                :data-testid="`workspace-delete-${item.id}`"
                 rounded="xl"
               />
             </template>

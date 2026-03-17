@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+API_DIR="$ROOT_DIR/services/api"
+LOCAL_ENV_FILE="$API_DIR/.env"
+LEGACY_ENV_FILE="$ROOT_DIR/../hydroserver-api-services/.env"
+
+load_env_file() {
+  local env_file="$1"
+  if [[ -f "$env_file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+  fi
+}
+
+load_env_file "$LOCAL_ENV_FILE"
+if [[ ! -f "$LOCAL_ENV_FILE" ]]; then
+  load_env_file "$LEGACY_ENV_FILE"
+fi
+
+export DEBUG="${DEBUG:-True}"
+export DEPLOYMENT_BACKEND="${DEPLOYMENT_BACKEND:-dev}"
+export PROXY_BASE_URL="${PROXY_BASE_URL:-http://127.0.0.1:5173}"
+export APP_CLIENT_URL="${APP_CLIENT_URL:-http://127.0.0.1:5173}"
+export DATABASE_URL="${DATABASE_URL:-postgresql://hsdbadmin:admin@localhost:5432/hydroserver}"
+export CELERY_BROKER_URL="${CELERY_BROKER_URL:-redis://localhost:6379/0}"
+export SMTP_URL="${SMTP_URL:-smtp://127.0.0.1:1025}"
+export ALLOWED_HOSTS="${ALLOWED_HOSTS:-127.0.0.1,localhost,host.docker.internal}"
+export TRUSTED_ORIGINS="${TRUSTED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}"
+export CSRF_TRUSTED_ORIGINS="${CSRF_TRUSTED_ORIGINS:-$TRUSTED_ORIGINS,http://127.0.0.1:8000}"
+export ANON_THROTTLE_RATE="${ANON_THROTTLE_RATE:-200/s}"
+export AUTH_THROTTLE_RATE="${AUTH_THROTTLE_RATE:-200/s}"
+export PYTHONPATH="$ROOT_DIR/packages/hydroserverpy/src${PYTHONPATH:+:$PYTHONPATH}"
+
+PYTHON_BIN="${PYTHON_BIN:-python3.11}"
+
+cd "$API_DIR"
+
+"$PYTHON_BIN" manage.py ensure_dev_site >/dev/null
+
+if [[ "${1:-}" == "manage.py" ]]; then
+  shift
+  exec "$PYTHON_BIN" manage.py "$@"
+fi
+
+exec "$PYTHON_BIN" "$@"

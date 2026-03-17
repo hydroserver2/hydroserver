@@ -1,5 +1,10 @@
 <template>
-  <v-card v-if="hasWorkspaces">
+  <v-card
+    v-if="hasWorkspaces"
+    :data-testid="
+      useWorkspaceVariables ? 'workspace-metadata-table' : 'system-metadata-table'
+    "
+  >
     <v-toolbar
       :color="toolbarColor"
       :title="useWorkspaceVariables ? 'Workspace metadata' : 'System metadata'"
@@ -22,6 +27,11 @@
         :prependIcon="mdiPlus"
         color="white"
         class="mx-2"
+        :data-testid="
+          useWorkspaceVariables
+            ? 'add-workspace-metadata-item'
+            : 'add-system-metadata-item'
+        "
         @click="metaMap[tab]?.openDialog()"
         >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
       >
