@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag name
+        required: true
+      prerelease:
+        description: Whether this is a prerelease
+        required: true
+        default: 'false'
+
+jobs:
+
+  build-data-management-app:
+    name: Build Data Management App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: apps/data-management/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/data-management
+        run: npm ci
+
+      - name: Configure environment variables
+        working-directory: apps/data-management
+        run: |
+          cat << EOF > .env
+          VITE_APP_VERSION=${{ inputs.tag }}
+          EOF
+
+      - name: Build
+        working-directory: apps/data-management
+        run: npm run django-build
+
+      - name: Create ZIP archive
+        working-directory: apps/data-management
+        run: zip -r data-management-app-${{ inputs.tag }}.zip dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-management-app-${{ inputs.tag }}
+          path: apps/data-management/data-management-app-${{ inputs.tag }}.zip
+
+  publish-hydroserverpy:
+    name: Publish hydroserverpy to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine build
+
+      - name: Check version matches release tag and whether already published
+        id: pypi-check
+        run: |
+          CFG_VERSION=$(python -c "
+          import configparser
+          cfg = configparser.ConfigParser()
+          cfg.read('packages/hydroserverpy/setup.cfg')
+          print(cfg['metadata']['version'])
+          ")
+          TAG=${{ inputs.tag }}
+          TAG_VERSION=${TAG#v}
+          if [ "$CFG_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ setup.cfg version ($CFG_VERSION) does not match release tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✅ Version check passed: $CFG_VERSION"
+          if pip index versions hydroserverpy 2>/dev/null | grep -q "$TAG_VERSION"; then
+            echo "⚠️ Version $TAG_VERSION already exists on PyPI, skipping publish"
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and publish package
+        if: steps.pypi-check.outputs.already_published == 'false'
+        working-directory: packages/hydroserverpy
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m build
+          twine upload dist/*
+
+  build-and-push-docker-image:
+    name: Build and Push Docker Image to GHCR
+    runs-on: ubuntu-latest
+    needs: [build-data-management-app, publish-hydroserverpy]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download data management app artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-management-app-${{ inputs.tag }}
+          path: .
+
+      - name: Rename artifact for Docker build
+        run: mv data-management-app-${{ inputs.tag }}.zip data_mgmt_app.zip
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: django/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            RELEASE=${{ inputs.tag }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+            ${{ inputs.prerelease != 'true' && format('ghcr.io/{0}:latest', github.repository) || '' }}
