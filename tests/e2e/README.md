@@ -4,7 +4,7 @@ This directory contains the HydroServer browser-based end-to-end test suite.
 
 The suite uses Playwright and runs against:
 
-- the Django API in `services/api`
+- the Django API in `django`
 - the Vue app in `apps/data-management`
 - a deterministic seeded database created by `python manage.py setup_e2e_data`
 

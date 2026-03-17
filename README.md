@@ -14,9 +14,9 @@ HydroServer is organized as follows:
 - `apps/docs`: the VitePress documentation site for HydroServer.
 - `apps/data-management`: the end-user web application for creating and managing monitoring sites, datastreams, metadata, and orchestration settings.
 
-**Services** (`services/`)
+**Backend**
 
-- `services/api`: the Django backend that owns the HydroServer API contract and runtime behavior, including SensorThings, data management, and orchestration.
+- `django`: the Django backend that owns the HydroServer API contract and runtime behavior, including SensorThings, data management, and orchestration.
 
 **Packages** (`packages/`)
 

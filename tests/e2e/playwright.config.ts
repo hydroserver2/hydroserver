@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
 
 const repoRoot = path.resolve(__dirname, '../..')
-const apiDir = path.join(repoRoot, 'services/api')
+const apiDir = path.join(repoRoot, 'django')
 const appDir = path.join(repoRoot, 'apps/data-management')
 const e2ePython = process.env.E2E_PYTHON || 'python3.11'
 const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
@@ -53,7 +53,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `${e2ePython} ../../tests/e2e/scripts/ensure_e2e_database.py && ${e2ePython} manage.py setup_e2e_data && ${e2ePython} manage.py runserver ${apiHost}:${apiPort}`,
+      command: `${e2ePython} ../tests/e2e/scripts/ensure_e2e_database.py && ${e2ePython} manage.py setup_e2e_data && ${e2ePython} manage.py runserver ${apiHost}:${apiPort}`,
       cwd: apiDir,
       env: {
         ...process.env,

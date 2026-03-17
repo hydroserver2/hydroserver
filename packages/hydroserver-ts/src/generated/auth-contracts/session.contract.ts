@@ -1,5 +1,5 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../services/api/contracts/openapi/auth.openapi.json */
+   Generated from ../../django/contracts/openapi/auth.openapi.json */
 import type * as Data from '../auth.types'
 
 export namespace SessionContract {

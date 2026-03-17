@@ -1,5 +1,5 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../services/api/contracts/openapi/data.openapi.json */
+   Generated from ../../django/contracts/openapi/data.openapi.json */
 import type * as Data from '../data.types'
 
 export namespace WorkspaceContract {
