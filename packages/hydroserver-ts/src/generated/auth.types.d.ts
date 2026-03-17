@@ -68,10 +68,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get User Types
+         * Get Organization Types
          * @description Get organization types.
          */
-        get: operations["interfaces_auth_views_account_get_user_types"];
+        get: operations["interfaces_auth_views_account_get_organization_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -710,7 +710,7 @@ export interface operations {
             };
         };
     };
-    interfaces_auth_views_account_get_user_types: {
+    interfaces_auth_views_account_get_organization_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
