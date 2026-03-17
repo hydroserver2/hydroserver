@@ -20,8 +20,8 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 RUN unzip data_mgmt_app.zip -d data_mgmt_app && \
-    mkdir -p interfaces/web/static/web && \
-    cp -f data_mgmt_app/dist/index.html templates/index.html && \
-    cp -r data_mgmt_app/dist/* interfaces/web/static/web/ && \
-    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/index.html && \
+    mkdir -p django/interfaces/web/static/web && \
+    cp -f data_mgmt_app/dist/index.html django/templates/index.html && \
+    cp -r data_mgmt_app/dist/* django/interfaces/web/static/web/ && \
+    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" django/templates/index.html && \
     rm -rf data_mgmt_app data_mgmt_app.zip
