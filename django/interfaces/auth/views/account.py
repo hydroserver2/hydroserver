@@ -114,7 +114,7 @@ def get_user_types(
 
 
 @account_router.get("/organization-types", response={200: list[str]}, by_alias=True)
-def get_user_types(
+def get_organization_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
     query: Query[VocabularyQueryParameters],
