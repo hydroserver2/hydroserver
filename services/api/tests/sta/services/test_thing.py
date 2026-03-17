@@ -27,6 +27,7 @@ thing_service = ThingService()
             "owner",
             {},
             [
+                "E2E Mutable Thing",
                 "Public Thing",
                 "Private Thing",
                 "Private Thing Public Workspace",
@@ -38,6 +39,7 @@ thing_service = ThingService()
             "editor",
             {},
             [
+                "E2E Mutable Thing",
                 "Public Thing",
                 "Private Thing",
                 "Private Thing Public Workspace",
@@ -49,6 +51,7 @@ thing_service = ThingService()
             "viewer",
             {},
             [
+                "E2E Mutable Thing",
                 "Public Thing",
                 "Private Thing",
                 "Private Thing Public Workspace",
@@ -56,11 +59,17 @@ thing_service = ThingService()
             ],
             6,
         ),
-        ("apikey", {}, ["Public Thing", "Private Thing Public Workspace"], 7),
+        (
+            "apikey",
+            {},
+            ["Public Thing", "Private Thing Public Workspace", "E2E Mutable Thing"],
+            7,
+        ),
         (
             "admin",
             {},
             [
+                "E2E Mutable Thing",
                 "Public Thing",
                 "Private Thing",
                 "Private Thing Public Workspace",
@@ -68,8 +77,8 @@ thing_service = ThingService()
             ],
             6,
         ),
-        ("unaffiliated", {}, ["Public Thing"], 6),
-        ("unaffiliated", {}, ["Public Thing"], 6),
+        ("unaffiliated", {}, ["Public Thing", "E2E Mutable Thing"], 6),
+        ("unaffiliated", {}, ["Public Thing", "E2E Mutable Thing"], 6),
         # Test pagination and order_by
         (
             "owner",
@@ -81,7 +90,7 @@ thing_service = ThingService()
         (
             "owner",
             {"workspace_id": ["6e0deaf2-a92b-421b-9ece-86783265596f"]},
-            ["Public Thing", "Private Thing Public Workspace"],
+            ["Public Thing", "Private Thing Public Workspace", "E2E Mutable Thing"],
             6,
         ),
         ("owner", {"bbox": ["-111.794,41.739,-111.793,41.740"]}, ["Public Thing"], 6),
@@ -89,13 +98,13 @@ thing_service = ThingService()
         (
             "owner",
             {"site_type": ["Public"], "samplingFeatureType": ["Public"]},
-            ["Public Thing"],
+            ["Public Thing", "E2E Mutable Thing"],
             6,
         ),
         (
             "owner",
             {"is_private": False},
-            ["Public Thing"],
+            ["Public Thing", "E2E Mutable Thing"],
             6,
         ),
     ],
@@ -137,10 +146,20 @@ def test_list_thing_markers_returns_lean_payload_with_site_type(get_principal):
             "is_private": False,
             "latitude": 41.739742,
             "longitude": -111.793766,
+        },
+        {
+            "id": "5d4db6d5-6030-4db8-a620-23bb2d8d3f91",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "E2E Mutable Thing",
+            "site_type": "Public",
+            "is_private": False,
+            "latitude": 41.741111,
+            "longitude": -111.805555,
         }
     ]
     assert Counter(marker["name"] for marker in owner_markers) == Counter(
         [
+            "E2E Mutable Thing",
             "Public Thing",
             "Private Thing",
             "Private Thing Public Workspace",
@@ -182,7 +201,10 @@ def test_list_thing_markers_invalidates_public_cache_on_update():
 
     markers = thing_service.list_markers(principal=None)
 
-    assert [marker["name"] for marker in markers] == ["Updated Public Thing"]
+    assert [marker["name"] for marker in markers] == [
+        "Updated Public Thing",
+        "E2E Mutable Thing",
+    ]
 
 
 def test_list_thing_site_summaries_returns_lean_payload_with_tags():
@@ -204,6 +226,22 @@ def test_list_thing_site_summaries_returns_lean_payload_with_tags():
                     "value": "Test Public Value",
                 }
             ],
+        },
+        {
+            "id": "5d4db6d5-6030-4db8-a620-23bb2d8d3f91",
+            "workspace_id": "6e0deaf2-a92b-421b-9ece-86783265596f",
+            "name": "E2E Mutable Thing",
+            "sampling_feature_code": "E2E-MUTABLE",
+            "site_type": "Public",
+            "is_private": False,
+            "latitude": 41.741111,
+            "longitude": -111.805555,
+            "tags": [
+                {
+                    "key": "E2E",
+                    "value": "Mutable",
+                }
+            ],
         }
     ]
 
@@ -216,6 +254,7 @@ def test_list_thing_site_summaries_filters_by_workspace(get_principal):
 
     assert Counter(site["name"] for site in site_summaries) == Counter(
         [
+            "E2E Mutable Thing",
             "Public Thing",
             "Private Thing Public Workspace",
         ]
@@ -716,7 +755,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
 @pytest.mark.parametrize(
     "principal, workspace, thing, length, max_queries",
     [
-        ("owner", None, None, 2, 2),
+        ("owner", None, None, 3, 2),
         ("owner", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 1, 2),
         ("owner", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 1, 2),
         (
@@ -726,7 +765,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             2,
         ),
-        ("admin", None, None, 2, 2),
+        ("admin", None, None, 3, 2),
         ("admin", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 1, 2),
         ("admin", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 1, 2),
         (
@@ -736,7 +775,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             2,
         ),
-        ("editor", None, None, 2, 2),
+        ("editor", None, None, 3, 2),
         ("editor", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 1, 2),
         ("editor", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 1, 2),
         (
@@ -746,7 +785,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             2,
         ),
-        ("viewer", None, None, 2, 2),
+        ("viewer", None, None, 3, 2),
         ("viewer", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 1, 2),
         ("viewer", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 1, 2),
         (
@@ -756,7 +795,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             2,
         ),
-        ("apikey", None, None, 2, 3),
+        ("apikey", None, None, 3, 3),
         ("apikey", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 0, 3),
         ("apikey", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 0, 3),
         (
@@ -766,7 +805,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             3,
         ),
-        ("anonymous", None, None, 1, 2),
+        ("anonymous", None, None, 2, 2),
         ("anonymous", "b27c51a0-7374-462d-8a53-d97d47176c10", None, 0, 2),
         ("anonymous", None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 0, 2),
         (
@@ -776,7 +815,7 @@ def test_get_thing_tags(get_principal, principal, thing, message, error_code):
             0,
             2,
         ),
-        (None, None, None, 1, 2),
+        (None, None, None, 2, 2),
         (None, "b27c51a0-7374-462d-8a53-d97d47176c10", None, 0, 2),
         (None, None, "76dadda5-224b-4e1f-8570-e385bd482b2d", 0, 2),
         (

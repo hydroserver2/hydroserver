@@ -49,6 +49,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "jsdom": "^22.1.0",
     "openapi-zod-client": "^1.18.3",
     "tsx": "^4.16.2",
     "typescript": "^5.8.3",
