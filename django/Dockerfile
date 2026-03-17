@@ -6,7 +6,7 @@ ENV RELEASE=${RELEASE}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /app/django
 
 RUN test -n "$RELEASE" || (echo "RELEASE is required but not set." && exit 1)
 
@@ -17,11 +17,11 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install git+https://github.com/hydroserver2/hydroserver.git@${RELEASE}#subdirectory=packages/hydroserverpy
 
-COPY . .
+COPY . /app
 
-RUN unzip data_mgmt_app.zip -d data_mgmt_app && \
-    mkdir -p django/interfaces/web/static/web && \
-    cp -f data_mgmt_app/dist/index.html django/templates/index.html && \
-    cp -r data_mgmt_app/dist/* django/interfaces/web/static/web/ && \
-    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" django/templates/index.html && \
-    rm -rf data_mgmt_app data_mgmt_app.zip
+RUN unzip /app/data_mgmt_app.zip -d /tmp/data_mgmt_app && \
+    mkdir -p interfaces/web/static/web && \
+    cp -f /tmp/data_mgmt_app/dist/index.html templates/index.html && \
+    cp -r /tmp/data_mgmt_app/dist/* interfaces/web/static/web/ && \
+    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/index.html && \
+    rm -rf /tmp/data_mgmt_app /app/data_mgmt_app.zip
