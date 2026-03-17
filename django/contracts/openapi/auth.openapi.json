@@ -672,7 +672,7 @@
   "info": {
     "description": "",
     "title": "HydroServer User Authentication API",
-    "version": "1.8.0"
+    "version": "1.9.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1095,7 +1095,7 @@
     "/api/auth/{client}/account/organization-types": {
       "get": {
         "description": "Get organization types.",
-        "operationId": "interfaces_auth_views_account_get_user_types",
+        "operationId": "interfaces_auth_views_account_get_organization_types",
         "parameters": [
           {
             "description": "Page number (1-based).",
@@ -1172,7 +1172,7 @@
             "description": "OK"
           }
         },
-        "summary": "Get User Types",
+        "summary": "Get Organization Types",
         "tags": [
           "Account"
         ]
