@@ -24,11 +24,13 @@
           v-model="selectedWorkspaces"
           :items="workspaces"
           :item-props="(ws) => ({ subtitle: `Owned by: ${ws?.owner?.name}` })"
+          name="browse-workspace-filter"
           item-title="name"
           return-object
           clearable
           :prepend-inner-icon="mdiDomain"
           label="Workspaces"
+          autocomplete="new-password"
           multiple
           hide-details
           color="primary"
@@ -53,8 +55,10 @@
           label="Site types"
           v-model="selectedSiteTypes"
           :items="vocabularyStore.siteTypes"
+          name="browse-site-type-filter"
           clearable
           :prepend-inner-icon="mdiWaterPump"
+          autocomplete="new-password"
           multiple
           hide-details
           color="primary"
