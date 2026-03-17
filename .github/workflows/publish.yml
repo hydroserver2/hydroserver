@@ -68,7 +68,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine build
 
-      - name: Check version matches release tag
+      - name: Check version matches release tag and whether already published
+        id: pypi-check
         run: |
           CFG_VERSION=$(python -c "
           import configparser
@@ -83,8 +84,15 @@ jobs:
             exit 1
           fi
           echo "✅ Version check passed: $CFG_VERSION"
+          if pip index versions hydroserverpy 2>/dev/null | grep -q "$TAG_VERSION"; then
+            echo "⚠️ Version $TAG_VERSION already exists on PyPI, skipping publish"
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and publish package
+        if: steps.pypi-check.outputs.already_published == 'false'
         working-directory: packages/hydroserverpy
         env:
           TWINE_USERNAME: __token__
