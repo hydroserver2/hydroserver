@@ -23,7 +23,7 @@ export default defineConfig({
   globalSetup: path.join(__dirname, 'support', 'globalSetup.ts'),
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,
@@ -74,7 +74,7 @@ export default defineConfig({
       timeout: 180 * 1000,
     },
     {
-      command: `npm run dev -- --host ${appHost} --port ${appPort}`,
+      command: `npm run build && npm run preview -- --host ${appHost} --port ${appPort}`,
       cwd: appDir,
       env: {
         ...process.env,
@@ -87,7 +87,7 @@ export default defineConfig({
       },
       url: `${appBaseUrl}/browse`,
       reuseExistingServer: false,
-      timeout: 180 * 1000,
+      timeout: 300 * 1000,
     },
   ],
 })
