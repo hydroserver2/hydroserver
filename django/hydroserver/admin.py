@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect
 from django.core.management import call_command
 from django.contrib import messages
 from django.urls import reverse
+from django.conf import settings
 
 
 class VocabularyAdmin:
@@ -10,7 +11,7 @@ class VocabularyAdmin:
     def load_fixtures(self, request, redirect, fixtures):
         try:
             for fixture in fixtures:
-                call_command("loaddata", fixture)
+                call_command("loaddata", str(settings.BASE_DIR / fixture))
             self.message_user(
                 request, "Default data loaded successfully!", messages.SUCCESS
             )
