@@ -109,9 +109,8 @@ test.describe('visualization', () => {
       )
     ).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Clear Selected' }).click()
-
-    await page.getByTestId('toggle-selected-datastreams').click()
+    // clearSelected() resets showOnlySelected to false, so both rows are visible immediately
+    await page.getByTestId('clear-selected-datastreams').click()
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
@@ -133,19 +132,14 @@ test.describe('visualization', () => {
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeVisible()
 
-    await expect(
-      page.getByRole('button', { name: /last week/i })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: /last month/i })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: /last year/i })
-    ).toBeVisible()
+    // Date preset chips use abbreviated labels: 1m, 6m, YTD, 1y, all
+    await expect(page.getByText('1m').first()).toBeVisible()
+    await expect(page.getByText('6m').first()).toBeVisible()
+    await expect(page.getByText('1y').first()).toBeVisible()
 
-    await page.getByRole('button', { name: /last week/i }).click()
-    await page.getByRole('button', { name: /last month/i }).click()
-    await page.getByRole('button', { name: /last year/i }).click()
+    await page.getByText('1m').first().click()
+    await page.getByText('6m').first().click()
+    await page.getByText('1y').first().click()
   })
 
   test('visualization custom date range can be set', async ({ page }) => {
@@ -156,20 +150,19 @@ test.describe('visualization', () => {
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeVisible()
 
-    const startDate = page
-      .getByRole('textbox', { name: /start date/i })
-      .first()
-    const endDate = page.getByRole('textbox', { name: /end date/i }).first()
+    // DatePickerField uses placeholder "Begin Date" / "End Date" and M/D/YYYY format
+    const startDate = page.locator('input[placeholder="Begin Date"]').first()
+    const endDate = page.locator('input[placeholder="End Date"]').first()
 
     await expect(startDate).toBeVisible()
     await expect(endDate).toBeVisible()
 
-    await startDate.fill('2020-01-01')
-    await endDate.fill('2021-01-01')
-    await endDate.press('Enter')
+    await startDate.fill('1/1/2020')
+    await endDate.fill('1/1/2021')
+    await endDate.press('Tab')
 
-    await expect(startDate).toHaveValue('2020-01-01')
-    await expect(endDate).toHaveValue('2021-01-01')
+    await expect(startDate).toHaveValue('1/1/2020')
+    await expect(endDate).toHaveValue('1/1/2021')
   })
 
   test('visualization can download the plot as an image', async ({ page }) => {

@@ -168,6 +168,7 @@
                   v-bind="tp"
                   :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
                   :color="item.isVisible ? 'green' : 'red-darken-2'"
+                  :data-testid="`data-visibility-toggle-${item.id}`"
                   small
                   @click="toggleDataVisibility(item)"
                 />
@@ -203,6 +204,7 @@
                 <v-icon
                   :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
                   :color="item.isPrivate ? 'red-darken-2' : 'green'"
+                  :data-testid="`datastream-privacy-toggle-${item.id}`"
                   small
                   v-bind="props"
                   @click="toggleVisibility(item)"
@@ -462,6 +464,7 @@
                   v-bind="tp"
                   :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
                   :color="item.isVisible ? 'green' : 'red-darken-2'"
+                  :data-testid="`data-visibility-toggle-${item.id}`"
                   small
                   @click="toggleDataVisibility(item)"
                 />
@@ -497,6 +500,7 @@
                 <v-icon
                   :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
                   :color="item.isPrivate ? 'red-darken-2' : 'green'"
+                  :data-testid="`datastream-privacy-toggle-${item.id}`"
                   small
                   v-bind="props"
                   @click="toggleVisibility(item)"

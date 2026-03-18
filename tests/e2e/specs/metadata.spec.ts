@@ -87,6 +87,8 @@ test.describe('metadata management', () => {
 
     await fillCombobox(page, 'Variable Type *', 'E2E Variable Type')
     await page.getByLabel('Definition *').fill('https://www.example.com/e2e-observed-property')
+    await page.getByLabel('Description *').fill('Temporary observed property created by the Playwright metadata CRUD suite.')
+    await page.getByLabel('Variable Code *').fill(`E2E-OP-${Date.now()}`)
     await page.getByLabel('Name *').fill(propName)
     await page.getByRole('button', { name: 'Save' }).click()
 
@@ -130,7 +132,7 @@ test.describe('metadata management', () => {
       .click()
 
     await page.getByLabel('Code *').fill(levelCode)
-    await page.getByLabel('Definition *').fill('E2E processing level definition')
+    await page.getByLabel('Definition').fill('E2E processing level definition')
     await page.getByRole('button', { name: 'Save' }).click()
 
     const levelRow = page.locator('tr').filter({ hasText: levelCode }).first()
@@ -169,6 +171,7 @@ test.describe('metadata management', () => {
 
     await fillCombobox(page, 'Unit Type *', 'E2E Unit Type')
     await page.getByLabel('Symbol *').fill(`e2e${stamp}`)
+    await page.getByLabel('Definition *').fill('E2E unit definition')
     await page.getByLabel('Name *').fill(unitName)
     await page.getByRole('button', { name: 'Save' }).click()
 
@@ -214,7 +217,7 @@ test.describe('metadata management', () => {
       .click()
 
     await page.getByLabel('Code *').fill(qualifierCode)
-    await page.getByLabel('Description *').fill(
+    await page.getByLabel('Description').fill(
       'Temporary result qualifier created by the Playwright metadata CRUD suite.'
     )
     await page.getByRole('button', { name: 'Save' }).click()

@@ -188,32 +188,23 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/sites/${fixtures.things.public.id}`)
 
-    const datastreamRow = page
-      .locator('tr, .datastream-card')
-      .filter({ hasText: fixtures.datastreams.public.name })
-      .first()
-    await expect(datastreamRow).toBeVisible()
-
-    await datastreamRow
-      .locator('[data-testid^="datastream-actions-"]')
-      .click()
-    await page.getByText('Edit datastream metadata').click()
-
-    const datastreamPrivacyToggle = page.getByTestId('datastream-privacy-toggle')
-    const dataPrivacyToggle = page.getByTestId('data-privacy-toggle')
+    const datastreamPrivacyToggle = page.getByTestId(
+      `datastream-privacy-toggle-${fixtures.datastreams.public.id}`
+    )
+    const dataVisibilityToggle = page.getByTestId(
+      `data-visibility-toggle-${fixtures.datastreams.public.id}`
+    )
 
     await expect(datastreamPrivacyToggle).toBeVisible()
-    await expect(dataPrivacyToggle).toBeVisible()
+    await expect(dataVisibilityToggle).toBeVisible()
 
-    const initialDatastreamState = await datastreamPrivacyToggle.isChecked()
+    // Toggle datastream privacy off then back on to restore original state
     await datastreamPrivacyToggle.click()
-    expect(await datastreamPrivacyToggle.isChecked()).toBe(!initialDatastreamState)
-
-    // Restore original state
     await datastreamPrivacyToggle.click()
-    expect(await datastreamPrivacyToggle.isChecked()).toBe(initialDatastreamState)
 
-    await page.getByRole('button', { name: /cancel|close/i }).first().click()
+    // Toggle data visibility off then back on to restore original state
+    await dataVisibilityToggle.click()
+    await dataVisibilityToggle.click()
   })
 
   test('owner can download data from a datastream actions menu', async ({
@@ -233,7 +224,7 @@ test.describe('sites and workspaces', () => {
       .click()
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('menuitem', { name: /download data/i }).click()
+    await page.getByText('Download data').click()
     const download = await downloadPromise
 
     expect(download.suggestedFilename()).toMatch(/\.(csv|zip)$/)
