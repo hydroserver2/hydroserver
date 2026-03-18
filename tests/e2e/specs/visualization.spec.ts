@@ -85,6 +85,108 @@ test.describe('visualization', () => {
     await copiedContext.close()
   })
 
+  test('visualization clear selected deselects all datastreams', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeVisible()
+
+    await page
+      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      .click()
+    await page.getByTestId('toggle-selected-datastreams').click()
+
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeVisible()
+    await expect(
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
+      )
+    ).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Clear Selected' }).click()
+
+    await page.getByTestId('toggle-selected-datastreams').click()
+
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeVisible()
+    await expect(
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
+      )
+    ).toBeVisible()
+  })
+
+  test('visualization quick-range date buttons update the time range', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeVisible()
+
+    await expect(
+      page.getByRole('button', { name: /last week/i })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: /last month/i })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: /last year/i })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: /last week/i }).click()
+    await page.getByRole('button', { name: /last month/i }).click()
+    await page.getByRole('button', { name: /last year/i }).click()
+  })
+
+  test('visualization custom date range can be set', async ({ page }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeVisible()
+
+    const startDate = page
+      .getByRole('textbox', { name: /start date/i })
+      .first()
+    const endDate = page.getByRole('textbox', { name: /end date/i }).first()
+
+    await expect(startDate).toBeVisible()
+    await expect(endDate).toBeVisible()
+
+    await startDate.fill('2020-01-01')
+    await endDate.fill('2021-01-01')
+    await endDate.press('Enter')
+
+    await expect(startDate).toHaveValue('2020-01-01')
+    await expect(endDate).toHaveValue('2021-01-01')
+  })
+
+  test('visualization can download the plot as an image', async ({ page }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await page
+      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      .click()
+
+    const downloadPromise = page.waitForEvent('download')
+    await page.getByTestId('download-plot-image').click()
+    const download = await downloadPromise
+
+    expect(download.suggestedFilename()).toMatch(/\.(png|svg|jpeg)$/)
+  })
+
   test('visualization metadata modal supports plotting and downloads', async ({
     page,
   }) => {

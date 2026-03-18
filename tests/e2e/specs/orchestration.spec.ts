@@ -20,4 +20,28 @@ test.describe('orchestration', () => {
       page.getByText(fixtures.orchestration.taskName)
     ).toBeVisible()
   })
+
+  test('orchestration status filters narrow the task list', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+
+    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+
+    await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
+
+    const okFilter = page.getByRole('button', { name: /^ok$/i }).first()
+    const needsAttentionFilter = page
+      .getByRole('button', { name: /needs attention/i })
+      .first()
+
+    await expect(okFilter).toBeVisible()
+    await expect(needsAttentionFilter).toBeVisible()
+
+    await okFilter.click()
+    await expect(okFilter).toHaveAttribute('aria-pressed', 'true')
+
+    await needsAttentionFilter.click()
+    await expect(needsAttentionFilter).toHaveAttribute('aria-pressed', 'true')
+  })
 })
