@@ -38,6 +38,7 @@ const AXIS_CHAR_SPACING = 0.006
 const AXIS_MAX_SPACING = 0.14
 const MIN_EXPORT_WIDTH = 3840
 const MIN_EXPORT_HEIGHT = 2160
+let cachedWebglSupport: boolean | null = null
 
 const rangeSelectorOptions = {
   xanchor: 'left',
@@ -74,6 +75,27 @@ const rangeSelectorOptions = {
       label: 'all',
     },
   ],
+}
+
+const supportsWebgl = () => {
+  if (cachedWebglSupport !== null) return cachedWebglSupport
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    cachedWebglSupport = false
+    return cachedWebglSupport
+  }
+
+  try {
+    const canvas = document.createElement('canvas')
+    cachedWebglSupport = Boolean(
+      window.WebGLRenderingContext &&
+        (canvas.getContext('webgl') ||
+          canvas.getContext('experimental-webgl'))
+    )
+  } catch {
+    cachedWebglSupport = false
+  }
+
+  return cachedWebglSupport
 }
 
 export function createYAxisConfigurations(
@@ -386,6 +408,7 @@ export const createPlotlyOption = (
   }
 
   const markerSymbols = ['circle', 'square', 'triangle-up', 'x', 'diamond']
+  const traceType = supportsWebgl() ? 'scattergl' : 'scatter'
 
   const traces = seriesArray.map((series, index) => {
     const axisConfig = yAxisConfigurations.get(series.yAxisLabel)
@@ -399,7 +422,7 @@ export const createPlotlyOption = (
       x: series.data.map((dp) => dp.date.getTime()),
       y: series.data.map((dp) => dp.value),
       yaxis: axisId,
-      type: 'scattergl',
+      type: traceType,
       mode: 'lines+markers',
       line: { color: series.lineColor, width: 2 },
       marker: { color: series.lineColor, size: 6, symbol },

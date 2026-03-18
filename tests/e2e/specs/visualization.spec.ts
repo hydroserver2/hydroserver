@@ -1,9 +1,18 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
 
 test.describe('visualization', () => {
+  async function plotPublicDatastream(page: Page) {
+    await page
+      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      .click()
+    await expect(
+      page.getByRole('button', { name: 'Download plot image' })
+    ).toBeVisible()
+  }
+
   test('visualization page renders filter controls and seeded datastream rows', async ({
     page,
   }) => {
@@ -51,9 +60,7 @@ test.describe('visualization', () => {
       )
     ).toBeVisible()
 
-    await page
-      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
-      .click()
+    await plotPublicDatastream(page)
     await page.getByTestId('toggle-selected-datastreams').click()
 
     await expect(
@@ -72,7 +79,7 @@ test.describe('visualization', () => {
     await page.getByTestId('copy-visualization-state').click()
     const copiedUrl = await page.evaluate(() => window.__e2eCopiedText as string)
 
-    expect(copiedUrl).toContain(`/visualize-data/?sites=${fixtures.things.public.id}`)
+    expect(copiedUrl).toContain(`/visualize-data?sites=${fixtures.things.public.id}`)
     expect(copiedUrl).toContain(`datastreams=${fixtures.datastreams.public.id}`)
 
     const copiedContext = await browser.newContext()
@@ -80,7 +87,10 @@ test.describe('visualization', () => {
     await copiedPage.goto(copiedUrl)
 
     await expect(
-      copiedPage.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      copiedPage.getByRole('button', { name: 'Copy State as URL' })
+    ).toBeVisible()
+    await expect(
+      copiedPage.getByText(fixtures.datastreams.public.name, { exact: true })
     ).toBeVisible()
     await copiedContext.close()
   })
@@ -95,9 +105,7 @@ test.describe('visualization', () => {
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeVisible()
 
-    await page
-      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
-      .click()
+    await plotPublicDatastream(page)
     await page.getByTestId('toggle-selected-datastreams').click()
 
     await expect(
@@ -132,6 +140,8 @@ test.describe('visualization', () => {
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeVisible()
 
+    await plotPublicDatastream(page)
+
     // Date preset chips use abbreviated labels: 1m, 6m, YTD, 1y, all
     await expect(page.getByText('1m').first()).toBeVisible()
     await expect(page.getByText('6m').first()).toBeVisible()
@@ -149,6 +159,8 @@ test.describe('visualization', () => {
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeVisible()
+
+    await plotPublicDatastream(page)
 
     // DatePickerField uses placeholder "Begin Date" / "End Date" and M/D/YYYY format
     const startDate = page.locator('input[placeholder="Begin Date"]').first()
@@ -169,12 +181,10 @@ test.describe('visualization', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
 
-    await page
-      .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
-      .click()
+    await plotPublicDatastream(page)
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByTestId('download-plot-image').click()
+    await page.getByRole('button', { name: 'Download plot image' }).click()
     const download = await downloadPromise
 
     expect(download.suggestedFilename()).toMatch(/\.(png|svg|jpeg)$/)

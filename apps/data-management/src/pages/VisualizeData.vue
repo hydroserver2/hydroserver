@@ -107,7 +107,7 @@ const handleDrawerChange = () => {
 }
 
 const generateStateUrl = () => {
-  const BASE_URL = `${window.location.origin}/visualize-data/`
+  const BASE_URL = new URL('/visualize-data', window.location.origin).toString()
 
   const queryParams = new URLSearchParams()
 
