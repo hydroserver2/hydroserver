@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test'
 import { login, requestBrowserSession } from '../support/auth'
 import { users } from '../support/fixtures'
 
+const API_BASE_URL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:18000'
+
 test.describe('account management', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -44,6 +46,22 @@ test.describe('account management', () => {
     await expect(
       page.getByRole('heading', { name: 'Organization information' })
     ).toHaveCount(0)
+
+    // Restore profile to original seeded state so retries start from a clean slate.
+    await page.request.patch(`${API_BASE_URL}/api/auth/browser/account`, {
+      data: {
+        first_name: 'Profile',
+        last_name: 'Example',
+        type: 'Other',
+        organization: {
+          code: 'E2E',
+          name: 'E2E Test Organization',
+          description: 'Deterministic organization for browser profile tests.',
+          link: 'https://example.com/org/e2e-profile',
+          type: 'Other',
+        },
+      },
+    })
   })
 
   test('account deletion removes the user session and invalidates login', async ({
