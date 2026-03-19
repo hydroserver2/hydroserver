@@ -896,13 +896,19 @@ async function toggleDataVisibility(computedDatastream: Datastream) {
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
+  const previousIsVisible = datastream.isVisible
+  const previousIsPrivate = datastream.isPrivate
   datastream.isVisible = !datastream.isVisible
   if (datastream.isVisible) datastream.isPrivate = false
-  patchDatastream({
+  const didPersist = await patchDatastream({
     id: datastream.id,
     isPrivate: datastream.isPrivate,
     isVisible: datastream.isVisible,
   })
+  if (!didPersist) {
+    datastream.isVisible = previousIsVisible
+    datastream.isPrivate = previousIsPrivate
+  }
 }
 
 async function toggleVisibility(computedDatastream: Datastream) {
@@ -910,13 +916,19 @@ async function toggleVisibility(computedDatastream: Datastream) {
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
+  const previousIsVisible = datastream.isVisible
+  const previousIsPrivate = datastream.isPrivate
   datastream.isPrivate = !datastream.isPrivate
-  if (datastream.isPrivate) datastream.isVisible = false
-  patchDatastream({
+  datastream.isVisible = !datastream.isPrivate
+  const didPersist = await patchDatastream({
     id: datastream.id,
     isPrivate: datastream.isPrivate,
     isVisible: datastream.isVisible,
   })
+  if (!didPersist) {
+    datastream.isVisible = previousIsVisible
+    datastream.isPrivate = previousIsPrivate
+  }
 }
 
 const copyDatastreamId = async (id: string) => {
@@ -931,8 +943,10 @@ const copyDatastreamId = async (id: string) => {
 const patchDatastream = async <T extends { id: string }>(patchBody: T) => {
   try {
     await hs.datastreams.update(patchBody)
+    return true
   } catch (error) {
     console.error('Error updating datastream', error)
+    return false
   }
 }
 

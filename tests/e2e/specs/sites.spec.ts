@@ -376,6 +376,15 @@ test.describe('sites and workspaces', () => {
         return datastream.isPrivate
       })
       .toBe(false)
+    await expect
+      .poll(async () => {
+        const response = await page.request.get(
+          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+        )
+        const datastream = await response.json()
+        return datastream.isVisible
+      })
+      .toBe(true)
 
     await dataVisibilityToggle.click()
     await expect
