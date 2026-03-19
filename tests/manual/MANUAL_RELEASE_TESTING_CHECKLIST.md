@@ -71,6 +71,12 @@ Work through this list before production release alongside CI.
 - [ ] **Load Template button** — on the "Add datastream" form, click "Load
       Template", select an existing orchestration template, and confirm the form
       pre-fills with the template's field values.
+- [ ] **Rating curve manager CRUD** — on a site details page, open "Manage rating
+      curves", add a CSV-backed rating curve, confirm its preview/details render,
+      update its description or file, download it, and delete it successfully.
+- [ ] **Rating curve delete guard** — attach a site rating curve to an
+      orchestration task, then return to the site's rating curve manager and
+      confirm deletion is blocked with links to the referencing task(s).
 - [ ] **Datastream form auto-fill controls** — verify any auto-fill controls on
       the datastream form populate fields with the expected values.
 - [ ] **Sparkline color coding** — for a datastream with recent data confirm the
@@ -130,6 +136,20 @@ Work through this list before production release alongside CI.
       and confirm the saved configuration matches the changes.
 - [ ] **Add new task** — with a data source selected, click "Add task", fill in
       the task fields, save, and confirm the task appears under the data source.
+- [ ] **Rating curve transformation workflow** — edit or create an ETL task,
+      add a rating curve transformation to a mapping, verify both "Select existing
+      rating curve" and "Create new rating curve" flows work, confirm the preview
+      loads, save the task, then reopen it and verify the selected rating curve
+      persists.
+- [ ] **Aggregation task create/edit workflow** — create an Aggregation task
+      without a data connection, choose source and target datastreams, set an
+      aggregation statistic, verify both fixed-offset and daylight-savings-aware
+      timezone modes work, save, then reopen the task and confirm the mappings and
+      timezone settings persist.
+- [ ] **Aggregation task validation states** — while creating or editing an
+      Aggregation task, confirm missing source datastream, target datastream, or
+      aggregation statistic fields show validation errors and block save until the
+      task is completed correctly.
 - [ ] **Run Now** — click "Run Now" on an existing task and confirm the task
       status updates to a running or queued state (or a success toast appears).
 - [ ] **Pause / Resume** — click "Pause" on a running task and confirm the status
