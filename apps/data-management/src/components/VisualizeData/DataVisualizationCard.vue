@@ -167,7 +167,10 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
-import { getXRangeBounds } from '@/utils/plotting/plotly'
+import {
+  downloadPlotlyImage,
+  getXRangeBounds,
+} from '@/utils/plotting/plotly'
 import { mdiChartLine, mdiDownload, mdiSigma } from '@mdi/js'
 
 const emit = defineEmits(['copy-state'])
@@ -457,8 +460,10 @@ const handleCopyState = () => {
 
 const downloadPlotImage = async () => {
   if (!plotlyRef.value) return
-  const Plotly = await ensurePlotly()
-  await Plotly.downloadImage(plotlyRef.value, { format: 'png', filename: 'plot' })
+  await downloadPlotlyImage(plotlyRef.value, {
+    format: 'png',
+    filename: 'plot',
+  })
 }
 
 const updating = computed(() =>

@@ -1,9 +1,12 @@
 import { expect, Locator, Page } from '@playwright/test'
 
 function overlayOptions(page: Page) {
-  return page
-    .locator('.v-overlay-container [role="option"], .v-overlay-container .v-list-item')
-    .filter({ hasNot: page.locator('[aria-hidden="true"]') })
+  return page.locator(
+    '.v-overlay-container [role="option"]:visible, ' +
+      '.v-overlay-container .v-list-item:visible, ' +
+      '[role="listbox"] [role="option"]:visible, ' +
+      '[role="listbox"] .v-list-item:visible'
+  )
 }
 
 export async function chooseOverlayOption(page: Page, text: string) {
@@ -32,10 +35,17 @@ export async function chooseAutocompleteOption(
 }
 
 export async function fillCombobox(page: Page, label: string, value: string) {
-  const field = page.getByRole('combobox', { name: label }).first()
+  const combobox = page.getByRole('combobox', { name: label }).first()
+  const textbox = page.getByRole('textbox', { name: label }).first()
+  const field = (await combobox.count()) > 0 ? combobox : textbox
+
+  await expect(field).toBeVisible()
   await field.click()
   await field.fill(value)
-  await field.press('Enter')
+
+  if ((await combobox.count()) > 0) {
+    await field.press('Enter')
+  }
 }
 
 export async function clickWorkspaceTableAction(

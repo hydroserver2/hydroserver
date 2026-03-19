@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
   return {
-    base: mode === 'django' ? '/static/web/' : '',
+    base: mode === 'django' ? '/static/web/' : '/',
     plugins: [
       vue(),
       tailwindcss(),

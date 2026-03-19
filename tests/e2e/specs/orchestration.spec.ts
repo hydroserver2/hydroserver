@@ -36,10 +36,20 @@ test.describe('orchestration', () => {
 
     await statusFilter.click()
     await chooseOverlayOption(page, 'OK')
-    await expect(statusFilter).toContainText('OK')
+    await expect(
+      page.getByRole('heading', { name: 'No tasks match your search/filter.' })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Clear Status filters' }).click()
+    await page
+      .getByRole('button', {
+        name: new RegExp(fixtures.orchestration.systemName),
+      })
+      .click()
+    await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
 
     await statusFilter.click()
-    await chooseOverlayOption(page, 'Needs attention')
-    await expect(statusFilter).toContainText('Needs attention')
+    await chooseOverlayOption(page, 'Loading paused')
+    await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
   })
 })
