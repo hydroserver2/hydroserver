@@ -2,8 +2,25 @@ import { expect, test, type Page } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
+import { chooseAutocompleteOption } from '../support/ui'
 
 test.describe('visualization', () => {
+  function mobileDatastreamRow(page: Page, datastreamName: string) {
+    return page.getByRole('row').filter({ hasText: datastreamName }).first()
+  }
+
+  async function ensureFiltersDrawerOpen(page: Page) {
+    const workspaceFilter = page.getByRole('combobox', { name: 'Workspaces' }).first()
+    if ((await workspaceFilter.count()) > 0 && (await workspaceFilter.isVisible())) {
+      return
+    }
+
+    await page.getByRole('button', { name: 'Toggle filters drawer' }).click()
+    await expect(
+      page.getByRole('combobox', { name: 'Workspaces' }).first()
+    ).toBeVisible()
+  }
+
   async function plotPublicDatastream(page: Page) {
     await page
       .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
@@ -16,6 +33,8 @@ test.describe('visualization', () => {
   test('visualization page renders filter controls and seeded datastream rows', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 500, height: 900 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
 
     await expect(
@@ -26,12 +45,10 @@ test.describe('visualization', () => {
       page.getByRole('button', { name: 'Clear Selected' })
     ).toBeVisible()
     await expect(
-      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
     ).toBeVisible()
     await expect(
-      page.getByTestId(
-        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
-      )
+      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name)
     ).toBeVisible()
   })
 
@@ -39,6 +56,7 @@ test.describe('visualization', () => {
     page,
     browser,
   }) => {
+    await page.setViewportSize({ width: 500, height: 900 })
     await page.addInitScript(() => {
       const clipboard = navigator.clipboard
       if (!clipboard) return
@@ -52,24 +70,21 @@ test.describe('visualization', () => {
     await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
 
     await expect(
-      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      page.getByText(fixtures.datastreams.public.name, { exact: true })
     ).toBeVisible()
     await expect(
-      page.getByTestId(
-        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
-      )
+      page.getByText(fixtures.datastreams.publicSystemMetadata.name, { exact: true })
     ).toBeVisible()
 
-    await plotPublicDatastream(page)
+    await page.getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`).click()
+    await page.getByTestId('add-datastream-to-plot').click()
     await page.getByTestId('toggle-selected-datastreams').click()
 
     await expect(
-      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
     ).toBeVisible()
     await expect(
-      page.getByTestId(
-        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
-      )
+      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name)
     ).toHaveCount(0)
 
     await page.getByTestId('show-summary-view').click()
@@ -84,13 +99,15 @@ test.describe('visualization', () => {
 
     const copiedContext = await browser.newContext()
     const copiedPage = await copiedContext.newPage()
+    await copiedPage.setViewportSize({ width: 500, height: 900 })
+    await authenticateSession(copiedPage, users.owner.email, users.owner.password)
     await copiedPage.goto(copiedUrl)
 
     await expect(
       copiedPage.getByRole('button', { name: 'Copy State as URL' })
     ).toBeVisible()
     await expect(
-      copiedPage.getByText(fixtures.datastreams.public.name, { exact: true })
+      mobileDatastreamRow(copiedPage, fixtures.datastreams.public.name)
     ).toBeVisible()
     await copiedContext.close()
   })
@@ -127,6 +144,86 @@ test.describe('visualization', () => {
       page.getByTestId(
         `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
       )
+    ).toBeVisible()
+  })
+
+  test('visualization filters can narrow datastreams by site', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 900 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/visualize-data')
+    await ensureFiltersDrawerOpen(page)
+
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toBeVisible()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.privateWorkspacePublic.name)
+    ).toBeVisible()
+
+    await chooseAutocompleteOption(page, 'Sites', fixtures.things.privateWorkspacePublic.name)
+
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.privateWorkspacePublic.name)
+    ).toBeVisible()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Clear filters' }).click()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toBeVisible()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.privateWorkspacePublic.name)
+    ).toBeVisible()
+  })
+
+  test('visualization search filters the mobile datastream cards', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 900 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    const tableSearch = page.getByRole('textbox', {
+      name: 'Search',
+    })
+    await expect(tableSearch).toBeVisible()
+
+    await tableSearch.fill('System Assigned Observed Property')
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name)
+    ).toBeVisible()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toHaveCount(0)
+
+    await tableSearch.clear()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toBeVisible()
+  })
+
+  test('visualization column toggles hide and restore table headers', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    const columnsButton = page.getByRole('button', {
+      name: 'Show or hide columns',
+    })
+    await columnsButton.click()
+    await page.getByRole('checkbox', { name: 'Toggle Observed Property' }).click()
+    await expect(
+      page.getByRole('columnheader', { name: 'Observed Property' })
+    ).toHaveCount(0)
+
+    await page.getByRole('checkbox', { name: 'Toggle Observed Property' }).click()
+    await expect(
+      page.getByRole('columnheader', { name: 'Observed Property' })
     ).toBeVisible()
   })
 
@@ -235,6 +332,49 @@ test.describe('visualization', () => {
         `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`
       )
     ).toHaveCount(0)
+
+    const zipDownload = page.waitForEvent('download')
+    await page.getByTestId('download-selected-datastreams').click()
+    const zipArtifact = await zipDownload
+    expect(zipArtifact.suggestedFilename()).toBe('datastreams.zip')
+  })
+
+  test('visualization metadata modal clear-and-plot resets the current selection', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 900 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await page
+      .getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`)
+      .click()
+    await page.getByTestId('add-datastream-to-plot').click()
+
+    await page
+      .getByTestId(`datavis-metadata-${fixtures.datastreams.publicSystemMetadata.id}`)
+      .click()
+    await page.getByTestId('clear-and-plot-datastream').click()
+    await page.getByTestId('toggle-selected-datastreams').click()
+
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name)
+    ).toBeVisible()
+    await expect(
+      mobileDatastreamRow(page, fixtures.datastreams.public.name)
+    ).toHaveCount(0)
+  })
+
+  test('visualization selected download works for multiple datastreams', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`)
+
+    await page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`).click()
+    await page
+      .getByTestId(`plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`)
+      .click()
 
     const zipDownload = page.waitForEvent('download')
     await page.getByTestId('download-selected-datastreams').click()

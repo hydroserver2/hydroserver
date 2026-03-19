@@ -24,6 +24,29 @@ test.describe('metadata management', () => {
     await expect(
       page.getByRole('tab', { name: 'Result qualifiers' }).first()
     ).toBeVisible()
+    await expect(page.getByTestId('system-metadata-table')).toBeVisible()
+    await expect(page.getByText('System metadata')).toBeVisible()
+  })
+
+  test('system metadata entries are visible alongside workspace metadata', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/metadata')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+
+    const workspaceTable = page.getByTestId('workspace-metadata-table')
+    const systemTable = page.getByTestId('system-metadata-table')
+
+    await workspaceTable.getByRole('tab', { name: 'Sensors' }).click()
+    await systemTable.getByRole('tab', { name: 'Sensors' }).click()
+
+    await expect(
+      workspaceTable.locator('tr').filter({ hasText: 'Private Assigned Sensor' }).first()
+    ).toBeVisible()
+    await expect(
+      systemTable.locator('tr').filter({ hasText: 'System Sensor' }).first()
+    ).toBeVisible()
   })
 
   test('workspace sensor metadata can be created, updated, and deleted', async ({
@@ -265,5 +288,29 @@ test.describe('metadata management', () => {
     ).toHaveCount(0)
 
     await searchBox.clear()
+  })
+
+  test('metadata in-use items cannot be deleted from the workspace table', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/metadata')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+
+    const workspaceTable = page.getByTestId('workspace-metadata-table')
+    await workspaceTable.getByRole('tab', { name: 'Sensors' }).click()
+
+    const assignedSensorRow = workspaceTable
+      .locator('tr')
+      .filter({ hasText: 'Private Assigned Sensor' })
+      .first()
+    await expect(assignedSensorRow).toBeVisible()
+
+    await assignedSensorRow.locator('.v-icon').nth(1).click()
+    await expect(
+      page.getByText("cannot be deleted because it's being referenced")
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Cancel' }).click()
   })
 })

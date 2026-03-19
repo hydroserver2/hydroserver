@@ -20,11 +20,15 @@ test.describe('account management', () => {
     ).toBeVisible()
   })
 
-  test('profile editing can remove organization details', async ({ page }) => {
+  test('account menu opens the profile page and profile editing can remove organization details', async ({
+    page,
+  }) => {
     await login(page, users.profile.email, users.profile.password)
     await expect(page).toHaveURL(/\/sites$/)
 
-    await page.goto('/profile')
+    await page.getByTestId('account-menu-button').click()
+    await page.getByTestId('account-menu-item').click()
+    await expect(page).toHaveURL(/\/profile$/)
     await expect(
       page.getByRole('heading', { name: 'User information' })
     ).toBeVisible()

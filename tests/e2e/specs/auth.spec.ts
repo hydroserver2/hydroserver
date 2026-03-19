@@ -24,4 +24,21 @@ test.describe('authentication', () => {
       page.getByText('Selected workspace:', { exact: false })
     ).toBeVisible()
   })
+
+  test('authenticated users can log out from the account menu', async ({ page }) => {
+    await login(page, users.owner.email, users.owner.password)
+    await expect(page).toHaveURL(/\/sites$/)
+
+    await page.getByTestId('account-menu-button').click()
+    await expect(page.getByTestId('logout-menu-item')).toBeVisible()
+    await Promise.all([
+      page.waitForURL(/\/login(?:\?.*)?$/),
+      page.getByTestId('logout-menu-item').click(),
+    ])
+
+    await expect(page).toHaveURL(/\/login(?:\?.*)?$/)
+    await expect(
+      page.locator('main').getByRole('button', { name: 'Log in' })
+    ).toBeVisible()
+  })
 })

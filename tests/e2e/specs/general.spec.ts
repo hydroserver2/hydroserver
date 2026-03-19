@@ -30,10 +30,7 @@ test.describe('general navigation', () => {
     await siteTypeFilter.fill('Lake')
     await siteTypeFilter.press('Enter')
 
-    await page
-      .getByRole('button', { name: /clear/i })
-      .first()
-      .click()
+    await page.getByRole('button', { name: /clear/i }).first().click()
     await expect(siteTypeFilter).toBeEmpty()
   })
 })

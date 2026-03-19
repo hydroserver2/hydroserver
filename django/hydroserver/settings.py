@@ -234,6 +234,8 @@ ACCOUNT_SIGNUP_FORM_CLASS = "domains.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
 
 ACCOUNT_ADAPTER = "domains.iam.auth.adapters.AccountAdapter"
+if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
+    ACCOUNT_RATE_LIMITS = False
 HEADLESS_ONLY = True
 
 HEADLESS_FRONTEND_URLS = {

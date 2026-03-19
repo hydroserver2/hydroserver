@@ -85,6 +85,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { useSidebarStore } from '@/store/useSidebar'
 import { useVocabularyStore } from '@/composables/useVocabulary'
+import { filterThingMarkers } from '@/utils/browseFilters'
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
 import { mdiClose, mdiDomain, mdiWaterPump } from '@mdi/js'
@@ -107,17 +108,11 @@ const props = defineProps({
 const sidebar = useSidebarStore()
 sidebar.isOpen = !!smAndDown
 
-const inSelectedWorkspaces = (thing: ThingMarker) =>
-  selectedWorkspaces.value.length === 0 ||
-  selectedWorkspaces.value.find((ws) => ws.id === thing.workspaceId)
-
-const isTypeValid = (thing: ThingMarker) =>
-  selectedSiteTypes.value.length === 0 ||
-  selectedSiteTypes.value.includes(thing.siteType)
-
 const emitFilteredThings = () => {
-  const filteredThings = props.things.filter(
-    (thing) => inSelectedWorkspaces(thing) && isTypeValid(thing)
+  const filteredThings = filterThingMarkers(
+    props.things,
+    selectedWorkspaces.value,
+    selectedSiteTypes.value
   )
   emit('filter', filteredThings)
 }

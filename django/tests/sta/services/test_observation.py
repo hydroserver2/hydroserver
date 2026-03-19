@@ -3,14 +3,16 @@ import uuid
 from collections import Counter
 from django.http import HttpResponse
 from domains.sta.models import Observation
-from domains.sta.services import ObservationService
+from domains.sta.services import DatastreamService, ObservationService
 from interfaces.api.schemas import (
+    DatastreamPatchBody,
     ObservationBulkPostBody,
     ObservationBulkDeleteBody,
     ObservationSummaryResponse,
 )
 
 observation_service = ObservationService()
+datastream_service = DatastreamService()
 
 
 @pytest.mark.parametrize(
@@ -180,4 +182,40 @@ def test_delete_observations(
             datastream_id=uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
         ).count()
         == 0
+    )
+
+
+def test_hidden_public_datastream_observations_are_not_listed_for_guests(
+    get_principal,
+):
+    datastream_id = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+
+    datastream_service.update(
+        principal=get_principal("owner"),
+        uid=datastream_id,
+        data=DatastreamPatchBody(is_visible=False),
+    )
+
+    anonymous_result = observation_service.list(
+        principal=get_principal("anonymous"),
+        response=HttpResponse(),
+        datastream_id=datastream_id,
+        page=1,
+        page_size=100,
+        order_by=[],
+        filtering={},
+    )
+    owner_result = observation_service.list(
+        principal=get_principal("owner"),
+        response=HttpResponse(),
+        datastream_id=datastream_id,
+        page=1,
+        page_size=100,
+        order_by=[],
+        filtering={},
+    )
+
+    assert anonymous_result == []
+    assert Counter(observation.result for observation in owner_result) == Counter(
+        [1.1, 3.1]
     )

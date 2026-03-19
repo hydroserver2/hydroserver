@@ -247,6 +247,44 @@ def test_list_datastream_visualization_bootstrap_filters_by_workspace(get_princi
     )
 
 
+def test_hidden_public_datastream_csv_omits_observation_rows_for_guests(
+    get_principal,
+):
+    datastream_id = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+    datastream_service.update(
+        principal=get_principal("owner"),
+        uid=datastream_id,
+        data=DatastreamPatchBody(is_visible=False),
+    )
+
+    anonymous_response = datastream_service.get_csv(
+        principal=get_principal("anonymous"),
+        uid=datastream_id,
+    )
+    owner_response = datastream_service.get_csv(
+        principal=get_principal("owner"),
+        uid=datastream_id,
+    )
+
+    anonymous_csv = "".join(
+        chunk.decode() if isinstance(chunk, bytes) else chunk
+        for chunk in anonymous_response.streaming_content
+    )
+    owner_csv = "".join(
+        chunk.decode() if isinstance(chunk, bytes) else chunk
+        for chunk in owner_response.streaming_content
+    )
+
+    anonymous_rows = [
+        line for line in anonymous_csv.splitlines() if line and not line.startswith("#")
+    ]
+    owner_rows = [line for line in owner_csv.splitlines() if line and not line.startswith("#")]
+
+    assert anonymous_rows == ["ResultTime,Result,ResultQualifiers"]
+    assert owner_rows[0] == "ResultTime,Result,ResultQualifiers"
+    assert len(owner_rows) == 3
+
+
 @pytest.mark.parametrize(
     "principal, datastream, message, error_code",
     [

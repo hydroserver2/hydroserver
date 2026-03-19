@@ -36,7 +36,7 @@ HydroServer is organized as follows:
 **System Tests** (`tests/`)
 
 - `tests/e2e`: end-to-end tests for the HydroServer product as a whole.
-  The Playwright suite boots the API and data-management app automatically against an isolated `hydroserver_e2e` database. The human release signoff list lives in `MANUAL_RELEASE_TESTING_CHECKLIST.md`.
+  The Playwright suite boots the API and data-management app automatically against an isolated `hydroserver_e2e` database. The human release signoff list lives in `tests/manual/MANUAL_RELEASE_TESTING_CHECKLIST.md`.
 
 **Scripts** (`scripts/`)
 

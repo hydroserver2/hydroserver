@@ -55,7 +55,12 @@ export async function authenticateSession(
   email: string,
   password: string
 ) {
-  const response = await requestBrowserSession(page, email, password)
+  let response = await requestBrowserSession(page, email, password)
+
+  for (let attempt = 0; response.status() === 429 && attempt < 5; attempt += 1) {
+    await page.waitForTimeout(250 * (attempt + 1))
+    response = await requestBrowserSession(page, email, password)
+  }
 
   expect(response.ok()).toBeTruthy()
 

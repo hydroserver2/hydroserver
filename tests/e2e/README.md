@@ -28,19 +28,19 @@ The runner is isolated from normal local development:
 The initial suite covers the core workflows that are stable and valuable to gate:
 
 - anonymous access control for protected routes
-- login with a seeded user
+- login and logout with a seeded user
 - account onboarding for users with no workspaces
-- profile editing and account deletion
-- root navigation and about-page availability
+- account-menu profile navigation, profile editing, and account deletion
+- root navigation, about-page availability, and browse filter clearing
 - workspace creation from the shared workspace toolbar
 - workspace edit validation, privacy changes, and deletion
 - workspace collaborator add, edit, and removal
-- public site details plus site photo/site/datastream CRUD on a seeded mutable site
+- workspace transfer visibility plus accept/cancel ownership handoff
+- public site details, site registration/search/filtering, privacy controls, metadata modal/downloads, and site photo/site/datastream CRUD
 - metadata page shell and tab availability
 - representative workspace sensor CRUD
 - visualization bootstrap, metadata modal actions, CSV/ZIP downloads, selected-only filtering, summary mode, and copied URL restore
 - orchestration page loading with seeded workspace data
-- pending workspace transfer visibility for the target user
 
 ## Running Locally
 
@@ -73,4 +73,4 @@ This executes:
 
 - Browser login is tested through the UI, but most authenticated page tests use a seeded session cookie helper because the current app login flow does not persist the session cookie reliably in the browser automation environment.
 - The visualization tests rely on the app honoring `VITE_APP_PROXY_BASE_URL` for bootstrap requests so the isolated Playwright API instance is used instead of the default local dev port.
-- The manual release checklist in `MANUAL_RELEASE_TESTING_CHECKLIST.md` complements the Playwright suite for external-system checks and rendering behaviors that are still not deterministic in headless automation.
+- The manual release checklist in `tests/manual/MANUAL_RELEASE_TESTING_CHECKLIST.md` complements the Playwright suite for external-system checks and rendering behaviors that are still not deterministic in headless automation.

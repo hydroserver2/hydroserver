@@ -701,10 +701,11 @@ class DatastreamService(ServiceUtils):
         return queryset.values_list("name", flat=True)
 
     @staticmethod
-    def generate_csv(datastream: Datastream):
-        observations = Observation.objects.filter(datastream=datastream).order_by(
-            "phenomenon_time"
-        )
+    def generate_csv(datastream: Datastream, observations=None):
+        if observations is None:
+            observations = Observation.objects.filter(datastream=datastream).order_by(
+                "phenomenon_time"
+            )
 
         latitude = (
             round(datastream.thing.location.latitude, 6)
@@ -820,9 +821,13 @@ class DatastreamService(ServiceUtils):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="view"
         )
+        visible_observations = Observation.objects.visible(principal=principal).filter(
+            datastream=datastream
+        ).order_by("phenomenon_time")
 
         response = StreamingHttpResponse(
-            self.generate_csv(datastream), content_type="text/csv"
+            self.generate_csv(datastream, observations=visible_observations),
+            content_type="text/csv",
         )
         response["Content-Disposition"] = (
             f'attachment; filename="{datastream.name}.csv"'

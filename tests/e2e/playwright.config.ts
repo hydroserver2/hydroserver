@@ -64,8 +64,13 @@ export default defineConfig({
         SMTP_URL: process.env.SMTP_URL || 'memory://',
         PROXY_BASE_URL: appBaseUrl,
         ALLOWED_HOSTS: '127.0.0.1,localhost',
-        ANON_THROTTLE_RATE: '200/s',
-        AUTH_THROTTLE_RATE: '200/s',
+        // The seeded browser suite issues many short bursts of API requests while
+        // bootstrapping pages. Keep throttling effectively disabled in the
+        // isolated E2E environment so the release pass reflects product failures,
+        // not test-runner rate limiting.
+        ANON_THROTTLE_RATE: '10000/s',
+        AUTH_THROTTLE_RATE: '10000/s',
+        ACCOUNT_RATE_LIMITS_DISABLED: 'true',
         DEPLOYMENT_BACKEND: 'dev',
         DEBUG: 'True',
       },

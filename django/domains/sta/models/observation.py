@@ -23,6 +23,7 @@ class ObservationQuerySet(models.QuerySet):
             datastream__thing__workspace__is_private=False,
             datastream__thing__is_private=False,
             datastream__is_private=False,
+            datastream__is_visible=True,
         )
 
         if hasattr(principal, "account_type") and principal.account_type == "admin":
@@ -232,6 +233,7 @@ class Observation(models.Model, PermissionChecker):
             not self.datastream.thing.workspace.is_private
             and not self.datastream.thing.is_private
             and not self.datastream.is_private
+            and self.datastream.is_visible
             and "view" not in list(permissions)
         ):
             permissions = list(permissions) + ["view"]

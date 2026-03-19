@@ -70,7 +70,7 @@
       <v-spacer />
 
       <template v-if="hs.session.isAuthenticated">
-        <v-btn elevation="2" rounded>
+        <v-btn data-testid="account-menu-button" elevation="2" rounded>
           <v-icon :icon="mdiAccountCircle" />
           <v-icon :icon="mdiMenuDown" />
 
@@ -79,6 +79,7 @@
               <v-list-item
                 :prepend-icon="mdiAccountCircle"
                 :to="{ path: '/profile' }"
+                data-testid="account-menu-item"
                 title="Account"
               />
 
@@ -87,6 +88,7 @@
               <v-list-item
                 :prepend-icon="mdiLogout"
                 @click="onLogout"
+                data-testid="logout-menu-item"
                 title="Log out"
               />
             </v-list>
@@ -138,10 +140,16 @@
 
     <v-list density="compact" nav>
       <template v-if="hs.session.isAuthenticated">
-        <v-list-item to="/profile" :prepend-icon="mdiAccountCircle"
+        <v-list-item
+          to="/profile"
+          :prepend-icon="mdiAccountCircle"
+          data-testid="account-drawer-item"
           >Account</v-list-item
         >
-        <v-list-item :prepend-icon="mdiLogout" @click.prevent="onLogout"
+        <v-list-item
+          :prepend-icon="mdiLogout"
+          @click.prevent="onLogout"
+          data-testid="logout-drawer-item"
           >Logout</v-list-item
         >
       </template>
