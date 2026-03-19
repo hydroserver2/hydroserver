@@ -41,7 +41,6 @@ The initial suite covers the core workflows that are stable and valuable to gate
 - visualization bootstrap, metadata modal actions, CSV/ZIP downloads, selected-only filtering, summary mode, and copied URL restore
 - orchestration page loading with seeded workspace data
 - pending workspace transfer visibility for the target user
-- release-coverage mapping in `tests/e2e/release-matrix.yaml`
 
 ## Running Locally
 
@@ -74,4 +73,4 @@ This executes:
 
 - Browser login is tested through the UI, but most authenticated page tests use a seeded session cookie helper because the current app login flow does not persist the session cookie reliably in the browser automation environment.
 - The visualization tests rely on the app honoring `VITE_APP_PROXY_BASE_URL` for bootstrap requests so the isolated Playwright API instance is used instead of the default local dev port.
-- `tests/e2e/release-matrix.yaml` is the source of truth for which release-test document cases are automated in Playwright, delegated to pytest, or still manual because they depend on external systems such as SDL or HydroShare.
+- The manual release checklist in `MANUAL_RELEASE_TESTING_CHECKLIST.md` complements the Playwright suite for external-system checks and rendering behaviors that are still not deterministic in headless automation.
