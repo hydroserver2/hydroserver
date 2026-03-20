@@ -1,0 +1,30 @@
+# Public Workspace
+- model: iam.workspace
+  pk: 6e0deaf2-a92b-421b-9ece-86783265596f
+  fields:
+    name: "Public"
+    owner: 1000000010
+    is_private: false
+
+# Private Workspace
+- model: iam.workspace
+  pk: b27c51a0-7374-462d-8a53-d97d47176c10
+  fields:
+    name: "Private"
+    owner: 1000000010
+    is_private: true
+
+# Transfer Workspace
+- model: iam.workspace
+  pk: caf4b92e-6914-4449-8c8a-efa5a7fd1826
+  fields:
+    name: "Transfer"
+    owner: 1000000010
+    is_private: true
+
+- model: iam.workspacetransferconfirmation
+  pk: 1000000010
+  fields:
+    workspace: caf4b92e-6914-4449-8c8a-efa5a7fd1826
+    new_owner: 1000000013
+    initiated: "2025-01-01 11:11:11.000 +0000"

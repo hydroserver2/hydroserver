@@ -1,37 +1,47 @@
 # HydroServer
 
-This repository hosts the main issue tracker for the HydroServer software stack and documentation for HydroServer components. Code repositories for each HydroServer component are linked below.
+This repository contains the core HydroServer apps, services, deployment assets, and shared packages.
 
 - Access the [HydroServer issue tracker](https://github.com/hydroserver2/hydroserver/issues)
 - Access [HydroServer documentation](https://hydroserver2.github.io/hydroserver/)
 
 HydroServer is a software cyberinfrastructure platform created to support collection, management, and sharing of time series of observations from hydrologic and evironmental monitoring sites. Under development at the [Utah Water Research Laboratory](https://uwrl.usu.edu/) at [Utah State University](https://www.usu.edu/), HydroServer is designed to be an open platform that enables research groups, agencies, organizations, and practitioners to more easily collect and manage streaming observations from environmental sensors.
 
-HydroServer consists of the following components:
+HydroServer is organized as follows:
 
-**HydroServer Data Management Web Application**: A web application for creating and managing monitoring sites, data streams, and associated metadata.
+**Apps** (`apps/`)
 
-- Map interface for browsing data collection sites
-- User interface for registering sites and creating site metadata
-- User interface for creating data streams and associated metadata
-- An job orchestration user interface for configuring the automated extraction, transformation, and loading of source data to their destinations.
-- A data management API for programmatically managing site and datastream metadata
-- Data management app code repository: [https://github.com/hydroserver2/hydroserver-data-management-app](https://github.com/hydroserver2/hydroserver-data-management-app)
-- API services code repository: [https://github.com/hydroserver2/hydroserver-api-services](https://github.com/hydroserver2/hydroserver-api-services)
+- `apps/docs`: the VitePress documentation site for HydroServer.
+- `apps/data-management`: the end-user web application for creating and managing monitoring sites, datastreams, metadata, and orchestration settings.
 
-**HydroServer SensorThings API**: A Python Django implementation of the Open Geospatial Consortium's SensorThings API for HydroServer
+**Backend**
 
-- SensorThings Part 1: Sensing Version 1.1 API implementation in Python using Django
-- Data ingest to HydroServer from any device capable of HTTP POST requests
-- Data querying via a REST API
-- SensorThings API repository: [https://github.com/hydroserver2/hydroserver-sensorthings](https://github.com/hydroserver2/hydroserver-sensorthings)
+- `django`: the Django backend that owns the HydroServer API contract and runtime behavior, including SensorThings, data management, and orchestration.
 
-**HydroServer Streaming Data Loader**: A desktop/server app and Python package for loading streaming data into a HydroServer instance.
+**Packages** (`packages/`)
 
-- Cross platform app for running on Windows, Mac, or Linux
-- Silent updater for loading data to a HydroServer instance from delimited text files
-- Python package (used by the app) for loading data to HydroServer via the SensorThings API
-- Streaming Data Loader Desktop app repository: [https://github.com/hydroserver2/streaming-data-loader](https://github.com/hydroserver2/streaming-data-loader)
+- `packages/hydroserver-ts`: the shared TypeScript client used by browser-based HydroServer applications.
+- `packages/hydroserverpy`: the shared Python client used by HydroServer Python integrations and tooling.
+- `packages/etl-core`: the reserved package boundary for the ETL framework that will be extracted from `hydroserverpy` in a later migration step.
+
+**Specifications** (`specs/`)
+
+- `specs/functional`: Markdown copies of HydroServer functional specification documents kept in the repo for planning, implementation, and review.
+
+**Deployment** (`deploy/`)
+
+- `deploy/dev`: local development deployment assets.
+- `deploy/prod`: production deployment assets.
+
+**System Tests** (`tests/`)
+
+- `tests/e2e`: end-to-end tests for the HydroServer product as a whole.
+  The Playwright suite boots the API and data-management app automatically against an isolated `hydroserver_e2e` database. The human release signoff list lives in `tests/manual/MANUAL_RELEASE_TESTING_CHECKLIST.md`.
+
+**Scripts** (`scripts/`)
+
+- `scripts/e2e`: canonical local and CI entrypoint for the browser E2E suite.
+- `scripts/release-test`: root runner for API, Python-client, and browser release regression suites.
 
 ## History
 

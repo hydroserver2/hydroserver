@@ -1,0 +1,159 @@
+# Public Thing
+- model: sta.thing
+  pk: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+  fields:
+    name: Public Thing
+    description: Utah Water Research Lab
+    sampling_feature_type: Public
+    sampling_feature_code: UWRL
+    site_type: Public
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.location
+  pk: 8a6f1578-060a-40d9-9064-f8c4af4da80d
+  fields:
+    name: Location for Public Thing
+    description: Location for Utah Water Research Lab
+    encoding_type: application/geo+json
+    latitude: 41.739742
+    longitude: -111.793766
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+- model: sta.thingtag
+  pk: 1000000010
+  fields:
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    key: Test Public Key
+    value: Test Public Value
+
+# Private Thing
+- model: sta.thing
+  pk: 76dadda5-224b-4e1f-8570-e385bd482b2d
+  fields:
+    name: Private Thing
+    description: Private Thing
+    sampling_feature_type: Private
+    sampling_feature_code: TSC
+    site_type: Private
+    is_private: True
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+- model: sta.location
+  pk: 5bba0397-096b-4d60-a3f0-c00f1e6e85da
+  fields:
+    name: Location for Private Thing
+    description: Location for Taggart Student Center
+    encoding_type: application/geo+json
+    latitude: 41.743042
+    longitude: -111.813250
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+- model: sta.thingtag
+  pk: 1000000011
+  fields:
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+    key: Test Private Key
+    value: Test Private Value
+
+# Private Thing in Public Workspace
+- model: sta.thing
+  pk: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+  fields:
+    name: Private Thing Public Workspace
+    description: Old Main Building
+    sampling_feature_type: Private
+    sampling_feature_code: MAIN
+    site_type: Private
+    is_private: True
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.location
+  pk: a5247605-ca8a-4419-a24f-e030813c92db
+  fields:
+    name: Location for Private Thing Public Workspace
+    description: Location for Old Main Building
+    encoding_type: application/geo+json
+    latitude: 41.740741
+    longitude: -111.813924
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+- model: sta.thingtag
+  pk: 1000000012
+  fields:
+    thing: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+    key: Test Private Key
+    value: Test Private Value
+
+# Public Thing in Private Workspace
+- model: sta.thing
+  pk: 819260c8-2543-4046-b8c4-7431243ed7c5
+  fields:
+    name: Public Thing Private Workspace
+    description: Merrill-Cazier Library
+    sampling_feature_type: Private
+    sampling_feature_code: LIB
+    site_type: Private
+    is_private: False
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+- model: sta.location
+  pk: 286fc929-8d18-4993-8abd-5cdaaa28c60b
+  fields:
+    name: Location for Public Thing Private Workspace
+    description: Location for Merrill-Cazier Library
+    encoding_type: application/geo+json
+    latitude: 41.742008
+    longitude: -111.809720
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+- model: sta.thingtag
+  pk: 1000000013
+  fields:
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    key: Test Private Key
+    value: Test Private Value
+
+# Mutable Public Thing for E2E CRUD
+- model: sta.thing
+  pk: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+  fields:
+    name: E2E Mutable Thing
+    description: Deterministic mutable site reserved for browser CRUD tests
+    sampling_feature_type: Public
+    sampling_feature_code: E2E-MUTABLE
+    site_type: Public
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.location
+  pk: 7f7054ca-e4f6-432c-ad81-f5bda9eeab42
+  fields:
+    name: Location for E2E Mutable Thing
+    description: Location for the mutable browser test thing
+    encoding_type: application/geo+json
+    latitude: 41.741111
+    longitude: -111.805555
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    thing: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+- model: sta.thingtag
+  pk: 1000000014
+  fields:
+    thing: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+    key: E2E
+    value: Mutable

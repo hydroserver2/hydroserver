@@ -1,0 +1,57 @@
+# System Sensor
+- model: sta.sensor
+  pk: a947c551-8e21-4848-a89b-3048aec69574
+  fields:
+    name: System Sensor
+    description: System Sensor
+    encoding_type: application/json
+    method_type: System Method
+
+# System Assigned Sensor
+- model: sta.sensor
+  pk: 41e44514-b52f-4788-94e1-93c7587aa84a
+  fields:
+    name: System Assigned Sensor
+    description: System Assigned Sensor
+    encoding_type: application/json
+    method_type: System Assigned Method
+
+# Public Sensor
+- model: sta.sensor
+  pk: f87072e1-6ccb-46ec-ab34-befb453140de
+  fields:
+    name: Public Sensor
+    description: Public Sensor
+    encoding_type: application/json
+    method_type: Public Method
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Assigned Sensor
+- model: sta.sensor
+  pk: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+  fields:
+    name: Public Assigned Sensor
+    description: Public Assigned Sensor
+    encoding_type: application/json
+    method_type: Public Assigned Method
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Sensor
+- model: sta.sensor
+  pk: 89a6ae16-9f85-4279-985e-83484db47107
+  fields:
+    name: Private Sensor
+    description: Private Sensor
+    encoding_type: application/json
+    method_type: Private Method
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Assigned Sensor
+- model: sta.sensor
+  pk: b2cc0c86-c131-4721-8080-9f5f722224ec
+  fields:
+    name: Private Assigned Sensor
+    description: Private Assigned Sensor
+    encoding_type: application/json
+    method_type: Private Assigned Method
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

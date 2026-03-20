@@ -1,0 +1,4 @@
+.required-label::after {
+  content: ' *';
+  color: #f44336; /* Vuetify error color */
+}

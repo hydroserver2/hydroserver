@@ -1,0 +1,61 @@
+# ETL Task Interval
+- model: django_celery_beat.intervalschedule
+  pk: 1000000
+  fields:
+    every: 1
+    period: days
+
+# ETL Task Schedule
+- model: django_celery_beat.periodictask
+  pk: 1000000
+  fields:
+    name: Test ETL Data Connection — 019adb4f-856c-745a-a996-708a2b2d33bd
+    task: domains.etl.tasks.run_etl_task
+    args: []
+    kwargs: {"task_id": "019adb4f-856c-745a-a996-708a2b2d33bd"}
+    enabled: False
+    total_run_count: 0
+    date_changed: 2025-01-01 01:00:00.000 -0700
+    description: ""
+    interval_id: 1000000
+    one_off: False
+    start_time: 2025-01-01 01:00:00.000 -0700
+    headers: {}
+    expire_seconds: 3600
+
+# ETL Task
+- model: etl.task
+  pk: 019adbc3-35e8-7f25-bc68-171fb66d446e
+  fields:
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+    data_connection: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+    periodic_task: 1000000
+    orchestration_system: 7cb900d2-eb11-4a59-a05b-dd02d95af312
+    name: Test ETL Task
+    paused: True
+    extractor_variables: {}
+    transformer_variables: {}
+    loader_variables: {}
+
+- model: etl.taskmapping
+  pk: 019adb5f-2d50-7e60-b1cc-fcae97899931
+  fields:
+    task: 019adbc3-35e8-7f25-bc68-171fb66d446e
+    source_identifier: test_value
+
+- model: etl.taskmappingpath
+  pk: 019adb5f-2d50-7e60-b1cc-fcae97899931
+  fields:
+    task_mapping: 019adb5f-2d50-7e60-b1cc-fcae97899931
+    target_identifier: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    data_transformations: []
+
+# ETL Run
+- model: etl.taskrun
+  pk: 019adb60-8cb6-70cc-a1b1-91c2f0ded756
+  fields:
+    task: 019adbc3-35e8-7f25-bc68-171fb66d446e
+    result: {"message": "OK"}
+    started_at: 2025-01-01 01:00:00.000 -0700
+    finished_at: 2025-01-01 02:00:00.000 -0700
+    status: SUCCESS

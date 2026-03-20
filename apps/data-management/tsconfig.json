@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    "strict": true,
+    "useDefineForClassFields": true,
+    "importHelpers": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "noEmit": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@hydroserver/client": ["../hydroserver-ts/src/index.ts"],
+      "@hydroserver/client/*": ["../hydroserver-ts/src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "vitest.config.ts"
+  ],
+
+  "exclude": ["node_modules", "dist"]
+}

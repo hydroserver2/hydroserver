@@ -1,0 +1,26 @@
+# ETL Data Connection
+- model: etl.dataconnection
+  pk: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+  fields:
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+    name: Test ETL Data Connection
+    data_connection_type: SDL
+    extractor_type: HTTP
+    extractor_settings: {}
+    transformer_type: CSV
+    transformer_settings: {}
+    loader_type: HydroServer
+    loader_settings: {}
+
+# ETL Global Data Connection
+- model: etl.dataconnection
+  pk: 019bbd9d-ee62-7669-8db0-3ef50802f1d8
+  fields:
+    name: Test Global ETL Data Connection
+    data_connection_type: ETL
+    extractor_type: HTTP
+    extractor_settings: {}
+    transformer_type: CSV
+    transformer_settings: {}
+    loader_type: HydroServer
+    loader_settings: {}

@@ -1,0 +1,63 @@
+# System Observed Property
+- model: sta.observedproperty
+  pk: 49a245bd-4517-4dea-b3ba-25c919bf2cf5
+  fields:
+    name: System Observed Property
+    definition: System Observed Property
+    description: System Observed Property
+    observed_property_type: System
+    code: System
+
+# System Assigned Observed Property
+- model: sta.observedproperty
+  pk: a5746e4e-f479-4476-a462-6a8f7874794d
+  fields:
+    name: System Assigned Observed Property
+    definition: System Assigned Observed Property
+    description: System Assigned Observed Property
+    observed_property_type: System
+    code: System
+
+# Public Observed Property
+- model: sta.observedproperty
+  pk: cac1262e-68ee-43a0-9222-f214f2161091
+  fields:
+    name: Public Observed Property
+    definition: Public Observed Property
+    description: Public Observed Property
+    observed_property_type: Public
+    code: Public
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Assigned Observed Property
+- model: sta.observedproperty
+  pk: d66414cc-ff33-4e12-bbe0-2c048abd1f40
+  fields:
+    name: Public Assigned Observed Property
+    definition: Public Assigned Observed Property
+    description: Public Assigned Observed Property
+    observed_property_type: Public
+    code: Public
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Observed Property
+- model: sta.observedproperty
+  pk: 5dbfd184-ae79-4c05-a9ea-3f5e775ecbc1
+  fields:
+    name: Private Observed Property
+    definition: Private Observed Property
+    description: Private Observed Property
+    observed_property_type: Private
+    code: Private
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Assigned Observed Property
+- model: sta.observedproperty
+  pk: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+  fields:
+    name: Private Assigned Observed Property
+    definition: Private Assigned Observed Property
+    description: Private Assigned Observed Property
+    observed_property_type: Private
+    code: Private
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

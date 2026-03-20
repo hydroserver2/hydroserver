@@ -1,0 +1,15 @@
+*.pyc
+*.sqlite3
+*.db
+*.egg-info
+*.spec
+*test.ipynb
+.DS_Store
+.idea
+.env
+.pytest_cache
+.vscode
+__pycache__/
+dist
+build
+venv

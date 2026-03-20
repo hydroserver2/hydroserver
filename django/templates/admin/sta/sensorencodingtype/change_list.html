@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="{% url 'admin:sensor_encoding_type_load_default_data' %}" class="addlink">
+      Load Default Sensor Encoding Types
+    </a>
+  </li>
+  {{ block.super }}
+{% endblock %}

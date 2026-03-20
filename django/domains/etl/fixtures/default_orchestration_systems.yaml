@@ -1,0 +1,7 @@
+---
+- model: etl.orchestrationsystem
+  pk: 019aeaa7-2310-7121-a627-e04427ff8bc9
+  fields:
+    name: HydroServer
+    orchestration_system_type: INTERNAL
+    workspace_id:

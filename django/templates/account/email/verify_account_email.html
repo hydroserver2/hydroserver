@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Email Verification</title>
+    <style>
+      .button {
+        background-color: #377ef9;
+        color: #ffffff;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-family: Helvetica, Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Hi {{ name }},</p>
+
+    <p>
+      Thank you for creating an account with HydroServer. Before you continue,
+      we need to verify the email you provided really belongs to you. To
+      activate your account and start using HydroServer, please click the
+      "Verify Email" button or URL below.
+    </p>
+
+    <p style="text-align: center">
+      <a
+        href="{{ app_client_url }}/activate?uid={{ uid }}&token={{ token }}"
+        class="button"
+        target="_blank"
+      >
+        Verify Email
+      </a>
+    </p>
+
+    <p>{{ app_client_url }}/activate?uid={{ uid}}&token={{ token }}</p>
+
+    <p>Thanks,</p>
+    <p>The HydroServer Team</p>
+  </body>
+</html>

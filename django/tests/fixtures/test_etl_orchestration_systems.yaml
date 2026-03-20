@@ -1,0 +1,12 @@
+# Orchestration System
+- model: etl.orchestrationsystem
+  pk: 019aead4-df4e-7a08-a609-dbc96df6befe
+  fields:
+    name: HydroServer
+    orchestration_system_type: INTERNAL
+- model: etl.orchestrationsystem
+  pk: 7cb900d2-eb11-4a59-a05b-dd02d95af312
+  fields:
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+    name: Test Streaming Data Loader
+    orchestration_system_type: SDL

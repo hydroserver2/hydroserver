@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SUITE="${1:-all}"
+
+run_api() {
+  (
+    cd "$ROOT_DIR/django"
+    DATABASE_URL="${DATABASE_URL:-postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver}" \
+    CELERY_BROKER_URL="${CELERY_BROKER_URL:-redis://127.0.0.1:6379/0}" \
+    SMTP_URL="${SMTP_URL:-memory://}" \
+    python3.11 -m pytest
+  )
+}
+
+run_python_client() {
+  (cd "$ROOT_DIR/packages/hydroserverpy" && python3.11 -m pytest --import-mode=append tests/)
+}
+
+run_ui() {
+  "$ROOT_DIR/scripts/e2e" test
+}
+
+case "$SUITE" in
+  all)
+    run_api
+    run_python_client
+    run_ui
+    ;;
+  api)
+    run_api
+    ;;
+  python)
+    run_python_client
+    ;;
+  ui|e2e)
+    run_ui
+    ;;
+  *)
+    echo "Usage: scripts/release-test [all|api|python|ui]" >&2
+    exit 1
+    ;;
+esac

@@ -1,0 +1,166 @@
+---
+- model: iam.organizationtype
+  pk: 1
+  fields:
+    name: Analytical library
+    public: true
+- model: iam.organizationtype
+  pk: 2
+  fields:
+    name: Association
+    public: true
+- model: iam.organizationtype
+  pk: 3
+  fields:
+    name: Center
+    public: true
+- model: iam.organizationtype
+  pk: 4
+  fields:
+    name: College
+    public: true
+- model: iam.organizationtype
+  pk: 5
+  fields:
+    name: Company
+    public: true
+- model: iam.organizationtype
+  pk: 6
+  fields:
+    name: Consortium
+    public: true
+- model: iam.organizationtype
+  pk: 7
+  fields:
+    name: Department
+    public: true
+- model: iam.organizationtype
+  pk: 8
+  fields:
+    name: Division
+    public: true
+- model: iam.organizationtype
+  pk: 9
+  fields:
+    name: Faith-based organization
+    public: true
+- model: iam.organizationtype
+  pk: 10
+  fields:
+    name: Foundation
+    public: true
+- model: iam.organizationtype
+  pk: 11
+  fields:
+    name: Funding organization
+    public: true
+- model: iam.organizationtype
+  pk: 12
+  fields:
+    name: Government agency
+    public: true
+- model: iam.organizationtype
+  pk: 13
+  fields:
+    name: Institute
+    public: true
+- model: iam.organizationtype
+  pk: 14
+  fields:
+    name: Laboratory
+    public: true
+- model: iam.organizationtype
+  pk: 15
+  fields:
+    name: Library
+    public: true
+- model: iam.organizationtype
+  pk: 16
+  fields:
+    name: Manufacturer
+    public: true
+- model: iam.organizationtype
+  pk: 17
+  fields:
+    name: Museum
+    public: true
+- model: iam.organizationtype
+  pk: 18
+  fields:
+    name: Nature center
+    public: true
+- model: iam.organizationtype
+  pk: 19
+  fields:
+    name: Non-profit organization
+    public: true
+- model: iam.organizationtype
+  pk: 20
+  fields:
+    name: Park
+    public: true
+- model: iam.organizationtype
+  pk: 21
+  fields:
+    name: Program
+    public: true
+- model: iam.organizationtype
+  pk: 22
+  fields:
+    name: Publisher
+    public: true
+- model: iam.organizationtype
+  pk: 23
+  fields:
+    name: Research agency
+    public: true
+- model: iam.organizationtype
+  pk: 24
+  fields:
+    name: Research institute
+    public: true
+- model: iam.organizationtype
+  pk: 25
+  fields:
+    name: Research organization
+    public: true
+- model: iam.organizationtype
+  pk: 26
+  fields:
+    name: School primary
+    public: true
+- model: iam.organizationtype
+  pk: 27
+  fields:
+    name: School secondary
+    public: true
+- model: iam.organizationtype
+  pk: 28
+  fields:
+    name: Student organization
+    public: true
+- model: iam.organizationtype
+  pk: 29
+  fields:
+    name: University
+    public: true
+- model: iam.organizationtype
+  pk: 30
+  fields:
+    name: Unknown
+    public: true
+- model: iam.organizationtype
+  pk: 31
+  fields:
+    name: Vendor
+    public: true
+- model: iam.organizationtype
+  pk: 32
+  fields:
+    name: Youth group
+    public: true
+- model: iam.organizationtype
+  pk: 33
+  fields:
+    name: Other
+    public: true

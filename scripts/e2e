@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+E2E_DIR="$ROOT_DIR/tests/e2e"
+
+COMMAND="${1:-test}"
+shift || true
+
+export E2E_PYTHON="${E2E_PYTHON:-python3.11}"
+export E2E_API_HOST="${E2E_API_HOST:-127.0.0.1}"
+export E2E_API_PORT="${E2E_API_PORT:-18000}"
+export E2E_APP_HOST="${E2E_APP_HOST:-127.0.0.1}"
+export E2E_APP_PORT="${E2E_APP_PORT:-14173}"
+export E2E_DATABASE_URL="${E2E_DATABASE_URL:-postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver_e2e}"
+export E2E_ADMIN_DATABASE_URL="${E2E_ADMIN_DATABASE_URL:-postgresql://hsdbadmin:admin@127.0.0.1:5432/postgres}"
+
+run_npm() {
+  (cd "$E2E_DIR" && npm "$@")
+}
+
+case "$COMMAND" in
+  install)
+    run_npm ci
+    run_npm run install:browsers
+    ;;
+  test)
+    run_npm test "$@"
+    ;;
+  headed)
+    run_npm run test:headed -- "$@"
+    ;;
+  debug)
+    run_npm run test:debug -- "$@"
+    ;;
+  *)
+    echo "Usage: scripts/e2e [install|test|headed|debug]" >&2
+    exit 1
+    ;;
+esac

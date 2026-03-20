@@ -1,0 +1,4 @@
+@use 'vuetify/settings' with (
+  $list-item-icon-margin-end: 16px,
+  $tooltip-font-size: 1.1em
+);

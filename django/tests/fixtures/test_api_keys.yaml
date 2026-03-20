@@ -1,0 +1,10 @@
+# Public Workspace API Key for Data Loader
+- model: iam.apikey
+  pk: b7792fbd-53e1-4fd1-92d8-1830d1c5c9a8
+  fields:
+    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+    name: apikey
+    created_at: 2024-01-01 01:00:00.000 -0700
+    is_active: True
+    hashed_key: pbkdf2_sha256$600000$wABK4JtTfH3K$WrD0R7gSgjEjQvNo8j2XMoQOgIkCjVZUl1V50xEY8X8=

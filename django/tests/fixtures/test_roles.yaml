@@ -1,0 +1,15 @@
+# Private Role
+- model: iam.role
+  pk: 60b9d8b1-28d1-4d0d-9bee-4e47219d0118
+  fields:
+    name: "Private"
+    description: "Private"
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Permissions
+- model: iam.permission
+  pk: 1000000012
+  fields:
+    role: 60b9d8b1-28d1-4d0d-9bee-4e47219d0118
+    permission_type: "*"
+    resource_type: "*"

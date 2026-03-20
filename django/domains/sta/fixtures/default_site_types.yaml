@@ -1,0 +1,93 @@
+---
+- model: sta.sitetype
+  pk: 1
+  fields:
+    name: Atmosphere
+- model: sta.sitetype
+  pk: 2
+  fields:
+    name: Borehole
+- model: sta.sitetype
+  pk: 3
+  fields:
+    name: Calculated
+- model: sta.sitetype
+  pk: 4
+  fields:
+    name: Ditch
+- model: sta.sitetype
+  pk: 5
+  fields:
+    name: Estuary
+- model: sta.sitetype
+  pk: 6
+  fields:
+    name: Groundwater Well
+- model: sta.sitetype
+  pk: 7
+  fields:
+    name: House
+- model: sta.sitetype
+  pk: 8
+  fields:
+    name: Irrigation Pivot
+- model: sta.sitetype
+  pk: 9
+  fields:
+    name: Lake, Reservoir, Impoundment
+- model: sta.sitetype
+  pk: 10
+  fields:
+    name: Land
+- model: sta.sitetype
+  pk: 11
+  fields:
+    name: Laboratory or sample-preparation area
+- model: sta.sitetype
+  pk: 12
+  fields:
+    name: Observation well
+- model: sta.sitetype
+  pk: 13
+  fields:
+    name: Other
+- model: sta.sitetype
+  pk: 14
+  fields:
+    name: Pavement
+- model: sta.sitetype
+  pk: 15
+  fields:
+    name: Soil hole
+- model: sta.sitetype
+  pk: 16
+  fields:
+    name: Spring
+- model: sta.sitetype
+  pk: 17
+  fields:
+    name: Stream
+- model: sta.sitetype
+  pk: 18
+  fields:
+    name: Stream gage
+- model: sta.sitetype
+  pk: 19
+  fields:
+    name: Storm sewer
+- model: sta.sitetype
+  pk: 20
+  fields:
+    name: Tidal stream
+- model: sta.sitetype
+  pk: 21
+  fields:
+    name: Water quality station
+- model: sta.sitetype
+  pk: 22
+  fields:
+    name: Weather station
+- model: sta.sitetype
+  pk: 23
+  fields:
+    name: Wetland

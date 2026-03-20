@@ -1,9 +1,18 @@
 node_modules
-docs/.vitepress/cache/
-docs/.vitepress/dist/
+**/node_modules/
+**/.vitepress/cache/
+**/.vitepress/dist/
+**/.vitepress/.temp/
+**/__pycache__/
+**/*.pyc
 
 .idea*
 .DS_Store
 .terraform*
 terraform.tfstate*
 .env
+.venv
+playwright-report/
+test-results/
+tests/e2e/.auth/
+.playwright-mcp/
