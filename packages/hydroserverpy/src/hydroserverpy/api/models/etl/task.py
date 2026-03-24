@@ -4,7 +4,6 @@ from typing import ClassVar, TYPE_CHECKING, List, Optional, Literal, Union
 from datetime import datetime
 from pydantic import Field, AliasPath, AliasChoices
 from ..base import HydroServerBaseModel
-from .orchestration_system import OrchestrationSystem
 from .data_connection import DataConnection
 from .run import TaskRun
 
@@ -22,9 +21,6 @@ class Task(HydroServerBaseModel):
     loader_settings: dict = Field(default_factory=dict, alias="loaderSettings")
     data_connection_id: Optional[uuid.UUID] = Field(
         None, validation_alias=AliasChoices("dataConnectionId", AliasPath("dataConnection", "id"))
-    )
-    orchestration_system_id: uuid.UUID = Field(
-        None, validation_alias=AliasChoices("orchestrationSystemId", AliasPath("orchestrationSystem", "id"))
     )
     workspace_id: uuid.UUID = Field(
         None, validation_alias=AliasChoices("workspaceId", AliasPath("workspace", "id"))
@@ -47,7 +43,6 @@ class Task(HydroServerBaseModel):
         "transformer_settings",
         "loader_settings",
         "data_connection_id",
-        "orchestration_system_id",
         "start_time",
         "next_run_at",
         "paused",
@@ -67,10 +62,6 @@ class Task(HydroServerBaseModel):
     @cached_property
     def workspace(self) -> "Workspace":
         return self.client.workspaces.get(uid=self.workspace_id)
-
-    @cached_property
-    def orchestration_system(self) -> Optional[OrchestrationSystem]:
-        return self.client.orchestrationsystems.get(uid=self.orchestration_system_id)
 
     @cached_property
     def data_connection(self) -> Optional[DataConnection]:

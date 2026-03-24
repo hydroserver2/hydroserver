@@ -12,7 +12,6 @@ from .sta.result_qualifier import ResultQualifier
 from .sta.sensor import Sensor
 from .sta.thing import Thing
 from .sta.unit import Unit
-from .etl.orchestration_system import OrchestrationSystem
 from .etl.data_connection import DataConnection
 from .etl.run import TaskRun
 from .etl.task import Task

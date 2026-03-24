@@ -65,9 +65,3 @@
     role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
     permission_type: edit
     resource_type: Datastream
-- model: iam.permission
-  pk: 8
-  fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: create
-    resource_type: OrchestrationSystem

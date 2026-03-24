@@ -16,7 +16,6 @@ RESOURCE_TYPE_CHOICES = (
     ("Collaborator", "Collaborator"),
     ("Task", "Task"),
     ("DataConnection", "Data Connection"),
-    ("OrchestrationSystem", "Orchestration System"),
     ("Thing", "Thing"),
     ("Datastream", "Datastream"),
     ("Observation", "Observation"),

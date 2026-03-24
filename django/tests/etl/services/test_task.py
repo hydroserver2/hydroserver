@@ -241,7 +241,6 @@ def test_list_task_can_filter_and_order_by_latest_run_fields(get_principal):
         name="Later Task",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=uuid.UUID("019adb5c-da8b-7970-877d-c3b4ca37cc60"),
-        orchestration_system_id=uuid.UUID("7cb900d2-eb11-4a59-a05b-dd02d95af312"),
         extractor_variables={},
         transformer_variables={},
         loader_variables={},
@@ -291,9 +290,6 @@ def test_run_task_returns_a_new_running_run(get_principal, monkeypatch, settings
     settings.CELERY_ENABLED = True
     principal = get_principal("owner")
     task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
-    Task.objects.filter(pk=task_id).update(
-        orchestration_system_id="019aead4-df4e-7a08-a609-dbc96df6befe"
-    )
     previous_run = TaskRun.objects.filter(task_id=task_id).order_by("-started_at").first()
 
     recorded: dict[str, str] = {}
@@ -321,9 +317,6 @@ def test_run_task_returns_completed_run_state_in_eager_mode(get_principal, monke
     settings.CELERY_ENABLED = False
     principal = get_principal("owner")
     task_id = uuid.UUID("019adbc3-35e8-7f25-bc68-171fb66d446e")
-    Task.objects.filter(pk=task_id).update(
-        orchestration_system_id="019aead4-df4e-7a08-a609-dbc96df6befe"
-    )
 
     def fake_apply(*args, **kwargs):
         task_run = TaskRun.objects.get(id=kwargs["task_id"])
@@ -471,7 +464,6 @@ def test_create_task(
 ):
     task_data = TaskPostBody(
         name="New", workspace_id=uuid.UUID(workspace), data_connection_id=uuid.UUID(data_connection),
-        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
         schedule=TaskSchedulePostBody(
             paused=True,
             crontab="* * * * *"
@@ -501,7 +493,6 @@ def test_create_aggregation_task_without_data_connection(get_principal):
         task_type="Aggregation",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=None,
-        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
         schedule=TaskSchedulePostBody(
             paused=True,
             crontab="* * * * *",
@@ -541,7 +532,6 @@ def test_create_etl_task_requires_data_connection(get_principal):
         task_type="ETL",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=None,
-        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
         schedule=TaskSchedulePostBody(
             paused=True,
             crontab="* * * * *",
@@ -576,7 +566,6 @@ def test_create_aggregation_task_supports_multiple_source_target_mappings(get_pr
         task_type="Aggregation",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=None,
-        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
         schedule=TaskSchedulePostBody(
             paused=True,
             crontab="* * * * *",
@@ -625,7 +614,6 @@ def test_create_aggregation_task_rejects_multiple_paths_per_mapping(get_principa
         task_type="Aggregation",
         workspace_id=uuid.UUID("b27c51a0-7374-462d-8a53-d97d47176c10"),
         data_connection_id=None,
-        orchestration_system_id=uuid.UUID("019aead4-df4e-7a08-a609-dbc96df6befe"),
         schedule=TaskSchedulePostBody(
             paused=True,
             crontab="* * * * *",

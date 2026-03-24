@@ -7,7 +7,6 @@ from django.dispatch import receiver
 from core.iam.models.utils import PermissionChecker
 from django_celery_beat.models import PeriodicTask
 from .data_connection import DataConnection
-from .orchestration_system import OrchestrationSystem
 
 if TYPE_CHECKING:
     from django.contrib.auth import get_user_model
@@ -69,9 +68,6 @@ class Task(models.Model, PermissionChecker):
         related_name="tasks",
         null=True,
         blank=True,
-    )
-    orchestration_system = models.ForeignKey(
-        OrchestrationSystem, on_delete=models.CASCADE, related_name="tasks"
     )
     periodic_task = models.OneToOneField(
         PeriodicTask, null=True, blank=True, on_delete=models.SET_NULL, related_name="etl_task"

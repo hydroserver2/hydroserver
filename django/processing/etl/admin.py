@@ -1,7 +1,5 @@
-from django.urls import path
 from django.contrib import admin
 from processing.etl.models import (
-    OrchestrationSystem,
     DataConnection,
     DataConnectionNotificationRecipient,
     Task,
@@ -9,30 +7,6 @@ from processing.etl.models import (
     TaskMappingPath,
     TaskRun,
 )
-from hydroserver.admin import VocabularyAdmin
-
-
-class OrchestrationSystemAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name", "orchestration_system_type", "workspace__name")
-    change_list_template = "admin/etl/orchestrationsystem/change_list.html"
-
-    def get_urls(self):
-        urls = super().get_urls()
-
-        return [
-            path(
-                "load-default-orchestration-system-data/",
-                self.admin_site.admin_view(self.load_default_data),
-                name="orchestration_system_load_default_data",
-            ),
-        ] + urls
-
-    def load_default_data(self, request):
-        return self.load_fixtures(
-            request,
-            "admin:etl_orchestrationsystem_changelist",
-            ["processing/etl/fixtures/default_orchestration_systems.yaml"],
-        )
 
 
 class DataConnectionAdmin(admin.ModelAdmin):
@@ -44,8 +18,7 @@ class DataConnectionNotificationRecipientAdmin(admin.ModelAdmin):
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "data_connection__name", "orchestration_system__name",
-                    "data_connection__workspace__name")
+    list_display = ("id", "name", "data_connection__name", "data_connection__workspace__name")
 
 
 class TaskMappingAdmin(admin.ModelAdmin):
@@ -62,7 +35,6 @@ class TaskRunAdmin(admin.ModelAdmin):
     list_display = ("id", "status", "started_at", "finished_at", "result")
 
 
-admin.site.register(OrchestrationSystem, OrchestrationSystemAdmin)
 admin.site.register(DataConnection, DataConnectionAdmin)
 admin.site.register(DataConnectionNotificationRecipient, DataConnectionNotificationRecipientAdmin)
 admin.site.register(Task, TaskAdmin)

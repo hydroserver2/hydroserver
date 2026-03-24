@@ -32,12 +32,10 @@ from core.interfaces.api.schemas import (
 from processing.etl.tasks import run_etl_task
 from core.interfaces.api.service import ServiceUtils
 from .data_connection import DataConnectionService
-from .orchestration_system import OrchestrationSystemService
 
 User = get_user_model()
 
 data_connection_service = DataConnectionService()
-orchestration_system_service = OrchestrationSystemService()
 AGGREGATION_STATISTICS = (
     "last_value_of_day",
     "simple_mean",
@@ -256,16 +254,9 @@ class TaskService(ServiceUtils):
                     ) else None,
                 } if task.data_connection else None
             )
-            response["orchestration_system"] = {
-                "id": task.orchestration_system.id,
-                "name": task.orchestration_system.name,
-                "orchestration_system_type": task.orchestration_system.orchestration_system_type,
-                "workspace_id": task.orchestration_system.workspace_id
-            }
         else:
             response["workspace_id"] = task.workspace_id
             response["data_connection_id"] = task.data_connection_id
-            response["orchestration_system_id"] = task.orchestration_system_id
 
         return response
 
@@ -275,7 +266,7 @@ class TaskService(ServiceUtils):
         include_mappings: bool = True,
     ) -> QuerySet:
         queryset = queryset.select_related(
-            "data_connection", "workspace", "orchestration_system", "periodic_task", "periodic_task__crontab",
+            "data_connection", "workspace", "periodic_task", "periodic_task__crontab",
             "periodic_task__interval"
         )
         if include_mappings:
@@ -478,8 +469,6 @@ class TaskService(ServiceUtils):
             "workspace_id",
             "task_type",
             "data_connection_id",
-            "orchestration_system_id",
-            "orchestration_system__type",
             "latest_run_status",
             "latest_run_started_at__lte",
             "latest_run_started_at__gte",
@@ -506,7 +495,6 @@ class TaskService(ServiceUtils):
         if order_by:
             order_by_aliases = {
                 "type": "task_type",
-                "orchestrationSystemType": "orchestration_system__type",
                 "startTime": "periodic_task__start_time",
                 "dataConnectionType": "data_connection__data_connection_type",
                 "dataConnectionExtractorType": "data_connection__extractor_type",
@@ -608,13 +596,6 @@ class TaskService(ServiceUtils):
             if data_connection.workspace and data_connection.workspace_id != workspace.id:
                 raise HttpError(400, "Task and data connection must belong to the same workspace.")
 
-        orchestration_system = orchestration_system_service.get_orchestration_system_for_action(
-            principal=principal, uid=data.orchestration_system_id, action="view", raise_400=True
-        )
-
-        if orchestration_system.workspace and orchestration_system.workspace_id != workspace.id:
-            raise HttpError(400, "Task and orchestration system must belong to the same workspace.")
-
         try:
             task = Task.objects.create(
                 pk=data.id,
@@ -622,7 +603,6 @@ class TaskService(ServiceUtils):
                 task_type=task_type,
                 workspace=workspace,
                 data_connection=data_connection,
-                orchestration_system=orchestration_system,
                 extractor_variables=data.extractor_variables or {},
                 transformer_variables=data.transformer_variables or {},
                 loader_variables=data.loader_variables or {},
@@ -653,7 +633,7 @@ class TaskService(ServiceUtils):
             principal=principal, uid=uid, action="edit"
         )
         task_data = data.dict(
-            include=set(TaskFields.model_fields.keys()) | {"schedule", "mappings", "data_connection_id", "orchestration_system_id"},
+            include=set(TaskFields.model_fields.keys()) | {"schedule", "mappings", "data_connection_id"},
             exclude_unset=True,
         )
 
@@ -675,14 +655,6 @@ class TaskService(ServiceUtils):
 
                 if data_connection.workspace_id != task.workspace_id:
                     raise HttpError(400, "Task and data connection must belong to the same workspace.")
-
-        if "orchestration_system_id" in task_data:
-            orchestration_system = orchestration_system_service.get_orchestration_system_for_action(
-                principal=principal, uid=data.orchestration_system_id, action="view", raise_400=True
-            )
-
-            if orchestration_system.workspace and orchestration_system.workspace_id != task.workspace_id:
-                raise HttpError(400, "Task and orchestration system must belong to the same workspace.")
 
         task.task_type = next_task_type
 
@@ -722,9 +694,6 @@ class TaskService(ServiceUtils):
         task = self.get_task_for_action(
             principal=principal, uid=task_id, action="edit", expand_related=True
         )
-
-        if task.orchestration_system.orchestration_system_type != "INTERNAL":
-            raise HttpError(400, "Cannot run task managed by external orchestration system")
 
         run_id = uuid.uuid4()
         task_run = TaskRun.objects.create(
@@ -880,10 +849,7 @@ class TaskService(ServiceUtils):
         if "start_time" in schedule_data:
             task.periodic_task.start_time = schedule_data["start_time"]
 
-        task.periodic_task.enabled = (
-            task.orchestration_system.orchestration_system_type == "INTERNAL"
-            and not schedule_data.get("paused", False)
-        )
+        task.periodic_task.enabled = not schedule_data.get("paused", False)
         task.periodic_task.date_changed = timezone.now()
 
         if task.periodic_task.interval and task.periodic_task.crontab:

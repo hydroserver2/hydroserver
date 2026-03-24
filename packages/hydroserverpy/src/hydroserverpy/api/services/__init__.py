@@ -7,6 +7,5 @@ from .sta.processing_level import ProcessingLevelService
 from .sta.result_qualifier import ResultQualifierService
 from .sta.sensor import SensorService
 from .sta.datastream import DatastreamService
-from .etl.orchestration_system import OrchestrationSystemService
 from .etl.data_connection import DataConnectionService
 from .etl.task import TaskService

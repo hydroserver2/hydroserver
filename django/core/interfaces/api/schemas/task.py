@@ -6,14 +6,12 @@ from core.interfaces.api.types import ISODatetime
 from core.interfaces.api.schemas import BaseGetResponse, BasePostBody, BasePatchBody, CollectionQueryParameters
 from core.interfaces.api.schemas import WorkspaceSummaryResponse
 from .data_connection import DataConnectionSummaryResponse
-from .orchestration_system import OrchestrationSystemSummaryResponse
 from .run import TaskRunResponse
 
 
 _order_by_fields = (
     "name",
     "type",
-    "orchestrationSystemType",
     "latestRunStatus",
     "latestRunStartedAt",
     "latestRunFinishedAt",
@@ -40,10 +38,6 @@ class TaskQueryParameters(CollectionQueryParameters):
     )
     task_type: list[str] = Query([], description="Filter by task type.", alias="type")
     data_connection_id: list[uuid.UUID] = Query([], description="Filter by data connection ID.")
-    orchestration_system_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter by orchestration system ID."
-    )
-    orchestration_system__type: list[str] = Query([], description="Filter by orchestration system type.")
     latest_run_status: list[str | Literal["null"]] = Query(
         [], description="Filters tasks by the status of their most recent run."
     )
@@ -175,7 +169,6 @@ class TaskSummaryResponse(BaseGetResponse, TaskFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
     data_connection_id: uuid.UUID | None = None
-    orchestration_system_id: uuid.UUID
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
     target_identifiers: list[str] = Field(default_factory=list)
@@ -186,7 +179,6 @@ class TaskDetailResponse(BaseGetResponse, TaskFields):
     id: uuid.UUID
     workspace: WorkspaceSummaryResponse
     data_connection: DataConnectionSummaryResponse | None = None
-    orchestration_system: OrchestrationSystemSummaryResponse
     schedule: TaskScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
     target_identifiers: list[str] = Field(default_factory=list)
@@ -197,13 +189,11 @@ class TaskPostBody(BasePostBody, TaskFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
     data_connection_id: uuid.UUID | None = None
-    orchestration_system_id: uuid.UUID
     schedule: TaskSchedulePostBody | None = None
     mappings: list[TaskMappingPostBody]
 
 
 class TaskPatchBody(BasePatchBody, TaskFields):
     data_connection_id: uuid.UUID | None = None
-    orchestration_system_id: uuid.UUID | None = None
     schedule: TaskSchedulePatchBody | None = None
     mappings: list[TaskMappingPostBody] | None = None

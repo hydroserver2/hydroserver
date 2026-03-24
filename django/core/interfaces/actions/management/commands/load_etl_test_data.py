@@ -8,7 +8,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         fixtures = [
             "tests/fixtures/test_etl_data_connections.yaml",
-            "tests/fixtures/test_etl_orchestration_systems.yaml",
             "tests/fixtures/test_etl_tasks.yaml",
         ]
 

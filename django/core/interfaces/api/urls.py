@@ -21,7 +21,6 @@ from core.interfaces.api.views import (
 )
 from core.interfaces.api.views import (
     data_connection_router,
-    orchestration_system_router,
     task_router,
     task_run_router
 )
@@ -56,7 +55,6 @@ api.add_router("result-qualifiers", result_qualifier_router)
 api.add_router("etl-data-connections", data_connection_router)
 api.add_router("etl-tasks", task_router)
 api.add_router("etl-tasks", task_run_router)
-api.add_router("etl-orchestration-systems", orchestration_system_router)
 
 st_api_1_1 = SensorThingsAPI(
     title="HydroServer SensorThings API",

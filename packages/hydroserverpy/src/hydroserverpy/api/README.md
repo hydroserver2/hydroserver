@@ -72,9 +72,6 @@ workspace_processing_levels = workspace.processinglevels
 # Get all sensors within a workspace
 workspace_sensors = workspace.sensors
 
-# Get all orchestration systems within a workspace
-workspace_orchestration_systems = workspace.orchestrationsystems
-
 # Get all data sources within a workspace
 workspace_data_sources = workspace.datasources
 
@@ -710,64 +707,6 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 datastream.delete()
 ```
 
-### Orchestration Systems
-
-Orchestration systems are external apps or processes that interact with HydroServer data and perform scheduled automated tasks such as ETL or data archival to external systems. Users can register their own orchestration systems, and site administrators can configure global systems that can be used by any user.
-
-#### Example: Get Orchestration Systems
-```python
-# Get all orchestration systems
-orchestration_systems = hs_api.orchestrationsystems.list()
-
-# Get orchestration systems belonging to a workspace
-workspace_orchestration_systems = hs_api.orchestrationsystems.list(workspace="00000000-0000-0000-0000-000000000000")
-
-# Get orchestration system with a given ID
-orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
-```
-
-#### Example: Create Orchestration System
-```python
-# Create a new orchestration system in HydroServer
-new_orchestration_system = hs_api.orchestrationsystems.create(
-    name='My Data Loader',
-    orchestration_system_type='ETL',
-    workspace='00000000-0000-0000-0000-000000000000'
-)
-```
-
-Each of the methods above will return one or more OrchestrationSystem objects. The examples below show the main properties and methods available to an OrchestrationSystem object.
-
-#### Example: Modify an Orchestration System
-```python
-# Get an orchestration system
-orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Update one or more properties of the orchestration system.
-orchestration_system.name = 'Updated Orchestration System'
-
-# Save the changes back to HydroServer.
-orchestration_system.save()
-```
-
-#### Example: Refresh Orchestration System data from HydroServer
-```python
-# Get an orchestration system
-orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Refresh orchestration system data from HydroServer
-orchestration_system.refresh()
-```
-
-#### Example: Delete Orchestration System from HydroServer
-```python
-# Get a orchestration system
-orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Delete the orchestration system from HydroServer
-orchestration_system.delete()
-```
-
 ### Data Sources
 
 Data sources represent where datastream observations are loaded into HydroServer from. They can also contain settings, scheduling, and status information used by orchestration systems responsible for loading the data.
@@ -790,7 +729,6 @@ data_source = hs_api.datasources.get(uid='00000000-0000-0000-0000-000000000000')
 new_data_source = hs_api.datasources.create(
     name='Example Data Source',
     workspace='00000000-0000-0000-0000-000000000000',
-    orchestration_system='00000000-0000-0000-0000-000000000000',
     settings={'link': 'http://www.example.com/mydata'},
     interval=1,
     interval_units='days',
@@ -867,7 +805,6 @@ data_archive = hs_api.dataarchives.get(uid='00000000-0000-0000-0000-000000000000
 new_data_archive = hs_api.dataarchives.create(
     name='Example Data Archive',
     workspace='00000000-0000-0000-0000-000000000000',
-    orchestration_system='00000000-0000-0000-0000-000000000000',
     settings={'link': 'http://www.example.com/mydata'},
     interval=1,
     interval_units='days',
