@@ -55,7 +55,7 @@ Before proceeding, ensure you have:
 Familiarity with Terraform, AWS services, and security best practices is recommended.
 
 An example Terraform configuration demonstrating a simple HydroServer deployment on AWS is provided 
-[here](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/examples/terraform-aws/main.tf).
+[here](https://github.com/hydroserver2/hydroserver/blob/main/apps/docs/docs/how-to/deployment/examples/terraform-aws/main.tf).
 This configuration performs the following tasks:
 
 - Pulls the latest HydroServer release image from 
@@ -100,7 +100,7 @@ Before proceeding, ensure you have:
 Familiarity with Terraform, GCP services, and security best practices is recommended.
 
 An example Terraform configuration demonstrating a simple HydroServer deployment on GCP is provided 
-[here](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/examples/terraform-gcp/main.tf).
+[here](https://github.com/hydroserver2/hydroserver/blob/main/apps/docs/docs/how-to/deployment/examples/terraform-gcp/main.tf).
 This configuration performs the following tasks:
 
 - Pulls the latest HydroServer release image from 
@@ -141,7 +141,7 @@ Before proceeding, ensure you have the following installed and configured locall
 Familiarity with Docker Compose concepts such as services, volumes, and environment variables is recommended.
 
 An example configuration demonstrating how to deploy HydroServer with Docker Compose is provided 
-[here](https://github.com/hydroserver2/hydroserver/blob/main/docs/how-to/deployment/examples/docker-compose/docker-compose.yaml). 
+[here](https://github.com/hydroserver2/hydroserver/blob/main/apps/docs/docs/how-to/deployment/examples/docker-compose/docker-compose.yaml). 
 This example configuration performs the following tasks:
 
 - Pulls the latest HydroServer release image from 
