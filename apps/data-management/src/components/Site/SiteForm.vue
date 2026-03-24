@@ -213,9 +213,9 @@ const countryTitle = (item: { name: string; code: string } | undefined) => {
 }
 
 const { thing: storedThing } = storeToRefs(useThingStore())
-const { updatePhotos } = usePhotosStore()
+const { updatePhotos, resetPendingPhotos } = usePhotosStore()
 const { updateRatingCurves, resetRatingCurves } = useRatingCurveStore()
-const { tags } = storeToRefs(useTagStore())
+const { tags, previewTags } = storeToRefs(useTagStore())
 const { updateTags } = useTagStore()
 const vocabularyStore = useVocabularyStore()
 
@@ -230,6 +230,21 @@ const myForm = ref<VForm>()
 const thing = reactive<Thing>(new Thing())
 const includeDataDisclaimer = ref(thing.dataDisclaimer !== '')
 
+function cloneThing(source?: Thing) {
+  const clonedThing = source
+    ? JSON.parse(JSON.stringify(source))
+    : new Thing()
+
+  Object.assign(thing, new Thing(), clonedThing)
+  thing.location = Object.assign(new Thing().location, clonedThing.location ?? {})
+}
+
+function resetPendingSiteChanges() {
+  resetPendingPhotos()
+  resetRatingCurves()
+  previewTags.value = props.thingId ? [...tags.value] : []
+}
+
 watch(
   () => includeDataDisclaimer.value,
   (newVal) => {
@@ -241,12 +256,15 @@ watch(
 )
 
 async function populateThing() {
-  Object.assign(thing, storedThing.value)
+  cloneThing(storedThing.value)
   if (thing.location.latitude && thing.location.longitude) loaded.value = true
 }
 
 function closeDialog() {
-  resetRatingCurves()
+  if (props.thingId) cloneThing(storedThing.value)
+  else cloneThing()
+  includeDataDisclaimer.value = !!thing.dataDisclaimer
+  resetPendingSiteChanges()
   emit('close')
 }
 
@@ -296,17 +314,18 @@ function onMapLocationClicked(locationData: Thing) {
 }
 
 onMounted(async () => {
-  resetRatingCurves()
+  resetPendingSiteChanges()
   countries.value = countryList.getData()
   if (props.thingId) {
     await populateThing()
     includeDataDisclaimer.value = !!thing.dataDisclaimer
   } else {
+    cloneThing()
     loaded.value = true
   }
 })
 
 onUnmounted(() => {
-  resetRatingCurves()
+  resetPendingSiteChanges()
 })
 </script>
