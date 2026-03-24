@@ -1,12 +1,12 @@
 import pytest
-from interfaces.auth.schemas import (
+from core.interfaces.auth.schemas import (
     AccountPostBody,
     AccountPatchBody,
     OrganizationPostBody,
     OrganizationPatchBody,
     AccountDetailResponse,
 )
-from domains.iam.services.account import AccountService
+from core.iam.services.account import AccountService
 
 account_service = AccountService()
 

@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 from ninja.errors import HttpError
 
-from domains.etl.models import Task, TaskMappingPath, TaskRun
-from domains.etl.services import TaskService
-from interfaces.api.schemas import TaskPostBody
+from processing.etl.models import Task, TaskMappingPath, TaskRun
+from processing.etl.services import TaskService
+from core.interfaces.api.schemas import TaskPostBody
 
 
 task_service = TaskService()

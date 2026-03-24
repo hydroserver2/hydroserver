@@ -3,8 +3,8 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.iam.services.workspace import WorkspaceService
-from interfaces.api.schemas import (
+from core.iam.services.workspace import WorkspaceService
+from core.interfaces.api.schemas import (
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,

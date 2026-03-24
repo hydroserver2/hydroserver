@@ -3,8 +3,8 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.etl.services import DataConnectionService
-from interfaces.api.schemas import (
+from processing.etl.services import DataConnectionService
+from core.interfaces.api.schemas import (
     DataConnectionPostBody,
     DataConnectionPatchBody,
     DataConnectionSummaryResponse,

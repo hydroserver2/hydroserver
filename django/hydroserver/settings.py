@@ -88,12 +88,12 @@ DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRON
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_task_runs": {
-        "task": "domains.etl.tasks.cleanup_etl_task_runs",
+        "task": "processing.etl.tasks.cleanup_etl_task_runs",
         "schedule": crontab(hour=3, minute=0),
         "args": (7,),
     },
     "send_orchestration_notifications": {
-        "task": "domains.etl.tasks.send_orchestration_notifications",
+        "task": "processing.etl.tasks.send_orchestration_notifications",
         "schedule": crontab(
             minute=DATA_CONNECTION_NOTIFICATION_CRONTAB[0],
             hour=DATA_CONNECTION_NOTIFICATION_CRONTAB[1],
@@ -125,21 +125,21 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.orcid",
     "allauth.socialaccount.providers.openid_connect",
-    "domains.iam.auth.providers.hydroshare",
-    "domains.iam.auth.providers.orcidsandbox",
+    "core.iam.auth.providers.hydroshare",
+    "core.iam.auth.providers.orcidsandbox",
     "corsheaders",
     "easyaudit",
     "sensorthings",
     "storages",
     "django_celery_results",
     "django_celery_beat",
-    "interfaces.api.apps.ApiConfig",
-    "interfaces.web.apps.WebConfig",
-    "interfaces.actions.apps.ActionsConfig",
-    "domains.iam.apps.IamConfig",
-    "domains.sta.apps.StaConfig",
-    "domains.etl.apps.EtlConfig",
-    "domains.web.apps.WebConfig",
+    "core.interfaces.api.apps.ApiConfig",
+    "core.interfaces.web.apps.WebConfig",
+    "core.interfaces.actions.apps.ActionsConfig",
+    "core.iam.apps.IamConfig",
+    "core.sta.apps.StaConfig",
+    "core.web.apps.WebConfig",
+    "processing.etl.apps.EtlConfig",
     "django.contrib.admin",
 ]
 
@@ -230,10 +230,10 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_SIGNUP_FORM_CLASS = "domains.iam.auth.forms.UserSignupForm"
+ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
 
-ACCOUNT_ADAPTER = "domains.iam.auth.adapters.AccountAdapter"
+ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
 HEADLESS_ONLY = True

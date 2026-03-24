@@ -3,14 +3,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.static import serve
-from interfaces.web.views import index
+from core.interfaces.web.views import index
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("api/auth/", include("interfaces.auth.urls")),
-    path("api/", include("interfaces.api.urls")),
+    path("api/auth/", include("core.interfaces.auth.urls")),
+    path("api/", include("core.interfaces.api.urls")),
 ]
 
 urlpatterns += [

@@ -2,9 +2,9 @@ import uuid
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from domains.sta.models import Thing, ThingFileAttachment
-from domains.etl.services import TaskService
-from interfaces.api.schemas import TaskPatchBody
+from core.sta.models import Thing, ThingFileAttachment
+from core.interfaces.api.schemas import TaskPatchBody
+from processing.etl.services import TaskService
 
 
 task_service = TaskService()

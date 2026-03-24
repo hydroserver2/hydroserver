@@ -6,11 +6,11 @@ from types import SimpleNamespace
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.utils import timezone
-from domains.etl.models import Task, TaskRun
-from domains.etl.services import TaskService
-from domains.etl.tasks import mark_etl_task_failure, run_etl_task
+from processing.etl.models import Task, TaskRun
+from processing.etl.services import TaskService
+from processing.etl.tasks import mark_etl_task_failure, run_etl_task
 from hydroserverpy.etl.exceptions import ETLError
-from interfaces.api.schemas import (
+from core.interfaces.api.schemas import (
     TaskPostBody,
     TaskPatchBody,
     TaskSummaryResponse,

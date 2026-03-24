@@ -3,8 +3,8 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.services import ProcessingLevelService
-from interfaces.api.schemas import (
+from core.sta.services import ProcessingLevelService
+from core.interfaces.api.schemas import (
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
     ProcessingLevelSummaryResponse,
