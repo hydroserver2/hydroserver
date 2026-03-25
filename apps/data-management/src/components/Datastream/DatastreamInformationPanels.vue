@@ -124,12 +124,12 @@ type ListItemArray = { label: string; value: any }[]
 
 const expandedPanels = ref<number[]>([])
 const datastream = ref<any>()
-let generalItems: ListItemArray = []
-let locationItems: ListItemArray = []
-let sensorItems: ListItemArray = []
-let observedPropertyItems: ListItemArray = []
-let unitItems: ListItemArray = []
-let processingLevelItems: ListItemArray = []
+const generalItems = ref<ListItemArray>([])
+const locationItems = ref<ListItemArray>([])
+const sensorItems = ref<ListItemArray>([])
+const observedPropertyItems = ref<ListItemArray>([])
+const unitItems = ref<ListItemArray>([])
+const processingLevelItems = ref<ListItemArray>([])
 
 onMounted(async () => {
   datastream.value = await hs.datastreams.getItem(props.datastreamId, {
@@ -147,7 +147,7 @@ onMounted(async () => {
     }
   }
 
-  generalItems = [
+  generalItems.value = [
     { label: 'Workspace Name', value: d.workspace.name },
     { label: 'Datastream name', value: d.name },
     { label: 'Description', value: d.description },
@@ -195,7 +195,7 @@ onMounted(async () => {
   ]
 
   const op = d.observedProperty
-  observedPropertyItems = [
+  observedPropertyItems.value = [
     { label: 'Name', value: op.name },
     { label: 'Definition', value: op.definition },
     { label: 'Description', value: op.description },
@@ -205,7 +205,7 @@ onMounted(async () => {
 
   let t = d.thing
   let l = t.location
-  locationItems = [
+  locationItems.value = [
     { label: 'Site name', value: t.name },
     { label: 'Site code', value: t.samplingFeatureCode },
     { label: 'Description', value: t.description },
@@ -224,7 +224,7 @@ onMounted(async () => {
   ]
 
   let u = d.unit
-  unitItems = [
+  unitItems.value = [
     { label: 'Name', value: u.name },
     { label: 'Symbol', value: u.symbol },
     { label: 'Definition', value: u.definition },
@@ -232,7 +232,7 @@ onMounted(async () => {
   ]
 
   const s = d.sensor
-  sensorItems = [
+  sensorItems.value = [
     { label: 'Name', value: s.name },
     { label: 'Description', value: s.description },
     { label: 'Manufacturer', value: s.manufacturer },
@@ -245,7 +245,7 @@ onMounted(async () => {
   ]
 
   const pl = d.processingLevel
-  processingLevelItems = [
+  processingLevelItems.value = [
     { label: 'Code', value: pl.code },
     { label: 'Definition', value: pl.definition },
     { label: 'Explanation', value: pl.explanation },

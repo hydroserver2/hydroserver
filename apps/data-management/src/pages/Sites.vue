@@ -17,7 +17,11 @@
         </v-col>
       </v-row>
 
-      <v-card class="mb-1" elevation="2">
+      <v-card
+        v-if="hasWorkspaces && selectedWorkspace !== null"
+        class="mb-1"
+        elevation="2"
+      >
         <KeepAlive>
           <v-expand-transition>
             <SiteFilterToolbar
@@ -28,6 +32,18 @@
             />
           </v-expand-transition>
         </KeepAlive>
+      </v-card>
+
+      <v-card
+        v-if="!hasWorkspaces || selectedWorkspace === null"
+        class="pa-8 text-center"
+        elevation="2"
+      >
+        <v-icon size="48" color="grey lighten-1" :icon="mdiBriefcaseOutline" />
+        <h4 class="mt-2">No workspace selected</h4>
+        <p class="mb-0">
+          Create or join a workspace to register and manage sites.
+        </p>
       </v-card>
 
       <v-card v-if="hasWorkspaces && selectedWorkspace !== null">
@@ -138,11 +154,13 @@ import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import SiteForm from '@/components/Site/SiteForm.vue'
 import SiteFilterToolbar from '@/components/Site/SiteFilterToolbar.vue'
 import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
-import hs, {
-  PermissionResource,
-  PermissionAction,
-} from '@hydroserver/client'
+import hs, { PermissionResource, PermissionAction } from '@hydroserver/client'
 import { listThingSiteSummaries } from '@/api/thingSiteSummaries'
+import {
+  hasBootstrappedWorkspaces,
+  isAppInitializing,
+  startAppInitialization,
+} from '@/bootstrap/appInitialization'
 import { addColorToMarkers } from '@/utils/maps/markers'
 import { ThingSiteSummary, ThingSiteSummaryWithColor } from '@/types'
 import { Snackbar } from '@/utils/notifications'
@@ -151,6 +169,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import {
+  mdiBriefcaseOutline,
   mdiFilterRemoveOutline,
   mdiMagnify,
   mdiMenuDown,
@@ -168,6 +187,9 @@ const isFiltered = ref(false)
 const isPageLoaded = ref(false)
 const filterCriteria = ref({ key: '', values: [] as string[] })
 const search = ref()
+const hasResolvedInitialWorkspaces = ref(false)
+const lastLoadedWorkspaceId = ref<string | null>(null)
+let currentThingsRequest = 0
 
 const matchesFilterCriteria = (
   thing: ThingSiteSummary,
@@ -201,8 +223,22 @@ const onClickRegisterSite = () => {
     )
 }
 
-watch(selectedWorkspace, async (ws) => {
-  await loadThings()
+const syncThingsToSelectedWorkspace = async () => {
+  const workspaceId = selectedWorkspace.value?.id ?? null
+  if (workspaceId === lastLoadedWorkspaceId.value) return
+
+  lastLoadedWorkspaceId.value = workspaceId
+  await loadThings(workspaceId)
+}
+
+watch(selectedWorkspace, async (workspace) => {
+  if (!hasResolvedInitialWorkspaces.value) return
+
+  if (!workspace) {
+    showSiteForm.value = false
+  }
+
+  await syncThingsToSelectedWorkspace()
 })
 
 const filteredThings = computed(() => {
@@ -253,25 +289,59 @@ const onRowClick = (event: Event, item: any) => {
   router.push({ name: 'SiteDetails', params: { id: item.item.id } })
 }
 
-const loadThings = async () => {
-  workspaceThings.value = await listThingSiteSummaries(selectedWorkspace.value!.id)
+const loadThings = async (
+  workspaceId = selectedWorkspace.value?.id ?? null
+) => {
+  currentThingsRequest += 1
+  const requestId = currentThingsRequest
+
+  if (!workspaceId) {
+    workspaceThings.value = []
+    return
+  }
+
+  try {
+    const things = await listThingSiteSummaries(workspaceId)
+    if (
+      requestId !== currentThingsRequest ||
+      selectedWorkspace.value?.id !== workspaceId
+    )
+      return
+
+    workspaceThings.value = things
+  } catch (error) {
+    if (requestId !== currentThingsRequest) return
+
+    workspaceThings.value = []
+    console.error('Error fetching sites', error)
+  }
+}
+
+const refreshWorkspaces = async () => {
+  const workspaceRes = await hs.workspaces.listAllItems({
+    is_associated: true,
+    expand_related: true,
+  })
+  setWorkspaces(workspaceRes)
 }
 
 onMounted(async () => {
-  if (selectedWorkspace.value == null) {
-    const [workspaceRes] = await Promise.all([
-      hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
-    ])
-    setWorkspaces(workspaceRes)
-  } else {
-    const [things, workspaceRes] = await Promise.all([
-      listThingSiteSummaries(selectedWorkspace.value.id),
-      hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
-    ])
-    setWorkspaces(workspaceRes)
-    workspaceThings.value = things
+  try {
+    if (isAppInitializing.value) {
+      await startAppInitialization()
+    }
+
+    if (!hasBootstrappedWorkspaces.value) {
+      await refreshWorkspaces()
+    }
+  } catch (error) {
+    console.error('Error fetching workspaces', error)
+    workspaceThings.value = []
+  } finally {
+    hasResolvedInitialWorkspaces.value = true
+    await syncThingsToSelectedWorkspace()
+    isPageLoaded.value = true
   }
-  isPageLoaded.value = true
 })
 </script>
 
