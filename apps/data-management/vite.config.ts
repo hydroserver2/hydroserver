@@ -6,10 +6,10 @@ import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL === '1'
+  const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
-    env.VITE_HYDROSERVER_CLIENT_PATH || '../hydroserver-ts/src'
+    env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)

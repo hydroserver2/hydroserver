@@ -22,6 +22,6 @@ class APIKeyAuth(APIKeyHeader):
         for api_key in api_key_match:
             if check_password(key, api_key.hashed_key.split("$", 1)[1]):
                 api_key.last_used_at = now
-                api_key.save(update_fields=["last_used"])
+                api_key.save(update_fields=["last_used_at"])
                 request.principal = api_key
                 return api_key

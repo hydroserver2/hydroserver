@@ -4,7 +4,7 @@ from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
@@ -32,7 +32,7 @@ datastream_service = DatastreamService()
 
 @datastream_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[DatastreamSummaryResponse] | list[DatastreamDetailResponse],
         401: str,
@@ -61,7 +61,7 @@ def get_datastreams(
 
 @datastream_router.get(
     "/visualization-bootstrap",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: DatastreamVisualizationBootstrapResponse,
         401: str,
@@ -84,7 +84,7 @@ def get_datastream_visualization_bootstrap(
 
 @datastream_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: DatastreamSummaryResponse | DatastreamDetailResponse,
         400: str,
@@ -111,7 +111,7 @@ def create_datastream(
 
 @datastream_router.get(
     "/tags/keys",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: dict[str, list[str]],
         401: str,
@@ -211,7 +211,7 @@ def get_file_attachment_types(
 
 @datastream_router.get(
     "/{datastream_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: DatastreamSummaryResponse | DatastreamDetailResponse,
         401: str,
@@ -236,7 +236,7 @@ def get_datastream(
 
 @datastream_router.patch(
     "/{datastream_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: DatastreamSummaryResponse | DatastreamDetailResponse,
         400: str,
@@ -267,7 +267,7 @@ def update_datastream(
 
 @datastream_router.delete(
     "/{datastream_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -288,7 +288,7 @@ def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.
 
 @datastream_router.get(
     "/{datastream_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[TagGetResponse],
         401: str,
@@ -311,7 +311,7 @@ def get_datastream_tags(
 
 @datastream_router.post(
     "/{datastream_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: TagGetResponse,
         400: str,
@@ -337,7 +337,7 @@ def add_datastream_tag(
 
 @datastream_router.put(
     "/{datastream_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TagGetResponse,
         400: str,
@@ -363,7 +363,7 @@ def edit_datastream_tag(
 
 @datastream_router.delete(
     "/{datastream_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -389,7 +389,7 @@ def remove_datastream_tag(
 
 @datastream_router.get(
     "/{datastream_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[FileAttachmentGetResponse],
         401: str,
@@ -415,7 +415,7 @@ def get_datastream_file_attachments(
 
 @datastream_router.post(
     "/{datastream_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: FileAttachmentGetResponse,
         400: str,
@@ -451,7 +451,7 @@ def add_datastream_file_attachment(
 
 @datastream_router.put(
     "/{datastream_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -487,7 +487,7 @@ def replace_datastream_file_attachment(
 
 @datastream_router.delete(
     "/{datastream_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -515,7 +515,7 @@ def remove_datastream_file_attachment(
 
 @datastream_router.get(
     "/{datastream_id}/csv",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: None, 403: str, 404: str},
 )
 def get_datastream_csv(request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]):

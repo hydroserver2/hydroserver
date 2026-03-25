@@ -24,7 +24,7 @@
           <HydroShareArchivalButton
             v-if="
               hasPermission(PermissionResource.Thing, PermissionAction.Edit) &&
-              hydroShareConnected
+              hydroShareEnabled
             "
           />
         </div>
@@ -268,7 +268,7 @@ const thingId = useRoute().params.id.toString()
 const { photos, loading } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 
-const { isConnected: hydroShareConnected } = useHydroShare()
+const { isConnectionEnabled: hydroShareEnabled } = useHydroShare()
 const { hydroShareArchive } = storeToRefs(useHydroShareStore())
 
 const { hasPermission } = useWorkspacePermissions(workspace)

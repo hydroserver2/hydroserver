@@ -6,7 +6,7 @@ import { AUTH_OPENAPI_FILE } from './openapi-paths'
 const SCHEMA_FILE = AUTH_OPENAPI_FILE
 const OUT_DIR = path.resolve('src/generated/auth-contracts')
 
-const resources = ['account', 'session']
+const resources = ['account']
 
 generateContracts({
   schemaFile: SCHEMA_FILE,

@@ -33,35 +33,19 @@ function updateDocumentTitle(matched: RouteRecordNormalized[]): void {
 }
 
 router.beforeEach(
-  async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+  async (to: RouteLocationNormalized) => {
     await waitForHydroServerInitialization()
     if (!isHydroServerReady.value) return false
 
-    const { inEmailVerificationFlow, inProviderSignupFlow } = hs.session
-
-    if (inEmailVerificationFlow && to.name !== 'VerifyEmail') {
-      if (to.name === 'ResetPassword') return { name: 'ResetPassword' }
-      return { name: 'VerifyEmail' }
+    if (!hs.session.isAuthenticated && to.meta.requiresAuth) {
+      await hs.session.login(to.fullPath)
+      return false
     }
-    if (!inEmailVerificationFlow && to.name === 'VerifyEmail')
-      return { name: 'Sites' }
-
-    if (inProviderSignupFlow && to.name !== 'CompleteProfile')
-      return { name: 'CompleteProfile' }
-    if (!inProviderSignupFlow && to.name === 'CompleteProfile')
-      return { name: 'Sites' }
-
-    if (hs.session.isAuthenticated && to.meta.requiresLoggedOut)
-      return { name: 'Sites' }
-    if (!hs.session.isAuthenticated && to.meta.requiresAuth)
-      return { name: 'Login', query: { next: to.fullPath } }
   }
 )
 
-router.afterEach(
-  (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    updateDocumentTitle(to.matched)
-  }
-)
+router.afterEach((to: RouteLocationNormalized) => {
+  updateDocumentTitle(to.matched)
+})
 
 export default router

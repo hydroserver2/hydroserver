@@ -7,7 +7,7 @@ const limit = pLimit(10)
 const DEFAULT_PAGE_SIZE = 1000
 
 async function interceptedFetch(endpoint: string, options: any) {
-  const opts = requestInterceptor(options)
+  const opts = await requestInterceptor(options)
   const response = await fetch(endpoint, opts)
   return await responseInterceptor(response)
 }
@@ -74,7 +74,7 @@ export const apiMethods = {
     if (!url.searchParams.has('page_size'))
       url.searchParams.set('page_size', String(DEFAULT_PAGE_SIZE))
 
-    const opts = requestInterceptor({ method: 'GET' })
+    const opts = await requestInterceptor({ method: 'GET' })
 
     // fetch first page without response interceptor so we can read headers
     const firstResponse = await limit(() => fetch(url, opts))

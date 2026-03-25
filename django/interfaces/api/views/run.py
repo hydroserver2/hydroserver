@@ -3,7 +3,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth
 from domains.etl.services import TaskRunService
 from interfaces.api.schemas import TaskRunResponse, TaskRunPostBody, TaskRunPatchBody, TaskRunQueryParameters
 
@@ -14,7 +14,7 @@ task_run_service = TaskRunService()
 
 @task_run_router.get(
     "/{task_id}/runs",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[TaskRunResponse],
         401: str,
@@ -44,7 +44,7 @@ def get_task_runs(
 
 @task_run_router.post(
     "/{task_id}/runs",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: TaskRunResponse,
         400: str,
@@ -70,7 +70,7 @@ def create_task_run(
 
 @task_run_router.get(
     "/{task_id}/runs/{run_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,
         401: str,
@@ -95,7 +95,7 @@ def get_task_run(
 
 @task_run_router.patch(
     "/{task_id}/runs/{run_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,
         400: str,
@@ -126,7 +126,7 @@ def update_task_run(
 
 @task_run_router.delete(
     "/{task_id}/runs/{run_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

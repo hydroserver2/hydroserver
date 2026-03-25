@@ -15,6 +15,8 @@ class Command(BaseCommand):
                     "Instance configuration already exists. Skipping default data load."
                 )
             )
+            self.stdout.write("Synchronizing bundled OIDC clients...")
+            call_command("register_oidc_clients", verbosity=1)
             return
 
         with transaction.atomic():
@@ -42,3 +44,6 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.SUCCESS("Default domains loaded successfully.")
                 )
+
+            self.stdout.write("Synchronizing bundled OIDC clients...")
+            call_command("register_oidc_clients", verbosity=1)

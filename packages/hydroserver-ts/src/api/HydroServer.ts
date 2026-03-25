@@ -13,16 +13,25 @@ import { ThingFileAttachmentService } from './services/thing-file-attachment.ser
 
 export type AuthTuple = [string, string]
 
+export interface HydroServerOIDCOptions {
+  clientId?: string
+  redirectPath?: string
+  postLogoutRedirectPath?: string
+  scope?: string
+}
+
 export interface HydroServerOptions {
   host: string
+  oidc?: HydroServerOIDCOptions
 }
 
 export class HydroServer {
   readonly host: string
+  readonly resolvedHost: string
   readonly baseRoute: string
   readonly authBase: string
   readonly etlBase: string
-  readonly providerBase: string
+  readonly oidc: Required<HydroServerOIDCOptions>
 
   private _workspaces?: WorkspaceService
   private _things?: ThingService
@@ -41,12 +50,18 @@ export class HydroServer {
   private _thingFileAttachments?: ThingFileAttachmentService
 
   constructor(opts: HydroServerOptions) {
-    const { host } = opts
+    const { host, oidc } = opts
     this.host = host.trim().replace(/\/+$/, '')
+    this.resolvedHost = this.host || globalThis.location?.origin || ''
     this.baseRoute = `${this.host}/api/data`
     this.authBase = `${this.host}/api/auth`
     this.etlBase = `${this.host}/api/etl`
-    this.providerBase = `${this.authBase}/browser/provider`
+    this.oidc = {
+      clientId: oidc?.clientId ?? 'hydroserver-data-management',
+      redirectPath: oidc?.redirectPath ?? '/callback',
+      postLogoutRedirectPath: oidc?.postLogoutRedirectPath ?? '/',
+      scope: oidc?.scope ?? 'openid profile email',
+    }
   }
 
   static async initialize(options: HydroServerOptions): Promise<HydroServer> {
@@ -65,6 +80,17 @@ export class HydroServer {
     for (const callback of this.listeners[eventName] ?? []) {
       callback(...args)
     }
+  }
+
+  resolveUrl(path: string): string {
+    if (!this.resolvedHost) return path
+    return new URL(path, this.resolvedHost).toString()
+  }
+
+  resolveAppUrl(path: string): string {
+    const base = globalThis.location?.origin || this.resolvedHost
+    if (!base) return path
+    return new URL(path, base).toString()
   }
 
   get workspaces(): WorkspaceService {

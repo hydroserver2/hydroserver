@@ -5,7 +5,8 @@ from typing import Literal
 from django.contrib.auth import get_user_model
 from django_ratelimit.core import get_usage
 from allauth.headless.account.views import VerifyEmailView
-from allauth.account.utils import send_email_confirmation, has_verified_email
+from allauth.account.utils import has_verified_email
+from allauth.account.internal.flows.email_verification import send_verification_email_for_user
 from allauth.headless.constants import Client
 from interfaces.auth.schemas import (
     VerificationEmailPutBody,
@@ -56,7 +57,7 @@ def send_verification_email(
         user = None
 
     if user and not has_verified_email(user):
-        send_email_confirmation(request, user, user.email)
+        send_verification_email_for_user(request, user)
 
     return 200, "Account verification email sent"
 

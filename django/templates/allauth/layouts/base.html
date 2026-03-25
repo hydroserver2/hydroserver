@@ -1,0 +1,60 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block head_title %}{% endblock %} - HydroServer</title>
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/hydroserver-icon-min.png' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <img src="{% static 'img/hydroserver-icon-min.png' %}" alt="HydroServer" class="h-8 w-8">
+                    <span class="text-xl font-semibold text-gray-900">HydroServer</span>
+                </div>
+                <div class="flex items-center gap-4 text-sm">
+                    {% if user.is_authenticated %}
+                        <span class="text-gray-600">{{ user.email }}</span>
+                        <a href="{% url 'account_profile' %}" class="text-blue-600 hover:text-blue-800">{% trans "Profile" %}</a>
+                        <form method="post" action="{% url 'account_logout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-gray-500 hover:text-gray-700">{% trans "Sign Out" %}</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'account_login' %}" class="text-blue-600 hover:text-blue-800">{% trans "Sign In" %}</a>
+                        <a href="{% url 'account_signup' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">{% trans "Sign Up" %}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1">
+        {% if messages %}
+            <div class="max-w-md mx-auto mt-4 px-4">
+                {% for message in messages %}
+                    <div class="rounded-md p-3 mb-2 text-sm
+                        {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+                        {% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-700 border border-yellow-200
+                        {% elif message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200
+                        {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="py-6 text-center text-sm text-gray-400">
+        {% trans "Powered by" %} HydroServer
+    </footer>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

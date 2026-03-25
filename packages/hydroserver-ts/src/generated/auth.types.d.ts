@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/auth/{client}/account": {
+    "/api/auth/account": {
         parameters: {
             query?: never;
             header?: never;
@@ -17,11 +17,7 @@ export interface paths {
          */
         get: operations["interfaces_auth_views_account_get_account"];
         put?: never;
-        /**
-         * Create Account
-         * @description Create a new user account.
-         */
-        post: operations["interfaces_auth_views_account_create_account"];
+        post?: never;
         /**
          * Delete Account
          * @description Delete a user account.
@@ -36,31 +32,7 @@ export interface paths {
         patch: operations["interfaces_auth_views_account_update_account"];
         trace?: never;
     };
-    "/api/auth/{client}/account/email/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Send Verification Email
-         * @description Send an account verification email.
-         */
-        put: operations["interfaces_auth_views_email_send_verification_email"];
-        /**
-         * Verify Email
-         * @description Verify an account email.
-         */
-        post: operations["interfaces_auth_views_email_verify_email"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/account/organization-types": {
+    "/api/auth/account/organization-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -80,47 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/{client}/account/password/request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Request Password Reset
-         * @description Request password reset email.
-         */
-        post: operations["interfaces_auth_views_password_request_password_reset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/account/password/reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reset Password
-         * @description Reset account password.
-         */
-        post: operations["interfaces_auth_views_password_reset_password"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/account/user-types": {
+    "/api/auth/account/user-types": {
         parameters: {
             query?: never;
             header?: never;
@@ -135,98 +67,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/provider/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Providers
-         * @description Get connected provider accounts.
-         */
-        get: operations["interfaces_auth_views_provider_get_providers"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Provider
-         * @description Disconnect a provider account.
-         */
-        delete: operations["interfaces_auth_views_provider_delete_provider"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/provider/redirect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Redirect To Provider
-         * @description Redirect to provider login window.
-         */
-        post: operations["interfaces_auth_views_provider_redirect_to_provider"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/provider/signup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Provider Signup
-         * @description Finish signing up with a provider account.
-         */
-        post: operations["interfaces_auth_views_provider_provider_signup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/{client}/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Session
-         * @description Get an active user session.
-         */
-        get: operations["interfaces_auth_views_session_get_session"];
-        put?: never;
-        /**
-         * Create Session
-         * @description Create a new user session.
-         */
-        post: operations["interfaces_auth_views_session_create_session"];
-        /**
-         * Delete Session
-         * @description Delete an active user session.
-         */
-        delete: operations["interfaces_auth_views_session_delete_session"];
         options?: never;
         head?: never;
         patch?: never;
@@ -282,31 +122,6 @@ export interface components {
             /** Type */
             type?: string;
         };
-        /** AccountPostBody */
-        AccountPostBody: {
-            /** Address */
-            address?: string | null;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Link */
-            link?: string | null;
-            /** Middlename */
-            middleName?: string | null;
-            organization?: components["schemas"]["OrganizationPostBody"] | null;
-            /** Password */
-            password: string;
-            /** Phone */
-            phone?: string | null;
-            /** Type */
-            type: string;
-        };
         /** OrganizationDetailResponse */
         OrganizationDetailResponse: {
             /** Code */
@@ -332,92 +147,6 @@ export interface components {
             name?: string;
             /** Type */
             type?: string;
-        };
-        /** OrganizationPostBody */
-        OrganizationPostBody: {
-            /** Code */
-            code: string;
-            /** Description */
-            description?: string | null;
-            /** Link */
-            link?: string | null;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-        };
-        /** ProviderRedirectPostForm */
-        ProviderRedirectPostForm: {
-            /** Callback Url */
-            callback_url: string;
-            /**
-             * Process
-             * @enum {string}
-             */
-            process: "login" | "connect";
-            /** Provider */
-            provider: string;
-        };
-        /** ProviderSignupPostBody */
-        ProviderSignupPostBody: {
-            /** Address */
-            address?: string | null;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Firstname */
-            firstName?: string;
-            /** Lastname */
-            lastName?: string;
-            /** Link */
-            link?: string | null;
-            /** Middlename */
-            middleName?: string | null;
-            organization: components["schemas"]["OrganizationPostBody"] | null;
-            /** Phone */
-            phone?: string | null;
-            /** Type */
-            type?: string;
-        };
-        /** RequestResetPasswordPostBody */
-        RequestResetPasswordPostBody: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-        };
-        /** ResetPasswordPostBody */
-        ResetPasswordPostBody: {
-            /** Key */
-            key: string;
-            /** Password */
-            password: string;
-        };
-        /** SessionPostBody */
-        SessionPostBody: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Password */
-            password: string;
-        };
-        /** VerificationEmailPutBody */
-        VerificationEmailPutBody: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-        };
-        /** VerifyEmailPostBody */
-        VerifyEmailPostBody: {
-            /** Key */
-            key: string;
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
@@ -451,9 +180,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                client: "browser" | "app";
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -478,84 +205,11 @@ export interface operations {
             };
         };
     };
-    interfaces_auth_views_account_create_account: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AccountPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_auth_views_account_delete_account: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                client: "browser" | "app";
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -582,9 +236,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                client: "browser" | "app";
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -622,94 +274,6 @@ export interface operations {
             };
         };
     };
-    interfaces_auth_views_email_send_verification_email: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerificationEmailPutBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_email_verify_email: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerifyEmailPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_auth_views_account_get_organization_types: {
         parameters: {
             query?: {
@@ -737,85 +301,6 @@ export interface operations {
             };
         };
     };
-    interfaces_auth_views_password_request_password_reset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RequestResetPasswordPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_password_reset_password: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResetPasswordPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_auth_views_account_get_user_types: {
         parameters: {
             query?: {
@@ -839,279 +324,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_auth_views_provider_get_providers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_provider_delete_provider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_provider_redirect_to_provider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/x-www-form-urlencoded": {
-                    /** Callback Url */
-                    callback_url: string;
-                    /**
-                     * Process
-                     * @enum {string}
-                     */
-                    process: "login" | "connect";
-                    /** Provider */
-                    provider: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Found */
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    interfaces_auth_views_provider_provider_signup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProviderSignupPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_session_get_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_session_create_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SessionPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_auth_views_session_delete_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                client: "browser" | "app";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
                 };
             };
         };

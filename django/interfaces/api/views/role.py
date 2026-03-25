@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
     RoleSummaryResponse,
@@ -17,7 +17,7 @@ role_service = RoleService()
 
 @role_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[RoleSummaryResponse] | list[RoleDetailResponse],
         401: str,
@@ -46,7 +46,7 @@ def get_roles(
 
 @role_router.get(
     "/{role_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: RoleSummaryResponse | RoleDetailResponse,
         401: str,

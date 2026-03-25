@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 from django.db import transaction
 from django.http import HttpResponse
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.schemas import (
     WorkspaceSummaryResponse,
     WorkspaceDetailResponse,
@@ -23,7 +23,7 @@ workspace_service = WorkspaceService()
 
 @workspace_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[WorkspaceDetailResponse] | list[WorkspaceSummaryResponse],
         401: str,
@@ -53,7 +53,7 @@ def get_workspaces(
 
 @workspace_router.post(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: WorkspaceDetailResponse | WorkspaceSummaryResponse,
         401: str,
@@ -79,7 +79,7 @@ def create_workspace(
 
 @workspace_router.get(
     "/{workspace_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: WorkspaceDetailResponse | WorkspaceSummaryResponse,
         401: str,
@@ -104,7 +104,7 @@ def get_workspace(
 
 @workspace_router.patch(
     "/{workspace_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: WorkspaceDetailResponse | WorkspaceSummaryResponse,
         401: str,
@@ -135,7 +135,7 @@ def update_workspace(
 
 @workspace_router.delete(
     "/{workspace_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -154,7 +154,7 @@ def delete_workspace(request: HydroServerHttpRequest, workspace_id: Path[uuid.UU
 
 @workspace_router.post(
     "/{workspace_id}/transfer",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: str,
         400: str,
@@ -181,7 +181,7 @@ def transfer_workspace(
 
 @workspace_router.put(
     "/{workspace_id}/transfer",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: str,
         400: str,
@@ -205,7 +205,7 @@ def accept_workspace_transfer(
 
 @workspace_router.delete(
     "/{workspace_id}/transfer",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: str,
         400: str,

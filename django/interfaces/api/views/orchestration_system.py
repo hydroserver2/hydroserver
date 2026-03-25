@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from domains.etl.services import OrchestrationSystemService
 from interfaces.api.schemas import (OrchestrationSystemSummaryResponse, OrchestrationSystemDetailResponse,
                                     OrchestrationSystemPostBody, OrchestrationSystemPatchBody,
@@ -17,7 +17,7 @@ orchestration_system_service = OrchestrationSystemService()
 
 @orchestration_system_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[OrchestrationSystemSummaryResponse]
         | list[OrchestrationSystemDetailResponse],
@@ -47,7 +47,7 @@ def get_orchestration_systems(
 
 @orchestration_system_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: OrchestrationSystemSummaryResponse | OrchestrationSystemDetailResponse,
         400: str,
@@ -74,7 +74,7 @@ def create_orchestration_system(
 
 @orchestration_system_router.get(
     "/{orchestration_system_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: OrchestrationSystemSummaryResponse | OrchestrationSystemDetailResponse,
         401: str,
@@ -101,7 +101,7 @@ def get_orchestration_system(
 
 @orchestration_system_router.patch(
     "/{orchestration_system_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: OrchestrationSystemSummaryResponse | OrchestrationSystemDetailResponse,
         400: str,
@@ -132,7 +132,7 @@ def update_orchestration_system(
 
 @orchestration_system_router.delete(
     "/{orchestration_system_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

@@ -63,12 +63,7 @@ export async function responseInterceptor<T = any>(
     }
   }
 
-  // Django AllAuth doesn't consider 401 responses errors but rather an
-  // message to put the caller in an unauthenticated flow state.
-  // Pass the response to the calling component to handle the returned AllAuth flows.
-
-  // TODO: Clients and frontend apps shouldn't have to know anything about Django. Move AllAuth logic to the server
-  if (response.ok || response.status === 401) {
+  if (response.ok) {
     const looksEnveloped =
       body &&
       typeof body === 'object' &&

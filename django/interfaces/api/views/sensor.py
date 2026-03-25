@@ -3,7 +3,7 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
@@ -21,7 +21,7 @@ sensor_service = SensorService()
 
 @sensor_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[SensorSummaryResponse] | list[SensorDetailResponse],
         401: str,
@@ -50,7 +50,7 @@ def get_sensors(
 
 @sensor_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: SensorSummaryResponse | SensorDetailResponse,
         400: str,
@@ -115,7 +115,7 @@ def get_method_types(
 
 @sensor_router.get(
     "/{sensor_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: SensorSummaryResponse | SensorDetailResponse,
         401: str,
@@ -140,7 +140,7 @@ def get_sensor(
 
 @sensor_router.patch(
     "/{sensor_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: SensorSummaryResponse | SensorDetailResponse,
         400: str,
@@ -171,7 +171,7 @@ def update_sensor(
 
 @sensor_router.delete(
     "/{sensor_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

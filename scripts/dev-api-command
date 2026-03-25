@@ -22,6 +22,8 @@ if [[ ! -f "$LOCAL_ENV_FILE" ]]; then
   load_env_file "$LEGACY_ENV_FILE"
 fi
 
+"$ROOT_DIR/scripts/ensure-dev-oidc-key" >/dev/null
+
 export DEBUG="${DEBUG:-True}"
 export DEPLOYMENT_BACKEND="${DEPLOYMENT_BACKEND:-dev}"
 export PROXY_BASE_URL="${PROXY_BASE_URL:-http://127.0.0.1:5173}"

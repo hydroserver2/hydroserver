@@ -1,4 +1,5 @@
 import { HydroServer, HydroServerOptions } from './HydroServer'
+import { registerAccessTokenProvider } from './requestInterceptor'
 
 let _hs: HydroServer | null = null
 let _creating: Promise<HydroServer> | null = null
@@ -60,6 +61,7 @@ export async function createHydroServer(
     // Rebind the proxy target to the actual instance
     Object.setPrototypeOf(hs, _hs)
 
+    registerAccessTokenProvider(() => client.session.getAccessToken())
     attachGlobalSessionGuards()
     _creating = null
     return client

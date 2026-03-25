@@ -3,7 +3,7 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
     ResultQualifierSummaryResponse,
@@ -20,7 +20,7 @@ result_qualifier_service = ResultQualifierService()
 
 @result_qualifier_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ResultQualifierSummaryResponse] | list[ResultQualifierDetailResponse],
         401: str,
@@ -49,7 +49,7 @@ def get_result_qualifiers(
 
 @result_qualifier_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
         401: str,
@@ -76,7 +76,7 @@ def create_result_qualifier(
 
 @result_qualifier_router.get(
     "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
         401: str,
@@ -103,7 +103,7 @@ def get_result_qualifier(
 
 @result_qualifier_router.patch(
     "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
         401: str,
@@ -133,7 +133,7 @@ def update_result_qualifier(
 
 @result_qualifier_router.delete(
     "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

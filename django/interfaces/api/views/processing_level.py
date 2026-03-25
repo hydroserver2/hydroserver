@@ -3,7 +3,7 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
     ProcessingLevelSummaryResponse,
@@ -20,7 +20,7 @@ processing_level_service = ProcessingLevelService()
 
 @processing_level_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ProcessingLevelSummaryResponse] | list[ProcessingLevelDetailResponse],
         401: str,
@@ -49,7 +49,7 @@ def get_processing_levels(
 
 @processing_level_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
         400: str,
@@ -76,7 +76,7 @@ def create_processing_level(
 
 @processing_level_router.get(
     "/{processing_level_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
         401: str,
@@ -103,7 +103,7 @@ def get_processing_level(
 
 @processing_level_router.patch(
     "/{processing_level_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: ProcessingLevelSummaryResponse | ProcessingLevelDetailResponse,
         400: str,
@@ -134,7 +134,7 @@ def update_processing_level(
 
 @processing_level_router.delete(
     "/{processing_level_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

@@ -1,227 +1,209 @@
-import { User } from '../../types'
+import {
+  UserManager,
+  WebStorageStateStore,
+  type User as OidcUser,
+} from 'oidc-client-ts'
 import type { HydroServer } from '../HydroServer'
-import { apiMethods } from '../apiMethods'
-import Storage from '../../utils/storage'
-import { getCSRFToken } from '../getCSRFToken'
-import { ApiResponse } from '../responseInterceptor'
 
-export interface Provider {
-  id: string
-  name: string
-  iconLink: string | null
-  signupEnabled: boolean
-  connectEnabled: boolean
+const EXPIRING_SOON_SECONDS = 60
+
+type SigninState = {
+  returnTo?: string
 }
 
-export type SessionSnapshot = {
-  isAuthenticated: boolean
-  expiresAt: string | null
-  flows: Array<{ id: string; providers?: string[] }>
-  oAuthProviders: Provider[]
-  signupEnabled: boolean
+function isBrowser() {
+  return typeof window !== 'undefined'
 }
 
-const DEFAULT_SESSION_SNAPSHOT: SessionSnapshot = {
-  isAuthenticated: false,
-  expiresAt: null,
-  flows: [],
-  oAuthProviders: [],
-  signupEnabled: false,
-}
+function removeHydroServerStorage() {
+  if (!isBrowser()) return
 
-export const emailStorage = new Storage<string>('hydroserver:unverifiedEmail')
+  for (const store of [window.localStorage, window.sessionStorage]) {
+    for (const key of Object.keys(store)) {
+      if (key.startsWith('hydroserver:')) {
+        store.removeItem(key)
+      }
+    }
+  }
+}
 
 export class SessionService {
-  readonly sessionBase: string
-  readonly providerBase: string
+  readonly accountSignupUrl: string
+  readonly accountProfileUrl: string
 
-  private _client: HydroServer
-  private snapshot: SessionSnapshot = { ...DEFAULT_SESSION_SNAPSHOT }
+  private readonly _client: HydroServer
+  private _manager: UserManager | null = null
+  private _user: OidcUser | null = null
+  private _eventsBound = false
 
   constructor(client: HydroServer) {
     this._client = client
-    this.sessionBase = `${this._client.authBase}/browser/session`
-    this.providerBase = `${this._client.authBase}/browser/provider`
+    this.accountSignupUrl = this._client.resolveUrl('/accounts/signup/')
+    this.accountProfileUrl = this._client.resolveUrl('/accounts/profile/')
   }
 
   get isAuthenticated(): boolean {
-    return this.snapshot.isAuthenticated
+    return Boolean(this._user?.access_token && !this._user.expired)
   }
-  get expiresAt(): string | null {
-    return this.snapshot.expiresAt
-  }
-  /**
-   * Determines if signing up on the website is available at all.
-   * Some organizations will want an admin signing up for their users
-   * to be the only way to create an account.
-   *
-   * Not to be confused with `oAuthProviders.signupEnabled` that tells us if
-   * that particular OAuth service can be used to create an account.
-   */
-  get signupEnabled() {
-    return this.snapshot.signupEnabled
-  }
-  /**
-   * An array of OAuth providers that the user can use to authenticate.
-   * In some cases, such as with HydroShare, this allows connecting to the provider
-   * for data archival instead of direct authentication.
-   *
-   * This array determines which login with OAuth buttons are available on the login and signup pages.
-   */
-  get oAuthProviders() {
-    return this.snapshot.oAuthProviders || []
-  }
-  get flows(): Array<{ id: string; providers?: string[] }> {
-    return this.snapshot.flows
-  }
-  get flowIds() {
-    return this.flows.map((f) => f.id)
-  }
-  get inEmailVerificationFlow(): boolean {
-    return this.flowIds.includes('verify_email')
-  }
-  get inProviderSignupFlow(): boolean {
-    return this.flowIds.includes('provider_signup')
-  }
-  /**
-   * Persist the state of unverified email since it won't be saved in the db
-   * during the verify_email flow. Used for
-   * re-emailing the verification code to the user upon request.
-   */
-  get unverifiedEmail() {
-    return emailStorage.get() || ''
-  }
-  set unverifiedEmail(email: string) {
-    emailStorage.set(email)
+
+  get accessToken(): string | null {
+    return this.isAuthenticated ? this._user!.access_token : null
   }
 
   async initialize(): Promise<void> {
-    const res = await apiMethods.fetch(this.sessionBase)
-    this._setSession(res)
+    if (!isBrowser()) return
+
+    const manager = this.getManager()
+    let user = await manager.getUser()
+    if (this.isExpiredOrExpiring(user)) {
+      user = await this.tryRefreshUser(manager)
+    }
+    if (!user || user.expired) {
+      await manager.removeUser()
+      this.setUser(null)
+      return
+    }
+    this.setUser(user)
   }
 
-  get = async () => apiMethods.fetch(this.sessionBase)
-
-  async login(email: string, password: string) {
-    const res = await apiMethods.post(this.sessionBase, {
-      email,
-      password,
+  async login(returnTo = this.getCurrentPath()): Promise<void> {
+    const manager = this.getManager()
+    await manager.signinRedirect({
+      state: { returnTo },
     })
-    this._setSession(res)
-    return res
   }
 
-  async signup(user: User) {
-    return this._client.user.create(user)
+  async completeLogin(callbackUrl = this.getCurrentUrl()): Promise<string> {
+    const manager = this.getManager()
+    const user = await manager.signinRedirectCallback(callbackUrl)
+    this.setUser(user)
+
+    const returnTo = (user.state as SigninState | undefined)?.returnTo
+    return typeof returnTo === 'string' && returnTo.startsWith('/')
+      ? returnTo
+      : '/'
   }
 
-  private _loggingOut = false
-  async logout() {
-    if (this._loggingOut) return
+  async logout(returnTo = '/'): Promise<void> {
+    const manager = this.getManager()
+    await manager.removeUser()
+    this.setUser(null)
+    removeHydroServerStorage()
+
     try {
-      this._loggingOut = true
-      for (const store of [localStorage, sessionStorage]) {
-        for (const key of Object.keys(store)) {
-          if (key.startsWith('hydroserver:')) {
-            store.removeItem(key)
-          }
-        }
-      }
-      const res = await apiMethods.delete(this.sessionBase)
-      this._setSession(res)
+      await manager.signoutRedirect({
+        post_logout_redirect_uri: this._client.resolveAppUrl(returnTo),
+      })
     } catch (error) {
-      console.error('Error logging out.', error)
-    } finally {
-      this._loggingOut = false
+      console.warn('OIDC sign-out redirect failed, falling back to local logout.', error)
+      if (isBrowser()) {
+        window.location.assign(this._client.resolveAppUrl(returnTo))
+      }
     }
   }
 
-  _setSession(res: ApiResponse) {
-    const meta = res?.meta ?? {}
-    const data = res?.data ?? {}
+  async getAccessToken(): Promise<string | null> {
+    if (!isBrowser()) return null
 
-    this.snapshot = {
-      isAuthenticated: Boolean(meta.is_authenticated),
-      expiresAt: meta.expires ?? null,
-      flows: Array.isArray(data.flows) ? data.flows : [],
-      oAuthProviders: Array.isArray(meta.oAuthProviders ?? [])
-        ? meta.oAuthProviders
-        : [],
-      signupEnabled: Boolean(meta.signupEnabled ?? false),
+    const manager = this.getManager()
+    let user = this._user ?? (await manager.getUser())
+    if (!user) {
+      this.setUser(null)
+      return null
     }
+
+    if (this.isExpiredOrExpiring(user)) {
+      user = await this.tryRefreshUser(manager)
+    } else {
+      this.setUser(user)
+    }
+
+    return user && !user.expired ? user.access_token : null
   }
 
-  checkExpiration() {
-    if (!this.snapshot.isAuthenticated) return
-    if (!this.snapshot.expiresAt) return
+  checkExpiration(): void {
+    if (!this._user) return
+    if (!this.isExpiredOrExpiring(this._user)) return
+    void this.getAccessToken()
+  }
 
-    const expirationTime = new Date(this.snapshot.expiresAt).getTime()
-    if (Number.isFinite(expirationTime) && Date.now() >= expirationTime) {
+  private getManager(): UserManager {
+    if (!isBrowser()) {
+      throw new Error('OIDC session management requires a browser environment.')
+    }
+
+    if (!this._manager) {
+      this._manager = new UserManager({
+        authority: this._client.resolvedHost,
+        client_id: this._client.oidc.clientId,
+        redirect_uri: this._client.resolveAppUrl(this._client.oidc.redirectPath),
+        post_logout_redirect_uri: this._client.resolveAppUrl(
+          this._client.oidc.postLogoutRedirectPath
+        ),
+        response_type: 'code',
+        scope: this._client.oidc.scope,
+        loadUserInfo: true,
+        automaticSilentRenew: false,
+        userStore: new WebStorageStateStore({ store: window.localStorage }),
+      })
+    }
+
+    if (!this._eventsBound) {
+      this._manager.events.addUserLoaded((user) => {
+        this.setUser(user)
+      })
+      this._manager.events.addUserUnloaded(() => {
+        this.setUser(null)
+      })
+      this._manager.events.addAccessTokenExpired(() => {
+        void this.getAccessToken()
+      })
+      this._manager.events.addSilentRenewError((error) => {
+        console.error('OIDC silent renew failed', error)
+      })
+      this._eventsBound = true
+    }
+
+    return this._manager
+  }
+
+  private async tryRefreshUser(manager: UserManager): Promise<OidcUser | null> {
+    try {
+      const user = await manager.signinSilent()
+      this.setUser(user)
+      return user
+    } catch (error) {
+      console.warn('Unable to refresh OIDC session.', error)
+      await manager.removeUser()
+      this.setUser(null)
       this._client.emit('session:expired')
-      this.logout()
+      return null
     }
   }
 
-  /**
-   * Initiates a synchronous form submission to redirect the user for OAuth login in a Django AllAuth
-   * environment. This allows the server to return a 302 redirect that the browser will follow,
-   * preserving session cookies and enabling AllAuth to handle the full OAuth handshake.
-   *
-   * @param {string} provider - The ID of the OAuth provider (e.g. "google", "hydroshare").
-   * @param {string} callbackUrl - The URL to which the user is redirected after the OAuth flow completes.
-   * @param {string} process - Enum: "login" or "connect" The process to be executed when the user successfully authenticates.
-   *                           When set to login, the user will be logged into the account to which the provider account is connected,
-   *                           or if no such account exists, a signup will occur. If set to connect, the provider account will
-   *                           be connected to the list of provider accounts for the currently authenticated user.
-   */
-  providerRedirect = (
-    provider: string,
-    callbackUrl: string,
-    process: string
-  ) => {
-    const data: Record<string, string> = {
-      provider: provider,
-      callback_url: callbackUrl,
-      process: process,
-    }
-    const csrfToken = getCSRFToken()
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = `${this.providerBase}/redirect`
-    if (csrfToken) {
-      const csrfInput = document.createElement('input')
-      csrfInput.type = 'hidden'
-      csrfInput.name = 'csrfmiddlewaretoken'
-      csrfInput.value = csrfToken
-      form.appendChild(csrfInput)
-    }
-    for (const key in data) {
-      const input = document.createElement('input')
-      input.type = 'hidden'
-      input.name = key
-      input.value = data[key]
-      form.appendChild(input)
-    }
-    document.body.appendChild(form)
-    form.submit()
+  private setUser(user: OidcUser | null): void {
+    this._user = user && !user.expired ? user : null
   }
 
-  fetchConnectedProviders = async () =>
-    apiMethods.fetch(`${this._client.providerBase}/connections`)
+  private isExpiredOrExpiring(user: OidcUser | null): boolean {
+    if (!user) return false
+    if (user.expired) return true
+    return typeof user.expires_in === 'number' && user.expires_in <= EXPIRING_SOON_SECONDS
+  }
 
-  providerSignup = async (user: User) => {
-    const res = await apiMethods.post(
-      `${this._client.providerBase}/signup`,
-      user
+  private getCurrentPath(): string {
+    if (!isBrowser()) return '/'
+    return (
+      window.location.pathname +
+      window.location.search +
+      window.location.hash
     )
-    console.log('provider signup', res)
-    this._setSession(res.data)
-    return res
   }
 
-  deleteProvider = async (provider: string, account: string) =>
-    apiMethods.delete(`${this._client.providerBase}/connections`, {
-      provider: provider,
-      account: account,
-    })
+  private getCurrentUrl(): string {
+    if (!isBrowser()) {
+      return this._client.resolveAppUrl(this._client.oidc.redirectPath)
+    }
+    return window.location.href
+  }
 }

@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth
 from interfaces.api.schemas import (
     APIKeySummaryResponse,
     APIKeyDetailResponse,
@@ -22,7 +22,7 @@ api_key_service = APIKeyService()
 
 @api_key_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[APIKeySummaryResponse] | list[APIKeyDetailResponse],
         401: str,
@@ -54,7 +54,7 @@ def get_api_keys(
 
 @api_key_router.post(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: APIKeySummaryPostResponse | APIKeyDetailPostResponse,
         401: str,
@@ -84,7 +84,7 @@ def create_api_key(
 
 @api_key_router.get(
     "/{api_key_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: APIKeySummaryResponse | APIKeyDetailResponse,
         401: str,
@@ -113,7 +113,7 @@ def get_api_key(
 
 @api_key_router.patch(
     "/{api_key_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: APIKeySummaryResponse | APIKeyDetailResponse,
         401: str,
@@ -146,7 +146,7 @@ def update_api_key(
 
 @api_key_router.delete(
     "/{api_key_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -171,7 +171,7 @@ def delete_api_key(
 
 @api_key_router.put(
     "/{api_key_id}/regenerate",
-    auth=[session_auth, bearer_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: APIKeySummaryPostResponse | APIKeyDetailPostResponse,
         400: str,

@@ -11,6 +11,25 @@ from urllib.parse import urlparse
 from celery.schedules import crontab
 
 
+def _split_setting_values(value):
+    values = []
+    seen = set()
+    for line in value.replace(",", "\n").splitlines():
+        item = line.strip()
+        if not item or item in seen:
+            continue
+        values.append(item)
+        seen.add(item)
+    return values
+
+
+def _url_origin(url):
+    parsed = urlparse(url)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    return ""
+
+
 # Build paths inside the project like this: BASE_DIR / "subdir".
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,6 +55,7 @@ DEFAULT_SUPERUSER_PASSWORD = config("DEFAULT_SUPERUSER_PASSWORD", default="pass"
 
 USE_X_FORWARDED_HOST = True
 PROXY_BASE_URL = config("PROXY_BASE_URL", "http://127.0.0.1:8000")
+APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
 
 LOAD_DEFAULT_DATA = config("LOAD_DEFAULT_DATA", default=False, cast=bool)
 
@@ -121,6 +141,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.headless",
+    "allauth.idp.oidc",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.orcid",
@@ -225,10 +246,9 @@ ACCOUNT_SIGNUP_ENABLED = config("ACCOUNT_SIGNUP_ENABLED", default=True, cast=boo
 ACCOUNT_OWNERSHIP_ENABLED = config("ACCOUNT_OWNERSHIP_ENABLED", default=True, cast=bool)
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "domains.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
@@ -236,7 +256,7 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "htt
 ACCOUNT_ADAPTER = "domains.iam.auth.adapters.AccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
-HEADLESS_ONLY = True
+HEADLESS_ONLY = False
 
 HEADLESS_FRONTEND_URLS = {
     "account_confirm_email": f"{PROXY_BASE_URL}/verify-email/{{key}}",
@@ -257,6 +277,70 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_STORE_TOKENS = True
+
+
+# OIDC Identity Provider Settings
+
+IDP_OIDC_PRIVATE_KEY = config("IDP_OIDC_PRIVATE_KEY", default="")
+
+if not IDP_OIDC_PRIVATE_KEY and DEPLOYMENT_BACKEND == "dev":
+    _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
+    if _dev_key_path.exists():
+        IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
+
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = 3600   # 1 hour
+IDP_OIDC_ID_TOKEN_EXPIRES_IN = 300        # 5 minutes
+IDP_OIDC_ROTATE_REFRESH_TOKEN = True
+
+DATA_MANAGEMENT_CLIENT_URL = config(
+    "DATA_MANAGEMENT_CLIENT_URL",
+    default=APP_CLIENT_URL,
+)
+QC_CLIENT_URL = config(
+    "QC_CLIENT_URL",
+    default=PROXY_BASE_URL,
+)
+
+OIDC_BUNDLED_CLIENTS = {
+    "data-management": {
+        "id": config(
+            "OIDC_DATA_MANAGEMENT_CLIENT_ID",
+            default="hydroserver-data-management",
+        ),
+        "name": config(
+            "OIDC_DATA_MANAGEMENT_CLIENT_NAME",
+            default="HydroServer Data Management",
+        ),
+        "redirect_uris": _split_setting_values(
+            config(
+                "OIDC_DATA_MANAGEMENT_REDIRECT_URIS",
+                default=f"{DATA_MANAGEMENT_CLIENT_URL.rstrip('/')}/callback",
+            )
+        ),
+        "cors_origins": _split_setting_values(
+            config(
+                "OIDC_DATA_MANAGEMENT_CORS_ORIGINS",
+                default=_url_origin(DATA_MANAGEMENT_CLIENT_URL),
+            )
+        ),
+    },
+    "qc": {
+        "id": config("OIDC_QC_CLIENT_ID", default="hydroserver-qc"),
+        "name": config("OIDC_QC_CLIENT_NAME", default="HydroServer QC"),
+        "redirect_uris": _split_setting_values(
+            config(
+                "OIDC_QC_REDIRECT_URIS",
+                default=f"{QC_CLIENT_URL.rstrip('/')}/callback",
+            )
+        ),
+        "cors_origins": _split_setting_values(
+            config(
+                "OIDC_QC_CORS_ORIGINS",
+                default=_url_origin(QC_CLIENT_URL),
+            )
+        ),
+    },
+}
 
 
 # Email Settings
@@ -322,7 +406,6 @@ PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
 
 # Storage settings
 
-APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None

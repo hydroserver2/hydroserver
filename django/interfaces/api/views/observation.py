@@ -3,7 +3,7 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
     ObservationSummaryResponse,
@@ -24,7 +24,7 @@ observation_service = ObservationService()
 
 @observation_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ObservationSummaryResponse]
         | list[ObservationDetailResponse]
@@ -60,7 +60,7 @@ def get_observations(
 
 @observation_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: ObservationSummaryResponse | ObservationDetailResponse,
         400: str,
@@ -91,7 +91,7 @@ def create_observation(
 
 @observation_router.post(
     "/bulk-create",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={201: None, 403: str, 404: str},
 )
 @transaction.atomic
@@ -115,7 +115,7 @@ def insert_observations(
 
 @observation_router.post(
     "/bulk-delete",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={204: None, 403: str, 404: str},
 )
 @transaction.atomic
@@ -135,7 +135,7 @@ def delete_observations(
 
 @observation_router.get(
     "/{observation_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ObservationSummaryResponse | ObservationDetailResponse,
         401: str,
@@ -164,7 +164,7 @@ def get_observation(
 
 @observation_router.delete(
     "/{observation_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

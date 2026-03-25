@@ -1,0 +1,49 @@
+{% extends "allauth/layouts/manage.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Delete Account" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-red-600 mb-4">{% trans "Delete Account" %}</h1>
+
+<div class="rounded-md bg-red-50 border border-red-200 p-4 mb-6">
+    <p class="text-sm text-red-700 font-medium mb-2">{% trans "This action cannot be undone." %}</p>
+    <p class="text-sm text-red-600">
+        {% trans "Deleting your account will permanently remove all your data, including any workspaces you own and all data within them." %}
+    </p>
+</div>
+
+{% if owned_workspaces %}
+<div class="mb-6">
+    <p class="text-sm font-medium text-gray-700 mb-2">{% trans "The following workspaces will be deleted:" %}</p>
+    <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+        {% for workspace in owned_workspaces %}
+            <li>{{ workspace }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    <div>
+        <label for="id_confirmation" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.confirmation.label }}
+        </label>
+        <input type="text" name="confirmation" id="id_confirmation"
+               placeholder="delete my account and data"
+               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none">
+        {% if form.confirmation.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.confirmation.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <div class="flex gap-3 pt-4">
+        <button type="submit" class="rounded-md bg-red-600 px-6 py-2 text-sm font-medium text-white hover:bg-red-700">
+            {% trans "Delete My Account" %}
+        </button>
+        <a href="{% url 'account_profile' %}" class="rounded-md border border-gray-300 bg-white px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {% trans "Cancel" %}
+        </a>
+    </div>
+</form>
+{% endblock %}

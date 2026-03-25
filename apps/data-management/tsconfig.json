@@ -21,8 +21,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@hydroserver/client": ["../hydroserver-ts/src/index.ts"],
-      "@hydroserver/client/*": ["../hydroserver-ts/src/*"]
+      "@hydroserver/client": ["../../packages/hydroserver-ts/src/index.ts"],
+      "@hydroserver/client/*": ["../../packages/hydroserver-ts/src/*"]
     }
   },
   "include": [

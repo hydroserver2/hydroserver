@@ -3,7 +3,7 @@ from typing import Optional
 from ninja import Router, Path, Query
 from django.db import transaction
 from django.http import HttpResponse
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
@@ -21,7 +21,7 @@ unit_service = UnitService()
 
 @unit_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[UnitSummaryResponse] | list[UnitDetailResponse],
         401: str,
@@ -50,7 +50,7 @@ def get_units(
 
 @unit_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: UnitSummaryResponse | UnitDetailResponse,
         400: str,
@@ -96,7 +96,7 @@ def get_unit_types(
 
 @unit_router.get(
     "/{unit_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: UnitSummaryResponse | UnitDetailResponse,
         401: str,
@@ -121,7 +121,7 @@ def get_unit(
 
 @unit_router.patch(
     "/{unit_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: UnitSummaryResponse | UnitDetailResponse,
         400: str,
@@ -152,7 +152,7 @@ def update_unit(
 
 @unit_router.delete(
     "/{unit_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

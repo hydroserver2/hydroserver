@@ -5,11 +5,9 @@ import hs, { createHydroServer, User } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 
-const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL
-  ? ''
-  : import.meta.env.DEV
-  ? 'http://127.0.0.1:8000'
-  : ''
+const hydroServerHost =
+  import.meta.env.VITE_APP_PROXY_BASE_URL ||
+  (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '')
 
 const isHydroServerInitializing = ref(false)
 export const isHydroServerReady = ref(false)
@@ -27,11 +25,14 @@ function recordInitializationError(message: string, error: unknown) {
   }
 }
 
-async function initializeAuthenticatedState() {
+export async function initializeAuthenticatedState() {
   const { user } = storeToRefs(useUserStore())
   const { setWorkspaces } = useWorkspaceStore()
 
   user.value = new User()
+  setWorkspaces([])
+  hasBootstrappedWorkspaces.value = false
+
   if (!hs.session.isAuthenticated) return
 
   const userRequest = hs.user.get().catch((error) => {
@@ -75,6 +76,14 @@ export function startAppInitialization() {
 
   hydroServerInitializationPromise = createHydroServer({
     host: hydroServerHost,
+    oidc: {
+      clientId:
+        import.meta.env.VITE_OIDC_CLIENT_ID || 'hydroserver-data-management',
+      redirectPath: import.meta.env.VITE_OIDC_REDIRECT_PATH || '/callback',
+      postLogoutRedirectPath:
+        import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_PATH || '/',
+      scope: import.meta.env.VITE_OIDC_SCOPE || 'openid profile email',
+    },
   })
     .then(() => {
       isHydroServerReady.value = true

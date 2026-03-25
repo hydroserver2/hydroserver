@@ -8284,14 +8284,13 @@
         "name": "X-Api-Key",
         "type": "apiKey"
       },
-      "BearerAuth": {
-        "scheme": "bearer",
+      "BasicAuth": {
+        "scheme": "basic",
         "type": "http"
       },
-      "SessionAuth": {
-        "in": "cookie",
-        "name": "hs_session",
-        "type": "apiKey"
+      "OIDCAuth": {
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
@@ -8865,13 +8864,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastreams",
@@ -8976,13 +8975,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Datastream",
@@ -9407,13 +9406,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream Tag Keys",
@@ -9469,13 +9468,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream Visualization Bootstrap",
@@ -9529,13 +9528,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Datastream",
@@ -9618,13 +9617,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream",
@@ -9739,13 +9738,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Datastream",
@@ -9799,13 +9798,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream Csv",
@@ -9891,13 +9890,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Remove Datastream File Attachment",
@@ -10014,13 +10013,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream File Attachments",
@@ -10149,13 +10148,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Add Datastream File Attachment",
@@ -10277,13 +10276,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Replace Datastream File Attachment",
@@ -10527,13 +10526,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Observations",
@@ -10648,13 +10647,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Observation",
@@ -10742,13 +10741,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Insert Observations",
@@ -10812,13 +10811,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Observations",
@@ -10893,13 +10892,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Observation",
@@ -10992,13 +10991,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Observation",
@@ -11084,13 +11083,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Remove Datastream Tag",
@@ -11153,13 +11152,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Datastream Tags",
@@ -11250,13 +11249,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Add Datastream Tag",
@@ -11347,13 +11346,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Edit Datastream Tag",
@@ -11616,13 +11615,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Data Connections",
@@ -11702,13 +11701,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Data Connection",
@@ -11773,13 +11772,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Data Connection",
@@ -11862,13 +11861,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Data Connection",
@@ -11959,13 +11958,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Data Connection",
@@ -12144,13 +12143,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Orchestration Systems",
@@ -12255,13 +12254,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Orchestration System",
@@ -12326,13 +12325,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Orchestration System",
@@ -12415,13 +12414,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Orchestration System",
@@ -12536,13 +12535,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Orchestration System",
@@ -13209,13 +13208,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Tasks",
@@ -13295,13 +13294,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Task",
@@ -13366,13 +13365,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Task",
@@ -13455,13 +13454,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Task",
@@ -13552,13 +13551,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Task",
@@ -13649,13 +13648,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Run Task",
@@ -13892,13 +13891,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Task Runs",
@@ -13989,13 +13988,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Task Run",
@@ -14070,13 +14069,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Task Run",
@@ -14145,13 +14144,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Task Run",
@@ -14252,13 +14251,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Task Run",
@@ -14493,13 +14492,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Observed Properties",
@@ -14604,13 +14603,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Observed Property",
@@ -14761,13 +14760,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Observed Property",
@@ -14850,13 +14849,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Observed Property",
@@ -14971,13 +14970,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Observed Property",
@@ -15193,13 +15192,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Processing Levels",
@@ -15304,13 +15303,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Processing Level",
@@ -15375,13 +15374,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Processing Level",
@@ -15464,13 +15463,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Processing Level",
@@ -15585,13 +15584,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Processing Level",
@@ -15807,13 +15806,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Result Qualifiers",
@@ -15896,13 +15895,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Result Qualifier",
@@ -15967,13 +15966,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Result Qualifier",
@@ -16056,13 +16055,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Result Qualifier",
@@ -16166,13 +16165,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Result Qualifier",
@@ -16374,13 +16373,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Roles",
@@ -16465,13 +16464,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Role",
@@ -16742,13 +16741,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Sensors",
@@ -16853,13 +16852,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Sensor",
@@ -17096,13 +17095,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Sensor",
@@ -17185,13 +17184,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Sensor",
@@ -17306,13 +17305,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Sensor",
@@ -17608,13 +17607,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Things",
@@ -17708,13 +17707,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Thing",
@@ -17890,13 +17889,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing Markers",
@@ -18057,13 +18056,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing Site Summaries",
@@ -18230,13 +18229,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing Tag Keys",
@@ -18290,13 +18289,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Thing",
@@ -18379,13 +18378,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing",
@@ -18500,13 +18499,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Thing",
@@ -18592,13 +18591,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Remove Thing File Attachment",
@@ -18715,13 +18714,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing File Attachments",
@@ -18850,13 +18849,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Add Thing File Attachment",
@@ -18978,13 +18977,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Replace Thing File Attachment",
@@ -19070,13 +19069,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Remove Thing Tag",
@@ -19139,13 +19138,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Thing Tags",
@@ -19236,13 +19235,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Add Thing Tag",
@@ -19333,13 +19332,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Edit Thing Tag",
@@ -19574,13 +19573,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Units",
@@ -19674,13 +19673,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Unit",
@@ -19831,13 +19830,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Unit",
@@ -19920,13 +19919,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Unit",
@@ -20041,13 +20040,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Unit",
@@ -20220,13 +20219,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Workspaces",
@@ -20310,10 +20309,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Workspace",
@@ -20367,10 +20369,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Workspace",
@@ -20454,13 +20459,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Workspace",
@@ -20565,10 +20570,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Workspace",
@@ -20733,13 +20741,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Api Keys",
@@ -20832,10 +20840,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Create Api Key",
@@ -20899,10 +20910,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Api Key",
@@ -20995,13 +21009,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Api Key",
@@ -21115,10 +21129,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Api Key",
@@ -21235,10 +21252,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Regenerate Api Key",
@@ -21313,10 +21333,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Remove Collaborator",
@@ -21434,13 +21457,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
+            "OIDCAuth": []
           },
           {
             "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Collaborators",
@@ -21520,10 +21543,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Add Collaborator",
@@ -21603,10 +21629,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Edit Collaborator Role",
@@ -21679,10 +21708,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Reject Workspace Transfer",
@@ -21774,10 +21806,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Transfer Workspace",
@@ -21848,10 +21883,13 @@
         },
         "security": [
           {
-            "SessionAuth": []
+            "OIDCAuth": []
           },
           {
-            "BearerAuth": []
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Accept Workspace Transfer",

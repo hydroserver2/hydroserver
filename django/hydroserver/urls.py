@@ -9,12 +9,17 @@ from interfaces.web.views import index
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
+    path("accounts/", include("interfaces.account.urls")),
+    path("", include("allauth.idp.urls")),
     path("api/auth/", include("interfaces.auth.urls")),
     path("api/", include("interfaces.api.urls")),
 ]
 
 urlpatterns += [
-    re_path(r"^(?!admin/|accounts/|api/|static/|media/).*$", index),
+    re_path(
+        r"^(?!admin/|accounts/|identity/|\.well-known/|api/|static/|media/).*$",
+        index,
+    ),
 ]
 
 urlpatterns += static(

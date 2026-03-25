@@ -3,7 +3,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth
 from domains.etl.services import TaskService
 from interfaces.api.schemas import (TaskSummaryResponse, TaskDetailResponse, TaskPostBody, TaskPatchBody, TaskQueryParameters,
                                     TaskRunResponse)
@@ -15,7 +15,7 @@ task_service = TaskService()
 
 @task_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[TaskSummaryResponse] | list[TaskDetailResponse],
         401: str,
@@ -47,7 +47,7 @@ def get_tasks(
 
 @task_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: TaskDetailResponse,
         400: str,
@@ -73,7 +73,7 @@ def create_task(
 
 @task_router.get(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskSummaryResponse | TaskDetailResponse,
         401: str,
@@ -98,7 +98,7 @@ def get_task(
 
 @task_router.post(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,
         202: TaskRunResponse,
@@ -124,7 +124,7 @@ def run_task(
 
 @task_router.patch(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskDetailResponse,
         400: str,
@@ -153,7 +153,7 @@ def update_task(
 
 @task_router.delete(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

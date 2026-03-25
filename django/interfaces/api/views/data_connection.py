@@ -3,7 +3,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.http.request import HydroServerHttpRequest
-from interfaces.http.auth import bearer_auth, session_auth, apikey_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth
 from domains.etl.services import DataConnectionService
 from interfaces.api.schemas import (DataConnectionSummaryResponse, DataConnectionDetailResponse, DataConnectionPostBody,
                                     DataConnectionPatchBody, DataConnectionQueryParameters)
@@ -15,7 +15,7 @@ data_connection_service = DataConnectionService()
 
 @data_connection_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[DataConnectionSummaryResponse] | list[DataConnectionDetailResponse],
         401: str,
@@ -44,7 +44,7 @@ def get_data_connections(
 
 @data_connection_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         201: DataConnectionDetailResponse,
         400: str,
@@ -69,7 +69,7 @@ def create_data_connection(
 
 @data_connection_router.get(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: DataConnectionSummaryResponse | DataConnectionDetailResponse,
         401: str,
@@ -94,7 +94,7 @@ def get_data_connection(
 
 @data_connection_router.patch(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         200: DataConnectionDetailResponse,
         400: str,
@@ -123,7 +123,7 @@ def update_data_connection(
 
 @data_connection_router.delete(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

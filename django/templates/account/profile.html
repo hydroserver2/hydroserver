@@ -1,0 +1,96 @@
+{% extends "allauth/layouts/manage.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Profile" %}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">{% trans "Profile" %}</h1>
+    <a href="{% url 'account_profile_edit' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Edit" %}</a>
+</div>
+
+<div class="space-y-6">
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Personal Information" %}</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Name" %}</dt>
+                <dd class="text-sm text-gray-900">{{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Email" %}</dt>
+                <dd class="text-sm text-gray-900">{{ user.email }}</dd>
+            </div>
+            {% if user.phone %}
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Phone" %}</dt>
+                <dd class="text-sm text-gray-900">{{ user.phone }}</dd>
+            </div>
+            {% endif %}
+            {% if user.address %}
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Address" %}</dt>
+                <dd class="text-sm text-gray-900">{{ user.address }}</dd>
+            </div>
+            {% endif %}
+            {% if user.link %}
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Website" %}</dt>
+                <dd class="text-sm text-gray-900"><a href="{{ user.link }}" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener">{{ user.link }}</a></dd>
+            </div>
+            {% endif %}
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "User Type" %}</dt>
+                <dd class="text-sm text-gray-900">{{ user.user_type }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Account Type" %}</dt>
+                <dd class="text-sm text-gray-900 capitalize">{{ user.account_type }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    {% if organization %}
+    <section>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Organization" %}</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Name" %}</dt>
+                <dd class="text-sm text-gray-900">{{ organization.name }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Code" %}</dt>
+                <dd class="text-sm text-gray-900">{{ organization.code }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Type" %}</dt>
+                <dd class="text-sm text-gray-900">{{ organization.organization_type }}</dd>
+            </div>
+            {% if organization.description %}
+            <div class="sm:col-span-2">
+                <dt class="text-xs text-gray-500">{% trans "Description" %}</dt>
+                <dd class="text-sm text-gray-900">{{ organization.description }}</dd>
+            </div>
+            {% endif %}
+            {% if organization.link %}
+            <div>
+                <dt class="text-xs text-gray-500">{% trans "Website" %}</dt>
+                <dd class="text-sm text-gray-900"><a href="{{ organization.link }}" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener">{{ organization.link }}</a></dd>
+            </div>
+            {% endif %}
+        </dl>
+    </section>
+    {% endif %}
+
+    <section class="border-t border-gray-200 pt-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Account Management" %}</h2>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'account_change_password' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Change Password" %}</a>
+            <span class="text-gray-300">|</span>
+            <a href="{% url 'account_email' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Manage Email" %}</a>
+            <span class="text-gray-300">|</span>
+            <a href="{% url 'socialaccount_connections' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Connected Accounts" %}</a>
+            <span class="text-gray-300">|</span>
+            <a href="{% url 'account_delete' %}" class="text-sm text-red-600 hover:text-red-800">{% trans "Delete Account" %}</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Authorize Application" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Authorize Application" %}</h1>
+<p class="text-sm text-gray-600 mb-6">
+    {% blocktrans with client_name=form.initial.request|default:"An application" %}
+    An application is requesting access to your HydroServer account.
+    {% endblocktrans %}
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.request }}
+
+    <div class="mb-6">
+        <p class="text-sm font-medium text-gray-700 mb-2">{% trans "Requested permissions:" %}</p>
+        <div class="space-y-2">
+            {% for checkbox in form.scopes %}
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    {{ checkbox.tag }}
+                    {{ checkbox.choice_label }}
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if form.email %}
+        <div class="mb-6">
+            <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Email to share:" %}</label>
+            {{ form.email }}
+        </div>
+    {% endif %}
+
+    <div class="flex gap-3">
+        <button type="submit" name="action" value="grant"
+                class="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            {% trans "Allow" %}
+        </button>
+        <button type="submit" name="action" value="deny"
+                class="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {% trans "Deny" %}
+        </button>
+    </div>
+</form>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.db import transaction
 from sensorthings import SensorThingsExtension
 from sensorthings.factories import SensorThingsEndpointHookFactory
-from interfaces.http.auth import session_auth, bearer_auth, apikey_auth, anonymous_auth
+from interfaces.http.auth import oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from .schemas import (DatastreamListResponse, DatastreamGetResponse, ThingListResponse, ThingGetResponse,
                       LocationListResponse, LocationGetResponse, ObservationListResponse, ObservationGetResponse,
                       ObservationPostBody, ObservationDataArrayPostBody, ObservedPropertyListResponse,
@@ -13,9 +13,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_datastreams",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=DatastreamListResponse,
@@ -23,9 +23,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_datastream",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=DatastreamGetResponse,
@@ -48,18 +48,18 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_features_of_interest",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
         ),
         SensorThingsEndpointHookFactory(
             endpoint_name="get_feature_of_interest",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
         ),
@@ -81,18 +81,18 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_historical_locations",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
         ),
         SensorThingsEndpointHookFactory(
             endpoint_name="get_historical_location",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
         ),
@@ -114,9 +114,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_locations",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=LocationListResponse,
@@ -124,9 +124,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_location",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=LocationGetResponse,
@@ -149,9 +149,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_observations",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ObservationListResponse,
@@ -159,9 +159,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_observation",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ObservationGetResponse,
@@ -170,9 +170,9 @@ hydroserver_extension = SensorThingsExtension(
             endpoint_name="create_observation",
             view_wrapper=transaction.atomic,
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_body_schema=ObservationPostBody,
@@ -181,9 +181,9 @@ hydroserver_extension = SensorThingsExtension(
             endpoint_name="create_observations",
             view_wrapper=transaction.atomic,
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_body_schema=ObservationDataArrayPostBody,
@@ -201,9 +201,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_observed_properties",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ObservedPropertyListResponse,
@@ -211,9 +211,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_observed_property",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ObservedPropertyGetResponse,
@@ -236,9 +236,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_sensors",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=SensorListResponse,
@@ -246,9 +246,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_sensor",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=SensorGetResponse,
@@ -271,9 +271,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="list_things",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ThingListResponse,
@@ -281,9 +281,9 @@ hydroserver_extension = SensorThingsExtension(
         SensorThingsEndpointHookFactory(
             endpoint_name="get_thing",
             view_authentication=[
-                session_auth,
-                bearer_auth,
+                oidc_auth,
                 apikey_auth,
+                basic_auth,
                 anonymous_auth,
             ],
             view_response_schema=ThingGetResponse,

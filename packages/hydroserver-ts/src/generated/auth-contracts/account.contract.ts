@@ -7,7 +7,7 @@ export namespace AccountContract {
   export type QueryParameters = ([Data.operations['interfaces_auth_views_account_get_account']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_auth_views_account_get_account']['parameters']['query']>)
   export type SummaryResponse = never
   export type DetailResponse  = Data.components['schemas']['AccountDetailResponse']
-  export type PostBody        = Data.components['schemas']['AccountPostBody']
+  export type PostBody        = never
   export type PatchBody       = Data.components['schemas']['AccountPatchBody']
   export type DeleteBody      = never
   export const writableKeys = ["address","firstName","lastName","link","middleName","organization","phone","type"] as const
