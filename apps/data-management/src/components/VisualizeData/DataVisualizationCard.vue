@@ -55,24 +55,6 @@
               </template>
               Summary statistics
             </v-tooltip>
-            <v-tooltip bottom :openDelay="0">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  :icon="mdiDownload"
-                  class="plot-rail-btn"
-                  variant="text"
-                  size="small"
-                  block
-                  rounded="0"
-                  aria-label="Download plot image"
-                  data-testid="download-plot-image"
-                  :disabled="!canPlot"
-                  @click="downloadPlotImage"
-                />
-              </template>
-              Download plot
-            </v-tooltip>
           </div>
           <div class="plot-panel">
             <v-window v-model="viewMode" class="plot-window" :touch="false">
@@ -168,10 +150,9 @@ import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
 import {
-  downloadPlotlyImage,
   getXRangeBounds,
 } from '@/utils/plotting/plotly'
-import { mdiChartLine, mdiDownload, mdiSigma } from '@mdi/js'
+import { mdiChartLine, mdiSigma } from '@mdi/js'
 
 const emit = defineEmits(['copy-state'])
 
@@ -456,14 +437,6 @@ const captureAxisRangesFromPlotly = () => {
 const handleCopyState = () => {
   captureAxisRangesFromPlotly()
   emit('copy-state')
-}
-
-const downloadPlotImage = async () => {
-  if (!plotlyRef.value) return
-  await downloadPlotlyImage(plotlyRef.value, {
-    format: 'png',
-    filename: 'plot',
-  })
 }
 
 const updating = computed(() =>

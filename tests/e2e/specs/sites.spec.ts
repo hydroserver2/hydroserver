@@ -151,6 +151,41 @@ test.describe('sites and workspaces', () => {
     await expect(page).toHaveURL(/\/sites$/)
   })
 
+  test('canceling or dismissing site edits discards unsaved changes', async ({
+    page,
+  }) => {
+    const stamp = Date.now()
+    const unsavedProvince = `Unsaved Province ${stamp}`
+    const unsavedCounty = `Unsaved County ${stamp}`
+
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/sites/${fixtures.things.mutablePublic.id}`)
+
+    await page.getByTestId('edit-site-button').click()
+    await page.getByLabel('State/Province/Region').fill(unsavedProvince)
+    await page.getByRole('button', { name: 'Cancel' }).click()
+
+    await expect(page.getByText(unsavedProvince, { exact: true })).toHaveCount(0)
+
+    await page.getByTestId('edit-site-button').click()
+    await expect(page.getByLabel('State/Province/Region')).not.toHaveValue(
+      unsavedProvince
+    )
+    await page.getByRole('button', { name: 'Cancel' }).click()
+
+    await page.getByTestId('edit-site-button').click()
+    await page.getByLabel('County/District').fill(unsavedCounty)
+    await page.keyboard.press('Escape')
+
+    await expect(page.getByText(unsavedCounty, { exact: true })).toHaveCount(0)
+
+    await page.getByTestId('edit-site-button').click()
+    await expect(page.getByLabel('County/District')).not.toHaveValue(
+      unsavedCounty
+    )
+    await page.getByRole('button', { name: 'Cancel' }).click()
+  })
+
   test('owner can edit, toggle privacy for, and delete a site with datastream CRUD', async ({
     page,
     browser,
