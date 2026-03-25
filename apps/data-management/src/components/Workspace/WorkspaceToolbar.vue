@@ -325,6 +325,7 @@ import { computed, ref, watch } from 'vue'
 import WorkspaceFormCard from '@/components/Workspace/WorkspaceFormCard.vue'
 import DeleteWorkspaceCard from './DeleteWorkspaceCard.vue'
 import WorkspaceAccessControl from '@/components/Workspace/AccessControl/WorkspaceAccessControl.vue'
+import { isAppInitializing } from '@/bootstrap/appInitialization'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
 import PermissionTooltip from '../PermissionTooltip.vue'
@@ -361,7 +362,7 @@ const { setWorkspaces } = useWorkspaceStore()
 const { hasPermission, getUserRoleName } = useWorkspacePermissions()
 const { user } = storeToRefs(useUserStore())
 
-const openWorkspaceTable = ref(!workspaces.value.length)
+const openWorkspaceTable = ref(false)
 const openTransferTable = ref(false)
 const openCreate = ref(false)
 const openEdit = ref(false)
@@ -370,9 +371,20 @@ const openAccessControl = ref(false)
 const search = ref<string>('')
 const activeItem = ref<Workspace>({} as Workspace)
 const showWorkspaceHelp = ref(false)
+const initializedWorkspaceTableState = ref(false)
 
 const canCreateWorkspace = computed(() =>
   ['admin', 'standard'].includes(user.value?.accountType ?? '')
+)
+
+watch(
+  [isAppInitializing, workspaces],
+  ([appInitializing, currentWorkspaces]) => {
+    if (initializedWorkspaceTableState.value || appInitializing) return
+    initializedWorkspaceTableState.value = true
+    if (!currentWorkspaces.length) openWorkspaceTable.value = true
+  },
+  { immediate: true }
 )
 
 const selectedWorkspaceId = ref('')
@@ -409,11 +421,13 @@ function openDialog(
  * always be the source of truth. This function syncs the table items with the db and global workspaces.
  */
 const refreshWorkspaces = async (workspace?: Workspace) => {
-  const res = await hs.workspaces.listItems({
+  const keepWorkspaceTableOpen = openWorkspaceTable.value
+  const res = await hs.workspaces.listAllItems({
     is_associated: true,
-    fetch_all: true,
+    expand_related: true,
   })
   setWorkspaces(res)
+  openWorkspaceTable.value = keepWorkspaceTableOpen
 
   if (
     workspace &&
@@ -453,7 +467,7 @@ async function onDelete() {
   const res = await hs.workspaces.delete(activeItem.value.id)
   if (res.ok) {
     Snackbar.success('Workspace deleted')
-    refreshWorkspaces()
+    await refreshWorkspaces()
   } else Snackbar.error(res.message)
 }
 

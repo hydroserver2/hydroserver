@@ -4,6 +4,10 @@ import {
   createRouter,
   createWebHistory,
 } from 'vue-router'
+import {
+  isHydroServerReady,
+  waitForHydroServerInitialization,
+} from '@/bootstrap/appInitialization'
 import { routes } from '@/router/routes'
 import hs from '@hydroserver/client'
 
@@ -30,6 +34,9 @@ function updateDocumentTitle(matched: RouteRecordNormalized[]): void {
 
 router.beforeEach(
   async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    await waitForHydroServerInitialization()
+    if (!isHydroServerReady.value) return false
+
     const { inEmailVerificationFlow, inProviderSignupFlow } = hs.session
 
     if (inEmailVerificationFlow && to.name !== 'VerifyEmail') {
