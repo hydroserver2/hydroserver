@@ -36,7 +36,6 @@ describe('requestInterceptor', () => {
       },
       body: { key: 'value' },
       method: 'GET',
-      credentials: 'include',
     }
 
     const result = await requestInterceptor(options)
@@ -47,6 +46,6 @@ describe('requestInterceptor', () => {
     // Checking properties that shouldn't be changed
     expect(result.headers['Existing-Header']).toBe('Existing-Value')
     expect(result.method).toBe('GET')
-    expect(result.credentials).toBe('include')
+    expect(result.credentials).toBeUndefined()
   })
 })

@@ -51,20 +51,6 @@ type ReplaceExistingRatingCurveResult = {
   data?: ThingFileAttachment
 }
 
-function getCsrfToken() {
-  if (typeof document === 'undefined') return ''
-
-  const decodedCookies = decodeURIComponent(document.cookie || '')
-  for (const part of decodedCookies.split(';')) {
-    const cookie = part.trim()
-    if (cookie.startsWith('csrftoken=')) {
-      return cookie.substring('csrftoken='.length)
-    }
-  }
-
-  return ''
-}
-
 function toNamedUploadFile(file: File | Blob, name: string) {
   if (file instanceof File && file.name === name) {
     return file
@@ -107,11 +93,12 @@ async function readResponseBody(response: Response) {
 }
 
 async function fetchExistingAttachmentBlob(attachment: ThingFileAttachment) {
+  const accessToken = await hs.session.getAccessToken()
   const response = await fetch(attachment.link, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       Accept: 'text/csv, text/plain, application/octet-stream',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   })
 
@@ -145,12 +132,12 @@ export async function replaceExistingRatingCurveAttachment({
     formData.append('description', description)
   }
 
+  const accessToken = await hs.session.getAccessToken()
   const response = await fetch(`${hs.baseRoute}/things/${thingId}/file-attachments`, {
     method: 'PUT',
     body: formData,
-    credentials: 'include',
     headers: {
-      'X-CSRFToken': getCsrfToken(),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   })
   const body = await readResponseBody(response)

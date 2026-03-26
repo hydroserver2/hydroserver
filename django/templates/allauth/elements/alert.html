@@ -4,5 +4,5 @@
     {% elif 'warning' in attrs.tags %}bg-yellow-50 text-yellow-700 border border-yellow-200
     {% elif 'success' in attrs.tags %}bg-green-50 text-green-700 border border-green-200
     {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-    {% slot default %}{% endslot %}
+    {% slot %}{% endslot %}
 </div>

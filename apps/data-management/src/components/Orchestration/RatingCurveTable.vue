@@ -1420,11 +1420,12 @@ async function downloadAttachment(item: DisplayRatingCurve) {
   try {
     let response: Response
     try {
+      const accessToken = await hs.session.getAccessToken()
       response = await fetch(item.link, {
         method: 'GET',
-        credentials: 'include',
         headers: {
           Accept: 'text/csv, text/plain, application/octet-stream',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
       })
     } catch {

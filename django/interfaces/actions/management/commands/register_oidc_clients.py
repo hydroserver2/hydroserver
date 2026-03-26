@@ -69,6 +69,8 @@ class Command(BaseCommand):
                     "redirect_uris": _values_to_text(redirect_uris),
                     "cors_origins": _values_to_text(cors_origins),
                     "allow_uri_wildcards": False,
+                    # Bundled clients are first-party. Do not reuse this default
+                    # for any future third-party client registrations.
                     "skip_consent": True,
                 },
             )

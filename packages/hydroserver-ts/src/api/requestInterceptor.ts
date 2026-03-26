@@ -41,6 +41,5 @@ export async function requestInterceptor(options: any) {
     ...options,
     headers,
     body,
-    credentials: 'include',
   }
 }

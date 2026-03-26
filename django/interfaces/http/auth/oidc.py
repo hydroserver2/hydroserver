@@ -1,3 +1,4 @@
+from django.conf import settings
 from allauth.core.context import request_context
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.tokens import decode_jwt_token
@@ -28,20 +29,31 @@ class OIDCAuth(HttpBearer):
         return access_token.user
 
     def _authenticate_jwt_token(self, request, token):
+        claims = None
+        validated_client_id = None
+
         with request_context(request):
-            claims = decode_jwt_token(
-                token,
-                client_id=None,
-                verify_exp=True,
-                verify_iss=True,
-            )
+            for client_id in self._get_allowed_client_ids():
+                claims = decode_jwt_token(
+                    token,
+                    client_id=client_id,
+                    verify_exp=True,
+                    verify_iss=True,
+                )
+                if claims:
+                    validated_client_id = client_id
+                    break
 
         if not claims or claims.get("token_use") != "access":
             return None
 
         client_id = claims.get("client_id")
         sub = claims.get("sub")
-        if not isinstance(client_id, str) or not isinstance(sub, str):
+        if (
+            not isinstance(client_id, str)
+            or client_id != validated_client_id
+            or not isinstance(sub, str)
+        ):
             return None
 
         client = Client.objects.filter(id=client_id).first()
@@ -50,3 +62,11 @@ class OIDCAuth(HttpBearer):
 
         with request_context(request):
             return get_adapter().get_user_by_sub(client, sub)
+
+    def _get_allowed_client_ids(self):
+        client_ids = []
+        for client_config in getattr(settings, "OIDC_BUNDLED_CLIENTS", {}).values():
+            client_id = client_config.get("id")
+            if isinstance(client_id, str) and client_id not in client_ids:
+                client_ids.append(client_id)
+        return client_ids

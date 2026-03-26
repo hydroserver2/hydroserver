@@ -1,4 +1,6 @@
 import pytest
+from allauth.idp.oidc.adapter import get_adapter
+from allauth.idp.oidc.models import Client, Token
 from interfaces.auth.schemas import (
     AccountPostBody,
     AccountPatchBody,
@@ -75,9 +77,9 @@ def test_update_account(get_principal, principal, account_data):
 @pytest.mark.parametrize(
     "principal, max_queries",
     [
-        ("owner", 79),
-        ("admin", 45),
-        ("limited", 45),
+        ("owner", 82),
+        ("admin", 48),
+        ("limited", 48),
     ],
 )
 def test_delete_account(
@@ -86,3 +88,28 @@ def test_delete_account(
     with django_assert_max_num_queries(max_queries):
         message = account_service.delete(get_principal(principal))
         assert message == "User account has been deleted"
+
+
+def test_delete_account_revokes_oidc_tokens(get_principal):
+    principal = get_principal("owner")
+    client = Client.objects.create(
+        id="test-delete-account-client",
+        name="Delete Account Test Client",
+        type=Client.Type.PUBLIC,
+    )
+    access_token = Token.objects.create(
+        client=client,
+        user=principal,
+        type=Token.Type.ACCESS_TOKEN,
+        hash=get_adapter().hash_token("access-token"),
+    )
+    refresh_token = Token.objects.create(
+        client=client,
+        user=principal,
+        type=Token.Type.REFRESH_TOKEN,
+        hash=get_adapter().hash_token("refresh-token"),
+    )
+
+    account_service.delete(principal)
+
+    assert not Token.objects.filter(id__in=[access_token.id, refresh_token.id]).exists()

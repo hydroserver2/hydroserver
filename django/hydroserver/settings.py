@@ -7,6 +7,7 @@ from pathlib import Path
 from uuid import UUID
 from corsheaders.defaults import default_headers
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 from urllib.parse import urlparse
 from celery.schedules import crontab
 
@@ -36,9 +37,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEPLOYMENT_BACKEND = config("DEPLOYMENT_BACKEND", default="dev")
 
 # SECURITY WARNING: keep the secret key used in production secret!
+DEFAULT_SECRET_KEY = (
+    "django-insecure-zw@4h#ol@0)5fxy=ib6(t&7o4ot9mzvli*d-wd=81kjxqc!5w4"
+)
 SECRET_KEY = config(
     "SECRET_KEY",
-    default="django-insecure-zw@4h#ol@0)5fxy=ib6(t&7o4ot9mzvli*d-wd=81kjxqc!5w4",
+    default=DEFAULT_SECRET_KEY,
 )
 
 # SECURITY WARNING: don"t run with debug turned on in production!
@@ -49,7 +53,19 @@ DEBUG = config("DEBUG", default=DEPLOYMENT_BACKEND == "dev", cast=bool)
 DEFAULT_SUPERUSER_EMAIL = config(
     "DEFAULT_SUPERUSER_EMAIL", default="admin@hydroserver.org"
 )
-DEFAULT_SUPERUSER_PASSWORD = config("DEFAULT_SUPERUSER_PASSWORD", default="pass")
+DEFAULT_SUPERUSER_PASSWORD_FALLBACK = "pass"
+DEFAULT_SUPERUSER_PASSWORD = config(
+    "DEFAULT_SUPERUSER_PASSWORD",
+    default=DEFAULT_SUPERUSER_PASSWORD_FALLBACK,
+)
+
+if DEPLOYMENT_BACKEND in {"aws", "gcp"}:
+    if SECRET_KEY == DEFAULT_SECRET_KEY:
+        raise ImproperlyConfigured("SECRET_KEY must be set in production")
+    if DEFAULT_SUPERUSER_PASSWORD == DEFAULT_SUPERUSER_PASSWORD_FALLBACK:
+        raise ImproperlyConfigured(
+            "DEFAULT_SUPERUSER_PASSWORD must be set in production"
+        )
 
 # Deployment Settings
 
@@ -254,6 +270,7 @@ ACCOUNT_SIGNUP_FORM_CLASS = "domains.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
 
 ACCOUNT_ADAPTER = "domains.iam.auth.adapters.AccountAdapter"
+SOCIALACCOUNT_ADAPTER = "domains.iam.auth.adapters.SocialAccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
 HEADLESS_ONLY = False
@@ -287,10 +304,13 @@ if not IDP_OIDC_PRIVATE_KEY and DEPLOYMENT_BACKEND == "dev":
     _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
     if _dev_key_path.exists():
         IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
+elif not IDP_OIDC_PRIVATE_KEY:
+    raise ImproperlyConfigured("IDP_OIDC_PRIVATE_KEY must be set in production")
 
 IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = 3600   # 1 hour
 IDP_OIDC_ID_TOKEN_EXPIRES_IN = 300        # 5 minutes
 IDP_OIDC_ROTATE_REFRESH_TOKEN = True
+IDP_OIDC_ADAPTER = "interfaces.http.auth.oidc_adapter.HydroServerOIDCAdapter"
 
 DATA_MANAGEMENT_CLIENT_URL = config(
     "DATA_MANAGEMENT_CLIENT_URL",
@@ -408,6 +428,7 @@ PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
 
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 if DEPLOYMENT_BACKEND == "aws":

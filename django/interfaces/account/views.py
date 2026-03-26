@@ -1,8 +1,14 @@
+import logging
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from interfaces.account.forms import ProfileForm, DeleteAccountForm
+from domains.iam.services import AccountService
+
+
+logger = logging.getLogger(__name__)
+account_service = AccountService()
 
 
 @login_required
@@ -38,12 +44,12 @@ def delete_account(request):
             Workspace.objects.filter(owner=user).values_list("name", flat=True)
         )
     except Exception:
-        pass
+        logger.exception("Failed to load owned workspaces")
 
     if request.method == "POST":
         form = DeleteAccountForm(request.POST)
         if form.is_valid():
-            user.delete()
+            account_service.delete(user)
             logout(request)
             messages.success(request, "Your account has been deleted.")
             return redirect("account_login")

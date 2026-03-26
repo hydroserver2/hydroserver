@@ -1,4 +1,4 @@
-import {
+import hs, {
   Datastream,
   ObservedProperty,
   ProcessingLevel,
@@ -49,12 +49,13 @@ interface VisualizationBootstrapPayload {
 }
 
 export async function getVisualizationBootstrap() {
+  const accessToken = await hs.session.getAccessToken()
   const response = await fetch(
     `${apiBaseUrl}/api/data/datastreams/visualization-bootstrap`,
     {
-      credentials: 'include',
       headers: {
         Accept: 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
     }
   )

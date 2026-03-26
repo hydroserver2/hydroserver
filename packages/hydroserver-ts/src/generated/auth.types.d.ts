@@ -72,6 +72,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/{client}/email/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Send Verification Email
+         * @description Send an account verification email.
+         */
+        put: operations["interfaces_auth_views_email_send_verification_email"];
+        /**
+         * Verify Email
+         * @description Verify an account email.
+         */
+        post: operations["interfaces_auth_views_email_verify_email"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -147,6 +171,19 @@ export interface components {
             name?: string;
             /** Type */
             type?: string;
+        };
+        /** VerificationEmailPutBody */
+        VerificationEmailPutBody: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** VerifyEmailPostBody */
+        VerifyEmailPostBody: {
+            /** Key */
+            key: string;
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
@@ -324,6 +361,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    interfaces_auth_views_email_send_verification_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client: "browser" | "app";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationEmailPutBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_auth_views_email_verify_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client: "browser" | "app";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailPostBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

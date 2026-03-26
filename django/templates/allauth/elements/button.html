@@ -7,7 +7,7 @@
    {% else %}
        bg-blue-600 text-white hover:bg-blue-700
    {% endif %}">
-    {% slot default %}{% endslot %}
+    {% slot %}{% endslot %}
 </a>
 {% else %}
 <button type="{{ attrs.type|default:'submit' }}"
@@ -23,6 +23,6 @@
         {% else %}
             bg-blue-600 text-white hover:bg-blue-700
         {% endif %}">
-    {% slot default %}{% endslot %}
+    {% slot %}{% endslot %}
 </button>
 {% endif %}

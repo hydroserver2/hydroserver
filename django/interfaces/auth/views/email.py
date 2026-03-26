@@ -26,7 +26,7 @@ verification_view = {
 
 
 @email_router.put(
-    "verify",
+    "/verify",
     response={
         200: str,
         429: str,
@@ -63,7 +63,7 @@ def send_verification_email(
 
 
 @email_router.post(
-    "verify",
+    "/verify",
     response={
         200: str,
         400: str,

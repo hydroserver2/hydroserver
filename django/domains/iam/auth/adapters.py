@@ -1,6 +1,7 @@
 from django.http import HttpRequest
 from django.conf import settings
-from allauth.account.adapter import DefaultAccountAdapter
+from allauth.account.adapter import DefaultAccountAdapter, get_adapter as get_account_adapter
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from interfaces.auth.schemas import AccountPatchBody
 from domains.iam.services import AccountService
 
@@ -27,4 +28,19 @@ class AccountAdapter(DefaultAccountAdapter):
         user.is_ownership_allowed = settings.ACCOUNT_OWNERSHIP_ENABLED
         user.save()
 
+        return user
+
+
+class SocialAccountAdapter(DefaultSocialAccountAdapter):
+    def save_user(self, request, sociallogin, form=None):
+        user = sociallogin.user
+        user.set_unusable_password()
+
+        account_adapter = get_account_adapter(request)
+        if form:
+            account_adapter.save_user(request, user, form)
+        else:
+            account_adapter.populate_username(request, user)
+
+        sociallogin.save(request)
         return user

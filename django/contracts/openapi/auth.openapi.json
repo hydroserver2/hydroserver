@@ -273,6 +273,33 @@
         "title": "OrganizationPatchBody",
         "type": "object"
       },
+      "VerificationEmailPutBody": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "VerificationEmailPutBody",
+        "type": "object"
+      },
+      "VerifyEmailPostBody": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "VerifyEmailPostBody",
+        "type": "object"
+      },
       "VocabularyQueryParameters": {
         "properties": {
           "order_desc": {
@@ -643,6 +670,144 @@
         "summary": "Get User Types",
         "tags": [
           "Account"
+        ]
+      }
+    },
+    "/api/auth/{client}/email/verify": {
+      "post": {
+        "description": "Verify an account email.",
+        "operationId": "interfaces_auth_views_email_verify_email",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client",
+            "required": true,
+            "schema": {
+              "enum": [
+                "browser",
+                "app"
+              ],
+              "title": "Client",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Verify Email",
+        "tags": [
+          "Email"
+        ]
+      },
+      "put": {
+        "description": "Send an account verification email.",
+        "operationId": "interfaces_auth_views_email_send_verification_email",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client",
+            "required": true,
+            "schema": {
+              "enum": [
+                "browser",
+                "app"
+              ],
+              "title": "Client",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationEmailPutBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Send Verification Email",
+        "tags": [
+          "Email"
         ]
       }
     }

@@ -34,6 +34,7 @@ export class SessionService {
   private readonly _client: HydroServer
   private _manager: UserManager | null = null
   private _user: OidcUser | null = null
+  private _refreshPromise: Promise<OidcUser | null> | null = null
   private _eventsBound = false
 
   constructor(client: HydroServer) {
@@ -56,7 +57,7 @@ export class SessionService {
     const manager = this.getManager()
     let user = await manager.getUser()
     if (this.isExpiredOrExpiring(user)) {
-      user = await this.tryRefreshUser(manager)
+      user = await this.refreshUser(manager)
     }
     if (!user || user.expired) {
       await manager.removeUser()
@@ -79,7 +80,11 @@ export class SessionService {
     this.setUser(user)
 
     const returnTo = (user.state as SigninState | undefined)?.returnTo
-    return typeof returnTo === 'string' && returnTo.startsWith('/')
+    return (
+      typeof returnTo === 'string' &&
+      returnTo.startsWith('/') &&
+      !returnTo.startsWith('//')
+    )
       ? returnTo
       : '/'
   }
@@ -113,7 +118,7 @@ export class SessionService {
     }
 
     if (this.isExpiredOrExpiring(user)) {
-      user = await this.tryRefreshUser(manager)
+      user = await this.refreshUser(manager)
     } else {
       this.setUser(user)
     }
@@ -124,7 +129,7 @@ export class SessionService {
   checkExpiration(): void {
     if (!this._user) return
     if (!this.isExpiredOrExpiring(this._user)) return
-    void this.getAccessToken()
+    void this.getAccessToken().catch(() => {})
   }
 
   private getManager(): UserManager {
@@ -144,7 +149,7 @@ export class SessionService {
         scope: this._client.oidc.scope,
         loadUserInfo: true,
         automaticSilentRenew: false,
-        userStore: new WebStorageStateStore({ store: window.localStorage }),
+        userStore: new WebStorageStateStore({ store: window.sessionStorage }),
       })
     }
 
@@ -156,7 +161,7 @@ export class SessionService {
         this.setUser(null)
       })
       this._manager.events.addAccessTokenExpired(() => {
-        void this.getAccessToken()
+        void this.getAccessToken().catch(() => {})
       })
       this._manager.events.addSilentRenewError((error) => {
         console.error('OIDC silent renew failed', error)
@@ -179,6 +184,15 @@ export class SessionService {
       this._client.emit('session:expired')
       return null
     }
+  }
+
+  private refreshUser(manager: UserManager): Promise<OidcUser | null> {
+    if (!this._refreshPromise) {
+      this._refreshPromise = this.tryRefreshUser(manager).finally(() => {
+        this._refreshPromise = null
+      })
+    }
+    return this._refreshPromise
   }
 
   private setUser(user: OidcUser | null): void {

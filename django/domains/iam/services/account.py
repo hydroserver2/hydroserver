@@ -1,7 +1,9 @@
 from typing import Optional
+from allauth.idp.oidc.models import Token
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from interfaces.api.service import ServiceUtils
 from domains.iam.models import Organization, UserType, OrganizationType
 from interfaces.auth.schemas import AccountPostBody, AccountPatchBody
@@ -91,8 +93,14 @@ class AccountService(ServiceUtils):
         return principal
 
     @staticmethod
+    def revoke_oidc_tokens(principal: User):
+        Token.objects.filter(user=principal).delete()
+
+    @staticmethod
     def delete(principal: User):
-        principal.delete()
+        with transaction.atomic():
+            AccountService.revoke_oidc_tokens(principal)
+            principal.delete()
 
         return "User account has been deleted"
 

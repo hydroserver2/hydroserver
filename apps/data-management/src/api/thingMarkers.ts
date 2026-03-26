@@ -1,13 +1,15 @@
+import hs from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
 
 const apiHost = import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''
 const apiBaseUrl = import.meta.env.VITE_APP_PROXY_BASE_URL || apiHost
 
 export async function listThingMarkers(): Promise<ThingMarker[]> {
+  const accessToken = await hs.session.getAccessToken()
   const response = await fetch(`${apiBaseUrl}/api/data/things/markers`, {
-    credentials: 'include',
     headers: {
       Accept: 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   })
 
