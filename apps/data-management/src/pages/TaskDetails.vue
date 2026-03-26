@@ -631,7 +631,7 @@ const { ensureWorkspaceDatastreams } = orchestrationStore
 
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { setSelectedWorkspaceById } = useWorkspaceStore()
-const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
+const { checkPermissionsByWorkspaceId } = useWorkspacePermissions()
 
 // When opened from the orchestration slide-over, default to showing run history.
 const activePanel = ref<TaskDetailsPanel>(props.embedded ? 'runs' : 'details')
@@ -651,16 +651,13 @@ const canRunNow = computed(() => {
 })
 
 const canEditTask = computed(() => {
-  const workspace = task.value?.workspace
-  if (!workspace) return false
+  const workspaceId = task.value?.workspace?.id
+  if (!workspaceId) return false
 
-  const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
-  if (isAdmin() || isOwner(workspace) || roleName === 'editor') return true
-
-  return hasPermission(
+  return checkPermissionsByWorkspaceId(
+    workspaceId,
     PermissionResource.Workspace,
-    PermissionAction.Edit,
-    workspace
+    PermissionAction.Edit
   )
 })
 const readOnlyTooltip =
