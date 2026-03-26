@@ -2,17 +2,23 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
+from django.templatetags.static import static as static_url
 from django.views.static import serve
+from django.views.generic import RedirectView
 from interfaces.web.views import index
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("accounts/", include("allauth.urls")),
     path("accounts/", include("interfaces.account.urls")),
+    path("accounts/", include("allauth.urls")),
     path("", include("allauth.idp.urls")),
     path("api/auth/", include("interfaces.auth.urls")),
     path("api/", include("interfaces.api.urls")),
+    path(
+        "favicon.ico",
+        RedirectView.as_view(url=static_url("img/dm-favicon.ico"), permanent=True),
+    ),
 ]
 
 urlpatterns += [

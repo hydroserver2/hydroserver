@@ -6,6 +6,15 @@ from django.conf import settings
 from domains.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
 
+def _social_app_public_id(social_app):
+    return social_app.provider_id or social_app.provider
+
+
+def _social_app_icon_key(social_app):
+    provider_key = _social_app_public_id(social_app)
+    return provider_key or social_app.provider
+
+
 @cache_page(60 * 10)
 def index(request):
 
@@ -19,10 +28,10 @@ def index(request):
             "hydroserverSignupEnabled": settings.ACCOUNT_SIGNUP_ENABLED,
             "providers": [
                 {
-                    "id": social_app.provider_id,
+                    "id": _social_app_public_id(social_app),
                     "name": social_app.name,
                     "iconLink": f"{settings.PROXY_BASE_URL if settings.DEPLOYMENT_BACKEND == 'local' else ''}"
-                    f"{static(f'providers/{social_app.provider_id}.png')}",
+                    f"{static(f'providers/{_social_app_icon_key(social_app)}.png')}",
                     "signupEnabled": (
                         True
                         if social_app.settings.get("allowSignUp") is not False

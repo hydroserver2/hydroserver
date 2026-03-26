@@ -21,6 +21,11 @@
     {% element form form=form method="post" action=login_url tags="entrance,login" %}
         {% slot body %}
             {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
             {% element fields form=form unlabeled=True tags="login" %}{% endelement %}
             {{ redirect_field }}
         {% endslot %}
@@ -50,7 +55,7 @@
 
 <p class="text-center text-sm text-gray-600">
     Don't have an account?
-    <a href="{% url 'account_signup' %}" class="font-medium text-primary transition-colors hover:text-primary-dark">
+    <a href="{% if signup_url %}{{ signup_url }}{% else %}{% url 'account_signup' %}{% endif %}" class="font-medium text-primary transition-colors hover:text-primary-dark">
         Sign up
     </a>
 </p>

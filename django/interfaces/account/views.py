@@ -1,4 +1,8 @@
 import logging
+from urllib.parse import unquote
+
+from allauth.account.views import LoginView as AllauthLoginView
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -9,6 +13,34 @@ from domains.iam.services import AccountService
 
 logger = logging.getLogger(__name__)
 account_service = AccountService()
+
+
+def _normalize_redirect_field(query_dict):
+    if REDIRECT_FIELD_NAME not in query_dict:
+        return query_dict
+
+    raw_value = query_dict.get(REDIRECT_FIELD_NAME)
+    if not raw_value:
+        return query_dict
+
+    decoded_value = unquote(raw_value)
+    if decoded_value == raw_value:
+        return query_dict
+
+    normalized = query_dict.copy()
+    normalized[REDIRECT_FIELD_NAME] = decoded_value
+    return normalized
+
+
+class LoginView(AllauthLoginView):
+    def dispatch(self, request, *args, **kwargs):
+        request.GET = _normalize_redirect_field(request.GET)
+        if request.method == "POST":
+            request.POST = _normalize_redirect_field(request.POST)
+        return super().dispatch(request, *args, **kwargs)
+
+
+login = LoginView.as_view()
 
 
 @login_required
@@ -32,6 +64,12 @@ def profile_edit(request):
         form = ProfileForm(instance=request.user)
 
     return render(request, "account/profile_edit.html", {"form": form})
+
+
+@login_required
+def unavailable_account_management(request):
+    messages.info(request, "That account management page is not available in this HydroServer instance.")
+    return redirect("account_profile")
 
 
 @login_required

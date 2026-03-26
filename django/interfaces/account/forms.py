@@ -5,6 +5,17 @@ from domains.iam.models import Organization, UserType, OrganizationType
 User = get_user_model()
 
 
+def _choices_from_vocabulary(queryset, *, selected_value=None, empty_label=None):
+    values = list(queryset.order_by("name").values_list("name", flat=True))
+    if selected_value and selected_value not in values:
+        values.append(selected_value)
+
+    choices = [(value, value) for value in values]
+    if empty_label is not None:
+        choices = [("", empty_label)] + choices
+    return choices
+
+
 class ProfileForm(forms.ModelForm):
     has_organization = forms.BooleanField(required=False, label="Affiliated with an organization")
     org_name = forms.CharField(max_length=255, required=False, label="Organization name")
@@ -25,16 +36,27 @@ class ProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        user_types = UserType.objects.filter(public=True).values_list("name", flat=True)
+        self.fields["first_name"].required = True
+        self.fields["last_name"].required = True
+
         self.fields["user_type"] = forms.ChoiceField(
-            choices=[("", "Select a type...")] + [(t, t) for t in user_types],
+            choices=_choices_from_vocabulary(
+                UserType.objects.all(),
+                selected_value=getattr(self.instance, "user_type", None),
+                empty_label="Select a type...",
+            ),
             required=True,
             label="User type",
         )
 
-        org_types = OrganizationType.objects.filter(public=True).values_list("name", flat=True)
         self.fields["org_type"] = forms.ChoiceField(
-            choices=[("", "Select a type...")] + [(t, t) for t in org_types],
+            choices=_choices_from_vocabulary(
+                OrganizationType.objects.all(),
+                selected_value=(
+                    getattr(getattr(self.instance, "organization", None), "organization_type", None)
+                ),
+                empty_label="Select a type...",
+            ),
             required=False,
             label="Organization type",
         )

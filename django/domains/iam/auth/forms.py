@@ -6,6 +6,17 @@ from domains.iam.models import OrganizationType, UserType
 from domains.iam.services import AccountService
 
 
+def _choices_from_vocabulary(queryset, *, selected_value=None, empty_label=None):
+    values = list(queryset.order_by("name").values_list("name", flat=True))
+    if selected_value and selected_value not in values:
+        values.append(selected_value)
+
+    choices = [(value, value) for value in values]
+    if empty_label is not None:
+        choices = [("", empty_label)] + choices
+    return choices
+
+
 class UserSignupForm(forms.Form):
     first_name = forms.CharField(max_length=30, required=False, label="firstName")
     middle_name = forms.CharField(max_length=30, required=False, label="middleName")
@@ -47,23 +58,25 @@ class UserSignupForm(forms.Form):
             kwargs["data"] = data
         super().__init__(*args, **kwargs)
 
-        user_types = list(UserType.objects.filter(public=True).values_list("name", flat=True))
-        if user_types:
-            self.fields["user_type"] = forms.ChoiceField(
-                choices=[("", "Select a type...")] + [(user_type, user_type) for user_type in user_types],
-                required=True,
-                label="type",
-            )
-
-        organization_types = list(
-            OrganizationType.objects.filter(public=True).values_list("name", flat=True)
+        self.fields["user_type"] = forms.ChoiceField(
+            choices=_choices_from_vocabulary(
+                UserType.objects.all(),
+                selected_value=self.data.get("user_type") if hasattr(self, "data") else None,
+                empty_label="Select a type...",
+            ),
+            required=True,
+            label="type",
         )
-        if organization_types:
-            self.fields["org_type"] = forms.ChoiceField(
-                choices=[("", "Select a type...")] + [(org_type, org_type) for org_type in organization_types],
-                required=False,
-                label="Organization type",
-            )
+
+        self.fields["org_type"] = forms.ChoiceField(
+            choices=_choices_from_vocabulary(
+                OrganizationType.objects.all(),
+                selected_value=self.data.get("org_type") if hasattr(self, "data") else None,
+                empty_label="Select a type...",
+            ),
+            required=False,
+            label="Organization type",
+        )
 
         self.fields["organization"].widget = forms.HiddenInput()
         self._configure_widgets()
