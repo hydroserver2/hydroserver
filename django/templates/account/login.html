@@ -1,0 +1,96 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n static %}
+{% load allauth account socialaccount %}
+
+{% block head_title %}{% trans "Sign In" %}{% endblock head_title %}
+
+{% block content %}
+<div class="flex min-h-screen items-center justify-center bg-app-bg px-4 py-8 sm:px-6">
+    <div class="w-full max-w-md">
+        <div class="rounded-xl bg-white px-6 py-8 shadow-elevation-2 sm:px-8">
+            <div class="space-y-8">
+                <div class="space-y-4 text-center">
+                    <div class="flex justify-center">
+                        <img src="{% static 'img/hydroserver-logo.svg' %}" alt="HydroServer" class="h-16 w-auto">
+                    </div>
+                    <div class="space-y-2">
+                        <h1 class="text-2xl font-medium tracking-tight text-gray-900">Log in to HydroServer</h1>
+                        <p class="text-sm leading-6 text-gray-600">
+                            Sign in to access your HydroServer workspace, data services, and connected applications.
+                        </p>
+                    </div>
+                </div>
+
+                {% if messages %}
+                <div class="space-y-3">
+                    {% for message in messages %}
+                        <div class="rounded-lg border px-4 py-3 text-sm
+                            {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800
+                            {% elif message.tags == 'warning' %}border-yellow-200 bg-yellow-50 text-yellow-800
+                            {% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-800
+                            {% else %}border-blue-200 bg-blue-50 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% get_providers as socialaccount_providers %}
+                {% if socialaccount_providers %}
+                    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+                {% endif %}
+
+                {% if not SOCIALACCOUNT_ONLY %}
+                    {% if socialaccount_providers %}
+                        {% element hr %}{% endelement %}
+                    {% endif %}
+
+                    {% url 'account_login' as login_url %}
+                    {% element form form=form method="post" action=login_url tags="entrance,login" %}
+                        {% slot body %}
+                            {% csrf_token %}
+                            {% element fields form=form unlabeled=True tags="login" %}{% endelement %}
+                            {{ redirect_field }}
+                        {% endslot %}
+                        {% slot actions %}
+                            {% element button type="submit" tags="prominent,login" %}
+                                {% trans "Continue with email" %}
+                            {% endelement %}
+                        {% endslot %}
+                    {% endelement %}
+                {% endif %}
+
+                {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
+                    {% element hr %}{% endelement %}
+                    {% element button_group vertical=True %}
+                        {% if PASSKEY_LOGIN_ENABLED %}
+                            {% element button type="submit" form="mfa_login" id="passkey_login" tags="prominent,login,outline,primary" %}
+                                {% trans "Log in with passkey" %}
+                            {% endelement %}
+                        {% endif %}
+                        {% if LOGIN_BY_CODE_ENABLED %}
+                            {% element button href=request_login_code_url tags="prominent,login,outline,primary" %}
+                                {% trans "Send me a sign-in code" %}
+                            {% endelement %}
+                        {% endif %}
+                    {% endelement %}
+                {% endif %}
+
+                <p class="text-center text-sm text-gray-600">
+                    Don't have an account?
+                    <a href="{% url 'account_signup' %}" class="font-medium text-primary transition-colors hover:text-primary-dark">
+                        Sign up
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+    {{ block.super }}
+    {% if PASSKEY_LOGIN_ENABLED %}
+        {% include "mfa/webauthn/snippets/login_script.html" with button_id="passkey_login" %}
+    {% endif %}
+{% endblock %}
