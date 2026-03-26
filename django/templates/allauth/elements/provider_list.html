@@ -1,4 +1,4 @@
 {% load allauth %}
-<div class="flex flex-col gap-2">
+<div class="flex flex-col {% if origin == 'account/login' %}gap-3{% else %}gap-2{% endif %}">
     {% slot %}{% endslot %}
 </div>

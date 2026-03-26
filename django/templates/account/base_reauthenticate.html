@@ -1,0 +1,27 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load allauth i18n %}
+
+{% block head_title %}{% trans "Confirm Access" %}{% endblock head_title %}
+
+{% block auth_title %}Confirm access{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    Please reauthenticate to safeguard your account.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+{% block reauthenticate_content %}{% endblock %}
+{% if reauthentication_alternatives %}
+    {% element hr %}{% endelement %}
+    <p class="text-center text-sm font-medium text-gray-700">Alternative options</p>
+    {% element button_group vertical=True tags="login" %}
+        {% for alt in reauthentication_alternatives %}
+            {% element button href=alt.url tags="login,outline" %}
+                {{ alt.description }}
+            {% endelement %}
+        {% endfor %}
+    {% endelement %}
+{% endif %}
+{% endblock %}

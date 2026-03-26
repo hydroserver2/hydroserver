@@ -1,0 +1,44 @@
+{% extends "allauth/layouts/base.html" %}
+{% load static %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block messages %}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen items-center justify-center bg-app-bg px-4 py-8 sm:px-6">
+    <div class="w-full {% block auth_width_class %}max-w-md{% endblock %}">
+        <div class="rounded-xl bg-white px-6 py-8 shadow-elevation-2 sm:px-8 {% block auth_card_class %}{% endblock %}">
+            <div class="space-y-8 {% block auth_inner_class %}{% endblock %}">
+                {% block auth_header %}
+                <div class="space-y-4 text-center">
+                    <div class="flex justify-center">
+                        <img src="{% static 'img/hydroserver-logo.svg' %}" alt="HydroServer" class="{% block auth_logo_class %}h-16 w-auto{% endblock %}">
+                    </div>
+                    <div class="space-y-2">
+                        <h1 class="text-2xl font-medium tracking-tight text-gray-900">{% block auth_title %}{% endblock %}</h1>
+                        {% block auth_subtitle %}{% endblock %}
+                    </div>
+                </div>
+                {% endblock %}
+
+                {% if messages %}
+                <div class="space-y-3">
+                    {% for message in messages %}
+                        <div class="rounded-lg border px-4 py-3 text-sm
+                            {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800
+                            {% elif message.tags == 'warning' %}border-yellow-200 bg-yellow-50 text-yellow-800
+                            {% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-800
+                            {% else %}border-blue-200 bg-blue-50 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block auth_body %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Signup" %}{% endblock head_title %}
+{% block auth_width_class %}max-w-5xl{% endblock %}
+
+{% block auth_title %}Complete your sign up{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    {% blocktrans with provider_name=account.get_provider.name site_name=site.name %}You are about to use your {{ provider_name }} account to log in to {{ site_name }}. As a final step, please complete the following form:{% endblocktrans %}
+</p>
+{% endblock %}
+
+{% block auth_body %}
+{% url 'socialaccount_signup' as action_url %}
+{% element form form=form method="post" action=action_url tags="entrance,login" %}
+    {% slot body %}
+        {% csrf_token %}
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+        {% include "account/snippets/signup_form_fields.html" %}
+        {{ redirect_field }}
+    {% endslot %}
+    {% slot actions %}
+        {% element button type="submit" tags="prominent,login" %}
+            {% trans "Create account" %}
+        {% endelement %}
+    {% endslot %}
+{% endelement %}
+{% endblock %}
+
+{% block extra_body %}
+    {{ block.super }}
+    {% if form.has_organization %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const checkbox = document.getElementById("{{ form.has_organization.id_for_label }}");
+            const details = document.getElementById("organization-fields");
+            if (!checkbox || !details) {
+                return;
+            }
+            const toggleOrganizationDetails = function () {
+                details.classList.toggle("hidden", !checkbox.checked);
+            };
+            checkbox.addEventListener("change", toggleOrganizationDetails);
+            toggleOrganizationDetails();
+        });
+    </script>
+    {% endif %}
+{% endblock %}

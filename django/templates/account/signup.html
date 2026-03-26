@@ -1,0 +1,78 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load allauth i18n socialaccount %}
+
+{% block head_title %}{% trans "Signup" %}{% endblock head_title %}
+{% block auth_width_class %}max-w-5xl{% endblock %}
+
+{% block auth_title %}Create your HydroServer account{% endblock %}
+
+{% block auth_subtitle %}
+<div class="space-y-2 text-sm leading-6 text-gray-600">
+    <p>
+        Note that all provided information besides your password may be publicly viewable. This supports collaboration and data integrity across HydroServer.
+    </p>
+    <p>
+        Already have one?
+        <a href="{{ login_url }}" class="font-medium text-primary transition-colors hover:text-primary-dark">Sign in</a>.
+    </p>
+</div>
+{% endblock %}
+
+{% block auth_body %}
+{% get_providers as socialaccount_providers %}
+{% if socialaccount_providers %}
+    <div>
+    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    </div>
+{% endif %}
+
+{% if not SOCIALACCOUNT_ONLY %}
+    {% if socialaccount_providers %}
+        {% element hr %}{% endelement %}
+    {% endif %}
+
+    {% url 'account_signup' as action_url %}
+    {% element form form=form method="post" action=action_url tags="entrance,login" %}
+        {% slot body %}
+            {% csrf_token %}
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+            {% include "account/snippets/signup_form_fields.html" %}
+            {{ redirect_field }}
+        {% endslot %}
+        {% slot actions %}
+            {% element button tags="prominent,login" type="submit" %}
+                {% trans "Create account" %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+{% endif %}
+
+{% if PASSKEY_SIGNUP_ENABLED %}
+    {% element hr %}{% endelement %}
+    {% element button href=signup_by_passkey_url tags="prominent,login,outline,primary" %}
+        {% trans "Sign up using a passkey" %}
+    {% endelement %}
+{% endif %}
+{% endblock %}
+
+{% block extra_body %}
+    {{ block.super }}
+    {% if form.has_organization %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const checkbox = document.getElementById("{{ form.has_organization.id_for_label }}");
+            const details = document.getElementById("organization-fields");
+            if (!checkbox || !details) {
+                return;
+            }
+            const toggleOrganizationDetails = function () {
+                details.classList.toggle("hidden", !checkbox.checked);
+            };
+            checkbox.addEventListener("change", toggleOrganizationDetails);
+            toggleOrganizationDetails();
+        });
+    </script>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Third-Party Login Failure" %}{% endblock head_title %}
+
+{% block auth_title %}Third-party login failure{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    An error occurred while attempting to log in with your third-party account.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<p class="text-center text-sm leading-6 text-gray-600">
+    Please try again or use another sign-in method.
+</p>
+{% endblock %}

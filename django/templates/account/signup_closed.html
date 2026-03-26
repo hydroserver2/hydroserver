@@ -1,0 +1,18 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Sign Up Closed" %}{% endblock head_title %}
+
+{% block auth_title %}Sign up closed{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    New account creation is currently unavailable.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<p class="text-center text-sm leading-6 text-gray-600">
+    Please try again later or contact your administrator for access.
+</p>
+{% endblock %}

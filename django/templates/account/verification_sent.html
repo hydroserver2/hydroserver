@@ -1,0 +1,18 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Verify Your Email Address" %}{% endblock head_title %}
+
+{% block auth_title %}Verify your email{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    We sent a verification email to the address you used to sign up.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<p class="text-center text-sm leading-6 text-gray-600">
+    Follow the link in that email to finish creating your account. If you do not see it in your inbox, check your spam folder.
+</p>
+{% endblock %}

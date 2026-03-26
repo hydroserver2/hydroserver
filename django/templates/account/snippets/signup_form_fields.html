@@ -1,0 +1,167 @@
+{% if form.non_field_errors %}
+<div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {% for error in form.non_field_errors %}
+        <p>{{ error }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid gap-4 md:grid-cols-3">
+    <div class="space-y-1.5">
+        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">First name</label>
+        {{ form.first_name }}
+        {% for error in form.first_name.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    <div class="space-y-1.5">
+        <label for="{{ form.middle_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Middle name</label>
+        {{ form.middle_name }}
+        {% for error in form.middle_name.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    <div class="space-y-1.5">
+        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Last name</label>
+        {{ form.last_name }}
+        {% for error in form.last_name.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% if form.email %}
+<div class="space-y-1.5">
+    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email</label>
+    {{ form.email }}
+    {% for error in form.email.errors %}
+        <p class="text-xs text-red-600">{{ error }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if form.password1 or form.password2 %}
+<div class="grid gap-4 md:grid-cols-2">
+    {% if form.password1 %}
+    <div class="space-y-1.5">
+        <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">Password</label>
+        <input
+            type="password"
+            name="{{ form.password1.html_name }}"
+            id="{{ form.password1.id_for_label }}"
+            placeholder="Password"
+            {% if form.password1.field.required %}required{% endif %}
+            {% if form.password1.field.widget.attrs.autocomplete %}autocomplete="{{ form.password1.field.widget.attrs.autocomplete }}"{% endif %}
+            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-50 disabled:text-gray-500 {% if form.password1.errors %}border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+        {% for error in form.password1.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if form.password2 %}
+    <div class="space-y-1.5">
+        <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">Confirm password</label>
+        <input
+            type="password"
+            name="{{ form.password2.html_name }}"
+            id="{{ form.password2.id_for_label }}"
+            placeholder="Confirm password"
+            {% if form.password2.field.required %}required{% endif %}
+            {% if form.password2.field.widget.attrs.autocomplete %}autocomplete="{{ form.password2.field.widget.attrs.autocomplete }}"{% endif %}
+            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-50 disabled:text-gray-500 {% if form.password2.errors %}border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+        {% for error in form.password2.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="grid gap-4 md:grid-cols-2">
+    <div class="space-y-1.5">
+        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Phone number</label>
+        {{ form.phone }}
+        {% for error in form.phone.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    <div class="space-y-1.5">
+        <label for="{{ form.user_type.id_for_label }}" class="block text-sm font-medium text-gray-700">User type</label>
+        {{ form.user_type }}
+        {% for error in form.user_type.errors %}
+            <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="space-y-1.5">
+    <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">Address</label>
+    {{ form.address }}
+    {% for error in form.address.errors %}
+        <p class="text-xs text-red-600">{{ error }}</p>
+    {% endfor %}
+</div>
+
+<div class="space-y-1.5">
+    <label for="{{ form.link.id_for_label }}" class="block text-sm font-medium text-gray-700">User link</label>
+    {{ form.link }}
+    {% for error in form.link.errors %}
+        <p class="text-xs text-red-600">{{ error }}</p>
+    {% endfor %}
+</div>
+
+{% if form.has_organization %}
+<div class="rounded-lg border border-gray-200 bg-gray-50/70 px-4 py-4">
+    <label for="{{ form.has_organization.id_for_label }}" class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-800">
+        {{ form.has_organization }}
+        <span>Affiliated with an organization</span>
+    </label>
+    {% for error in form.has_organization.errors %}
+        <p class="mt-2 text-xs text-red-600">{{ error }}</p>
+    {% endfor %}
+
+    <div id="organization-fields" class="mt-4 space-y-4 {% if not form.has_organization.value %}hidden{% endif %}">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-1.5">
+                <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization name</label>
+                {{ form.org_name }}
+                {% for error in form.org_name.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="space-y-1.5">
+                <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization code</label>
+                {{ form.org_code }}
+                {% for error in form.org_code.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-1.5">
+                <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization type</label>
+                {{ form.org_type }}
+                {% for error in form.org_type.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="space-y-1.5">
+                <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization link</label>
+                {{ form.org_link }}
+                {% for error in form.org_link.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="space-y-1.5">
+            <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization description</label>
+            {{ form.org_description }}
+            {% for error in form.org_description.errors %}
+                <p class="text-xs text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

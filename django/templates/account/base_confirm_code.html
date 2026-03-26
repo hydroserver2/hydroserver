@@ -1,0 +1,85 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth account %}
+
+{% block auth_title %}
+    {% block title %}{% endblock %}
+{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    {% setvar recipient %}{% block recipient %}{% endblock %}{% endsetvar %}
+    {% blocktranslate %}We've sent a code to {{ recipient }}. The code expires shortly, so please enter it soon.{% endblocktranslate %}
+</p>
+{% endblock %}
+
+{% block auth_body %}
+{% setvar action_url %}{% block action_url %}{% endblock %}{% endsetvar %}
+{% setvar extra_tags %}{% block extra_tags %}{% endblock %}{% endsetvar %}
+{% setvar form_tags %}entrance,login,{{ extra_tags }}{% endsetvar %}
+{% setvar submit_button_tags %}prominent,login,confirm,{{ extra_tags }}{% endsetvar %}
+
+{% element form form=verify_form method="post" action=action_url tags=form_tags %}
+    {% slot body %}
+        {% csrf_token %}
+        {% element fields form=verify_form unlabeled=True tags="login" %}{% endelement %}
+        {{ redirect_field }}
+    {% endslot %}
+    {% slot actions %}
+        {% element button_group vertical=True tags="login" %}
+            {% element button type="submit" tags=submit_button_tags %}
+                {% translate "Confirm" %}
+            {% endelement %}
+            {% if can_resend %}
+                {% element button form="resend" tags="login,outline,resend" %}
+                    {% translate "Request new code" %}
+                {% endelement %}
+            {% endif %}
+            {% if cancel_url %}
+                {% element button href=cancel_url tags="login,outline,cancel" %}
+                    {% translate "Cancel" %}
+                {% endelement %}
+            {% else %}
+                {% element button type="submit" form="logout-from-stage" tags="login,outline,cancel" %}
+                    {% translate "Cancel" %}
+                {% endelement %}
+            {% endif %}
+        {% endelement %}
+    {% endslot %}
+{% endelement %}
+
+<form id="resend" method="post" action="{{ action_url }}">
+    <input type="hidden" name="action" value="resend">
+    {{ redirect_field }}
+    {% csrf_token %}
+</form>
+
+{% if not cancel_url %}
+    <form id="logout-from-stage" method="post" action="{% url 'account_logout' %}">
+        <input type="hidden" name="next" value="{% url 'account_login' %}">
+        {% csrf_token %}
+    </form>
+{% endif %}
+
+{% setvar summary_ %}{% block change_title %}{% endblock %}{% endsetvar %}
+{% if can_change %}
+    {% element details open=change_form.errors %}
+        {% slot summary %}
+            {{ summary_ }}
+        {% endslot %}
+        {% slot body %}
+            {% element form form=change_form method="post" action=action_url tags="entrance,login" %}
+                {% slot body %}
+                    {% csrf_token %}
+                    {% element fields form=change_form unlabeled=True tags="login" %}{% endelement %}
+                    {{ redirect_field }}
+                {% endslot %}
+                {% slot actions %}
+                    {% element button name="action" value="change" type="submit" tags="prominent,login" %}
+                        {% trans "Change" %}
+                    {% endelement %}
+                {% endslot %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+{% endif %}
+{% endblock %}

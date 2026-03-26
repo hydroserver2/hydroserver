@@ -1,0 +1,17 @@
+{% extends "allauth/layouts/auth_card.html" %} {% load i18n allauth %} {% block
+head_title %}{% trans "Sign In" %}{% endblock head_title %} {% block auth_title
+%} {% if process == "connect" %} {% blocktrans with provider.name as provider
+%}Connect {{ provider }}{% endblocktrans %} {% else %} {% blocktrans with
+provider.name as provider %}Sign In Via {{ provider }}{% endblocktrans %} {%
+endif %} {% endblock %} {% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+  {% if process == "connect" %} {% blocktrans with provider.name as provider
+  %}You are about to connect a new third-party account from {{ provider }}.{%
+  endblocktrans %} {% else %} {% blocktrans with provider.name as provider %}You
+  are about to sign in using a third-party account from {{ provider }}.{%
+  endblocktrans %} {% endif %}
+</p>
+{% endblock %} {% block auth_body %} {% element form method="post"
+no_visible_fields=True tags="entrance,login" %} {% slot actions %} {% csrf_token
+%} {% element button type="submit" tags="prominent,login" %} {% trans "Continue"
+%} {% endelement %} {% endslot %} {% endelement %} {% endblock %} =

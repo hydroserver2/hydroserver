@@ -1,0 +1,19 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Login Cancelled" %}{% endblock head_title %}
+
+{% block auth_title %}Login cancelled{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    You cancelled third-party sign in before it was completed.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<p class="text-center text-sm leading-6 text-gray-600">
+    If this was a mistake, return to
+    <a href="{% url 'account_login' %}" class="font-medium text-primary transition-colors hover:text-primary-dark">sign in</a>.
+</p>
+{% endblock %}

@@ -45,6 +45,27 @@ def signup_payload(email: str):
     }
 
 
+def flat_signup_payload(email: str):
+    return {
+        "email": email,
+        "password1": "HydroServer123!",
+        "password2": "HydroServer123!",
+        "firstName": "New",
+        "middleName": "Flow",
+        "lastName": "User",
+        "phone": "4355550100",
+        "address": "123 Test Street",
+        "link": "https://example.com/profile",
+        "type": "Other",
+        "has_organization": "on",
+        "org_name": "Test Organization",
+        "org_code": "ORG",
+        "org_description": "Organization captured during signup.",
+        "org_link": "https://example.com/org",
+        "org_type": "Other",
+    }
+
+
 def assert_extended_profile(user):
     user.refresh_from_db()
     assert user.first_name == "New"
@@ -66,6 +87,20 @@ def test_account_signup_saves_extended_profile_fields(settings):
     request = build_request("/accounts/signup/")
     email = f"signup-{uuid4().hex}@example.com"
     form = SignupForm(data=signup_payload(email))
+
+    assert form.is_valid(), form.errors
+
+    user = form.save(request)
+
+    assert user.email == email
+    assert user.is_ownership_allowed == settings.ACCOUNT_OWNERSHIP_ENABLED
+    assert_extended_profile(user)
+
+
+def test_account_signup_saves_flat_organization_fields(settings):
+    request = build_request("/accounts/signup/")
+    email = f"signup-flat-{uuid4().hex}@example.com"
+    form = SignupForm(data=flat_signup_payload(email))
 
     assert form.is_valid(), form.errors
 

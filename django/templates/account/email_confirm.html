@@ -1,0 +1,44 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n account allauth %}
+
+{% block head_title %}{% trans "Confirm Email Address" %}{% endblock head_title %}
+
+{% block auth_title %}Confirm your email{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    Confirm your email address to continue using HydroServer.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+{% if confirmation %}
+    {% user_display confirmation.email_address.user as user_display %}
+    {% if can_confirm %}
+        <p class="text-center text-sm leading-6 text-gray-600">
+            Please confirm that <a href="mailto:{{ confirmation.email_address.email }}" class="font-medium text-primary transition-colors hover:text-primary-dark">{{ confirmation.email_address.email }}</a>
+            belongs to {{ user_display }}.
+        </p>
+        {% url 'account_confirm_email' confirmation.key as action_url %}
+        {% element form method="post" action=action_url tags="entrance,login" %}
+            {% slot actions %}
+                {% csrf_token %}
+                {{ redirect_field }}
+                {% element button type="submit" tags="prominent,login" %}
+                    {% trans "Confirm" %}
+                {% endelement %}
+            {% endslot %}
+        {% endelement %}
+    {% else %}
+        <p class="text-center text-sm leading-6 text-gray-600">
+            Unable to confirm this address because it has already been verified by a different account.
+        </p>
+    {% endif %}
+{% else %}
+    {% url 'account_email' as email_url %}
+    <p class="text-center text-sm leading-6 text-gray-600">
+        This confirmation link expired or is invalid. Please
+        <a href="{{ email_url }}" class="font-medium text-primary transition-colors hover:text-primary-dark">request a new confirmation email</a>.
+    </p>
+{% endif %}
+{% endblock %}

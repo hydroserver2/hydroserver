@@ -2,95 +2,132 @@
 {% load i18n %}
 {% block head_title %}{% trans "Profile" %}{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">{% trans "Profile" %}</h1>
-    <a href="{% url 'account_profile_edit' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Edit" %}</a>
+
+<div class="flex items-start justify-between mb-8">
+    <div class="flex items-center gap-4">
+        <div class="flex items-center justify-center w-14 h-14 rounded-full text-white text-xl font-medium shrink-0"
+             style="background-color: #272e3d;">
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+        </div>
+        <div>
+            <h1 class="text-xl font-medium text-gray-900">
+                {{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}
+            </h1>
+            <p class="text-sm text-gray-500">{{ user.email }}</p>
+        </div>
+    </div>
+    <a href="{% url 'account_profile_edit' %}"
+       class="inline-flex items-center gap-1.5 rounded-full border border-primary text-primary px-4 py-1.5 text-sm font-medium hover:bg-primary-light transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+        </svg>
+        {% trans "Edit" %}
+    </a>
 </div>
 
-<div class="space-y-6">
+<div class="space-y-7">
+
     <section>
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Personal Information" %}</h2>
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-            <div>
-                <dt class="text-xs text-gray-500">{% trans "Name" %}</dt>
-                <dd class="text-sm text-gray-900">{{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</dd>
-            </div>
-            <div>
-                <dt class="text-xs text-gray-500">{% trans "Email" %}</dt>
-                <dd class="text-sm text-gray-900">{{ user.email }}</dd>
-            </div>
+        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{% trans "Personal Information" %}</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             {% if user.phone %}
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Phone" %}</dt>
-                <dd class="text-sm text-gray-900">{{ user.phone }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Phone" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ user.phone }}</dd>
             </div>
             {% endif %}
             {% if user.address %}
-            <div>
-                <dt class="text-xs text-gray-500">{% trans "Address" %}</dt>
-                <dd class="text-sm text-gray-900">{{ user.address }}</dd>
+            <div class="sm:col-span-2">
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Address" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ user.address }}</dd>
             </div>
             {% endif %}
             {% if user.link %}
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Website" %}</dt>
-                <dd class="text-sm text-gray-900"><a href="{{ user.link }}" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener">{{ user.link }}</a></dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Website" %}</dt>
+                <dd class="text-sm font-medium">
+                    <a href="{{ user.link }}" class="text-primary hover:text-primary-dark" target="_blank" rel="noopener">{{ user.link }}</a>
+                </dd>
             </div>
             {% endif %}
             <div>
-                <dt class="text-xs text-gray-500">{% trans "User Type" %}</dt>
-                <dd class="text-sm text-gray-900">{{ user.user_type }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "User Type" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ user.user_type }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Account Type" %}</dt>
-                <dd class="text-sm text-gray-900 capitalize">{{ user.account_type }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Account Type" %}</dt>
+                <dd class="text-sm font-medium text-gray-800 capitalize">{{ user.account_type }}</dd>
             </div>
         </dl>
     </section>
 
     {% if organization %}
-    <section>
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Organization" %}</h2>
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+    <section class="border-t border-gray-100 pt-7">
+        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{% trans "Organization" %}</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Name" %}</dt>
-                <dd class="text-sm text-gray-900">{{ organization.name }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Name" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ organization.name }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Code" %}</dt>
-                <dd class="text-sm text-gray-900">{{ organization.code }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Code" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ organization.code }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Type" %}</dt>
-                <dd class="text-sm text-gray-900">{{ organization.organization_type }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Type" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ organization.organization_type }}</dd>
             </div>
             {% if organization.description %}
             <div class="sm:col-span-2">
-                <dt class="text-xs text-gray-500">{% trans "Description" %}</dt>
-                <dd class="text-sm text-gray-900">{{ organization.description }}</dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Description" %}</dt>
+                <dd class="text-sm font-medium text-gray-800">{{ organization.description }}</dd>
             </div>
             {% endif %}
             {% if organization.link %}
             <div>
-                <dt class="text-xs text-gray-500">{% trans "Website" %}</dt>
-                <dd class="text-sm text-gray-900"><a href="{{ organization.link }}" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener">{{ organization.link }}</a></dd>
+                <dt class="text-xs text-gray-400 mb-0.5">{% trans "Website" %}</dt>
+                <dd class="text-sm font-medium">
+                    <a href="{{ organization.link }}" class="text-primary hover:text-primary-dark" target="_blank" rel="noopener">{{ organization.link }}</a>
+                </dd>
             </div>
             {% endif %}
         </dl>
     </section>
     {% endif %}
 
-    <section class="border-t border-gray-200 pt-6">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{% trans "Account Management" %}</h2>
-        <div class="flex flex-wrap gap-3">
-            <a href="{% url 'account_change_password' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Change Password" %}</a>
-            <span class="text-gray-300">|</span>
-            <a href="{% url 'account_email' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Manage Email" %}</a>
-            <span class="text-gray-300">|</span>
-            <a href="{% url 'socialaccount_connections' %}" class="text-sm text-blue-600 hover:text-blue-800">{% trans "Connected Accounts" %}</a>
-            <span class="text-gray-300">|</span>
-            <a href="{% url 'account_delete' %}" class="text-sm text-red-600 hover:text-red-800">{% trans "Delete Account" %}</a>
+    <section class="border-t border-gray-100 pt-7">
+        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{% trans "Account Management" %}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a href="{% url 'account_change_password' %}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                </svg>
+                {% trans "Change Password" %}
+            </a>
+            <a href="{% url 'account_email' %}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+                </svg>
+                {% trans "Manage Email" %}
+            </a>
+            <a href="{% url 'socialaccount_connections' %}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-primary hover:text-primary hover:bg-primary-light transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/>
+                </svg>
+                {% trans "Connected Accounts" %}
+            </a>
+            <a href="{% url 'account_delete' %}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 text-sm text-red-600 hover:border-red-400 hover:bg-red-50 transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                </svg>
+                {% trans "Delete Account" %}
+            </a>
         </div>
     </section>
+
 </div>
 {% endblock %}

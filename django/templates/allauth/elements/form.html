@@ -2,7 +2,7 @@
 <form {% if attrs.method %}method="{{ attrs.method }}"{% endif %}
       {% if attrs.action %}action="{{ attrs.action }}"{% endif %}
       {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
-      class="space-y-2">
+      class="{% if attrs.tags and 'login' in attrs.tags %}space-y-4{% else %}space-y-2{% endif %}">
     {% slot body %}{% endslot %}
     {% slot actions %}{% endslot %}
 </form>

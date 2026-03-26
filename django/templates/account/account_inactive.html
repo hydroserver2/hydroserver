@@ -1,0 +1,18 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% translate "Account Inactive" %}{% endblock head_title %}
+
+{% block auth_title %}Account inactive{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    This account is currently inactive.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<p class="text-center text-sm leading-6 text-gray-600">
+    Contact your administrator or support team if you believe this is a mistake.
+</p>
+{% endblock %}

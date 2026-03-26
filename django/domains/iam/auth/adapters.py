@@ -1,5 +1,6 @@
 from django.http import HttpRequest
 from django.conf import settings
+from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter, get_adapter as get_account_adapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from interfaces.auth.schemas import AccountPatchBody
@@ -7,6 +8,9 @@ from domains.iam.services import AccountService
 
 
 class AccountAdapter(DefaultAccountAdapter):
+    def get_logout_redirect_url(self, request: HttpRequest) -> str:
+        return reverse("account_login")
+
     def is_open_for_signup(self, request: HttpRequest):
         return settings.ACCOUNT_SIGNUP_ENABLED
 

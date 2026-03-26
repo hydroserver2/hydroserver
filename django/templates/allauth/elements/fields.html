@@ -1,8 +1,25 @@
 {% load allauth %}
 {% for field in attrs.form %}
-    {% element field type=field.widget_type id=field.html_name name=field.html_name value=field.value required=field.field.required errors=field.errors placeholder=field.placeholder help_text=field.help_text autocomplete=field.autocomplete checked=field.checked disabled=field.disabled readonly=field.readonly %}
-        {% slot label %}{{ field.label }}{% endslot %}
-        {% slot value %}{{ field.value|default:"" }}{% endslot %}
-        {% slot help_text %}{{ field.help_text|default:"" }}{% endslot %}
-    {% endelement %}
+    {% if attrs.unlabeled %}
+        {% if field.placeholder %}
+            {% setvar placeholder %}{{ field.placeholder }}{% endsetvar %}
+        {% else %}
+            {% setvar placeholder %}{{ field.label }}{% endsetvar %}
+        {% endif %}
+    {% else %}
+        {% setvar placeholder %}{{ field.placeholder }}{% endsetvar %}
+    {% endif %}
+    {% if attrs.tags and 'login' in attrs.tags %}
+        {% element field type=field.widget_type id=field.html_name name=field.html_name value=field.value required=field.field.required errors=field.errors placeholder=placeholder help_text=field.help_text autocomplete=field.autocomplete checked=field.checked disabled=field.disabled readonly=field.readonly unlabeled=attrs.unlabeled tags="login" %}
+            {% slot label %}{{ field.label }}{% endslot %}
+            {% slot value %}{{ field.value|default:"" }}{% endslot %}
+            {% slot help_text %}{{ field.help_text|default:"" }}{% endslot %}
+        {% endelement %}
+    {% else %}
+        {% element field type=field.widget_type id=field.html_name name=field.html_name value=field.value required=field.field.required errors=field.errors placeholder=placeholder help_text=field.help_text autocomplete=field.autocomplete checked=field.checked disabled=field.disabled readonly=field.readonly unlabeled=attrs.unlabeled %}
+            {% slot label %}{{ field.label }}{% endslot %}
+            {% slot value %}{{ field.value|default:"" }}{% endslot %}
+            {% slot help_text %}{{ field.help_text|default:"" }}{% endslot %}
+        {% endelement %}
+    {% endif %}
 {% endfor %}

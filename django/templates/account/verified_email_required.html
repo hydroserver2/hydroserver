@@ -1,0 +1,23 @@
+{% extends "allauth/layouts/auth_card.html" %}
+{% load i18n allauth %}
+
+{% block head_title %}{% trans "Verify Your Email Address" %}{% endblock head_title %}
+
+{% block auth_title %}Verify your email{% endblock %}
+
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    This part of HydroServer requires a verified email address.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<div class="space-y-4 text-sm leading-6 text-gray-600">
+    <p>We have sent a verification email to your inbox. Click the link in that email to continue.</p>
+    <p>If you do not see it in your main inbox, check your spam folder.</p>
+    <p>
+        Need to change the address?
+        <a href="{% url 'account_email' %}" class="font-medium text-primary transition-colors hover:text-primary-dark">Update your email</a>.
+    </p>
+</div>
+{% endblock %}

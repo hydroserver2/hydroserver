@@ -1,5 +1,21 @@
-{% load allauth %}
+{% load allauth static %}
+{% with icon_id=attrs.icon_id|default:attrs.provider_id %}
 <a href="{{ attrs.href }}"
-   class="inline-flex items-center justify-center w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-    Continue with {{ attrs.name }}
+   class="grid min-h-14 w-full grid-cols-[1.5rem_minmax(0,1fr)_1.5rem] items-center gap-3 rounded-xl border border-gray-300 bg-white px-5 py-4 text-base font-medium text-gray-700 shadow-sm transition-all duration-150 hover:border-primary/30 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white">
+    <span class="flex h-6 w-6 items-center justify-center">
+        {% if icon_id == 'google' %}
+            <img src="{% static 'providers/google.png' %}" alt="" class="h-5 w-5" loading="lazy">
+        {% elif icon_id == 'utahid' %}
+            <img src="{% static 'providers/utahid.png' %}" alt="" class="h-5 w-5 rounded-sm" loading="lazy">
+        {% elif icon_id == 'orcid' %}
+            <img src="{% static 'providers/orcid.png' %}" alt="" class="h-5 w-5" loading="lazy">
+        {% elif icon_id == 'orcidsandbox' %}
+            <img src="{% static 'providers/orcidsandbox.png' %}" alt="" class="h-5 w-5" loading="lazy">
+        {% elif icon_id == 'hydroshare' %}
+            <img src="{% static 'providers/hydroshare.png' %}" alt="" class="h-5 w-5 rounded-sm" loading="lazy">
+        {% endif %}
+    </span>
+    <span class="truncate text-center">Continue with {{ attrs.name }}</span>
+    <span aria-hidden="true" class="block h-6 w-6"></span>
 </a>
+{% endwith %}

@@ -1,10 +1,84 @@
 {% extends "allauth/layouts/base.html" %}
+{% load static i18n %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block messages %}{% endblock %}
+
 {% block content %}
-<div class="flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-        <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-8">
-            {{ block.super }}
+<div class="flex min-h-screen">
+
+    {# ── Left panel: white, logo + form ────────────────────────────────── #}
+    <div class="flex flex-col w-full lg:w-5/12 xl:w-120 bg-white">
+
+        {# Logo #}
+        <div class="px-10 pt-8 shrink-0">
+            <a href="/" class="inline-flex items-center gap-2 no-underline">
+                <img src="{% static 'img/hydroserver-logo.svg' %}" alt="HydroServer" class="h-8 w-auto">
+                <span class="font-medium text-gray-800 tracking-tight">HydroServer</span>
+            </a>
         </div>
+
+        {# Messages (repositioned from base layout) #}
+        {% if messages %}
+        <div class="px-10 pt-5 space-y-2 shrink-0">
+            {% for message in messages %}
+                <div class="rounded-xl px-4 py-3 text-sm flex items-start gap-2
+                    {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+                    {% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200
+                    {% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
+                    {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Form card centered in remaining space #}
+        <div class="flex-1 flex items-center justify-center px-10 py-10">
+            <div class="w-full max-w-sm">
+                <div class="bg-white rounded-2xl shadow-elevation-2 px-8 pt-7 pb-8">
+                    <div class="flex justify-center mb-6">
+                        <img src="{% static 'img/hydroserver-logo.svg' %}" alt="HydroServer" class="h-14 w-auto">
+                    </div>
+                    {{ block.super }}
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    {# ── Right panel: water-themed decorative background ───────────────── #}
+    <div class="hidden lg:flex flex-1 relative overflow-hidden">
+
+        {# Gradient base #}
+        <div class="absolute inset-0" style="background: linear-gradient(150deg, #0d1b2e 0%, #1a237e 30%, #1565c0 58%, #0288d1 78%, #29b6f6 100%);"></div>
+
+        {# Layered SVG wave shapes #}
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 700 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            {# Upper arc #}
+            <path d="M0,180 C120,80 300,240 700,140 L700,0 L0,0 Z" fill="rgba(41,182,246,0.18)"/>
+            {# Mid wave 1 #}
+            <path d="M0,360 C180,240 420,440 700,300 L700,900 L0,900 Z" fill="rgba(33,150,243,0.22)"/>
+            {# Mid wave 2 #}
+            <path d="M0,500 C200,390 460,560 700,430 L700,900 L0,900 Z" fill="rgba(41,182,246,0.16)"/>
+            {# Lower wave #}
+            <path d="M0,660 C240,560 500,700 700,590 L700,900 L0,900 Z" fill="rgba(100,181,246,0.12)"/>
+            {# Subtle radial glow #}
+            <ellipse cx="500" cy="280" rx="280" ry="200" fill="rgba(33,150,243,0.13)" transform="rotate(-15 500 280)"/>
+        </svg>
+
+        {# Tagline #}
+        <div class="relative z-10 flex flex-col items-start justify-end w-full px-14 pb-14">
+            <p class="text-2xl font-light text-white leading-snug mb-2">
+                Water data,<br>managed with clarity.
+            </p>
+            <p class="text-sm text-blue-200">
+                HydroServer — open-source hydrological data management
+            </p>
+        </div>
+
+    </div>
+
 </div>
 {% endblock %}
