@@ -1,116 +1,200 @@
-{% extends "allauth/layouts/manage.html" %}
+{% extends "allauth/layouts/auth_card.html" %}
 {% load i18n %}
+
 {% block head_title %}{% trans "Edit Profile" %}{% endblock %}
-{% block content %}
+{% block auth_width_class %}max-w-5xl{% endblock %}
 
-<div class="flex items-center gap-3 mb-8">
-    <a href="{% url 'account_profile' %}"
-       class="text-gray-400 hover:text-gray-600 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-        </svg>
-    </a>
-    <h1 class="text-xl font-medium text-gray-900">{% trans "Edit Profile" %}</h1>
-</div>
+{% block auth_title %}Edit your HydroServer profile{% endblock %}
 
-<form method="post" class="space-y-8">
+{% block auth_subtitle %}
+<p class="text-sm leading-6 text-gray-600">
+    Update the public account information associated with your HydroServer identity.
+</p>
+{% endblock %}
+
+{% block auth_body %}
+<form method="post" class="space-y-6">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-        <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
         </div>
     {% endif %}
 
-    <section>
-        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{% trans "Personal Information" %}</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {% for field in form %}
-                {% if field.name in "first_name,middle_name,last_name,phone,address,link,user_type" %}
-                    <div {% if field.name == "address" %}class="sm:col-span-2"{% endif %}>
-                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-                            {{ field.label }}
-                        </label>
-                        <input type="{{ field.field.widget.input_type|default:'text' }}"
-                               name="{{ field.html_name }}"
-                               id="{{ field.id_for_label }}"
-                               value="{{ field.value|default:'' }}"
-                               {% if field.field.required %}required{% endif %}
-                               class="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none{% if field.errors %} border-red-400{% endif %}">
-                        {% if field.errors %}
-                            <p class="mt-1.5 text-xs text-red-600">{{ field.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            {% endfor %}
+    <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="space-y-1">
+            <h2 class="text-base font-medium text-gray-900">{% trans "Account information" %}</h2>
+            <p class="text-sm text-gray-600">{% trans "These details may be visible to other HydroServer users." %}</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="space-y-1.5">
+                <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.first_name.label }}{% if form.first_name.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <input type="text" name="{{ form.first_name.html_name }}" id="{{ form.first_name.id_for_label }}" value="{{ form.first_name.value|default:'' }}"
+                       {% if form.first_name.field.required %}required{% endif %}
+                       class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.first_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                {% if form.first_name.errors %}<p class="text-xs text-red-600">{{ form.first_name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="space-y-1.5">
+                <label for="{{ form.middle_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.middle_name.label }}{% if form.middle_name.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <input type="text" name="{{ form.middle_name.html_name }}" id="{{ form.middle_name.id_for_label }}" value="{{ form.middle_name.value|default:'' }}"
+                       class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.middle_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                {% if form.middle_name.errors %}<p class="text-xs text-red-600">{{ form.middle_name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="space-y-1.5">
+                <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.last_name.label }}{% if form.last_name.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <input type="text" name="{{ form.last_name.html_name }}" id="{{ form.last_name.id_for_label }}" value="{{ form.last_name.value|default:'' }}"
+                       {% if form.last_name.field.required %}required{% endif %}
+                       class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.last_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                {% if form.last_name.errors %}<p class="text-xs text-red-600">{{ form.last_name.errors.0 }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-1.5">
+                <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.phone.label }}{% if form.phone.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <input type="text" name="{{ form.phone.html_name }}" id="{{ form.phone.id_for_label }}" value="{{ form.phone.value|default:'' }}"
+                       class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.phone.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                {% if form.phone.errors %}<p class="text-xs text-red-600">{{ form.phone.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="space-y-1.5">
+                <label for="{{ form.user_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.user_type.label }}{% if form.user_type.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <select name="{{ form.user_type.html_name }}" id="{{ form.user_type.id_for_label }}"
+                        {% if form.user_type.field.required %}required{% endif %}
+                        class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 pr-10 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.user_type.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                    {% for value, label in form.user_type.field.choices %}
+                        <option value="{{ value }}" {% if form.user_type.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.user_type.errors %}<p class="text-xs text-red-600">{{ form.user_type.errors.0 }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="space-y-1.5">
+            <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.address.label }}{% if form.address.field.required %}<span class="text-red-600"> *</span>{% endif %}
+            </label>
+            <input type="text" name="{{ form.address.html_name }}" id="{{ form.address.id_for_label }}" value="{{ form.address.value|default:'' }}"
+                   class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.address.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+            {% if form.address.errors %}<p class="text-xs text-red-600">{{ form.address.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="space-y-1.5">
+            <label for="{{ form.link.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.link.label }}{% if form.link.field.required %}<span class="text-red-600"> *</span>{% endif %}
+            </label>
+            <input type="url" name="{{ form.link.html_name }}" id="{{ form.link.id_for_label }}" value="{{ form.link.value|default:'' }}"
+                   class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.link.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+            {% if form.link.errors %}<p class="text-xs text-red-600">{{ form.link.errors.0 }}</p>{% endif %}
         </div>
     </section>
 
-    <section class="border-t border-gray-100 pt-8">
-        <div class="flex items-center gap-3 mb-4">
-            <input type="checkbox" name="has_organization" id="id_has_organization"
-                   {% if form.has_organization.value %}checked{% endif %}
-                   class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                   onchange="document.getElementById('org-fields').classList.toggle('hidden', !this.checked)">
-            <label for="id_has_organization" class="text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer">
-                {% trans "Organization Affiliation" %}
+    <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="flex items-center justify-between gap-4">
+            <div class="space-y-1">
+                <h2 class="text-base font-medium text-gray-900">{% trans "Organization affiliation" %}</h2>
+                <p class="text-sm text-gray-600">{% trans "Add or remove the organization shown with your account." %}</p>
+            </div>
+            <label for="id_has_organization" class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-800">
+                <input type="checkbox" name="has_organization" id="id_has_organization"
+                       {% if form.has_organization.value %}checked{% endif %}
+                       class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/40"
+                       onchange="document.getElementById('org-fields').classList.toggle('hidden', !this.checked)">
+                <span>{% trans "Affiliated" %}</span>
             </label>
         </div>
-        <div id="org-fields" class="{% if not form.has_organization.value %}hidden{% endif %}">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {% for field in form %}
-                    {% if field.name in "org_name,org_code,org_type,org_link" %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                {{ field.label }}
-                            </label>
-                            {% if field.name == "org_type" %}
-                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}"
-                                        class="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none">
-                                    {% for value, label in field.field.choices %}
-                                        <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            {% else %}
-                                <input type="{{ field.field.widget.input_type|default:'text' }}"
-                                       name="{{ field.html_name }}"
-                                       id="{{ field.id_for_label }}"
-                                       value="{{ field.value|default:'' }}"
-                                       class="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none">
-                            {% endif %}
-                            {% if field.errors %}
-                                <p class="mt-1.5 text-xs text-red-600">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-                {% for field in form %}
-                    {% if field.name == "org_description" %}
-                        <div class="sm:col-span-2">
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                {{ field.label }}
-                            </label>
-                            <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}" rows="3"
-                                      class="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none">{{ field.value|default:'' }}</textarea>
-                            {% if field.errors %}
-                                <p class="mt-1.5 text-xs text-red-600">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
+
+        <div id="org-fields" class="space-y-4 {% if not form.has_organization.value %}hidden{% endif %}">
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-1.5">
+                    <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.org_name.label }}<span class="text-red-600"> *</span>
+                    </label>
+                    <input type="text" name="{{ form.org_name.html_name }}" id="{{ form.org_name.id_for_label }}" value="{{ form.org_name.value|default:'' }}"
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                    {% if form.org_name.errors %}<p class="text-xs text-red-600">{{ form.org_name.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="space-y-1.5">
+                    <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.org_code.label }}<span class="text-red-600"> *</span>
+                    </label>
+                    <input type="text" name="{{ form.org_code.html_name }}" id="{{ form.org_code.id_for_label }}" value="{{ form.org_code.value|default:'' }}"
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_code.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                    {% if form.org_code.errors %}<p class="text-xs text-red-600">{{ form.org_code.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-1.5">
+                    <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.org_type.label }}<span class="text-red-600"> *</span>
+                    </label>
+                    <select name="{{ form.org_type.html_name }}" id="{{ form.org_type.id_for_label }}"
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 pr-10 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_type.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                        {% for value, label in form.org_type.field.choices %}
+                            <option value="{{ value }}" {% if form.org_type.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.org_type.errors %}<p class="text-xs text-red-600">{{ form.org_type.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="space-y-1.5">
+                    <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.org_link.label }}{% if form.org_link.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                    </label>
+                    <input type="url" name="{{ form.org_link.html_name }}" id="{{ form.org_link.id_for_label }}" value="{{ form.org_link.value|default:'' }}"
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_link.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                    {% if form.org_link.errors %}<p class="text-xs text-red-600">{{ form.org_link.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.org_description.label }}{% if form.org_description.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                </label>
+                <textarea name="{{ form.org_description.html_name }}" id="{{ form.org_description.id_for_label }}" rows="3"
+                          class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_description.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">{{ form.org_description.value|default:'' }}</textarea>
+                {% if form.org_description.errors %}<p class="text-xs text-red-600">{{ form.org_description.errors.0 }}</p>{% endif %}
             </div>
         </div>
     </section>
 
-    <div class="flex gap-3 pt-2 border-t border-gray-100">
-        <button type="submit"
-                class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white shadow hover:bg-primary-dark hover:shadow-md transition-all duration-150">
-            {% trans "Save Changes" %}
-        </button>
+    <div class="flex flex-col-reverse gap-3 sm:flex-row">
         <a href="{% url 'account_profile' %}"
-           class="inline-flex items-center justify-center rounded-full border border-gray-300 bg-transparent px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all duration-150">
+           class="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
             {% trans "Cancel" %}
         </a>
+        <button type="submit"
+                class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-primary bg-primary px-6 py-3 text-sm font-medium text-white shadow-elevation-2 transition-colors hover:bg-primary-dark">
+            {% trans "Save changes" %}
+        </button>
     </div>
 </form>
+{% endblock %}
+
+{% block extra_body %}
+    {{ block.super }}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const checkbox = document.getElementById("id_has_organization");
+            const details = document.getElementById("org-fields");
+            if (!checkbox || !details) {
+                return;
+            }
+            const toggleOrganizationDetails = function () {
+                details.classList.toggle("hidden", !checkbox.checked);
+            };
+            checkbox.addEventListener("change", toggleOrganizationDetails);
+            toggleOrganizationDetails();
+        });
+    </script>
 {% endblock %}

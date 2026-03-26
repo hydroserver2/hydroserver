@@ -123,14 +123,14 @@
     <div id="organization-fields" class="mt-4 space-y-4 {% if not form.has_organization.value %}hidden{% endif %}">
         <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-1.5">
-                <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization name</label>
+                <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization name<span class="text-red-600"> *</span></label>
                 {{ form.org_name }}
                 {% for error in form.org_name.errors %}
                     <p class="text-xs text-red-600">{{ error }}</p>
                 {% endfor %}
             </div>
             <div class="space-y-1.5">
-                <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization code</label>
+                <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization code<span class="text-red-600"> *</span></label>
                 {{ form.org_code }}
                 {% for error in form.org_code.errors %}
                     <p class="text-xs text-red-600">{{ error }}</p>
@@ -140,7 +140,7 @@
 
         <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-1.5">
-                <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization type</label>
+                <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization type<span class="text-red-600"> *</span></label>
                 {{ form.org_type }}
                 {% for error in form.org_type.errors %}
                     <p class="text-xs text-red-600">{{ error }}</p>

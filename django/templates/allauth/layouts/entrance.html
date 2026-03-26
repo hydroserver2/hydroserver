@@ -3,7 +3,6 @@
 
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block messages %}{% endblock %}
 
 {% block content %}
 <div class="flex min-h-screen">
@@ -18,21 +17,6 @@
                 <span class="font-medium text-gray-800 tracking-tight">HydroServer</span>
             </a>
         </div>
-
-        {# Messages (repositioned from base layout) #}
-        {% if messages %}
-        <div class="px-10 pt-5 space-y-2 shrink-0">
-            {% for message in messages %}
-                <div class="rounded-xl px-4 py-3 text-sm flex items-start gap-2
-                    {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
-                    {% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200
-                    {% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
-                    {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
 
         {# Form card centered in remaining space #}
         <div class="flex-1 flex items-center justify-center px-10 py-10">

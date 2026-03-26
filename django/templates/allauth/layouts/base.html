@@ -46,9 +46,9 @@
     <main class="flex-1">
         {% block messages %}
         {% if messages %}
-            <div class="max-w-md mx-auto mt-4 px-4 space-y-2">
+            <div id="auth-snackbar-stack" class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
                 {% for message in messages %}
-                    <div class="rounded-lg px-4 py-3 text-sm flex items-start gap-2 shadow-sm
+                    <div data-snackbar class="pointer-events-auto w-full max-w-md rounded-xl px-4 py-3 text-sm shadow-elevation-2 transition-all duration-300
                         {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
                         {% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200
                         {% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
@@ -69,5 +69,17 @@
     {% endblock %}
 
     {% block extra_body %}{% endblock %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-snackbar]").forEach(function (snackbar, index) {
+                window.setTimeout(function () {
+                    snackbar.classList.add("translate-y-2", "opacity-0");
+                    window.setTimeout(function () {
+                        snackbar.remove();
+                    }, 300);
+                }, 3000 + (index * 150));
+            });
+        });
+    </script>
 </body>
 </html>

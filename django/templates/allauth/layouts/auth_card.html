@@ -3,7 +3,6 @@
 
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block messages %}{% endblock %}
 
 {% block content %}
 <div class="flex min-h-screen items-center justify-center bg-app-bg px-4 py-8 sm:px-6">
@@ -21,20 +20,6 @@
                     </div>
                 </div>
                 {% endblock %}
-
-                {% if messages %}
-                <div class="space-y-3">
-                    {% for message in messages %}
-                        <div class="rounded-lg border px-4 py-3 text-sm
-                            {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800
-                            {% elif message.tags == 'warning' %}border-yellow-200 bg-yellow-50 text-yellow-800
-                            {% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-800
-                            {% else %}border-blue-200 bg-blue-50 text-blue-800{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
 
                 {% block auth_body %}{% endblock %}
             </div>
