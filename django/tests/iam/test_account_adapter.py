@@ -2,6 +2,10 @@ from smtplib import SMTPException
 
 import pytest
 from allauth.core.context import request_context
+from allauth.account.adapter import DefaultAccountAdapter
+from django.contrib import messages
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 
@@ -34,6 +38,11 @@ def attach_session(request):
     middleware = SessionMiddleware(lambda req: None)
     middleware.process_request(request)
     request.session.save()
+    return request
+
+
+def attach_messages(request):
+    setattr(request, "_messages", FallbackStorage(request))
     return request
 
 
@@ -119,3 +128,93 @@ def test_post_return_to_does_not_clear_stored_handoff():
     request.session[ACCOUNT_POST_AUTH_HANDOFF_SESSION_KEY] = handoff_url
 
     assert get_post_auth_account_return_to(request) == handoff_url
+
+
+def test_account_adapter_clears_queued_messages_before_handoff_redirect():
+    handoff_url = (
+        "http://127.0.0.1:5173/auth/handoff"
+        "?returnTo=http%3A%2F%2F127.0.0.1%3A5173%2Fsites"
+    )
+    request = attach_messages(attach_session(RequestFactory().get("/accounts/login/")))
+    request.user = type("AuthenticatedUser", (), {"is_authenticated": True})()
+    request.session[ACCOUNT_RETURN_TO_SESSION_KEY] = "http://127.0.0.1:5173/sites"
+    request.session[ACCOUNT_POST_AUTH_HANDOFF_SESSION_KEY] = handoff_url
+    messages.success(request, "Verify your email address.")
+    adapter = AccountAdapter()
+
+    with request_context(request):
+        assert adapter.get_login_redirect_url(request) == handoff_url
+
+    assert list(get_messages(request)) == []
+
+
+def test_account_adapter_keeps_messages_for_non_handoff_redirects():
+    redirect_url = "/accounts/profile/"
+    request = attach_messages(attach_session(RequestFactory().get("/accounts/login/")))
+    request.user = type("AuthenticatedUser", (), {"is_authenticated": True})()
+    request.session[ACCOUNT_RETURN_TO_SESSION_KEY] = redirect_url
+    messages.success(request, "Signed in successfully.")
+    adapter = AccountAdapter()
+
+    with request_context(request):
+        assert adapter.get_login_redirect_url(request) == redirect_url
+
+    queued_messages = list(get_messages(request))
+    assert len(queued_messages) == 1
+    assert str(queued_messages[0]) == "Signed in successfully."
+
+
+def test_account_adapter_skips_logged_in_message_during_handoff(monkeypatch):
+    request = attach_messages(attach_session(RequestFactory().get("/accounts/login/")))
+    request.session[ACCOUNT_POST_AUTH_HANDOFF_SESSION_KEY] = (
+        "http://127.0.0.1:5173/auth/handoff"
+        "?returnTo=http%3A%2F%2F127.0.0.1%3A5173%2Fsites"
+    )
+    adapter = AccountAdapter()
+    called = False
+
+    def fake_add_message(self, request, level, **kwargs):
+        nonlocal called
+        called = True
+        messages.add_message(request, level, kwargs.get("message") or "queued")
+
+    monkeypatch.setattr(DefaultAccountAdapter, "add_message", fake_add_message)
+
+    adapter.add_message(
+        request,
+        messages.SUCCESS,
+        "account/messages/logged_in.txt",
+        {"user": object()},
+    )
+
+    assert called is False
+    assert list(get_messages(request)) == []
+
+
+def test_account_adapter_keeps_non_redirect_message_during_handoff(monkeypatch):
+    request = attach_messages(attach_session(RequestFactory().get("/accounts/login/")))
+    request.session[ACCOUNT_POST_AUTH_HANDOFF_SESSION_KEY] = (
+        "http://127.0.0.1:5173/auth/handoff"
+        "?returnTo=http%3A%2F%2F127.0.0.1%3A5173%2Fsites"
+    )
+    adapter = AccountAdapter()
+    called = False
+
+    def fake_add_message(self, request, level, **kwargs):
+        nonlocal called
+        called = True
+        messages.add_message(request, level, kwargs.get("message") or "queued")
+
+    monkeypatch.setattr(DefaultAccountAdapter, "add_message", fake_add_message)
+
+    adapter.add_message(
+        request,
+        messages.SUCCESS,
+        "account/messages/login_code_sent.txt",
+        {"recipient": "user@example.com"},
+    )
+
+    assert called is True
+    queued_messages = list(get_messages(request))
+    assert len(queued_messages) == 1
+    assert str(queued_messages[0]) == "queued"

@@ -4,18 +4,26 @@ from urllib.parse import urlparse
 
 from django.http import HttpRequest
 from django.conf import settings
+from django.contrib.messages import get_messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import get_connection
 from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter, get_adapter as get_account_adapter
 from allauth.core import context as allauth_context
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from interfaces.account.navigation import get_post_auth_account_return_to
+from interfaces.account.navigation import (
+    get_post_auth_account_return_to,
+    get_stored_account_post_auth_handoff,
+)
 from interfaces.auth.schemas import AccountPatchBody
 from domains.iam.services import AccountService
 
 
 logger = logging.getLogger(__name__)
+POST_AUTH_HANDOFF_MESSAGE_TEMPLATES = {
+    "account/messages/email_confirmed.txt",
+    "account/messages/logged_in.txt",
+}
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -25,22 +33,58 @@ class AccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request: HttpRequest):
         return settings.ACCOUNT_SIGNUP_ENABLED
 
-    def get_login_redirect_url(self, request):
-        return get_post_auth_account_return_to(request) or super().get_login_redirect_url(
-            request
+    def _consume_handoff_messages(self, request: HttpRequest, redirect_url: str) -> str:
+        handoff_url = get_stored_account_post_auth_handoff(request)
+        if handoff_url and redirect_url == handoff_url:
+            list(get_messages(request))
+        return redirect_url
+
+    def _should_skip_handoff_message(
+        self, request: HttpRequest, message_template: str | None
+    ) -> bool:
+        return bool(
+            message_template in POST_AUTH_HANDOFF_MESSAGE_TEMPLATES
+            and get_stored_account_post_auth_handoff(request)
         )
 
-    def get_signup_redirect_url(self, request):
-        return get_post_auth_account_return_to(request) or super().get_signup_redirect_url(
-            request
+    def add_message(
+        self,
+        request,
+        level,
+        message_template=None,
+        message_context=None,
+        extra_tags="",
+        message=None,
+    ):
+        if self._should_skip_handoff_message(request, message_template):
+            return
+        return super().add_message(
+            request,
+            level,
+            message_template=message_template,
+            message_context=message_context,
+            extra_tags=extra_tags,
+            message=message,
         )
+
+    def get_login_redirect_url(self, request):
+        redirect_url = get_post_auth_account_return_to(request)
+        if redirect_url:
+            return self._consume_handoff_messages(request, redirect_url)
+        return super().get_login_redirect_url(request)
+
+    def get_signup_redirect_url(self, request):
+        redirect_url = get_post_auth_account_return_to(request)
+        if redirect_url:
+            return self._consume_handoff_messages(request, redirect_url)
+        return super().get_signup_redirect_url(request)
 
     def get_email_verification_redirect_url(self, email_address):
         request = allauth_context.request
         if request is not None:
             redirect_url = get_post_auth_account_return_to(request)
             if redirect_url:
-                return redirect_url
+                return self._consume_handoff_messages(request, redirect_url)
         return super().get_email_verification_redirect_url(email_address)
 
     def is_safe_url(self, url):
