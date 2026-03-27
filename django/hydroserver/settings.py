@@ -72,6 +72,12 @@ if DEPLOYMENT_BACKEND in {"aws", "gcp"}:
 USE_X_FORWARDED_HOST = True
 PROXY_BASE_URL = config("PROXY_BASE_URL", "http://127.0.0.1:8000")
 APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
+ACCOUNT_SERVER_URL = config(
+    "ACCOUNT_SERVER_URL",
+    default=(
+        "http://127.0.0.1:8000" if DEPLOYMENT_BACKEND == "dev" else PROXY_BASE_URL
+    ),
+)
 
 LOAD_DEFAULT_DATA = config("LOAD_DEFAULT_DATA", default=False, cast=bool)
 
@@ -284,8 +290,10 @@ HEADLESS_ONLY = False
 
 HEADLESS_FRONTEND_URLS = {
     "account_confirm_email": f"{PROXY_BASE_URL}/verify-email/{{key}}",
-    "account_reset_password_from_key": f"{PROXY_BASE_URL}/reset-password/{{key}}",
-    "account_reset_password": f"{PROXY_BASE_URL}/reset-password",
+    "account_reset_password_from_key": (
+        f"{ACCOUNT_SERVER_URL}/accounts/password/reset/key/{{key}}/"
+    ),
+    "account_reset_password": f"{ACCOUNT_SERVER_URL}/accounts/password/reset/",
     "account_signup": f"{PROXY_BASE_URL}/sign-up",
 }
 

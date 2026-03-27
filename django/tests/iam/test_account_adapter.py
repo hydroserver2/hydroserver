@@ -3,6 +3,7 @@ from smtplib import SMTPException
 import pytest
 from allauth.core.context import request_context
 from allauth.account.adapter import DefaultAccountAdapter
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -218,3 +219,12 @@ def test_account_adapter_keeps_non_redirect_message_during_handoff(monkeypatch):
     queued_messages = list(get_messages(request))
     assert len(queued_messages) == 1
     assert str(queued_messages[0]) == "queued"
+
+
+def test_headless_password_reset_urls_target_server_origin():
+    assert settings.HEADLESS_FRONTEND_URLS["account_reset_password"] == (
+        f"{settings.ACCOUNT_SERVER_URL}/accounts/password/reset/"
+    )
+    assert settings.HEADLESS_FRONTEND_URLS["account_reset_password_from_key"] == (
+        f"{settings.ACCOUNT_SERVER_URL}/accounts/password/reset/key/{{key}}/"
+    )
