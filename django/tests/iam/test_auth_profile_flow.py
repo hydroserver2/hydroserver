@@ -3,12 +3,15 @@ from uuid import uuid4
 
 import pytest
 from allauth.account.forms import SignupForm
+from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import get_adapter as get_socialaccount_adapter
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from allauth.headless.socialaccount.inputs import SignupInput
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.template.loader import render_to_string
 from django.test import RequestFactory
+from django.urls import reverse
 
 from interfaces.account.forms import ProfileForm
 from domains.iam.models import Organization, OrganizationType, UserType
@@ -195,6 +198,114 @@ def test_profile_form_can_remove_organization(get_principal):
     updated_user.refresh_from_db()
 
     assert updated_user.organization is None
+
+
+def test_signup_page_marks_required_fields(client):
+    response = client.get(reverse("account_signup"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'First name<span class="text-red-600"> *</span>' in content
+    assert 'Last name<span class="text-red-600"> *</span>' in content
+    assert 'Email<span class="text-red-600"> *</span>' in content
+    assert 'Password<span class="text-red-600"> *</span>' in content
+    assert 'Confirm password<span class="text-red-600"> *</span>' in content
+    assert 'User type<span class="text-red-600"> *</span>' in content
+
+
+def test_email_verification_sent_page_renders():
+    request = RequestFactory().get("/accounts/confirm-email/")
+    content = render_to_string("account/verification_sent.html", request=request)
+
+    assert "Verify your email" in content
+
+
+def test_account_signup_requires_first_name():
+    payload = signup_payload(f"signup-missing-first-{uuid4().hex}@example.com")
+    payload["firstName"] = ""
+    form = SignupForm(data=payload)
+
+    assert not form.is_valid()
+    assert "first_name" in form.errors
+
+
+def test_account_signup_requires_last_name():
+    payload = signup_payload(f"signup-missing-last-{uuid4().hex}@example.com")
+    payload["lastName"] = ""
+    form = SignupForm(data=payload)
+
+    assert not form.is_valid()
+    assert "last_name" in form.errors
+
+
+def test_account_signup_invalid_post_rerenders_without_jsonfield_type_error(client):
+    response = client.post(
+        reverse("account_signup"),
+        {
+            "email": f"signup-browser-{uuid4().hex}@example.com",
+            "password1": "HydroServer123!",
+            "password2": "HydroServer123!",
+            "first_name": "",
+            "middle_name": "",
+            "last_name": "User",
+            "phone": "",
+            "address": "",
+            "link": "",
+            "user_type": "Other",
+            "organization": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"This field is required." in response.content
+
+
+@pytest.fixture
+def social_only_user():
+    user = User.objects.create_user(
+        email="social@example.com",
+        password=None,
+        first_name="Social",
+        last_name="User",
+        user_type="Other",
+    )
+    user.set_unusable_password()
+    user.save()
+    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+    return user
+
+
+def test_profile_edit_works_for_social_only_user(client, social_only_user):
+    client.force_login(social_only_user)
+
+    response = client.post(
+        reverse("account_profile_edit"),
+        {
+            "first_name": "Updated",
+            "middle_name": "",
+            "last_name": "User",
+            "phone": "",
+            "address": "",
+            "link": "",
+            "user_type": "Other",
+        },
+    )
+
+    assert response.status_code == 302
+    social_only_user.refresh_from_db()
+    assert social_only_user.first_name == "Updated"
+
+
+def test_delete_account_works_for_social_only_user(client, social_only_user):
+    client.force_login(social_only_user)
+
+    response = client.post(
+        reverse("account_delete"),
+        {"confirmation": "delete my account and data"},
+    )
+
+    assert response.status_code == 302
+    assert not User.objects.filter(email="social@example.com").exists()
 
 
 def build_sociallogin(email: str):

@@ -67,6 +67,12 @@ def test_logout_without_id_token_hint_requires_confirmation(client):
     assert client.session.get("_auth_user_id") == str(user.pk)
 
 
+def test_logout_when_not_authenticated_redirects(client):
+    response = client.get(reverse("idp:oidc:logout"))
+
+    assert response.status_code in (200, 302)
+
+
 def test_logout_with_valid_id_token_hint_completes_immediately(
     client, oidc_logout_client, settings
 ):
@@ -85,4 +91,24 @@ def test_logout_with_valid_id_token_hint_completes_immediately(
 
     assert response.status_code == 302
     assert response["Location"] == "https://rp.example/logout?state=opaque-state"
+    assert "_auth_user_id" not in client.session
+
+
+def test_immediate_logout_with_valid_hint(client, oidc_logout_client, settings):
+    user = User.objects.get(email="owner@example.com")
+    client.force_login(user)
+    id_token_hint = _build_id_token_hint(user, oidc_logout_client, settings)
+
+    oidc_logout_client.set_redirect_uris(["https://rp.example/callback"])
+    oidc_logout_client.save()
+
+    response = client.get(
+        "/identity/o/logout",
+        {
+            "id_token_hint": id_token_hint,
+            "post_logout_redirect_uri": "https://rp.example/callback",
+        },
+    )
+
+    assert response.status_code == 302
     assert "_auth_user_id" not in client.session

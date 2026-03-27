@@ -8,21 +8,21 @@
 
 <div class="grid gap-4 md:grid-cols-3">
     <div class="space-y-1.5">
-        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">First name</label>
+        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">First name{% if form.first_name.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         {{ form.first_name }}
         {% for error in form.first_name.errors %}
             <p class="text-xs text-red-600">{{ error }}</p>
         {% endfor %}
     </div>
     <div class="space-y-1.5">
-        <label for="{{ form.middle_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Middle name</label>
+        <label for="{{ form.middle_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Middle name{% if form.middle_name.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         {{ form.middle_name }}
         {% for error in form.middle_name.errors %}
             <p class="text-xs text-red-600">{{ error }}</p>
         {% endfor %}
     </div>
     <div class="space-y-1.5">
-        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Last name</label>
+        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Last name{% if form.last_name.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         {{ form.last_name }}
         {% for error in form.last_name.errors %}
             <p class="text-xs text-red-600">{{ error }}</p>
@@ -32,7 +32,7 @@
 
 {% if form.email %}
 <div class="space-y-1.5">
-    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email</label>
+    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email{% if form.email.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
     {{ form.email }}
     {% for error in form.email.errors %}
         <p class="text-xs text-red-600">{{ error }}</p>
@@ -44,7 +44,7 @@
 <div class="grid gap-4 md:grid-cols-2">
     {% if form.password1 %}
     <div class="space-y-1.5">
-        <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">Password</label>
+        <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">Password{% if form.password1.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         <input
             type="password"
             name="{{ form.password1.html_name }}"
@@ -60,7 +60,7 @@
     {% endif %}
     {% if form.password2 %}
     <div class="space-y-1.5">
-        <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">Confirm password</label>
+        <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">Confirm password{% if form.password2.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         <input
             type="password"
             name="{{ form.password2.html_name }}"
@@ -79,14 +79,14 @@
 
 <div class="grid gap-4 md:grid-cols-2">
     <div class="space-y-1.5">
-        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Phone number</label>
+        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Phone number{% if form.phone.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         {{ form.phone }}
         {% for error in form.phone.errors %}
             <p class="text-xs text-red-600">{{ error }}</p>
         {% endfor %}
     </div>
     <div class="space-y-1.5">
-        <label for="{{ form.user_type.id_for_label }}" class="block text-sm font-medium text-gray-700">User type</label>
+        <label for="{{ form.user_type.id_for_label }}" class="block text-sm font-medium text-gray-700">User type{% if form.user_type.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
         {{ form.user_type }}
         {% for error in form.user_type.errors %}
             <p class="text-xs text-red-600">{{ error }}</p>
@@ -95,7 +95,7 @@
 </div>
 
 <div class="space-y-1.5">
-    <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">Address</label>
+    <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">Address{% if form.address.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
     {{ form.address }}
     {% for error in form.address.errors %}
         <p class="text-xs text-red-600">{{ error }}</p>
@@ -103,7 +103,7 @@
 </div>
 
 <div class="space-y-1.5">
-    <label for="{{ form.link.id_for_label }}" class="block text-sm font-medium text-gray-700">User link</label>
+    <label for="{{ form.link.id_for_label }}" class="block text-sm font-medium text-gray-700">User link{% if form.link.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
     {{ form.link }}
     {% for error in form.link.errors %}
         <p class="text-xs text-red-600">{{ error }}</p>
@@ -147,7 +147,7 @@
                 {% endfor %}
             </div>
             <div class="space-y-1.5">
-                <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization link</label>
+                <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization link{% if form.org_link.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
                 {{ form.org_link }}
                 {% for error in form.org_link.errors %}
                     <p class="text-xs text-red-600">{{ error }}</p>
@@ -156,7 +156,7 @@
         </div>
 
         <div class="space-y-1.5">
-            <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization description</label>
+            <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">Organization description{% if form.org_description.field.required %}<span class="text-red-600"> *</span>{% endif %}</label>
             {{ form.org_description }}
             {% for error in form.org_description.errors %}
                 <p class="text-xs text-red-600">{{ error }}</p>

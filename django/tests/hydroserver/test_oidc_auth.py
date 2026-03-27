@@ -94,6 +94,31 @@ def test_oidc_auth_authenticates_jwt_access_tokens(request_factory, oidc_client,
     assert request.principal == user
 
 
+def test_oidc_auth_rejects_expired_opaque_tokens(request_factory, oidc_client):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    request = request_factory.get("/api/data/workspaces")
+    user = User.objects.get(email="owner@example.com")
+    token_value = "expired-opaque-token"
+
+    access_token = Token.objects.create(
+        client=oidc_client,
+        user=user,
+        type=Token.Type.ACCESS_TOKEN,
+        hash=get_adapter().hash_token(token_value),
+        expires_at=timezone.now() - timedelta(hours=1),
+    )
+    access_token.set_scopes(["openid", "profile", "email"])
+    access_token.save(update_fields=["scopes"])
+
+    with pytest.raises(HttpError) as exc_info:
+        oidc_auth.authenticate(request, token_value)
+
+    assert exc_info.value.status_code == 401
+
+
 def test_oidc_auth_rejects_jwt_access_tokens_without_matching_audience(
     request_factory, oidc_client, settings
 ):
@@ -106,6 +131,35 @@ def test_oidc_auth_rejects_jwt_access_tokens_without_matching_audience(
         "iss": request.build_absolute_uri("/").rstrip("/"),
         "iat": now,
         "exp": now + 300,
+        "jti": uuid.uuid4().hex,
+        "token_use": "access",
+        "sub": get_adapter().get_user_sub(oidc_client, user),
+    }
+    jwk_dict, private_key = jwkkit.load_jwk_from_pem(settings.IDP_OIDC_PRIVATE_KEY)
+    token_value = jwt.encode(
+        claims,
+        private_key,
+        algorithm="RS256",
+        headers={"kid": jwk_dict["kid"]},
+    )
+
+    with request_context(request):
+        with pytest.raises(HttpError) as exc_info:
+            oidc_auth.authenticate(request, token_value)
+
+    assert exc_info.value.status_code == 401
+
+
+def test_oidc_auth_rejects_expired_jwt_tokens(request_factory, oidc_client, settings):
+    request = request_factory.get("/api/data/workspaces")
+    user = User.objects.get(email="owner@example.com")
+    now = int(time.time())
+    claims = {
+        "aud": oidc_client.id,
+        "client_id": oidc_client.id,
+        "iss": request.build_absolute_uri("/").rstrip("/"),
+        "iat": now - 600,
+        "exp": now - 300,
         "jti": uuid.uuid4().hex,
         "token_use": "access",
         "sub": get_adapter().get_user_sub(oidc_client, user),

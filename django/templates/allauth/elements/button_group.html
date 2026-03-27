@@ -1,4 +1,4 @@
 {% load allauth %}
-<div class="mt-2 flex {% if attrs.vertical %}flex-col{% endif %} {% if (attrs.tags and 'login' in attrs.tags) or origin == 'account/login' %}gap-3{% else %}gap-2{% endif %}">
+<div class="mt-2 flex {% if attrs.vertical %}flex-col{% endif %} {% if attrs.tags and 'login' in attrs.tags or origin == 'account/login' %}gap-3{% else %}gap-2{% endif %}">
     {% slot %}{% endslot %}
 </div>

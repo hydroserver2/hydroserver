@@ -82,3 +82,13 @@ class Command(BaseCommand):
                     f"{len(redirect_uris)} redirect URI(s)."
                 )
             )
+
+        bundled_ids = {cfg["id"] for cfg in clients.values()}
+        stale_clients = Client.objects.exclude(id__in=bundled_ids)
+        for stale in stale_clients:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"OIDC client '{stale.id}' exists in the database but is not in "
+                    f"OIDC_BUNDLED_CLIENTS. Remove it manually if it is no longer needed."
+                )
+            )

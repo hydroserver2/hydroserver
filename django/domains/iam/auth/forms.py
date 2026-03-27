@@ -18,9 +18,9 @@ def _choices_from_vocabulary(queryset, *, selected_value=None, empty_label=None)
 
 
 class UserSignupForm(forms.Form):
-    first_name = forms.CharField(max_length=30, required=False, label="firstName")
+    first_name = forms.CharField(max_length=30, required=True, label="firstName")
     middle_name = forms.CharField(max_length=30, required=False, label="middleName")
-    last_name = forms.CharField(max_length=100, required=False, label="lastName")
+    last_name = forms.CharField(max_length=100, required=True, label="lastName")
     phone = forms.CharField(max_length=15, required=False)
     address = forms.CharField(max_length=255, required=False)
     link = forms.URLField(max_length=2000, required=False)
@@ -42,8 +42,13 @@ class UserSignupForm(forms.Form):
             data = kwargs["data"].copy()
             for field_name, field in self.base_fields.items():
                 alias = field.label or field_name
-                if alias in data:
-                    data[field_name] = data.pop(alias)
+                if alias == field_name or alias not in data:
+                    continue
+                if hasattr(data, "setlist") and hasattr(data, "getlist"):
+                    data.setlist(field_name, data.getlist(alias))
+                else:
+                    data[field_name] = data.get(alias)
+                del data[alias]
             organization = data.get("organization")
             if isinstance(organization, dict):
                 data.setdefault("has_organization", "on")

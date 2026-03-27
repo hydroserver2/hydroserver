@@ -107,6 +107,10 @@ if DEPLOYMENT_BACKEND == "dev":
     CORS_ALLOW_CREDENTIALS = True
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
+else:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 CORS_EXPOSE_HEADERS = [
     "X-Total-Pages",
@@ -250,7 +254,7 @@ DATABASES = {
 SITE_ID = 1
 
 SESSION_COOKIE_NAME = "hs_session"
-SESSION_COOKIE_AGE = 86400
+SESSION_COOKIE_AGE = 604800  # 1 week
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 
@@ -312,8 +316,14 @@ if not IDP_OIDC_PRIVATE_KEY and DEPLOYMENT_BACKEND == "dev":
 elif not IDP_OIDC_PRIVATE_KEY:
     raise ImproperlyConfigured("IDP_OIDC_PRIVATE_KEY must be set in production")
 
-IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = 3600   # 1 hour
-IDP_OIDC_ID_TOKEN_EXPIRES_IN = 300        # 5 minutes
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = config(
+    "IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN", default=3600, cast=int
+)
+# Note: allauth v65.15.0 hardcodes ID_TOKEN_EXPIRES_IN in its app_settings and does
+# not read this Django setting. This env var is defined for forward-compatibility.
+IDP_OIDC_ID_TOKEN_EXPIRES_IN = config(
+    "IDP_OIDC_ID_TOKEN_EXPIRES_IN", default=300, cast=int
+)
 IDP_OIDC_ROTATE_REFRESH_TOKEN = True
 IDP_OIDC_ADAPTER = "interfaces.http.auth.oidc_adapter.HydroServerOIDCAdapter"
 IDP_OIDC_RP_INITIATED_LOGOUT_ASKS_FOR_OP_LOGOUT = config(

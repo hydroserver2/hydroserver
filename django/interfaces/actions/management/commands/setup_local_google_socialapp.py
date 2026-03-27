@@ -39,10 +39,6 @@ class Command(BaseCommand):
             defaults={"domain": domain, "name": domain},
         )
 
-        client_id = options["client_id"] or "local-google-preview.apps.googleusercontent.com"
-        secret = options["secret"] or "local-google-preview-secret"
-        using_placeholder_credentials = not options["client_id"] or not options["secret"]
-
         social_app = (
             SocialApp.objects.filter(provider="google", provider_id__in=["", "google"])
             .order_by("id")
@@ -52,6 +48,26 @@ class Command(BaseCommand):
         if social_app is None:
             social_app = SocialApp(provider="google")
 
+        has_supplied_credentials = bool(options["client_id"] and options["secret"])
+        has_existing_real_credentials = bool(
+            social_app.client_id
+            and social_app.secret
+            and not (social_app.settings or {}).get("preview_only")
+        )
+
+        if has_supplied_credentials:
+            client_id = options["client_id"]
+            secret = options["secret"]
+            using_placeholder_credentials = False
+        elif has_existing_real_credentials:
+            client_id = social_app.client_id
+            secret = social_app.secret
+            using_placeholder_credentials = False
+        else:
+            client_id = "local-google-preview.apps.googleusercontent.com"
+            secret = "local-google-preview-secret"
+            using_placeholder_credentials = True
+
         social_app.name = options["name"]
         social_app.provider_id = "google"
         social_app.client_id = client_id
@@ -59,6 +75,7 @@ class Command(BaseCommand):
         social_app.settings = {
             **(social_app.settings or {}),
             "preview_only": using_placeholder_credentials,
+            "hidden": using_placeholder_credentials,
         }
         social_app.save()
         social_app.sites.set([site])
@@ -72,8 +89,9 @@ class Command(BaseCommand):
         if using_placeholder_credentials:
             self.stdout.write(
                 self.style.WARNING(
-                    "Using placeholder Google credentials so the provider button appears locally. "
-                    "Set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET or rerun with "
-                    "--client-id/--secret to enable a working Google OAuth flow."
+                    "Google OAuth credentials are not configured. The Google provider has been "
+                    "hidden locally to avoid invalid_client errors. Set GOOGLE_OAUTH_CLIENT_ID "
+                    "and GOOGLE_OAUTH_CLIENT_SECRET or rerun with --client-id/--secret to "
+                    "enable a working Google OAuth flow."
                 )
             )

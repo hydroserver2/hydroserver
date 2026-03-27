@@ -15,6 +15,13 @@ def _social_app_icon_key(social_app):
     return provider_key or social_app.provider
 
 
+def _social_app_is_visible(social_app):
+    social_app_settings = social_app.settings or {}
+    return not (
+        social_app_settings.get("hidden") or social_app_settings.get("preview_only")
+    )
+
+
 @cache_page(60 * 10)
 def index(request):
 
@@ -44,6 +51,7 @@ def index(request):
                     ),
                 }
                 for social_app in social_apps
+                if _social_app_is_visible(social_app)
             ],
         },
         "aboutInformation": {

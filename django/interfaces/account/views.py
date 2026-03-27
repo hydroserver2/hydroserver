@@ -5,6 +5,7 @@ from allauth.account.views import LoginView as AllauthLoginView
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.db import OperationalError, ProgrammingError
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from interfaces.account.forms import ProfileForm, DeleteAccountForm
@@ -81,8 +82,9 @@ def delete_account(request):
         owned_workspaces = list(
             Workspace.objects.filter(owner=user).values_list("name", flat=True)
         )
-    except Exception:
+    except (OperationalError, ProgrammingError):
         logger.exception("Failed to load owned workspaces")
+        messages.warning(request, "Could not load your workspace list. Proceed with caution.")
 
     if request.method == "POST":
         form = DeleteAccountForm(request.POST)
