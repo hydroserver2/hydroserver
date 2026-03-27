@@ -12,12 +12,14 @@ const hydroServerHost =
 
 const isHydroServerInitializing = ref(false)
 export const isHydroServerReady = ref(false)
+export const isHydroServerAuthenticated = ref(false)
 export const isAppInitializing = ref(false)
 export const hasBootstrappedWorkspaces = ref(false)
 export const initializationError = ref<unknown>(null)
 
 let hydroServerInitializationPromise: Promise<void> | null = null
 let appInitializationPromise: Promise<void> | null = null
+let sessionListenersAttached = false
 
 function recordInitializationError(message: string, error: unknown) {
   console.error(message, error)
@@ -33,8 +35,22 @@ export async function initializeAuthenticatedState() {
   user.value = new User()
   setWorkspaces([])
   hasBootstrappedWorkspaces.value = false
+  isHydroServerAuthenticated.value = hs.session.isAuthenticated
 
-  if (!hs.session.isAuthenticated) return
+  if (!hs.session.isAuthenticated) {
+    let browserSessionAccount: User | null = null
+    try {
+      browserSessionAccount = await hs.session.getBrowserSessionAccount()
+    } catch (error) {
+      recordInitializationError('Error fetching browser session', error)
+    }
+
+    if (!browserSessionAccount) return
+
+    user.value = browserSessionAccount
+    isHydroServerAuthenticated.value = true
+    return
+  }
 
   const userRequest = hs.user.get().catch((error) => {
     recordInitializationError('Error fetching user', error)
@@ -66,6 +82,19 @@ export async function initializeAuthenticatedState() {
   }
 }
 
+function attachSessionListeners() {
+  if (sessionListenersAttached) return
+
+  hs.on('session:changed', (authenticated: boolean) => {
+    isHydroServerAuthenticated.value = authenticated
+  })
+  hs.on('session:expired', () => {
+    void initializeAuthenticatedState()
+  })
+
+  sessionListenersAttached = true
+}
+
 export function startAppInitialization() {
   if (appInitializationPromise) return appInitializationPromise
 
@@ -83,11 +112,15 @@ export function startAppInitialization() {
       redirectPath: import.meta.env.VITE_OIDC_REDIRECT_PATH || '/callback',
       postLogoutRedirectPath:
         import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_PATH || '/',
+      accountHandoffPath:
+        import.meta.env.VITE_OIDC_ACCOUNT_HANDOFF_PATH || '/auth/handoff',
       scope: import.meta.env.VITE_OIDC_SCOPE || 'openid profile email',
     },
   })
     .then(() => {
       isHydroServerReady.value = true
+      isHydroServerAuthenticated.value = hs.session.isAuthenticated
+      attachSessionListeners()
     })
     .catch((error) => {
       recordInitializationError('Error initializing HydroServer client', error)

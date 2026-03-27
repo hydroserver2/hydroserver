@@ -10,7 +10,7 @@ from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter, get_adapter as get_account_adapter
 from allauth.core import context as allauth_context
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from interfaces.account.navigation import get_stored_account_return_to
+from interfaces.account.navigation import get_post_auth_account_return_to
 from interfaces.auth.schemas import AccountPatchBody
 from domains.iam.services import AccountService
 
@@ -26,14 +26,22 @@ class AccountAdapter(DefaultAccountAdapter):
         return settings.ACCOUNT_SIGNUP_ENABLED
 
     def get_login_redirect_url(self, request):
-        return get_stored_account_return_to(request) or super().get_login_redirect_url(
+        return get_post_auth_account_return_to(request) or super().get_login_redirect_url(
             request
         )
 
     def get_signup_redirect_url(self, request):
-        return get_stored_account_return_to(request) or super().get_signup_redirect_url(
+        return get_post_auth_account_return_to(request) or super().get_signup_redirect_url(
             request
         )
+
+    def get_email_verification_redirect_url(self, email_address):
+        request = allauth_context.request
+        if request is not None:
+            redirect_url = get_post_auth_account_return_to(request)
+            if redirect_url:
+                return redirect_url
+        return super().get_email_verification_redirect_url(email_address)
 
     def is_safe_url(self, url):
         parsed = urlparse(url)

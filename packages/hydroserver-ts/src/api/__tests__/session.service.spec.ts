@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
 import { SessionService } from '../services/session.service'
 
+const apiFetchMock = vi.hoisted(() => vi.fn())
+
 const managerState = vi.hoisted(() => ({
   getUser: vi.fn(),
   signinSilent: vi.fn(),
@@ -16,6 +18,12 @@ const managerState = vi.hoisted(() => ({
     addSilentRenewError: vi.fn(),
   },
   stores: [] as Storage[],
+}))
+
+vi.mock('../apiMethods', () => ({
+  apiMethods: {
+    fetch: apiFetchMock,
+  },
 }))
 
 vi.mock('oidc-client-ts', () => ({
@@ -40,6 +48,7 @@ vi.mock('oidc-client-ts', () => ({
 
 describe('SessionService', () => {
   beforeEach(() => {
+    apiFetchMock.mockReset()
     managerState.getUser.mockReset()
     managerState.signinSilent.mockReset()
     managerState.signinRedirect.mockReset()
@@ -139,10 +148,51 @@ describe('SessionService', () => {
     )
 
     expect(session.accountSignupUrl).toBe(
-      'https://hydro.example.com/accounts/signup/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs'
+      'https://hydro.example.com/accounts/signup/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs&handoff=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fhandoff%3FreturnTo%3Dhttp%253A%252F%252Flocalhost%253A3000%252Forchestration%253FworkspaceId%253Dabc%2523runs'
     )
     expect(session.accountProfileUrl).toBe(
-      'https://hydro.example.com/accounts/profile/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs'
+      'https://hydro.example.com/accounts/profile/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs&handoff=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fhandoff%3FreturnTo%3Dhttp%253A%252F%252Flocalhost%253A3000%252Forchestration%253FworkspaceId%253Dabc%2523runs'
+    )
+  })
+
+  it('does not block initialization on a silent bootstrap when no cached user exists', async () => {
+    managerState.getUser.mockResolvedValue(null)
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    const emitSpy = vi.spyOn(client, 'emit')
+    const session = new SessionService(client)
+
+    await session.initialize()
+
+    expect(managerState.signinSilent).not.toHaveBeenCalled()
+    expect(managerState.removeUser).toHaveBeenCalledTimes(1)
+    expect(session.isAuthenticated).toBe(false)
+    expect(emitSpy).not.toHaveBeenCalledWith('session:changed', true)
+  })
+
+  it('loads the browser session account using credentialed requests', async () => {
+    apiFetchMock.mockResolvedValue({
+      ok: true,
+      data: {
+        account: {
+          email: 'user@example.com',
+          firstName: 'Signed',
+          lastName: 'In',
+        },
+      },
+    })
+
+    const session = new SessionService(
+      new HydroServer({ host: 'https://hydro.example.com' })
+    )
+
+    await expect(session.getBrowserSessionAccount()).resolves.toMatchObject({
+      email: 'user@example.com',
+      firstName: 'Signed',
+      lastName: 'In',
+    })
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      'https://hydro.example.com/api/auth/browser/session',
+      { credentials: 'include' }
     )
   })
 })

@@ -14,7 +14,7 @@
         </h4>
       </div>
 
-      <div v-if="hs.session.isAuthenticated">
+      <div v-if="isHydroServerAuthenticated">
         <h5 class="text-h5 mb-8 has-text-shadow">
           Logged in as {{ user?.firstName }}
           {{ user?.lastName }}
@@ -212,6 +212,7 @@ import ogcLogo from '@/assets/ogc-min.png'
 import cirohLogo from '@/assets/CIROH_logo_transparent-min.png'
 import sensorThingsLogo from '@/assets/sensorThings-min.png'
 import hydroWhiteImg from '@/assets/hydroserver-white-min.png'
+import { isHydroServerAuthenticated } from '@/bootstrap/appInitialization'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/store/user'
 import hs from '@hydroserver/client'

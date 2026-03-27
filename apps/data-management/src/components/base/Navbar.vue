@@ -69,7 +69,7 @@
 
       <v-spacer />
 
-      <template v-if="hs.session.isAuthenticated">
+      <template v-if="isHydroServerAuthenticated">
         <v-btn data-testid="account-menu-button" elevation="2" rounded>
           <v-icon :icon="mdiAccountCircle" />
           <v-icon :icon="mdiMenuDown" />
@@ -139,7 +139,7 @@
     <v-divider />
 
     <v-list density="compact" nav>
-      <template v-if="hs.session.isAuthenticated">
+      <template v-if="isHydroServerAuthenticated">
         <v-list-item
           to="/profile"
           :prepend-icon="mdiAccountCircle"
@@ -171,6 +171,7 @@
 
 <script setup lang="ts">
 import { useDisplay } from 'vuetify/lib/framework.mjs'
+import { isHydroServerAuthenticated } from '@/bootstrap/appInitialization'
 import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'

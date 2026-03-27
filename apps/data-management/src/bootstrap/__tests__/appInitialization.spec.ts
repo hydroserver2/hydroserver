@@ -8,6 +8,7 @@ const {
   fetchAllVocabulariesMock,
   userGetMock,
   listAllItemsMock,
+  onMock,
   sessionState,
   testPinia,
 } = vi.hoisted(() => ({
@@ -15,8 +16,10 @@ const {
   fetchAllVocabulariesMock: vi.fn(),
   userGetMock: vi.fn(),
   listAllItemsMock: vi.fn(),
+  onMock: vi.fn(),
   sessionState: {
     isAuthenticated: false,
+    getBrowserSessionAccount: vi.fn(),
   },
   testPinia: { value: null as Pinia | null },
 }))
@@ -30,6 +33,7 @@ vi.mock('@hydroserver/client', () => {
     User,
     createHydroServer: createHydroServerMock,
     default: {
+      on: onMock,
       session: sessionState,
       user: {
         get: userGetMock,
@@ -59,10 +63,12 @@ describe('app initialization bootstrap', () => {
     testPinia.value = pinia
     localStorage.clear()
     sessionState.isAuthenticated = false
+    sessionState.getBrowserSessionAccount.mockReset()
     createHydroServerMock.mockReset()
     fetchAllVocabulariesMock.mockReset()
     userGetMock.mockReset()
     listAllItemsMock.mockReset()
+    onMock.mockReset()
   })
 
   it('waits for HydroServer session initialization before resolving router guards', async () => {
@@ -103,9 +109,11 @@ describe('app initialization bootstrap', () => {
   it('does not mark workspace bootstrap complete when initialized while logged out', async () => {
     createHydroServerMock.mockResolvedValue(undefined)
     fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    sessionState.getBrowserSessionAccount.mockResolvedValue(null)
 
     const {
       hasBootstrappedWorkspaces,
+      isHydroServerAuthenticated,
       startAppInitialization,
       isAppInitializing,
     } = await import('../appInitialization')
@@ -117,10 +125,39 @@ describe('app initialization bootstrap', () => {
     expect(isAppInitializing.value).toBe(false)
   })
 
+  it('hydrates authenticated ui state from the browser session when no oidc user is cached', async () => {
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    sessionState.getBrowserSessionAccount.mockResolvedValue({
+      email: 'browser@example.com',
+      firstName: 'Browser',
+      lastName: 'Session',
+    })
+
+    const {
+      hasBootstrappedWorkspaces,
+      isHydroServerAuthenticated,
+      startAppInitialization,
+    } = await import('../appInitialization')
+
+    await startAppInitialization()
+
+    const userStore = useUserStore()
+
+    expect(sessionState.getBrowserSessionAccount).toHaveBeenCalledTimes(1)
+    expect(isHydroServerAuthenticated.value).toBe(true)
+    expect(userStore.user.email).toBe('browser@example.com')
+    expect(userStore.user.firstName).toBe('Browser')
+    expect(hasBootstrappedWorkspaces.value).toBe(false)
+    expect(userGetMock).not.toHaveBeenCalled()
+    expect(listAllItemsMock).not.toHaveBeenCalled()
+  })
+
   it('loads vocabularies, user, and workspaces after first session initialization', async () => {
     sessionState.isAuthenticated = true
     createHydroServerMock.mockResolvedValue(undefined)
     fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    sessionState.getBrowserSessionAccount.mockResolvedValue(null)
     userGetMock.mockResolvedValue({
       status: 200,
       data: { email: 'user@example.com' },
@@ -132,6 +169,7 @@ describe('app initialization bootstrap', () => {
 
     const {
       hasBootstrappedWorkspaces,
+      isHydroServerAuthenticated,
       startAppInitialization,
       isAppInitializing,
     } = await import('../appInitialization')
@@ -144,6 +182,8 @@ describe('app initialization bootstrap', () => {
     const workspaceStore = useWorkspaceStore()
 
     expect(fetchAllVocabulariesMock).toHaveBeenCalledTimes(1)
+    expect(onMock).toHaveBeenCalledWith('session:changed', expect.any(Function))
+    expect(onMock).toHaveBeenCalledWith('session:expired', expect.any(Function))
     expect(userGetMock).toHaveBeenCalledTimes(1)
     expect(listAllItemsMock).toHaveBeenCalledWith({
       is_associated: true,
@@ -155,6 +195,7 @@ describe('app initialization bootstrap', () => {
       'workspace-2',
     ])
     expect(workspaceStore.selectedWorkspace?.id).toBe('workspace-1')
+    expect(isHydroServerAuthenticated.value).toBe(true)
     expect(hasBootstrappedWorkspaces.value).toBe(true)
     expect(isAppInitializing.value).toBe(false)
   })

@@ -4,11 +4,19 @@ import {
   type User as OidcUser,
 } from 'oidc-client-ts'
 import type { HydroServer } from '../HydroServer'
+import { apiMethods } from '../apiMethods'
+import { User } from '../../types'
 
 const EXPIRING_SOON_SECONDS = 60
+const ACCOUNT_HANDOFF_PARAM = 'handoff'
+const ACCOUNT_HANDOFF_RETURN_TO_PARAM = 'returnTo'
 
 type SigninState = {
   returnTo?: string
+}
+
+type BrowserSessionPayload = {
+  account?: Partial<User> | null
 }
 
 function isBrowser() {
@@ -129,6 +137,26 @@ export class SessionService {
     return user && !user.expired ? user.access_token : null
   }
 
+  async getBrowserSessionAccount(): Promise<User | null> {
+    const response = await apiMethods.fetch(
+      `${this._client.authBase}/browser/session`,
+      {
+        credentials: 'include',
+      }
+    )
+
+    if (!response.ok) {
+      return null
+    }
+
+    const account = (response.data as BrowserSessionPayload | null)?.account
+    if (!account || typeof account !== 'object') {
+      return null
+    }
+
+    return Object.assign(new User(), account)
+  }
+
   checkExpiration(): void {
     if (!this._user) return
     if (!this.isExpiredOrExpiring(this._user)) return
@@ -199,7 +227,12 @@ export class SessionService {
   }
 
   private setUser(user: OidcUser | null): void {
+    const previousAuthenticated = this.isAuthenticated
     this._user = user && !user.expired ? user : null
+    const nextAuthenticated = this.isAuthenticated
+    if (previousAuthenticated !== nextAuthenticated) {
+      this._client.emit('session:changed', nextAuthenticated)
+    }
   }
 
   private isExpiredOrExpiring(user: OidcUser | null): boolean {
@@ -224,6 +257,14 @@ export class SessionService {
     return window.location.href
   }
 
+  private buildAccountHandoffUrl(returnTo: string): string {
+    const handoffUrl = new URL(
+      this._client.resolveAppUrl(this._client.oidc.accountHandoffPath)
+    )
+    handoffUrl.searchParams.set(ACCOUNT_HANDOFF_RETURN_TO_PARAM, returnTo)
+    return handoffUrl.toString()
+  }
+
   private buildAccountUrl(path: string, returnTo = this.getCurrentUrl()): string {
     const url = new URL(this._client.resolveUrl(path))
     if (
@@ -231,6 +272,7 @@ export class SessionService {
       /^https?:\/\//.test(returnTo)
     ) {
       url.searchParams.set('next', returnTo)
+      url.searchParams.set(ACCOUNT_HANDOFF_PARAM, this.buildAccountHandoffUrl(returnTo))
     }
     return url.toString()
   }

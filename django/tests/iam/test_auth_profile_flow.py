@@ -233,6 +233,24 @@ def test_profile_page_shows_back_to_app_link(client, get_principal):
     assert b"http://127.0.0.1:5173/orchestration?workspaceId=abc123" in response.content
 
 
+def test_profile_page_uses_next_for_back_link_not_handoff(client, get_principal):
+    client.force_login(get_principal("owner"))
+
+    response = client.get(
+        "/accounts/profile/",
+        {
+            "next": "http://127.0.0.1:5173/orchestration?workspaceId=abc123",
+            "handoff": "http://127.0.0.1:5173/auth/handoff?returnTo=http%3A%2F%2F127.0.0.1%3A5173%2Forchestration%3FworkspaceId%3Dabc123",
+        },
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Back to app" in content
+    assert "http://127.0.0.1:5173/orchestration?workspaceId=abc123" in content
+    assert "http://127.0.0.1:5173/auth/handoff" not in content
+
+
 def test_account_signup_requires_first_name():
     payload = signup_payload(f"signup-missing-first-{uuid4().hex}@example.com")
     payload["firstName"] = ""

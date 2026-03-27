@@ -186,3 +186,14 @@ def test_oidc_auth_rejects_invalid_access_tokens(request_factory):
         oidc_auth.authenticate(request, "invalid-access-token")
 
     assert exc_info.value.status_code == 401
+
+
+def test_browser_session_endpoint_returns_authenticated_account(client):
+    user = User.objects.get(email="owner@example.com")
+    client.force_login(user)
+
+    response = client.get("/api/auth/browser/session")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data"]["account"]["email"] == user.email

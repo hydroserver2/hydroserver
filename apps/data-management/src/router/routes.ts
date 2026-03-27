@@ -95,6 +95,16 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/auth/handoff',
+    name: 'AuthHandoff',
+    component: () => import('@/pages/AuthHandoff.vue'),
+    meta: {
+      title: 'Returning To App',
+      hideNavBar: true,
+      hideFooter: true,
+    },
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/pages/Redirecting.vue'),

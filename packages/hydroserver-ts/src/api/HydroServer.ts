@@ -17,6 +17,7 @@ export interface HydroServerOIDCOptions {
   clientId?: string
   redirectPath?: string
   postLogoutRedirectPath?: string
+  accountHandoffPath?: string
   scope?: string
 }
 
@@ -60,6 +61,7 @@ export class HydroServer {
       clientId: oidc?.clientId ?? 'hydroserver-data-management',
       redirectPath: oidc?.redirectPath ?? '/callback',
       postLogoutRedirectPath: oidc?.postLogoutRedirectPath ?? '/',
+      accountHandoffPath: oidc?.accountHandoffPath ?? '/auth/handoff',
       scope: oidc?.scope ?? 'openid profile email',
     }
   }
