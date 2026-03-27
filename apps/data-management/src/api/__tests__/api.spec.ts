@@ -5,6 +5,12 @@ const { fetchMock } = vi.hoisted(() => ({
 }))
 
 vi.mock('@hydroserver/client', () => {
+  const defaultExport = {
+    session: {
+      getAccessToken: vi.fn().mockResolvedValue(null),
+    },
+  }
+
   class Thing {
     id = ''
     workspaceId = ''
@@ -35,6 +41,7 @@ vi.mock('@hydroserver/client', () => {
   }
 
   return {
+    default: defaultExport,
     Thing,
     Datastream,
     ObservedProperty,

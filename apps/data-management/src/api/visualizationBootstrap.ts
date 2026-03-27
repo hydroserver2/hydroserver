@@ -53,6 +53,7 @@ export async function getVisualizationBootstrap() {
   const response = await fetch(
     `${apiBaseUrl}/api/data/datastreams/visualization-bootstrap`,
     {
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

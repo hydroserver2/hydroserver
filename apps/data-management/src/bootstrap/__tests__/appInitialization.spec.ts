@@ -223,4 +223,178 @@ describe('app initialization bootstrap', () => {
 
     consoleErrorSpy.mockRestore()
   })
+
+  it('returns an already resolved wait promise before initialization starts', async () => {
+    const { waitForHydroServerInitialization } = await import('../appInitialization')
+
+    await expect(waitForHydroServerInitialization()).resolves.toBeUndefined()
+  })
+
+  it('resets the user when the authenticated user request returns 401', async () => {
+    sessionState.isAuthenticated = true
+    sessionState.hasAccessToken = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    userGetMock.mockResolvedValue({
+      status: 401,
+      data: { email: 'ignored@example.com' },
+    })
+    listAllItemsMock.mockResolvedValue([
+      { id: 'workspace-1', name: 'Workspace 1' },
+    ])
+
+    const { startAppInitialization } = await import('../appInitialization')
+
+    await startAppInitialization()
+
+    const userStore = useUserStore()
+    expect(userStore.user.email).toBe('')
+  })
+
+  it('records user fetch failures without breaking workspace bootstrap', async () => {
+    const userError = new Error('user request failed')
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    sessionState.isAuthenticated = true
+    sessionState.hasAccessToken = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    userGetMock.mockRejectedValue(userError)
+    listAllItemsMock.mockResolvedValue([
+      { id: 'workspace-1', name: 'Workspace 1' },
+    ])
+
+    const {
+      hasBootstrappedWorkspaces,
+      initializationError,
+      startAppInitialization,
+    } = await import('../appInitialization')
+
+    await startAppInitialization()
+
+    expect(initializationError.value).toBe(userError)
+    expect(hasBootstrappedWorkspaces.value).toBe(true)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching user',
+      userError
+    )
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('records workspace fetch failures without breaking user bootstrap', async () => {
+    const workspaceError = new Error('workspace request failed')
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    sessionState.isAuthenticated = true
+    sessionState.hasAccessToken = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    userGetMock.mockResolvedValue({
+      status: 200,
+      data: { email: 'user@example.com' },
+    })
+    listAllItemsMock.mockRejectedValue(workspaceError)
+
+    const {
+      hasBootstrappedWorkspaces,
+      initializationError,
+      startAppInitialization,
+    } = await import('../appInitialization')
+
+    await startAppInitialization()
+
+    const userStore = useUserStore()
+    expect(userStore.user.email).toBe('user@example.com')
+    expect(hasBootstrappedWorkspaces.value).toBe(false)
+    expect(initializationError.value).toBe(workspaceError)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching workspaces',
+      workspaceError
+    )
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('records vocabulary fetch failures', async () => {
+    const vocabularyError = new Error('vocabulary request failed')
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockRejectedValue(vocabularyError)
+
+    const { initializationError, startAppInitialization } = await import(
+      '../appInitialization'
+    )
+
+    await startAppInitialization()
+
+    expect(initializationError.value).toBe(vocabularyError)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching vocabularies',
+      vocabularyError
+    )
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('reuses the initialization promise and only attaches session listeners once', async () => {
+    sessionState.isAuthenticated = false
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+
+    const { startAppInitialization } = await import('../appInitialization')
+
+    const first = startAppInitialization()
+    const second = startAppInitialization()
+
+    await first
+    await second
+
+    expect(first).toBe(second)
+    expect(createHydroServerMock).toHaveBeenCalledTimes(1)
+    expect(onMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('refreshes authenticated state when session change and expiry callbacks fire', async () => {
+    sessionState.isAuthenticated = true
+    sessionState.hasAccessToken = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    userGetMock.mockResolvedValue({
+      status: 200,
+      data: { email: 'callback@example.com' },
+    })
+    listAllItemsMock.mockResolvedValue([
+      { id: 'workspace-1', name: 'Workspace 1' },
+    ])
+
+    const { startAppInitialization } = await import('../appInitialization')
+
+    await startAppInitialization()
+
+    const sessionChanged = onMock.mock.calls.find(
+      ([eventName]) => eventName === 'session:changed'
+    )?.[1] as (() => void) | undefined
+    const sessionExpired = onMock.mock.calls.find(
+      ([eventName]) => eventName === 'session:expired'
+    )?.[1] as (() => void) | undefined
+
+    expect(sessionChanged).toBeTypeOf('function')
+    expect(sessionExpired).toBeTypeOf('function')
+
+    sessionChanged?.()
+    sessionExpired?.()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(userGetMock).toHaveBeenCalledTimes(3)
+    expect(listAllItemsMock).toHaveBeenCalledTimes(3)
+  })
 })

@@ -12,6 +12,7 @@ export async function listThingSiteSummaries(
   const response = await fetch(
     `${apiBaseUrl}/api/data/things/site-summaries?${query.toString()}`,
     {
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

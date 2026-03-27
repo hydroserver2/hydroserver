@@ -470,4 +470,140 @@ describe('task run detail helpers', () => {
       { title: 'Logs', type: 'text', text: '–' },
     ])
   })
+
+  it('parses newline-delimited raw logs into inferred extract entries', () => {
+    const run: TaskRun = {
+      id: 'run-raw',
+      status: 'FAILURE',
+      result: {
+        logs: [
+          '2026-03-12T12:00:00Z INFO Download complete',
+          'plain text line',
+        ].join('\n'),
+      },
+    }
+
+    const sections = buildTaskRunDetailSections(run)
+
+    expect(sections.map((section) => section.title)).toEqual(['Extract'])
+
+    const extractSection = sections[0]
+    expect(extractSection?.type).toBe('lines')
+    if (extractSection?.type === 'lines') {
+      expect(extractSection.entries).toEqual([
+        {
+          timestamp: '2026-03-12T12:00:00Z',
+          level: 'INFO',
+          stage: 'EXTRACT',
+          message: 'Download complete',
+        },
+        {
+          stage: 'EXTRACT',
+          message: 'plain text line',
+        },
+      ])
+    }
+  })
+
+  it('builds summary, error, runtime, target, traceback, and detail sections when logs are absent', () => {
+    const run: TaskRun = {
+      id: 'run-raw',
+      status: 'FAILURE',
+      result: {
+        success_count: 1,
+        failure_count: 1,
+        skipped_count: 0,
+        values_loaded_total: 7,
+        earliest_timestamp: '2026-03-01T00:00:00Z',
+        latest_timestamp: '2026-03-12T00:00:00Z',
+        error: 'Top-level failure',
+        runtime_variables: {
+          extractor: {
+            source_uri: 'https://example.com/runtime.csv',
+          },
+        },
+        target_results: {
+          first: {
+            status: 'failed',
+            error: 'failed to upload',
+            earliest_timestamp: '2026-03-01T00:00:00Z',
+            latest_timestamp: '2026-03-12T00:00:00Z',
+          },
+          second: {
+            status: 'success',
+            values_loaded: 7,
+          },
+        },
+        traceback: 'Traceback body',
+        extra_context: { retained: true },
+      },
+    }
+
+    const sections = buildTaskRunDetailSections(run)
+
+    expect(sections.map((section) => section.title)).toEqual([
+      'Summary',
+      'Error',
+      'Runtime context',
+      'Target results',
+      'Traceback',
+      'Details',
+    ])
+
+    const errorSection = sections.find((section) => section.title === 'Error')
+    expect(errorSection).toEqual({
+      title: 'Error',
+      type: 'text',
+      text: 'Top-level failure',
+    })
+
+    const runtimeContextSection = sections.find(
+      (section) => section.title === 'Runtime context'
+    )
+    expect(runtimeContextSection).toEqual({
+      title: 'Runtime context',
+      type: 'text',
+      text: prettyJson({
+        extractor: {
+          source_uri: 'https://example.com/runtime.csv',
+        },
+      }),
+    })
+
+    const targetResultsSection = sections.find(
+      (section) => section.title === 'Target results'
+    )
+    expect(targetResultsSection?.type).toBe('lines')
+    if (targetResultsSection?.type === 'lines') {
+      expect(targetResultsSection.entries).toEqual([
+        {
+          level: 'FAILED',
+          message:
+            'Target first | first 2026-03-01T00:00:00Z | last 2026-03-12T00:00:00Z | failed to upload',
+        },
+        {
+          level: 'SUCCESS',
+          message: 'Target second | 7 loaded',
+        },
+      ])
+    }
+
+    const tracebackSection = sections.find(
+      (section) => section.title === 'Traceback'
+    )
+    expect(tracebackSection).toEqual({
+      title: 'Traceback',
+      type: 'text',
+      text: 'Traceback body',
+    })
+
+    const detailsSection = sections.find((section) => section.title === 'Details')
+    expect(detailsSection).toEqual({
+      title: 'Details',
+      type: 'text',
+      text: prettyJson({
+        extra_context: { retained: true },
+      }),
+    })
+  })
 })

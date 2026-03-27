@@ -158,4 +158,47 @@ describe('useTableLogic', () => {
     expect(consoleErrorSpy).toHaveBeenCalled()
     consoleErrorSpy.mockRestore()
   })
+
+  it('does nothing when deleting with no selected item', async () => {
+    const apiDeleteFunction = vi.fn().mockResolvedValue(undefined)
+    const wrapper = mount(createDummyComponent({ apiDeleteFunction }))
+    await flushPromises()
+
+    const vm = wrapper.vm as Omit<typeof wrapper.vm, 'item'> & {
+      item: Unit | null
+    }
+    vm.item = null
+    await wrapper.vm.onDelete()
+
+    expect(apiDeleteFunction).not.toHaveBeenCalled()
+  })
+
+  it('reloads items when the workspace id changes', async () => {
+    const secondResult = [{ ...unitFixtures[0], id: 'reloaded-id' }]
+    const apiFetchFunction = vi
+      .fn()
+      .mockResolvedValueOnce(unitFixtures)
+      .mockResolvedValueOnce(secondResult)
+
+    const wrapper = mount(createDummyComponent({ apiFetchFunction }))
+    await flushPromises()
+
+    wrapper.vm.workspaceIdRef = 'next-workspace'
+    await flushPromises()
+
+    expect(apiFetchFunction).toHaveBeenCalledTimes(2)
+    expect(apiFetchFunction).toHaveBeenNthCalledWith(2, 'next-workspace')
+    expect(wrapper.vm.items).toEqual(secondResult)
+  })
+
+  it('does not reload items when the workspace id is set to the same value', async () => {
+    const apiFetchFunction = vi.fn().mockResolvedValue(unitFixtures)
+    const wrapper = mount(createDummyComponent({ apiFetchFunction }))
+    await flushPromises()
+
+    wrapper.vm.workspaceIdRef = 'test-workspace'
+    await flushPromises()
+
+    expect(apiFetchFunction).toHaveBeenCalledTimes(1)
+  })
 })
