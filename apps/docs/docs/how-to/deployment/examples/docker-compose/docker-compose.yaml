@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   hydroserver:
-    image: ghcr.io/hydroserver2/hydroserver-api-services:latest
+    image: ghcr.io/hydroserver2/hydroserver:latest
     command: python manage.py run_demo
     restart: unless-stopped
     environment:
