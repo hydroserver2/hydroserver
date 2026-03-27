@@ -2,20 +2,21 @@
 
 ## What is HydroServer?
 
-HydroServer is a data management system designed to store, manage, and
-share a diverse range of environmental time-series data. The following is a list of HydroServer's main parts:
+HydroServer is a data management system designed to store, manage, and share a diverse range of environmental time-series data. It is a modular system that connects data sources to researchers and decision-makers.
 
-### A Django REST API
+### The HydroServer Instance
 
-This is the “server” in HydroServer. Most organizations using HydroServer will fork our [hydroserver-ops GitHub repository](https://github.com/hydroserver2/hydroserver-ops) and use it to spin up their own server, whether on Google Cloud Platform, Amazon Web Services, or a local machine. Throughout this documentation, we often refer to “an instance of HydroServer.” This means you've copied our source code and deployed it as your own live instance.
+The core of the ecosystem is your **HydroServer Instance**. This is the live, hosted environment—consisting of the database, APIs, and apps—that serves as the central hub for your environmental data.
+
+Most organizations will start by following our [production deployment guide](/how-to/deployment/production-deployment-overview.md) to spin up their own instance, whether on-premises (using a local server or VM) or through a cloud provider like **Google Cloud Platform** or **Amazon Web Services**. Throughout this documentation, when we refer to "an instance," we mean your specific, deployed version of the HydroServer software that you manage and maintain as a persistent web service.
 
 ### Client-side applications and packages which include:
 
-1. The Data Management Web App. This will be the main website for your HydroServer instance where you can register and manage your sites, define their metadata, and view and download your data.
+1. `hydroserverpy` **(Python Package)**: This is a Python wrapper for the HydroServer REST API, designed for those who want to manage data programmatically. Beyond simple API interaction, the package includes specialized tools for performing time-series ETL (Extract, Transform, Load) and automated quality control.
 
-2. Orchestration systems. Orchestration software can be downloaded onto a computer or data logger to be put to work extracting data from field sensors or URLs, transforming those files into a standard format HydroServer can read, and loading those data into HydroServer via the REST API. Custom schedules can be set for each dataset.
+2. `hydroserver-ts` **(NodeJS Package)**: This is a TypeScript library designed to help developers build web applications that need to plug into HydroServer’s APIs.
 
-3. A Python package named hydroserverpy. This is a wrapper around the REST API which makes managing data in HydroServer much easier for those interesting in doing so programmatically.
+3. **The Streaming Data Loader**: A desktop application designed to automate data ingestion into HydroServer. It monitors local CSV files containing environmental time-series data and automatically loads them into your HydroServer instance, reducing the need for manual uploads.
 
 ## Cite HydroServer
 
