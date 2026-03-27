@@ -23,7 +23,7 @@ Before starting, make sure you have the following software installed on your mac
    git clone https://github.com/hydroserver2/hydroserver.git
    cd hydroserver/deploy/dev
    ```
-2. Create environment variables for static and media file paths. The default locations of these folders should be `/static` and `/media` within the `hydroserver-api-services` project folder.
+2. Create environment variables for static and media file paths. The default locations of these folders should be `/static` and `/media` within the `hydroserver` project folder.
    Mac/Linux:
    ```bash
    export HS_MEDIAFILES="/path/to/media"
@@ -39,51 +39,51 @@ Before starting, make sure you have the following software installed on your mac
    docker compose --file "docker-compose.yaml" up
    ```
 
-## HydroServer API Services
-
-### Installation
+## Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/hydroserver2/hydroserver-api-services.git
-   cd hydroserver-api-services
+   git clone https://github.com/hydroserver2/hydroserver.git
+   cd hydroserver
    ```
-2. Install the dependencies:
+
+## HydroServer Backend Setup
+
+### Installation
+
+1. Navigate to `django` and install the dependencies:
    ```bash
+   cd django
    pip install -r requirements.txt
    ```
-3. Create a .env file in the root of the repository and update variables as needed. For getting started, the default settings should be sufficient.
-4. Perform database migrations and collect static files:
+2. Create a .env file and update variables as needed. For getting started, the default settings should be sufficient.
+3. Perform database migrations and collect static files:
    ```bash
    python manage.py migrate
    python manage.py collectstatic
    ```
-5. Create an admin user and load test data.
+4. Create an admin user and load test data.
    ```bash
    python manage.py createsuperuser
    python manage.py load_iam_test_data
    python manage.py load_sta_test_data
    ```
-6. Start the development web server:
+5. Start the Django development web server:
    ```bash
    python manage.py runserver
    ```
 
-## HydroServer Data Management App
+## HydroServer Frontend
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/hydroserver2/hydroserver-data-management-app.git
-   ```
-2. Navigate to the project directory and install the required packages:
+1. Navigate to `apps/data-management` and install the required packages:
    ```bash
    cd hydroserver-data-management-app
    npm install
    ```
-3. Create a .env file in the root of the repository and update variables as needed. For getting started, the default settings should be sufficient.
-4. Build the static files and run the application in production mode:
+2. Create a .env file and update variables as needed. For getting started, the default settings should be sufficient.
+3. Build the static files and run the application in production mode:
    ```bash
    npm run build
    npm run preview

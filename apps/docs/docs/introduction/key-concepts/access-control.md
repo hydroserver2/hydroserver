@@ -2,7 +2,7 @@
 
 HydroServer is built to handle not only multiple users with varying permission levels for one organization, but multiple organizations sharing the same instance of HydroServer. This is accomplished primarily through workspaces.
 
-# Workspaces
+## Workspaces
 
 Think of a workspace as Google Drive or Microsoft OneDrive folder. The person who creates the folder is automatically the owner. They can then share the folder with anyone they want and give them either edit or view only permissions. Any one person can have different permissions for various folders shared with them.
 
@@ -10,7 +10,7 @@ Ownership within the HydroServer system is user-centric, meaning individual user
 
 All resources in HydroServer (sites, datastreams, etc.) are handled within the context of a workspace. When you create a new site, you'll first decide which workspace it belongs to. It then inherits all the permissions of that workspace.
 
-## Rolls
+## Roles
 
 Each collaborator in a workspace is assigned a roll. A roll is a set of permissions configurable at the resource level. For example, you can give a roll read only access to the sites in a workspace, but give it full edit access to the datastreams of a workspace. By default, HydroServer ships with owner, editor, and viewer rolls, but you can configure your own.
 

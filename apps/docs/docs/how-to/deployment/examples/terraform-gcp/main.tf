@@ -47,8 +47,8 @@ resource "null_resource" "ghcr_to_artifact_registry" {
       set -euo pipefail
 
       REGION="${var.region}"
-      REPO="${var.region}-docker.pkg.dev/${var.project_id}/hydroserver-demo/hydroserver-api-services"
-      GHCR_IMAGE="ghcr.io/hydroserver2/hydroserver-api-services:latest"
+      REPO="${var.region}-docker.pkg.dev/${var.project_id}/hydroserver-demo/hydroserver"
+      GHCR_IMAGE="ghcr.io/hydroserver2/hydroserver:latest"
 
       # GCP Authentication
       gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
@@ -112,7 +112,7 @@ resource "google_cloud_run_v2_service" "hydroserver" {
 
   template {
     containers {
-      image   = "${var.region}-docker.pkg.dev/${var.project_id}/hydroserver-demo/hydroserver-api-services:latest"
+      image   = "${var.region}-docker.pkg.dev/${var.project_id}/hydroserver-demo/hydroserver:latest"
       command = ["python", "manage.py", "run_demo"]
 
       resources {
