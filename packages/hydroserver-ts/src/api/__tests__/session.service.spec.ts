@@ -130,4 +130,19 @@ describe('SessionService', () => {
 
     expect(() => session.checkExpiration()).not.toThrow()
   })
+
+  it('builds account urls with the current app route as next', () => {
+    window.history.replaceState({}, '', '/orchestration?workspaceId=abc#runs')
+
+    const session = new SessionService(
+      new HydroServer({ host: 'https://hydro.example.com' })
+    )
+
+    expect(session.accountSignupUrl).toBe(
+      'https://hydro.example.com/accounts/signup/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs'
+    )
+    expect(session.accountProfileUrl).toBe(
+      'https://hydro.example.com/accounts/profile/?next=http%3A%2F%2Flocalhost%3A3000%2Forchestration%3FworkspaceId%3Dabc%23runs'
+    )
+  })
 })

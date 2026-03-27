@@ -28,9 +28,6 @@ function removeHydroServerStorage() {
 }
 
 export class SessionService {
-  readonly accountSignupUrl: string
-  readonly accountProfileUrl: string
-
   private readonly _client: HydroServer
   private _manager: UserManager | null = null
   private _user: OidcUser | null = null
@@ -39,8 +36,14 @@ export class SessionService {
 
   constructor(client: HydroServer) {
     this._client = client
-    this.accountSignupUrl = this._client.resolveUrl('/accounts/signup/')
-    this.accountProfileUrl = this._client.resolveUrl('/accounts/profile/')
+  }
+
+  get accountSignupUrl(): string {
+    return this.buildAccountUrl('/accounts/signup/')
+  }
+
+  get accountProfileUrl(): string {
+    return this.buildAccountUrl('/accounts/profile/')
   }
 
   get isAuthenticated(): boolean {
@@ -219,5 +222,16 @@ export class SessionService {
       return this._client.resolveAppUrl(this._client.oidc.redirectPath)
     }
     return window.location.href
+  }
+
+  private buildAccountUrl(path: string, returnTo = this.getCurrentUrl()): string {
+    const url = new URL(this._client.resolveUrl(path))
+    if (
+      (returnTo.startsWith('/') && !returnTo.startsWith('//')) ||
+      /^https?:\/\//.test(returnTo)
+    ) {
+      url.searchParams.set('next', returnTo)
+    }
+    return url.toString()
   }
 }

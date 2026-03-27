@@ -3,6 +3,7 @@ from interfaces.account import views
 
 urlpatterns = [
     path("login/", views.login, name="account_login"),
+    path("signup/", views.signup, name="account_signup"),
     path("email/", views.unavailable_account_management, name="disabled_account_email"),
     path("3rdparty/", views.unavailable_account_management, name="disabled_socialaccount_connections"),
     path("social/connections/", views.unavailable_account_management, name="disabled_socialaccount_connections_legacy"),

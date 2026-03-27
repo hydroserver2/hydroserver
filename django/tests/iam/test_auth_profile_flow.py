@@ -220,6 +220,19 @@ def test_email_verification_sent_page_renders():
     assert "Verify your email" in content
 
 
+def test_profile_page_shows_back_to_app_link(client, get_principal):
+    client.force_login(get_principal("owner"))
+
+    response = client.get(
+        "/accounts/profile/",
+        {"next": "http://127.0.0.1:5173/orchestration?workspaceId=abc123"},
+    )
+
+    assert response.status_code == 200
+    assert b"Back to app" in response.content
+    assert b"http://127.0.0.1:5173/orchestration?workspaceId=abc123" in response.content
+
+
 def test_account_signup_requires_first_name():
     payload = signup_payload(f"signup-missing-first-{uuid4().hex}@example.com")
     payload["firstName"] = ""

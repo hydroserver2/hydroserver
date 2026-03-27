@@ -1,5 +1,6 @@
 import logging
 from smtplib import SMTPException
+from urllib.parse import urlparse
 
 from django.http import HttpRequest
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter, get_adapter as get_account_adapter
 from allauth.core import context as allauth_context
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from interfaces.account.navigation import get_stored_account_return_to
 from interfaces.auth.schemas import AccountPatchBody
 from domains.iam.services import AccountService
 
@@ -22,6 +24,32 @@ class AccountAdapter(DefaultAccountAdapter):
 
     def is_open_for_signup(self, request: HttpRequest):
         return settings.ACCOUNT_SIGNUP_ENABLED
+
+    def get_login_redirect_url(self, request):
+        return get_stored_account_return_to(request) or super().get_login_redirect_url(
+            request
+        )
+
+    def get_signup_redirect_url(self, request):
+        return get_stored_account_return_to(request) or super().get_signup_redirect_url(
+            request
+        )
+
+    def is_safe_url(self, url):
+        parsed = urlparse(url)
+        try:
+            if super().is_safe_url(url):
+                return True
+        except (AttributeError, LookupError):
+            if parsed.scheme or parsed.netloc:
+                pass
+            else:
+                return url.startswith("/") and not url.startswith("//")
+
+        if not parsed.scheme or not parsed.netloc:
+            return False
+
+        return self._origin_from_url(url) in self._get_allowed_return_origins()
 
     def send_mail(self, template_prefix: str, email: str, context: dict) -> None:
         request = allauth_context.request
@@ -45,6 +73,28 @@ class AccountAdapter(DefaultAccountAdapter):
                 backend="django.core.mail.backends.console.EmailBackend"
             )
             console_connection.send_messages([msg])
+
+    def _get_allowed_return_origins(self):
+        origins = set()
+
+        for client_config in getattr(settings, "OIDC_BUNDLED_CLIENTS", {}).values():
+            for url in client_config.get("redirect_uris", []):
+                origin = self._origin_from_url(url)
+                if origin:
+                    origins.add(origin)
+            for origin in client_config.get("cors_origins", []):
+                normalized = self._origin_from_url(origin)
+                if normalized:
+                    origins.add(normalized)
+
+        return origins
+
+    @staticmethod
+    def _origin_from_url(url):
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return None
+        return f"{parsed.scheme}://{parsed.netloc}"
 
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)

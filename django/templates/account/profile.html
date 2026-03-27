@@ -26,10 +26,21 @@
                 <p class="text-sm text-gray-600">{{ user.email }}</p>
             </div>
         </div>
-        <a href="{% url 'account_profile_edit' %}"
-           class="inline-flex min-h-12 items-center justify-center rounded-xl border border-primary bg-white px-5 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary-light hover:text-primary-dark">
-            {% trans "Edit profile" %}
-        </a>
+        <div class="flex flex-col gap-3 sm:flex-row">
+            {% if account_return_url %}
+            <a href="{{ account_return_url }}"
+               class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-5 py-3 text-sm font-medium text-white shadow-elevation-2 transition-colors hover:bg-primary-dark">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M17.5 10a.75.75 0 0 1-.75.75H5.06l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 1 1 1.06 1.06L5.06 9.25h11.69a.75.75 0 0 1 .75.75Z" clip-rule="evenodd" />
+                </svg>
+                {% trans "Back to app" %}
+            </a>
+            {% endif %}
+            <a href="{% url 'account_profile_edit' %}"
+               class="inline-flex min-h-12 items-center justify-center rounded-xl border border-primary bg-white px-5 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary-light hover:text-primary-dark">
+                {% trans "Edit profile" %}
+            </a>
+        </div>
     </div>
 
     <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5">

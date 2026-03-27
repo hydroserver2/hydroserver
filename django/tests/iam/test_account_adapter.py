@@ -55,3 +55,18 @@ def test_account_adapter_reraises_email_delivery_errors_outside_dev(
     with request_context(request):
         with pytest.raises(SMTPException):
             adapter.send_mail("account/email/email_confirmation", "user@example.com", {})
+
+
+def test_account_adapter_allows_registered_client_origins_as_return_urls(settings):
+    adapter = AccountAdapter()
+
+    settings.OIDC_BUNDLED_CLIENTS = {
+        "test": {
+            "id": "test-client",
+            "redirect_uris": ["http://127.0.0.1:5173/callback"],
+            "cors_origins": ["http://127.0.0.1:5173"],
+        }
+    }
+
+    assert adapter.is_safe_url("http://127.0.0.1:5173/orchestration?workspaceId=123")
+    assert not adapter.is_safe_url("http://malicious.example.com/orchestration")

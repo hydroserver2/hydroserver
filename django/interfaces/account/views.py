@@ -1,7 +1,7 @@
 import logging
 from urllib.parse import unquote
 
-from allauth.account.views import LoginView as AllauthLoginView
+from allauth.account.views import LoginView as AllauthLoginView, SignupView as AllauthSignupView
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -9,6 +9,7 @@ from django.db import OperationalError, ProgrammingError
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from interfaces.account.forms import ProfileForm, DeleteAccountForm
+from interfaces.account.navigation import get_account_return_to
 from domains.iam.services import AccountService
 
 
@@ -38,23 +39,37 @@ class LoginView(AllauthLoginView):
         request.GET = _normalize_redirect_field(request.GET)
         if request.method == "POST":
             request.POST = _normalize_redirect_field(request.POST)
+        get_account_return_to(request)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class SignupView(AllauthSignupView):
+    def dispatch(self, request, *args, **kwargs):
+        request.GET = _normalize_redirect_field(request.GET)
+        if request.method == "POST":
+            request.POST = _normalize_redirect_field(request.POST)
+        get_account_return_to(request)
         return super().dispatch(request, *args, **kwargs)
 
 
 login = LoginView.as_view()
+signup = SignupView.as_view()
 
 
 @login_required
 def profile(request):
     user = request.user
+    return_to = get_account_return_to(request)
     return render(request, "account/profile.html", {
         "user": user,
         "organization": user.organization,
+        "return_to": return_to,
     })
 
 
 @login_required
 def profile_edit(request):
+    return_to = get_account_return_to(request)
     if request.method == "POST":
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
@@ -64,11 +79,12 @@ def profile_edit(request):
     else:
         form = ProfileForm(instance=request.user)
 
-    return render(request, "account/profile_edit.html", {"form": form})
+    return render(request, "account/profile_edit.html", {"form": form, "return_to": return_to})
 
 
 @login_required
 def unavailable_account_management(request):
+    get_account_return_to(request)
     messages.info(request, "That account management page is not available in this HydroServer instance.")
     return redirect("account_profile")
 
@@ -76,6 +92,7 @@ def unavailable_account_management(request):
 @login_required
 def delete_account(request):
     user = request.user
+    return_to = get_account_return_to(request)
     owned_workspaces = []
     try:
         from domains.iam.models import Workspace
@@ -99,4 +116,5 @@ def delete_account(request):
     return render(request, "account/delete_account.html", {
         "form": form,
         "owned_workspaces": owned_workspaces,
+        "return_to": return_to,
     })
