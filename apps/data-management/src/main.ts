@@ -6,13 +6,12 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router/router'
 import vuetify from '@/plugins/vuetify'
-import { createPinia } from 'pinia'
+import pinia from '@/plugins/pinia'
 import { injectClarity } from '@/plugins/clarity'
 import { settings } from '@/config/settings'
 import { startAppInitialization } from '@/bootstrap/appInitialization'
 
 const app = createApp(App)
-const pinia = createPinia()
 
 app.use(pinia)
 

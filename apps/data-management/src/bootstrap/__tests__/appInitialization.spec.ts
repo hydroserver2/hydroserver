@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createPinia, setActivePinia } from 'pinia'
+import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { useUserStore } from '@/store/user'
 import { useWorkspaceStore } from '@/store/workspaces'
 
@@ -9,6 +9,7 @@ const {
   userGetMock,
   listAllItemsMock,
   sessionState,
+  testPinia,
 } = vi.hoisted(() => ({
   createHydroServerMock: vi.fn(),
   fetchAllVocabulariesMock: vi.fn(),
@@ -17,6 +18,7 @@ const {
   sessionState: {
     isAuthenticated: false,
   },
+  testPinia: { value: null as Pinia | null },
 }))
 
 vi.mock('@hydroserver/client', () => {
@@ -45,10 +47,16 @@ vi.mock('@/composables/useVocabulary', () => ({
   }),
 }))
 
+vi.mock('@/plugins/pinia', () => ({
+  default: testPinia.value,
+}))
+
 describe('app initialization bootstrap', () => {
   beforeEach(() => {
     vi.resetModules()
-    setActivePinia(createPinia())
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    testPinia.value = pinia
     localStorage.clear()
     sessionState.isAuthenticated = false
     createHydroServerMock.mockReset()

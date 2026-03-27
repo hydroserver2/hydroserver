@@ -1,4 +1,5 @@
 import { useVocabularyStore } from '@/composables/useVocabulary'
+import pinia from '@/plugins/pinia'
 import { useUserStore } from '@/store/user'
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs, { createHydroServer, User } from '@hydroserver/client'
@@ -26,8 +27,8 @@ function recordInitializationError(message: string, error: unknown) {
 }
 
 export async function initializeAuthenticatedState() {
-  const { user } = storeToRefs(useUserStore())
-  const { setWorkspaces } = useWorkspaceStore()
+  const { user } = storeToRefs(useUserStore(pinia))
+  const { setWorkspaces } = useWorkspaceStore(pinia)
 
   user.value = new User()
   setWorkspaces([])
@@ -99,7 +100,7 @@ export function startAppInitialization() {
     .then(async () => {
       if (!isHydroServerReady.value) return
 
-      const vocabularyRequest = useVocabularyStore()
+      const vocabularyRequest = useVocabularyStore(pinia)
         .fetchAllVocabularies()
         .catch((error) => {
           recordInitializationError('Error fetching vocabularies', error)
