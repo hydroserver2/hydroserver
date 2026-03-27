@@ -3,7 +3,6 @@ from allauth.core.context import request_context
 from allauth.idp.oidc.adapter import get_adapter
 from allauth.idp.oidc.internal.tokens import decode_jwt_token
 from allauth.idp.oidc.models import Client, Token
-from ninja.errors import HttpError
 from ninja.security import HttpBearer
 
 
@@ -17,8 +16,7 @@ class OIDCAuth(HttpBearer):
             request.user = user
             request.principal = user
             return user
-        elif token:
-            raise HttpError(401, "Invalid token")
+        return None
 
     def _authenticate_opaque_token(self, token):
         access_token = Token.objects.lookup(Token.Type.ACCESS_TOKEN, token)

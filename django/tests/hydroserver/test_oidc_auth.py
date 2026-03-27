@@ -2,10 +2,9 @@ import time
 import uuid
 
 import jwt
-import pytest
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
-from ninja.errors import HttpError
+import pytest
 
 from allauth.core.context import request_context
 from allauth.core.internal import jwkkit
@@ -113,10 +112,7 @@ def test_oidc_auth_rejects_expired_opaque_tokens(request_factory, oidc_client):
     access_token.set_scopes(["openid", "profile", "email"])
     access_token.save(update_fields=["scopes"])
 
-    with pytest.raises(HttpError) as exc_info:
-        oidc_auth.authenticate(request, token_value)
-
-    assert exc_info.value.status_code == 401
+    assert oidc_auth.authenticate(request, token_value) is None
 
 
 def test_oidc_auth_rejects_jwt_access_tokens_without_matching_audience(
@@ -144,10 +140,7 @@ def test_oidc_auth_rejects_jwt_access_tokens_without_matching_audience(
     )
 
     with request_context(request):
-        with pytest.raises(HttpError) as exc_info:
-            oidc_auth.authenticate(request, token_value)
-
-    assert exc_info.value.status_code == 401
+        assert oidc_auth.authenticate(request, token_value) is None
 
 
 def test_oidc_auth_rejects_expired_jwt_tokens(request_factory, oidc_client, settings):
@@ -173,19 +166,42 @@ def test_oidc_auth_rejects_expired_jwt_tokens(request_factory, oidc_client, sett
     )
 
     with request_context(request):
-        with pytest.raises(HttpError) as exc_info:
-            oidc_auth.authenticate(request, token_value)
-
-    assert exc_info.value.status_code == 401
+        assert oidc_auth.authenticate(request, token_value) is None
 
 
 def test_oidc_auth_rejects_invalid_access_tokens(request_factory):
     request = request_factory.get("/api/data/workspaces")
 
-    with pytest.raises(HttpError) as exc_info:
-        oidc_auth.authenticate(request, "invalid-access-token")
+    assert oidc_auth.authenticate(request, "invalid-access-token") is None
 
-    assert exc_info.value.status_code == 401
+
+def test_public_workspace_listing_ignores_invalid_bearer_token(client):
+    response = client.get(
+        "/api/data/workspaces?expand_related=true",
+        HTTP_AUTHORIZATION="Bearer invalid-access-token",
+    )
+
+    assert response.status_code == 200
+
+
+def test_public_thing_markers_ignore_invalid_bearer_token(client):
+    response = client.get(
+        "/api/data/things/markers",
+        HTTP_AUTHORIZATION="Bearer invalid-access-token",
+    )
+
+    assert response.status_code == 200
+
+
+def test_protected_workspace_creation_with_invalid_bearer_token_returns_401(client):
+    response = client.post(
+        "/api/data/workspaces?expand_related=true",
+        data={"name": "Unauthorized"},
+        content_type="application/json",
+        HTTP_AUTHORIZATION="Bearer invalid-access-token",
+    )
+
+    assert response.status_code == 401
 
 
 def test_browser_session_endpoint_returns_authenticated_account(client):

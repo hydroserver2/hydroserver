@@ -36,7 +36,14 @@ class AccountAdapter(DefaultAccountAdapter):
     def _consume_handoff_messages(self, request: HttpRequest, redirect_url: str) -> str:
         handoff_url = get_stored_account_post_auth_handoff(request)
         if handoff_url and redirect_url == handoff_url:
-            list(get_messages(request))
+            storage = get_messages(request)
+            list(storage)
+            if hasattr(storage, "_queued_messages"):
+                storage._queued_messages.clear()
+            if hasattr(storage, "_loaded_data"):
+                storage._loaded_data.clear()
+            if hasattr(storage, "used"):
+                storage.used = True
         return redirect_url
 
     def _should_skip_handoff_message(
