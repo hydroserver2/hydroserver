@@ -100,70 +100,71 @@
     </section>
 
     <section class="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-        <div class="flex items-center justify-between gap-4">
-            <div class="space-y-1">
-                <h2 class="text-base font-medium text-gray-900">{% trans "Organization affiliation" %}</h2>
-                <p class="text-sm text-gray-600">{% trans "Add or remove the organization shown with your account." %}</p>
-            </div>
+        <div class="space-y-1">
+            <h2 class="text-base font-medium text-gray-900">{% trans "Organization affiliation" %}</h2>
+            <p class="text-sm text-gray-600">{% trans "Add or remove the organization shown with your account." %}</p>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 bg-gray-50/70 px-4 py-4">
             <label for="id_has_organization" class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-800">
                 <input type="checkbox" name="has_organization" id="id_has_organization"
                        {% if form.has_organization.value %}checked{% endif %}
-                       class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/40"
-                       onchange="document.getElementById('org-fields').classList.toggle('hidden', !this.checked)">
-                <span>{% trans "Affiliated" %}</span>
+                       class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/40">
+                <span>{% trans "Affiliated with an organization" %}</span>
             </label>
-        </div>
+            {% if form.has_organization.errors %}<p class="mt-2 text-xs text-red-600">{{ form.has_organization.errors.0 }}</p>{% endif %}
 
-        <div id="org-fields" class="space-y-4 {% if not form.has_organization.value %}hidden{% endif %}">
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-1.5">
-                    <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.org_name.label }}<span class="text-red-600"> *</span>
-                    </label>
-                    <input type="text" name="{{ form.org_name.html_name }}" id="{{ form.org_name.id_for_label }}" value="{{ form.org_name.value|default:'' }}"
-                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
-                    {% if form.org_name.errors %}<p class="text-xs text-red-600">{{ form.org_name.errors.0 }}</p>{% endif %}
+            <div id="organization-fields" class="mt-4 space-y-4 {% if not form.has_organization.value %}hidden{% endif %}">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-1.5">
+                        <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.org_name.label }}<span class="text-red-600"> *</span>
+                        </label>
+                        <input type="text" name="{{ form.org_name.html_name }}" id="{{ form.org_name.id_for_label }}" value="{{ form.org_name.value|default:'' }}"
+                               class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_name.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                        {% if form.org_name.errors %}<p class="text-xs text-red-600">{{ form.org_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="space-y-1.5">
+                        <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.org_code.label }}<span class="text-red-600"> *</span>
+                        </label>
+                        <input type="text" name="{{ form.org_code.html_name }}" id="{{ form.org_code.id_for_label }}" value="{{ form.org_code.value|default:'' }}"
+                               class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_code.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                        {% if form.org_code.errors %}<p class="text-xs text-red-600">{{ form.org_code.errors.0 }}</p>{% endif %}
+                    </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label for="{{ form.org_code.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.org_code.label }}<span class="text-red-600"> *</span>
-                    </label>
-                    <input type="text" name="{{ form.org_code.html_name }}" id="{{ form.org_code.id_for_label }}" value="{{ form.org_code.value|default:'' }}"
-                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_code.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
-                    {% if form.org_code.errors %}<p class="text-xs text-red-600">{{ form.org_code.errors.0 }}</p>{% endif %}
-                </div>
-            </div>
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-1.5">
-                    <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.org_type.label }}<span class="text-red-600"> *</span>
-                    </label>
-                    <select name="{{ form.org_type.html_name }}" id="{{ form.org_type.id_for_label }}"
-                            class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 pr-10 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_type.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
-                        {% for value, label in form.org_type.field.choices %}
-                            <option value="{{ value }}" {% if form.org_type.value == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                    {% if form.org_type.errors %}<p class="text-xs text-red-600">{{ form.org_type.errors.0 }}</p>{% endif %}
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-1.5">
+                        <label for="{{ form.org_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.org_type.label }}<span class="text-red-600"> *</span>
+                        </label>
+                        <select name="{{ form.org_type.html_name }}" id="{{ form.org_type.id_for_label }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 pr-10 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_type.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                            {% for value, label in form.org_type.field.choices %}
+                                <option value="{{ value }}" {% if form.org_type.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.org_type.errors %}<p class="text-xs text-red-600">{{ form.org_type.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="space-y-1.5">
+                        <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.org_link.label }}{% if form.org_link.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                        </label>
+                        <input type="url" name="{{ form.org_link.html_name }}" id="{{ form.org_link.id_for_label }}" value="{{ form.org_link.value|default:'' }}"
+                               class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_link.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
+                        {% if form.org_link.errors %}<p class="text-xs text-red-600">{{ form.org_link.errors.0 }}</p>{% endif %}
+                    </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label for="{{ form.org_link.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.org_link.label }}{% if form.org_link.field.required %}<span class="text-red-600"> *</span>{% endif %}
-                    </label>
-                    <input type="url" name="{{ form.org_link.html_name }}" id="{{ form.org_link.id_for_label }}" value="{{ form.org_link.value|default:'' }}"
-                           class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_link.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">
-                    {% if form.org_link.errors %}<p class="text-xs text-red-600">{{ form.org_link.errors.0 }}</p>{% endif %}
-                </div>
-            </div>
 
-            <div class="space-y-1.5">
-                <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                    {{ form.org_description.label }}{% if form.org_description.field.required %}<span class="text-red-600"> *</span>{% endif %}
-                </label>
-                <textarea name="{{ form.org_description.html_name }}" id="{{ form.org_description.id_for_label }}" rows="3"
-                          class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_description.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">{{ form.org_description.value|default:'' }}</textarea>
-                {% if form.org_description.errors %}<p class="text-xs text-red-600">{{ form.org_description.errors.0 }}</p>{% endif %}
+                <div class="space-y-1.5">
+                    <label for="{{ form.org_description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.org_description.label }}{% if form.org_description.field.required %}<span class="text-red-600"> *</span>{% endif %}
+                    </label>
+                    <textarea name="{{ form.org_description.html_name }}" id="{{ form.org_description.id_for_label }}" rows="3"
+                              class="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30{% if form.org_description.errors %} border-red-400 focus:border-red-500 focus:ring-red-500/30{% endif %}">{{ form.org_description.value|default:'' }}</textarea>
+                    {% if form.org_description.errors %}<p class="text-xs text-red-600">{{ form.org_description.errors.0 }}</p>{% endif %}
+                </div>
             </div>
         </div>
     </section>
@@ -186,7 +187,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const checkbox = document.getElementById("id_has_organization");
-            const details = document.getElementById("org-fields");
+            const details = document.getElementById("organization-fields");
             if (!checkbox || !details) {
                 return;
             }
