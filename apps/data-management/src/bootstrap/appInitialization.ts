@@ -12,7 +12,6 @@ const hydroServerHost =
 
 const isHydroServerInitializing = ref(false)
 export const isHydroServerReady = ref(false)
-export const isHydroServerAuthenticated = ref(false)
 export const isAppInitializing = ref(false)
 export const hasBootstrappedWorkspaces = ref(false)
 export const initializationError = ref<unknown>(null)
@@ -35,20 +34,11 @@ export async function initializeAuthenticatedState() {
   user.value = new User()
   setWorkspaces([])
   hasBootstrappedWorkspaces.value = false
-  isHydroServerAuthenticated.value = hs.session.isAuthenticated
 
-  if (!hs.session.isAuthenticated) {
-    let browserSessionAccount: User | null = null
-    try {
-      browserSessionAccount = await hs.session.getBrowserSessionAccount()
-    } catch (error) {
-      recordInitializationError('Error fetching browser session', error)
-    }
+  if (!hs.session.isAuthenticated) return
 
-    if (!browserSessionAccount) return
-
-    user.value = browserSessionAccount
-    isHydroServerAuthenticated.value = true
+  if (!hs.session.hasAccessToken) {
+    user.value = hs.session.account ?? new User()
     return
   }
 
@@ -85,8 +75,8 @@ export async function initializeAuthenticatedState() {
 function attachSessionListeners() {
   if (sessionListenersAttached) return
 
-  hs.on('session:changed', (authenticated: boolean) => {
-    isHydroServerAuthenticated.value = authenticated
+  hs.on('session:changed', () => {
+    void initializeAuthenticatedState()
   })
   hs.on('session:expired', () => {
     void initializeAuthenticatedState()
@@ -119,7 +109,6 @@ export function startAppInitialization() {
   })
     .then(() => {
       isHydroServerReady.value = true
-      isHydroServerAuthenticated.value = hs.session.isAuthenticated
       attachSessionListeners()
     })
     .catch((error) => {

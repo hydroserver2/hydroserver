@@ -112,7 +112,7 @@ export const routes: RouteRecordRaw[] = [
       window.location.assign(hs.session.accountProfileUrl)
       return false
     },
-    meta: { requiresAuth: true, title: 'Profile' },
+    meta: { title: 'Profile' },
   },
   {
     path: '/metadata',

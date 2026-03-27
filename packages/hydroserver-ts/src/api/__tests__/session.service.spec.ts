@@ -157,6 +157,7 @@ describe('SessionService', () => {
 
   it('does not block initialization on a silent bootstrap when no cached user exists', async () => {
     managerState.getUser.mockResolvedValue(null)
+    apiFetchMock.mockResolvedValue({ ok: false, data: null })
     const client = new HydroServer({ host: 'https://hydro.example.com' })
     const emitSpy = vi.spyOn(client, 'emit')
     const session = new SessionService(client)
@@ -194,5 +195,53 @@ describe('SessionService', () => {
       'https://hydro.example.com/api/auth/browser/session',
       { credentials: 'include' }
     )
+  })
+
+  it('treats the browser session as authenticated after initialization', async () => {
+    managerState.getUser.mockResolvedValue(null)
+    apiFetchMock.mockResolvedValue({
+      ok: true,
+      data: {
+        account: {
+          email: 'user@example.com',
+          firstName: 'Signed',
+        },
+      },
+    })
+
+    const session = new SessionService(
+      new HydroServer({ host: 'https://hydro.example.com' })
+    )
+
+    await session.initialize()
+
+    expect(session.isAuthenticated).toBe(true)
+    expect(session.hasAccessToken).toBe(false)
+    expect(session.account).toMatchObject({
+      email: 'user@example.com',
+      firstName: 'Signed',
+    })
+  })
+
+  it('redirects through login when a protected route needs an access token', async () => {
+    managerState.getUser.mockResolvedValue(null)
+    apiFetchMock.mockResolvedValue({
+      ok: true,
+      data: {
+        account: {
+          email: 'user@example.com',
+        },
+      },
+    })
+
+    const session = new SessionService(
+      new HydroServer({ host: 'https://hydro.example.com' })
+    )
+    await session.initialize()
+
+    await expect(session.ensureAuthorized('/sites')).resolves.toBe(false)
+    expect(managerState.signinRedirect).toHaveBeenCalledWith({
+      state: { returnTo: '/sites' },
+    })
   })
 })

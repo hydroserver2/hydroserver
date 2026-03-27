@@ -39,6 +39,7 @@ export class SessionService {
   private readonly _client: HydroServer
   private _manager: UserManager | null = null
   private _user: OidcUser | null = null
+  private _account: User | null = null
   private _refreshPromise: Promise<OidcUser | null> | null = null
   private _eventsBound = false
 
@@ -55,11 +56,19 @@ export class SessionService {
   }
 
   get isAuthenticated(): boolean {
+    return this.hasAccessToken || Boolean(this._account)
+  }
+
+  get hasAccessToken(): boolean {
     return Boolean(this._user?.access_token && !this._user.expired)
   }
 
   get accessToken(): string | null {
-    return this.isAuthenticated ? this._user!.access_token : null
+    return this.hasAccessToken ? this._user!.access_token : null
+  }
+
+  get account(): User | null {
+    return this._account
   }
 
   async initialize(): Promise<void> {
@@ -73,6 +82,7 @@ export class SessionService {
     if (!user || user.expired) {
       await manager.removeUser()
       this.setUser(null)
+      await this.syncBrowserSession()
       return
     }
     this.setUser(user)
@@ -103,6 +113,7 @@ export class SessionService {
   async logout(returnTo = '/'): Promise<void> {
     const manager = this.getManager()
     await manager.removeUser()
+    this.setAccount(null)
     this.setUser(null)
     removeHydroServerStorage()
 
@@ -135,6 +146,15 @@ export class SessionService {
     }
 
     return user && !user.expired ? user.access_token : null
+  }
+
+  async ensureAuthorized(returnTo = this.getCurrentPath()): Promise<boolean> {
+    if (await this.getAccessToken()) {
+      return true
+    }
+
+    await this.login(returnTo)
+    return false
   }
 
   async getBrowserSessionAccount(): Promise<User | null> {
@@ -212,6 +232,7 @@ export class SessionService {
       console.warn('Unable to refresh OIDC session.', error)
       await manager.removeUser()
       this.setUser(null)
+      await this.syncBrowserSession()
       this._client.emit('session:expired')
       return null
     }
@@ -226,9 +247,26 @@ export class SessionService {
     return this._refreshPromise
   }
 
+  private async syncBrowserSession(): Promise<void> {
+    try {
+      this.setAccount(await this.getBrowserSessionAccount())
+    } catch {
+      this.setAccount(null)
+    }
+  }
+
   private setUser(user: OidcUser | null): void {
     const previousAuthenticated = this.isAuthenticated
     this._user = user && !user.expired ? user : null
+    const nextAuthenticated = this.isAuthenticated
+    if (previousAuthenticated !== nextAuthenticated) {
+      this._client.emit('session:changed', nextAuthenticated)
+    }
+  }
+
+  private setAccount(account: User | null): void {
+    const previousAuthenticated = this.isAuthenticated
+    this._account = account
     const nextAuthenticated = this.isAuthenticated
     if (previousAuthenticated !== nextAuthenticated) {
       this._client.emit('session:changed', nextAuthenticated)

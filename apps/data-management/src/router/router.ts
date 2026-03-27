@@ -37,9 +37,8 @@ router.beforeEach(
     await waitForHydroServerInitialization()
     if (!isHydroServerReady.value) return false
 
-    if (!hs.session.isAuthenticated && to.meta.requiresAuth) {
-      await hs.session.login(to.fullPath)
-      return false
+    if (to.meta.requiresAuth) {
+      return await hs.session.ensureAuthorized(to.fullPath)
     }
   }
 )
