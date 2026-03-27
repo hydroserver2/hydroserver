@@ -14,7 +14,7 @@ We recommend the tutorial [HydroServer 101](/tutorials/hydroserver-101.md) for a
 
 If you're ready to deploy your own instance of HydroServer, please refer to our [deployment guide.](/how-to/deployment/production-deployment-overview)
 
-This guide will walk you through the process of setting up HydroServer on Amazon Web Services, ensuring you have a smooth and successful deployment.
+This guide will walk you through the process of setting up HydroServer in production, ensuring you have a smooth and successful deployment.
 
 ## Contributing
 
