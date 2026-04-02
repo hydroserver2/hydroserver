@@ -29,7 +29,7 @@ The hydroserverpy connection instance exposes the following types of core data a
 
 ### Collections
 
-Many HydroServer endpoints return *collections* of resources. These collections provide access to paginated lists of objects along with convenience methods for navigating and retrieving data.
+Many HydroServer endpoints return _collections_ of resources. These collections provide access to paginated lists of objects along with convenience methods for navigating and retrieving data.
 
 All resource types listed below have a `list` method that accepts:
 
@@ -46,6 +46,7 @@ Collection data is accessible through the `.items` property on the returned coll
 ---
 
 #### Example: Access Collection Items
+
 ```python
 workspaces = hs_api.workspaces.list()
 
@@ -307,7 +308,10 @@ file_attachments = thing.file_attachments
 
 # Add a file attachment to a thing
 with open('/path/to/my/myfile.png', 'rb') as file_attachment:
-    thing.add_file_attachment(file=file_attachment)
+    thing.add_file_attachment(
+        file=file_attachment,
+        file_attachment_type='Photo'
+    )
 
 # Delete a thing's file attachment
 thing.delete_file_attachment(name='myfile.png')
@@ -693,10 +697,10 @@ Datastreams are used in HydroServer to represent a group of environmental observ
 # Get all datastreams
 datastreams = hs_api.datastreams.list()
 
-# Get processing levels belonging to a workspace
+# Get datastreams belonging to a workspace
 workspace_datastreams = hs_api.datastreams.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get processing levels belonging to a thing
+# Get datastreams belonging to a thing
 thing_datastreams = hs_api.datastreams.list(thing="00000000-0000-0000-0000-000000000000")
 
 # Get datastream with a given ID
@@ -790,7 +794,10 @@ file_attachments = datastream.file_attachments
 
 # Add a file attachment to a datastream
 with open('/path/to/my/myfile.png', 'rb') as file_attachment:
-    datastream.add_file_attachment(file=file_attachment)
+    datastream.add_file_attachment(
+        file=file_attachment,
+        file_attachment_type='Photo'
+    )
 
 # Delete a datastream's file attachment
 datastream.delete_file_attachment(name='myfile.png')
@@ -981,7 +988,7 @@ orchestration_system = hs_api.orchestrationsystems.get(uid='00000000-0000-0000-0
 # Create a new orchestration system in HydroServer
 new_orchestration_system = hs_api.orchestrationsystems.create(
     name='My Data Loader',
-    orchestration_system_type='ETL',
+    orchestration_system_type='SDL',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
@@ -1049,15 +1056,32 @@ new_data_connection = hs_api.dataconnections.create(
     data_connection_type='ETL',
     workspace='00000000-0000-0000-0000-000000000000',
     extractor_type='HTTP',
-    extractor_settings={'url': 'https://www.example.com/data.csv'},
+    extractor_settings={
+        'sourceUri': 'https://www.example.com/data.csv?site={site_code}',
+        'placeholderVariables': [
+            {'name': 'site_code', 'type': 'perTask'},
+        ],
+    },
     transformer_type='CSV',
-    transformer_settings={'header_row': 1, 'data_start_row': 2, 'timestamp_column': 'TIMESTAMP'}, # TODO
+    transformer_settings={
+        'headerRow': 1,
+        'dataStartRow': 2,
+        'delimiter': ',',
+        'identifierType': 'name',
+        'timestamp': {
+            'key': 'TIMESTAMP',
+            'format': 'ISO8601',
+            'timezoneMode': 'embeddedOffset',
+        },
+    },
     loader_type='HydroServer',
     loader_settings={}
 )
 ```
 
-Each of the methods above will return one or more DataConnection objects. The examples below show the main properties and methods available to an DataConnection object.
+`extractor_settings`, `transformer_settings`, and `loader_settings` should use the same nested JSON shape used by the Data Management app and TypeScript client. For example, HTTP extractors use `sourceUri` and `placeholderVariables` in camelCase.
+
+Each of the methods above will return one or more DataConnection objects. The examples below show the main properties and methods available to a DataConnection object.
 
 #### Example: Modify a Data Connection
 
@@ -1191,7 +1215,7 @@ HydroServer can store data about specific task runs. Task run information can al
 # Get a task
 task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get all tasks
+# Get all task runs
 task_runs = task.get_task_runs()
 
 # Get task run with a given ID
@@ -1201,14 +1225,18 @@ task_run = task.get_task_run(uid='00000000-0000-0000-0000-000000000000')
 #### Example: Create Task Run
 
 ```python
+from datetime import datetime, timezone
+
+...
+
 # Get a task
 task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Create a new task run in HydroServer
 new_task_run = task.create_task_run(
     status="SUCCESS",
-    started_at="2026-01-01T00:00:00Z",
-    finished_at="2026-01-01T00:10:00Z",
+    started_at=datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc),
+    finished_at=datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc),
     result={
         "message": "Task executed successfully."
     }
@@ -1236,6 +1264,6 @@ task_run = task.update_task_run(
 # Get a task
 task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get task run with a given ID
-task_run = task.delete_task_run(uid='00000000-0000-0000-0000-000000000000')
+# Delete task run with a given ID
+task.delete_task_run(uid='00000000-0000-0000-0000-000000000000')
 ```
