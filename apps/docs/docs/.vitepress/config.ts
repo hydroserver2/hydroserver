@@ -183,6 +183,10 @@ export default defineConfig({
         collapsed: true,
         items: [
           {
+            text: "Data Model",
+            link: "/references/data-model/data-model",
+          },
+          {
             text: "API",
             collapsed: true,
             link: "/references/api/sensor-things-api",
