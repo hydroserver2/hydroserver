@@ -203,7 +203,14 @@ export default defineConfig({
           },
           {
             text: "Data Model",
+            collapsed: true,
             link: "/references/data-model/data-model",
+            items: [
+              {
+                text: "Data Dictionary",
+                link: "/references/data-model/data-model",
+              },
+            ],
           },
           {
             text: "Hydroserverpy",
