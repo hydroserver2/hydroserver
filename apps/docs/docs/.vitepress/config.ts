@@ -202,6 +202,10 @@ export default defineConfig({
             ],
           },
           {
+            text: "Data Model",
+            link: "/references/data-model/data-model",
+          },
+          {
             text: "Hydroserverpy",
             link: "/references/hydroserverpy/hydroserverpy-ref.md",
           },
