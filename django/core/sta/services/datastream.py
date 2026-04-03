@@ -8,7 +8,7 @@ from django.db.models import QuerySet, Min, Max, Count, F
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils import timezone
 from django.http import StreamingHttpResponse
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 from core.iam.models import APIKey
 from core.sta.models import (
     Datastream,
@@ -20,7 +20,7 @@ from core.sta.models import (
     SampledMedium,
     FileAttachmentType,
 )
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
     TagPostBody,
@@ -28,7 +28,7 @@ from core.interfaces.api.schemas import (
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
-from core.interfaces.api.schemas.datastream import (
+from interfaces.api.schemas.sta.datastream import (
     DatastreamOrderByFields,
     DatastreamSummaryResponse,
     DatastreamDetailResponse,

@@ -2,9 +2,9 @@ from typing import Optional
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 from core.iam.models import Organization, UserType, OrganizationType
-from core.interfaces.auth.schemas import AccountPostBody, AccountPatchBody
+from interfaces.auth.schemas import AccountPostBody, AccountPatchBody
 
 User = get_user_model()
 

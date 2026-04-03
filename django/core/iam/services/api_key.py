@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import APIKey
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     APIKeyPostBody,
     APIKeyPatchBody,
     APIKeySummaryResponse,
@@ -14,8 +14,8 @@ from core.interfaces.api.schemas import (
     APIKeySummaryPostResponse,
     APIKeyDetailPostResponse,
 )
-from core.interfaces.api.schemas.api_key import APIKeyOrderByFields
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas.iam.api_key import APIKeyOrderByFields
+from core.service import ServiceUtils
 from .role import RoleService
 
 User = get_user_model()

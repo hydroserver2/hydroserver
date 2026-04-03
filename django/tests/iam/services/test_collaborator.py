@@ -4,7 +4,7 @@ from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from core.iam.services.collaborator import CollaboratorService
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     CollaboratorPostBody,
     CollaboratorDeleteBody,
     CollaboratorDetailResponse,

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from processing.etl.models import Task, TaskRun
+from processing.orchestration.models import Task, TaskRun
 
 
 class Command(BaseCommand):

@@ -1,251 +1,450 @@
 import uuid
-from typing import Optional, Literal, get_args
-from ninja.errors import HttpError
-from django.http import HttpResponse
+import uuid6
+from datetime import datetime
+from typing import Optional, Literal, Union, Annotated
+
+from pydantic import Field, ConfigDict, validate_call
+from django.db import IntegrityError, transaction
+from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
-from django.db.models import QuerySet, Prefetch
-from core.iam.models import APIKey
-from processing.etl.models import DataConnection, DataConnectionNotificationRecipient
-from core.interfaces.api.schemas import (
-    DataConnectionSummaryResponse,
-    DataConnectionDetailResponse,
-    DataConnectionPostBody,
-    DataConnectionPatchBody,
+from django.contrib.postgres.search import SearchVector, SearchQuery
+
+from hydroserverpy.etl.models import Timestamp
+
+from core.types import Unset
+from core.iam.models import APIKey, Workspace
+from core.service import ServiceUtils
+from processing.orchestration.services import SchedulingService
+from processing.etl.models import (
+    DataConnection, Payload, PlaceholderVariable,
+    DataConnectionNotification, DataConnectionNotificationRecipient,
 )
-from core.interfaces.api.schemas.data_connection import (
-    DataConnectionFields,
-    DataConnectionOrderByFields,
-)
-from core.interfaces.api.service import ServiceUtils
+
 
 User = get_user_model()
 
+ETL_NOTIFICATION_CELERY_TASK = "processing.etl.tasks.send_etl_notification_email"
 
-class DataConnectionService(ServiceUtils):
 
-    def get_data_connection_for_action(
-        self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
-        raise_400: bool = False,
-    ):
-        try:
-            data_connection = DataConnection.objects
-            if expand_related:
-                data_connection = self.select_expanded_fields(data_connection)
-            data_connection = data_connection.prefetch_related(
-                Prefetch(
-                    "notification_recipients",
-                    queryset=DataConnectionNotificationRecipient.objects.only("email", "data_connection_id"),
-                    to_attr="prefetched_recipients"
-                )
-            )
-            data_connection = data_connection.get(pk=uid)
-            data_connection.notification_recipient_emails = [
-                recipient.email for recipient in data_connection.prefetched_recipients
-            ]
-        except DataConnection.DoesNotExist:
-            raise HttpError(
-                404 if not raise_400 else 400, "ETL Data Connection does not exist"
-            )
+class DataConnectionService(SchedulingService, ServiceUtils):
 
-        data_connection_permissions = (
-            data_connection.get_principal_permissions(principal=principal)
-        )
+    order_by_fields = {"id", "name", "timestamp_key", "timestamp_format", "timezone_type", "timezone", "workspace_id",
+                       "workspace__name"}
 
-        if "view" not in data_connection_permissions:
-            raise HttpError(
-                404 if not raise_400 else 400, "ETL Data Connection does not exist"
-            )
+    @staticmethod
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def get(
+        data_connection: uuid.UUID | DataConnection,
+        action: Literal["view", "edit", "delete"] = "view",
+        principal: User | APIKey | None | Unset = Unset,
+    ) -> DataConnection:
+        """
+        Get a data connection.
+        """
 
-        if action not in data_connection_permissions:
-            raise HttpError(
-                403 if not raise_400 else 400,
-                f"You do not have permission to {action} this ETL data connection",
-            )
+        if isinstance(data_connection, uuid.UUID):
+            try:
+                data_connection = DataConnection.objects.get(pk=data_connection)
+            except DataConnection.DoesNotExist:
+                raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
+
+        if principal is not Unset:
+            permissions = data_connection.get_principal_permissions(principal=principal)
+
+            if "view" not in permissions:
+                raise LookupError(f"Data connection with ID {str(data_connection.id)} does not exist.")
+
+            if action not in permissions:
+                raise PermissionError(f"You do not have permission to {action} this data connection.")
 
         return data_connection
 
-    @staticmethod
-    def select_expanded_fields(queryset: QuerySet) -> QuerySet:
-        return queryset.select_related("workspace")
-
-    def list(
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def get_collection(
         self,
-        principal: Optional[User | APIKey],
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
-        filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
-    ):
+        principal: User | APIKey | None = None,
+        page: int = Field(gt=0, default=1),
+        page_size: int = Field(gt=0, default=100),
+        order_by: list[str] = Field(default_factory=list),
+        search_term: str | Unset = Unset,
+        workspace: list[uuid.UUID | Workspace] | Unset = Unset,
+        payload_type: list[str] | Unset = Unset,
+    ) -> tuple[int, QuerySet[DataConnection]]:
+        """
+        Return a collection of data connections.
+        """
+
         queryset = DataConnection.objects
 
-        for field in [
-            "workspace_id",
-            "data_connection_type",
-            "extractor_type",
-            "transformer_type",
-            "loader_type"
-        ]:
-            if field in filtering:
-                queryset = self.apply_filters(queryset, field, filtering[field])
-
-        if order_by:
-            queryset = self.apply_ordering(
-                queryset,
-                order_by,
-                list(get_args(DataConnectionOrderByFields)),
-                {"type": "data_connection_type"},
+        if search_term is not Unset:
+            search_vector = SearchVector(
+                "name", "description", "workspace__name", "source_url", "timestamp_key", "timestamp_format",
+                "timezone_type", "timezone"
             )
-        else:
-            queryset = queryset.order_by("id")
+            queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
 
-        if expand_related:
-            queryset = self.select_expanded_fields(queryset)
+        if workspace is not Unset:
+            queryset = queryset.filter(workspace__in=[
+                getattr(term, "pk", term) for term in workspace
+            ])
 
-        queryset = queryset.prefetch_related(
-            Prefetch(
-                "notification_recipients",
-                queryset=DataConnectionNotificationRecipient.objects.only("email", "data_connection_id"),
-                to_attr="prefetched_recipients"
-            )
-        )
+        if payload_type is not Unset:
+            queryset = queryset.filter(payload__payload_type__in=payload_type)
 
+        if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
+            raise ValueError(f"Invalid order_by field(s): {order_by}")
+
+        queryset = queryset.order_by(*order_by, "-id")
+        queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
         queryset = queryset.visible(principal=principal).distinct()
 
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
+        count = queryset.count()
+        offset = (page - 1) * page_size
 
-        data_connections = queryset.all()
+        queryset = queryset[offset:offset + page_size]
 
-        for data_connection in data_connections:
-            data_connection.notification_recipient_emails = [
-                recipient.email for recipient in data_connection.prefetched_recipients
-            ]
+        return count, queryset
 
-        return [
-            (
-                DataConnectionDetailResponse.model_validate(data_connection)
-                if expand_related
-                else DataConnectionSummaryResponse.model_validate(
-                    data_connection
-                )
-            )
-            for data_connection in data_connections
-        ]
-
-    def get(
-        self,
-        principal: Optional[User | APIKey],
-        uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
-    ):
-        data_connection = self.get_data_connection_for_action(
-            principal=principal, uid=uid, action="view", expand_related=expand_related
-        )
-
-        return (
-            DataConnectionDetailResponse.model_validate(data_connection)
-            if expand_related
-            else DataConnectionSummaryResponse.model_validate(data_connection)
-        )
-
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    @transaction.atomic
     def create(
         self,
-        principal: User | APIKey,
-        data: DataConnectionPostBody,
-    ):
-        workspace, _ = (
-            self.get_workspace(principal=principal, workspace_id=data.workspace_id)
-            if data.workspace_id
-            else (
-                None,
-                None,
-            )
+        principal: User | APIKey | None,
+        name: str,
+        workspace: uuid.UUID | Workspace,
+        source_url: str,
+        payload_type: Literal["CSV", "JSON"],
+        timestamp_key: str,
+        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        description: str | None = None,
+        timestamp_format: str | None = None,
+        timezone_type: Literal["utc", "offset", "iana"] | None = None,
+        timezone: str | None = None,
+        header_row: int | None | Unset = Field(Unset, gt=0),
+        data_start_row: int | Unset = Field(Unset, gt=0),
+        delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
+        jmespath: str | Unset = Unset,
+        placeholder_variables: list[dict] = Field(default_factory=list),
+        notification_recipient_emails: list[str] | Unset = Unset,
+        notification_crontab: Union[Optional[str], Unset] = Unset,
+        notification_interval: Union[Optional[int], Unset] = Unset,
+        notification_interval_period: Union[Optional[Literal["minutes", "hours", "days"]], Unset] = Unset,
+        notification_start_time: Union[Optional[datetime], Unset] = Unset,
+        notification_enabled: Union[bool, Unset] = Unset,
+    ) -> DataConnection:
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=getattr(workspace, "pk", workspace)
         )
 
-        if not DataConnection.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
-            raise HttpError(
-                403, "You do not have permission to create this ETL data connection"
-            )
+        if not DataConnection.can_principal_create(principal=principal, workspace=workspace):
+            raise PermissionError("You do not have permission to create this data connection.")
+
+        timestamp = Timestamp(
+            timestamp_type="iso" if timestamp_format is None else "custom",
+            timestamp_format=timestamp_format,
+            timezone_type=timezone_type,
+            timezone=timezone,
+        )
 
         try:
-            data_connection_payload = data.dict(include=set(DataConnectionFields.model_fields.keys()))
-            notification_recipients = data_connection_payload.pop("notification_recipient_emails", [])
             data_connection = DataConnection.objects.create(
-                pk=data.id,
+                pk=uid,
                 workspace=workspace,
-                extractor_type=data.extractor.settings_type if data.extractor else None,
-                extractor_settings=data.extractor.settings if data.extractor else {},
-                transformer_type=data.transformer.settings_type if data.transformer else None,
-                transformer_settings=data.transformer.settings if data.transformer else {},
-                loader_type=data.loader.settings_type if data.loader else None,
-                loader_settings=data.loader.settings if data.loader else {},
-                **data_connection_payload,
+                name=name,
+                description=description,
+                source_url=source_url,
+                timestamp_key=timestamp_key,
+                timestamp_format=timestamp.timestamp_format,
+                timezone_type=timestamp.timezone_type,
+                timezone=timestamp.timezone
             )
-            for notification_recipient in notification_recipients:
-                DataConnectionNotificationRecipient.objects.create(
-                    data_connection=data_connection,
-                    email=notification_recipient,
-                )
         except IntegrityError:
-            raise HttpError(409, "The operation could not be completed due to a resource conflict.")
+            raise IntegrityError("The operation could not be completed due to a resource conflict.")
 
-        return self.get(
-            principal=principal,
-            uid=data_connection.id,
-            expand_related=True,
+        self.apply_payload(
+            data_connection=data_connection,
+            payload_type=payload_type,
+            header_row=header_row,
+            data_start_row=data_start_row,
+            delimiter=delimiter,
+            jmespath=jmespath,
         )
 
+        self.apply_placeholders(
+            data_connection=data_connection,
+            placeholder_variables=placeholder_variables,
+        )
+
+        if notification_recipient_emails is not Unset:
+            self.apply_notification(
+                data_connection=data_connection,
+                recipient_emails=notification_recipient_emails,
+                crontab=notification_crontab,
+                interval=notification_interval,
+                interval_period=notification_interval_period,
+                start_time=notification_start_time,
+                enabled=notification_enabled,
+            )
+
+        return self.get(data_connection.pk)
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    @transaction.atomic
     def update(
         self,
-        principal: User | APIKey,
-        uid: uuid.UUID,
-        data: DataConnectionPatchBody,
-    ):
-        data_connection = self.get_data_connection_for_action(
-            principal=principal, uid=uid, action="edit"
-        )
-        data_connection_data = data.dict(
-            include=set(DataConnectionFields.model_fields.keys() | {"extractor", "transformer", "loader"}),
-            exclude_unset=True,
+        data_connection: uuid.UUID | DataConnection,
+        principal: User | APIKey | None,
+        name: str | Unset = Unset,
+        source_url: str | Unset = Unset,
+        payload_type: Literal["CSV", "JSON"] | Unset = Unset,
+        timestamp_key: str | Unset = Unset,
+        description: str | None | Unset = Unset,
+        timestamp_format: str | None | Unset = Unset,
+        timezone_type: Literal["utc", "offset", "iana"] | None | Unset = Unset,
+        timezone: str | None | Unset = Unset,
+        header_row: int | None | Unset = Field(Unset, gt=0),
+        data_start_row: int | Unset = Field(Unset, gt=0),
+        delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
+        jmespath: str | Unset = Unset,
+        placeholder_variables: list[dict] | Unset = Unset,
+        notification_recipient_emails: list[str] | Unset = Unset,
+        notification_crontab: Union[Optional[str], Unset] = Unset,
+        notification_interval: Union[Optional[int], Unset] = Unset,
+        notification_interval_period: Union[Optional[Literal["minutes", "hours", "days"]], Unset] = Unset,
+        notification_start_time: Union[Optional[datetime], Unset] = Unset,
+        notification_enabled: Union[bool, Unset] = Unset,
+    ) -> DataConnection:
+        data_connection = self.get(
+            data_connection=data_connection,
+            action="edit",
+            principal=principal
         )
 
-        for field, value in data_connection_data.items():
-            if field in ["extractor", "transformer", "loader"]:
-                if "settings_type" in value:
-                    setattr(data_connection, f"{field}_type", value["settings_type"])
-                if "settings" in value:
-                    setattr(data_connection, f"{field}_settings", value["settings"] or {})
-            elif field == "notification_recipient_emails":
-                data_connection.notification_recipients.all().delete()
-                for notification_recipient in value:
-                    DataConnectionNotificationRecipient.objects.create(
-                        data_connection=data_connection,
-                        email=notification_recipient,
-                    )
-            else:
+        if any(field is not Unset for field in [timestamp_format, timezone_type, timezone]):
+            timestamp_type: Literal["iso", "custom"] = (
+                "iso" if timestamp_format is None
+                else "custom" if timestamp_format is not Unset
+                else "custom" if data_connection.timestamp_format is not None
+                else "iso"
+            )
+            timestamp = Timestamp(
+                timestamp_type=timestamp_type,
+                timestamp_format=(
+                    timestamp_format if timestamp_format is not Unset else data_connection.timestamp_format
+                ),
+                timezone_type=(
+                    timezone_type if timezone_type is not Unset else data_connection.timezone_type
+                ),
+                timezone=(
+                    timezone if timezone is not Unset else data_connection.timezone
+                ),
+            )
+            data_connection.timestamp_format = timestamp.timestamp_format
+            data_connection.timezone_type = timestamp.timezone_type
+            data_connection.timezone = timestamp.timezone
+
+        if any(field is not Unset for field in [payload_type, header_row, data_start_row, delimiter, jmespath]):
+            resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
+            self.apply_payload(
+                data_connection=data_connection,
+                payload_type=resolved_payload_type,
+                header_row=header_row,
+                data_start_row=data_start_row,
+                delimiter=delimiter,
+                jmespath=jmespath,
+            )
+
+        if placeholder_variables is not Unset:
+            self.apply_placeholders(
+                data_connection=data_connection,
+                placeholder_variables=placeholder_variables,
+            )
+
+        if notification_recipient_emails is not Unset:
+            self.apply_notification(
+                data_connection=data_connection,
+                recipient_emails=notification_recipient_emails,
+                crontab=notification_crontab,
+                interval=notification_interval,
+                interval_period=notification_interval_period,
+                start_time=notification_start_time,
+                enabled=notification_enabled,
+            )
+
+        editable_fields = {
+            "name": name, "source_url": source_url, "description": description, "timestamp_key": timestamp_key,
+        }
+
+        for field, value in editable_fields.items():
+            if value is not Unset:
                 setattr(data_connection, field, value)
 
         data_connection.save()
 
-        return self.get(
-            principal=principal,
-            uid=data_connection.id,
-            expand_related=True,
-        )
+        return self.get(data_connection.pk)
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
-        data_connection = self.get_data_connection_for_action(
-            principal=principal, uid=uid, action="delete", expand_related=True
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    @transaction.atomic
+    def delete(
+        self,
+        data_connection: uuid.UUID | DataConnection,
+        principal: User | APIKey | None,
+    ) -> None:
+        data_connection = self.get(
+            data_connection=data_connection,
+            action="delete",
+            principal=principal
         )
 
         data_connection.delete()
 
-        return "ETL Data Connection deleted"
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def apply_payload(
+        self,
+        data_connection: uuid.UUID | DataConnection,
+        payload_type: Literal["CSV", "JSON"],
+        header_row: Annotated[int | None, Field(gt=0)] | Unset = Unset,
+        data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
+        delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
+        jmespath: str | Unset = Unset,
+    ):
+        """Create or update the payload attached to a data connection."""
+
+        data_connection = self.get(data_connection)
+
+        try:
+            current_payload = data_connection.payload
+        except Payload.DoesNotExist:
+            current_payload = None
+
+        if current_payload and current_payload.payload_type != payload_type:
+            current_payload.delete()
+            current_payload = None
+
+        if not current_payload:
+            if payload_type == "CSV" and any(field is Unset for field in [header_row, data_start_row, delimiter]):
+                raise ValueError("header_row, data_start_row, and delimiter are required when creating a CSV payload.")
+            if payload_type == "JSON" and jmespath is Unset:
+                raise ValueError("jmespath is required when creating a JSON payload.")
+
+        if payload_type == "CSV":
+            fields = {
+                "payload_type": payload_type,
+                "header_row": header_row,
+                "data_start_row": data_start_row,
+                "delimiter": delimiter,
+                "jmespath": None,
+            }
+        elif payload_type == "JSON":
+            fields = {
+                "payload_type": payload_type,
+                "header_row": None,
+                "data_start_row": None,
+                "delimiter": None,
+                "jmespath": jmespath,
+            }
+        else:
+            raise NotImplementedError(f"Unsupported payload type {payload_type}")
+
+        if current_payload:
+            for field, value in fields.items():
+                if value is not Unset:
+                    setattr(current_payload, field, value)
+            current_payload.save()
+        else:
+            data_connection.payload = Payload.objects.create(
+                data_connection=data_connection,
+                **fields
+            )
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def apply_placeholders(
+        self,
+        data_connection: uuid.UUID | DataConnection,
+        placeholder_variables: list[dict],
+    ):
+        """Replace placeholder variables on a data connection, preserving existing ones that match."""
+
+        data_connection = self.get(data_connection)
+
+        new_placeholders = {(pv["name"], pv["variable_type"]) for pv in placeholder_variables}
+        current_placeholders = {(pv.name, pv.variable_type): pv for pv in data_connection.placeholder_variables.all()}
+
+        data_connection.placeholder_variables.filter(
+            pk__in=[pv.pk for key, pv in current_placeholders.items() if key not in new_placeholders]
+        ).delete()
+
+        for name, variable_type in new_placeholders:
+            if (name, variable_type) not in current_placeholders:
+                PlaceholderVariable.objects.create(
+                    data_connection=data_connection,
+                    name=name,
+                    variable_type=variable_type,
+                )
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def apply_notification(
+        self,
+        data_connection: uuid.UUID | DataConnection,
+        recipient_emails: list[str],
+        crontab: Union[Optional[str], Unset] = Unset,
+        interval: Union[Optional[int], Unset] = Unset,
+        interval_period: Union[Optional[Literal["minutes", "hours", "days"]], Unset] = Unset,
+        start_time: Union[Optional[datetime], Unset] = Unset,
+        enabled: Union[bool, Unset] = Unset,
+    ) -> DataConnectionNotification | None:
+        """
+        Create, update, or delete the notification for a data connection.
+
+        recipient_emails is a full replacement — passing an empty list removes
+        the notification entirely. A schedule is required when recipients are present.
+        """
+
+        data_connection = self.get(data_connection)
+
+        try:
+            notification = data_connection.notification
+        except DataConnectionNotification.DoesNotExist:
+            notification = None
+
+        selected_recipients = set(recipient_emails)
+
+        if not selected_recipients:
+            if notification is not None:
+                notification.delete()
+            return None
+
+        periodic_task = self.apply_schedule(
+            periodic_task=notification.periodic_task if notification else None,
+            crontab=crontab,
+            interval=interval,
+            interval_period=interval_period,
+            start_time=start_time,
+            enabled=enabled,
+            celery_task_name=ETL_NOTIFICATION_CELERY_TASK,
+            celery_task_kwargs={"data_connection_id": str(data_connection.pk)},
+            periodic_task_name=str(data_connection.pk),
+        )
+
+        if not periodic_task:
+            raise ValueError("A schedule is required when recipient emails are provided.")
+
+        if notification is None:
+            notification = DataConnectionNotification.objects.create(
+                data_connection=data_connection,
+                periodic_task=periodic_task,
+            )
+        else:
+            notification.periodic_task = periodic_task
+            notification.save()
+
+        current_recipients = set(notification.recipients.values_list("email", flat=True))
+
+        notification.recipients.filter(
+            email__in=current_recipients - selected_recipients
+        ).delete()
+
+        for email in selected_recipients - current_recipients:
+            DataConnectionNotificationRecipient.objects.create(notification=notification, email=email)
+
+        return notification

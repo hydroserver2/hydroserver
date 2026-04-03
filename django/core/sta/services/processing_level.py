@@ -7,17 +7,17 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import APIKey
 from core.sta.models import ProcessingLevel
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     ProcessingLevelSummaryResponse,
     ProcessingLevelDetailResponse,
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
 )
-from core.interfaces.api.schemas.processing_level import (
+from interfaces.api.schemas.sta.processing_level import (
     ProcessingLevelFields,
     ProcessingLevelOrderByFields,
 )
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 
 User = get_user_model()
 

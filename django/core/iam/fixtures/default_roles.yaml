@@ -48,18 +48,6 @@
     permission_type: create
     resource_type: Observation
 - model: iam.permission
-  pk: 5
-  fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: edit
-    resource_type: DataConnection
-- model: iam.permission
-  pk: 6
-  fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: edit
-    resource_type: Task
-- model: iam.permission
   pk: 7
   fields:
     role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a

@@ -22,7 +22,7 @@ from core.sta.models import (
     SiteType,
     FileAttachmentType,
 )
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     TagGetResponse,
     ThingSummaryResponse,
     ThingDetailResponse,
@@ -33,8 +33,8 @@ from core.interfaces.api.schemas import (
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
-from core.interfaces.api.schemas.thing import ThingFields, LocationFields, ThingOrderByFields
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas.sta.thing import ThingFields, LocationFields, ThingOrderByFields
+from core.service import ServiceUtils
 
 User = get_user_model()
 

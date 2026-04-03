@@ -4,8 +4,8 @@ from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from core.iam.models import Collaborator, APIKey
-from core.interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody
+from core.service import ServiceUtils
 from .role import RoleService
 
 User = get_user_model()

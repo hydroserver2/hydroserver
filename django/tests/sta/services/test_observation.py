@@ -4,7 +4,7 @@ from collections import Counter
 from django.http import HttpResponse
 from core.sta.models import Observation
 from core.sta.services import DatastreamService, ObservationService
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     DatastreamPatchBody,
     ObservationBulkPostBody,
     ObservationBulkDeleteBody,

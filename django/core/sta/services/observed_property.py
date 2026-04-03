@@ -7,17 +7,17 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import APIKey
 from core.sta.models import ObservedProperty, VariableType
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     ObservedPropertySummaryResponse,
     ObservedPropertyDetailResponse,
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,
 )
-from core.interfaces.api.schemas.observed_property import (
+from interfaces.api.schemas.sta.observed_property import (
     ObservedPropertyFields,
     ObservedPropertyOrderByFields,
 )
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 
 User = get_user_model()
 

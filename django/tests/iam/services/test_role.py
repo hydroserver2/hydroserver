@@ -4,7 +4,7 @@ from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from core.iam.services.role import RoleService
-from core.interfaces.api.schemas import RoleSummaryResponse
+from interfaces.api.schemas import RoleSummaryResponse
 
 role_service = RoleService()
 

@@ -27,7 +27,7 @@ from core.sta.models import (
     SampledMedium,
     FileAttachmentType,
 )
-from core.interfaces.actions.management.utils import generate_test_timeseries
+from interfaces.actions.management.utils import generate_test_timeseries
 from hydroserver.admin import VocabularyAdmin
 
 

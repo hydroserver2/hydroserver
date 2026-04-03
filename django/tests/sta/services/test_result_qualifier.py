@@ -4,7 +4,7 @@ from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from core.sta.services import ResultQualifierService
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
     ResultQualifierSummaryResponse,

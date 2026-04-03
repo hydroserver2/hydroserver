@@ -1,7 +1,7 @@
 from django.http import HttpRequest
 from django.conf import settings
 from allauth.account.adapter import DefaultAccountAdapter
-from core.interfaces.auth.schemas import AccountPatchBody
+from interfaces.auth.schemas import AccountPatchBody
 from core.iam.services import AccountService
 
 

@@ -8,17 +8,17 @@ from django.db.utils import IntegrityError
 from psycopg.errors import UniqueViolation
 from core.iam.models import APIKey
 from core.sta.models import ResultQualifier
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     ResultQualifierSummaryResponse,
     ResultQualifierDetailResponse,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
-from core.interfaces.api.schemas.result_qualifier import (
+from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierFields,
     ResultQualifierOrderByFields,
 )
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 
 User = get_user_model()
 

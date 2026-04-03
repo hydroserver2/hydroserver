@@ -26,8 +26,6 @@ class PermissionChecker:
                 "staff",
             ]:
                 if not workspace and resource_type not in [
-                    "OrchestrationSystem",
-                    "DataConnection",
                     "ProcessingLevel",
                     "Unit",
                     "Sensor",
@@ -115,13 +113,13 @@ class PermissionChecker:
             permissions = ["view", "edit", "delete"]
 
         if not workspace.is_private and "view" not in permissions:
-            if resource_type not in [
-                "Thing",
-                "Datastream",
-                "OrchestrationSystem",
-                "DataConnection",
-                "Task",
-                "APIKey",
+            if resource_type in [
+                "Role",
+                "ProcessingLevel",
+                "Unit",
+                "Sensor",
+                "ResultQualifier",
+                "ObservedProperty",
             ]:
                 permissions.append("view")
 

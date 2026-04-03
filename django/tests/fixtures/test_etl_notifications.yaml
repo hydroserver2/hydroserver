@@ -1,0 +1,51 @@
+# ETL Notification Crontab Schedule
+- model: django_celery_beat.crontabschedule
+  pk: 1000001
+  fields:
+    minute: "0"
+    hour: "8"
+    day_of_week: "*"
+    day_of_month: "*"
+    month_of_year: "*"
+    timezone: UTC
+
+# ETL Notification Periodic Task
+- model: django_celery_beat.periodictask
+  pk: 1000001
+  fields:
+    name: Test ETL Notification — 019adbc5-0001-7000-0000-000000000001
+    task: processing.orchestration.tasks.send_notification_email
+    args: []
+    kwargs: '{"notification_id": "019adbc5-0001-7000-0000-000000000001"}'
+    enabled: True
+    total_run_count: 0
+    date_changed: 2025-01-01 01:00:00.000 -0700
+    description: ""
+    crontab_id: 1000001
+    one_off: False
+    start_time: 2025-01-01 01:00:00.000 -0700
+    headers: {}
+    expire_seconds: 3600
+
+# Orchestration Notification
+- model: orchestration.notification
+  pk: 019adbc5-0001-7000-0000-000000000001
+  fields:
+    name: Test ETL Notification
+    description: null
+    periodic_task: 1000001
+    tasks:
+      - 019adbc3-35e8-7f25-bc68-171fb66d446e
+
+# ETL Notification (MTI child)
+- model: etl.etlnotification
+  pk: 019adbc5-0001-7000-0000-000000000001
+  fields:
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# ETL Notification Recipient
+- model: orchestration.notificationrecipient
+  pk: 019adbc5-0001-7000-0000-000000000002
+  fields:
+    notification: 019adbc5-0001-7000-0000-000000000001
+    email: recipient@example.com

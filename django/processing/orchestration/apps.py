@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class EtlConfig(AppConfig):
+class OrchestrationConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "processing.orchestration"
     label = "orchestration"

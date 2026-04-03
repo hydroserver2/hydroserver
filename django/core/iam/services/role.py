@@ -5,8 +5,8 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from core.iam.models import APIKey, Role
-from core.interfaces.api.schemas.role import RoleOrderByFields, RoleSummaryResponse, RoleDetailResponse
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas import RoleOrderByFields, RoleSummaryResponse, RoleDetailResponse
+from core.service import ServiceUtils
 
 User = get_user_model()
 

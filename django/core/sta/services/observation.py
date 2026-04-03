@@ -14,7 +14,7 @@ from django.db.utils import IntegrityError
 from django.contrib.postgres.aggregates import ArrayAgg
 from core.iam.models import APIKey
 from core.sta.models import Observation, ResultQualifier
-from core.interfaces.api.schemas.observation import (
+from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationOrderByFields,
     ObservationSummaryResponse,
@@ -24,7 +24,7 @@ from core.interfaces.api.schemas.observation import (
     ObservationBulkDeleteBody,
 )
 from core.sta.services.datastream import DatastreamService
-from core.interfaces.api.service import ServiceUtils
+from core.service import ServiceUtils
 
 User = get_user_model()
 datastream_service = DatastreamService()

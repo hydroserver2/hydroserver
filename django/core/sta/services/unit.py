@@ -7,14 +7,14 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import APIKey
 from core.sta.models import Unit, UnitType
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     UnitSummaryResponse,
     UnitDetailResponse,
     UnitPostBody,
     UnitPatchBody,
 )
-from core.interfaces.api.schemas.unit import UnitFields, UnitOrderByFields
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas.sta.unit import UnitFields, UnitOrderByFields
+from core.service import ServiceUtils
 
 User = get_user_model()
 

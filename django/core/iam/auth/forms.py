@@ -1,6 +1,6 @@
 from django import forms
 from django.conf import settings
-from core.interfaces.auth.schemas import AccountPatchBody
+from interfaces.auth.schemas import AccountPatchBody
 from core.iam.services import AccountService
 
 

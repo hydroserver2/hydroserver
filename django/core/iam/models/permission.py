@@ -14,8 +14,6 @@ RESOURCE_TYPE_CHOICES = (
     ("APIKey", "API Key"),
     ("Role", "Role"),
     ("Collaborator", "Collaborator"),
-    ("Task", "Task"),
-    ("DataConnection", "Data Connection"),
     ("Thing", "Thing"),
     ("Datastream", "Datastream"),
     ("Observation", "Observation"),
@@ -24,6 +22,9 @@ RESOURCE_TYPE_CHOICES = (
     ("ProcessingLevel", "Processing Level"),
     ("Unit", "Unit"),
     ("ResultQualifier", "Result Qualifier"),
+    ("ETL", "ETL"),
+    ("DataProduct", "Data Product"),
+    ("DataMonitoring", "Data Monitoring"),
 )
 
 

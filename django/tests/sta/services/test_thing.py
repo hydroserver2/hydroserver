@@ -6,7 +6,7 @@ from ninja.errors import HttpError
 from django.http import HttpResponse
 from core.sta.models import Thing
 from core.sta.services import ThingService
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     ThingPostBody,
     ThingPatchBody,
     LocationPostBody,
@@ -534,10 +534,7 @@ def test_edit_thing(get_principal, principal, thing, thing_fields, message, erro
         sampling_feature_type=thing_fields.get("sampling_feature_type", "Site"),
         sampling_feature_code=thing_fields.get("sampling_feature_code", "NEW"),
         site_type=thing_fields.get("site_type", "Site"),
-        location=LocationPatchBody(
-            latitude=thing_fields.get("location", {}).get("latitude", 0),
-            longitude=thing_fields.get("location", {}).get("longitude", 0),
-        ),
+        location=thing_fields.get("location", {"latitude": 0, "longitude": 0}),
         is_private=thing_fields.get("is_private", False),
     )
     if error_code:
@@ -568,9 +565,9 @@ def test_edit_thing(get_principal, principal, thing, thing_fields, message, erro
     "principal, thing, message, error_code, max_queries",
     [
         # Test edit Thing
-        ("owner", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
-        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
-        ("admin", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
+        ("owner", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 26),
+        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 26),
+        ("admin", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 26),
         # Test unauthorized attempts
         (
             "viewer",

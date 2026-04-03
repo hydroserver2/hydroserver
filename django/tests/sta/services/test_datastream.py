@@ -4,7 +4,7 @@ from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from core.sta.services import DatastreamService
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     DatastreamPostBody,
     DatastreamPatchBody,
     DatastreamSummaryResponse,
@@ -1747,42 +1747,42 @@ def test_edit_datastream(
             "27c70b41-e845-40ea-8cc7-d1b40f89816b",
             "Public Datastream 1",
             None,
-            14,
+            16,
         ),
         (
             "owner",
             "9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
             "Private Datastream 7",
             None,
-            14,
+            16,
         ),
         (
             "admin",
             "27c70b41-e845-40ea-8cc7-d1b40f89816b",
             "Public Datastream 1",
             None,
-            14,
+            16,
         ),
         (
             "admin",
             "9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
             "Private Datastream 7",
             None,
-            14,
+            16,
         ),
         (
             "editor",
             "27c70b41-e845-40ea-8cc7-d1b40f89816b",
             "Public Datastream 1",
             None,
-            14,
+            16,
         ),
         (
             "editor",
             "9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
             "Private Datastream 7",
             None,
-            14,
+            16,
         ),
         # Anonymous and viewers cannot delete datastreams
         (

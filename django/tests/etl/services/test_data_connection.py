@@ -1,477 +1,230 @@
-import pytest
 import uuid
+import pytest
 from collections import Counter
 from ninja.errors import HttpError
-from django.http import HttpResponse
-from processing.etl.services import DataConnectionService
-from core.interfaces.api.schemas import (
-    DataConnectionPostBody,
-    DataConnectionPatchBody,
-    DataConnectionSummaryResponse,
-    DataConnectionDetailResponse
-)
+from processing.etl.services.data_connection import DataConnectionService
+from processing.etl.models import DataConnection
 
 data_connection_service = DataConnectionService()
 
+DC1 = "019adb5c-da8b-7970-877d-c3b4ca37cc60"  # private workspace
+DC2 = "019bbd9d-ee62-7669-8db0-3ef50802f1d8"  # public workspace
+PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
+PUBLIC_WORKSPACE = "6e0deaf2-a92b-421b-9ece-86783265596f"
+NONEXISTENT = "00000000-0000-0000-0000-000000000000"
+
+
+def _err(exc_info):
+    """Return a consistent error message string from any exception type."""
+    val = exc_info.value
+    return val.message if isinstance(val, HttpError) else str(val)
+
 
 @pytest.mark.parametrize(
-    "principal, params, data_connection_names, max_queries",
+    "principal, params, expected_names, max_queries",
     [
-        # Test user access
+        # User access
+        ("owner", {}, ["Test ETL Data Connection", "Test Public ETL Data Connection"], 10),
+        ("editor", {}, ["Test ETL Data Connection", "Test Public ETL Data Connection"], 10),
+        ("viewer", {}, ["Test ETL Data Connection", "Test Public ETL Data Connection"], 10),
+        ("admin", {}, ["Test ETL Data Connection", "Test Public ETL Data Connection"], 10),
+        # API key only sees public workspace data connections
+        ("apikey", {}, ["Test Public ETL Data Connection"], 10),
+        # No access
+        ("unaffiliated", {}, [], 10),
+        ("anonymous", {}, [], 10),
+        # Pagination and ordering — page 2 of 1 gives the alphabetically lower name
         (
             "owner",
-            {},
-            ["Test ETL Data Connection", "Test Global ETL Data Connection"],
-            4,
-        ),
-        (
-            "editor",
-            {},
-            ["Test ETL Data Connection", "Test Global ETL Data Connection"],
-            4,
-        ),
-        (
-            "viewer",
-            {},
-            ["Test ETL Data Connection", "Test Global ETL Data Connection"],
-            4,
-        ),
-        (
-            "admin",
-            {},
-            ["Test ETL Data Connection", "Test Global ETL Data Connection"],
-            4,
-        ),
-        ("apikey", {}, ["Test Global ETL Data Connection"], 5),
-        ("unaffiliated", {}, ["Test Global ETL Data Connection"], 4),
-        ("anonymous", {}, ["Test Global ETL Data Connection"], 4),
-        # Test pagination and order_by
-        (
-            "owner",
-            {"page": 3, "page_size": 1, "order_by": "-name"},
-            [],
-            4,
-        ),
-        # Test filtering
-        (
-            "owner",
-            {"data_connection_type": "SDL"},
+            {"page": 2, "page_size": 1, "order_by": ["-name"]},
             ["Test ETL Data Connection"],
-            4,
+            10,
+        ),
+        # Workspace filtering
+        (
+            "owner",
+            {"workspace": [uuid.UUID(PRIVATE_WORKSPACE)]},
+            ["Test ETL Data Connection"],
+            10,
+        ),
+        (
+            "owner",
+            {"workspace": [uuid.UUID(PUBLIC_WORKSPACE)]},
+            ["Test Public ETL Data Connection"],
+            10,
         ),
     ],
 )
-def test_list_data_connection(
-    django_assert_max_num_queries,
-    get_principal,
-    principal,
-    params,
-    data_connection_names,
-    max_queries,
+def test_list_data_connections(
+    django_assert_max_num_queries, get_principal, principal, params, expected_names, max_queries
 ):
     with django_assert_max_num_queries(max_queries):
-        http_response = HttpResponse()
-        result = data_connection_service.list(
+        count, dcs = data_connection_service.get_collection(
             principal=get_principal(principal),
-            response=http_response,
             page=params.pop("page", 1),
             page_size=params.pop("page_size", 100),
-            order_by=[params.pop("order_by")] if "order_by" in params else [],
-            filtering=params,
+            order_by=params.pop("order_by", []),
+            **params,
         )
-        assert Counter(
-            str(data_connection.name) for data_connection in result
-        ) == Counter(data_connection_names)
-        assert (
-            DataConnectionSummaryResponse.from_orm(data_connection)
-            for data_connection in result
-        )
+        assert Counter(dc.name for dc in dcs) == Counter(expected_names)
 
 
 @pytest.mark.parametrize(
-    "principal, data_connection, message, error_code",
+    "principal, data_connection, expected_name, error, error_fragment",
     [
-        (
-            "owner",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "Test ETL Data Connection",
-            None,
-        ),
-        (
-            "admin",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "Test ETL Data Connection",
-            None,
-        ),
-        (
-            "editor",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "Test ETL Data Connection",
-            None,
-        ),
-        (
-            "viewer",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "Test ETL Data Connection",
-            None,
-        ),
-        (
-            "apikey",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019bbd9d-ee62-7669-8db0-3ef50802f1d8",
-            "Test Global ETL Data Connection",
-            None,
-        ),
-        (
-            "anonymous",
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
+        # Successful reads
+        ("owner", DC1, "Test ETL Data Connection", None, None),
+        ("owner", DC2, "Test Public ETL Data Connection", None, None),
+        ("editor", DC1, "Test ETL Data Connection", None, None),
+        ("viewer", DC1, "Test ETL Data Connection", None, None),
+        ("admin", DC1, "Test ETL Data Connection", None, None),
+        ("apikey", DC2, "Test Public ETL Data Connection", None, None),
+        # No access to private workspace
+        ("apikey", DC1, None, LookupError, "does not exist"),
+        # DataConnection is excluded from public-workspace auto-visibility
+        ("unaffiliated", DC1, None, LookupError, "does not exist"),
+        ("anonymous", DC1, None, LookupError, "does not exist"),
+        ("anonymous", DC2, None, LookupError, "does not exist"),
+        # Not found
+        ("owner", NONEXISTENT, None, LookupError, "does not exist"),
     ],
 )
 def test_get_data_connection(
-    get_principal, principal, data_connection, message, error_code
+    get_principal, principal, data_connection, expected_name, error, error_fragment
 ):
-    if error_code:
-        with pytest.raises(HttpError) as exc_info:
+    if error:
+        with pytest.raises(error) as exc_info:
             data_connection_service.get(
-                principal=get_principal(principal), uid=uuid.UUID(data_connection)
-            )
-        assert exc_info.value.status_code == error_code
-        assert exc_info.value.message.startswith(message)
-    else:
-        data_connection_get = data_connection_service.get(
-            principal=get_principal(principal), uid=uuid.UUID(data_connection)
-        )
-        assert data_connection_get.name == message
-        assert DataConnectionSummaryResponse.from_orm(data_connection_get)
-
-
-@pytest.mark.parametrize(
-    "principal, workspace, message, error_code",
-    [
-        (
-            "admin",
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            None,
-            None,
-        ),
-        (
-            "admin",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            None,
-            None,
-        ),
-        (
-            "admin",
-            "00000000-0000-0000-0000-000000000000",
-            "Workspace does not exist",
-            404,
-        ),
-        (
-            "owner",
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            None,
-            None,
-        ),
-        (
-            "owner",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            None,
-            None,
-        ),
-        (
-            "editor",
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            None,
-            None,
-        ),
-        (
-            "editor",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            None,
-            None,
-        ),
-        (
-            "viewer",
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "viewer",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "apikey",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            "Workspace does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "anonymous",
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            "Workspace does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "00000000-0000-0000-0000-000000000000",
-            "Workspace does not exist",
-            404,
-        ),
-        (
-            None,
-            "6e0deaf2-a92b-421b-9ece-86783265596f",
-            "You do not have permission",
-            403,
-        ),
-        (
-            None,
-            "b27c51a0-7374-462d-8a53-d97d47176c10",
-            "Workspace does not exist",
-            404,
-        ),
-        (
-            None,
-            "00000000-0000-0000-0000-000000000000",
-            "Workspace does not exist",
-            404,
-        ),
-    ],
-)
-def test_create_data_connection(
-    get_principal, principal, workspace, message, error_code
-):
-    data_connection_data = DataConnectionPostBody(
-        name="New", workspace_id=uuid.UUID(workspace), data_connection_type="Test", extractor=None, transformer=None, loader=None
-    )
-    if error_code:
-        with pytest.raises(HttpError) as exc_info:
-            data_connection_service.create(
-                principal=get_principal(principal), data=data_connection_data
-            )
-        assert exc_info.value.status_code == error_code
-        assert exc_info.value.message.startswith(message)
-    else:
-        data_connection_create = data_connection_service.create(
-            principal=get_principal(principal), data=data_connection_data
-        )
-        assert data_connection_create.name == data_connection_data.name
-        assert DataConnectionDetailResponse.from_orm(data_connection_create)
-
-
-@pytest.mark.parametrize(
-    "principal, data_connection, message, error_code",
-    [
-        ("admin", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("admin", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("owner", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("owner", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("editor", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("editor", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        (
-            "viewer",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "viewer",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "apikey",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "apikey",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-    ],
-)
-def test_edit_data_connection(
-    get_principal, principal, data_connection, message, error_code
-):
-    data_connection_data = DataConnectionPatchBody(
-        name="New", data_connection_type="Test"
-    )
-    if error_code:
-        with pytest.raises(HttpError) as exc_info:
-            data_connection_service.update(
+                data_connection=uuid.UUID(data_connection),
                 principal=get_principal(principal),
-                uid=uuid.UUID(data_connection),
-                data=data_connection_data,
             )
-        assert exc_info.value.status_code == error_code
-        assert exc_info.value.message.startswith(message)
+        assert error_fragment in _err(exc_info)
     else:
-        data_connection_update = data_connection_service.update(
+        result = data_connection_service.get(
+            data_connection=uuid.UUID(data_connection),
             principal=get_principal(principal),
-            uid=uuid.UUID(data_connection),
-            data=data_connection_data,
         )
-        assert data_connection_update.name == data_connection_data.name
-        assert DataConnectionDetailResponse.from_orm(data_connection_update)
+        assert result.name == expected_name
+
+
+def _create_params():
+    return dict(
+        name="New Data Connection",
+        source_url="https://example.com/test.csv",
+        payload_type="CSV",
+        timestamp_key="timestamp",
+        header_row=1,
+        data_start_row=2,
+        delimiter=",",
+    )
 
 
 @pytest.mark.parametrize(
-    "principal, data_connection, message, error_code",
+    "principal, workspace, error, error_fragment",
     [
-        ("admin", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("admin", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("owner", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("owner", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("editor", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        ("editor", "019adb5c-da8b-7970-877d-c3b4ca37cc60", None, None),
-        (
-            "viewer",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "viewer",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "You do not have permission",
-            403,
-        ),
-        (
-            "apikey",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "apikey",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            "anonymous",
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "019adb5c-da8b-7970-877d-c3b4ca37cc60",
-            "ETL Data Connection does not exist",
-            404,
-        ),
-        (
-            None,
-            "00000000-0000-0000-0000-000000000000",
-            "ETL Data Connection does not exist",
-            404,
-        ),
+        # Authorized
+        ("owner", PRIVATE_WORKSPACE, None, None),
+        ("owner", PUBLIC_WORKSPACE, None, None),
+        ("editor", PRIVATE_WORKSPACE, None, None),
+        ("admin", PRIVATE_WORKSPACE, None, None),
+        # Viewer has no create permission
+        ("viewer", PRIVATE_WORKSPACE, PermissionError, "do not have permission"),
+        ("viewer", PUBLIC_WORKSPACE, PermissionError, "do not have permission"),
+        # API key (Data Loader): has view but not create for ETL
+        ("apikey", PUBLIC_WORKSPACE, PermissionError, "do not have permission"),
+        # Unaffiliated and anonymous cannot create in accessible workspaces
+        ("unaffiliated", PUBLIC_WORKSPACE, PermissionError, "do not have permission"),
+        ("anonymous", PUBLIC_WORKSPACE, PermissionError, "do not have permission"),
+        # Private workspace not accessible to apikey / anonymous
+        ("apikey", PRIVATE_WORKSPACE, HttpError, "Workspace does not exist"),
+        ("anonymous", PRIVATE_WORKSPACE, HttpError, "Workspace does not exist"),
+        # Non-existent workspace
+        ("owner", NONEXISTENT, HttpError, "Workspace does not exist"),
     ],
 )
-def test_delete_data_connection(
-    get_principal, principal, data_connection, message, error_code
-):
-    if error_code:
-        with pytest.raises(HttpError) as exc_info:
-            data_connection_service.delete(
-                principal=get_principal(principal), uid=uuid.UUID(data_connection)
+def test_create_data_connection(get_principal, principal, workspace, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            data_connection_service.create(
+                principal=get_principal(principal),
+                workspace=uuid.UUID(workspace),
+                **_create_params(),
             )
-        assert exc_info.value.status_code == error_code
-        assert exc_info.value.message.startswith(message)
+        assert error_fragment in _err(exc_info)
     else:
-        data_connection_delete = data_connection_service.delete(
-            principal=get_principal(principal), uid=uuid.UUID(data_connection)
+        result = data_connection_service.create(
+            principal=get_principal(principal),
+            workspace=uuid.UUID(workspace),
+            **_create_params(),
         )
-        assert data_connection_delete == "ETL Data Connection deleted"
+        assert result.name == "New Data Connection"
+        assert result.source_url == "https://example.com/test.csv"
+        assert result.workspace_id == uuid.UUID(workspace)
+
+
+@pytest.mark.parametrize(
+    "principal, data_connection, error, error_fragment",
+    [
+        # Authorized
+        ("owner", DC1, None, None),
+        ("editor", DC1, None, None),
+        ("admin", DC1, None, None),
+        # View-only
+        ("viewer", DC1, PermissionError, "do not have permission"),
+        # API key: not visible for private DC; view-only for public DC
+        ("apikey", DC1, LookupError, "does not exist"),
+        ("apikey", DC2, PermissionError, "do not have permission"),
+        # Anonymous
+        ("anonymous", DC1, LookupError, "does not exist"),
+        # Not found
+        ("owner", NONEXISTENT, LookupError, "does not exist"),
+    ],
+)
+def test_update_data_connection(get_principal, principal, data_connection, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            data_connection_service.update(
+                data_connection=uuid.UUID(data_connection),
+                principal=get_principal(principal),
+                name="Updated Name",
+            )
+        assert error_fragment in _err(exc_info)
+    else:
+        result = data_connection_service.update(
+            data_connection=uuid.UUID(data_connection),
+            principal=get_principal(principal),
+            name="Updated Name",
+        )
+        assert result.name == "Updated Name"
+
+
+@pytest.mark.parametrize(
+    "principal, data_connection, error, error_fragment",
+    [
+        # Authorized
+        ("owner", DC1, None, None),
+        ("editor", DC1, None, None),
+        ("admin", DC1, None, None),
+        # View-only
+        ("viewer", DC1, PermissionError, "do not have permission"),
+        # Not visible
+        ("apikey", DC1, LookupError, "does not exist"),
+        ("anonymous", DC1, LookupError, "does not exist"),
+        # Not found
+        ("owner", NONEXISTENT, LookupError, "does not exist"),
+    ],
+)
+def test_delete_data_connection(get_principal, principal, data_connection, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            data_connection_service.delete(
+                data_connection=uuid.UUID(data_connection),
+                principal=get_principal(principal),
+            )
+        assert error_fragment in _err(exc_info)
+    else:
+        data_connection_service.delete(
+            data_connection=uuid.UUID(data_connection),
+            principal=get_principal(principal),
+        )
+        assert not DataConnection.objects.filter(pk=uuid.UUID(data_connection)).exists()

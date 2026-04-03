@@ -6,15 +6,15 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 from core.iam.models import Workspace, WorkspaceTransferConfirmation, APIKey
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     WorkspaceSummaryResponse,
     WorkspaceDetailResponse,
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,
 )
-from core.interfaces.api.schemas.workspace import WorkspaceOrderByFields
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas.iam.workspace import WorkspaceOrderByFields
+from core.service import ServiceUtils
 
 User = get_user_model()
 

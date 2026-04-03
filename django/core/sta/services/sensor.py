@@ -7,14 +7,14 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from core.iam.models import APIKey
 from core.sta.models import Sensor, SensorEncodingType, MethodType
-from core.interfaces.api.schemas import (
+from interfaces.api.schemas import (
     SensorSummaryResponse,
     SensorDetailResponse,
     SensorPostBody,
     SensorPatchBody,
 )
-from core.interfaces.api.schemas.sensor import SensorFields, SensorOrderByFields
-from core.interfaces.api.service import ServiceUtils
+from interfaces.api.schemas.sta.sensor import SensorFields, SensorOrderByFields
+from core.service import ServiceUtils
 
 User = get_user_model()
 
