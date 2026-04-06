@@ -46,6 +46,8 @@ export function useDataSelection() {
     })
 
     selectedData.value = []
+
+    handleSelected(true)
   }
 
   const startDateString = computed(() => {

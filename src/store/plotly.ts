@@ -1,6 +1,7 @@
-import { GraphSeries, HistoryItem } from '@/types'
+import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
+import { HistoryItem } from "@uwrl/qc-utils"
 
 import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions
@@ -19,7 +20,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
   const showCoordinates = ref(false)
-  const hover = ref({x: 0, y: 0})
+  const hover = ref({ x: 0, y: 0 })
 
   const graphSeriesArray = ref<GraphSeries[]>([])
   /** The index of the series that represents the datastream selected for quality control */
@@ -32,6 +33,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     }
     return -1
   })
+
   /** The edit history for the currently selected series */
   const editHistory: Ref<HistoryItem[]> = ref([])
 

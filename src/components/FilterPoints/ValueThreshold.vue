@@ -100,7 +100,9 @@ const clearFilters = async () => {
       EnumFilterOperations.VALUE_THRESHOLD,
       appliedFilters.value
     )
-    await dispatchSelection(selection)
+    if (selection) {
+      await dispatchSelection(selection)
+    }
     isUpdating.value = false
   })
 }
@@ -116,23 +118,27 @@ const onAddFilter = async (key: string, value: number) => {
 
 const _addFilter = async (key: string, value: number) => {
   appliedFilters.value[key] = +value
-  const selection = await selectedSeries.value?.data.dispatchFilter(
+  const newSelection = await selectedSeries.value?.data.dispatchFilter(
     EnumFilterOperations.VALUE_THRESHOLD,
     appliedFilters.value
   )
 
-  await dispatchSelection(selection)
+  if (newSelection) {
+    await dispatchSelection(newSelection)
+  }
 }
 
 const removeFilter = async (key: string) => {
   isUpdating.value = true
   delete appliedFilters.value[key]
   setTimeout(async () => {
-    const selection = await selectedSeries.value?.data.dispatchFilter(
+    const newSelection = await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.VALUE_THRESHOLD,
       appliedFilters.value
     )
-    await dispatchSelection(selection)
+    if (newSelection) {
+      await dispatchSelection(newSelection)
+    }
     isUpdating.value = false
   })
 }

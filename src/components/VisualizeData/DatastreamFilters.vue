@@ -27,7 +27,7 @@
           :items="sortedThings"
           :height="sortedThings.length < 6 ? 'auto' : 250"
         >
-          <template #default="{ item, index }">
+          <template #default="{ item }">
             <v-checkbox
               :key="item.id"
               v-model="selectedThings"
@@ -137,7 +137,7 @@ const sortedProcessingLevelNames = computed(() => {
         .includes(searchProcessingLevel.value.toLowerCase()) &&
       datastreams.value.some(
         (ds) =>
-          ds.processingLevelId === pl.id &&
+          ds.processingLevel.id === pl.id &&
           matchesSelectedThing(ds) &&
           matchesSelectedObservedProperty(ds)
       )
@@ -153,7 +153,7 @@ const sortedThings = computed(() => {
         thing.name.toLowerCase().includes(searchThing.value.toLowerCase()) &&
         datastreams.value.some(
           (ds) =>
-            ds.thingId === thing.id &&
+            ds.thing.id === thing.id &&
             matchesSelectedObservedProperty(ds) &&
             matchesSelectedProcessingLevel(ds)
         )
@@ -162,18 +162,19 @@ const sortedThings = computed(() => {
 })
 
 const sortedObservedPropertyNames = computed(() => {
-  const filteredProperties = observedProperties.value.filter(
-    (op) =>
+  const filteredProperties = observedProperties.value.filter((op) => {
+    return (
       op.name
         .toLowerCase()
         .includes(searchObservedProperty.value.toLowerCase()) &&
       datastreams.value.some(
         (ds) =>
-          ds.observedPropertyId === op.id &&
+          ds.observedProperty.id === op.id &&
           matchesSelectedThing(ds) &&
           matchesSelectedProcessingLevel(ds)
       )
-  )
+    )
+  })
 
   const names = filteredProperties.map((pl) => pl.name)
   return [...new Set(names)].sort()

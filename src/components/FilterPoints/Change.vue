@@ -51,13 +51,15 @@ const onFilter = async (key: string, value: number) => {
   isUpdating.value = true
   setTimeout(async () => {
     await clearSelected()
-    const selection = await selectedSeries.value?.data.dispatchFilter(
+    const newSelection = await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.CHANGE,
       key,
       +value
     )
 
-    await dispatchSelection(selection)
+    if (newSelection) {
+      await dispatchSelection(newSelection)
+    }
     isUpdating.value = false
     emit('close')
   })

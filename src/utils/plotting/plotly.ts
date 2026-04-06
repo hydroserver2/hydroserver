@@ -5,7 +5,7 @@ import Plotly from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { debounce, isEqual } from 'lodash-es'
-import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
+import { EnumFilterOperations, findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 
 // TODO: import these directly from Plotly
 // https://github.com/plotly/plotly.js/blob/v2.14.0/src/components/color/attributes.js#L5-L16
@@ -250,12 +250,12 @@ export const handleClick = async (eventData: any) => {
       selectedpoints: [[...alreadySelected]],
     })
 
-    handleSelected()
+    handleSelected(eventData)
   }
 }
 
-export const handleSelected = async (_eventData?: any) => {
-  const { plotlyRef } = storeToRefs(usePlotlyStore())
+export const handleSelected = async (eventData?: any) => {
+  const { plotlyRef, selectedSeries } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -265,8 +265,45 @@ export const handleSelected = async (_eventData?: any) => {
 
   selectedData.value = trace?.selectedpoints || null
 
+  if (
+    eventData?.dragmode || // Changing selected tool
+    eventData?.['xaxis.range[0]'] // Zooming
+  ) {
+    return
+  }
+
+  if (eventData) {
+    await selectedSeries.value?.data.dispatchFilter(
+      EnumFilterOperations.SELECTION,
+      trace?.selectedpoints
+    )
+  }
+
+
   // TODO: prevent selection on other traces
 }
+
+// export const handlePlotlySelected = async (eventData?: any) => {
+//   console.log('handlePlotlySelected')
+//   const { plotlyRef } = storeToRefs(usePlotlyStore())
+//   const { qcDatastream } = storeToRefs(useDataVisStore())
+
+//   const trace = plotlyRef.value?.data.find(
+//     (trace: any) => trace.id == qcDatastream.value?.id
+//   )
+
+//   // Dispatch selection to qc-utils
+//   // console.log(eventData)
+//   if (eventData) {
+//     const { selectedSeries } = storeToRefs(usePlotlyStore())
+//     await selectedSeries.value?.data.dispatchFilter(
+//       EnumFilterOperations.SELECTION,
+//       trace?.selectedpoints
+//     )
+//   }
+
+//   // TODO: prevent selection on other traces
+// }
 
 export const handleNewPlot = async (element?: any) => {
   const { plotlyOptions, plotlyRef } = storeToRefs(usePlotlyStore())
@@ -286,11 +323,12 @@ export const handleNewPlot = async (element?: any) => {
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
   )
-  plotlyRef.value?.on(
-    'plotly_selected',
-    debounce(handleSelected, debounceDelay)
-  )
-  plotlyRef.value?.on('plotly_deselec', debounce(handleSelected, debounceDelay))
+  // plotlyRef.value?.on(
+  //   'plotly_selected',
+  //   debounce(handleSelected, debounceDelay)
+  // )
+  // plotlyRef.value?.on('plotly_deselec', debounce(handleSelected, debounceDelay))
+
   plotlyRef.value?.on('plotly_click', handleClick)
   // plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
 
@@ -309,7 +347,7 @@ export const handleRelayout = async (eventData: any) => {
     tooltipsMaxDataPoints,
   } = storeToRefs(usePlotlyStore())
 
-  handleSelected()
+  handleSelected(eventData)
 
   // Plotly fires the relayout event for practically everything.
   // We only need to handle it when panning or zooming.
@@ -339,7 +377,7 @@ export const handleRelayout = async (eventData: any) => {
 
       // Find number of visible points
       for (let i = 0; i < plotlyRef.value?.data.length; i++) {
-        // Plotly does not return the indexes of current x-axis extent. We must find them using binary seach.
+        // Plotly does not return the indexes of current x-axis extent. We must find them using binary search.
         const startIdx = findFirstGreaterOrEqual(
           plotlyRef.value?.data[i].x,
           layoutUpdates.xaxis.range[0]
@@ -380,25 +418,25 @@ export const handleRelayout = async (eventData: any) => {
   })
 }
 
-export const handleDoubleClick = async (_event: MouseEvent) => {
-  const { plotlyRef } = storeToRefs(usePlotlyStore())
+// export const handleDoubleClick = async (_event: MouseEvent) => {
+//   const { plotlyRef } = storeToRefs(usePlotlyStore())
 
-  // Removes selected areas
-  await Plotly.update(
-    plotlyRef.value,
-    {},
-    { selections: [], selectedpoints: [[]] },
-    [0]
-  )
+//   // Removes selected areas
+//   await Plotly.update(
+//     plotlyRef.value,
+//     {},
+//     { selections: [], selectedpoints: [[]] },
+//     [0]
+//   )
 
-  // Updates the color
-  await Plotly.restyle(plotlyRef.value, {
-    selectedpoints: [[]],
-  })
+//   // Updates the color
+//   await Plotly.restyle(plotlyRef.value, {
+//     selectedpoints: [[]],
+//   })
 
-  const { selectedData } = storeToRefs(useDataVisStore())
-  selectedData.value = []
-}
+//   const { selectedData } = storeToRefs(useDataVisStore())
+//   selectedData.value = []
+// }
 
 // TODO: work in progress
 export const handleMouseMove = async (event: MouseEvent) => {
@@ -420,7 +458,7 @@ export const handleMouseMove = async (event: MouseEvent) => {
 }
 
 export const handleMouseOut = () => {
-  const {showCoordinates} = storeToRefs(usePlotlyStore())
+  const { showCoordinates } = storeToRefs(usePlotlyStore())
   showCoordinates.value = false
 }
 

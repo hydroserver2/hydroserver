@@ -133,7 +133,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 const { editHistory, selectedSeries, isUpdating } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { clearSelected } = useDataSelection()
+const { clearSelected, dispatchSelection } = useDataSelection()
 
 const onReload = async () => {
   isUpdating.value = true
@@ -155,9 +155,13 @@ const onReloadHistory = async (index: number) => {
   if (index < editHistory.value.length) {
     isUpdating.value = true
     setTimeout(async () => {
-      await selectedSeries.value?.data.reloadHistory(index)
+      const newSelection = await selectedSeries.value?.data.reloadHistory(index)
+
       isUpdating.value = false
       await redraw()
+      if (newSelection) {
+        dispatchSelection(newSelection)
+      }
     })
   }
 }
@@ -166,9 +170,14 @@ const onRemoveHistoryItem = async (index: number) => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.removeHistoryItem(index)
+    const newSelection =
+      await selectedSeries.value?.data.removeHistoryItem(index)
+
     isUpdating.value = false
     await redraw()
+    if (newSelection) {
+      dispatchSelection(newSelection)
+    }
   })
 }
 
