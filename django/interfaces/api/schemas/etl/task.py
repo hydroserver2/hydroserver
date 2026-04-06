@@ -106,8 +106,8 @@ class EtlTaskResponse(BaseGetResponse):
             "status": obj.latest_run_status,
             "started_at": obj.latest_run_started_at,
             "finished_at": obj.latest_run_finished_at,
-            "message": None,
-            "result": None,
+            "message": obj.latest_run_message,
+            "result": obj.latest_run_result,
         }
 
     @staticmethod

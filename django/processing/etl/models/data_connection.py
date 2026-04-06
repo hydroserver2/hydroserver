@@ -61,6 +61,12 @@ class TimezoneType(models.TextChoices):
     IANA = "iana"
 
 
+class PlaceholderVariableType(models.TextChoices):
+    RUN_TIME = "run_time"
+    LATEST_OBSERVATION_TIMESTAMP = "latest_observation_timestamp"
+    PER_TASK = "per_task"
+
+
 class DataConnection(models.Model, PermissionChecker):
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     name = models.CharField(max_length=255)
@@ -116,7 +122,7 @@ class PlaceholderVariable(models.Model):
         related_name="placeholder_variables"
     )
     name = models.CharField(max_length=255)
-    variable_type = models.CharField(max_length=255)
+    variable_type = models.CharField(choices=PlaceholderVariableType, max_length=255)
 
     class Meta:
         app_label = "etl"

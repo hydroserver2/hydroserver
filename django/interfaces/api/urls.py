@@ -21,6 +21,11 @@ from interfaces.api.views import (
     datastream_router,
     data_connection_router,
     etl_task_router,
+    rating_curve_router,
+    expression_router,
+    data_product_task_router,
+    monitoring_task_router,
+    monitoring_rule_router,
 )
 
 
@@ -52,6 +57,13 @@ api.add_router("result-qualifiers", result_qualifier_router)
 
 api.add_router("etl/data-connections", data_connection_router)
 api.add_router("etl/tasks", etl_task_router)
+
+api.add_router("products/rating-curves", rating_curve_router)
+api.add_router("products/expressions", expression_router)
+api.add_router("products/tasks", data_product_task_router)
+
+monitoring_task_router.add_router("/{task_id}/rules", monitoring_rule_router)
+api.add_router("monitoring/tasks", monitoring_task_router)
 
 st_api_1_1 = SensorThingsAPI(
     title="HydroServer SensorThings API",

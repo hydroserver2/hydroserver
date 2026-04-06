@@ -25,18 +25,12 @@ def test_annotate_latest_run_populates_fields():
     assert task.latest_run_finished_at is not None
 
 
-def test_annotate_latest_run_with_include_result():
-    qs = TaskService.annotate_latest_run(EtlTask.objects.filter(pk=TASK_ID), include_result=True)
-    task = qs.get()
-
-    assert task.latest_run_result == {"message": "OK"}
-
-
-def test_annotate_latest_run_without_include_result_omits_field():
+def test_annotate_latest_run_includes_message_and_result():
     qs = TaskService.annotate_latest_run(EtlTask.objects.filter(pk=TASK_ID))
     task = qs.get()
 
-    assert not hasattr(task, "latest_run_result")
+    assert task.latest_run_message == "OK"
+    assert task.latest_run_result is None
 
 
 def test_annotate_latest_run_is_none_when_no_runs():

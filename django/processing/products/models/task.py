@@ -159,6 +159,7 @@ class DataProductOutputMapping(models.Model):
     aggregation_timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
     aggregation_timezone = models.CharField(max_length=255, null=True, blank=True)
     aggregation_min_coverage = models.FloatField(null=True, blank=True)
+    alignment_tolerance = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         app_label = "products"

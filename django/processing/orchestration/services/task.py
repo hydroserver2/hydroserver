@@ -99,6 +99,24 @@ class TaskService(SchedulingService, Generic[T]):
         return task
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def get_run(
+        self,
+        task: Union[T, uuid.UUID],
+        run: uuid.UUID,
+        principal: User | APIKey | None | Unset = Unset,
+    ) -> TaskRun:
+        """
+        Return a single TaskRun by ID, scoped to the given task.
+        """
+
+        task = self.get(task=task, action="view", principal=principal)
+
+        try:
+            return TaskRun.objects.get(pk=run, task=task)
+        except TaskRun.DoesNotExist:
+            raise LookupError(f"TaskRun with ID {run} does not exist.")
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_run_collection(
         self,
         task: Union[T, uuid.UUID],
@@ -153,7 +171,7 @@ class TaskService(SchedulingService, Generic[T]):
         return count, queryset
 
     @staticmethod
-    def annotate_latest_run(queryset: QuerySet, include_result: bool = False) -> QuerySet:
+    def annotate_latest_run(queryset: QuerySet) -> QuerySet:
         """
         Annotate a task queryset with fields from the latest run.
         """
@@ -164,9 +182,8 @@ class TaskService(SchedulingService, Generic[T]):
             "latest_run_status": Subquery(latest.values("status")[:1]),
             "latest_run_started_at": Subquery(latest.values("started_at")[:1]),
             "latest_run_finished_at": Subquery(latest.values("finished_at")[:1]),
+            "latest_run_message": Subquery(latest.values("message")[:1]),
+            "latest_run_result": Subquery(latest.values("result")[:1]),
         }
-
-        if include_result:
-            annotations["latest_run_result"] = Subquery(latest.values("result")[:1])
 
         return queryset.annotate(**annotations)

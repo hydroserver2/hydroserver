@@ -132,6 +132,10 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         notification_start_time: Union[Optional[datetime], Unset] = Unset,
         notification_enabled: Union[bool, Unset] = Unset,
     ) -> DataConnection:
+        """
+        Create a new data connection.
+        """
+
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=getattr(workspace, "pk", workspace)
         )
@@ -214,6 +218,10 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         notification_start_time: Union[Optional[datetime], Unset] = Unset,
         notification_enabled: Union[bool, Unset] = Unset,
     ) -> DataConnection:
+        """
+        Update a data connection.
+        """
+
         data_connection = self.get(
             data_connection=data_connection,
             action="edit",
@@ -290,6 +298,10 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_connection: uuid.UUID | DataConnection,
         principal: User | APIKey | None,
     ) -> None:
+        """
+        Delete a data connection.
+        """
+
         data_connection = self.get(
             data_connection=data_connection,
             action="delete",
@@ -308,7 +320,9 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
     ):
-        """Create or update the payload attached to a data connection."""
+        """
+        Create or update the payload settings attached to a data connection.
+        """
 
         data_connection = self.get(data_connection)
 
@@ -363,7 +377,9 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_connection: uuid.UUID | DataConnection,
         placeholder_variables: list[dict],
     ):
-        """Replace placeholder variables on a data connection, preserving existing ones that match."""
+        """
+        Replace placeholder variables on a data connection, preserving existing ones that match.
+        """
 
         data_connection = self.get(data_connection)
 
@@ -395,9 +411,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     ) -> DataConnectionNotification | None:
         """
         Create, update, or delete the notification for a data connection.
-
-        recipient_emails is a full replacement — passing an empty list removes
-        the notification entirely. A schedule is required when recipients are present.
         """
 
         data_connection = self.get(data_connection)

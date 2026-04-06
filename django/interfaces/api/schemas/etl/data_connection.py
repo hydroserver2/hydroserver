@@ -83,7 +83,7 @@ class JSONPayloadPatchBody(BasePatchBody, JSONPayloadResponse):
 
 class PlaceholderVariableResponse(BaseGetResponse):
     name: str
-    variable_type: Literal["runTime", "latestObservationTimestamp", "perTask"] = Field(alias="type")
+    variable_type: Literal["run_time", "latest_observation_timestamp", "per_task"] = Field(alias="type")
 
 
 class PlaceholderVariablePostBody(BasePostBody, PlaceholderVariableResponse):

@@ -19,61 +19,36 @@ class WindowUnits(models.TextChoices):
     DAYS = "days"
 
 
-class MonitoredDatastream(models.Model):
+class MonitoringRule(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     task = models.ForeignKey(
         MonitoringTask,
         on_delete=models.CASCADE,
-        related_name="monitored_datastreams",
+        related_name="rules",
     )
     datastream = models.ForeignKey(
         Datastream,
         on_delete=models.CASCADE,
-        related_name="monitoring",
-    )
-    last_checked_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        app_label = "monitoring"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["task", "datastream"],
-                name="unique_monitored_datastream_per_task",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.task} - {self.datastream}"
-
-
-class MonitoringRule(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
-    monitored_datastream = models.ForeignKey(
-        MonitoredDatastream,
-        on_delete=models.CASCADE,
-        related_name="rules",
+        related_name="monitoring_rules",
     )
     rule_type = models.CharField(max_length=255, choices=RuleType)
+    last_checked_at = models.DateTimeField(null=True, blank=True)
 
     min_value = models.FloatField(null=True, blank=True)
     max_value = models.FloatField(null=True, blank=True)
-
     max_change = models.FloatField(null=True, blank=True)
-    max_persistence_count = models.IntegerField(null=True, blank=True)
-
+    persist_value = models.FloatField(null=True, blank=True)
     window = models.IntegerField(null=True, blank=True)
-    window_units = models.CharField(
-        max_length=255, choices=WindowUnits, null=True, blank=True
-    )
+    window_units = models.CharField(max_length=255, choices=WindowUnits, null=True, blank=True)
 
     class Meta:
         app_label = "monitoring"
         constraints = [
             models.UniqueConstraint(
-                fields=["monitored_datastream", "rule_type"],
-                name="unique_monitoring_rule_type_per_datastream",
+                fields=["task", "datastream", "rule_type"],
+                name="unique_monitoring_rule_type_per_datastream_task",
             )
         ]
 
     def __str__(self):
-        return f"{self.monitored_datastream} - {self.rule_type}"
+        return f"{self.task} - {self.datastream} - {self.rule_type}"

@@ -376,7 +376,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('name', models.CharField(max_length=255)),
-                ('variable_type', models.CharField(max_length=255)),
+                ('variable_type', models.CharField(choices=[('run_time', 'Run Time'), ('latest_observation_timestamp', 'Latest Observation Timestamp'), ('per_task', 'Per Task')], max_length=255),),
                 ('data_connection',
                  models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='placeholder_variables',
                                    to='etl.dataconnection')),

@@ -1,2 +1,2 @@
 from .task import MonitoringTask, MonitoringNotificationRecipient
-from .rule import MonitoredDatastream, MonitoringRule, RuleType, WindowUnits
+from .rule import MonitoringRule, RuleType, WindowUnits

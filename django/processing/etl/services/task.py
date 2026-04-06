@@ -1,6 +1,6 @@
 import uuid
 import uuid6
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, validate_call
@@ -14,7 +14,12 @@ from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, EtlMapping, DataConnection
-from processing.etl.tasks import run_etl_task
+from processing.etl.loader import HydroServerInternalLoader
+
+from hydroserverpy.etl import ETLPipeline
+from hydroserverpy.etl.extractors import HTTPExtractor
+from hydroserverpy.etl.transformers import CSVTransformer, JSONTransformer, ETLDataMapping, ETLTargetPath
+from hydroserverpy.etl.models import Timestamp
 
 
 User = get_user_model()
@@ -111,6 +116,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         crontab: str | None = None,
         interval: int | None = None,
         interval_period: Literal["minutes", "hours", "days"] | None = None,
+        start_time: datetime | None = None,
         enabled: bool = True,
         mappings: list[dict] = Field(default_factory=list),
     ) -> EtlTask:
@@ -142,6 +148,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             crontab=crontab,
             interval=interval,
             interval_period=interval_period,
+            start_time=start_time,
             enabled=enabled,
             celery_task_name="processing.etl.tasks.run_etl_task",
         )
@@ -162,6 +169,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         crontab: str | None | Unset = Unset,
         interval: int | None | Unset = Unset,
         interval_period: Literal["minutes", "hours", "days"] | None | Unset = Unset,
+        start_time: datetime | None | Unset = Unset,
         enabled: bool | Unset = Unset,
         mappings: list[dict] | Unset = Unset,
     ) -> EtlTask:
@@ -183,12 +191,13 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         task.save()
 
-        if any(field is not Unset for field in [crontab, interval, interval_period, enabled]):
+        if any(field is not Unset for field in [crontab, interval, interval_period, start_time, enabled]):
             self.apply_schedule(
                 task=task,
                 crontab=crontab,
                 interval=interval,
                 interval_period=interval_period,
+                start_time=start_time,
                 enabled=enabled,
                 celery_task_name="processing.etl.tasks.run_etl_task",
             )
@@ -197,19 +206,6 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             self.apply_mappings(task=task, mappings=mappings)
 
         return task
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def trigger(
-        self,
-        task: Union[uuid.UUID, EtlTask],
-        principal: User | APIKey,
-    ) -> None:
-        """
-        Dispatch an immediate run of an ETL task to a Celery worker.
-        """
-
-        task = self.get(task=task, action="edit", principal=principal)
-        run_etl_task.apply_async(kwargs={"task_id": str(task.id)})
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def apply_mappings(
@@ -240,3 +236,102 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                     source_identifier=source_identifier,
                     target_datastream_id=target_datastream,
                 )
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def run(
+        self,
+        task: Union[uuid.UUID, EtlTask],
+        principal: User | APIKey | None | Unset = Unset,
+    ):
+        """
+        Build and run an ETL Pipeline.
+        """
+
+        task: EtlTask = self.get(task, action="edit", principal=principal)
+        data_connection = task.data_connection
+        etl_mappings = task.etl_mappings.all()
+
+        extractor = HTTPExtractor(
+            source_uri=data_connection.source_url
+        )
+
+        timestamp = Timestamp(
+            timestamp_type="custom" if data_connection.timestamp_format is not None else "iso",
+            timestamp_format=data_connection.timestamp_format,
+            timezone_type=data_connection.timezone_type,  # noqa
+            timezone=data_connection.timezone,
+        )
+
+        transformer_timestamp_settings = {
+            "timestamp_key": data_connection.timestamp_key,
+            "timestamp_format": data_connection.timestamp_format,
+            "timezone_type": data_connection.timezone_type,
+            "timezone": data_connection.timezone,
+        }
+
+        if data_connection.payload.payload_type == "CSV":
+            transformer = CSVTransformer(
+                **timestamp.model_dump(),
+                timestamp_key=data_connection.timestamp_key,
+                header_row=data_connection.payload.header_row,
+                data_start_row=data_connection.payload.data_start_row,
+                delimiter=data_connection.payload.delimiter,  # noqa
+            )
+
+        elif data_connection.payload.payload_type == "JSON":
+            transformer = JSONTransformer(
+                **transformer_timestamp_settings,
+                jmespath=data_connection.payload.jmespath
+            )
+
+        else:
+            raise NotImplementedError(
+                f"Unsupported payload settings for transformer: {str(data_connection.payload.payload_type)}"
+            )
+
+        loader = HydroServerInternalLoader()
+
+        etl_pipeline = ETLPipeline(
+            extractor=extractor,
+            transformer=transformer,
+            loader=loader,
+        )
+
+        execution_time = datetime.now(timezone.utc)
+        earliest_loaded_through = loader.earliest_loaded_through(
+            target_identifiers=[str(etl_mapping.target_datastream_id) for etl_mapping in etl_mappings]
+        )
+
+        context = etl_pipeline.run(
+            data_mappings=[
+                ETLDataMapping(
+                    source_identifier=mapping.source_identifier,
+                    target_paths=[
+                        ETLTargetPath(
+                            target_identifier=str(mapping.target_datastream_id),
+                        )
+                    ],
+                ) for mapping in etl_mappings
+            ],
+            **{
+                pv.name: (
+                    execution_time if pv.variable_type == "run_time" else
+                    earliest_loaded_through if pv.variable_type == "latest_observation_timestamp" else
+                    task.runtime_variables.get(pv.name)
+                ) for pv in data_connection.placeholder_variables.all()
+                if pv.variable_type in ("run_time", "latest_observation_timestamp", "per_task")
+            },
+        )
+
+        if context.results.values_loaded_total == 0:
+            message = "Already up-to-date. No new observations were loaded."
+        else:
+            message = (
+                f"Loaded {context.results.values_loaded_total} total observation(s) "
+                f"into {context.results.success_count} datastream(s)."
+            )
+
+        return {
+            "message": message,
+            "results": context.results.model_dump()
+        }
