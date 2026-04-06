@@ -2,7 +2,6 @@ import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
-
 import { useDataVisStore } from './dataVisualization'
 // @ts-ignore no type definitions
 import Plotly from 'plotly.js-dist'
@@ -110,12 +109,14 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
     const observationsPromise = fetchObservationsInRange(datastream, start, end)
 
-    const fetchUnitPromise =
-      hs.value.units.get(datastream.unitId).catch((error) => {
+    const fetchUnitPromise = hs.value.units
+      .get(datastream.unitId)
+      .catch((error) => {
         console.error('Failed to fetch Unit:', error)
         return null
       })
-    const fetchObservedPropertyPromise = hs.value.observedProperties.get(datastream.observedPropertyId)
+    const fetchObservedPropertyPromise = hs.value.observedProperties
+      .get(datastream.observedPropertyId)
       .catch((error) => {
         console.error('Failed to fetch ObservedProperty:', error)
         return null
@@ -162,6 +163,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     visiblePoints,
     areTooltipsEnabled,
     showCoordinates,
-    hover
+    hover,
   }
 })

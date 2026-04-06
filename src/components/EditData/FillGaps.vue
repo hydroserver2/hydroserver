@@ -105,7 +105,7 @@ const onFillGaps = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.FILL_GAPS,
       // @ts-ignore
       [+gapAmount.value, TimeUnit[selectedGapUnit.value]],

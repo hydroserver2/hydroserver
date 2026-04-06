@@ -1,6 +1,4 @@
-import {
-  ObservationRecord,
-} from "@uwrl/qc-utils"
+import { ObservationRecord } from '@uwrl/qc-utils'
 
 export type EnumDictionary<T extends string | symbol | number, U> = {
   [K in T]: U
