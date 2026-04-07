@@ -103,7 +103,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     datastream: Datastream,
     start: Date,
     end: Date
-  ) => {
+  ): Promise<GraphSeries> => {
     const { fetchObservationsInRange } = useObservationStore()
     const { hs } = storeToRefs(useHydroServer())
 

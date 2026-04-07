@@ -98,12 +98,12 @@
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
-import { Datastream, Unit } from '@hydroserver/client'
+import { Datastream, type DatastreamExtended, Unit } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 const { hs } = storeToRefs(useHydroServer())
 
 const props = defineProps({
-  datastream: { type: Object as () => Datastream & any, required: true },
+  datastream: { type: Object as () => Datastream & DatastreamExtended, required: true },
 })
 const emit = defineEmits(['close'])
 

@@ -4,7 +4,13 @@ import { usePlotlyStore } from './plotly'
 import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
-import { Datastream, ObservedProperty, ProcessingLevel, Thing } from '@hydroserver/client'
+import {
+  Datastream,
+  type DatastreamExtended,
+  ObservedProperty,
+  ProcessingLevel,
+  Thing,
+} from '@hydroserver/client'
 
 export const useDataVisStore = defineStore('dataVisualization', () => {
   const {
@@ -19,7 +25,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   // To only fetch these once per page
   const things = ref<Thing[]>([])
-  const datastreams = ref<(Datastream & any)[]>([])
+  const datastreams = ref<(Datastream & DatastreamExtended)[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
 

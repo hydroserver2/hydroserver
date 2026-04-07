@@ -18,7 +18,11 @@ import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useHydroServer } from '@/store/hydroserver'
 import { storeToRefs } from 'pinia'
-import { HydroServer } from '@hydroserver/client'
+import {
+  HydroServer,
+  Datastream,
+  type DatastreamExtended,
+} from '@hydroserver/client'
 
 // Use stores
 const isLoading = ref(true)
@@ -44,13 +48,14 @@ const initializeHydroServer = async () => {
     observedPropertiesResponse,
   ] = await Promise.all([
     hs.value.things.list(),
-    hs.value.datastreams.list({ expand_related: true }), // TODO: get type definitions when using `expand_related`
+    hs.value.datastreams.list({ expand_related: true }),
     hs.value.processingLevels.list(),
     hs.value.observedProperties.list(),
   ])
 
   things.value = thingsResponse.data
-  datastreams.value = datastreamsResponse.data
+  datastreams.value = datastreamsResponse.data as (Datastream &
+    DatastreamExtended)[]
   processingLevels.value = processingLevelsResponse.data
   observedProperties.value = observedPropertiesResponse.data
 

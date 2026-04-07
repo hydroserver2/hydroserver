@@ -33,8 +33,6 @@ export const fetchObservationsSync = async (
           page: page,
           order_by: ["phenomenonTime"],
           format: 'column',
-          // @ts-ignore: should be an optional property
-          result_qualifier_code: null
         }
       )
 
