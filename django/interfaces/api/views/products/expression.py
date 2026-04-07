@@ -79,8 +79,7 @@ def create_expression(
         expression = expression_service.create(
             principal=request.principal,
             thing=data.thing_id,
-            segments=[s.model_dump() for s in data.segments],
-            **data.model_dump(exclude_unset=True, exclude={"thing_id", "segments"}),
+            **data.model_dump(exclude_unset=True, exclude={"thing_id"}),
         )
 
     return 201, expression
@@ -140,9 +139,7 @@ def update_expression(
         expression = expression_service.update(
             expression=expression_id,
             principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"segments"}),
-            **({"segments": [s.model_dump() for s in data.segments]}
-               if "segments" in data.model_fields_set else {}),
+            **data.model_dump(exclude_unset=True),
         )
 
     return 200, expression

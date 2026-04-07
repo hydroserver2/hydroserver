@@ -35,6 +35,26 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         "latest_run_finished_at",
     }
 
+    def get(
+        self,
+        task: Union[uuid.UUID, EtlTask],
+        action: Literal["view", "edit", "delete"] = "view",
+        principal: User | APIKey | None | Unset = Unset,
+    ) -> EtlTask:
+        """Get an ETL task with related data and latest run annotations."""
+
+        task = super().get(task=task, action=action, principal=principal)
+
+        if isinstance(task.pk, uuid.UUID):
+            task = (
+                self.annotate_latest_run(self.task_model.objects)
+                .select_related("data_connection__workspace", "periodic_task__crontab", "periodic_task__interval")
+                .prefetch_related("etl_mappings")
+                .get(pk=task.pk)
+            )
+
+        return task
+
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
@@ -155,7 +175,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         self.apply_mappings(task=task, mappings=mappings)
 
-        return task
+        return self.get(task.pk)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic
@@ -205,7 +225,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         if mappings is not Unset:
             self.apply_mappings(task=task, mappings=mappings)
 
-        return task
+        return self.get(task.pk)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def apply_mappings(

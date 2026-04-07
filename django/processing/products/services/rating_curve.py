@@ -13,7 +13,7 @@ from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
 from core.sta.models import Thing
-from processing.products.models import RatingCurve, RatingCurveSegment, RatingCurvePoint
+from processing.products.models import RatingCurve, RatingCurvePoint
 
 
 User = get_user_model()
@@ -37,7 +37,7 @@ class RatingCurveService(ServiceUtils):
                 rating_curve = RatingCurve.objects.select_related(
                     "thing__workspace"
                 ).prefetch_related(
-                    "segments", "points",
+                    "points",
                     "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
                 ).get(pk=rating_curve)
             except RatingCurve.DoesNotExist:
@@ -65,9 +65,7 @@ class RatingCurveService(ServiceUtils):
         thing: list[uuid.UUID | Thing] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
     ) -> tuple[int, QuerySet[RatingCurve]]:
-        """
-        Return a collection of rating curves.
-        """
+        """Return a collection of rating curves."""
 
         queryset = RatingCurve.objects
 
@@ -86,7 +84,7 @@ class RatingCurveService(ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("thing__workspace").prefetch_related(
-            "segments", "points",
+            "points",
             "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
         )
         queryset = queryset.visible(principal=principal).distinct()
@@ -104,14 +102,12 @@ class RatingCurveService(ServiceUtils):
         principal: User | APIKey | None,
         thing: uuid.UUID | Thing,
         name: str,
-        segments: list[dict] = Field(default_factory=list),
-        points: list[dict] = Field(default_factory=list),
+        fitting_method: Literal["linear", "power_law", "polynomial", "spline"],
+        points: list[tuple] = Field(default_factory=list),
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         description: str | None = None,
     ) -> RatingCurve:
-        """
-        Create a rating curve with its segments and points.
-        """
+        """Create a rating curve with its points."""
 
         if isinstance(thing, uuid.UUID):
             try:
@@ -127,13 +123,11 @@ class RatingCurveService(ServiceUtils):
             thing=thing,
             name=name,
             description=description,
+            fitting_method=fitting_method,
         )
 
-        self.apply_rating_curve(
-            rating_curve=rating_curve,
-            segments=segments,
-            points=points,
-        )
+        if points:
+            self.apply_points(rating_curve=rating_curve, points=points)
 
         return self.get(rating_curve.pk)
 
@@ -145,28 +139,22 @@ class RatingCurveService(ServiceUtils):
         principal: User | APIKey | None,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
-        segments: list[dict] | Unset = Unset,
-        points: list[dict] | Unset = Unset,
+        fitting_method: Literal["linear", "power_law", "polynomial", "spline"] | Unset = Unset,
+        points: list[tuple] | Unset = Unset,
     ) -> RatingCurve:
-        """
-        Update a rating curve. Providing segments or points replaces them entirely.
-        """
+        """Update a rating curve. Providing points replaces them entirely."""
 
         rating_curve = self.get(rating_curve=rating_curve, action="edit", principal=principal)
 
-        if segments is not Unset or points is not Unset:
-            self.apply_rating_curve(
-                rating_curve=rating_curve,
-                segments=segments,
-                points=points,
-            )
-
-        editable_fields = {"name": name, "description": description}
+        editable_fields = {"name": name, "description": description, "fitting_method": fitting_method}
         for field, value in editable_fields.items():
             if value is not Unset:
                 setattr(rating_curve, field, value)
 
         rating_curve.save()
+
+        if points is not Unset:
+            self.apply_points(rating_curve=rating_curve, points=points)
 
         return self.get(rating_curve.pk)
 
@@ -177,79 +165,37 @@ class RatingCurveService(ServiceUtils):
         rating_curve: uuid.UUID | RatingCurve,
         principal: User | APIKey | None,
     ) -> None:
-        """
-        Delete a rating curve.
-        """
+        """Delete a rating curve."""
 
         rating_curve = self.get(rating_curve=rating_curve, action="delete", principal=principal)
         rating_curve.delete()
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def apply_rating_curve(
+    def apply_points(
         self,
         rating_curve: uuid.UUID | RatingCurve,
-        segments: list[dict] | Unset = Unset,
-        points: list[dict] | Unset = Unset,
+        points: list[tuple],
     ) -> None:
-        """
-        Replace segments and/or points on a rating curve.
-        """
+        """Replace all points on a rating curve."""
 
         rating_curve = self.get(rating_curve)
 
-        if segments is not Unset:
-            self._validate_segments(segments)
-            rating_curve.segments.all().delete()
-            RatingCurveSegment.objects.bulk_create([
-                RatingCurveSegment(
-                    rating_curve=rating_curve,
-                    lower_bound=seg.get("lower_bound"),
-                    upper_bound=seg.get("upper_bound"),
-                    fitting_method=seg["fitting_method"],
-                )
-                for seg in segments
-            ])
-
-        if points is not Unset:
-            self._validate_points(points)
-            rating_curve.points.all().delete()
-            RatingCurvePoint.objects.bulk_create([
-                RatingCurvePoint(
-                    rating_curve=rating_curve,
-                    input_value=pt["input_value"],
-                    output_value=pt.get("output_value"),
-                )
-                for pt in points
-            ])
+        self._validate_points(points)
+        rating_curve.points.all().delete()
+        RatingCurvePoint.objects.bulk_create([
+            RatingCurvePoint(
+                rating_curve=rating_curve,
+                input_value=pt[0],
+                output_value=pt[1] if len(pt) > 1 else None,
+            )
+            for pt in points
+        ])
 
     @staticmethod
-    def _validate_segments(segments: list[dict]) -> None:
-        for seg in segments:
-            lb = seg.get("lower_bound")
-            ub = seg.get("upper_bound")
-            if lb is not None and ub is not None and lb >= ub:
-                raise ValueError(
-                    f"Segment lower_bound ({lb}) must be less than upper_bound ({ub})."
-                )
-
-        # Check for overlaps among bounded segments. Unbounded endpoints
-        # are treated as -inf / +inf for comparison purposes.
-        intervals = sorted(
-            [(seg.get("lower_bound") or float("-inf"), seg.get("upper_bound") or float("inf")) for seg in segments],
-            key=lambda s: s[0],
-        )
-        for i in range(len(intervals) - 1):
-            if intervals[i][1] > intervals[i + 1][0]:
-                raise ValueError(
-                    f"Segments overlap: [{intervals[i][0]}, {intervals[i][1]}] "
-                    f"and [{intervals[i + 1][0]}, {intervals[i + 1][1]}]."
-                )
-
-    @staticmethod
-    def _validate_points(points: list[dict]) -> None:
-        input_values = [pt["input_value"] for pt in points]
+    def _validate_points(points: list[tuple]) -> None:
         seen = set()
-        for v in input_values:
+        for pt in points:
+            v = pt[0]
             if v in seen:
                 raise ValueError(f"Duplicate input_value {v} in points.")
             seen.add(v)

@@ -35,29 +35,12 @@ class ExpressionQueryParameters(CollectionQueryParameters):
     )
 
 
-class ExpressionSegmentResponse(BaseGetResponse):
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
-    formula: Optional[str] = None
-
-
 class ExpressionResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
-    breakpoint_variable: Optional[str] = None
-    thing: ThingSummaryResponse
-    segments: list[ExpressionSegmentResponse]
-
-    @staticmethod
-    def resolve_segments(obj):
-        return obj.segments.all()
-
-
-class ExpressionSegmentPostBody(BasePostBody):
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
     formula: Optional[str] = None
+    thing: ThingSummaryResponse
 
 
 class ExpressionPostBody(BasePostBody):
@@ -65,12 +48,10 @@ class ExpressionPostBody(BasePostBody):
     name: str
     description: Optional[str] = None
     thing_id: uuid.UUID
-    breakpoint_variable: Optional[str] = None
-    segments: list[ExpressionSegmentPostBody] = []
+    formula: Optional[str] = None
 
 
 class ExpressionPatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
-    breakpoint_variable: Optional[str] = None
-    segments: list[ExpressionSegmentPostBody] = []
+    formula: Optional[str] = None

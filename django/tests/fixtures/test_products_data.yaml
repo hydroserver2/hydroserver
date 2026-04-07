@@ -1,0 +1,98 @@
+# Expression in Private Workspace (Private Thing)
+- model: products.expression
+  pk: 019c0001-0000-7000-8000-000000000001
+  fields:
+    name: Test Expression
+    description: null
+    formula: "x + y"
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+# Expression in Public Workspace (Public Thing)
+- model: products.expression
+  pk: 019c0001-0000-7000-8000-000000000002
+  fields:
+    name: Test Public Expression
+    description: null
+    formula: null
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+
+# Rating Curve in Private Workspace (Private Thing)
+- model: products.ratingcurve
+  pk: 019c0002-0000-7000-8000-000000000001
+  fields:
+    name: Test Rating Curve
+    description: null
+    fitting_method: linear
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+- model: products.ratingcurvepoint
+  pk: 019c0002-0000-7000-8000-000000000010
+  fields:
+    rating_curve: 019c0002-0000-7000-8000-000000000001
+    input_value: 1.0
+    output_value: 2.0
+
+- model: products.ratingcurvepoint
+  pk: 019c0002-0000-7000-8000-000000000011
+  fields:
+    rating_curve: 019c0002-0000-7000-8000-000000000001
+    input_value: 2.0
+    output_value: 4.0
+
+# Rating Curve in Public Workspace (Public Thing)
+- model: products.ratingcurve
+  pk: 019c0002-0000-7000-8000-000000000002
+  fields:
+    name: Test Public Rating Curve
+    description: null
+    fitting_method: linear
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+
+# Data Product Task in Private Workspace (Private Thing)
+- model: orchestration.task
+  pk: 019c0003-0000-7000-8000-000000000001
+  fields:
+    name: Test Data Product Task
+    description: null
+    periodic_task: null
+    next_run_at: null
+
+- model: products.dataproducttask
+  pk: 019c0003-0000-7000-8000-000000000001
+  fields:
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+# Output Mapping (temporal aggregation) — output: dd1f9293 (Private Workspace DS)
+- model: products.dataproductoutputmapping
+  pk: 019c0003-0000-7000-8000-000000000010
+  fields:
+    task: 019c0003-0000-7000-8000-000000000001
+    output_datastream: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    transformation_type: temporal_aggregation
+    aggregation_method: simple_mean
+    aggregation_period: daily
+    aggregation_timezone_type: utc
+    aggregation_timezone: null
+    aggregation_min_coverage: null
+    alignment_tolerance: null
+    rating_curve: null
+    expression: null
+
+# Input Mapping — input: 27c70b41 (Public Datastream)
+- model: products.dataproductinputmapping
+  pk: 019c0003-0000-7000-8000-000000000020
+  fields:
+    output_mapping: 019c0003-0000-7000-8000-000000000010
+    datastream: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    variable_name: null
+
+# Task Run
+- model: orchestration.taskrun
+  pk: 019c0003-0000-7000-8000-000000000030
+  fields:
+    task: 019c0003-0000-7000-8000-000000000001
+    status: SUCCESS
+    message: "OK"
+    started_at: 2025-01-01 01:00:00.000 -0700
+    result: null
+    finished_at: 2025-01-01 02:00:00.000 -0700

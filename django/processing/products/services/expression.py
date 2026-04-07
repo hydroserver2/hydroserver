@@ -14,7 +14,7 @@ from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
 from core.sta.models import Thing
-from processing.products.models import Expression, ExpressionSegment
+from processing.products.models import Expression
 
 
 User = get_user_model()
@@ -31,16 +31,13 @@ class ExpressionService(ServiceUtils):
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | APIKey | None | Unset = Unset,
     ) -> Expression:
-        """
-        Get an expression.
-        """
+        """Get an expression."""
 
         if isinstance(expression, uuid.UUID):
             try:
                 expression = Expression.objects.select_related(
                     "thing__workspace"
                 ).prefetch_related(
-                    "segments",
                     "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
                 ).get(pk=expression)
             except Expression.DoesNotExist:
@@ -68,9 +65,7 @@ class ExpressionService(ServiceUtils):
         thing: list[uuid.UUID | Thing] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
     ) -> tuple[int, QuerySet[Expression]]:
-        """
-        Return a collection of expressions.
-        """
+        """Return a collection of expressions."""
 
         queryset = Expression.objects
 
@@ -89,7 +84,6 @@ class ExpressionService(ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("thing__workspace").prefetch_related(
-            "segments",
             "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
         )
         queryset = queryset.visible(principal=principal).distinct()
@@ -107,14 +101,11 @@ class ExpressionService(ServiceUtils):
         principal: User | APIKey | None,
         thing: uuid.UUID | Thing,
         name: str,
-        segments: list[dict] = Field(default_factory=list),
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         description: str | None = None,
-        breakpoint_variable: str | None = None,
+        formula: str | None = None,
     ) -> Expression:
-        """
-        Create an expression with its segments.
-        """
+        """Create an expression."""
 
         if isinstance(thing, uuid.UUID):
             try:
@@ -125,15 +116,16 @@ class ExpressionService(ServiceUtils):
         if not Expression.can_principal_create(principal=principal, workspace=thing.workspace):
             raise PermissionError("You do not have permission to create this expression.")
 
+        if formula is not None:
+            self._validate_formula(formula)
+
         expression = Expression.objects.create(
             pk=uid,
             thing=thing,
             name=name,
             description=description,
-            breakpoint_variable=breakpoint_variable,
+            formula=formula,
         )
-
-        self.apply_expression(expression=expression, segments=segments)
 
         return self.get(expression.pk)
 
@@ -145,19 +137,16 @@ class ExpressionService(ServiceUtils):
         principal: User | APIKey | None,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
-        breakpoint_variable: str | None | Unset = Unset,
-        segments: list[dict] | Unset = Unset,
+        formula: str | None | Unset = Unset,
     ) -> Expression:
-        """
-        Update an expression. Providing segments replaces them entirely.
-        """
+        """Update an expression."""
 
         expression = self.get(expression=expression, action="edit", principal=principal)
 
-        if segments is not Unset:
-            self.apply_expression(expression=expression, segments=segments)
+        if formula is not Unset and formula is not None:
+            self._validate_formula(formula)
 
-        editable_fields = {"name": name, "description": description, "breakpoint_variable": breakpoint_variable}
+        editable_fields = {"name": name, "description": description, "formula": formula}
         for field, value in editable_fields.items():
             if value is not Unset:
                 setattr(expression, field, value)
@@ -173,42 +162,10 @@ class ExpressionService(ServiceUtils):
         expression: uuid.UUID | Expression,
         principal: User | APIKey | None,
     ) -> None:
-        """
-        Delete an expression and all its segments.
-        """
+        """Delete an expression."""
 
         expression = self.get(expression=expression, action="delete", principal=principal)
         expression.delete()
-
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def apply_expression(
-        self,
-        expression: uuid.UUID | Expression,
-        segments: list[dict] | Unset = Unset,
-    ) -> None:
-        """
-        Replace segments on an expression.
-
-        Providing segments deletes all existing segments and creates new ones.
-        Omitting segments (Unset) leaves them unchanged.
-
-        Expected segment dict keys: lower_bound, upper_bound, formula
-        """
-
-        expression = self.get(expression)
-
-        if segments is not Unset:
-            self._validate_segments(segments)
-            expression.segments.all().delete()
-            ExpressionSegment.objects.bulk_create([
-                ExpressionSegment(
-                    expression=expression,
-                    lower_bound=seg.get("lower_bound"),
-                    upper_bound=seg.get("upper_bound"),
-                    formula=seg.get("formula"),
-                )
-                for seg in segments
-            ])
 
     @staticmethod
     def _validate_formula(formula: str) -> None:
@@ -234,27 +191,4 @@ class ExpressionService(ServiceUtils):
             if not isinstance(node, _ALLOWED_AST):
                 raise ValueError(
                     f"Formula contains unsupported operation: {type(node).__name__}."
-                )
-
-    @staticmethod
-    def _validate_segments(segments: list[dict]) -> None:
-        for seg in segments:
-            lb = seg.get("lower_bound")
-            ub = seg.get("upper_bound")
-            if lb is not None and ub is not None and lb >= ub:
-                raise ValueError(
-                    f"Segment lower_bound ({lb}) must be less than upper_bound ({ub})."
-                )
-            if seg.get("formula") is not None:
-                ExpressionService._validate_formula(seg["formula"])
-
-        intervals = sorted(
-            [(seg.get("lower_bound") or float("-inf"), seg.get("upper_bound") or float("inf")) for seg in segments],
-            key=lambda s: s[0],
-        )
-        for i in range(len(intervals) - 1):
-            if intervals[i][1] > intervals[i + 1][0]:
-                raise ValueError(
-                    f"Segments overlap: [{intervals[i][0]}, {intervals[i][1]}] "
-                    f"and [{intervals[i + 1][0]}, {intervals[i + 1][1]}]."
                 )

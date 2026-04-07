@@ -62,7 +62,7 @@ class Expression(models.Model, PermissionChecker):
     )
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    breakpoint_variable = models.CharField(max_length=255, null=True, blank=True)
+    formula = models.TextField(null=True, blank=True)
 
     objects = ExpressionQuerySet.as_manager()
 
@@ -86,21 +86,3 @@ class Expression(models.Model, PermissionChecker):
         return self.check_object_permissions(
             principal=principal, workspace=self.thing.workspace, resource_type="DataProducts"
         )
-
-
-class ExpressionSegment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
-    expression = models.ForeignKey(
-        Expression,
-        on_delete=models.CASCADE,
-        related_name="segments",
-    )
-    lower_bound = models.FloatField(null=True, blank=True)
-    upper_bound = models.FloatField(null=True, blank=True)
-    formula = models.TextField(null=True, blank=True)
-
-    class Meta:
-        app_label = "products"
-
-    def __str__(self):
-        return f"{self.expression} [{self.lower_bound}, {self.upper_bound}]"

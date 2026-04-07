@@ -37,56 +37,30 @@ class RatingCurveQueryParameters(CollectionQueryParameters):
     )
 
 
-class RatingCurveSegmentResponse(BaseGetResponse):
-    fitting_method: FittingMethod
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
-
-
-class RatingCurvePointResponse(BaseGetResponse):
-    input_value: float
-    output_value: Optional[float] = None
-
-
 class RatingCurveResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
+    fitting_method: FittingMethod
     thing: ThingSummaryResponse
-    segments: list[RatingCurveSegmentResponse]
-    points: list[RatingCurvePointResponse]
-
-    @staticmethod
-    def resolve_segments(obj):
-        return obj.segments.all()
+    points: list[tuple[float, Optional[float]]]
 
     @staticmethod
     def resolve_points(obj):
-        return obj.points.all()
-
-
-class RatingCurveSegmentPostBody(BasePostBody):
-    fitting_method: FittingMethod
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
-
-
-class RatingCurvePointPostBody(BasePostBody):
-    input_value: float
-    output_value: Optional[float] = None
+        return [(p.input_value, p.output_value) for p in obj.points.all()]
 
 
 class RatingCurvePostBody(BasePostBody):
     uid: uuid.UUID | Unset = Field(Unset, alias="id")
     name: str
     description: Optional[str] = None
+    fitting_method: FittingMethod
     thing_id: uuid.UUID
-    segments: list[RatingCurveSegmentPostBody] = []
-    points: list[RatingCurvePointPostBody] = []
+    points: list[tuple[float, Optional[float]]] = []
 
 
 class RatingCurvePatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
-    segments: list[RatingCurveSegmentPostBody] = []
-    points: list[RatingCurvePointPostBody] = []
+    fitting_method: FittingMethod
+    points: list[tuple[float, Optional[float]]] = []

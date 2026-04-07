@@ -47,7 +47,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         if isinstance(task.pk, uuid.UUID):
             task = (
-                self.task_model.objects
+                self.annotate_latest_run(self.task_model.objects)
                 .select_related("thing__workspace", "periodic_task__crontab", "periodic_task__interval")
                 .prefetch_related("rules__datastream", "recipients")
                 .get(pk=task.pk)

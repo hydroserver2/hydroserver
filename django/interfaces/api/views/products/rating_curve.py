@@ -79,9 +79,7 @@ def create_rating_curve(
         rating_curve = rating_curve_service.create(
             principal=request.principal,
             thing=data.thing_id,
-            segments=[s.model_dump() for s in data.segments],
-            points=[p.model_dump() for p in data.points],
-            **data.model_dump(exclude_unset=True, exclude={"thing_id", "segments", "points"}),
+            **data.model_dump(exclude_unset=True, exclude={"thing_id"}),
         )
 
     return 201, rating_curve
@@ -141,11 +139,7 @@ def update_rating_curve(
         rating_curve = rating_curve_service.update(
             rating_curve=rating_curve_id,
             principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"segments", "points"}),
-            **({"segments": [s.model_dump() for s in data.segments]}
-               if "segments" in data.model_fields_set else {}),
-            **({"points": [p.model_dump() for p in data.points]}
-               if "points" in data.model_fields_set else {}),
+            **data.model_dump(exclude_unset=True),
         )
 
     return 200, rating_curve

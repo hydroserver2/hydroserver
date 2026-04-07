@@ -1,281 +1,267 @@
-# import pytest
-# import uuid
-# from collections import Counter
-# from ninja.errors import HttpError
-# from django.http import HttpResponse
-# from processing.etl.services import EtlTaskService
-# from processing.etl.schemas import (
-#     EtlTaskSummaryResponse,
-#     EtlTaskDetailResponse,
-#     EtlTaskPostBody,
-#     EtlTaskPatchBody,
-#     EtlMappingPostBody,
-# )
-# from processing.orchestration.schemas import SchedulePostBody, TaskRunResponse
-# from processing.etl.tasks import run_etl_task
-#
-# etl_task_service = EtlTaskService()
-#
-# ETL_TASK_PK = "019adbc3-35e8-7f25-bc68-171fb66d446e"
-# DC1_PK = "019adb5c-da8b-7970-877d-c3b4ca37cc60"
-# DC2_PK = "019bbd9d-ee62-7669-8db0-3ef50802f1d8"
-# PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
-# PUBLIC_WORKSPACE = "6e0deaf2-a92b-421b-9ece-86783265596f"
-# DATASTREAM_PK = "27c70b41-e845-40ea-8cc7-d1b40f89816b"
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, params, task_names, max_queries",
-#     [
-#         # Test user access
-#         ("owner", {}, ["Test ETL Task"], 10),
-#         ("editor", {}, ["Test ETL Task"], 10),
-#         ("viewer", {}, ["Test ETL Task"], 10),
-#         ("admin", {}, ["Test ETL Task"], 10),
-#         ("apikey", {}, [], 6),
-#         ("unaffiliated", {}, [], 6),
-#         ("anonymous", {}, [], 4),
-#         # Test pagination and order_by
-#         ("owner", {"page": 2, "page_size": 1, "order_by": "-name"}, [], 10),
-#         # Test workspace filtering
-#         (
-#             "owner",
-#             {"workspace_id": [PRIVATE_WORKSPACE]},
-#             ["Test ETL Task"],
-#             10,
-#         ),
-#     ],
-# )
-# def test_list_etl_task(
-#     django_assert_max_num_queries,
-#     get_principal,
-#     principal,
-#     params,
-#     task_names,
-#     max_queries,
-# ):
-#     with django_assert_max_num_queries(max_queries):
-#         http_response = HttpResponse()
-#         result = etl_task_service.list(
-#             principal=get_principal(principal),
-#             response=http_response,
-#             page=params.pop("page", 1),
-#             page_size=params.pop("page_size", 100),
-#             order_by=[params.pop("order_by")] if "order_by" in params else [],
-#             filtering=params,
-#         )
-#         assert Counter(task.name for task in result) == Counter(task_names)
-#         assert all(isinstance(task, EtlTaskSummaryResponse) for task in result)
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, task_id, expected_name, error_code",
-#     [
-#         ("owner", ETL_TASK_PK, "Test ETL Task", None),
-#         ("admin", ETL_TASK_PK, "Test ETL Task", None),
-#         ("editor", ETL_TASK_PK, "Test ETL Task", None),
-#         ("viewer", ETL_TASK_PK, "Test ETL Task", None),
-#         ("apikey", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#         (None, ETL_TASK_PK, "ETL task does not exist", 404),
-#         (None, "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#     ],
-# )
-# def test_get_etl_task(get_principal, principal, task_id, expected_name, error_code):
-#     if error_code:
-#         with pytest.raises(HttpError) as exc_info:
-#             etl_task_service.get(
-#                 principal=get_principal(principal), uid=uuid.UUID(task_id)
-#             )
-#         assert exc_info.value.status_code == error_code
-#         assert exc_info.value.message.startswith(expected_name)
-#     else:
-#         result = etl_task_service.get(
-#             principal=get_principal(principal), uid=uuid.UUID(task_id)
-#         )
-#         assert result.name == expected_name
-#         assert isinstance(result, EtlTaskDetailResponse)
-#         assert result.schedule is not None
-#         assert result.schedule.paused is True
-#
-#
-# def test_get_etl_task_includes_latest_run(get_principal):
-#     result = etl_task_service.get(
-#         principal=get_principal("owner"), uid=uuid.UUID(ETL_TASK_PK)
-#     )
-#     assert result.latest_run is not None
-#     assert result.latest_run.status == "SUCCESS"
-#     assert len(result.mappings) == 1
-#     assert result.mappings[0].source_identifier == "test_value"
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, workspace, data_connection, message, error_code",
-#     [
-#         ("admin", PRIVATE_WORKSPACE, DC1_PK, None, None),
-#         (
-#             "admin",
-#             PRIVATE_WORKSPACE,
-#             "00000000-0000-0000-0000-000000000000",
-#             "Data Connection does not exist",
-#             400,
-#         ),
-#         (
-#             "admin",
-#             PUBLIC_WORKSPACE,
-#             DC1_PK,
-#             "Task workspace must match data connection workspace.",
-#             400,
-#         ),
-#         ("owner", PRIVATE_WORKSPACE, DC1_PK, None, None),
-#         ("editor", PRIVATE_WORKSPACE, DC1_PK, None, None),
-#         (
-#             "viewer",
-#             PRIVATE_WORKSPACE,
-#             DC1_PK,
-#             "You do not have permission",
-#             400,
-#         ),
-#         (
-#             "anonymous",
-#             PRIVATE_WORKSPACE,
-#             DC1_PK,
-#             "Data Connection does not exist",
-#             400,
-#         ),
-#         (
-#             None,
-#             PRIVATE_WORKSPACE,
-#             DC1_PK,
-#             "Data Connection does not exist",
-#             400,
-#         ),
-#     ],
-# )
-# def test_create_etl_task(
-#     get_principal, principal, workspace, data_connection, message, error_code
-# ):
-#     data = EtlTaskPostBody(
-#         name="New ETL Task",
-#         workspace_id=uuid.UUID(workspace),
-#         data_connection_id=uuid.UUID(data_connection),
-#         schedule=SchedulePostBody(paused=True, crontab="* * * * *"),
-#         mappings=[
-#             EtlMappingPostBody(
-#                 source_identifier="col1",
-#                 target_datastream_id=uuid.UUID(DATASTREAM_PK),
-#             )
-#         ],
-#     )
-#     if error_code:
-#         with pytest.raises(HttpError) as exc_info:
-#             etl_task_service.create(principal=get_principal(principal), data=data)
-#         assert exc_info.value.status_code == error_code
-#         assert exc_info.value.message.startswith(message)
-#     else:
-#         result = etl_task_service.create(principal=get_principal(principal), data=data)
-#         assert result.name == data.name
-#         assert isinstance(result, EtlTaskDetailResponse)
-#         assert result.schedule is not None
-#         assert result.schedule.paused is True
-#         assert len(result.mappings) == 1
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, task_id, message, error_code",
-#     [
-#         ("admin", ETL_TASK_PK, None, None),
-#         ("owner", ETL_TASK_PK, None, None),
-#         ("editor", ETL_TASK_PK, None, None),
-#         ("viewer", ETL_TASK_PK, "You do not have permission", 403),
-#         ("apikey", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#         (None, ETL_TASK_PK, "ETL task does not exist", 404),
-#         (None, "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#     ],
-# )
-# def test_edit_etl_task(get_principal, principal, task_id, message, error_code):
-#     data = EtlTaskPatchBody(name="Updated Name")
-#     if error_code:
-#         with pytest.raises(HttpError) as exc_info:
-#             etl_task_service.update(
-#                 principal=get_principal(principal),
-#                 uid=uuid.UUID(task_id),
-#                 data=data,
-#             )
-#         assert exc_info.value.status_code == error_code
-#         assert exc_info.value.message.startswith(message)
-#     else:
-#         result = etl_task_service.update(
-#             principal=get_principal(principal),
-#             uid=uuid.UUID(task_id),
-#             data=data,
-#         )
-#         assert result.name == data.name
-#         assert isinstance(result, EtlTaskDetailResponse)
-#
-#
-# def test_run_etl_task_creates_started_run(get_principal, monkeypatch, settings):
-#     settings.CELERY_ENABLED = False
-#
-#     def fake_apply(*args, **kwargs):
-#         pass
-#
-#     monkeypatch.setattr(run_etl_task, "apply", fake_apply)
-#
-#     result = etl_task_service.run(
-#         principal=get_principal("owner"), uid=uuid.UUID(ETL_TASK_PK)
-#     )
-#
-#     assert isinstance(result, TaskRunResponse)
-#     assert result.status == "STARTED"
-#     assert result.id is not None
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, task_id, message, error_code",
-#     [
-#         ("viewer", ETL_TASK_PK, "You do not have permission", 403),
-#         ("apikey", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", ETL_TASK_PK, "ETL task does not exist", 404),
-#         (None, ETL_TASK_PK, "ETL task does not exist", 404),
-#     ],
-# )
-# def test_run_etl_task_denied(get_principal, principal, task_id, message, error_code):
-#     with pytest.raises(HttpError) as exc_info:
-#         etl_task_service.run(
-#             principal=get_principal(principal), uid=uuid.UUID(task_id)
-#         )
-#     assert exc_info.value.status_code == error_code
-#     assert exc_info.value.message.startswith(message)
-#
-#
-# @pytest.mark.parametrize(
-#     "principal, task_id, message, error_code",
-#     [
-#         ("admin", ETL_TASK_PK, None, None),
-#         ("owner", ETL_TASK_PK, None, None),
-#         ("editor", ETL_TASK_PK, None, None),
-#         ("viewer", ETL_TASK_PK, "You do not have permission", 403),
-#         ("apikey", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", ETL_TASK_PK, "ETL task does not exist", 404),
-#         ("anonymous", "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#         (None, ETL_TASK_PK, "ETL task does not exist", 404),
-#         (None, "00000000-0000-0000-0000-000000000000", "ETL task does not exist", 404),
-#     ],
-# )
-# def test_delete_etl_task(get_principal, principal, task_id, message, error_code):
-#     if error_code:
-#         with pytest.raises(HttpError) as exc_info:
-#             etl_task_service.delete(
-#                 principal=get_principal(principal), uid=uuid.UUID(task_id)
-#             )
-#         assert exc_info.value.status_code == error_code
-#         assert exc_info.value.message.startswith(message)
-#     else:
-#         result = etl_task_service.delete(
-#             principal=get_principal(principal), uid=uuid.UUID(task_id)
-#         )
-#         assert result == "ETL task deleted"
+import uuid
+import pytest
+from collections import Counter
+from processing.etl.services.task import EtlTaskService
+from processing.etl.models import EtlTask
+
+etl_task_service = EtlTaskService()
+
+TASK1 = "019adbc3-35e8-7f25-bc68-171fb66d446e"  # private workspace, via DC1
+DC1 = "019adb5c-da8b-7970-877d-c3b4ca37cc60"    # private workspace
+DC2 = "019bbd9d-ee62-7669-8db0-3ef50802f1d8"    # public workspace
+PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
+PUBLIC_WORKSPACE = "6e0deaf2-a92b-421b-9ece-86783265596f"
+DATASTREAM = "27c70b41-e845-40ea-8cc7-d1b40f89816b"
+NONEXISTENT = "00000000-0000-0000-0000-000000000000"
+
+
+@pytest.mark.parametrize(
+    "principal, params, expected_names, max_queries",
+    [
+        # User access — task is in private workspace so all affiliated users see it
+        ("owner", {}, ["Test ETL Task"], 10),
+        ("editor", {}, ["Test ETL Task"], 10),
+        ("viewer", {}, ["Test ETL Task"], 10),
+        ("admin", {}, ["Test ETL Task"], 10),
+        # API key only has access to public workspace; task is in private workspace
+        ("apikey", {}, [], 10),
+        # No access
+        ("unaffiliated", {}, [], 10),
+        ("anonymous", {}, [], 10),
+        # Pagination — only 1 task, page 2 is empty
+        ("owner", {"page": 2, "page_size": 1}, [], 10),
+        # Workspace filter
+        ("owner", {"workspace": [uuid.UUID(PRIVATE_WORKSPACE)]}, ["Test ETL Task"], 10),
+        ("owner", {"workspace": [uuid.UUID(PUBLIC_WORKSPACE)]}, [], 10),
+        # Data connection filter
+        ("owner", {"data_connection": [uuid.UUID(DC1)]}, ["Test ETL Task"], 10),
+        ("owner", {"data_connection": [uuid.UUID(DC2)]}, [], 10),
+    ],
+)
+def test_list_etl_tasks(
+    django_assert_max_num_queries, get_principal, principal, params, expected_names, max_queries
+):
+    with django_assert_max_num_queries(max_queries):
+        count, tasks = etl_task_service.get_collection(
+            principal=get_principal(principal),
+            page=params.pop("page", 1),
+            page_size=params.pop("page_size", 100),
+            order_by=params.pop("order_by", []),
+            **params,
+        )
+        assert Counter(t.name for t in tasks) == Counter(expected_names)
+
+
+@pytest.mark.parametrize(
+    "principal, task, expected_name, error, error_fragment",
+    [
+        # Successful reads
+        ("owner", TASK1, "Test ETL Task", None, None),
+        ("editor", TASK1, "Test ETL Task", None, None),
+        ("viewer", TASK1, "Test ETL Task", None, None),
+        ("admin", TASK1, "Test ETL Task", None, None),
+        # API key cannot see private workspace tasks
+        ("apikey", TASK1, None, LookupError, "does not exist"),
+        # No access
+        ("unaffiliated", TASK1, None, LookupError, "does not exist"),
+        ("anonymous", TASK1, None, LookupError, "does not exist"),
+        # Not found
+        ("owner", NONEXISTENT, None, LookupError, "does not exist"),
+    ],
+)
+def test_get_etl_task(get_principal, principal, task, expected_name, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            etl_task_service.get(
+                task=uuid.UUID(task),
+                principal=get_principal(principal),
+            )
+        assert error_fragment in str(exc_info.value)
+    else:
+        result = etl_task_service.get(
+            task=uuid.UUID(task),
+            principal=get_principal(principal),
+        )
+        assert result.name == expected_name
+
+
+def test_get_etl_task_includes_latest_run_and_mappings(get_principal):
+    result = etl_task_service.get(
+        task=uuid.UUID(TASK1),
+        principal=get_principal("owner"),
+    )
+    assert getattr(result, "latest_run_status", None) == "SUCCESS"
+    assert result.etl_mappings.count() == 1
+    assert result.etl_mappings.first().source_identifier == "test_value"
+
+
+def _create_params():
+    return dict(
+        name="New ETL Task",
+        data_connection=uuid.UUID(DC1),
+        mappings=[{"source_identifier": "col1", "target_datastream": uuid.UUID(DATASTREAM)}],
+    )
+
+
+@pytest.mark.parametrize(
+    "principal, error, error_fragment",
+    [
+        ("owner", None, None),
+        ("editor", None, None),
+        ("admin", None, None),
+        # Viewer has no create permission
+        ("viewer", PermissionError, "do not have permission"),
+        # API key and unaffiliated: DC fetched without visibility filter, then create permission denied
+        ("apikey", PermissionError, "do not have permission"),
+        ("unaffiliated", PermissionError, "do not have permission"),
+    ],
+)
+def test_create_etl_task(get_principal, principal, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            etl_task_service.create(
+                principal=get_principal(principal),
+                **_create_params(),
+            )
+        assert error_fragment in str(exc_info.value)
+    else:
+        result = etl_task_service.create(
+            principal=get_principal(principal),
+            **_create_params(),
+        )
+        assert result.name == "New ETL Task"
+        assert result.data_connection_id == uuid.UUID(DC1)
+
+
+def test_create_etl_task_nonexistent_data_connection(get_principal):
+    with pytest.raises(LookupError) as exc_info:
+        etl_task_service.create(
+            principal=get_principal("owner"),
+            name="New ETL Task",
+            data_connection=uuid.UUID(NONEXISTENT),
+        )
+    assert "does not exist" in str(exc_info.value)
+
+
+def test_create_etl_task_creates_mappings(get_principal):
+    result = etl_task_service.create(
+        principal=get_principal("owner"),
+        **_create_params(),
+    )
+    assert result.etl_mappings.count() == 1
+    mapping = result.etl_mappings.first()
+    assert mapping.source_identifier == "col1"
+    assert mapping.target_datastream_id == uuid.UUID(DATASTREAM)
+
+
+def test_create_etl_task_with_schedule(get_principal):
+    result = etl_task_service.create(
+        principal=get_principal("owner"),
+        name="Scheduled Task",
+        data_connection=uuid.UUID(DC1),
+        interval=1,
+        interval_period="days",
+        enabled=True,
+    )
+    assert result.periodic_task is not None
+    assert result.periodic_task.interval.every == 1
+    assert result.periodic_task.interval.period == "days"
+    assert result.periodic_task.enabled is True
+
+
+@pytest.mark.parametrize(
+    "principal, error, error_fragment",
+    [
+        ("owner", None, None),
+        ("editor", None, None),
+        ("admin", None, None),
+        # View-only
+        ("viewer", PermissionError, "do not have permission"),
+        # Not visible
+        ("apikey", LookupError, "does not exist"),
+        ("unaffiliated", LookupError, "does not exist"),
+    ],
+)
+def test_update_etl_task(get_principal, principal, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            etl_task_service.update(
+                task=uuid.UUID(TASK1),
+                principal=get_principal(principal),
+                name="Updated Name",
+            )
+        assert error_fragment in str(exc_info.value)
+    else:
+        result = etl_task_service.update(
+            task=uuid.UUID(TASK1),
+            principal=get_principal(principal),
+            name="Updated Name",
+        )
+        assert result.name == "Updated Name"
+
+
+def test_update_etl_task_nonexistent(get_principal):
+    with pytest.raises(LookupError) as exc_info:
+        etl_task_service.update(
+            task=uuid.UUID(NONEXISTENT),
+            principal=get_principal("owner"),
+            name="Updated Name",
+        )
+    assert "does not exist" in str(exc_info.value)
+
+
+def test_update_etl_task_replaces_mappings(get_principal):
+    result = etl_task_service.update(
+        task=uuid.UUID(TASK1),
+        principal=get_principal("owner"),
+        mappings=[{"source_identifier": "new_col", "target_datastream": uuid.UUID(DATASTREAM)}],
+    )
+    assert result.etl_mappings.count() == 1
+    assert result.etl_mappings.first().source_identifier == "new_col"
+
+
+def test_update_etl_task_clears_mappings(get_principal):
+    result = etl_task_service.update(
+        task=uuid.UUID(TASK1),
+        principal=get_principal("owner"),
+        mappings=[],
+    )
+    assert result.etl_mappings.count() == 0
+
+
+@pytest.mark.parametrize(
+    "principal, error, error_fragment",
+    [
+        ("owner", None, None),
+        ("editor", None, None),
+        ("admin", None, None),
+        # View-only
+        ("viewer", PermissionError, "do not have permission"),
+        # Not visible
+        ("apikey", LookupError, "does not exist"),
+        ("unaffiliated", LookupError, "does not exist"),
+    ],
+)
+def test_delete_etl_task(get_principal, principal, error, error_fragment):
+    if error:
+        with pytest.raises(error) as exc_info:
+            etl_task_service.delete(
+                task=uuid.UUID(TASK1),
+                principal=get_principal(principal),
+            )
+        assert error_fragment in str(exc_info.value)
+    else:
+        etl_task_service.delete(
+            task=uuid.UUID(TASK1),
+            principal=get_principal(principal),
+        )
+        assert not EtlTask.objects.filter(pk=uuid.UUID(TASK1)).exists()
+
+
+def test_delete_etl_task_nonexistent(get_principal):
+    with pytest.raises(LookupError) as exc_info:
+        etl_task_service.delete(
+            task=uuid.UUID(NONEXISTENT),
+            principal=get_principal("owner"),
+        )
+    assert "does not exist" in str(exc_info.value)

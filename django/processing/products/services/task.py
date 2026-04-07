@@ -51,7 +51,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
 
         if isinstance(task.pk, uuid.UUID):
             task = (
-                self.task_model.objects
+                self.annotate_latest_run(self.task_model.objects)
                 .select_related("thing__workspace", "periodic_task__crontab", "periodic_task__interval")
                 .prefetch_related(
                     "mappings__input_mappings__datastream",
@@ -336,15 +336,14 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         if not expression_id:
             return
 
-        expression = Expression.objects.prefetch_related("segments").get(pk=expression_id)
+        expression = Expression.objects.get(pk=expression_id)
 
         required_vars: set[str] = set()
-        for segment in expression.segments.all():
-            if segment.formula:
-                tree = ast.parse(segment.formula, mode="eval")
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.Name):
-                        required_vars.add(node.id)
+        if expression.formula:
+            tree = ast.parse(expression.formula, mode="eval")
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Name):
+                    required_vars.add(node.id)
 
         provided_vars = set(variable_names)
         missing = required_vars - provided_vars

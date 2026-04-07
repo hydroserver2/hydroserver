@@ -69,6 +69,7 @@ class RatingCurve(models.Model, PermissionChecker):
     )
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
+    fitting_method = models.CharField(max_length=20, choices=FittingMethod)
 
     objects = RatingCurveQuerySet.as_manager()
 
@@ -92,24 +93,6 @@ class RatingCurve(models.Model, PermissionChecker):
         return self.check_object_permissions(
             principal=principal, workspace=self.thing.workspace, resource_type="DataProducts"
         )
-
-
-class RatingCurveSegment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
-    rating_curve = models.ForeignKey(
-        RatingCurve,
-        on_delete=models.CASCADE,
-        related_name="segments",
-    )
-    lower_bound = models.FloatField(null=True, blank=True)
-    upper_bound = models.FloatField(null=True, blank=True)
-    fitting_method = models.CharField(max_length=20, choices=FittingMethod)
-
-    class Meta:
-        app_label = "products"
-
-    def __str__(self):
-        return f"{self.rating_curve} [{self.lower_bound}, {self.upper_bound}]"
 
 
 class RatingCurvePoint(models.Model):

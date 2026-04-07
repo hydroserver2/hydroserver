@@ -1,0 +1,60 @@
+# Monitoring Task 1 — Private Workspace (thing: 819260c8 = Public Thing, Private Workspace)
+- model: orchestration.task
+  pk: 019d0001-0000-7000-8000-000000000001
+  fields:
+    name: Test Monitoring Task
+    description: null
+    periodic_task: null
+    next_run_at: null
+
+- model: monitoring.monitoringtask
+  pk: 019d0001-0000-7000-8000-000000000001
+  fields:
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+
+# Monitoring Task 2 — Public Workspace (thing: 3b7818af = Public Thing, Public Workspace)
+- model: orchestration.task
+  pk: 019d0001-0000-7000-8000-000000000002
+  fields:
+    name: Test Public Monitoring Task
+    description: null
+    periodic_task: null
+    next_run_at: null
+
+- model: monitoring.monitoringtask
+  pk: 019d0001-0000-7000-8000-000000000002
+  fields:
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+
+# Monitoring Rule — range on dd1f9293 (belongs to thing 819260c8)
+- model: monitoring.monitoringrule
+  pk: 019d0002-0000-7000-8000-000000000001
+  fields:
+    task: 019d0001-0000-7000-8000-000000000001
+    datastream: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    rule_type: range
+    last_checked_at: null
+    min_value: 0.0
+    max_value: 100.0
+    max_change: null
+    persist_value: null
+    window: null
+    window_units: null
+
+# Notification Recipient
+- model: monitoring.monitoringnotificationrecipient
+  pk: 019d0003-0000-7000-8000-000000000001
+  fields:
+    task: 019d0001-0000-7000-8000-000000000001
+    email: owner@example.com
+
+# Task Run
+- model: orchestration.taskrun
+  pk: 019d0004-0000-7000-8000-000000000001
+  fields:
+    task: 019d0001-0000-7000-8000-000000000001
+    status: SUCCESS
+    message: "OK"
+    started_at: 2025-01-01 01:00:00.000 -0700
+    result: null
+    finished_at: 2025-01-01 02:00:00.000 -0700
