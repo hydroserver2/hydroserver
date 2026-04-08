@@ -62,7 +62,7 @@ class EtlTask(Task, PermissionChecker):
         on_delete=models.CASCADE,
         related_name="etl_tasks",
     )
-    runtime_variables = models.JSONField(default=dict)
+    task_variables = models.JSONField(default=dict)
 
     objects = EtlTaskQuerySet.as_manager()
 

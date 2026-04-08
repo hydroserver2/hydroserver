@@ -57,7 +57,6 @@ class EtlTaskQueryParameters(CollectionQueryParameters):
 
 
 class EtlDataMappingResponse(BaseGetResponse):
-    id: uuid.UUID
     source_identifier: str
     target_datastream: DatastreamSummaryResponse
 
@@ -76,7 +75,7 @@ class EtlTaskResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
-    runtime_variables: dict[str, Any]
+    task_variables: dict[str, Any]
     data_connection: DataConnectionResponse
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
@@ -120,7 +119,7 @@ class EtlTaskPostBody(BasePostBody):
     name: str
     description: Optional[str] = None
     data_connection_id: uuid.UUID
-    runtime_variables: dict[str, Any] = {}
+    task_variables: dict[str, Any] = {}
     schedule: SchedulePostBody | None = None
     mappings: list[EtlDataMappingPostBody] = []
 
@@ -128,6 +127,6 @@ class EtlTaskPostBody(BasePostBody):
 class EtlTaskPatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
-    runtime_variables: dict[str, Any]
+    task_variables: dict[str, Any]
     schedule: SchedulePatchBody | None = None
     mappings: list[EtlDataMappingPatchBody]

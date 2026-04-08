@@ -6,7 +6,7 @@ Custom migration that restructures the old etl.Task model into two separate conc
   - etl.EtlTask — ETL-specific task linked to a DataConnection
 
 ETL variable fields (extractor_variables, transformer_variables, loader_variables) are
-merged into EtlTask.runtime_variables. The data_transformations field is not migrated.
+merged into EtlTask.task_variables. The data_transformations field is not migrated.
 
 Tasks with task_type="Aggregation" are not auto-migrated — the migration aborts if any
 exist. Those records must be manually converted to DataProductTask before running this
@@ -191,7 +191,7 @@ def migrate_tasks_forward(apps, schema_editor):
 
         if old_task.task_type == "ETL":
             import json as _json
-            runtime_variables = {
+            task_variables = {
                 **(old_task.extractor_variables or {}),
                 **(old_task.transformer_variables or {}),
                 **(old_task.loader_variables or {}),
@@ -200,9 +200,9 @@ def migrate_tasks_forward(apps, schema_editor):
             # trying to re-INSERT/UPDATE the already-created parent Task row.
             with schema_editor.connection.cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO etl_etltask (task_ptr_id, data_connection_id, runtime_variables) "
+                    "INSERT INTO etl_etltask (task_ptr_id, data_connection_id, task_variables) "
                     "VALUES (%s, %s, %s)",
-                    [str(orc_task.pk), str(old_task.data_connection_id), _json.dumps(runtime_variables)],
+                    [str(orc_task.pk), str(old_task.data_connection_id), _json.dumps(task_variables)],
                 )
             etl_task = EtlTask.objects.get(pk=orc_task.pk)
 
@@ -263,7 +263,7 @@ def migrate_tasks_reverse(apps, schema_editor):
             next_run_at=etl_task.next_run_at,
             paused=(not periodic_task.enabled) if periodic_task else False,
             periodic_task_id=periodic_task.id if periodic_task else None,
-            extractor_variables=etl_task.runtime_variables or {},
+            extractor_variables=etl_task.task_variables or {},
             transformer_variables={},
             loader_variables={},
         )
@@ -396,7 +396,7 @@ class Migration(migrations.Migration):
                         to="orchestration.task",
                     ),
                 ),
-                ("runtime_variables", models.JSONField(default=dict)),
+                ("task_variables", models.JSONField(default=dict)),
                 ("data_connection", models.ForeignKey(
                     on_delete=django.db.models.deletion.CASCADE,
                     related_name="etl_tasks",

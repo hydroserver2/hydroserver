@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, validate_call
+from pydantic.alias_generators import to_camel
 from django.db import transaction
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
@@ -132,7 +133,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         data_connection: Union[uuid.UUID, DataConnection],
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         description: str | None = None,
-        runtime_variables: dict = Field(default_factory=dict),
+        task_variables: dict = Field(default_factory=dict),
         crontab: str | None = None,
         interval: int | None = None,
         interval_period: Literal["minutes", "hours", "days"] | None = None,
@@ -160,7 +161,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             name=name,
             description=description,
             data_connection=data_connection,
-            runtime_variables=runtime_variables,
+            task_variables=task_variables,
         )
 
         self.apply_schedule(
@@ -185,7 +186,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         principal: User | APIKey,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
-        runtime_variables: dict | Unset = Unset,
+        task_variables: dict | Unset = Unset,
         crontab: str | None | Unset = Unset,
         interval: int | None | Unset = Unset,
         interval_period: Literal["minutes", "hours", "days"] | None | Unset = Unset,
@@ -202,7 +203,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         editable_fields = {
             "name": name,
             "description": description,
-            "runtime_variables": runtime_variables
+            "task_variables": task_variables
         }
 
         for field, value in editable_fields.items():
@@ -323,6 +324,8 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         )
 
         context = etl_pipeline.run(
+            raise_on_error=False,
+            task_instance=task,
             data_mappings=[
                 ETLDataMapping(
                     source_identifier=mapping.source_identifier,
@@ -337,13 +340,25 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                 pv.name: (
                     execution_time if pv.variable_type == "run_time" else
                     earliest_loaded_through if pv.variable_type == "latest_observation_timestamp" else
-                    task.runtime_variables.get(pv.name)
+                    task.task_variables.get(pv.name)
                 ) for pv in data_connection.placeholder_variables.all()
                 if pv.variable_type in ("run_time", "latest_observation_timestamp", "per_task")
             },
         )
 
-        if context.results.values_loaded_total == 0:
+        runtime_variables = {
+            "extractor": {to_camel(k): v for k, v in context.runtime_variables.get("extractor", {}).items()},
+            "transformer": {to_camel(k): v for k, v in context.runtime_variables.get("transformer", {}).items()},
+            "loader": {to_camel(k): v for k, v in context.runtime_variables.get("loader", {}).items()}
+        }
+
+        if context.exception:
+            context.exception.result = {
+                "stage": str(context.stage),
+                "runtimeVariables": runtime_variables,
+            }
+            raise context.exception
+        elif context.results.values_loaded_total == 0:
             message = "Already up-to-date. No new observations were loaded."
         else:
             message = (
@@ -353,5 +368,6 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         return {
             "message": message,
-            "results": context.results.model_dump()
+            "stage": str(context.stage),
+            "runtimeVariables": runtime_variables,
         }

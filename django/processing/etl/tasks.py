@@ -2,6 +2,7 @@ from uuid import UUID
 from celery import shared_task
 
 from processing.etl.services import EtlTaskService
+from hydroserverpy.etl.exceptions import ETLError
 
 
 etl_task_service = EtlTaskService()
@@ -13,4 +14,11 @@ def run_etl_task(self, task_id: str, run_id: str | None = None):
     Runs a HydroServer ETL task based on the task configuration provided.
     """
 
-    return etl_task_service.run(task=UUID(task_id))
+    try:
+        result = etl_task_service.run(task=UUID(task_id))
+    except ETLError as e:
+        raise e
+    except Exception as e:
+        raise Exception("Encountered an unexpected ETL error.") from e
+
+    return result
