@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional, Literal, Union
+from typing import Optional, Literal
 
 from ninja import Field, Query
 
@@ -15,7 +15,8 @@ from interfaces.api.schemas import (
 )
 
 
-WindowUnits = Literal["minutes", "hours", "days"]
+WindowIntervalUnits = Literal["minutes", "hours", "days"]
+RuleType = Literal["range", "rate_of_change", "persistence", "missing_data"]
 
 
 class MonitoringRuleOrderBy(OrderByField):
@@ -36,123 +37,48 @@ class MonitoringRuleQueryParameters(CollectionQueryParameters):
     )
 
 
-# --- Per-type response schemas ---
-
-class RangeRuleResponse(BaseGetResponse):
-    rule_type: Literal["range"] = Field(alias="type")
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-
-
-class RateOfChangeRuleResponse(BaseGetResponse):
-    rule_type: Literal["rate_of_change"] = Field(alias="type")
-    max_change: float
-    window: int
-    window_units: WindowUnits
-
-
-class PersistenceRuleResponse(BaseGetResponse):
-    rule_type: Literal["persistence"] = Field(alias="type")
-    persist_value: Optional[float] = None
-    window: int
-    window_units: WindowUnits
-
-
-class MissingDataRuleResponse(BaseGetResponse):
-    rule_type: Literal["missing_data"] = Field(alias="type")
-    window: int
-    window_units: WindowUnits
-
-
-# --- Per-type post body schemas ---
-
-class RangeRulePostBody(BasePostBody, RangeRuleResponse):
-    ...
-
-
-class RateOfChangeRulePostBody(BasePostBody, RateOfChangeRuleResponse):
-    ...
-
-
-class PersistenceRulePostBody(BasePostBody, PersistenceRuleResponse):
-    ...
-
-
-class MissingDataRulePostBody(BasePostBody, MissingDataRuleResponse):
-    ...
-
-
-# --- Per-type patch body schemas ---
-
-class RangeRulePatchBody(BasePatchBody, RangeRuleResponse):
-    ...
-
-
-class RateOfChangeRulePatchBody(BasePatchBody, RateOfChangeRuleResponse):
-    ...
-
-
-class PersistenceRulePatchBody(BasePatchBody, PersistenceRuleResponse):
-    ...
-
-
-class MissingDataRulePatchBody(BasePatchBody, MissingDataRuleResponse):
-    ...
-
-
-# --- Shared resolve_rule helper ---
-
-def _resolve_rule(obj) -> dict:
-    return {
-        "rule_type": obj.rule_type,
-        "min_value": obj.min_value,
-        "max_value": obj.max_value,
-        "max_change": obj.max_change,
-        "persist_value": obj.persist_value,
-        "window": obj.window,
-        "window_units": obj.window_units,
-    }
-
-
-# --- Top-level rule schemas ---
-
-class MonitoringRuleDetailResponse(BaseGetResponse):
-    """Rule details without the datastream — used when nested under a MonitoredDatastreamResponse."""
-    id: uuid.UUID
-    last_checked_at: Optional[datetime] = None
-    rule: Union[RangeRuleResponse, RateOfChangeRuleResponse, PersistenceRuleResponse, MissingDataRuleResponse]
-
-    @staticmethod
-    def resolve_rule(obj):
-        return _resolve_rule(obj)
-
-
-class MonitoredDatastreamResponse(BaseGetResponse):
-    """A datastream and all its rules for a given monitoring task."""
-    datastream: DatastreamSummaryResponse
-    rules: list[MonitoringRuleDetailResponse]
-
-
 class MonitoringRuleResponse(BaseGetResponse):
     id: uuid.UUID
     datastream: DatastreamSummaryResponse
+    rule_type: RuleType
     last_checked_at: Optional[datetime] = None
-    rule: Union[RangeRuleResponse, RateOfChangeRuleResponse, PersistenceRuleResponse, MissingDataRuleResponse]
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    window_interval: Optional[int] = None
+    window_interval_units: Optional[WindowIntervalUnits] = None
 
     @staticmethod
     def resolve_datastream(obj):
         return obj.datastream
 
-    @staticmethod
-    def resolve_rule(obj):
-        return _resolve_rule(obj)
+
+class MonitoringRuleDetailResponse(BaseGetResponse):
+    id: uuid.UUID
+    rule_type: RuleType
+    last_checked_at: Optional[datetime] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    window_interval: Optional[int] = None
+    window_interval_units: Optional[WindowIntervalUnits] = None
+
+
+class MonitoredDatastreamResponse(BaseGetResponse):
+    datastream: DatastreamSummaryResponse
+    rules: list[MonitoringRuleDetailResponse]
 
 
 class MonitoringRulePostBody(BasePostBody):
     uid: uuid.UUID | Unset = Field(Unset, alias="id")
     datastream_id: uuid.UUID
-    rule: Union[RangeRulePostBody, RateOfChangeRulePostBody, PersistenceRulePostBody, MissingDataRulePostBody]
+    rule_type: RuleType
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    window_interval: Optional[int] = None
+    window_interval_units: Optional[WindowIntervalUnits] = None
 
 
 class MonitoringRulePatchBody(BasePatchBody):
-    rule: Union[RangeRulePatchBody, RateOfChangeRulePatchBody, PersistenceRulePatchBody, MissingDataRulePatchBody]
+    min_value: Optional[float]
+    max_value: Optional[float]
+    window_interval: Optional[int]
+    window_interval_units: Optional[WindowIntervalUnits]

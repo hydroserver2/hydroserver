@@ -220,3 +220,13 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             MonitoringNotificationRecipient(task=task, email=email)
             for email in set(emails)
         ])
+
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+    def run(
+        self,
+        task: Union[uuid.UUID, MonitoringTask],
+        principal: User | APIKey | None | Unset = Unset,
+    ):
+        """
+        Run a monitoring task.
+        """

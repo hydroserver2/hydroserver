@@ -17,7 +17,7 @@ from processing.monitoring.models import MonitoringTask, MonitoringRule
 User = get_user_model()
 
 RuleType = Literal["range", "rate_of_change", "persistence", "missing_data"]
-WindowUnits = Literal["minutes", "hours", "days"]
+WindowIntervalUnits = Literal["minutes", "hours", "days"]
 
 
 class MonitoringRuleService(ServiceUtils):
@@ -112,10 +112,8 @@ class MonitoringRuleService(ServiceUtils):
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         min_value: float | None = None,
         max_value: float | None = None,
-        max_change: float | None = None,
-        persist_value: float | None = None,
-        window: int | None = None,
-        window_units: WindowUnits | None = None,
+        window_interval: int | None = None,
+        window_interval_units: WindowIntervalUnits | None = None,
     ) -> MonitoringRule:
         """
         Create a monitoring rule linked to a task and datastream.
@@ -147,10 +145,8 @@ class MonitoringRuleService(ServiceUtils):
             rule_type=rule_type,
             min_value=min_value,
             max_value=max_value,
-            max_change=max_change,
-            persist_value=persist_value,
-            window=window,
-            window_units=window_units,
+            window_interval=window_interval,
+            window_interval_units=window_interval_units,
         )
 
         if MonitoringRule.objects.filter(task=task, datastream=datastream, rule_type=rule_type).exists():
@@ -165,10 +161,8 @@ class MonitoringRuleService(ServiceUtils):
             rule_type=rule_type,
             min_value=min_value,
             max_value=max_value,
-            max_change=max_change,
-            persist_value=persist_value,
-            window=window,
-            window_units=window_units,
+            window_interval=window_interval,
+            window_interval_units=window_interval_units,
         )
 
         return self.get(rule=rule.pk, task=task)
@@ -182,10 +176,8 @@ class MonitoringRuleService(ServiceUtils):
         principal: User | APIKey,
         min_value: float | None | Unset = Unset,
         max_value: float | None | Unset = Unset,
-        max_change: float | None | Unset = Unset,
-        persist_value: float | None | Unset = Unset,
-        window: int | None | Unset = Unset,
-        window_units: WindowUnits | None | Unset = Unset,
+        window_interval: int | None | Unset = Unset,
+        window_interval_units: WindowIntervalUnits | None | Unset = Unset,
     ) -> MonitoringRule:
         """
         Update a monitoring rule's parameters.
@@ -196,10 +188,8 @@ class MonitoringRuleService(ServiceUtils):
         editable_fields = {
             "min_value": min_value,
             "max_value": max_value,
-            "max_change": max_change,
-            "persist_value": persist_value,
-            "window": window,
-            "window_units": window_units,
+            "window_interval": window_interval,
+            "window_interval_units": window_interval_units,
         }
         for field, value in editable_fields.items():
             if value is not Unset:
@@ -209,10 +199,8 @@ class MonitoringRuleService(ServiceUtils):
             rule_type=rule.rule_type,
             min_value=rule.min_value,
             max_value=rule.max_value,
-            max_change=rule.max_change,
-            persist_value=rule.persist_value,
-            window=rule.window,
-            window_units=rule.window_units,
+            window_interval=rule.window_interval,
+            window_interval_units=rule.window_interval_units,
         )
 
         rule.save()
@@ -239,10 +227,8 @@ class MonitoringRuleService(ServiceUtils):
         rule_type: str,
         min_value: float | None,
         max_value: float | None,
-        max_change: float | None,
-        persist_value: float | None,
-        window: int | None,
-        window_units: str | None,
+        window_interval: int | None,
+        window_interval_units: str | None,
     ) -> None:
         """
         Validate a monitoring rule.
@@ -250,50 +236,39 @@ class MonitoringRuleService(ServiceUtils):
 
         has_min = min_value is not None
         has_max = max_value is not None
-        has_change = max_change is not None
-        has_persist_value = persist_value is not None
-        has_window = window is not None
-        has_window_units = window_units is not None
+        has_window = window_interval is not None
+        has_window_units = window_interval_units is not None
 
         if has_window != has_window_units:
-            raise ValueError("window and window_units must both be set or both be omitted.")
+            raise ValueError("window_interval and window_interval_units must both be set or both be omitted.")
 
         if rule_type == "range":
             if not has_min and not has_max:
                 raise ValueError("At least one of min_value or max_value is required for rule_type 'range'.")
             if has_min and has_max and min_value >= max_value:
                 raise ValueError("min_value must be less than max_value.")
-            if has_change or has_persist_value or has_window:
-                raise ValueError(
-                    "max_change, persist_value, and window must not be set for rule_type 'range'."
-                )
+            if has_window:
+                raise ValueError("window_interval must not be set for rule_type 'range'.")
 
         elif rule_type == "rate_of_change":
-            if not has_change:
-                raise ValueError("max_change is required for rule_type 'rate_of_change'.")
+            if not has_max:
+                raise ValueError("max_value is required for rule_type 'rate_of_change'.")
             if not has_window:
-                raise ValueError("window and window_units are required for rule_type 'rate_of_change'.")
-            if has_min or has_max or has_persist_value:
-                raise ValueError(
-                    "min_value, max_value, and persist_value must not be set for rule_type 'rate_of_change'."
-                )
+                raise ValueError("window_interval and window_interval_units are required for rule_type 'rate_of_change'.")
+            if has_min:
+                raise ValueError("min_value must not be set for rule_type 'rate_of_change'.")
 
         elif rule_type == "persistence":
             if not has_window:
-                raise ValueError("window and window_units are required for rule_type 'persistence'.")
-            if has_min or has_max or has_change:
-                raise ValueError(
-                    "min_value, max_value, and max_change must not be set for rule_type 'persistence'."
-                )
+                raise ValueError("window_interval and window_interval_units are required for rule_type 'persistence'.")
+            if has_min and has_max and min_value >= max_value:
+                raise ValueError("min_value must be less than max_value.")
 
         elif rule_type == "missing_data":
             if not has_window:
-                raise ValueError("window and window_units are required for rule_type 'missing_data'.")
-            if has_min or has_max or has_change or has_persist_value:
-                raise ValueError(
-                    "min_value, max_value, max_change, and persist_value must not be set "
-                    "for rule_type 'missing_data'."
-                )
+                raise ValueError("window_interval and window_interval_units are required for rule_type 'missing_data'.")
+            if has_min or has_max:
+                raise ValueError("min_value and max_value must not be set for rule_type 'missing_data'.")
 
         else:
             raise ValueError(f"Invalid rule_type '{rule_type}'.")

@@ -36,10 +36,8 @@
     last_checked_at: null
     min_value: 0.0
     max_value: 100.0
-    max_change: null
-    persist_value: null
-    window: null
-    window_units: null
+    window_interval: null
+    window_interval_units: null
 
 # Notification Recipient
 - model: monitoring.monitoringnotificationrecipient

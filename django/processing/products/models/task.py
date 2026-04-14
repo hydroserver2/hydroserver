@@ -1,4 +1,3 @@
-import uuid6
 from typing import Union, Literal
 
 from django.db import models
@@ -7,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from core.iam.models import Workspace, APIKey
 from core.iam.models.utils import PermissionChecker
-from core.sta.models import Thing, Datastream
+from core.sta.models import Thing
 from processing.orchestration.models.task import Task
 
 
@@ -54,34 +53,6 @@ class DataProductTaskQuerySet(models.QuerySet):
             return self.none()
 
 
-class TimezoneType(models.TextChoices):
-    UTC = "utc"
-    OFFSET = "offset"
-    IANA = "iana"
-
-
-class TransformationType(models.TextChoices):
-    RATING_CURVE = "rating_curve"
-    EXPRESSION = "expression"
-    TEMPORAL_AGGREGATION = "temporal_aggregation"
-
-
-class AggregationMethod(models.TextChoices):
-    SIMPLE_MEAN = "simple_mean"
-    WEIGHTED_MEAN = "weighted_mean"
-    MIN_VALUE = "min_value"
-    MAX_VALUE = "max_value"
-    FIRST_VALUE = "first_value"
-    LAST_VALUE = "last_value"
-
-
-class AggregationPeriod(models.TextChoices):
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-
-
 class DataProductTask(Task, PermissionChecker):
     thing = models.ForeignKey(
         Thing,
@@ -115,82 +86,3 @@ class DataProductTask(Task, PermissionChecker):
     @property
     def workspace(self):
         return self.thing.workspace
-
-
-class DataProductOutputMapping(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
-    task = models.ForeignKey(
-        DataProductTask,
-        on_delete=models.CASCADE,
-        related_name="mappings",
-    )
-    output_datastream = models.OneToOneField(
-        Datastream,
-        on_delete=models.CASCADE,
-        related_name="data_product_mapping",
-    )
-    transformation_type = models.CharField(max_length=255, choices=TransformationType)
-    rating_curve = models.ForeignKey(
-        "products.RatingCurve",
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="mappings",
-    )
-    expression = models.ForeignKey(
-        "products.Expression",
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="mappings",
-    )
-    aggregation_method = models.CharField(
-        max_length=255,
-        choices=AggregationMethod,
-        null=True,
-        blank=True,
-    )
-    aggregation_period = models.CharField(
-        max_length=255,
-        choices=AggregationPeriod,
-        null=True,
-        blank=True,
-    )
-    aggregation_timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
-    aggregation_timezone = models.CharField(max_length=255, null=True, blank=True)
-    aggregation_min_coverage = models.FloatField(null=True, blank=True)
-    alignment_tolerance = models.PositiveIntegerField(null=True, blank=True)
-
-    class Meta:
-        app_label = "products"
-
-    def __str__(self):
-        return f"{self.task} - {self.output_datastream} ({self.transformation_type})"
-
-
-class DataProductInputMapping(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
-    output_mapping = models.ForeignKey(
-        DataProductOutputMapping,
-        on_delete=models.CASCADE,
-        related_name="input_mappings",
-    )
-    datastream = models.ForeignKey(
-        Datastream,
-        on_delete=models.CASCADE,
-        related_name="data_product_input_mappings",
-    )
-    variable_name = models.CharField(max_length=255, null=True, blank=True)
-
-    class Meta:
-        app_label = "products"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["output_mapping", "variable_name"],
-                condition=models.Q(variable_name__isnull=False),
-                name="unique_data_product_input_mapping_variable",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.output_mapping} <- {self.datastream} ({self.variable_name})"

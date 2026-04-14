@@ -13,7 +13,7 @@ from interfaces.api.schemas import (
 )
 
 
-FittingMethod = Literal["linear", "power_law", "polynomial", "spline"]
+FittingMethod = Literal["linear", "power_law", "polynomial"]
 
 
 class RatingCurveOrderBy(OrderByField):
@@ -37,13 +37,19 @@ class RatingCurveQueryParameters(CollectionQueryParameters):
     )
 
 
+class RatingCurveSummaryResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str
+    fitting_method: FittingMethod
+
+
 class RatingCurveResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
     fitting_method: FittingMethod
     thing: ThingSummaryResponse
-    points: list[tuple[float, Optional[float]]]
+    points: list[tuple[float, float]]
 
     @staticmethod
     def resolve_points(obj):
@@ -56,11 +62,11 @@ class RatingCurvePostBody(BasePostBody):
     description: Optional[str] = None
     fitting_method: FittingMethod
     thing_id: uuid.UUID
-    points: list[tuple[float, Optional[float]]] = []
+    points: list[tuple[float, float]] = []
 
 
 class RatingCurvePatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
     fitting_method: FittingMethod
-    points: list[tuple[float, Optional[float]]] = []
+    points: list[tuple[float, float]]

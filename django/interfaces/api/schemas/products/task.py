@@ -11,16 +11,15 @@ from interfaces.api.schemas import (
     BasePatchBody,
     CollectionQueryParameters,
     ThingSummaryResponse,
-    DatastreamSummaryResponse,
 )
 from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, SchedulePostBody, SchedulePatchBody
 from interfaces.api.schemas.orchestration.run import TaskRunResponse
-
-
-TransformationType = Literal["rating_curve", "expression", "temporal_aggregation"]
-AggregationMethod = Literal["simple_mean", "weighted_mean", "min_value", "max_value", "first_value", "last_value"]
-AggregationPeriod = Literal["hourly", "daily", "weekly", "monthly"]
-TimezoneType = Literal["utc", "offset", "iana"]
+from interfaces.api.schemas.products.transformation import (
+    RatingCurveTransformationResponse,
+    ExpressionTransformationResponse,
+    CompositeExpressionTransformationResponse,
+    AggregationTransformationResponse,
+)
 
 
 class DataProductTaskOrderBy(OrderByField):
@@ -48,7 +47,7 @@ class DataProductTaskQueryParameters(CollectionQueryParameters):
     latest_run_status: list[str | Literal["null"]] = Query(
         [], description="Filter data product tasks by their most recent run status."
     )
-    transformation_type: list[TransformationType] = Query(
+    transformation_type: list[str] = Query(
         [], description="Filter data product tasks by transformation type."
     )
     output_datastream: list[uuid.UUID] = Query(
@@ -60,33 +59,6 @@ class DataProductTaskQueryParameters(CollectionQueryParameters):
     rating_curve: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by rating curve ID.", alias="rating_curve_id"
     )
-    expression: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by expression ID.", alias="expression_id"
-    )
-
-
-class DataProductInputMappingResponse(BaseGetResponse):
-    datastream: DatastreamSummaryResponse
-    variable_name: Optional[str] = None
-
-
-class DataProductOutputMappingResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream: DatastreamSummaryResponse
-    transformation_type: TransformationType
-    rating_curve_id: Optional[uuid.UUID] = None
-    expression_id: Optional[uuid.UUID] = None
-    alignment_tolerance: Optional[int] = None
-    aggregation_method: Optional[AggregationMethod] = None
-    aggregation_period: Optional[AggregationPeriod] = None
-    aggregation_timezone_type: Optional[TimezoneType] = None
-    aggregation_timezone: Optional[str] = None
-    aggregation_min_coverage: Optional[float] = None
-    input_mappings: list[DataProductInputMappingResponse]
-
-    @staticmethod
-    def resolve_input_mappings(obj):
-        return obj.input_mappings.all()
 
 
 class DataProductTaskResponse(BaseGetResponse):
@@ -96,7 +68,10 @@ class DataProductTaskResponse(BaseGetResponse):
     thing: ThingSummaryResponse
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
-    mappings: list[DataProductOutputMappingResponse]
+    rating_curve_transformations: list[RatingCurveTransformationResponse]
+    expression_transformations: list[ExpressionTransformationResponse]
+    composite_expression_transformations: list[CompositeExpressionTransformationResponse]
+    aggregation_transformations: list[AggregationTransformationResponse]
 
     @staticmethod
     def resolve_schedule(obj):
@@ -127,27 +102,20 @@ class DataProductTaskResponse(BaseGetResponse):
         }
 
     @staticmethod
-    def resolve_mappings(obj):
-        return obj.mappings.all()
+    def resolve_rating_curve_transformations(obj):
+        return [t for t in obj.transformations.all() if t.transformation_type == "rating_curve"]
 
+    @staticmethod
+    def resolve_expression_transformations(obj):
+        return [t for t in obj.transformations.all() if t.transformation_type == "expression"]
 
-class DataProductInputMappingPostBody(BasePostBody):
-    datastream_id: uuid.UUID
-    variable_name: Optional[str] = None
+    @staticmethod
+    def resolve_composite_expression_transformations(obj):
+        return [t for t in obj.transformations.all() if t.transformation_type == "composite_expression"]
 
-
-class DataProductOutputMappingPostBody(BasePostBody):
-    output_datastream_id: uuid.UUID
-    transformation_type: TransformationType
-    rating_curve_id: Optional[uuid.UUID] = None
-    expression_id: Optional[uuid.UUID] = None
-    alignment_tolerance: Optional[int] = None
-    aggregation_method: Optional[AggregationMethod] = None
-    aggregation_period: Optional[AggregationPeriod] = None
-    aggregation_timezone_type: Optional[TimezoneType] = None
-    aggregation_timezone: Optional[str] = None
-    aggregation_min_coverage: Optional[float] = None
-    input_mappings: list[DataProductInputMappingPostBody] = []
+    @staticmethod
+    def resolve_aggregation_transformations(obj):
+        return [t for t in obj.transformations.all() if t.transformation_type == "aggregation"]
 
 
 class DataProductTaskPostBody(BasePostBody):
@@ -156,25 +124,9 @@ class DataProductTaskPostBody(BasePostBody):
     description: Optional[str] = None
     thing_id: uuid.UUID
     schedule: SchedulePostBody | None = None
-    mappings: list[DataProductOutputMappingPostBody] = []
-
-
-class DataProductOutputMappingPatchBody(BasePostBody):
-    output_datastream_id: uuid.UUID
-    transformation_type: TransformationType
-    rating_curve_id: Optional[uuid.UUID] = None
-    expression_id: Optional[uuid.UUID] = None
-    alignment_tolerance: Optional[int] = None
-    aggregation_method: Optional[AggregationMethod] = None
-    aggregation_period: Optional[AggregationPeriod] = None
-    aggregation_timezone_type: Optional[TimezoneType] = None
-    aggregation_timezone: Optional[str] = None
-    aggregation_min_coverage: Optional[float] = None
-    input_mappings: list[DataProductInputMappingPostBody] = []
 
 
 class DataProductTaskPatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
     schedule: SchedulePatchBody | None = None
-    mappings: list[DataProductOutputMappingPatchBody] = []

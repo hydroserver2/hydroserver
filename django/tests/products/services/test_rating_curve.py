@@ -1,5 +1,6 @@
 import uuid
 import pytest
+import numpy as np
 from collections import Counter
 from ninja.errors import HttpError
 from processing.products.services.rating_curve import RatingCurveService
@@ -7,8 +8,9 @@ from processing.products.models import RatingCurve
 
 rating_curve_service = RatingCurveService()
 
-RC1 = "019c0002-0000-7000-8000-000000000001"  # private workspace, private thing
+RC1 = "019c0002-0000-7000-8000-000000000001"  # private workspace, private thing (referenced by T_RC — PROTECTED)
 RC2 = "019c0002-0000-7000-8000-000000000002"  # public workspace, public thing
+RC3 = "019c0002-0000-7000-8000-000000000003"  # private workspace, no transformations (safe to delete)
 PRIVATE_THING = "76dadda5-224b-4e1f-8570-e385bd482b2d"
 PUBLIC_THING = "3b7818af-eff7-4149-8517-e5cad9dc22e1"
 PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
@@ -21,26 +23,30 @@ def _err(exc_info):
     return val.message if isinstance(val, HttpError) else str(val)
 
 
+PRIVATE_RC_NAMES = ["Test Rating Curve", "Test Disposable Rating Curve"]
+ALL_RC_NAMES = PRIVATE_RC_NAMES + ["Test Public Rating Curve"]
+
+
 @pytest.mark.parametrize(
     "principal, params, expected_names, max_queries",
     [
-        # User access — both workspaces visible
-        ("owner", {}, ["Test Rating Curve", "Test Public Rating Curve"], 10),
-        ("editor", {}, ["Test Rating Curve", "Test Public Rating Curve"], 10),
-        ("viewer", {}, ["Test Rating Curve", "Test Public Rating Curve"], 10),
-        ("admin", {}, ["Test Rating Curve", "Test Public Rating Curve"], 10),
+        # User access — all 3 rating curves visible (2 private, 1 public)
+        ("owner", {}, ALL_RC_NAMES, 10),
+        ("editor", {}, ALL_RC_NAMES, 10),
+        ("viewer", {}, ALL_RC_NAMES, 10),
+        ("admin", {}, ALL_RC_NAMES, 10),
         # API key has view access to public workspace only
         ("apikey", {}, ["Test Public Rating Curve"], 10),
         # No access
         ("unaffiliated", {}, [], 10),
         ("anonymous", {}, [], 10),
-        # Pagination
-        ("owner", {"page": 2, "page_size": 1}, ["Test Rating Curve"], 10),
+        # Pagination — ordered by -id; RC3 newest, then RC2, then RC1; page 3 = RC1
+        ("owner", {"page": 3, "page_size": 1}, ["Test Rating Curve"], 10),
         # Thing filter
-        ("owner", {"thing": [uuid.UUID(PRIVATE_THING)]}, ["Test Rating Curve"], 10),
+        ("owner", {"thing": [uuid.UUID(PRIVATE_THING)]}, PRIVATE_RC_NAMES, 10),
         ("owner", {"thing": [uuid.UUID(PUBLIC_THING)]}, ["Test Public Rating Curve"], 10),
         # Workspace filter
-        ("owner", {"workspace": [uuid.UUID(PRIVATE_WORKSPACE)]}, ["Test Rating Curve"], 10),
+        ("owner", {"workspace": [uuid.UUID(PRIVATE_WORKSPACE)]}, PRIVATE_RC_NAMES, 10),
         ("owner", {"workspace": [uuid.UUID(PUBLIC_WORKSPACE)]}, ["Test Public Rating Curve"], 10),
     ],
 )
@@ -123,7 +129,7 @@ def test_get_rating_curve_includes_points(get_principal):
         ("unaffiliated", PRIVATE_THING, PermissionError, "do not have permission"),
         ("unaffiliated", PUBLIC_THING, PermissionError, "do not have permission"),
         # Not found
-        ("owner", NONEXISTENT, HttpError, "does not exist"),
+        ("owner", NONEXISTENT, LookupError, "does not exist"),
     ],
 )
 def test_create_rating_curve(get_principal, principal, thing, error, error_fragment):
@@ -154,13 +160,13 @@ def test_create_rating_curve_with_points(get_principal):
         thing=uuid.UUID(PRIVATE_THING),
         name="Curve with Points",
         fitting_method="power_law",
-        points=[(0.5, 1.0), (1.0, 2.5), (2.0, None)],
+        points=[(0.5, 1.0), (1.0, 2.5), (2.0, 5.0)],
     )
     points = list(result.points.all())
     assert len(points) == 3
     assert points[0].input_value == 0.5
     assert points[0].output_value == 1.0
-    assert points[2].output_value is None
+    assert points[2].output_value == 5.0
 
 
 def test_create_rating_curve_duplicate_points_rejected(get_principal):
@@ -236,15 +242,6 @@ def test_update_rating_curve_clears_points(get_principal):
     assert result.points.count() == 0
 
 
-def test_update_rating_curve_changes_fitting_method(get_principal):
-    result = rating_curve_service.update(
-        rating_curve=uuid.UUID(RC1),
-        principal=get_principal("owner"),
-        fitting_method="spline",
-    )
-    assert result.fitting_method == "spline"
-
-
 @pytest.mark.parametrize(
     "principal, error, error_fragment",
     [
@@ -262,16 +259,16 @@ def test_delete_rating_curve(get_principal, principal, error, error_fragment):
     if error:
         with pytest.raises(error) as exc_info:
             rating_curve_service.delete(
-                rating_curve=uuid.UUID(RC1),
+                rating_curve=uuid.UUID(RC3),
                 principal=get_principal(principal),
             )
         assert error_fragment in _err(exc_info)
     else:
         rating_curve_service.delete(
-            rating_curve=uuid.UUID(RC1),
+            rating_curve=uuid.UUID(RC3),
             principal=get_principal(principal),
         )
-        assert not RatingCurve.objects.filter(pk=uuid.UUID(RC1)).exists()
+        assert not RatingCurve.objects.filter(pk=uuid.UUID(RC3)).exists()
 
 
 def test_delete_rating_curve_nonexistent(get_principal):
@@ -281,3 +278,84 @@ def test_delete_rating_curve_nonexistent(get_principal):
             principal=get_principal("owner"),
         )
     assert "does not exist" in str(exc_info.value)
+
+
+# --- apply_rating_curve ---
+
+def test_apply_rating_curve_linear_within_range():
+    """RC1 is linear with points (1→2, 2→4). y = 2x."""
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=uuid.UUID(RC1),
+        input_values=np.array([1.0, 1.5, 2.0]),
+    )
+    np.testing.assert_allclose(result, [2.0, 3.0, 4.0])
+
+
+def test_apply_rating_curve_linear_outside_range_gives_nan():
+    """Values outside the control point range should be NaN for linear method."""
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=uuid.UUID(RC1),
+        input_values=np.array([0.0, 3.0]),
+    )
+    assert np.isnan(result[0])
+    assert np.isnan(result[1])
+
+
+def test_apply_rating_curve_too_few_points_returns_all_nan():
+    """RC2 has no points; result should be all NaN."""
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=uuid.UUID(RC2),
+        input_values=np.array([1.0, 2.0]),
+    )
+    assert np.all(np.isnan(result))
+
+
+def test_apply_rating_curve_power_law(get_principal):
+    """Create a power_law curve with known coefficients and verify interpolation."""
+    # Points that exactly fit y = 2 * x^2: (1, 2), (2, 8), (4, 32)
+    rc = rating_curve_service.create(
+        principal=get_principal("owner"),
+        thing=uuid.UUID(PRIVATE_THING),
+        name="Power Law Curve",
+        fitting_method="power_law",
+        points=[(1.0, 2.0), (2.0, 8.0), (4.0, 32.0)],
+    )
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=rc.pk,
+        input_values=np.array([1.0, 2.0, 4.0]),
+    )
+    np.testing.assert_allclose(result, [2.0, 8.0, 32.0], rtol=1e-4)
+
+
+def test_apply_rating_curve_power_law_non_positive_input_gives_nan(get_principal):
+    """Power law is undefined for x ≤ 0; those values should be NaN."""
+    rc = rating_curve_service.create(
+        principal=get_principal("owner"),
+        thing=uuid.UUID(PRIVATE_THING),
+        name="Power Law NaN Curve",
+        fitting_method="power_law",
+        points=[(1.0, 2.0), (2.0, 8.0)],
+    )
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=rc.pk,
+        input_values=np.array([-1.0, 0.0, 1.0]),
+    )
+    assert np.isnan(result[0])
+    assert np.isnan(result[1])
+    assert not np.isnan(result[2])
+
+
+def test_apply_rating_curve_polynomial(get_principal):
+    """Create a polynomial curve and check it passes through control points."""
+    rc = rating_curve_service.create(
+        principal=get_principal("owner"),
+        thing=uuid.UUID(PRIVATE_THING),
+        name="Polynomial Curve",
+        fitting_method="polynomial",
+        points=[(0.0, 0.0), (1.0, 1.0), (2.0, 4.0), (3.0, 9.0)],
+    )
+    result = rating_curve_service.apply_rating_curve(
+        rating_curve=rc.pk,
+        input_values=np.array([0.0, 1.0, 2.0, 3.0]),
+    )
+    np.testing.assert_allclose(result, [0.0, 1.0, 4.0, 9.0], atol=1e-6)

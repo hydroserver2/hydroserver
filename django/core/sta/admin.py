@@ -153,6 +153,12 @@ class DatastreamAdmin(admin.ModelAdmin):
                         datastream_id=datastream.id
                     )
                     observations.delete()
+                    datastream.phenomenon_begin_time = None
+                    datastream.phenomenon_end_time = None
+                    datastream.result_begin_time = None
+                    datastream.result_end_time = None
+                    datastream.value_count = 0
+                    datastream.save()
             self.message_user(request, "Observations deleted successfully.")
         else:
             self.message_user(

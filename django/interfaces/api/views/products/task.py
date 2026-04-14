@@ -3,6 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 
+from core.types import Unset
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
@@ -45,14 +46,13 @@ def get_data_product_tasks(
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={
                 "order_by", "thing", "workspace",
-                "output_datastream", "input_datastream", "rating_curve", "expression",
+                "output_datastream", "input_datastream", "rating_curve",
             }),
             **({"thing": query.thing} if "thing" in query.model_fields_set else {}),
             **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
             **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
             **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
             **({"rating_curve": query.rating_curve} if "rating_curve" in query.model_fields_set else {}),
-            **({"expression": query.expression} if "expression" in query.model_fields_set else {}),
         )
 
     apply_response_pagination_headers(
@@ -90,14 +90,8 @@ def create_data_product_task(
         task = data_product_task_service.create(
             principal=request.principal,
             thing=data.thing_id,
-            mappings=[
-                {
-                    **m.model_dump(exclude={"input_mappings"}),
-                    "input_mappings": [im.model_dump() for im in m.input_mappings],
-                }
-                for m in data.mappings
-            ],
-            **data.model_dump(exclude_unset=True, exclude={"thing_id", "schedule", "mappings"}),
+            **data.model_dump(exclude_unset=True, exclude={"thing_id", "uid", "schedule"}),
+            **({"uid": data.uid} if data.uid is not Unset else {}),
             **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
         )
 
@@ -154,26 +148,12 @@ def update_data_product_task(
     Update a data product task.
     """
 
-    extra = {}
-
-    if "schedule" in data.model_fields_set:
-        extra.update(data.schedule.model_dump(exclude_unset=True) if data.schedule else {})
-
-    if "mappings" in data.model_fields_set:
-        extra["mappings"] = [
-            {
-                **m.model_dump(exclude={"input_mappings"}),
-                "input_mappings": [im.model_dump() for im in m.input_mappings],
-            }
-            for m in data.mappings
-        ]
-
     with raise_http_errors():
         task = data_product_task_service.update(
             task=task_id,
             principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"schedule", "mappings"}),
-            **extra,
+            **data.model_dump(exclude_unset=True, exclude={"schedule"}),
+            **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
         )
 
     return 200, task

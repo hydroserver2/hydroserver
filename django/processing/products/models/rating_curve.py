@@ -57,7 +57,6 @@ class FittingMethod(models.TextChoices):
     LINEAR = "linear"
     POWER_LAW = "power_law"
     POLYNOMIAL = "polynomial"
-    SPLINE = "spline"
 
 
 class RatingCurve(models.Model, PermissionChecker):
@@ -103,7 +102,7 @@ class RatingCurvePoint(models.Model):
         related_name="points",
     )
     input_value = models.FloatField()
-    output_value = models.FloatField(null=True, blank=True)
+    output_value = models.FloatField()
 
     class Meta:
         app_label = "products"

@@ -145,9 +145,9 @@ def test_create_monitoring_rule(get_principal, principal, error, error_fragment)
                 principal=get_principal(principal),
                 datastream_id=uuid.UUID(TASK1_DATASTREAM),
                 rule_type="rate_of_change",
-                max_change=5.0,
-                window=1,
-                window_units="hours",
+                max_value=5.0,
+                window_interval=1,
+                window_interval_units="hours",
             )
         assert error_fragment in str(exc_info.value)
     else:
@@ -156,12 +156,12 @@ def test_create_monitoring_rule(get_principal, principal, error, error_fragment)
             principal=get_principal(principal),
             datastream_id=uuid.UUID(TASK1_DATASTREAM),
             rule_type="rate_of_change",
-            max_change=5.0,
-            window=1,
-            window_units="hours",
+            max_value=5.0,
+            window_interval=1,
+            window_interval_units="hours",
         )
         assert result.rule_type == "rate_of_change"
-        assert result.max_change == 5.0
+        assert result.max_value == 5.0
 
 
 def test_create_monitoring_rule_nonexistent_task(get_principal):
@@ -224,14 +224,14 @@ def test_create_rate_of_change_rule(get_principal):
         principal=get_principal("owner"),
         datastream_id=uuid.UUID(TASK1_DATASTREAM),
         rule_type="rate_of_change",
-        max_change=2.5,
-        window=30,
-        window_units="minutes",
+        max_value=2.5,
+        window_interval=30,
+        window_interval_units="minutes",
     )
     assert result.rule_type == "rate_of_change"
-    assert result.max_change == 2.5
-    assert result.window == 30
-    assert result.window_units == "minutes"
+    assert result.max_value == 2.5
+    assert result.window_interval == 30
+    assert result.window_interval_units == "minutes"
 
 
 def test_create_persistence_rule(get_principal):
@@ -240,24 +240,26 @@ def test_create_persistence_rule(get_principal):
         principal=get_principal("owner"),
         datastream_id=uuid.UUID(TASK1_DATASTREAM),
         rule_type="persistence",
-        window=2,
-        window_units="hours",
+        window_interval=2,
+        window_interval_units="hours",
     )
     assert result.rule_type == "persistence"
-    assert result.window == 2
+    assert result.window_interval == 2
 
 
-def test_create_persistence_rule_with_value(get_principal):
+def test_create_persistence_rule_with_range(get_principal):
     result = rule_service.create(
         task=uuid.UUID(TASK1),
         principal=get_principal("owner"),
         datastream_id=uuid.UUID(TASK1_DATASTREAM),
         rule_type="persistence",
-        persist_value=0.0,
-        window=1,
-        window_units="days",
+        min_value=0.0,
+        max_value=10.0,
+        window_interval=1,
+        window_interval_units="days",
     )
-    assert result.persist_value == 0.0
+    assert result.min_value == 0.0
+    assert result.max_value == 10.0
 
 
 def test_create_missing_data_rule(get_principal):
@@ -266,11 +268,11 @@ def test_create_missing_data_rule(get_principal):
         principal=get_principal("owner"),
         datastream_id=uuid.UUID(TASK1_DATASTREAM),
         rule_type="missing_data",
-        window=4,
-        window_units="hours",
+        window_interval=4,
+        window_interval_units="hours",
     )
     assert result.rule_type == "missing_data"
-    assert result.window == 4
+    assert result.window_interval == 4
 
 
 # --- Validation ---
@@ -299,17 +301,17 @@ def test_range_rule_min_must_be_less_than_max(get_principal):
     assert "min_value must be less than max_value" in str(exc_info.value)
 
 
-def test_rate_of_change_requires_max_change(get_principal):
+def test_rate_of_change_requires_max_value(get_principal):
     with pytest.raises(ValueError) as exc_info:
         rule_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
             datastream_id=uuid.UUID(TASK1_DATASTREAM),
             rule_type="rate_of_change",
-            window=1,
-            window_units="hours",
+            window_interval=1,
+            window_interval_units="hours",
         )
-    assert "max_change" in str(exc_info.value)
+    assert "max_value" in str(exc_info.value)
 
 
 def test_rate_of_change_requires_window(get_principal):
@@ -319,9 +321,9 @@ def test_rate_of_change_requires_window(get_principal):
             principal=get_principal("owner"),
             datastream_id=uuid.UUID(TASK1_DATASTREAM),
             rule_type="rate_of_change",
-            max_change=1.0,
+            max_value=1.0,
         )
-    assert "window" in str(exc_info.value)
+    assert "window_interval" in str(exc_info.value)
 
 
 def test_window_units_required_with_window(get_principal):
@@ -331,10 +333,10 @@ def test_window_units_required_with_window(get_principal):
             principal=get_principal("owner"),
             datastream_id=uuid.UUID(TASK1_DATASTREAM),
             rule_type="persistence",
-            window=1,
-            # window_units omitted
+            window_interval=1,
+            # window_interval_units omitted
         )
-    assert "window_units" in str(exc_info.value)
+    assert "window_interval_units" in str(exc_info.value)
 
 
 @pytest.mark.parametrize(

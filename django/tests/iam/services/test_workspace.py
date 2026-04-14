@@ -251,14 +251,14 @@ def test_update_workspace(
             "6e0deaf2-a92b-421b-9ece-86783265596f",
             "Workspace deleted",
             None,
-            55,
+            56,
         ),
         (
             "admin",
             "6e0deaf2-a92b-421b-9ece-86783265596f",
             "Workspace deleted",
             None,
-            55,
+            56,
         ),
         (
             "owner",

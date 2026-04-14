@@ -13,7 +13,7 @@ class RuleType(models.TextChoices):
     MISSING_DATA = "missing_data"
 
 
-class WindowUnits(models.TextChoices):
+class WindowIntervalUnits(models.TextChoices):
     MINUTES = "minutes"
     HOURS = "hours"
     DAYS = "days"
@@ -36,10 +36,8 @@ class MonitoringRule(models.Model):
 
     min_value = models.FloatField(null=True, blank=True)
     max_value = models.FloatField(null=True, blank=True)
-    max_change = models.FloatField(null=True, blank=True)
-    persist_value = models.FloatField(null=True, blank=True)
-    window = models.IntegerField(null=True, blank=True)
-    window_units = models.CharField(max_length=255, choices=WindowUnits, null=True, blank=True)
+    window_interval = models.IntegerField(null=True, blank=True)
+    window_interval_units = models.CharField(max_length=255, choices=WindowIntervalUnits, null=True, blank=True)
 
     class Meta:
         app_label = "monitoring"

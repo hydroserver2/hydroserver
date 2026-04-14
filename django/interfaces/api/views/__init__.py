@@ -16,7 +16,12 @@ from interfaces.api.views.etl.data_connection import data_connection_router
 from interfaces.api.views.etl.task import etl_task_router
 
 from interfaces.api.views.products.rating_curve import rating_curve_router
-from interfaces.api.views.products.expression import expression_router
+from interfaces.api.views.products.transformation import (
+    rating_curve_transformation_router,
+    expression_transformation_router,
+    composite_expression_transformation_router,
+    aggregation_transformation_router,
+)
 from interfaces.api.views.products.task import data_product_task_router
 
 from interfaces.api.views.monitoring.task import monitoring_task_router

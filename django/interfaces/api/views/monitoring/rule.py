@@ -86,10 +86,8 @@ def create_monitoring_rule(
         rule = monitoring_rule_service.create(
             task=task_id,
             principal=request.principal,
-            datastream_id=data.datastream_id,
-            rule_type=data.rule.rule_type,
-            **data.rule.model_dump(exclude_unset=True, exclude={"rule_type"}),
-            **data.model_dump(exclude_unset=True, exclude={"datastream_id", "rule"}),
+            **data.model_dump(exclude_unset=True, exclude={"uid"}),
+            **({"uid": data.uid} if data.uid is not Unset else {}),
         )
 
     return 201, rule
@@ -153,10 +151,7 @@ def update_monitoring_rule(
             rule=rule_id,
             task=task_id,
             principal=request.principal,
-            **(
-                data.rule.model_dump(exclude_unset=True, exclude={"rule_type"})
-                if data.rule is not Unset else {}
-            ),
+            **data.model_dump(exclude_unset=True),
         )
 
     return 200, rule

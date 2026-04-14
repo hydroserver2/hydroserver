@@ -1,9 +1,9 @@
 import uuid
 import uuid6
+import numpy as np
 from typing import Literal
 
 from pydantic import Field, ConfigDict, validate_call
-from ninja.errors import HttpError
 from django.db import transaction
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
@@ -77,7 +77,7 @@ class RatingCurveService(ServiceUtils):
             queryset = queryset.filter(thing__in=[getattr(t, "pk", t) for t in thing])
 
         if workspace is not Unset:
-            queryset = queryset.filter(thing__workspace__in=workspace)
+            queryset = queryset.filter(thing__workspace__in=[getattr(ws, "pk", ws) for ws in workspace])
 
         if not all(term.lstrip("-") in self.order_by_fields for term in order_by):
             raise ValueError(f"Invalid order_by field(s): {order_by}")
@@ -102,18 +102,18 @@ class RatingCurveService(ServiceUtils):
         principal: User | APIKey | None,
         thing: uuid.UUID | Thing,
         name: str,
-        fitting_method: Literal["linear", "power_law", "polynomial", "spline"],
+        fitting_method: Literal["linear", "power_law", "polynomial"],
         points: list[tuple] = Field(default_factory=list),
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         description: str | None = None,
+        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
     ) -> RatingCurve:
-        """Create a rating curve with its points."""
+        """Create a rating curve."""
 
         if isinstance(thing, uuid.UUID):
             try:
                 thing = Thing.objects.select_related("workspace").get(pk=thing)
             except Thing.DoesNotExist:
-                raise HttpError(404, "Thing does not exist.")
+                raise LookupError("Thing does not exist.")
 
         if not RatingCurve.can_principal_create(principal=principal, workspace=thing.workspace):
             raise PermissionError("You do not have permission to create this rating curve.")
@@ -139,10 +139,10 @@ class RatingCurveService(ServiceUtils):
         principal: User | APIKey | None,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
-        fitting_method: Literal["linear", "power_law", "polynomial", "spline"] | Unset = Unset,
+        fitting_method: Literal["linear", "power_law", "polynomial"] | Unset = Unset,
         points: list[tuple] | Unset = Unset,
     ) -> RatingCurve:
-        """Update a rating curve. Providing points replaces them entirely."""
+        """Update a rating curve."""
 
         rating_curve = self.get(rating_curve=rating_curve, action="edit", principal=principal)
 
@@ -180,22 +180,61 @@ class RatingCurveService(ServiceUtils):
 
         rating_curve = self.get(rating_curve)
 
-        self._validate_points(points)
+        input_values = [pt[0] for pt in points]
+        if len(set(input_values)) != len(input_values):
+            raise ValueError("Duplicate input_value in points.")
+
         rating_curve.points.all().delete()
+
         RatingCurvePoint.objects.bulk_create([
             RatingCurvePoint(
                 rating_curve=rating_curve,
                 input_value=pt[0],
-                output_value=pt[1] if len(pt) > 1 else None,
+                output_value=pt[1],
             )
             for pt in points
         ])
 
-    @staticmethod
-    def _validate_points(points: list[tuple]) -> None:
-        seen = set()
-        for pt in points:
-            v = pt[0]
-            if v in seen:
-                raise ValueError(f"Duplicate input_value {v} in points.")
-            seen.add(v)
+    def apply_rating_curve(
+        self,
+        rating_curve: uuid.UUID | RatingCurve,
+        input_values: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Map input_values through a rating curve defined by control points (xs, ys).
+
+        linear — piecewise linear interpolation; NaN outside [min(xs), max(xs)].
+        power_law — least-squares fit of y = a·xᵇ in log-log space; NaN for x ≤ 0.
+        polynomial — least-squares polynomial fit (degree = min(n-1, 3)); extrapolates.
+        """
+
+        rating_curve = self.get(rating_curve=rating_curve)
+
+        points = list(rating_curve.points.all())
+        if len(points) < 2:
+            return np.full_like(input_values, np.nan)
+
+        xs = np.array([p.input_value for p in points])
+        ys = np.array([p.output_value for p in points])
+
+        if rating_curve.fitting_method == "linear":
+            return np.interp(input_values, xs, ys, left=np.nan, right=np.nan)
+
+        elif rating_curve.fitting_method == "power_law":
+            if np.any(xs <= 0) or np.any(ys <= 0):
+                raise ValueError(
+                    "Power law fitting requires all rating curve point values to be positive."
+                )
+            coefficients = np.polyfit(np.log(xs), np.log(ys), 1)
+            b, log_a = coefficients[0], coefficients[1]
+            a = np.exp(log_a)
+            with np.errstate(invalid="ignore"):
+                return np.where(input_values > 0, a * np.power(input_values, b), np.nan)
+
+        elif rating_curve.fitting_method == "polynomial":
+            degree = min(len(xs) - 1, 3)
+            coefficients = np.polyfit(xs, ys, degree)
+            return np.polyval(coefficients, input_values)
+
+        else:
+            raise ValueError(f"Unsupported fitting method: {rating_curve.fitting_method}")
