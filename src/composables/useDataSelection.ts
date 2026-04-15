@@ -1,6 +1,10 @@
 import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
-import { formatDate } from '@uwrl/qc-utils'
+import {
+  formatDate,
+  findFirstGreaterOrEqual,
+  findLastLessOrEqual,
+} from '@uwrl/qc-utils'
 import { handleSelected } from '@/utils/plotting/plotly'
 import { storeToRefs } from 'pinia'
 
@@ -25,7 +29,7 @@ export function useDataSelection() {
       [plotlyRef.value?.data.length - 1]
     )
 
-    await handleSelected(true)
+    await handleSelected(false)
   }
 
   /** Call this method after operations that change the order of elements or remove elements in the data */
@@ -50,7 +54,7 @@ export function useDataSelection() {
     handleSelected(true)
   }
 
-  const startDateString = computed(() => {
+  const startDate = computed(() => {
     let datetime = selectedSeries.value?.data.beginTime
     if (selectedData.value?.length) {
       const startIndex = selectedData.value[0] as number
@@ -58,26 +62,58 @@ export function useDataSelection() {
         new Date(plotlyRef.value?.data[0].x[startIndex]) ||
         selectedSeries.value?.data.beginTime
     }
-
-    return datetime ? formatDate(datetime) : ''
+    return datetime ?? new Date()
   })
 
-  const endDateString = computed(() => {
+  const endDate = computed(() => {
     let datetime = selectedSeries.value?.data.endTime
     if (selectedData.value?.length) {
-      const endIndex = selectedData.value[selectedData.value.length - 1] as number
+      const endIndex = selectedData.value[
+        selectedData.value.length - 1
+      ] as number
       datetime =
         new Date(plotlyRef.value?.data[0].x[endIndex]) ||
         selectedSeries.value?.data.endTime
     }
-
-    return datetime ? formatDate(datetime) : ''
+    return datetime ?? new Date()
   })
+
+  const startDateString = computed(() =>
+    startDate.value ? formatDate(startDate.value) : ''
+  )
+
+  const endDateString = computed(() =>
+    endDate.value ? formatDate(endDate.value) : ''
+  )
+
+  /** Select all data points within the given date range */
+  const selectDateRange = async (from: Date, to: Date) => {
+    const dataX = selectedSeries.value?.data.dataX
+    if (!dataX?.length) return
+
+    const fromTs = from.getTime()
+    const toTs = to.getTime()
+
+    const startIdx = findFirstGreaterOrEqual(dataX, fromTs)
+    const endIdx = findLastLessOrEqual(dataX, toTs)
+
+    if (startIdx > endIdx) return
+
+    const selection: number[] = []
+    for (let i = startIdx; i <= endIdx; i++) {
+      selection.push(i)
+    }
+
+    await dispatchSelection(selection)
+  }
 
   return {
     dispatchSelection,
     clearSelected,
+    startDate,
+    endDate,
     startDateString,
     endDateString,
+    selectDateRange,
   }
 }

@@ -5,27 +5,19 @@
     <v-divider></v-divider>
 
     <v-card-text>
-      <v-timeline
-        v-if="selectedData?.length"
-        direction="horizontal"
-        align="center"
-        side="start"
-        hide-opposite
-      >
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">From:</div>
-            <strong>{{ startDateString }}</strong>
-          </div>
-        </v-timeline-item>
-
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">To:</div>
-            <strong>{{ endDateString }}</strong>
-          </div>
-        </v-timeline-item>
-      </v-timeline>
+      <div class="mb-4">
+        <DatePickerField
+          placeholder="From"
+          :modelValue="fromDate"
+          @update:modelValue="onFromDateChange"
+          class="mb-2"
+        />
+        <DatePickerField
+          placeholder="To"
+          :modelValue="toDate"
+          @update:modelValue="onToDateChange"
+        />
+      </div>
 
       <p class="text-body-1 mb-4"><b>Find</b> gaps of at least:</p>
       <div class="d-flex gap-1">
@@ -80,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useUIStore } from '@/store/userInterface'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -93,12 +86,27 @@ const {
 } = storeToRefs(useUIStore())
 import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
-const { clearSelected, startDateString, endDateString } = useDataSelection()
+const { clearSelected, startDate, endDate, selectDateRange } =
+  useDataSelection()
+
+const fromDate = ref<Date>(startDate.value)
+const toDate = ref<Date>(endDate.value)
+
+const onFromDateChange = async (date: Date) => {
+  fromDate.value = date
+  await selectDateRange(date, toDate.value)
+}
+
+const onToDateChange = async (date: Date) => {
+  toDate.value = date
+  await selectDateRange(fromDate.value, date)
+}
 
 const emit = defineEmits(['close'])
 const onFillGaps = async () => {
