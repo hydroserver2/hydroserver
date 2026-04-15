@@ -25,7 +25,7 @@ export function useDataSelection() {
       [plotlyRef.value?.data.length - 1]
     )
 
-    handleSelected()
+    await handleSelected(true)
   }
 
   /** Call this method after operations that change the order of elements or remove elements in the data */

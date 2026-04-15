@@ -5,8 +5,35 @@
     <v-divider></v-divider>
 
     <v-card-actions>
-      <v-btn variant="plain">Save Changes</v-btn>
+      <v-btn
+        variant="plain"
+        :disabled="editHistory.length === 0 || isUpdating || isSubmitting"
+        :loading="isSubmitting"
+        @click="onSaveChanges"
+        >Save Changes</v-btn
+      >
     </v-card-actions>
+
+    <v-dialog v-model="openConfirm" max-width="500">
+      <v-card>
+        <v-card-title>Submit Quality-Controlled Observations?</v-card-title>
+        <v-card-text>
+          <p class="mb-2">
+            This will
+            <strong>overwrite existing server observations</strong> in the
+            submitted time range (replace mode). This action cannot be undone.
+          </p>
+          <p>{{ editHistory.length }} edit(s) pending</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="openConfirm = false">Cancel</v-btn>
+          <v-btn color="primary" :loading="isSubmitting" @click="onConfirmSubmit"
+            >Submit</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-divider></v-divider>
 
@@ -124,16 +151,30 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useQcSubmission } from '@/composables/useQcSubmission'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
-const { editHistory, selectedSeries, isUpdating } =
+const { editHistory, selectedSeries, isUpdating, isSubmitting } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, dispatchSelection } = useDataSelection()
+const { submitQcEdits } = useQcSubmission()
+
+const openConfirm = ref(false)
+
+const onSaveChanges = () => {
+  openConfirm.value = true
+}
+
+const onConfirmSubmit = async () => {
+  openConfirm.value = false
+  await submitQcEdits()
+}
 
 const onReload = async () => {
   isUpdating.value = true

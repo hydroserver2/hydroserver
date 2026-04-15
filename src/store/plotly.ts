@@ -15,6 +15,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
   const isUpdating = ref(false)
+  const isSubmitting = ref(false)
   const tooltipsMaxDataPoints = ref(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
@@ -159,6 +160,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     plotlyOptions,
     plotlyRef,
     isUpdating,
+    isSubmitting,
     tooltipsMaxDataPoints,
     visiblePoints,
     areTooltipsEnabled,

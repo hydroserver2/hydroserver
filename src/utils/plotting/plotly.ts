@@ -277,8 +277,12 @@ export const handleSelected = async (eventData?: any) => {
       EnumFilterOperations.SELECTION,
       trace?.selectedpoints
     )
-  }
 
+    // Sync Vue's reactive editHistory with the raw history array
+    // (dispatchFilter mutates the array outside Vue's proxy)
+    const { editHistory } = storeToRefs(usePlotlyStore())
+    editHistory.value = selectedSeries.value?.data.history ?? []
+  }
 
   // TODO: prevent selection on other traces
 }
