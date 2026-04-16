@@ -37,7 +37,8 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "up": "taze major -I",
-    "link": "npm link"
+    "link": "npm link",
+    "dev": "vite build --watch"
   },
   "dependencies": {
     "rxjs": "^7.8.2",
