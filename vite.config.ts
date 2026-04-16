@@ -5,7 +5,6 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => {
   const isProd = mode === "prod";
   const isDev = mode === "dev";
-  const isTest = mode === "test";
 
   // TODO: get build to emit types
 
@@ -50,19 +49,29 @@ export default defineConfig(({ mode }) => {
      */
   }
 
-  let test = {};
-  if (isTest) {
-    /**
-     * DESC:
-     * vitest config
-     */
-    test = {
-      include: ["test/**/*.test.ts"],
-      coverage: {
-        reporter: ["text", "text-summary", "lcov"],
+  const test = {
+    globals: true,
+    environment: "node",
+    include: ["src/**/__tests__/*.spec.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "lcov"],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 80,
       },
-    };
-  }
+      exclude: [
+        "dist/**",
+        "node_modules/**",
+        "**/*.d.ts",
+        "src/index.ts",
+        "**/__tests__/**",
+        "**/*.worker.ts",
+      ],
+    },
+  };
 
   return {
     // plugins: [
