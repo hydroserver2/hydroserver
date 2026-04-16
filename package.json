@@ -34,7 +34,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "npm run clean:coverage",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "up": "taze major -I",
     "link": "npm link"
   },
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.0.0",
+    "@vitest/coverage-v8": "^4.0.1",
     "eslint": "^9.27.0",
     "eslint-plugin-cypress": "^5.0.0",
     "eslint-plugin-prettier": "^5.4.1",
