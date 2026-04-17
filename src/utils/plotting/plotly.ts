@@ -316,7 +316,7 @@ export const handleClick = async (eventData: PlotMouseEvent) => {
 
     if (pointData.selectedpoints != null) {
       alreadySelected = Array.isArray(pointData.selectedpoints)
-        ? [...pointData.selectedpoints]
+        ? [...pointData.selectedpoints as number[]]
         : [pointData.selectedpoints]
     }
 
@@ -329,12 +329,12 @@ export const handleClick = async (eventData: PlotMouseEvent) => {
     alreadySelected.sort()
 
     // Removes selected areas
-    await Plotly.update(plotlyRef.value, {}, { selections: [] }, [0])
+    await Plotly.update(plotlyRef.value as Plotly.Root, {}, { selections: [] }, [0])
 
     // Colors selected points
-    await Plotly.restyle(plotlyRef.value, {
+    await Plotly.restyle(plotlyRef.value as Plotly.Root, {
       selectedpoints: [[...alreadySelected]],
-    } as Partial<PlotData>)
+    })
 
     handleSelected(eventData)
   }
@@ -418,7 +418,7 @@ export const handleNewPlot = async (element?: HTMLElement) => {
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
   // `plotlyRef` is now typed as `PlotlyHTMLElement | null` 
   const newElement = await Plotly.newPlot(
-    element || plotlyRef.value,
+    element || plotlyRef.value as Plotly.Root,
     plotlyOptions.value.traces,
     plotlyOptions.value.layout,
     plotlyOptions.value.config
@@ -637,7 +637,7 @@ export const setSelectedPoints = async (
       // `handleClick`/`handleRelayout` above.
       selections: [],
       selectedpoints: [indices],
-    } as Partial<PlotData>,
+    },
     {},
     [traceIndex]
   )
@@ -668,7 +668,7 @@ export const clearSelection = async (
   // restyled without a trace-index argument).
   await Plotly.restyle(gd, {
     selectedpoints: [[]],
-  } as Partial<PlotData>)
+  })
 }
 
 /**
@@ -715,7 +715,7 @@ export const cropXaxisRange = async () => {
         ]
       }
 
-      await Plotly.update(plotlyRef.value, {}, layoutUpdates)
+      await Plotly.update(plotlyRef.value as Plotly.Root, {}, layoutUpdates)
     } finally {
       isUpdating.value = false
     }
@@ -790,7 +790,7 @@ export const cropYaxisRange = async (_eventData?: unknown) => {
     }
 
     // Update axis range
-    await Plotly.update(plotlyRef.value, {}, layoutUpdates)
+    await Plotly.update(plotlyRef.value as Plotly.Root, {}, layoutUpdates)
   } finally {
     isUpdating.value = false
   }
