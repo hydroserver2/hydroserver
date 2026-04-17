@@ -11,6 +11,8 @@
     "build-prod": "vue-tsc && vite build --mode prod",
     "preview": "vite preview",
     "test": "vitest",
+    "test:e2e": "playwright test --headed",
+    "test:e2e:ci": "playwright test",
     "coverage": "vitest run --coverage --environment jsdom",
     "link-qc-utils": "npm link @uwrl/qc-utils"
   },
@@ -37,6 +39,7 @@
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
+    "@playwright/test": "^1.59.1",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^25.2.0",
     "@types/plotly.js": "^3.0.10",

@@ -55,6 +55,7 @@
       </v-toolbar>
 
       <v-data-table-virtual
+        data-testid="datastreams-table"
         :headers="headers.filter((header) => header.visible)"
         :items="tableItems"
         :sort-by="sortBy"
@@ -87,6 +88,7 @@
           <v-checkbox
             :model-value="isChecked(item)"
             :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+            :data-testid="`plot-checkbox-${item.id}`"
             class="d-flex align-self-center"
             density="compact"
             @change="() => toggleDatastream(item)"

@@ -7,6 +7,7 @@
     <v-card-actions>
       <v-btn
         variant="plain"
+        data-testid="save-changes-btn"
         :disabled="editHistory.length === 0 || isUpdating || isSubmitting"
         :loading="isSubmitting"
         @click="onSaveChanges"
@@ -71,6 +72,7 @@
         <v-timeline-item
           v-for="(entry, index) of editHistory"
           :key="index"
+          :data-testid="`history-item-${index}`"
           :size="index < editHistory.length - 1 ? 'small' : 'large'"
           :icon="entry.icon"
           :fill-dot="index < editHistory.length - 1"

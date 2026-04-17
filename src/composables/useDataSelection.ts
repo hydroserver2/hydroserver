@@ -25,9 +25,10 @@ export function useDataSelection() {
     const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
     await setSelectedPoints(plotlyRef.value, traceIndex, selection)
 
-    // Pass `null` so `handleSelected` re-syncs the QC selection without
-    // dispatching a filter (original code passed `false` here).
-    await handleSelected(null)
+    // Authoritative assignment: we already hold the indices returned by
+    // dispatchFilter, so write them straight into the store rather than
+    // round-tripping through Plotly trace introspection.
+    selectedData.value = [...selection]
   }
 
   /** Call this method after operations that change the order of elements or remove elements in the data */

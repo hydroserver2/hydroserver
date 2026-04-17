@@ -1,5 +1,10 @@
 <template>
-  <v-progress-linear v-if="isUpdating" color="primary" indeterminate />
+  <v-progress-linear
+    v-if="isUpdating"
+    data-testid="data-loading-indicator"
+    color="primary"
+    indeterminate
+  />
   <div v-if="!isUpdating && isDataAvailable" class="fill-height">
     <Plot class="fill-height" />
   </div>

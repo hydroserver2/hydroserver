@@ -9,7 +9,6 @@
       <template #title="{ title }">
         <span :title="`${title}`">{{ title }}</span>
       </template>
-
       <template #prepend>
         <v-list-item-action start>
           <v-radio

@@ -13,6 +13,7 @@
             <v-list-item
               :prepend-icon="item.icon"
               :value="item.title"
+              :data-testid="`nav-rail-item-${item.title.toLowerCase()}`"
               @click="onRailItemClicked(item.title as DrawerType)"
               :class="{
                 'v-list-item--active':

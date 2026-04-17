@@ -58,10 +58,12 @@ export function useQcSubmission() {
         { mode: 'replace' }
       )
       Snackbar.success('Quality-controlled observations submitted')
-      // Clear history as the committed signal (lightweight approach from
-      // research section 3). Do NOT call reload() — that would re-fetch
-      // raw data; intent is only to reset the pending-edits list.
-      selectedSeries.value.data.history = []
+      // Clear history in-place so the Pinia editHistory ref (which points
+      // to the same underlying array via storeToRefs sync in plotly.ts:207
+      // and :387) reflects the cleared state without needing a re-sync.
+      // Reassigning (history = []) would desync the reactive ref and leave
+      // EditHistory.vue rendering stale entries (MH-17 E2E regression).
+      selectedSeries.value.data.history.length = 0
     } catch (err: any) {
       Snackbar.error(
         'Failed to submit observations: ' + (err?.message ?? 'unknown error')
