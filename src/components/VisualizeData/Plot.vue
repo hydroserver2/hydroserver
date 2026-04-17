@@ -82,7 +82,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-// @ts-ignore no type definitions
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

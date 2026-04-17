@@ -3,10 +3,17 @@ import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
 import { useDataVisStore } from './dataVisualization'
-// @ts-ignore no type definitions
-import Plotly from 'plotly.js-dist'
 
-import { createPlotlyOption, cropXaxisRange } from '@/utils/plotting/plotly'
+import {
+  applyTraceUpdate,
+  createPlotlyOption,
+  cropXaxisRange,
+} from '@/utils/plotting/plotly'
+import type {
+  AppPlotlyHTMLElement,
+  AppPlotlyTrace,
+  PlotlyChartOptions,
+} from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
 import { useHydroServer } from './hydroserver'
 import { Datastream } from '@hydroserver/client'
@@ -41,9 +48,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     return graphSeriesArray.value[selectedSeriesIndex.value]
   })
 
-  const plotlyOptions: Ref<any> = ref({})
-  const plotlyRef: Ref<(HTMLDivElement & { [key: string]: any }) | null> =
-    ref(null) // Populated during DataVisualization onMounted hook
+  // Initialize to an empty-trace PlotlyChartOptions so consumers can read
+  // `plotlyOptions.value.traces` etc. without null-guards. 
+  const plotlyOptions: Ref<PlotlyChartOptions> = ref(createPlotlyOption([]))
+  const plotlyRef: Ref<AppPlotlyHTMLElement | null> = ref(null)
+  // ^ Populated during DataVisualization onMounted hook (handleNewPlot).
 
   /**
    * This function searches through the Pinia store's GraphSeries[] to determine which colors,
@@ -74,7 +83,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * Set the initial chart options.
    */
   function updateOptions() {
-    // @ts-ignore
     plotlyOptions.value = createPlotlyOption(graphSeriesArray.value)
   }
 
@@ -85,14 +93,18 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   async function redraw(recomputeXaxisRange?: boolean) {
     updateOptions()
 
-    // Update all traces
-    await Plotly.update(
+    const opts = plotlyOptions.value
+    if (!opts) return
+
+    // Update all traces. `opts.traces` is `Data[]`; each entry carries the
+    // QC-app trace shape (`AppPlotlyTrace`) including numeric `x`/`y`.
+    await applyTraceUpdate(
       plotlyRef.value,
       {
-        x: plotlyOptions.value.traces.map((t: any) => t.x),
-        y: plotlyOptions.value.traces.map((t: any) => t.y),
+        x: opts.traces.map((t) => (t as AppPlotlyTrace).x),
+        y: opts.traces.map((t) => (t as AppPlotlyTrace).y),
       },
-      plotlyOptions.value.layout
+      opts.layout
     )
 
     if (recomputeXaxisRange) {

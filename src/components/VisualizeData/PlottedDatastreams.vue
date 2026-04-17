@@ -75,12 +75,15 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { COLORS, handleNewPlot } from '@/utils/plotting/plotly'
+import {
+  COLORS,
+  handleNewPlot,
+  toggleTraceVisibility,
+} from '@/utils/plotting/plotly'
+import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions } = usePlotlyStore()
 const { plotlyRef } = storeToRefs(usePlotlyStore())
-// @ts-ignore no type definitions
-import Plotly from 'plotly.js-dist'
 import { Ref, ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 
@@ -101,17 +104,17 @@ const isUpdating = computed(() =>
 
 const toggleVisibility = async (datastream: Datastream) => {
   const traceIndex = plotlyRef.value?.data.findIndex(
-    (trace: any) => trace.id == datastream.id
+    (trace) => (trace as AppPlotlyTrace).id == datastream.id
   )
-  if (traceIndex >= 0) {
+  if (traceIndex !== undefined && traceIndex >= 0) {
     const isVisible = plotlyRef.value?.data[traceIndex].visible
     visibleDict.value[datastream.id] = !(
       isVisible === true || isVisible == undefined
     )
-    await Plotly.restyle(
+    await toggleTraceVisibility(
       plotlyRef.value,
-      { visible: visibleDict.value[datastream.id] },
-      [traceIndex]
+      traceIndex,
+      visibleDict.value[datastream.id]
     )
   }
 }

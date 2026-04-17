@@ -34,7 +34,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-// @ts-ignore no type definitions
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

@@ -5,11 +5,14 @@ import {
   findFirstGreaterOrEqual,
   findLastLessOrEqual,
 } from '@uwrl/qc-utils'
-import { handleSelected } from '@/utils/plotting/plotly'
+import {
+  clearSelection,
+  handleSelected,
+  setSelectedPoints,
+} from '@/utils/plotting/plotly'
+import type { AppPlotRelayoutEvent } from '@/utils/plotting/plotly'
 import { storeToRefs } from 'pinia'
 
-// @ts-ignore no type definitions
-import Plotly from 'plotly.js-dist'
 import { computed } from 'vue'
 
 export function useDataSelection() {
@@ -19,39 +22,26 @@ export function useDataSelection() {
 
   /** Dispatch selection  */
   const dispatchSelection = async (selection: number[]) => {
-    await Plotly.update(
-      plotlyRef.value,
-      {
-        selections: [], // Removes the selected areas
-        selectedpoints: [selection], // Plotly expects one array per trace (even if updating a single trace).
-      },
-      {},
-      [plotlyRef.value?.data.length - 1]
-    )
+    const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
+    await setSelectedPoints(plotlyRef.value, traceIndex, selection)
 
-    await handleSelected(false)
+    // Pass `null` so `handleSelected` re-syncs the QC selection without
+    // dispatching a filter (original code passed `false` here).
+    await handleSelected(null)
   }
 
   /** Call this method after operations that change the order of elements or remove elements in the data */
   const clearSelected = async () => {
     const { selectedData } = storeToRefs(useDataVisStore())
 
-    // Removes selected areas
-    await Plotly.update(
-      plotlyRef.value,
-      {},
-      { selections: [], selectedpoints: [[]] },
-      [plotlyRef.value?.data.length - 1]
-    )
-
-    // Updates the color
-    await Plotly.restyle(plotlyRef.value, {
-      selectedpoints: [[]],
-    })
+    const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
+    await clearSelection(plotlyRef.value, traceIndex)
 
     selectedData.value = []
 
-    handleSelected(true)
+    // Pass an empty event so `handleSelected` dispatches an empty selection
+    // filter.
+    handleSelected({} as AppPlotRelayoutEvent)
   }
 
   const startDate = computed(() => {
