@@ -118,23 +118,16 @@ const selectedGroups = computed((): number[][] => {
 })
 
 const onDriftCorrection = async () => {
-  const actions: [EnumEditOperations, ...any][] = []
-
   isUpdating.value = true
 
   setTimeout(async () => {
-    selectedGroups.value?.forEach(async (g) => {
-      const start = g[0]
-      const end = g[g.length - 1]
-      actions.push([
-        EnumEditOperations.DRIFT_CORRECTION,
-        start,
-        end,
-        +driftGapWidth.value,
-      ])
-    })
+    const ranges: [number, number, number][] = (selectedGroups.value ?? []).map(
+      (g) => [g[0], g[g.length - 1], +driftGapWidth.value]
+    )
 
-    await selectedSeries.value?.data.dispatch(actions)
+    await selectedSeries.value?.data.dispatch([
+      [EnumEditOperations.DRIFT_CORRECTION, ranges],
+    ])
     await clearSelected()
     isUpdating.value = false
     await redraw()
