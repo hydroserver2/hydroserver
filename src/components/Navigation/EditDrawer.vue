@@ -109,6 +109,10 @@
   <v-dialog v-model="openFillGaps" max-width="700">
     <FillGaps @close="openFillGaps = false" />
   </v-dialog>
+
+  <v-dialog v-model="openQualifyingComments" max-width="600">
+    <QualifyingComments @close="openQualifyingComments = false" />
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -127,6 +131,7 @@ import DriftCorrection from '@/components/EditData/DriftCorrection.vue'
 import AddPoints from '@/components/EditData/AddPoints.vue'
 import ShiftDatetimes from '@/components/EditData/ShiftDatetimes.vue'
 import FillGaps from '@/components/EditData/FillGaps.vue'
+import QualifyingComments from '@/components/EditData/QualifyingComments.vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 
@@ -145,6 +150,7 @@ const openDeletePoints = ref(false)
 const openDriftCorrection = ref(false)
 const openAddPoints = ref(false)
 const openFillGaps = ref(false)
+const openQualifyingComments = ref(false)
 
 const filterPoints = [
   {
@@ -203,7 +209,10 @@ const editData = [
     props: {
       prependIcon: 'mdi-flag',
     },
-    clickAction: () => {},
+    clickAction: () => {
+      openQualifyingComments.value = true
+    },
+    isDisabled: () => !selectedData.value?.length,
   },
   {
     title: 'Drift correction',

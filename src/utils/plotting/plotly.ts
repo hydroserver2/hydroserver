@@ -16,6 +16,7 @@ import type {
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useQualifierStore } from '@/store/qualifiers'
 import { debounce, isEqual } from 'lodash-es'
 import { EnumFilterOperations, findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 
@@ -93,6 +94,19 @@ export const COLORS = [
   '#17becf', // blue-teal
 ]
 
+// Colour palette for qualifier-flag markers along the bottom of the plot.
+// Assigned deterministically per qualifier code (by sorted order).
+export const QUALIFIER_COLORS = [
+  '#d62728',
+  '#ff7f0e',
+  '#2ca02c',
+  '#9467bd',
+  '#17becf',
+  '#bcbd22',
+  '#e377c2',
+  '#8c564b',
+]
+
 const selectorOptions: Partial<RangeSelector> = {
   yanchor: 'top',
   y: -0.15,
@@ -130,6 +144,120 @@ const iconRescaleY = {
   width: 500,
   height: 600,
   path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
+}
+
+/**
+ * Collects qualifier applications for the QC datastream and emits a dedicated
+ * band of scatter traces (one per unique qualifier code) at the bottom of the
+ * plot. Returns null when there is nothing to render.
+ */
+function buildQualifierBand(
+  seriesArray: GraphSeries[],
+  qcDatastreamId: string | undefined,
+  nonQcCounter: number,
+  qcAxisSuffix: string | number
+): {
+  traces: AppPlotlyTrace[]
+  axis: Partial<LayoutAxis>
+  axisKey: string
+  mainAxisBottom: number
+} | null {
+  if (!qcDatastreamId) return null
+
+  const qcSeries = seriesArray.find((s) => s.id === qcDatastreamId)
+  if (!qcSeries) return null
+
+  const xData = qcSeries.data?.dataX as ArrayLike<number> | undefined
+  if (!xData || !xData.length) return null
+
+  const qualifierStore = useQualifierStore()
+  const applications = qualifierStore.getApplicationsForDatastream(qcDatastreamId)
+  if (!applications.length) return null
+
+  // Group applications by qualifier code.
+  const byCode = new Map<
+    string,
+    Array<{ index: number; appliedAt: string; appliedBy: string; description: string }>
+  >()
+  for (const a of applications) {
+    const q = qualifierStore.qualifierById[a.qualifierId]
+    if (!q) continue
+    const arr = byCode.get(q.code) ?? []
+    arr.push({
+      index: a.index,
+      appliedAt: a.appliedAt,
+      appliedBy: a.appliedBy,
+      description: q.description,
+    })
+    byCode.set(q.code, arr)
+  }
+  if (!byCode.size) return null
+
+  const codes = Array.from(byCode.keys()).sort()
+  const qualAxisNum =
+    typeof qcAxisSuffix === 'number'
+      ? qcAxisSuffix + 1
+      : nonQcCounter > 0
+        ? nonQcCounter + 2
+        : 2
+  const qualAxisName = `y${qualAxisNum}`
+  const qualAxisKey = `yaxis${qualAxisNum}`
+
+  const bandTop = 0.1
+  const mainAxisBottom = 0.14
+
+  const traces: AppPlotlyTrace[] = codes.map((code, row) => {
+    const entries = byCode.get(code)!
+    const xs: number[] = []
+    const ys: number[] = []
+    const texts: string[] = []
+    for (const e of entries) {
+      const x = xData[e.index]
+      if (x == null || Number.isNaN(x)) continue
+      xs.push(x as number)
+      ys.push(row)
+      const ts = new Date(e.appliedAt)
+      const when = isNaN(ts.getTime()) ? e.appliedAt : ts.toLocaleString()
+      texts.push(
+        `<b>${code}</b>${e.description ? ' — ' + e.description : ''}` +
+          `<br>Applied: ${when}` +
+          `<br>By: ${e.appliedBy}`
+      )
+    }
+    const color = QUALIFIER_COLORS[row % QUALIFIER_COLORS.length]
+    return {
+      x: xs,
+      y: ys,
+      yaxis: qualAxisName,
+      type: 'scatter',
+      mode: 'markers',
+      name: code,
+      showLegend: false,
+      marker: {
+        color,
+        symbol: 'square',
+        size: 10,
+      },
+      text: texts,
+      hovertemplate: '%{text}<extra></extra>',
+    } as AppPlotlyTrace
+  })
+
+  const axis: Partial<LayoutAxis> = {
+    domain: [0, bandTop],
+    range: [-0.5, codes.length - 0.5],
+    tickmode: 'array',
+    tickvals: codes.map((_, i) => i),
+    ticktext: codes,
+    tickfont: { size: 10 },
+    showgrid: false,
+    zeroline: false,
+    fixedrange: true,
+    side: 'left',
+    anchor: 'x',
+  }
+
+  return { traces, axis, axisKey: qualAxisKey, mainAxisBottom }
 }
 
 export const createPlotlyOption = (
@@ -245,6 +373,33 @@ export const createPlotlyOption = (
   }
   if (qcYaxis) {
     ; (yaxis as Record<string, Partial<LayoutAxis>>)[`yaxis${axisSuffix}`] = qcYaxis
+  }
+
+  // Qualifier flag band at the bottom of the plot.
+  // One scatter trace per unique qualifier code; stacked by row in a dedicated y-axis.
+  // `qcDatastream` may be undefined here during the pinia circular-init from
+  // `plotlyStore` <-> `dataVisStore`; skip safely in that case.
+  const qualifierBand = seriesArray.length
+    ? buildQualifierBand(
+        seriesArray,
+        qcDatastream?.value?.id,
+        counter,
+        axisSuffix
+      )
+    : null
+  if (qualifierBand) {
+    // Shrink main y-axes so the qualifier band has room at the bottom.
+    for (const key of Object.keys(yaxis)) {
+      ; (yaxis as Record<string, Partial<LayoutAxis>>)[key].domain = [
+        qualifierBand.mainAxisBottom,
+        1,
+      ]
+    }
+    ; (yaxis as Record<string, Partial<LayoutAxis>>)[qualifierBand.axisKey] =
+      qualifierBand.axis
+    for (const t of qualifierBand.traces) {
+      traces.push(t)
+    }
   }
 
   const xaxis: Partial<LayoutAxis> = {
