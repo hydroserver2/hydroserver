@@ -3,20 +3,37 @@ import {
   EnumEditOperations,
   EnumFilterOperations,
   FilterOperation,
-  FilterOperationFn,
   HistoryItem,
-  LogicalComparator,
-  LogicalOperation,
   Operator,
   TimeUnit,
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
-import { shiftDatetime, timeUnitMultipliers } from "../format";
+import { timeUnitMultipliers } from "../format";
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from "../observations";
 // @ts-ignore
 import DeleteDataWorker from "./delete-data.worker?worker&inline";
 // @ts-ignore
 import FillGapsWorker from "./fill-gaps.worker?worker&inline";
+// @ts-ignore
+import InterpolateWorker from "./interpolate.worker?worker&inline";
+// @ts-ignore
+import DriftCorrectionWorker from "./drift-correction.worker?worker&inline";
+// @ts-ignore
+import AddDataWorker from "./add-data.worker?worker&inline";
+// @ts-ignore
+import ShiftDatetimesWorker from "./shift-datetimes.worker?worker&inline";
+// @ts-ignore
+import FindGapsWorker from "./find-gaps.worker?worker&inline";
+// @ts-ignore
+import PersistenceWorker from "./persistence.worker?worker&inline";
+// @ts-ignore
+import ChangeWorker from "./change.worker?worker&inline";
+// @ts-ignore
+import RateOfChangeWorker from "./rate-of-change.worker?worker&inline";
+// @ts-ignore
+import ValueThresholdWorker from "./value-threshold.worker?worker&inline";
+// @ts-ignore
+import ChangeValuesWorker from "./change-values.worker?worker&inline";
 
 /**
  * This number should approximate the number of observations that a dataset could increase by during a session.
@@ -363,75 +380,129 @@ export class ObservationRecord {
    * @param value The value to use in the operation
    * @returns an array of index values to keep selected in the plot
    */
-  private _changeValues(operator: Operator, value: number): number[] {
-    const operation = (x: number) => {
-      switch (operator) {
-        case Operator.ADD:
-          return x + value;
-        case Operator.ASSIGN:
-          return value;
-        case Operator.DIV:
-          return x / value;
-        case Operator.MULT:
-          return x * value;
-        case Operator.SUB:
-          return x - value;
-        default:
-          return x;
-      }
-    };
+  /**
+   * Multi-threaded apply of an arithmetic operator to Y at the previously-filtered selection.
+   *  1. Selection is read from the previous history entry (the last entry is this operation itself).
+   *  2. Selection indexes are sharded into disjoint chunks; workers write in place to shared Y.
+   *  3. Writes are conflict-free because the selection carries distinct indexes.
+   */
+  private async _changeValues(
+    operator: Operator,
+    value: number,
+  ): Promise<number[]> {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || selection.length === 0) return [];
 
-    // The selection will be the second to last item in history. The last item is this very same operation.
-    const selection = this.history[this.history.length - 2].selected
+    const N = selection.length;
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
+    const chunkSize = Math.ceil(N / numWorkers);
 
-    if (selection) {
-      selection.forEach((index: number) => {
-        this.dataset.source.y[index] = operation(this.dataset.source.y[index]);
-      });
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const cStart = i * chunkSize;
+      const cEnd = Math.min((i + 1) * chunkSize, N);
+      if (cStart >= cEnd) break;
+
+      const indexesChunk = selection.slice(cStart, cEnd);
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new ChangeValuesWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferY: this.dataY.buffer,
+            indexes: indexesChunk,
+            operator,
+            value,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data);
+          };
+        }),
+      );
     }
 
-    return []
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
+
+    workers.forEach((worker) => worker.terminate());
+
+    return [];
   }
 
-  private _interpolate(index: number[]) {
+  /**
+   * Multi-threaded linear interpolation over the selected indexes.
+   *  1. Main thread partitions the selected indexes into consecutive groups and computes each group's lower/upper anchors.
+   *  2. Groups are sharded across workers (disjoint by construction, so in-place writes are safe).
+   *  3. Each worker writes interpolated Y values directly into the shared Y buffer — no output copy needed since only a subset of Y changes.
+   */
+  private async _interpolate(index: number[]) {
     const groups = this._getConsecutiveGroups(index);
+    if (groups.length === 0 || groups[0].length === 0) return;
 
-    groups.forEach((g) => {
-      const start = g[0];
-      const end = g[g.length - 1];
+    const len = this.dataset.source.y.length;
+    const preparedGroups = groups.map((g) => ({
+      indexes: g,
+      lowerIdx: Math.max(0, g[0] - 1),
+      upperIdx: Math.min(len - 1, g[g.length - 1] + 1),
+    }));
 
-      let lowerIndex = Math.max(0, start - 1);
-      let upperIndex = Math.min(this.dataset.source.y.length - 1, end + 1);
+    const numWorkers = Math.min(
+      navigator.hardwareConcurrency || 1,
+      preparedGroups.length,
+    );
+    const groupsPerWorker = Math.ceil(preparedGroups.length / numWorkers);
 
-      const xData = this.dataset.source.x;
-      const yData = this.dataset.source.y;
-      for (let i = 0; i < g.length; i++) {
-        this.dataset.source.y[g[i]] = this._interpolateLinear(
-          xData[g[i]],
-          xData[lowerIndex],
-          yData[lowerIndex],
-          xData[upperIndex],
-          yData[upperIndex],
-        );
-      }
-    });
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
+    for (let i = 0; i < numWorkers; i++) {
+      const slice = preparedGroups.slice(
+        i * groupsPerWorker,
+        (i + 1) * groupsPerWorker,
+      );
+      if (slice.length === 0) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new InterpolateWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferX: this.dataX.buffer,
+            bufferY: this.dataY.buffer,
+            groups: slice,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data);
+          };
+        }),
+      );
+    }
+
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
+
+    workers.forEach((worker) => worker.terminate());
   }
 
   /** Interpolate existing values in the data source */
-  private _interpolateLinear(
-    datetime: number,
-    lowerDatetime: number,
-    lowerValue: number,
-    upperDatetime: number,
-    upperValue: number,
-  ) {
-    const interpolatedValue =
-      lowerValue +
-      ((datetime - lowerDatetime) * (upperValue - lowerValue)) /
-      (upperDatetime - lowerDatetime);
+  // private _interpolateLinear(
+  //   datetime: number,
+  //   lowerDatetime: number,
+  //   lowerValue: number,
+  //   upperDatetime: number,
+  //   upperValue: number,
+  // ) {
+  //   const interpolatedValue =
+  //     lowerValue +
+  //     ((datetime - lowerDatetime) * (upperValue - lowerValue)) /
+  //     (upperDatetime - lowerDatetime);
 
-    return interpolatedValue;
-  }
+  //   return interpolatedValue;
+  // }
 
   /**
    * Shifts the selected indexes by specified amount of units. Elements are reinserted according to their datetime.
@@ -441,39 +512,173 @@ export class ObservationRecord {
    * @returns
    */
   private async _shift(index: number[], amount: number, unit: TimeUnit) {
-    // Collection that will be re-added using `_addDataPoints`
-    const collection: [number, number][] = index.map((i) => [
-      shiftDatetime(this.dataX[i], amount, unit),
-      this.dataY[i],
-    ]);
-    // TODO: add dedicated method to do these in one go
+    if (index.length === 0) return;
+
+    const isMonth = unit === TimeUnit.MONTH;
+    const isYear = unit === TimeUnit.YEAR;
+    const deltaMs =
+      !isMonth && !isYear ? amount * timeUnitMultipliers[unit] * 1000 : 0;
+
+    const N = index.length;
+
+    // Output buffers hold the shifted (x, y) pairs for the selection, in the same order as `index`
+    const outputBufferX = new SharedArrayBuffer(
+      N * Float64Array.BYTES_PER_ELEMENT,
+    );
+    const outputBufferY = new SharedArrayBuffer(
+      N * Float32Array.BYTES_PER_ELEMENT,
+    );
+
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
+    const chunkSize = Math.ceil(N / numWorkers);
+
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const start = i * chunkSize;
+      const endExc = Math.min((i + 1) * chunkSize, N);
+      if (start >= endExc) break;
+
+      const indexesChunk = index.slice(start, endExc);
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new ShiftDatetimesWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferX: this.dataX.buffer,
+            bufferY: this.dataY.buffer,
+            outputBufferX,
+            outputBufferY,
+            indexes: indexesChunk,
+            outStart: start,
+            amount,
+            isMonth,
+            isYear,
+            deltaMs,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data);
+          };
+        }),
+      );
+    }
+
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
+
+    workers.forEach((worker) => worker.terminate());
+
+    // Build the [x, y] collection from the shifted buffers for re-insertion.
+    const shiftedX = new Float64Array(outputBufferX);
+    const shiftedY = new Float32Array(outputBufferY);
+    const collection: [number, number][] = new Array(N);
+    for (let i = 0; i < N; i++) {
+      collection[i] = [shiftedX[i], shiftedY[i]];
+    }
+
+    // TODO: add dedicated method to do delete+add in one go
     await this._deleteDataPoints(index);
     await this._addDataPoints(collection);
   }
 
-  private async _fillGapsV2(
+  /**
+   * Multi-threaded version of {@link _fillGaps}.
+   *  1. The main thread scans once for gaps and computes the number of fill points per gap.
+   *  2. The original array is split into equal segments; each gap is assigned to the segment containing its left index.
+   *  3. Cumulative fill counts before each segment give each worker's output startTarget, ensuring no overlap.
+   *  4. Each worker copies its segment to the output buffer and inserts its gap fills inline.
+   */
+  private async _fillGaps(
     gap: [number, TimeUnit],
     fill: [number, TimeUnit],
     interpolateValues: boolean,
     range?: [number, number],
   ) {
+    const len = this.dataX.length;
+    if (len === 0) return;
+
+    const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
+    const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
+    const fillValue = -9999;
+
+    const rangeStart = range?.[0] ?? 0;
+    const rangeEnd = range?.[1] ?? len - 1;
+
+    // Detect gaps as [leftIdx, rightIdx] pairs and count fills per gap
+    const dataX = this.dataX;
+    const allGaps: [number, number][] = [];
+    const gapFillCounts: number[] = [];
+    let totalFills = 0;
+    for (let i = rangeStart + 1; i <= rangeEnd; i++) {
+      const delta = dataX[i] - dataX[i - 1];
+      if (delta > gapThresholdMs) {
+        // Replicate the worker's fill loop to guarantee matching counts
+        let count = 0;
+        let t = dataX[i - 1] + fillDelta;
+        while (t < dataX[i]) {
+          count++;
+          t += fillDelta;
+        }
+        if (count > 0) {
+          allGaps.push([i - 1, i]);
+          gapFillCounts.push(count);
+          totalFills += count;
+        }
+      }
+    }
+
+    if (totalFills === 0) return;
+
     const numWorkers = navigator.hardwareConcurrency || 1;
-    const workers: Worker[] = [];
-    const promises = [];
-    const newLength = this.dataX.length;
+    const segmentSize = Math.ceil(len / numWorkers);
 
-    // To avoid workers reading from a memory address where another working is writing to, we use separate output buffers.
-    const outputBufferX = new SharedArrayBuffer(this.dataX.buffer.byteLength, {
-      maxByteLength: this.dataX.buffer.maxByteLength,
-    });
-
-    const outputBufferY = new SharedArrayBuffer(this.dataY.buffer.byteLength, {
-      maxByteLength: this.dataY.buffer.maxByteLength,
-    });
-
-    // Compute startTarget for each segment and start workers
+    // Partition gaps by segment (gap owned by the segment holding its left index)
+    const segments: {
+      start: number;
+      end: number;
+      gapsSegment: [number, number][];
+      fillsInSegment: number;
+    }[] = [];
+    let gapPtr = 0;
     for (let i = 0; i < numWorkers; i++) {
-      // Spawn workers
+      const start = i * segmentSize;
+      const end = Math.min((i + 1) * segmentSize - 1, len - 1);
+      const gapsSegment: [number, number][] = [];
+      let fillsInSegment = 0;
+      while (gapPtr < allGaps.length && allGaps[gapPtr][0] <= end) {
+        gapsSegment.push(allGaps[gapPtr]);
+        fillsInSegment += gapFillCounts[gapPtr];
+        gapPtr++;
+      }
+      segments.push({ start, end, gapsSegment, fillsInSegment });
+    }
+
+    // Prefix sums of fills before each segment
+    const prefixFills = new Array(numWorkers).fill(0);
+    for (let i = 1; i < numWorkers; i++) {
+      prefixFills[i] = prefixFills[i - 1] + segments[i - 1].fillsInSegment;
+    }
+
+    const newLength = len + totalFills;
+
+    // Output buffers sized for the new length
+    const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
+      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
+    });
+    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
+      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
+    });
+
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
+    for (let i = 0; i < numWorkers; i++) {
+      const { start, end, gapsSegment } = segments[i];
+      const startTarget = start + prefixFills[i];
       promises.push(
         new Promise((resolve) => {
           const worker = new FillGapsWorker();
@@ -483,6 +688,13 @@ export class ObservationRecord {
             bufferY: this.dataY.buffer,
             outputBufferX,
             outputBufferY,
+            start,
+            end,
+            gapsSegment,
+            startTarget,
+            fillDelta,
+            interpolate: interpolateValues,
+            fillValue,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -491,59 +703,15 @@ export class ObservationRecord {
       );
     }
 
-    await Promise.all(promises);
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
 
-    workers.forEach((worker) => worker.terminate()); // Important to terminate the workers
+    workers.forEach((worker) => worker.terminate());
 
     this.dataset.source.x = new Float64Array(outputBufferX);
     this.dataset.source.y = new Float32Array(outputBufferY);
     this._resizeTo(newLength);
-  }
-
-  /**
-   * Find gaps and fill them with placeholder value
-   * @param gap Intervals to detect as gaps
-   * @param fill Interval used to fill the detected gaps
-   * @param interpolateValues If true, the new values will be linearly interpolated
-   * @returns
-   */
-  // TODO: this needs to be improved using web workers
-  private _fillGaps(
-    gap: [number, TimeUnit],
-    fill: [number, TimeUnit],
-    interpolateValues: boolean,
-    range?: [number, number],
-  ) {
-    const gaps = this._findGaps(gap[0], gap[1], range);
-
-    for (let i = gaps.length - 1; i >= 0; i--) {
-      const currentGap = gaps[i];
-      const leftDatetime = this.dataX[currentGap[0]];
-      const rightDatetime = this.dataX[currentGap[1]];
-      const fillPoints: [number, number][] = [];
-
-      // TODO: number of seconds in a year or month is not constant
-      // Use setMonth and setFullYear instead
-      const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
-      let nextFillDatetime = leftDatetime + fillDelta;
-
-      while (nextFillDatetime < rightDatetime) {
-        const val: number = interpolateValues
-          ? this._interpolateLinear(
-            nextFillDatetime,
-            this.dataX[currentGap[0]],
-            this.dataY[currentGap[0]],
-            this.dataX[currentGap[1]],
-            this.dataY[currentGap[1]],
-          )
-          : -9999;
-
-        fillPoints.push([nextFillDatetime, val]);
-        nextFillDatetime += fillDelta;
-      }
-
-      this._addDataPoints(fillPoints);
-    }
   }
 
   /**
@@ -554,7 +722,6 @@ export class ObservationRecord {
     4. Each worker processes its segment linearly, skipping deletions and copying kept elements to their computed positions.
     * @param deleteIndices 
    */
-  // TODO: implement similar multithread solutions for other operations
   private async _deleteDataPoints(deleteIndices: number[]) {
     const numWorkers = navigator.hardwareConcurrency || 1;
     const segmentSize = Math.ceil(this.dataX.length / numWorkers);
@@ -637,19 +804,83 @@ export class ObservationRecord {
    * @param end The end index
    * @param value The drift amount
    */
-  private _driftCorrection(start: number, end: number, value: number) {
+  /**
+   * Multi-threaded drift correction over one or more [start, end, value] ranges.
+   *  1. Main thread reads each range's anchors (startDatetime, extent) once and chunks the range.
+   *  2. All chunks across all ranges are flattened into jobs and distributed round-robin across a fixed pool of workers.
+   *  3. Each worker applies y_n = y_0 + value * ((x_i - startDatetime) / extent) in place on its jobs.
+   *  4. Batching all ranges into a single call yields a single history entry.
+   */
+  private async _driftCorrection(ranges: [number, number, number][]) {
+    if (!ranges || ranges.length === 0) return;
+
     const xData = this.dataset.source.x;
-    const yData = this.dataset.source.y;
+    const hwConcurrency = navigator.hardwareConcurrency || 1;
 
-    const startDatetime = xData[start];
-    const endDatetime = xData[end];
-    const extent = endDatetime - startDatetime;
+    type DriftJob = {
+      chunkStart: number;
+      chunkEnd: number;
+      startDatetime: number;
+      value: number;
+      extent: number;
+    };
 
-    for (let i = start; i < end; i++) {
-      // y_n = y_0 + G(x_i / extent)
-      this.dataset.source.y[i] =
-        yData[i] + value * ((xData[i] - startDatetime) / extent);
+    const jobs: DriftJob[] = [];
+    for (const [start, end, value] of ranges) {
+      if (end <= start) continue;
+      const startDatetime = xData[start];
+      const extent = xData[end] - startDatetime;
+      if (extent === 0) continue;
+
+      const total = end - start;
+      const chunkSize = Math.max(1, Math.ceil(total / hwConcurrency));
+      for (let s = start; s < end; s += chunkSize) {
+        jobs.push({
+          chunkStart: s,
+          chunkEnd: Math.min(s + chunkSize, end),
+          startDatetime,
+          value,
+          extent,
+        });
+      }
     }
+
+    if (jobs.length === 0) return;
+
+    // Cap workers at hardware concurrency regardless of how many ranges were passed.
+    const numWorkers = Math.min(hwConcurrency, jobs.length);
+    const jobBuckets: DriftJob[][] = Array.from(
+      { length: numWorkers },
+      () => [],
+    );
+    jobs.forEach((job, i) => jobBuckets[i % numWorkers].push(job));
+
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
+
+    for (const bucket of jobBuckets) {
+      if (bucket.length === 0) continue;
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new DriftCorrectionWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferX: this.dataX.buffer,
+            bufferY: this.dataY.buffer,
+            jobs: bucket,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data);
+          };
+        }),
+      );
+    }
+
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
+
+    workers.forEach((worker) => worker.terminate());
   }
 
   /** Traverses the index array and returns groups of consecutive values.
@@ -677,40 +908,92 @@ export class ObservationRecord {
   }
 
   /**
-   * Adds data points. Their insert index is determined using `findFirstGreaterOrEqual` in the x-axis.
-   * @param dataPoints
+   * Adds data points using worker threads.
+   *  1. Main thread sorts insertions by datetime and computes each insertion's target index via binary search on the original X.
+   *  2. The original array is split into equal chunks; each insertion is assigned to the chunk containing its target index.
+   *  3. `firstIns` per chunk doubles as the prefix sum of insertions placed before the chunk, giving each worker its outStart in the output buffer without overlap.
+   *  4. Each worker linearly merges its original slice with its insertion slice (both already sorted by datetime) into the output buffer. Originals win on datetime ties, matching the original `findLastLessOrEqual` semantics.
    */
   private async _addDataPoints(dataPoints: [number, number][]) {
-    // Check if more space is needed
-    const newLength = this.dataX.length + dataPoints.length;
-    this._growBuffer(newLength);
-    // Sort the datapoints by datetime in reverse order
-    dataPoints.sort((a, b) => {
-      return a[0] - b[0];
+    if (dataPoints.length === 0) return;
+
+    const oldLen = this.dataX.length;
+    const newLength = oldLen + dataPoints.length;
+
+    // Sort insertions by datetime ascending
+    dataPoints.sort((a, b) => a[0] - b[0]);
+
+    // Insert index in the ORIGINAL array for each point
+    const insertIndex = dataPoints.map(
+      (point) => findLastLessOrEqual(this.dataX, point[0]) + 1,
+    );
+
+    // Output buffers sized for the new length
+    const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
+      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
+    });
+    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
+      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
     });
 
-    const insertIndex = dataPoints.map((point) => {
-      return findLastLessOrEqual(this.dataX, point[0]) + 1;
-    });
+    const numWorkers = Math.max(
+      1,
+      Math.min(navigator.hardwareConcurrency || 1, Math.max(oldLen, 1)),
+    );
+    const segmentSize = Math.ceil(Math.max(oldLen, 1) / numWorkers);
 
-    this._resizeTo(newLength); // The space needs to be allocated before insertion can happen
+    const workers: Worker[] = [];
+    const promises: Promise<any>[] = [];
 
-    insertIndex.push(this.dataX.length);
+    for (let i = 0; i < numWorkers; i++) {
+      const origStart = i * segmentSize;
+      const origEnd = Math.min((i + 1) * segmentSize, oldLen);
 
-    // Shift elements to the right to make room for the items to insert
-    let toInsert = dataPoints.length;
-    for (let i = insertIndex.length - 1; i > 0; i--) {
-      const left = insertIndex[i - 1];
-      const right = insertIndex[i] - 1;
+      // Insertions assigned to this chunk. Last chunk absorbs insertions with
+      // insertIndex >= oldLen (appended past the end).
+      const firstIns = findFirstGreaterOrEqual(insertIndex, origStart);
+      const lastIns =
+        i === numWorkers - 1
+          ? dataPoints.length
+          : findFirstGreaterOrEqual(insertIndex, origEnd);
 
-      for (let n = right; n >= left; n--) {
-        this.dataX[n + toInsert] = this.dataX[n];
-        this.dataY[n + toInsert] = this.dataY[n];
-      }
-      toInsert--;
-      this.dataX[left + toInsert] = dataPoints[i - 1][0];
-      this.dataY[left + toInsert] = dataPoints[i - 1][1];
+      const insertions = dataPoints.slice(firstIns, lastIns);
+      const outStart = origStart + firstIns;
+
+      if (origStart >= origEnd && insertions.length === 0) continue;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new AddDataWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferX: this.dataX.buffer,
+            bufferY: this.dataY.buffer,
+            outputBufferX,
+            outputBufferY,
+            origStart,
+            origEnd,
+            insertions,
+            outStart,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data);
+          };
+        }),
+      );
     }
+
+    if (import.meta.env.MODE !== "test") {
+      await Promise.all(promises);
+    }
+
+    workers.forEach((worker) => worker.terminate());
+
+    this.dataset.source.x = new Float64Array(outputBufferX);
+    this.dataset.source.y = new Float32Array(outputBufferY);
+    this._resizeTo(newLength);
   }
 
   // =======================
@@ -722,22 +1005,73 @@ export class ObservationRecord {
    * @param appliedFilters
    * @returns an array of index values to select in the plot
    */
-  private _valueThreshold(appliedFilters: { [key: string]: number }): number[] {
+  /**
+   * Filter by applying a set of logical operations, using worker threads.
+   *  1. Main thread encodes filters as numeric opcodes + thresholds (cheaper than string compares in the hot loop).
+   *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches (short-circuit).
+   *  3. Results from each chunk are concatenated in order to preserve ascending indexes.
+   *
+   * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E.
+   */
+  private async _valueThreshold(appliedFilters: {
+    [key: string]: number;
+  }): Promise<number[]> {
+    const keys = Object.keys(appliedFilters);
+    if (keys.length === 0) return [];
+
+    const opMap: Record<string, number> = {
+      [FilterOperation.LT]: 0,
+      [FilterOperation.LTE]: 1,
+      [FilterOperation.GT]: 2,
+      [FilterOperation.GTE]: 3,
+      [FilterOperation.E]: 4,
+      [FilterOperation.START]: 4,
+      [FilterOperation.END]: 4,
+    };
+    const ops = keys.map((k) => opMap[k] ?? 4);
+    const values = keys.map((k) => appliedFilters[k]);
+
+    const dataY = this.dataset.source.y;
+    const total = dataY.length;
+    if (total === 0) return [];
+
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
+    const chunkSize = Math.ceil(total / numWorkers);
+
+    const workers: Worker[] = [];
+    const promises: Promise<number[]>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const cStart = i * chunkSize;
+      const cEnd = Math.min((i + 1) * chunkSize, total);
+      if (cStart >= cEnd) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new ValueThresholdWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferY: this.dataY.buffer,
+            start: cStart,
+            end: cEnd,
+            ops,
+            values,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data as number[]);
+          };
+        }),
+      );
+    }
+
+    const results = await Promise.all(promises);
+    workers.forEach((worker) => worker.terminate());
+
     const selection: number[] = [];
-
-    this.dataset.source.y.forEach((value: number, index: number) => {
-      if (
-        Object.keys(appliedFilters).some((key) => {
-          return FilterOperationFn[key as FilterOperation]?.(
-            value,
-            appliedFilters[key],
-          );
-        })
-      ) {
-        selection.push(index);
-      }
-    });
-
+    for (let w = 0; w < results.length; w++) {
+      const arr = results[w];
+      for (let k = 0; k < arr.length; k++) selection.push(arr[k]);
+    }
     return selection;
   }
 
@@ -747,18 +1081,58 @@ export class ObservationRecord {
    * @param value
    * @returns
    */
-  private _rateOfChange(comparator: string, value: number) {
-    const selection: number[] = [];
+  /**
+   * Find points where the relative rate `(curr - prev) / |prev|` satisfies the comparator, using worker threads.
+   *  1. Main thread partitions scan range [1, dataY.length) into chunks; `Y[i-1]` is safely read from the shared buffer across chunk boundaries.
+   *  2. Each worker runs a hoisted branch matching the comparator and returns matching indexes in ascending order.
+   *  3. Main thread concatenates results in chunk order, preserving ascending order.
+   */
+  private async _rateOfChange(
+    comparator: string,
+    value: number,
+  ): Promise<number[]> {
     const dataY = this.dataset.source.y;
+    if (dataY.length < 2) return [];
 
-    for (let i = 0 + 1; i < dataY.length; i++) {
-      const prev = dataY[i - 1];
-      const curr = dataY[i];
-      const rate = (curr - prev) / Math.abs(prev);
+    const start = 1;
+    const end = dataY.length;
+    const total = end - start;
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
+    const chunkSize = Math.ceil(total / numWorkers);
 
-      if (LogicalComparator[comparator as LogicalOperation]?.(rate, value)) {
-        selection.push(i);
-      }
+    const workers: Worker[] = [];
+    const promises: Promise<number[]>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const cStart = start + i * chunkSize;
+      const cEnd = Math.min(start + (i + 1) * chunkSize, end);
+      if (cStart >= cEnd) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new RateOfChangeWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferY: this.dataY.buffer,
+            start: cStart,
+            end: cEnd,
+            comparator,
+            value,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data as number[]);
+          };
+        }),
+      );
+    }
+
+    const results = await Promise.all(promises);
+    workers.forEach((worker) => worker.terminate());
+
+    const selection: number[] = [];
+    for (let w = 0; w < results.length; w++) {
+      const arr = results[w];
+      for (let k = 0; k < arr.length; k++) selection.push(arr[k]);
     }
     return selection;
   }
@@ -782,35 +1156,73 @@ export class ObservationRecord {
    * @param value
    * @returns
    */
-  private _change(comparator: string, value: number) {
-    const selection: number[] = [];
+  /**
+   * Find points where the change from the previous value satisfies the comparator, using worker threads.
+   *  1. Main thread partitions scan range [1, dataY.length) into chunks (each chunk's first index safely reads Y[i-1] from the shared buffer).
+   *  2. Each worker runs a hoisted branch matching the comparator and returns matching indexes in ascending order.
+   *  3. Main thread concatenates results in chunk order, preserving ascending order.
+   */
+  private async _change(comparator: string, value: number): Promise<number[]> {
     const dataY = this.dataset.source.y;
+    if (dataY.length < 2) return [];
 
-    for (let i = 0 + 1; i < dataY.length; i++) {
-      const prev = dataY[i - 1];
-      const curr = dataY[i];
-      const change = curr - prev;
+    const start = 1;
+    const end = dataY.length;
+    const total = end - start;
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
+    const chunkSize = Math.ceil(total / numWorkers);
 
-      if (LogicalComparator[comparator as LogicalOperation]?.(change, value)) {
-        selection.push(i);
-      }
+    const workers: Worker[] = [];
+    const promises: Promise<number[]>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const cStart = start + i * chunkSize;
+      const cEnd = Math.min(start + (i + 1) * chunkSize, end);
+      if (cStart >= cEnd) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new ChangeWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferY: this.dataY.buffer,
+            start: cStart,
+            end: cEnd,
+            comparator,
+            value,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data as number[]);
+          };
+        }),
+      );
+    }
+
+    const results = await Promise.all(promises);
+    workers.forEach((worker) => worker.terminate());
+
+    const selection: number[] = [];
+    for (let w = 0; w < results.length; w++) {
+      const arr = results[w];
+      for (let k = 0; k < arr.length; k++) selection.push(arr[k]);
     }
     return selection;
   }
 
   /**
-   * Find gaps in the data
+   * Find gaps in the data using worker threads.
+   *  1. Main thread slices the scan range [start, end] into equal chunks with a 1-index overlap so adjacent workers observe the boundary delta correctly.
+   *  2. Each worker scans its chunk and returns a flat list of [leftIdx, rightIdx] pairs for gaps whose delta exceeds the threshold.
+   *  3. Main thread collects all pairs and dedups via Set — identical return shape to the original implementation.
    * @param value The time value
    * @param unit The time unit (TimeUnit)
    * @param range If specified, the gaps will be found only within the range
-   * @returns
    */
-  private _findGaps(
+  private async _findGaps(
     value: number,
     unit: TimeUnit,
     range?: [number, number],
-  ): number[] {
-    const selection: [number, number][] = [];
+  ): Promise<number[]> {
     const dataX = this.dataset.source.x;
     let start = 0;
     let end = dataX.length;
@@ -820,30 +1232,67 @@ export class ObservationRecord {
       end = range[1];
     }
 
-    let prevDatetime = dataX[start];
+    if (end <= start) return [];
 
-    for (let i = start + 1; i <= end; i++) {
-      const curr = dataX[i];
-      const delta = curr - prevDatetime; // milliseconds
+    const threshold = value * timeUnitMultipliers[unit] * 1000;
+    const total = end - start;
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
+    const chunkSize = Math.ceil(total / numWorkers);
 
-      if (delta > value * timeUnitMultipliers[unit] * 1000) {
-        selection.push([i - 1, i]);
-      }
-      prevDatetime = curr;
+    const workers: Worker[] = [];
+    const promises: Promise<number[]>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      // Chunk covers scan indexes (chunkStart, chunkEndInclusive].
+      // Adjacent chunks overlap at the boundary by design — the overlapping index is the `prev`
+      // for one worker and the `curr` for the other, so the boundary delta is still evaluated.
+      const chunkStart = start + i * chunkSize;
+      const chunkEndInclusive = Math.min(start + (i + 1) * chunkSize, end);
+      if (chunkStart >= chunkEndInclusive) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new FindGapsWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferX: this.dataX.buffer,
+            start: chunkStart,
+            endInclusive: chunkEndInclusive,
+            threshold,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data as number[]);
+          };
+        }),
+      );
     }
 
-    return [...new Set(selection.flat())];
+    const results = await Promise.all(promises);
+    workers.forEach((worker) => worker.terminate());
+
+    const selection = new Set<number>();
+    for (let w = 0; w < results.length; w++) {
+      const flat = results[w];
+      for (let k = 0; k < flat.length; k++) selection.add(flat[k]);
+    }
+    return [...selection];
   }
 
   /**
-   * Find points where the values are the same at least x times in a row
-   * @param times The number of times in a row that points can be equal
+   * Find points where the values are the same at least `times` in a row, using worker threads.
+   *  1. Main thread splits [start, end) into chunks and each worker emits its maximal runs of equal Y values as flat (startIndex, length, value) triplets.
+   *  2. Main thread stitches runs that cross chunk boundaries (same value, adjacent indexes).
+   *  3. Every run whose stitched length is >= `times` contributes all of its indexes to the selection.
+   *
+   * Matches the Python reference implementation in `edit_service.py::persistence` — every member of a qualifying run is selected (including the run's first index).
+   * @param times The minimum run length to qualify
    * @param range If specified, the points will be found only within the range
-   * @returns
    */
-  private _persistence(times: number, range?: [number, number]) {
-    let selection: number[] = [];
-    let dataY = this.dataset.source.y;
+  private async _persistence(
+    times: number,
+    range?: [number, number],
+  ): Promise<number[]> {
+    const dataY = this.dataset.source.y;
     let start = 0;
     let end = dataY.length;
     if (range?.[0] && range?.[1]) {
@@ -851,21 +1300,74 @@ export class ObservationRecord {
       end = range[1];
     }
 
-    let prev = dataY[start];
-    let stack = [];
+    if (end <= start) return [];
 
-    for (let i = start + 1; i < end; i++) {
-      const curr = dataY[i];
-      if (curr != prev || i === end) {
-        if (stack.length >= times) {
-          selection = [...selection, ...stack];
+    const total = end - start;
+    const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
+    const chunkSize = Math.ceil(total / numWorkers);
+
+    const workers: Worker[] = [];
+    const promises: Promise<number[]>[] = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+      const cStart = start + i * chunkSize;
+      const cEnd = Math.min(start + (i + 1) * chunkSize, end);
+      if (cStart >= cEnd) break;
+
+      promises.push(
+        new Promise((resolve) => {
+          const worker = new PersistenceWorker();
+          workers.push(worker);
+          worker.postMessage({
+            bufferY: this.dataY.buffer,
+            start: cStart,
+            end: cEnd,
+          });
+          worker.onmessage = (event: MessageEvent) => {
+            resolve(event.data as number[]);
+          };
+        }),
+      );
+    }
+
+    const chunkResults = await Promise.all(promises);
+    workers.forEach((worker) => worker.terminate());
+
+    // Stitch runs across chunk boundaries (runs are emitted in left-to-right order).
+    // Each triplet is (startIndex, length, value).
+    const mergedStart: number[] = [];
+    const mergedLength: number[] = [];
+    const mergedValue: number[] = [];
+
+    for (let w = 0; w < chunkResults.length; w++) {
+      const triplets = chunkResults[w];
+      for (let k = 0; k < triplets.length; k += 3) {
+        const runStart = triplets[k];
+        const runLength = triplets[k + 1];
+        const runValue = triplets[k + 2];
+        const lastIdx = mergedStart.length - 1;
+        if (
+          lastIdx >= 0 &&
+          mergedValue[lastIdx] === runValue &&
+          mergedStart[lastIdx] + mergedLength[lastIdx] === runStart
+        ) {
+          mergedLength[lastIdx] += runLength;
+        } else {
+          mergedStart.push(runStart);
+          mergedLength.push(runLength);
+          mergedValue.push(runValue);
         }
-        stack = [];
-      } else {
-        stack.push(i);
       }
     }
 
+    const selection: number[] = [];
+    for (let r = 0; r < mergedStart.length; r++) {
+      const len = mergedLength[r];
+      if (len >= times) {
+        const s = mergedStart[r];
+        for (let k = 0; k < len; k++) selection.push(s + k);
+      }
+    }
     return selection;
   }
 }

@@ -44,33 +44,6 @@ export enum FilterOperation {
   END = "End datetime",
 }
 
-export const FilterOperationFn: EnumDictionary<
-  FilterOperation,
-  (value: number, toCompare: number) => boolean
-> = {
-  [FilterOperation.LT]: (value: number, toCompare: number) => {
-    return value < toCompare;
-  },
-  [FilterOperation.LTE]: (value: number, toCompare: number) => {
-    return value <= toCompare;
-  },
-  [FilterOperation.GT]: (value: number, toCompare: number) => {
-    return value > toCompare;
-  },
-  [FilterOperation.GTE]: (value: number, toCompare: number) => {
-    return value >= toCompare;
-  },
-  [FilterOperation.E]: (value: number, toCompare: number) => {
-    return value == toCompare;
-  },
-  [FilterOperation.START]: (value: number, toCompare: number) => {
-    return value == toCompare;
-  },
-  [FilterOperation.END]: (value: number, toCompare: number) => {
-    return value == toCompare;
-  },
-};
-
 export enum Operator {
   ADD = "ADD",
   SUB = "SUB",
@@ -86,27 +59,6 @@ export enum LogicalOperation {
   GTE = "Greater than or equal to",
   E = "Equal",
 }
-
-export const LogicalComparator: EnumDictionary<
-  LogicalOperation,
-  (value: number, toCompare: number) => boolean
-> = {
-  [LogicalOperation.LT]: (value: number, toCompare: number) => {
-    return value < toCompare;
-  },
-  [LogicalOperation.LTE]: (value: number, toCompare: number) => {
-    return value <= toCompare;
-  },
-  [LogicalOperation.GT]: (value: number, toCompare: number) => {
-    return value > toCompare;
-  },
-  [LogicalOperation.GTE]: (value: number, toCompare: number) => {
-    return value >= toCompare;
-  },
-  [LogicalOperation.E]: (value: number, toCompare: number) => {
-    return value == toCompare;
-  },
-};
 
 export type HistoryItem = {
   method: EnumEditOperations | EnumFilterOperations;

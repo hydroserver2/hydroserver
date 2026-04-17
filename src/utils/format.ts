@@ -54,21 +54,3 @@ export const formatDuration = (duration: number) => {
 
   return `${formattedValue} ${unit}`
 }
-
-export const shiftDatetime = (
-  datetime: number,
-  amount: number,
-  unit: TimeUnit
-) => {
-  if (unit === TimeUnit.MONTH) {
-    const currentDate = new Date(datetime)
-    currentDate.setMonth(currentDate.getMonth() + amount)
-    return currentDate.getTime()
-  } else if (unit === TimeUnit.YEAR) {
-    const currentDate = new Date(datetime)
-    currentDate.setFullYear(currentDate.getFullYear() + amount)
-    return currentDate.getTime()
-  } else {
-    return datetime + amount * timeUnitMultipliers[unit] * 1000
-  }
-}
