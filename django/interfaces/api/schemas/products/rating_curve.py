@@ -13,7 +13,7 @@ from interfaces.api.schemas import (
 )
 
 
-FittingMethod = Literal["linear", "power_law", "polynomial"]
+FittingMethod = Literal["linear", "power_law"]
 
 
 class RatingCurveOrderBy(OrderByField):

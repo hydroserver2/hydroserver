@@ -8,7 +8,8 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
-from processing.products.services.transformation import DataProductTransformationService, TransformationInputDict
+from processing.products.services.transformation import (DataProductTransformationService, TransformationInput,
+                                                         TransformationInputPatch)
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
     RatingCurveTransformationResponse,
@@ -85,7 +86,7 @@ def create_rating_curve_transformation(
             principal=request.principal,
             transformation_type="rating_curve",
             output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInputDict(datastream=data.input_datastream)],
+            input_datastreams=[TransformationInput(datastream=data.input_datastream)],
             **data.model_dump(
                 exclude_unset=True,
                 exclude={"uid", "output_datastream", "input_datastream"},
@@ -134,7 +135,7 @@ def update_rating_curve_transformation(
     update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastream"})
 
     if "input_datastream" in data.model_fields_set:
-        update_kwargs["input_datastreams"] = [TransformationInputDict(datastream=data.input_datastream)]
+        update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
     with raise_http_errors():
         transformation = _service.update(
@@ -213,17 +214,18 @@ def create_expression_transformation(
 ):
     """Create an expression transformation on a data product task."""
 
-    input_datastream: TransformationInputDict = {"datastream": data.input_datastream}
-    if data.variable_name is not None:
-        input_datastream["variable_name"] = data.variable_name
-
     with raise_http_errors():
         transformation = _service.create(
             task=task_id,
             principal=request.principal,
             transformation_type="expression",
             output_datastream=data.output_datastream,
-            input_datastreams=[input_datastream],
+            input_datastreams=[
+                TransformationInput(
+                    datastream=data.input_datastream,
+                    variable_name=data.variable_name
+                )
+            ],
             **data.model_dump(
                 exclude_unset=True,
                 exclude={"uid", "output_datastream", "input_datastream", "variable_name"},
@@ -271,11 +273,13 @@ def update_expression_transformation(
 
     update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastream", "variable_name"})
 
-    if "input_datastream" in data.model_fields_set:
-        inp: TransformationInputDict = {"datastream": data.input_datastream}
+    if "input_datastream" in data.model_fields_set or "variable_name" in data.model_fields_set:
+        patch_kwargs = {}
+        if "input_datastream" in data.model_fields_set:
+            patch_kwargs["datastream"] = data.input_datastream
         if "variable_name" in data.model_fields_set:
-            inp["variable_name"] = data.variable_name
-        update_kwargs["input_datastreams"] = [inp]
+            patch_kwargs["variable_name"] = data.variable_name
+        update_kwargs["input_datastreams"] = [TransformationInputPatch(**patch_kwargs)]
 
     with raise_http_errors():
         transformation = _service.update(
@@ -360,7 +364,7 @@ def create_composite_expression_transformation(
             principal=request.principal,
             transformation_type="composite_expression",
             output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInputDict(**inp.model_dump()) for inp in data.input_datastreams],
+            input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
             **data.model_dump(
                 exclude_unset=True,
                 exclude={"uid", "output_datastream", "input_datastreams"},
@@ -409,7 +413,7 @@ def update_composite_expression_transformation(
     update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastreams"})
 
     if "input_datastreams" in data.model_fields_set:
-        update_kwargs["input_datastreams"] = [TransformationInputDict(**inp.model_dump()) for inp in data.input_datastreams]
+        update_kwargs["input_datastreams"] = [TransformationInput(**inp.model_dump()) for inp in data.input_datastreams]
 
     with raise_http_errors():
         transformation = _service.update(
@@ -494,7 +498,7 @@ def create_aggregation_transformation(
             principal=request.principal,
             transformation_type="aggregation",
             output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInputDict(datastream=data.input_datastream)],
+            input_datastreams=[TransformationInput(datastream=data.input_datastream)],
             **data.model_dump(
                 exclude_unset=True,
                 exclude={"uid", "output_datastream", "input_datastream"},
@@ -543,7 +547,7 @@ def update_aggregation_transformation(
     update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastream"})
 
     if "input_datastream" in data.model_fields_set:
-        update_kwargs["input_datastreams"] = [TransformationInputDict(datastream=data.input_datastream)]
+        update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
     with raise_http_errors():
         transformation = _service.update(

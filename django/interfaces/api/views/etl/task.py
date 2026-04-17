@@ -8,6 +8,7 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from processing.orchestration.models import TaskRun
 from processing.etl.services.task import EtlTaskService
 from processing.etl.tasks import run_etl_task
 from interfaces.api.schemas.etl.task import (
@@ -50,11 +51,16 @@ def get_etl_tasks(
                 "latest_run_finished_at_min", "latest_run_finished_at_max",
             }),
             **({"workspace": query.workspace_id} if "workspace_id" in query.model_fields_set else {}),
-            **({"data_connection": query.data_connection_id} if "data_connection_id" in query.model_fields_set else {}),
-            **({"latest_run_started_at_min": query.latest_run_started_at_min} if query.latest_run_started_at_min is not None else {}),
-            **({"latest_run_started_at_max": query.latest_run_started_at_max} if query.latest_run_started_at_max is not None else {}),
-            **({"latest_run_finished_at_min": query.latest_run_finished_at_min} if query.latest_run_finished_at_min is not None else {}),
-            **({"latest_run_finished_at_max": query.latest_run_finished_at_max} if query.latest_run_finished_at_max is not None else {}),
+            **({"data_connection": query.data_connection_id}
+               if "data_connection_id" in query.model_fields_set else {}),
+            **({"latest_run_started_at_min": query.latest_run_started_at_min}
+               if query.latest_run_started_at_min is not None else {}),
+            **({"latest_run_started_at_max": query.latest_run_started_at_max}
+               if query.latest_run_started_at_max is not None else {}),
+            **({"latest_run_finished_at_min": query.latest_run_finished_at_min}
+               if query.latest_run_finished_at_min is not None else {}),
+            **({"latest_run_finished_at_max": query.latest_run_finished_at_max}
+               if query.latest_run_finished_at_max is not None else {}),
         )
 
     apply_response_pagination_headers(
@@ -163,7 +169,8 @@ def update_etl_task(
                 if "mappings" in data.model_fields_set else Unset
             ),
             **data.model_dump(exclude_unset=True, exclude={"schedule", "mappings"}),
-            **(data.schedule.model_dump(exclude_unset=True) if "schedule" in data.model_fields_set and data.schedule else {}),
+            **(data.schedule.model_dump(exclude_unset=True)
+               if "schedule" in data.model_fields_set and data.schedule else {}),
         )
 
     return 200, etl_task
@@ -216,8 +223,6 @@ def trigger_etl_task(
     Trigger an immediate run of an ETL Task on a Celery worker.
     """
 
-    from processing.orchestration.models import TaskRun
-
     with raise_http_errors():
         etl_task = etl_task_service.get(
             task=task_id,
@@ -226,7 +231,7 @@ def trigger_etl_task(
         )
 
         run = TaskRun.objects.create(task=etl_task, status="PENDING")
-        run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id), "run_id": str(run.id)})
+        run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id)})
 
     return 202, run
 

@@ -364,7 +364,7 @@ class Migration(migrations.Migration):
                 ('payload_type', models.CharField(choices=[('CSV', 'Csv'), ('JSON', 'Json')], max_length=255)),
                 ('header_row', models.IntegerField(blank=True, null=True)),
                 ('data_start_row', models.IntegerField(blank=True, null=True)),
-                ('delimiter', models.CharField(blank=True, max_length=1, null=True)),
+                ('delimiter', models.CharField(blank=True, choices=[(',', 'Comma'), ('\t', 'Tab'), (';', 'Semicolon'), ('|', 'Pipe'), (' ', 'Space')], max_length=1, null=True)),
                 ('jmespath', models.TextField(blank=True, null=True)),
                 ('data_connection',
                  models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='payload',
@@ -380,6 +380,7 @@ class Migration(migrations.Migration):
                 ('data_connection',
                  models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='placeholder_variables',
                                    to='etl.dataconnection')),
+                ('timestamp_format', models.CharField(blank=True, max_length=255, null=True))
             ],
         ),
         migrations.CreateModel(

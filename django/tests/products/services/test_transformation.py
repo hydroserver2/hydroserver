@@ -20,7 +20,7 @@ import numpy as np
 from datetime import datetime, timezone as dt_timezone
 from core.types import Unset
 from processing.products.models import DataProductTransformation, DataProductTask
-from processing.products.services.transformation import DataProductTransformationService
+from processing.products.services.transformation import DataProductTransformationService, TransformationInput
 
 transformation_service = DataProductTransformationService()
 
@@ -131,7 +131,7 @@ def run_context(get_principal):
     Fixture that provides model instances needed to create run-test datastreams.
     Pulls metadata from one of the existing private-workspace datastreams.
     """
-    from core.sta.models import Datastream, Thing
+    from core.sta.models import Datastream
     task = DataProductTask.objects.select_related("thing__workspace").get(pk=TASK1)
     ref_ds = Datastream.objects.select_related(
         "sensor", "observed_property", "processing_level", "unit"
@@ -276,7 +276,7 @@ def test_create_expression_transformation_permissions(get_principal, ds_free, pr
                 transformation_type="expression",
                 output_datastream=ds_free,
                 formula="x * 3.0",
-                input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC), "variable_name": "x"}],
+                input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
             )
         assert error_fragment in str(exc_info.value)
     else:
@@ -286,7 +286,7 @@ def test_create_expression_transformation_permissions(get_principal, ds_free, pr
             transformation_type="expression",
             output_datastream=ds_free,
             formula="x * 3.0",
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC), "variable_name": "x"}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
         )
         assert result.transformation_type == "expression"
         assert result.formula == "x * 3.0"
@@ -299,7 +299,7 @@ def test_create_rating_curve_transformation(get_principal, ds_free):
         transformation_type="rating_curve",
         output_datastream=ds_free,
         rating_curve=uuid.UUID(RC1),
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     assert result.transformation_type == "rating_curve"
     assert str(result.rating_curve_id) == RC1
@@ -311,13 +311,13 @@ def test_create_aggregation_transformation(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     assert result.transformation_type == "aggregation"
-    assert result.aggregation_method == "simple_mean"
+    assert result.aggregation_method == "mean"
 
 
 def test_create_composite_expression_transformation(get_principal, ds_free):
@@ -330,8 +330,8 @@ def test_create_composite_expression_transformation(get_principal, ds_free):
         output_interval_units="hours",
         output_interval=1,
         input_datastreams=[
-            {"datastream": uuid.UUID(DS_IN_RC), "variable_name": "a"},
-            {"datastream": uuid.UUID(DS_OUT_RC), "variable_name": "b"},
+            TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="a"),
+            TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="b"),
         ],
     )
     assert result.transformation_type == "composite_expression"
@@ -347,7 +347,7 @@ def test_create_rating_curve_requires_rating_curve(get_principal, ds_free):
             principal=get_principal("owner"),
             transformation_type="rating_curve",
             output_datastream=ds_free,
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
@@ -358,7 +358,7 @@ def test_create_expression_requires_formula(get_principal, ds_free):
             principal=get_principal("owner"),
             transformation_type="expression",
             output_datastream=ds_free,
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC), "variable_name": "x"}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x")],
         )
 
 
@@ -369,7 +369,7 @@ def test_create_aggregation_requires_method_and_interval(get_principal, ds_free)
             principal=get_principal("owner"),
             transformation_type="aggregation",
             output_datastream=ds_free,
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
@@ -384,8 +384,8 @@ def test_create_duplicate_variable_names_rejected(get_principal, ds_free):
             output_interval_units="hours",
             output_interval=1,
             input_datastreams=[
-                {"datastream": uuid.UUID(DS_IN_RC), "variable_name": "x"},
-                {"datastream": uuid.UUID(DS_OUT_RC), "variable_name": "x"},
+                TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x"),
+                TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="x"),
             ],
         )
 
@@ -398,12 +398,12 @@ def test_create_aggregation_with_iana_timezone(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
         timezone_type="iana",
         timezone="America/Denver",
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     assert result.timezone_type == "iana"
     assert result.timezone == "America/Denver"
@@ -415,11 +415,11 @@ def test_create_aggregation_with_utc_timezone(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
         timezone_type="utc",
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     assert result.timezone_type == "utc"
 
@@ -430,46 +430,46 @@ def test_create_aggregation_with_offset_timezone(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
         timezone_type="offset",
         timezone="-07:00",
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     assert result.timezone_type == "offset"
     assert result.timezone == "-07:00"
 
 
 def test_create_aggregation_invalid_iana_timezone(get_principal, ds_free):
-    with pytest.raises(ValueError, match="not a valid IANA timezone"):
+    with pytest.raises(ValueError, match="Unknown timezone"):
         transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
             transformation_type="aggregation",
             output_datastream=ds_free,
-            aggregation_method="simple_mean",
+            aggregation_method="mean",
             output_interval_units="hours",
             output_interval=1,
             timezone_type="iana",
             timezone="Not/ATimezone",
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
 def test_create_aggregation_invalid_offset_timezone(get_principal, ds_free):
-    with pytest.raises(ValueError, match="not a valid UTC offset"):
+    with pytest.raises(ValueError, match="Unknown timezone"):
         transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
             transformation_type="aggregation",
             output_datastream=ds_free,
-            aggregation_method="simple_mean",
+            aggregation_method="mean",
             output_interval_units="hours",
             output_interval=1,
             timezone_type="offset",
             timezone="bad_offset",
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
@@ -480,11 +480,11 @@ def test_create_aggregation_timezone_without_timezone_type(get_principal, ds_fre
             principal=get_principal("owner"),
             transformation_type="aggregation",
             output_datastream=ds_free,
-            aggregation_method="simple_mean",
+            aggregation_method="mean",
             output_interval_units="hours",
             output_interval=1,
             timezone="America/Denver",
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
@@ -495,12 +495,12 @@ def test_create_aggregation_utc_with_timezone_value_rejected(get_principal, ds_f
             principal=get_principal("owner"),
             transformation_type="aggregation",
             output_datastream=ds_free,
-            aggregation_method="simple_mean",
+            aggregation_method="mean",
             output_interval_units="hours",
             output_interval=1,
             timezone_type="utc",
             timezone="America/Denver",
-            input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+            input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
         )
 
 
@@ -567,10 +567,10 @@ def test_update_aggregation_partial_does_not_fail_validation(get_principal, ds_f
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     result = transformation_service.update(
         transformation=created.pk,
@@ -587,10 +587,10 @@ def test_update_aggregation_timezone(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
     result = transformation_service.update(
         transformation=created.pk,
@@ -609,12 +609,12 @@ def test_update_aggregation_invalid_timezone_rejected(get_principal, ds_free):
         principal=get_principal("owner"),
         transformation_type="aggregation",
         output_datastream=ds_free,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
-        input_datastreams=[{"datastream": uuid.UUID(DS_IN_RC)}],
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
     )
-    with pytest.raises(ValueError, match="not a valid IANA timezone"):
+    with pytest.raises(ValueError, match="Unknown timezone"):
         transformation_service.update(
             transformation=created.pk,
             task=uuid.UUID(TASK1),
@@ -691,7 +691,7 @@ def test_run_expression(run_context):
         transformation_type="expression",
         output_datastream=ds_out.pk,
         formula="x * 2.0",
-        input_datastreams=[{"datastream": ds_in.pk, "variable_name": "x"}],
+        input_datastreams=[TransformationInput(datastream=ds_in.pk, variable_name="x")],
     )
     loaded = transformation_service.run(t)
     assert loaded == 2
@@ -717,7 +717,7 @@ def test_run_expression_idempotent(run_context):
         transformation_type="expression",
         output_datastream=ds_out.pk,
         formula="x * 2.0",
-        input_datastreams=[{"datastream": ds_in.pk, "variable_name": "x"}],
+        input_datastreams=[TransformationInput(datastream=ds_in.pk, variable_name="x")],
     )
     transformation_service.run(t)
     t = _load(str(t.pk))   # reload to pick up updated phenomenon_end_time
@@ -743,7 +743,7 @@ def test_run_rating_curve(run_context):
         transformation_type="rating_curve",
         output_datastream=ds_out.pk,
         rating_curve=uuid.UUID(RC1),
-        input_datastreams=[{"datastream": ds_in.pk}],
+        input_datastreams=[TransformationInput(datastream=ds_in.pk)],
     )
     loaded = transformation_service.run(t)
     assert loaded == 2
@@ -782,8 +782,8 @@ def test_run_composite_expression(run_context):
         output_interval_units="hours",
         output_interval=1,
         input_datastreams=[
-            {"datastream": ds_a.pk, "variable_name": "a"},
-            {"datastream": ds_b.pk, "variable_name": "b"},
+            TransformationInput(datastream=ds_a.pk, variable_name="a"),
+            TransformationInput(datastream=ds_b.pk, variable_name="b"),
         ],
     )
     loaded = transformation_service.run(t)
@@ -821,10 +821,10 @@ def test_run_aggregation(run_context):
         principal=ctx["owner"],
         transformation_type="aggregation",
         output_datastream=ds_out.pk,
-        aggregation_method="simple_mean",
+        aggregation_method="mean",
         output_interval_units="hours",
         output_interval=1,
-        input_datastreams=[{"datastream": ds_in.pk}],
+        input_datastreams=[TransformationInput(datastream=ds_in.pk)],
     )
     loaded = transformation_service.run(t)
     assert loaded == 2

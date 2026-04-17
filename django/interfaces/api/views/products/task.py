@@ -8,6 +8,7 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from processing.orchestration.models import TaskRun
 from processing.products.services.task import DataProductTaskService
 from processing.products.tasks import run_data_product_task
 from interfaces.api.schemas.products.task import (
@@ -206,8 +207,6 @@ def trigger_data_product_task(
     Trigger an immediate run of a data product task on a Celery worker.
     """
 
-    from processing.orchestration.models import TaskRun
-
     with raise_http_errors():
         task = data_product_task_service.get(
             task=task_id,
@@ -216,7 +215,7 @@ def trigger_data_product_task(
         )
 
         run = TaskRun.objects.create(task=task, status="PENDING")
-        run_data_product_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
+        run_data_product_task.apply_async(kwargs={"task_id": str(task.id)})
 
     return 202, run
 

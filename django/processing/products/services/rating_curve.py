@@ -1,6 +1,5 @@
 import uuid
 import uuid6
-import numpy as np
 from typing import Literal
 
 from pydantic import Field, ConfigDict, validate_call
@@ -194,47 +193,3 @@ class RatingCurveService(ServiceUtils):
             )
             for pt in points
         ])
-
-    def apply_rating_curve(
-        self,
-        rating_curve: uuid.UUID | RatingCurve,
-        input_values: np.ndarray,
-    ) -> np.ndarray:
-        """
-        Map input_values through a rating curve defined by control points (xs, ys).
-
-        linear — piecewise linear interpolation; NaN outside [min(xs), max(xs)].
-        power_law — least-squares fit of y = a·xᵇ in log-log space; NaN for x ≤ 0.
-        polynomial — least-squares polynomial fit (degree = min(n-1, 3)); extrapolates.
-        """
-
-        rating_curve = self.get(rating_curve=rating_curve)
-
-        points = list(rating_curve.points.all())
-        if len(points) < 2:
-            return np.full_like(input_values, np.nan)
-
-        xs = np.array([p.input_value for p in points])
-        ys = np.array([p.output_value for p in points])
-
-        if rating_curve.fitting_method == "linear":
-            return np.interp(input_values, xs, ys, left=np.nan, right=np.nan)
-
-        elif rating_curve.fitting_method == "power_law":
-            if np.any(xs <= 0) or np.any(ys <= 0):
-                raise ValueError(
-                    "Power law fitting requires all rating curve point values to be positive."
-                )
-            coefficients = np.polyfit(np.log(xs), np.log(ys), 1)
-            b, log_a = coefficients[0], coefficients[1]
-            a = np.exp(log_a)
-            with np.errstate(invalid="ignore"):
-                return np.where(input_values > 0, a * np.power(input_values, b), np.nan)
-
-        elif rating_curve.fitting_method == "polynomial":
-            degree = min(len(xs) - 1, 3)
-            coefficients = np.polyfit(xs, ys, degree)
-            return np.polyval(coefficients, input_values)
-
-        else:
-            raise ValueError(f"Unsupported fitting method: {rating_curve.fitting_method}")

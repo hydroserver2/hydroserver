@@ -45,7 +45,7 @@
   fields:
     etl_task: 019adbc3-35e8-7f25-bc68-171fb66d446e
     source_identifier: test_value
-    target_datastream: 27c70b41-e845-40ea-8cc7-d1b40f89816b
+    target_datastream: dd1f9293-ce29-4b6a-88e6-d65110d1be65
 
 # ETL Task Run
 - model: orchestration.taskrun

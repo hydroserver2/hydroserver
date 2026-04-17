@@ -15,7 +15,7 @@ from interfaces.api.schemas import (
 from interfaces.api.schemas.products.rating_curve import RatingCurveSummaryResponse
 
 
-AggregationMethod = Literal["simple_mean", "sum", "min_value", "max_value", "first_value", "last_value"]
+AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
 TimezoneType = Literal["utc", "offset", "iana"]
 
@@ -127,7 +127,7 @@ class RatingCurveTransformationPostBody(_TransformationPostBodyBase):
 
 class ExpressionTransformationPostBody(_TransformationPostBodyBase):
     input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    variable_name: Optional[str] = None
+    variable_name: str
     formula: str
 
 

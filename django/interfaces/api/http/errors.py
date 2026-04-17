@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 def raise_http_errors():
     try:
         yield
+    except HttpError as e:
+        raise e
     except ValueError as e:
         raise HttpError(400, str(e))
     except PermissionError as e:

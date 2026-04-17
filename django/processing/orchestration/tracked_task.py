@@ -1,10 +1,12 @@
 from celery import Task
 from django.utils import timezone
 
+from processing.orchestration.logging import RunIdFilter, run_id_var
+
 
 class TrackedTask(Task):
     """
-    Abstract Celery task base class that automatically manages TaskRun lifecycle.
+    Abstract Celery task base class that automatically manages the TaskRun lifecycle.
     """
 
     abstract = True
@@ -14,6 +16,8 @@ class TrackedTask(Task):
 
     default_success_message = "Task completed successfully."
     default_failure_message = "Task failed."
+
+    run_id_filter = RunIdFilter()
 
     def _get_or_create_run(self, kwargs: dict) -> str | None:
         """
@@ -39,6 +43,7 @@ class TrackedTask(Task):
 
     def before_start(self, task_id, args, kwargs):
         self.request.tracking_run_id = self._get_or_create_run(kwargs)
+        run_id_var.set(self.request.tracking_run_id or "-")
 
     def on_success(self, retval, task_id, args, kwargs):
         from processing.orchestration.models import TaskRun
@@ -58,6 +63,8 @@ class TrackedTask(Task):
             finished_at=timezone.now(),
         )
 
+        run_id_var.set("-")
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         from processing.orchestration.models import TaskRun
 
@@ -75,3 +82,5 @@ class TrackedTask(Task):
             result=result,
             finished_at=timezone.now(),
         )
+
+        run_id_var.set("-")

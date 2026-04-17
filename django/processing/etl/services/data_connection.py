@@ -122,7 +122,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         timezone: str | None = None,
         header_row: int | None | Unset = Field(Unset, gt=0),
         data_start_row: int | Unset = Field(Unset, gt=0),
-        delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
+        delimiter: Literal[",", "|", "\t", ";", " "] | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
         placeholder_variables: list[dict] = Field(default_factory=list),
         notification_recipient_emails: list[str] | Unset = Unset,
@@ -383,19 +383,36 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         data_connection = self.get(data_connection)
 
-        new_placeholders = {(pv["name"], pv["variable_type"]) for pv in placeholder_variables}
+        for pv in placeholder_variables:
+            if pv.get("timestamp_format"):
+                if pv.get("variable_type") not in ("run_time", "latest_observation_timestamp"):
+                    raise ValueError(
+                        "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
+                        "placeholder variables."
+                    )
+                Timestamp._validate_strftime_format(pv["timestamp_format"])  # noqa
+
+        new_placeholders = {(pv["name"], pv["variable_type"]): pv for pv in placeholder_variables}
         current_placeholders = {(pv.name, pv.variable_type): pv for pv in data_connection.placeholder_variables.all()}
 
         data_connection.placeholder_variables.filter(
             pk__in=[pv.pk for key, pv in current_placeholders.items() if key not in new_placeholders]
         ).delete()
 
-        for name, variable_type in new_placeholders:
-            if (name, variable_type) not in current_placeholders:
+        for key, pv_data in new_placeholders.items():
+            name, variable_type = key
+            new_format = pv_data.get("timestamp_format")
+            if key in current_placeholders:
+                existing = current_placeholders[key]
+                if existing.timestamp_format != new_format:
+                    existing.timestamp_format = new_format
+                    existing.save()
+            else:
                 PlaceholderVariable.objects.create(
                     data_connection=data_connection,
                     name=name,
                     variable_type=variable_type,
+                    timestamp_format=new_format,
                 )
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))

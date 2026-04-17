@@ -1,18 +1,19 @@
-import ast
-import re
 import uuid
 import uuid6
 import logging
-import pytz
-import pandas as pd
-import numpy as np
-from typing import Union, Literal, NotRequired
-from typing_extensions import TypedDict
+import polars as pl
+from datetime import datetime, timedelta, timezone as dt_timezone
+from typing import Union, Literal
 
-from pydantic import Field, ConfigDict, validate_call
+from pydantic import BaseModel, Field, ConfigDict, validate_call
 from django.db import transaction
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
+
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, SCHEMA, normalize_tz
+from hydroserverpy.products.expression import validate_expression, apply_expression
+from hydroserverpy.products.aggregation import apply_aggregation
+from hydroserverpy.products.rating_curve import apply_rating_curve
 
 from core.types import Unset
 from core.iam.models import APIKey
@@ -38,31 +39,27 @@ observation_service = ObservationService()
 rating_curve_service = RatingCurveService()
 
 TransformationType = Literal["rating_curve", "expression", "composite_expression", "aggregation"]
-AggregationMethod = Literal["simple_mean", "sum", "min_value", "max_value", "first_value", "last_value"]
+AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
 IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
 
 
-class TransformationInputDict(TypedDict):
+class TransformationInput(BaseModel):
     datastream: Union[uuid.UUID, Datastream]
-    variable_name: NotRequired[str | None]
+    variable_name: str | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class TransformationInputPatch(BaseModel):
+    datastream: Union[uuid.UUID, Datastream] | Unset = Unset
+    variable_name: str | None | Unset = Unset
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 _PERIOD_TO_UNIT = {"minutes": "min", "hours": "h", "days": "D"}
+_UNIT_TO_DURATION = {"minutes": "m", "hours": "h", "days": "d", "weeks": "w"}
 _UNIT_TO_SECONDS = {"minutes": 60, "hours": 3600, "days": 86400}
-_ALLOWED_AST = (
-    ast.Expression,
-    ast.BinOp,
-    ast.UnaryOp,
-    ast.Add,
-    ast.Sub,
-    ast.Mult,
-    ast.Div,
-    ast.UAdd,
-    ast.USub,
-    ast.Name,
-    ast.Load,
-    ast.Constant,
-)
 
 
 class DataProductTransformationService(ServiceUtils):
@@ -170,7 +167,7 @@ class DataProductTransformationService(ServiceUtils):
         principal: User | APIKey | None | Unset,
         task: Union[uuid.UUID, DataProductTask],
         transformation_type: TransformationType,
-        input_datastreams: list[TransformationInputDict],
+        input_datastreams: list[TransformationInput],
         output_datastream: Union[uuid.UUID, Datastream],
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
@@ -247,7 +244,7 @@ class DataProductTransformationService(ServiceUtils):
         principal: User | APIKey | None | Unset,
         task: Union[uuid.UUID, DataProductTask],
         transformation: Union[uuid.UUID, DataProductTransformation],
-        input_datastreams: list[TransformationInputDict] | Unset = Unset,
+        input_datastreams: list[Union[TransformationInput, TransformationInputPatch]] | Unset = Unset,
         output_datastream: Union[uuid.UUID, Datastream] | Unset = Unset,
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
         formula: str | Unset = Unset,
@@ -268,15 +265,29 @@ class DataProductTransformationService(ServiceUtils):
 
         transformation_type: TransformationType = transformation.transformation_type  # type: ignore[assignment]
 
+        if input_datastreams is not Unset and any(
+            isinstance(inp, TransformationInputPatch) for inp in input_datastreams
+        ):
+            existing_inputs = list(transformation.input_datastreams.select_related("datastream").all())
+            input_datastreams = [
+                TransformationInput(
+                    datastream=(
+                        inp.datastream if inp.datastream is not Unset
+                        else existing_inputs[i].datastream
+                    ),
+                    variable_name=(
+                        inp.variable_name if inp.variable_name is not Unset
+                        else (existing_inputs[i].variable_name if i < len(existing_inputs) else None)
+                    ),
+                ) if isinstance(inp, TransformationInputPatch) else inp
+                for i, inp in enumerate(input_datastreams)
+            ]
+
         self.validate_transformation(
             task=task,
             transformation_type=transformation_type,
             input_datastreams=(
-                input_datastreams if input_datastreams is not Unset
-                else [
-                    {"datastream": e.datastream_id, "variable_name": e.variable_name}
-                    for e in transformation.input_datastreams.all()
-                ]
+                input_datastreams if input_datastreams is not Unset else transformation.input_datastreams.all()
             ),
             output_datastream=output_datastream if output_datastream is not Unset else transformation.output_datastream,
             rating_curve=(
@@ -285,7 +296,9 @@ class DataProductTransformationService(ServiceUtils):
             ),
             formula=(
                 formula if formula is not Unset
-                else (transformation.formula if transformation_type in ("expression", "composite_expression") else Unset)
+                else (
+                    transformation.formula if transformation_type in ("expression", "composite_expression") else Unset
+                )
             ),
             aggregation_method=(
                 aggregation_method if aggregation_method is not Unset
@@ -293,11 +306,17 @@ class DataProductTransformationService(ServiceUtils):
             ),
             output_interval_units=(
                 output_interval_units if output_interval_units is not Unset
-                else (transformation.output_interval_units if transformation_type in ("aggregation", "composite_expression") else Unset)
+                else (
+                    transformation.output_interval_units
+                    if transformation_type in ("aggregation", "composite_expression") else Unset
+                )
             ),
             output_interval=(
                 output_interval if output_interval is not Unset
-                else (transformation.output_interval if transformation_type in ("aggregation", "composite_expression") else Unset)
+                else (
+                    transformation.output_interval
+                    if transformation_type in ("aggregation", "composite_expression") else Unset
+                )
             ),
             timezone_type=(
                 timezone_type if timezone_type is not Unset
@@ -363,7 +382,7 @@ class DataProductTransformationService(ServiceUtils):
     @staticmethod
     def apply_input_datastreams(
         transformation: DataProductTransformation,
-        input_datastreams: list[TransformationInputDict],
+        input_datastreams: list[TransformationInput],
     ) -> None:
         """Associate input datastreams with a transformation."""
 
@@ -371,8 +390,8 @@ class DataProductTransformationService(ServiceUtils):
         DataProductTransformationInput.objects.bulk_create([
             DataProductTransformationInput(
                 transformation=transformation,
-                datastream_id=getattr(input_datastream["datastream"], "pk", input_datastream["datastream"]),
-                variable_name=input_datastream.get("variable_name"),
+                datastream_id=getattr(input_datastream.datastream, "pk", input_datastream.datastream),
+                variable_name=input_datastream.variable_name,
             )
             for input_datastream in input_datastreams
         ])
@@ -381,7 +400,7 @@ class DataProductTransformationService(ServiceUtils):
     def validate_transformation(
         task: Union[uuid.UUID, DataProductTask],
         transformation_type: TransformationType,
-        input_datastreams: list[TransformationInputDict],
+        input_datastreams: list[TransformationInput],
         output_datastream: Union[uuid.UUID, Datastream],
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
         formula: str | Unset = Unset,
@@ -407,15 +426,15 @@ class DataProductTransformationService(ServiceUtils):
         input_datastream_variable_names = []
 
         for input_datastream in input_datastreams:
-            if isinstance(input_datastream["datastream"], uuid.UUID):
+            if isinstance(input_datastream.datastream, uuid.UUID):
                 try:
                     input_datastream_obj = Datastream.objects.select_related("thing__workspace").get(
-                        pk=input_datastream["datastream"]
+                        pk=input_datastream.datastream
                     )
                 except Datastream.DoesNotExist:
-                    raise LookupError(f"Datastream with ID {str(input_datastream['datastream'])} does not exist.")
+                    raise LookupError(f"Datastream with ID {str(input_datastream.datastream)} does not exist.")
             else:
-                input_datastream_obj = input_datastream["datastream"]
+                input_datastream_obj = input_datastream.datastream
 
             if input_datastream_obj.thing.workspace != workspace:
                 raise ValueError(
@@ -423,7 +442,7 @@ class DataProductTransformationService(ServiceUtils):
                     f"{workspace.id}."
                 )
 
-            if (variable_name := input_datastream.get("variable_name")) is not None:
+            if (variable_name := input_datastream.variable_name) is not None:
                 if variable_name in input_datastream_variable_names:
                     raise ValueError(f"Duplicate variable_name '{variable_name}'.")
                 input_datastream_variable_names.append(variable_name)
@@ -480,7 +499,10 @@ class DataProductTransformationService(ServiceUtils):
                     "rating_curve_id, output_interval_units, output_interval, and aggregation_method must not be set "
                     "for transformation_type 'expression'."
                 )
-            DataProductTransformationService.validate_formula(formula, input_datastream_variable_names)
+            validate_expression(
+                formula=formula,
+                variables=input_datastream_variable_names
+            )
 
         elif transformation_type == "composite_expression":
             if any(v is Unset for v in (formula, output_interval_units, output_interval)):
@@ -502,7 +524,10 @@ class DataProductTransformationService(ServiceUtils):
                     "composite_expression requires at least 2 inputs. "
                     "Use 'expression' for single-input transformations."
                 )
-            DataProductTransformationService.validate_formula(formula, input_datastream_variable_names)
+            validate_expression(
+                formula=formula,
+                variables=input_datastream_variable_names
+            )
 
         elif transformation_type == "aggregation":
             if any(v is Unset for v in (aggregation_method, output_interval_units, output_interval)):
@@ -516,58 +541,27 @@ class DataProductTransformationService(ServiceUtils):
                     "for transformation_type 'aggregation'."
                 )
 
-            tz_type_set = timezone_type is not Unset and timezone_type is not None
-            tz_set = timezone is not Unset and timezone is not None
+            is_tz_type_set = timezone_type is not Unset and timezone_type is not None
+            is_tz_set = timezone is not Unset and timezone is not None
 
-            if tz_set and not tz_type_set:
+            if is_tz_set and not is_tz_type_set:
                 raise ValueError("timezone_type is required when timezone is set.")
 
-            if tz_type_set:
+            if is_tz_type_set:
                 if timezone_type == "utc":
-                    if tz_set:
+                    if is_tz_set:
                         raise ValueError("timezone must not be set when timezone_type is 'utc'.")
                 elif timezone_type == "iana":
-                    if not tz_set:
+                    if not is_tz_set:
                         raise ValueError("timezone is required when timezone_type is 'iana'.")
-                    if timezone not in pytz.all_timezones_set:
-                        raise ValueError(f"'{timezone}' is not a valid IANA timezone.")
+                    normalize_tz(timezone)
                 elif timezone_type == "offset":
-                    if not tz_set:
+                    if not is_tz_set:
                         raise ValueError("timezone is required when timezone_type is 'offset'.")
-                    match = re.fullmatch(r"([+-])(\d{2}):(\d{2})", timezone)
-                    if not match or int(match.group(2)) > 14 or int(match.group(3)) > 59:
-                        raise ValueError(
-                            f"'{timezone}' is not a valid UTC offset. Expected format: ±HH:MM (e.g. +05:30)."
-                        )
+                    normalize_tz(timezone)
 
         else:
             raise ValueError(f"Invalid transformation_type '{transformation_type}'.")
-
-    @staticmethod
-    def validate_formula(
-        formula: str, provided_vars: list[str],
-    ) -> None:
-        try:
-            tree = ast.parse(formula, mode="eval")
-        except SyntaxError as e:
-            raise ValueError(f"Invalid formula syntax: {e}")
-        for node in ast.walk(tree):
-            if not isinstance(node, _ALLOWED_AST):
-                raise ValueError(
-                    f"formula contains unsupported operation: {type(node).__name__}."
-                )
-
-        required_vars: set[str] = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Name):
-                required_vars.add(node.id)
-
-        missing = required_vars - set(provided_vars)
-        if missing:
-            raise ValueError(
-                f"Inputs are missing variables required by formula: "
-                f"{', '.join(sorted(missing))}."
-            )
 
     def run(self, transformation: DataProductTransformation) -> int:
         """Dispatch to the appropriate transformation run method."""
@@ -587,9 +581,8 @@ class DataProductTransformationService(ServiceUtils):
         """
         Apply a rating curve to a single input datastream and load results to the output datastream.
 
-        Each input observation is mapped to an output value using the rating curve's fitting method.
-        Observations that fall outside the curve's point range (for linear) or produce non-finite
-        results are dropped.
+        Observations outside the curve's valid range are dropped. The polynomial fitting method
+        is not supported and will be skipped with a warning.
         """
 
         input_entry = transformation.input_datastreams.first()
@@ -612,20 +605,23 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if input_df.empty:
+        if input_df.is_empty():
             return 0
 
-        input_values = input_df["result"].to_numpy(dtype=float)
+        breakpoints = [
+            (point.input_value, point.output_value)
+            for point in rating_curve.points.all()
+        ]
 
-        result_values = rating_curve_service.apply_rating_curve(
-            rating_curve, input_values
+        result_df = apply_rating_curve(
+            input_df,
+            breakpoints=breakpoints,
+            method=rating_curve.fitting_method,  # noqa
+            out_of_range="drop",
+            no_data_value=input_ds.no_data_value,
         )
 
-        result_df = input_df[["phenomenon_time"]].copy()
-        result_df["result"] = result_values
-        result_df = result_df[np.isfinite(result_df["result"].to_numpy(dtype=float))]
-
-        if result_df.empty:
+        if result_df.is_empty():
             return 0
 
         return self._load_to_datastream(transformation, result_df)
@@ -633,10 +629,6 @@ class DataProductTransformationService(ServiceUtils):
     def run_expression(self, transformation: DataProductTransformation) -> int:
         """
         Evaluate a formula against a single input datastream and load results to the output datastream.
-
-        The formula is evaluated with the input values bound to the input's variable_name.
-        Evaluation is vectorized: the variable is bound to a numpy array so arithmetic
-        operators broadcast across all rows in one pass.
         """
 
         input_entry = transformation.input_datastreams.first()
@@ -645,7 +637,7 @@ class DataProductTransformationService(ServiceUtils):
 
         input_ds = input_entry.datastream
         output_ds = transformation.output_datastream
-        variable_name = input_entry.variable_name
+        variable_name = input_entry.variable_name or RESULT_COL
 
         start = output_ds.phenomenon_end_time
         end = input_ds.phenomenon_end_time
@@ -656,41 +648,30 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if input_df.empty:
+        if input_df.is_empty():
             return 0
 
-        values = input_df["result"].to_numpy(dtype=float)
-        context = {variable_name: values} if variable_name else {}
-        result_values = DataProductTransformationService._safe_eval(transformation.formula, context)
+        result_df = apply_expression(
+            inputs={variable_name: input_df},
+            formula=transformation.formula,
+            no_data_value=input_ds.no_data_value,
+        )
 
-        result_df = input_df[["phenomenon_time"]].copy()
-        result_df["result"] = result_values
-        result_df = result_df[np.isfinite(result_df["result"].to_numpy(dtype=float))]
-
-        if result_df.empty:
+        if result_df.is_empty():
             return 0
 
         return self._load_to_datastream(transformation, result_df)
 
-    @staticmethod
-    def run_composite_expression(transformation: DataProductTransformation) -> int:
+    def run_composite_expression(self, transformation: DataProductTransformation) -> int:
         """
         Interpolate multiple input datastreams onto a shared time grid, evaluate a formula
         against each row, and load results to the output datastream.
-
-        Supported periods: minutes, hours, days.
-        weeks and months are not supported.
-
-        Each input is linearly interpolated onto the target grid. Grid points where any
-        input lacks bracketing observations (i.e. cannot interpolate) are dropped.
-        If max_gap is set, grid points where the nearest actual observation for any input
-        is further away than max_gap seconds are also dropped.
         """
 
-        if transformation.output_interval_units not in _PERIOD_TO_UNIT:
+        if transformation.output_interval_units not in _UNIT_TO_DURATION:
             raise NotImplementedError(
-                f"Period '{transformation.output_interval_units}' is not supported for composite expression. "
-                f"Supported periods: {', '.join(_PERIOD_TO_UNIT)}."
+                f"Interval unit '{transformation.output_interval_units}' is not supported. "
+                f"Supported units: {', '.join(_UNIT_TO_DURATION)}."
             )
 
         input_entries = list(transformation.input_datastreams.select_related("datastream").all())
@@ -698,111 +679,59 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         output_ds = transformation.output_datastream
-        freq = f"{transformation.output_interval}{_PERIOD_TO_UNIT[transformation.output_interval_units]}"
-        freq_offset = pd.tseries.frequencies.to_offset(freq)
+        interval = f"{transformation.output_interval}{_UNIT_TO_DURATION[transformation.output_interval_units]}"
 
-        # End is capped at the earliest input's phenomenon_end_time so we only
+        # Limit end at the earliest input's phenomenon_end_time so we only
         # interpolate where all inputs have data.
         input_ends = [entry.datastream.phenomenon_end_time for entry in input_entries]
         if any(e is None for e in input_ends):
             return 0
         end = min(input_ends)
 
-        # Grid-align the start boundary the same way as aggregation,
-        # but in UTC (composite expression has no timezone setting).
-        raw_start = output_ds.phenomenon_end_time
-        if raw_start is not None:
-            grid_start = pd.Timestamp(raw_start).tz_convert("UTC").floor(freq) + freq_offset
-        else:
-            grid_start = None
-
-        if grid_start is not None and pd.Timestamp(end).tz_convert("UTC") <= grid_start:
+        start = output_ds.phenomenon_end_time
+        if start is not None and end <= start:
             return 0
 
-        # Fetch from raw_start (not grid_start) so interpolation has the observation
-        # just before the first grid point available as a left-side bracket.
-        input_series: dict[str, pd.Series] = {}
-        for entry in input_entries:
-            df = DataProductTransformationService._fetch_observations(
-                entry.datastream, after=raw_start, through=end
-            )
-            if df.empty:
-                return 0
-            input_series[entry.variable_name] = df.set_index("phenomenon_time")["result"]
-
-        # Build the target grid.
-        if grid_start is None:
-            earliest = min(s.index.min() for s in input_series.values())
-            grid_start = earliest.ceil(freq)
-
-        grid_end = pd.Timestamp(end).tz_convert("UTC").floor(freq)
-        target_index = pd.date_range(start=grid_start, end=grid_end, freq=freq, tz="UTC")
-
-        if target_index.empty:
-            return 0
-
-        # Interpolate each input onto the target grid.
-        result_df = pd.DataFrame(index=target_index)
-        for var_name, series in input_series.items():
-            combined = series.reindex(series.index.union(target_index)).interpolate(method="time")
-            result_df[var_name] = combined.reindex(target_index)
-
-        # Drop rows where interpolation failed (no bracketing observations).
-        result_df = result_df.dropna()
-
-        if result_df.empty:
-            return 0
-
-        # Optional max_gap filter: drop grid points where the nearest actual observation
-        # for any input is further away than max_gap_interval (converted to seconds).
+        max_gap = None
         if transformation.max_gap_interval is not None and transformation.max_gap_interval_units is not None:
-            if transformation.max_gap_interval_units not in _UNIT_TO_SECONDS:
+            if transformation.max_gap_interval_units not in _UNIT_TO_DURATION:
                 raise NotImplementedError(
-                    f"Period '{transformation.max_gap_interval_units}' is not supported for max_gap_interval_units. "
-                    f"Supported periods: {', '.join(_UNIT_TO_SECONDS)}."
+                    f"max_gap interval unit '{transformation.max_gap_interval_units}' is not supported. "
+                    f"Supported units: {', '.join(_UNIT_TO_DURATION)}."
                 )
-            max_gap_seconds = transformation.max_gap_interval * _UNIT_TO_SECONDS[transformation.max_gap_interval_units]
-            keep = np.ones(len(result_df), dtype=bool)
-            for var_name, series in input_series.items():
-                obs_ns = series.index.sort_values().asi8
-                target_ns = result_df.index.asi8
-                idx = np.searchsorted(obs_ns, target_ns)
-                gap_ns = np.minimum(
-                    np.abs(target_ns - obs_ns[np.clip(idx - 1, 0, len(obs_ns) - 1)]),
-                    np.abs(target_ns - obs_ns[np.clip(idx, 0, len(obs_ns) - 1)]),
-                )
-                keep &= gap_ns / 1e9 <= max_gap_seconds
-            result_df = result_df[keep]
+            max_gap = f"{transformation.max_gap_interval}{_UNIT_TO_DURATION[transformation.max_gap_interval_units]}"
 
-        if result_df.empty:
+        inputs = {}
+        for entry in input_entries:
+            df = self._fetch_observations(entry.datastream, after=start, through=end)
+            if df.is_empty():
+                return 0
+            inputs[entry.variable_name] = df
+
+        result_df = apply_expression(
+            inputs=inputs,
+            formula=transformation.formula,
+            interval=interval,
+            on_missing="interpolate",
+            max_gap=max_gap,
+            no_data_value=input_entries[0].datastream.no_data_value,
+        )
+
+        if result_df.is_empty():
             return 0
 
-        # Evaluate the formula with each variable bound to its column as a numpy array.
-        context = {col: result_df[col].to_numpy(dtype=float) for col in result_df.columns}
-        result_values = DataProductTransformationService._safe_eval(transformation.formula, context)
+        return self._load_to_datastream(transformation, result_df)
 
-        output_df = pd.DataFrame({"phenomenon_time": result_df.index, "result": result_values})
-        output_df = output_df[np.isfinite(output_df["result"].to_numpy(dtype=float))]
-
-        if output_df.empty:
-            return 0
-
-        return DataProductTransformationService._load_to_datastream(transformation, output_df)
-
-    @staticmethod
-    def run_aggregation(transformation: DataProductTransformation) -> int:
+    def run_aggregation(self, transformation: DataProductTransformation) -> int:
         """
         Resample a single input datastream into fixed time periods using the configured
-        aggregation method, and load results to the output datastream.
-
-        Supported periods: minutes, hours, days.
-        weeks and months are not supported.
+        aggregation method and load results to the output datastream.
         """
 
-        if transformation.output_interval_units not in _PERIOD_TO_UNIT:
+        if transformation.output_interval_units not in _UNIT_TO_DURATION:
             raise NotImplementedError(
-                f"Period '{transformation.output_interval_units}' is not supported for aggregation. "
-                f"Supported periods: {', '.join(_PERIOD_TO_UNIT)}."
+                f"Interval unit '{transformation.output_interval_units}' is not supported for aggregation. "
+                f"Supported units: {', '.join(_UNIT_TO_DURATION)}."
             )
 
         input_entry = transformation.input_datastreams.first()
@@ -812,23 +741,24 @@ class DataProductTransformationService(ServiceUtils):
         input_ds = input_entry.datastream
         output_ds = transformation.output_datastream
 
-        freq = f"{transformation.output_interval}{_PERIOD_TO_UNIT[transformation.output_interval_units]}"
-        tz = DataProductTransformationService._resolve_timezone(transformation)
-        freq_offset = pd.tseries.frequencies.to_offset(freq)
+        interval = f"{transformation.output_interval}{_UNIT_TO_DURATION[transformation.output_interval_units]}"
+        local_timezone = (
+            transformation.timezone
+            if transformation.timezone_type and transformation.timezone_type != "utc"
+            else None
+        )
 
-        # Determine the fetch start boundary aligned to the configured timezone.
-        # Floor the last output timestamp to the period boundary and advance by one
-        # period so that unaligned values in the output are ignored and we always
-        # start cleanly at the next period boundary.
+        # Advance raw_start to the next aligned period boundary so we never
+        # re-aggregate a period already present in the output datastream.
         raw_start = output_ds.phenomenon_end_time
         if raw_start is not None:
-            start_ts = pd.Timestamp(raw_start)
-            if tz:
-                start_ts = start_ts.tz_convert(tz)
-            start_ts = start_ts.floor(freq) + freq_offset
-            if tz:
-                start_ts = start_ts.tz_convert("UTC")
-            start = start_ts.to_pydatetime()
+            from hydroserverpy.core.duration import duration_to_us
+            epoch = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+            interval_us = duration_to_us(interval)
+            raw_start_utc = raw_start if raw_start.tzinfo else raw_start.replace(tzinfo=dt_timezone.utc)
+            raw_start_us = int((raw_start_utc - epoch).total_seconds() * 1_000_000)
+            start_us = ((raw_start_us // interval_us) + 1) * interval_us
+            start = epoch + timedelta(microseconds=start_us)
         else:
             start = None
 
@@ -839,62 +769,44 @@ class DataProductTransformationService(ServiceUtils):
         if start is not None and end <= start:
             return 0
 
-        input_df = DataProductTransformationService._fetch_observations(
-            input_ds, after=start, through=end
-        )
-        if input_df.empty:
+        input_df = self._fetch_observations(input_ds, after=start, through=end)
+        if input_df.is_empty():
             return 0
 
-        series = input_df.set_index("phenomenon_time")["result"]
-
-        if tz:
-            series.index = series.index.tz_convert(tz)
-
-        resampled = series.resample(freq, closed="left", label="left")
-
-        method_dispatch = {
-            "simple_mean": lambda r: r.mean(),
-            "sum": lambda r: r.sum(min_count=1),
-            "min_value": lambda r: r.min(),
-            "max_value": lambda r: r.max(),
-            "first_value": lambda r: r.first(),
-            "last_value": lambda r: r.last(),
-        }
-        aggregated = method_dispatch[transformation.aggregation_method](resampled)
-
-        if transformation.min_values is not None:
-            counts = series.resample(freq, closed="left", label="left").count()
-            aggregated = aggregated[
-                counts.reindex(aggregated.index).fillna(0) >= transformation.min_values
-            ]
-
-        aggregated = aggregated.dropna()
+        result_df = apply_aggregation(
+            input_df,
+            interval=interval,
+            method=transformation.aggregation_method,  # noqa
+            local_timezone=local_timezone,
+            min_values=transformation.min_values,
+            on_sparse="drop",
+            no_data_value=input_ds.no_data_value,
+        )
 
         # Discard the last bucket if its end extends beyond the available input data,
         # as it may be incomplete (i.e., the current period is still in progress).
-        if not aggregated.empty:
-            end_ts = pd.Timestamp(end).tz_convert(tz) if tz else pd.Timestamp(end)
-            aggregated = aggregated[aggregated.index + freq_offset <= end_ts]
+        if not result_df.is_empty():
+            from hydroserverpy.core.duration import duration_to_us
+            interval_us = duration_to_us(interval)
+            end_utc = end if end.tzinfo else end.replace(tzinfo=dt_timezone.utc)
+            result_df = result_df.filter(
+                pl.col(TIMESTAMP_COL) + pl.duration(microseconds=interval_us)
+                <= pl.lit(end_utc)
+            )
 
-        if aggregated.empty:
+        if result_df.is_empty():
             return 0
 
-        if tz:
-            aggregated.index = aggregated.index.tz_convert("UTC")
-
-        result_df = aggregated.reset_index()
-        result_df.columns = ["phenomenon_time", "result"]
-
-        return DataProductTransformationService._load_to_datastream(transformation, result_df)
+        return self._load_to_datastream(transformation, result_df)
 
     @staticmethod
     def _fetch_observations(
         datastream: Datastream,
         after=None,
         through=None,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
-        Fetch observations for a datastream as a UTC-aware DataFrame.
+        Fetch observations for a datastream as a canonical Polars timeseries DataFrame.
         """
 
         qs = Observation.objects.filter(datastream=datastream).order_by("phenomenon_time")
@@ -907,20 +819,27 @@ class DataProductTransformationService(ServiceUtils):
         data = list(qs.values_list("phenomenon_time", "result"))
 
         if not data:
-            return pd.DataFrame(columns=["phenomenon_time", "result"])
+            return pl.DataFrame(schema=SCHEMA)
 
-        df = pd.DataFrame(data, columns=["phenomenon_time", "result"])
-        df["phenomenon_time"] = pd.to_datetime(df["phenomenon_time"], utc=True)
+        timestamps, results = zip(*data)
 
-        return df
+        return pl.DataFrame(
+            {
+                TIMESTAMP_COL: list(timestamps),
+                RESULT_COL: list(results),
+            }
+        ).with_columns([
+            pl.col(TIMESTAMP_COL).cast(SCHEMA[TIMESTAMP_COL]),
+            pl.col(RESULT_COL).cast(pl.Float64),
+        ])
 
     @staticmethod
     def _load_to_datastream(
         transformation: DataProductTransformation,
-        result_df: pd.DataFrame,
+        result_df: pl.DataFrame,
     ) -> int:
         """
-        Write a DataFrame of (phenomenon_time, result) observations to the output datastream.
+        Write a canonical Polars timeseries DataFrame to the output datastream.
         Uses the task's workspace owner as the principal.
         """
 
@@ -928,8 +847,8 @@ class DataProductTransformationService(ServiceUtils):
         principal = transformation.task.thing.workspace.owner
 
         data = list(zip(
-            result_df["phenomenon_time"].tolist(),
-            result_df["result"].tolist(),
+            result_df[TIMESTAMP_COL].to_list(),
+            result_df[RESULT_COL].to_list(),
         ))
         loaded = 0
 
@@ -949,51 +868,3 @@ class DataProductTransformationService(ServiceUtils):
         logger.info("Loaded %s observation(s) to datastream %s.", loaded, output_ds.pk)
 
         return loaded
-
-    @staticmethod
-    def _safe_eval(formula: str, context: dict):
-        """
-        Parse the formula, verify every AST node is in _ALLOWED_AST, then evaluate.
-        Compiling directly from the validated tree ensures no gap between what was
-        checked and what runs. Raises ValueError for disallowed constructs.
-        """
-
-        try:
-            tree = ast.parse(formula, mode="eval")
-        except SyntaxError as e:
-            raise ValueError(f"Invalid formula syntax: {e}")
-
-        for node in ast.walk(tree):
-            if not isinstance(node, _ALLOWED_AST):
-                raise ValueError(f"Formula contains unsupported operation: {type(node).__name__}.")
-
-        return eval(compile(tree, "<formula>", "eval"), {"__builtins__": {}}, context)  # noqa: S307
-
-    @staticmethod
-    def _resolve_timezone(transformation: DataProductTransformation):
-        """
-        Return the timezone for resampling, or None to stay in UTC.
-        For 'iana' type, returns the IANA string directly.
-        For 'offset' type, parses '+HH:MM' / '-HH:MM' into a pytz.FixedOffset.
-        """
-
-        if not transformation.timezone_type or transformation.timezone_type == "utc":
-            return None
-        if not transformation.timezone:
-            return None
-
-        if transformation.timezone_type == "iana":
-            return transformation.timezone
-
-        if transformation.timezone_type == "offset":
-            match = re.match(r'^([+-])(\d{1,2}):?(\d{2})$', transformation.timezone.strip())
-            if not match:
-                raise ValueError(
-                    f"Invalid timezone offset '{transformation.timezone}'. "
-                    "Expected format: '+HH:MM', '-HH:MM', '+HHMM', or '-HHMM'."
-                )
-            sign = 1 if match.group(1) == '+' else -1
-            total_minutes = sign * (int(match.group(2)) * 60 + int(match.group(3)))
-            return pytz.FixedOffset(total_minutes)
-
-        return None

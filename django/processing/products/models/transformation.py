@@ -14,12 +14,12 @@ class TransformationType(models.TextChoices):
 
 
 class AggregationMethod(models.TextChoices):
-    SIMPLE_MEAN = "simple_mean"
+    MEAN = "mean"
     SUM = "sum"
-    MIN_VALUE = "min_value"
-    MAX_VALUE = "max_value"
-    FIRST_VALUE = "first_value"
-    LAST_VALUE = "last_value"
+    MIN = "min"
+    MAX = "max"
+    FIRST = "first"
+    LAST = "last"
 
 
 class IntervalUnits(models.TextChoices):

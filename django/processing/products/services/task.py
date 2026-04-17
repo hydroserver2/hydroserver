@@ -15,6 +15,7 @@ from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from processing.orchestration.services import TaskService
+from processing.products.exceptions import DataProductError
 from processing.products.models import DataProductTask
 from processing.products.services.transformation import DataProductTransformationService
 
@@ -228,13 +229,17 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
 
         loaded_total = 0
         success_count = 0
+        errors = {}
 
         for transformation in transformations:
             try:
                 loaded = transformation_service.run(transformation)
                 loaded_total += loaded
                 success_count += 1
-            except (Exception,):
+            except Exception as e:
+                errors[str(transformation.id)] = (
+                    str(e) if isinstance(e, ValueError) else "Encountered an unexpected error."
+                )
                 logger.error(
                     "Failed to run transformation %s (%s → %s)",
                     transformation.id,
@@ -244,13 +249,25 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
                 )
 
         total = len(transformations)
+        failure_count = len(errors)
 
-        if loaded_total == 0:
-            message = "Already up-to-date. No new observations were loaded."
+        if not errors:
+            if loaded_total == 0:
+                message = "Already up-to-date. No new observations were loaded."
+            else:
+                message = f"Loaded {loaded_total} observation(s) across {success_count} transformation(s)."
         else:
-            message = (
-                f"Loaded {loaded_total} observation(s) across "
-                f"{success_count} of {total} transformation(s)."
-            )
+            if loaded_total == 0:
+                message = f"{failure_count} of {total} transformation(s) failed. No observations were loaded."
+            else:
+                message = (
+                    f"Loaded {loaded_total} observation(s) across {success_count} of {total} transformation(s). "
+                    f"{failure_count} transformation(s) failed."
+                )
 
-        return {"message": message, "loaded_total": loaded_total}
+        if errors:
+            exc = DataProductError(message)
+            exc.result = {"loaded_total": loaded_total, "errors": errors}
+            raise exc
+
+        return {"message": message, "loaded_total": loaded_total, "errors": errors}

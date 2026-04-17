@@ -82,6 +82,7 @@ CORS_EXPOSE_HEADERS = [
 CELERY_ENABLED = config("CELERY_ENABLED", default=True, cast=bool)
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
 
@@ -397,6 +398,35 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Logging
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "run_id": {
+            "()": "processing.orchestration.logging.RunIdFilter",
+        },
+    },
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] [run:%(run_id)s] %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["run_id"],
+            "formatter": "standard",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
 
 
 # SensorThings Configuration

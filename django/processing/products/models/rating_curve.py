@@ -56,7 +56,6 @@ class RatingCurveQuerySet(models.QuerySet):
 class FittingMethod(models.TextChoices):
     LINEAR = "linear"
     POWER_LAW = "power_law"
-    POLYNOMIAL = "polynomial"
 
 
 class RatingCurve(models.Model, PermissionChecker):

@@ -7,6 +7,7 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from processing.orchestration.models import TaskRun
 from processing.monitoring.services.task import MonitoringTaskService
 from processing.monitoring.tasks import run_monitoring_task
 from interfaces.api.schemas.monitoring.task import (
@@ -43,7 +44,9 @@ def get_monitoring_tasks(
         count, tasks = monitoring_task_service.get_collection(
             principal=request.principal,
             order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "thing", "workspace", "datastream", "rule_type"}),
+            **query.model_dump(exclude_unset=True, exclude={
+                "order_by", "thing", "workspace", "datastream", "rule_type"
+            }),
             **({"thing": query.thing} if "thing" in query.model_fields_set else {}),
             **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
             **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
@@ -205,8 +208,6 @@ def trigger_monitoring_task(
     Trigger an immediate run of a monitoring task on a Celery worker.
     """
 
-    from processing.orchestration.models import TaskRun
-
     with raise_http_errors():
         task = monitoring_task_service.get(
             task=task_id,
@@ -215,7 +216,7 @@ def trigger_monitoring_task(
         )
 
         run = TaskRun.objects.create(task=task, status="PENDING")
-        run_monitoring_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
+        run_monitoring_task.apply_async(kwargs={"task_id": str(task.id)})
 
     return 202, run
 

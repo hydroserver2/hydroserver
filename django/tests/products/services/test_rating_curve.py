@@ -1,8 +1,11 @@
 import uuid
 import pytest
+import polars as pl
 import numpy as np
 from collections import Counter
+from datetime import datetime, timezone as dt_timezone
 from ninja.errors import HttpError
+from hydroserverpy.products.rating_curve import apply_rating_curve
 from processing.products.services.rating_curve import RatingCurveService
 from processing.products.models import RatingCurve
 
@@ -282,32 +285,49 @@ def test_delete_rating_curve_nonexistent(get_principal):
 
 # --- apply_rating_curve ---
 
+def _make_stage_df(values):
+    """Build a minimal canonical Polars timeseries DataFrame for rating curve tests."""
+    timestamps = [datetime(2025, 1, 1, tzinfo=dt_timezone.utc)] * len(values)
+    return pl.DataFrame({
+        "timestamp": timestamps,
+        "result": list(values),
+    }).with_columns(pl.col("timestamp").cast(pl.Datetime("us", "UTC")))
+
+
 def test_apply_rating_curve_linear_within_range():
     """RC1 is linear with points (1→2, 2→4). y = 2x."""
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=uuid.UUID(RC1),
-        input_values=np.array([1.0, 1.5, 2.0]),
+    rc = RatingCurve.objects.prefetch_related("points").get(pk=RC1)
+    breakpoints = [(p.input_value, p.output_value) for p in rc.points.all()]
+    result_df = apply_rating_curve(
+        _make_stage_df([1.0, 1.5, 2.0]),
+        breakpoints=breakpoints,
+        method="linear",
+        out_of_range="drop",
     )
-    np.testing.assert_allclose(result, [2.0, 3.0, 4.0])
+    np.testing.assert_allclose(result_df["result"].to_list(), [2.0, 3.0, 4.0])
 
 
-def test_apply_rating_curve_linear_outside_range_gives_nan():
-    """Values outside the control point range should be NaN for linear method."""
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=uuid.UUID(RC1),
-        input_values=np.array([0.0, 3.0]),
+def test_apply_rating_curve_linear_outside_range_dropped():
+    """Values outside the control point range should be dropped."""
+    rc = RatingCurve.objects.prefetch_related("points").get(pk=RC1)
+    breakpoints = [(p.input_value, p.output_value) for p in rc.points.all()]
+    result_df = apply_rating_curve(
+        _make_stage_df([0.0, 3.0]),
+        breakpoints=breakpoints,
+        method="linear",
+        out_of_range="drop",
     )
-    assert np.isnan(result[0])
-    assert np.isnan(result[1])
+    assert result_df.is_empty()
 
 
-def test_apply_rating_curve_too_few_points_returns_all_nan():
-    """RC2 has no points; result should be all NaN."""
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=uuid.UUID(RC2),
-        input_values=np.array([1.0, 2.0]),
-    )
-    assert np.all(np.isnan(result))
+def test_apply_rating_curve_too_few_breakpoints_raises():
+    """Fewer than 2 breakpoints should raise ValueError."""
+    with pytest.raises(ValueError, match="At least 2 breakpoints"):
+        apply_rating_curve(
+            _make_stage_df([1.0, 2.0]),
+            breakpoints=[(1.0, 2.0)],
+            method="linear",
+        )
 
 
 def test_apply_rating_curve_power_law(get_principal):
@@ -320,15 +340,18 @@ def test_apply_rating_curve_power_law(get_principal):
         fitting_method="power_law",
         points=[(1.0, 2.0), (2.0, 8.0), (4.0, 32.0)],
     )
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=rc.pk,
-        input_values=np.array([1.0, 2.0, 4.0]),
+    breakpoints = [(p.input_value, p.output_value) for p in rc.points.all()]
+    result_df = apply_rating_curve(
+        _make_stage_df([1.0, 2.0, 4.0]),
+        breakpoints=breakpoints,
+        method="power_law",
+        out_of_range="drop",
     )
-    np.testing.assert_allclose(result, [2.0, 8.0, 32.0], rtol=1e-4)
+    np.testing.assert_allclose(result_df["result"].to_list(), [2.0, 8.0, 32.0], rtol=1e-4)
 
 
-def test_apply_rating_curve_power_law_non_positive_input_gives_nan(get_principal):
-    """Power law is undefined for x ≤ 0; those values should be NaN."""
+def test_apply_rating_curve_power_law_non_positive_input_dropped(get_principal):
+    """Power law is undefined for x ≤ 0; those values should be dropped."""
     rc = rating_curve_service.create(
         principal=get_principal("owner"),
         thing=uuid.UUID(PRIVATE_THING),
@@ -336,26 +359,11 @@ def test_apply_rating_curve_power_law_non_positive_input_gives_nan(get_principal
         fitting_method="power_law",
         points=[(1.0, 2.0), (2.0, 8.0)],
     )
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=rc.pk,
-        input_values=np.array([-1.0, 0.0, 1.0]),
+    breakpoints = [(p.input_value, p.output_value) for p in rc.points.all()]
+    result_df = apply_rating_curve(
+        _make_stage_df([-1.0, 0.0, 1.0]),
+        breakpoints=breakpoints,
+        method="power_law",
+        out_of_range="drop",
     )
-    assert np.isnan(result[0])
-    assert np.isnan(result[1])
-    assert not np.isnan(result[2])
-
-
-def test_apply_rating_curve_polynomial(get_principal):
-    """Create a polynomial curve and check it passes through control points."""
-    rc = rating_curve_service.create(
-        principal=get_principal("owner"),
-        thing=uuid.UUID(PRIVATE_THING),
-        name="Polynomial Curve",
-        fitting_method="polynomial",
-        points=[(0.0, 0.0), (1.0, 1.0), (2.0, 4.0), (3.0, 9.0)],
-    )
-    result = rating_curve_service.apply_rating_curve(
-        rating_curve=rc.pk,
-        input_values=np.array([0.0, 1.0, 2.0, 3.0]),
-    )
-    np.testing.assert_allclose(result, [0.0, 1.0, 4.0, 9.0], atol=1e-6)
+    assert result_df.height == 1

@@ -2,7 +2,7 @@ import uuid
 import logging
 import traceback
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Union, Optional
 from pydantic import ConfigDict
 
@@ -173,4 +173,4 @@ class HydroServerInternalLoader(Loader):
                 f"Ensure the datastream UUID is formatted correctly."
             ) from e
 
-        return datastream.phenomenon_end_time
+        return datastream.phenomenon_end_time or datetime(1970, 1, 1, tzinfo=timezone.utc)

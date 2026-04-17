@@ -123,6 +123,7 @@ class PlaceholderVariable(models.Model):
     )
     name = models.CharField(max_length=255)
     variable_type = models.CharField(choices=PlaceholderVariableType, max_length=255)
+    timestamp_format = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         app_label = "etl"
@@ -131,6 +132,14 @@ class PlaceholderVariable(models.Model):
 class PayloadType(models.TextChoices):
     CSV = "CSV"
     JSON = "JSON"
+
+
+class PayloadDelimiter(models.TextChoices):
+    COMMA = ","
+    TAB = "\t"
+    SEMICOLON = ";"
+    PIPE = "|"
+    SPACE = " "
 
 
 class Payload(models.Model):
@@ -143,7 +152,7 @@ class Payload(models.Model):
     # CSV fields
     header_row = models.IntegerField(null=True, blank=True)
     data_start_row = models.IntegerField(null=True, blank=True)
-    delimiter = models.CharField(max_length=1, null=True, blank=True)
+    delimiter = models.CharField(max_length=1, choices=PayloadDelimiter, null=True, blank=True)
 
     # JSON fields
     jmespath = models.TextField(null=True, blank=True)

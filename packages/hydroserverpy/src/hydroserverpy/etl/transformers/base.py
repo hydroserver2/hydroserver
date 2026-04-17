@@ -85,7 +85,14 @@ class Transformer(ETLComponent, Timestamp, ABC):
 
         df = df.copy()
         raw_timestamps = df["timestamp"]
-        parsed_timestamps = self.parse_series_to_utc(raw_timestamps)
+
+        try:
+            parsed_timestamps = self.parse_series_to_utc(raw_timestamps)
+        except Exception as e:
+            raise ETLError(
+                "One or more timestamps could not be read using the current format and timezone settings. "
+                "Confirm how dates appear in the source file and update the transformer configuration to match."
+            ) from e
 
         raw_strings = raw_timestamps.astype("string", copy=False).str.strip()
         invalid_mask = parsed_timestamps.isna() & raw_strings.notna() & (raw_strings != "")
@@ -133,7 +140,7 @@ class Transformer(ETLComponent, Timestamp, ABC):
         data_mappings: list["ETLDataMapping"],
     ) -> pd.DataFrame:
         """
-        Reshape a wide-format DataFrame into long format suitable for standardize_dataframe.
+        Reshape a wide-format DataFrame into a long format suitable for standardize_dataframe.
 
         The input DataFrame must have a 'timestamp' column and one column per source
         identifier referenced by data_mappings. Each source column is fanned out to one
@@ -215,9 +222,9 @@ class Transformer(ETLComponent, Timestamp, ABC):
         The value column is coerced to numeric before operations are applied, with
         non-numeric values converted to NaN. Each operation in the target path is
         applied in order, receiving and returning a (timestamp, value) DataFrame.
-        Operations that only need the value column (e.g. arithmetic expressions,
+        Operations that only need the value column (e.g., arithmetic expressions,
         rating curves) may ignore the timestamp column. Operations that need temporal
-        context (e.g. aggregation) may use both columns.
+        context (e.g., aggregation) may use both columns.
 
         The returned DataFrame preserves the (timestamp, value) structure.
         """

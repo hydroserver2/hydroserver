@@ -13,6 +13,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
+from core.sta.services import DatastreamService
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, EtlMapping, DataConnection
 from processing.etl.loader import HydroServerInternalLoader
@@ -24,6 +25,8 @@ from hydroserverpy.etl.models import Timestamp
 
 
 User = get_user_model()
+
+datastream_service = DatastreamService()
 
 
 class EtlTaskService(TaskService[EtlTask], ServiceUtils):
@@ -42,7 +45,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | APIKey | None | Unset = Unset,
     ) -> EtlTask:
-        """Get an ETL task with related data and latest run annotations."""
+        """Get an ETL task with related data and the latest run annotations."""
 
         task = super().get(task=task, action=action, principal=principal)
 
@@ -174,7 +177,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             celery_task_name="processing.etl.tasks.run_etl_task",
         )
 
-        self.apply_mappings(task=task, mappings=mappings)
+        self.apply_mappings(task=task, mappings=mappings, principal=principal)
 
         return self.get(task.pk)
 
@@ -224,7 +227,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             )
 
         if mappings is not Unset:
-            self.apply_mappings(task=task, mappings=mappings)
+            self.apply_mappings(task=task, mappings=mappings, principal=principal)
 
         return self.get(task.pk)
 
@@ -233,12 +236,40 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         self,
         task: Union[uuid.UUID, EtlTask],
         mappings: list[dict],
+        principal: User | APIKey,
     ) -> None:
         """
         Replace the mappings on an ETL task, preserving existing ones that match.
         """
 
         task = self.get(task)
+        workspace = task.data_connection.workspace
+
+        target_ids = [m["target_datastream"] for m in mappings]
+
+        for target_id in target_ids:
+            ds = datastream_service.get_datastream_for_action(
+                principal=principal, uid=target_id, action="edit"
+            )
+            if ds.thing.workspace_id != workspace.pk:
+                raise ValueError(
+                    f"Datastream {str(target_id)} does not belong to workspace {str(workspace.pk)}."
+                )
+
+        existing_target_ids = set(task.etl_mappings.values_list("target_datastream_id", flat=True))
+        new_target_ids = [tid for tid in target_ids if tid not in existing_target_ids]
+
+        if new_target_ids:
+            conflicting_ids = list(
+                EtlMapping.objects
+                .filter(target_datastream_id__in=new_target_ids)
+                .values_list("target_datastream_id", flat=True)
+            )
+            if conflicting_ids:
+                raise ValueError(
+                    f"Datastream(s) {', '.join(str(i) for i in conflicting_ids)} "
+                    f"are already mapped to by another task."
+                )
 
         new_mappings = {(m["source_identifier"], m["target_datastream"]) for m in mappings}
         current_mappings = {
@@ -323,6 +354,22 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             target_identifiers=[str(etl_mapping.target_datastream_id) for etl_mapping in etl_mappings]
         )
 
+        placeholder_kwargs = {}
+        for pv in data_connection.placeholder_variables.all():
+            if pv.variable_type == "per_task":
+                placeholder_kwargs[pv.name] = task.task_variables.get(pv.name)
+            elif pv.variable_type in ("run_time", "latest_observation_timestamp"):
+                dt = execution_time if pv.variable_type == "run_time" else earliest_loaded_through
+                pv_timestamp = (
+                    Timestamp(
+                        timestamp_type="custom",
+                        timestamp_format=pv.timestamp_format,
+                        timezone_type=data_connection.timezone_type,  # noqa
+                        timezone=data_connection.timezone,
+                    ) if pv.timestamp_format else timestamp
+                )
+                placeholder_kwargs[pv.name] = pv_timestamp.to_string(dt) if dt is not None else None
+
         context = etl_pipeline.run(
             raise_on_error=False,
             task_instance=task,
@@ -336,14 +383,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                     ],
                 ) for mapping in etl_mappings
             ],
-            **{
-                pv.name: (
-                    execution_time if pv.variable_type == "run_time" else
-                    earliest_loaded_through if pv.variable_type == "latest_observation_timestamp" else
-                    task.task_variables.get(pv.name)
-                ) for pv in data_connection.placeholder_variables.all()
-                if pv.variable_type in ("run_time", "latest_observation_timestamp", "per_task")
-            },
+            **placeholder_kwargs,
         )
 
         runtime_variables = {

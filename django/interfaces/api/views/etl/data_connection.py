@@ -86,7 +86,7 @@ def create_data_connection(
             **data.timestamp.model_dump(exclude_unset=True),
             **data.payload.model_dump(exclude_unset=True),
             placeholder_variables=[
-                {"name": pv.name, "variable_type": pv.variable_type}
+                pv.model_dump(exclude_unset=True)
                 for pv in data.placeholder_variables
             ],
             **({"notification_recipient_emails": data.notification.recipient_emails,
@@ -157,7 +157,7 @@ def update_data_connection(
             **(data.payload.model_dump(exclude_unset=True) if "payload" in data.model_fields_set else {}),
             **({
                    "placeholder_variables": [
-                       {"name": pv.name, "variable_type": pv.variable_type} for pv in data.placeholder_variables
+                       pv.model_dump(exclude_unset=True) for pv in data.placeholder_variables
                    ]
                } if "placeholder_variables" in data.model_fields_set else {}),
             **({"notification_recipient_emails": getattr(data.notification, "recipient_emails", []),

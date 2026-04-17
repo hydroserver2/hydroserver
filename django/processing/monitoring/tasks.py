@@ -7,7 +7,7 @@ monitoring_task_service = MonitoringTaskService()
 
 
 @shared_task(bind=True, name="processing.monitoring.tasks.run_monitoring_task")
-def run_monitoring_task(self, task_id: str, run_id: str | None = None):
+def run_monitoring_task(self, task_id: str):
     """
     Runs a HydroServer monitoring task based on the task configuration provided.
     """

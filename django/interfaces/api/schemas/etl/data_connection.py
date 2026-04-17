@@ -57,7 +57,7 @@ class CSVPayloadResponse(BaseGetResponse):
     payload_type: Literal["CSV"] = Field(alias="type")
     header_row: Optional[int] = None
     data_start_row: Optional[int] = None
-    delimiter: Optional[str] = Field(None, max_length=1)
+    delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
 
 
 class CSVPayloadPostBody(BasePostBody, CSVPayloadResponse):
@@ -81,9 +81,18 @@ class JSONPayloadPatchBody(BasePatchBody, JSONPayloadResponse):
     ...
 
 
+class PayloadPatchBody(BasePatchBody):
+    payload_type: Optional[Literal["CSV", "JSON"]] = Field(None, alias="type")
+    header_row: Optional[int] = None
+    data_start_row: Optional[int] = None
+    delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
+    jmespath: Optional[str] = None
+
+
 class PlaceholderVariableResponse(BaseGetResponse):
     name: str
     variable_type: Literal["run_time", "latest_observation_timestamp", "per_task"] = Field(alias="type")
+    timestamp_format: Optional[str] = None
 
 
 class PlaceholderVariablePostBody(BasePostBody, PlaceholderVariableResponse):
@@ -152,7 +161,7 @@ class DataConnectionResponse(BaseGetResponse):
     def resolve_notification(obj):
         try:
             return obj.notification
-        except Exception:
+        except AttributeError:
             return None
 
 
@@ -173,6 +182,6 @@ class DataConnectionPatchBody(BasePatchBody):
     description: Optional[str] = None
     source_url: str
     timestamp: TimestampPatchBody
-    payload: Union[CSVPayloadPatchBody, JSONPayloadPatchBody]
+    payload: PayloadPatchBody
     placeholder_variables: list[PlaceholderVariablePatchBody]
     notification: NotificationPatchBody | None | Unset = Unset
