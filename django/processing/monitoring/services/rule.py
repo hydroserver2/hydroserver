@@ -1,16 +1,21 @@
 import uuid
 import uuid6
+import polars as pl
+
+from datetime import timedelta
 from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, validate_call
 from django.db import transaction
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from core.types import Unset
 from core.iam.models import APIKey
 from core.service import ServiceUtils
 from core.sta.models import Datastream
+from hydroserverpy.quality.check import check_range, check_rate_of_change, check_persistence
 from processing.monitoring.models import MonitoringTask, MonitoringRule
 
 
@@ -18,6 +23,8 @@ User = get_user_model()
 
 RuleType = Literal["range", "rate_of_change", "persistence", "missing_data"]
 WindowIntervalUnits = Literal["minutes", "hours", "days"]
+
+_UNIT_TO_DURATION = {"minutes": "m", "hours": "h", "days": "d"}
 
 
 class MonitoringRuleService(ServiceUtils):
@@ -254,7 +261,9 @@ class MonitoringRuleService(ServiceUtils):
             if not has_max:
                 raise ValueError("max_value is required for rule_type 'rate_of_change'.")
             if not has_window:
-                raise ValueError("window_interval and window_interval_units are required for rule_type 'rate_of_change'.")
+                raise ValueError(
+                    "window_interval and window_interval_units are required for rule_type 'rate_of_change'."
+                )
             if has_min:
                 raise ValueError("min_value must not be set for rule_type 'rate_of_change'.")
 
@@ -272,3 +281,78 @@ class MonitoringRuleService(ServiceUtils):
 
         else:
             raise ValueError(f"Invalid rule_type '{rule_type}'.")
+
+    @staticmethod
+    def check_rule(
+        rule: MonitoringRule,
+        df: pl.DataFrame,
+        datastream: Datastream,
+    ) -> dict:
+        """
+        Run a single rule check against a pre-sliced DataFrame.
+
+        Returns a dict with violated, violation_count, first_violation_at, last_violation_at.
+        For missing_data rules the df is unused; the datastream's phenomenon_end_time is checked
+        directly against the rule's window.
+        """
+
+        no_data_value = datastream.no_data_value
+
+        if rule.rule_type == "missing_data":
+            window_td = timedelta(**{rule.window_interval_units: rule.window_interval})
+            end_time = datastream.phenomenon_end_time
+            violated = end_time is None or (timezone.now() - end_time) > window_td
+            return {
+                "violated": violated,
+                "violation_count": 1 if violated else 0,
+                "first_violation_at": end_time if violated else None,
+                "last_violation_at": None,
+            }
+
+        if rule.rule_type == "range":
+            result = check_range(
+                df,
+                min_value=rule.min_value,
+                max_value=rule.max_value,
+                no_data_value=no_data_value,
+            )
+            timestamps = result["timestamps"]
+
+        elif rule.rule_type == "rate_of_change":
+            window = f"{rule.window_interval}{_UNIT_TO_DURATION[rule.window_interval_units]}"
+            result = check_rate_of_change(
+                df,
+                window=window,
+                max_change=rule.max_value,
+                no_data_value=no_data_value,
+            )
+            timestamps = result["timestamps"]
+
+        elif rule.rule_type == "persistence":
+            window = f"{rule.window_interval}{_UNIT_TO_DURATION[rule.window_interval_units]}"
+            result = check_persistence(
+                df,
+                window=window,
+                min_value=rule.min_value,
+                max_value=rule.max_value,
+                no_data_value=no_data_value,
+            )
+            timestamps = result["timestamps"]
+
+        else:
+            raise ValueError(f"Unhandled rule_type '{rule.rule_type}'.")
+
+        if result["violation_count"] > 0:
+            return {
+                "violated": True,
+                "violation_count": result["violation_count"],
+                "first_violation_at": timestamps[0],
+                "last_violation_at": timestamps[-1],
+            }
+
+        return {
+            "violated": False,
+            "violation_count": 0,
+            "first_violation_at": None,
+            "last_violation_at": None,
+        }

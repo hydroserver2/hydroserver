@@ -1,6 +1,7 @@
 from uuid import UUID
 from celery import shared_task
 
+from processing.monitoring.exceptions import MonitoringError
 from processing.monitoring.services import MonitoringTaskService
 
 monitoring_task_service = MonitoringTaskService()
@@ -14,6 +15,8 @@ def run_monitoring_task(self, task_id: str):
 
     try:
         result = monitoring_task_service.run(task=UUID(task_id))
+    except MonitoringError as e:
+        raise e
     except Exception as e:
         raise Exception("Encountered an unexpected data monitoring error.") from e
 
