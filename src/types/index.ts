@@ -114,6 +114,7 @@ export type HistoryItem = {
   isLoading: boolean;
   args?: any[];
   duration?: number;
+  selected?: number[];
   status?: "success" | "failed";
 };
 
@@ -411,7 +412,7 @@ export class Organization {
   description?: string;
   link?: string;
 
-  constructor() {}
+  constructor() { }
 }
 
 export class User {

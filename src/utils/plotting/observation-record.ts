@@ -38,26 +38,26 @@ export class ObservationRecord {
       y: Float32Array<SharedArrayBuffer>;
     };
   } = {
-    dimensions: components,
-    source: {
-      x: new Float64Array(
-        new SharedArrayBuffer(
-          INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
-          {
-            maxByteLength: INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT, // Max size the array can reach
-          },
+      dimensions: components,
+      source: {
+        x: new Float64Array(
+          new SharedArrayBuffer(
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
+            {
+              maxByteLength: INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT, // Max size the array can reach
+            },
+          ),
         ),
-      ),
-      y: new Float32Array(
-        new SharedArrayBuffer(
-          INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
-          {
-            maxByteLength: INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT, // Max size the array can reach
-          },
+        y: new Float32Array(
+          new SharedArrayBuffer(
+            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
+            {
+              maxByteLength: INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT, // Max size the array can reach
+            },
+          ),
         ),
-      ),
-    },
-  };
+      },
+    };
   history: HistoryItem[] = [];
   loadingTime: number | null = null;
   isLoading: boolean = true;
@@ -187,23 +187,22 @@ export class ObservationRecord {
    * @param index
    * @returns
    */
-  async reloadHistory(index: number) {
+  async reloadHistory(index: number): Promise<number[]> {
     const newHistory = this.history.slice(0, index + 1);
     await this.reload();
 
-    await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
-    return;
+    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
   }
 
   /**
    * Remove a history item
    * @param index
    */
-  async removeHistoryItem(index: number) {
+  async removeHistoryItem(index: number): Promise<number[]> {
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
     await this.reload();
-    await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
   }
 
   get beginTime(): Date | null {
@@ -243,7 +242,7 @@ export class ObservationRecord {
       [EnumEditOperations.FILL_GAPS]: "mdi-keyboard-space",
     };
 
-    let response: any[] = [];
+    let newSelection: number[] = [];
 
     try {
       const historyItem: HistoryItem = {
@@ -256,7 +255,7 @@ export class ObservationRecord {
       const measurement = await measureEllapsedTime(async () => {
         return await actions[action].apply(this, args);
       });
-      response = measurement.response;
+      newSelection = measurement.response;
       historyItem.duration = measurement.duration;
       historyItem.isLoading = false;
     } catch (e) {
@@ -267,7 +266,7 @@ export class ObservationRecord {
       console.log(e);
     }
 
-    return response;
+    return newSelection;
   }
 
   async dispatch(
@@ -279,27 +278,30 @@ export class ObservationRecord {
   ) {
     const _handleAction = async (
       action: EnumEditOperations | EnumFilterOperations,
-      ...args: any
-    ) => {
+      args: any
+    ): Promise<number[]> => {
       if (EnumFilterOperations[action as EnumFilterOperations]) {
-        await this.dispatchFilter(action as EnumFilterOperations, ...args);
+        return await this.dispatchFilter(action as EnumFilterOperations, ...args);
       } else {
-        await this.dispatchAction(action as EnumEditOperations, ...args);
+        return await this.dispatchAction(action as EnumEditOperations, ...args);
       }
     };
 
     if (Array.isArray(actions)) {
+      let lastResponse: number[] = []
       for (let i = 0; i < actions.length; i++) {
-        // @ts-ignore
-        await _handleAction(actions[i], ...args);
+        const method = actions[i][0]
+        const actionArgs = actions[i].slice(1, actions[i].length)
+        lastResponse = await _handleAction(method, actionArgs);
       }
+      return lastResponse
     } else {
-      await _handleAction(actions, ...args);
+      return await _handleAction(actions, args);
     }
   }
 
   /** Filter operations do not transform the data and return a selection */
-  async dispatchFilter(action: EnumFilterOperations, ...args: any) {
+  async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
     const filters: EnumDictionary<EnumFilterOperations, Function> = {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,
@@ -324,22 +326,26 @@ export class ObservationRecord {
     try {
       const historyItem: HistoryItem = {
         method: action,
-        args,
+        args: args,
         icon: filterIcons[action],
         isLoading: true,
       };
-      // If the last history item is a filter, replace it
+
       const lastItem = this.history[this.history.length - 1];
 
+      // If the last history item is a filter, replace it
       if (EnumFilterOperations[lastItem?.method as EnumFilterOperations]) {
-        this.history.pop();
+        this.history[this.history.length - 1] = historyItem
       }
-      this.history.push(historyItem);
+      else {
+        this.history.push(historyItem);
+      }
       const measurement = await measureEllapsedTime(async () => {
         return await filters[action].apply(this, args);
       });
       response = measurement.response;
       historyItem.duration = measurement.duration;
+      historyItem.selected = measurement.response;
       historyItem.isLoading = false;
     } catch (e) {
       console.log(
@@ -355,9 +361,9 @@ export class ObservationRecord {
    * @param index An array containing the list of index of values to perform the operations on.
    * @param operator The operator that will be applied
    * @param value The value to use in the operation
-   * @returns The modified DataFrame
+   * @returns an array of index values to keep selected in the plot
    */
-  private _changeValues(index: number[], operator: Operator, value: number) {
+  private _changeValues(operator: Operator, value: number): number[] {
     const operation = (x: number) => {
       switch (operator) {
         case Operator.ADD:
@@ -375,9 +381,16 @@ export class ObservationRecord {
       }
     };
 
-    index.forEach((index: number) => {
-      this.dataset.source.y[index] = operation(this.dataset.source.y[index]);
-    });
+    // The selection will be the second to last item in history. The last item is this very same operation.
+    const selection = this.history[this.history.length - 2].selected
+
+    if (selection) {
+      selection.forEach((index: number) => {
+        this.dataset.source.y[index] = operation(this.dataset.source.y[index]);
+      });
+    }
+
+    return []
   }
 
   private _interpolate(index: number[]) {
@@ -415,7 +428,7 @@ export class ObservationRecord {
     const interpolatedValue =
       lowerValue +
       ((datetime - lowerDatetime) * (upperValue - lowerValue)) /
-        (upperDatetime - lowerDatetime);
+      (upperDatetime - lowerDatetime);
 
     return interpolatedValue;
   }
@@ -517,12 +530,12 @@ export class ObservationRecord {
       while (nextFillDatetime < rightDatetime) {
         const val: number = interpolateValues
           ? this._interpolateLinear(
-              nextFillDatetime,
-              this.dataX[currentGap[0]],
-              this.dataY[currentGap[0]],
-              this.dataX[currentGap[1]],
-              this.dataY[currentGap[1]],
-            )
+            nextFillDatetime,
+            this.dataX[currentGap[0]],
+            this.dataY[currentGap[0]],
+            this.dataX[currentGap[1]],
+            this.dataY[currentGap[1]],
+          )
           : -9999;
 
         fillPoints.push([nextFillDatetime, val]);
@@ -707,9 +720,9 @@ export class ObservationRecord {
   /**
    * Filter by applying a set of logical operations
    * @param appliedFilters
-   * @returns
+   * @returns an array of index values to select in the plot
    */
-  private _valueThreshold(appliedFilters: { [key: string]: number }) {
+  private _valueThreshold(appliedFilters: { [key: string]: number }): number[] {
     const selection: number[] = [];
 
     this.dataset.source.y.forEach((value: number, index: number) => {
@@ -754,7 +767,12 @@ export class ObservationRecord {
    * @param index
    * @returns
    */
-  private _selection(index: number[]) {
+  private async _selection(index: number[]): Promise<number[]> {
+    // If clearing selection, remove the history item
+    if (!index || !index.length) {
+      this.history.pop();
+    }
+
     return index;
   }
 
@@ -791,7 +809,7 @@ export class ObservationRecord {
     value: number,
     unit: TimeUnit,
     range?: [number, number],
-  ): [number, number][] {
+  ): number[] {
     const selection: [number, number][] = [];
     const dataX = this.dataset.source.x;
     let start = 0;
@@ -814,7 +832,7 @@ export class ObservationRecord {
       prevDatetime = curr;
     }
 
-    return selection;
+    return [...new Set(selection.flat())];
   }
 
   /**
