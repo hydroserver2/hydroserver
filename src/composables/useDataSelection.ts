@@ -31,8 +31,21 @@ export function useDataSelection() {
     selectedData.value = [...selection]
   }
 
-  /** Call this method after operations that change the order of elements or remove elements in the data */
-  const clearSelected = async () => {
+  /**
+   * Call this method after operations that change the order of elements or
+   * remove elements in the data.
+   *
+   * `dispatchFilter` controls whether the Plotly-event-driven
+   * `handleSelected` flow runs, which issues an extra empty-SELECTION
+   * filter dispatch through `ObservationRecord.dispatchFilter`. That path
+   * can be surprisingly expensive (a reactive history push + Vue flush +
+   * devtools serialization of the whole series). Callers that have just
+   * logged their own SELECTION entry (e.g. table bulk save) should pass
+   * `false` to skip the redundant round-trip.
+   */
+  const clearSelected = async ({
+    dispatchFilter = true,
+  }: { dispatchFilter?: boolean } = {}) => {
     const { selectedData } = storeToRefs(useDataVisStore())
 
     const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
@@ -40,9 +53,11 @@ export function useDataSelection() {
 
     selectedData.value = []
 
-    // Pass an empty event so `handleSelected` dispatches an empty selection
-    // filter.
-    handleSelected({} as AppPlotRelayoutEvent)
+    if (dispatchFilter) {
+      // Pass an empty event so `handleSelected` dispatches an empty
+      // selection filter to ObservationRecord.
+      handleSelected({} as AppPlotRelayoutEvent)
+    }
   }
 
   const startDate = computed(() => {

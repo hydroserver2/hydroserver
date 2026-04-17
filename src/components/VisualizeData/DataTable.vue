@@ -1,90 +1,388 @@
 <template>
-  <div class="d-flex">
-    <v-data-table-virtual
-      :headers="headers"
-      :items="virtualData"
-      height="400"
-      item-value="datetime"
-      fixed-header
-      class="flex-grow-1"
-      :loading="isUpdating"
-      disable-sort
-      :row-props="getRowProps"
+  <div class="data-table d-flex flex-column fill-height">
+    <div
+      class="data-table__toolbar px-4 py-2 d-flex align-center gap-3 flex-wrap"
     >
-      <template #item.actions="{ index }">
-        <v-checkbox
-          color="primary"
-          hide-details
-          :model-value="selectedData?.includes(index)"
-          @update:model-value="onSelectChange($event, index)"
-        ></v-checkbox>
-      </template>
+      <div class="d-flex align-center">
+        <v-icon icon="mdi-table-edit" class="mr-2" color="primary" size="20" />
+        <span class="text-subtitle-2 font-weight-bold">Observations</span>
+      </div>
 
-      <template #item.datetime="{ index }">
-        {{ formatDate(new Date(selectedSeries?.data.dataX[index])) }}
-      </template>
+      <v-divider vertical />
 
-      <template #item.value="{ index }">
-        {{ formatNumber(selectedSeries?.data.dataY[index]) }}
-      </template>
-    </v-data-table-virtual>
+      <div class="text-caption text-medium-emphasis">
+        <span v-if="rowCount">
+          {{ rowCount.toLocaleString() }} row{{ rowCount === 1 ? '' : 's' }}
+        </span>
+      </div>
+
+      <v-chip
+        v-if="selectedData?.length"
+        size="small"
+        color="red"
+        variant="tonal"
+        prepend-icon="mdi-checkbox-marked-circle"
+      >
+        {{ selectedData.length }} selected
+      </v-chip>
+
+      <v-spacer />
+
+      <v-chip
+        v-if="pendingEditCount"
+        size="small"
+        color="warning"
+        variant="tonal"
+        prepend-icon="mdi-pencil-circle"
+      >
+        {{ pendingEditCount }} unsaved edit{{ pendingEditCount === 1 ? '' : 's' }}
+      </v-chip>
+
+      <v-btn
+        :disabled="!pendingEditCount || isUpdating"
+        variant="text"
+        size="small"
+        color="grey-darken-1"
+        prepend-icon="mdi-undo-variant"
+        @click="discardEdits"
+      >
+        Discard
+      </v-btn>
+
+      <v-btn
+        :disabled="!pendingEditCount || isUpdating"
+        :loading="isSaving"
+        color="primary"
+        variant="flat"
+        size="small"
+        prepend-icon="mdi-content-save-outline"
+        @click="onSaveChanges"
+      >
+        Save changes
+      </v-btn>
+    </div>
+
+    <v-divider />
+
+    <div class="data-table__hint px-4 py-1 text-caption text-medium-emphasis">
+      <v-icon size="14" icon="mdi-information-outline" class="mr-1" />
+      Click a cell in the <b>Datetime</b> or <b>Value</b> column to edit it.
+      Saving dispatches bulk shift / change operations.
+    </div>
+
+    <v-divider />
+
+    <div ref="bodyEl" class="data-table__body flex-grow-1">
+      <v-data-table-virtual
+        :headers="headers"
+        :items="virtualData"
+        :height="bodyHeight"
+        :item-height="ROW_HEIGHT"
+        item-value="datetime"
+        fixed-header
+        :loading="isUpdating"
+        disable-sort
+        :row-props="getRowProps"
+        density="compact"
+      >
+        <template #item.actions="{ index }">
+          <v-checkbox
+            color="primary"
+            hide-details
+            density="compact"
+            :model-value="selectedData?.includes(index)"
+            @update:model-value="onSelectChange($event, index)"
+          />
+        </template>
+
+        <template #item.datetime="{ index }">
+          <EditableCell
+            :value="formatDatetimeLocal(selectedSeries?.data.dataX[index])"
+            :display="formatDate(new Date(selectedSeries?.data.dataX[index]))"
+            :edited="datetimeEdits.has(index)"
+            :original-display="
+              formatDate(new Date(selectedSeries?.data.dataX[index]))
+            "
+            :edited-display="
+              datetimeEdits.has(index)
+                ? formatDate(new Date(datetimeEdits.get(index)!))
+                : ''
+            "
+            input-type="datetime-local"
+            @save="onDatetimeSave(index, $event)"
+            @clear="clearDatetimeEdit(index)"
+          />
+        </template>
+
+        <template #item.value="{ index }">
+          <EditableCell
+            :value="String(selectedSeries?.data.dataY[index] ?? '')"
+            :display="formatNumber(selectedSeries?.data.dataY[index])"
+            :edited="valueEdits.has(index)"
+            :original-display="formatNumber(selectedSeries?.data.dataY[index])"
+            :edited-display="
+              valueEdits.has(index)
+                ? formatNumber(valueEdits.get(index)!)
+                : ''
+            "
+            input-type="number"
+            align="end"
+            @save="onValueSave(index, $event)"
+            @clear="clearValueEdit(index)"
+          />
+        </template>
+      </v-data-table-virtual>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { formatDate } from '@uwrl/qc-utils'
+import {
+  EnumEditOperations,
+  EnumFilterOperations,
+  formatDate,
+} from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import EditableCell from '@/components/VisualizeData/EditableCell.vue'
 
 const { isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
+const { redraw } = usePlotlyStore()
 const { selectedData } = storeToRefs(useDataVisStore())
-const { dispatchSelection } = useDataSelection()
+const { clearSelected } = useDataSelection()
 
-const headers = [
-  { title: '', align: 'start', key: 'actions', width: '50px' },
-  { title: 'Datetime', align: 'start', key: 'datetime' },
-  { title: 'Value', align: 'end', key: 'value' },
-]
+const isSaving = ref(false)
 
-const virtualData = computed(() => {
-  return new Array(selectedSeries?.value?.data.dataX.length).fill(null)
+/**
+ * `v-data-table-virtual` only virtualizes rows when it gets a concrete
+ * pixel `height`. A percentage or `auto` makes it render every row in the
+ * DOM, which — with a million-row dataset — turns typing a single cell
+ * into a seconds-long reflow. We measure the container element and feed
+ * its pixel height into the `:height` prop. `item-height` is likewise
+ * required so the virtualizer can compute the visible slice from scroll
+ * position without measuring each row.
+ */
+const ROW_HEIGHT = 40
+const bodyEl = ref<HTMLDivElement | null>(null)
+const bodyHeight = ref(400)
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!bodyEl.value) return
+  bodyHeight.value = bodyEl.value.clientHeight || 400
+  resizeObserver = new ResizeObserver((entries) => {
+    const h = entries[0]?.contentRect.height
+    if (h && h !== bodyHeight.value) bodyHeight.value = h
+  })
+  resizeObserver.observe(bodyEl.value)
 })
 
-const onSelectChange = (isSelected: boolean, index: number) => {
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
+
+// Keyed by data-row index. Value edits store the new numeric y-value;
+// datetime edits store the new epoch-milliseconds.
+const valueEdits = reactive(new Map<number, number>())
+const datetimeEdits = reactive(new Map<number, number>())
+
+const headers = [
+  { title: '', align: 'start' as const, key: 'actions', width: '50px' },
+  { title: 'Datetime', align: 'start' as const, key: 'datetime' },
+  { title: 'Value', align: 'end' as const, key: 'value' },
+]
+
+const rowCount = computed(
+  () => selectedSeries?.value?.data.dataX.length ?? 0
+)
+
+const virtualData = computed(() => new Array(rowCount.value).fill(null))
+
+const pendingEditCount = computed(
+  () => valueEdits.size + datetimeEdits.size
+)
+
+function onSelectChange(isSelected: boolean, index: number) {
   if (isSelected) {
-    if (!selectedData.value) {
-      selectedData.value = []
-    }
-    selectedData.value?.push(index)
+    if (!selectedData.value) selectedData.value = []
+    selectedData.value.push(index)
   } else {
     const pos = selectedData.value?.indexOf(index)
-    if (pos !== undefined && pos >= 0) {
-      selectedData.value?.splice(pos, 1)
-    }
+    if (pos !== undefined && pos >= 0) selectedData.value?.splice(pos, 1)
   }
-
   selectedData.value?.sort((a, b) => a - b)
-
-  // dispatchSelection(selectedData.value || [])
 }
 
-const getRowProps = (data: any) => {
+function getRowProps(data: any) {
+  const idx = data.internalItem.index
+  const selected = selectedData.value?.includes(idx)
+  const edited = valueEdits.has(idx) || datetimeEdits.has(idx)
   return {
     class: {
-      'bg-grey-lighten-4': selectedData.value?.includes(
-        data.internalItem.index
-      ),
+      'row--selected': selected,
+      'row--edited': edited,
     },
   }
 }
 
-function formatNumber(num: any) {
-  return parseFloat(num.toFixed(4)) // Converts back to number, removing trailing .00 for integers
+function formatNumber(num: unknown): string {
+  if (num == null || Number.isNaN(num as number)) return ''
+  return String(parseFloat((num as number).toFixed(4)))
+}
+
+/**
+ * Format an epoch-ms timestamp for an <input type="datetime-local"> field:
+ * `YYYY-MM-DDTHH:mm:ss` in the browser's local time zone.
+ */
+function formatDatetimeLocal(epoch: number | undefined): string {
+  if (epoch == null || Number.isNaN(epoch)) return ''
+  const d = new Date(epoch)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  )
+}
+
+function parseDatetimeLocal(raw: string): number | null {
+  if (!raw) return null
+  const t = new Date(raw).getTime()
+  return Number.isNaN(t) ? null : t
+}
+
+function onValueSave(index: number, raw: string) {
+  const num = parseFloat(raw)
+  if (Number.isNaN(num)) return
+  const original = selectedSeries.value?.data.dataY[index]
+  if (original != null && Math.abs(num - (original as number)) < 1e-12) {
+    valueEdits.delete(index)
+  } else {
+    valueEdits.set(index, num)
+  }
+}
+
+function clearValueEdit(index: number) {
+  valueEdits.delete(index)
+}
+
+function onDatetimeSave(index: number, raw: string) {
+  const epoch = parseDatetimeLocal(raw)
+  if (epoch == null) return
+  const original = selectedSeries.value?.data.dataX[index]
+  if (original != null && epoch === original) {
+    datetimeEdits.delete(index)
+  } else {
+    datetimeEdits.set(index, epoch)
+  }
+}
+
+function clearDatetimeEdit(index: number) {
+  datetimeEdits.delete(index)
+}
+
+function discardEdits() {
+  valueEdits.clear()
+  datetimeEdits.clear()
+}
+
+/**
+ * Groups pending edits by their target (for value edits) or time delta
+ * (for datetime edits) and dispatches one batched operation per group:
+ *  - CHANGE_VALUES with Operator.ASSIGN for each distinct new value
+ *  - SHIFT_DATETIMES with a per-group second-resolution delta
+ */
+async function onSaveChanges() {
+  const rec = selectedSeries.value?.data
+  if (!rec || pendingEditCount.value === 0) return
+
+  isSaving.value = true
+  isUpdating.value = true
+
+  try {
+    // --- Value edits: log SELECTION (indices), then ASSIGN_VALUES_BULK
+    //     (values only; indices come from the prior history entry).
+    if (valueEdits.size) {
+      const valueIndices: number[] = []
+      const valueValues: number[] = []
+      for (const [idx, v] of valueEdits) {
+        valueIndices.push(idx)
+        valueValues.push(v)
+      }
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, valueIndices],
+        [EnumEditOperations.ASSIGN_VALUES_BULK, valueValues],
+      ])
+    }
+
+    // --- Datetime edits: same pattern. One delete + one add under the hood.
+    if (datetimeEdits.size) {
+      const dtIndices: number[] = []
+      const dtValues: number[] = []
+      for (const [idx, newEpoch] of datetimeEdits) {
+        const origEpoch = rec.dataX[idx] as number
+        if (newEpoch === origEpoch) continue
+        dtIndices.push(idx)
+        dtValues.push(newEpoch)
+      }
+      if (dtIndices.length) {
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, dtIndices],
+          [EnumEditOperations.ASSIGN_DATETIMES_BULK, dtValues],
+        ])
+      }
+    }
+
+    valueEdits.clear()
+    datetimeEdits.clear()
+    // Don't emit another SELECTION filter through ObservationRecord —
+    // we already logged SELECTION + ASSIGN above; an empty filter here
+    // just churns reactivity / devtools and can take seconds.
+    await clearSelected({ dispatchFilter: false })
+    await redraw(true)
+  } finally {
+    isSaving.value = false
+    isUpdating.value = false
+  }
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.data-table__toolbar {
+  background-color: rgb(var(--v-theme-surface));
+  min-height: 56px;
+}
+
+.data-table__hint {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+.data-table__body {
+  min-height: 0;
+  /* Anchor for the ResizeObserver — the v-data-table-virtual inside
+     takes an explicit pixel `height` so the internal virtualizer
+     actually virtualizes. Don't force child height via CSS: it fights
+     the virtualizer. */
+  position: relative;
+}
+
+:deep(tr.row--selected > td) {
+  background-color: rgba(var(--v-theme-error), 0.06) !important;
+}
+
+:deep(tr.row--edited > td) {
+  background-color: rgba(var(--v-theme-warning), 0.1) !important;
+}
+
+:deep(tr.row--selected.row--edited > td) {
+  background-color: rgba(var(--v-theme-warning), 0.16) !important;
+}
+
+:deep(tbody tr:hover > td) {
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
+}
+</style>
