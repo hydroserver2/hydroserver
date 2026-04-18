@@ -2,6 +2,7 @@ import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
+import type { LayoutAxis } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
 
 import {
@@ -103,6 +104,31 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
     const opts = plotlyOptions.value
     if (!opts) return
+
+    // `createPlotlyOption` rebuilds the layout with default axis ranges
+    // every call. Passing that straight to `Plotly.update` would clobber
+    // the user's current zoom/pan on every edit. Copy the live axis
+    // ranges from the current plot into the fresh layout so the viewport
+    // survives the update. `recomputeXaxisRange` below re-clips the
+    // x-axis when an operation can change the data extent.
+    const liveLayout = plotlyRef.value?.layout as
+      | Record<string, Partial<LayoutAxis> | unknown>
+      | undefined
+    if (liveLayout) {
+      const layoutRecord = opts.layout as Record<string, unknown>
+      for (const key of Object.keys(layoutRecord)) {
+        if (key !== 'xaxis' && !key.startsWith('yaxis')) continue
+        const nextAxis = layoutRecord[key] as Partial<LayoutAxis> | undefined
+        const liveAxis = liveLayout[key] as Partial<LayoutAxis> | undefined
+        const liveRange = liveAxis?.range as
+          | Array<string | number>
+          | undefined
+        if (nextAxis && liveRange) {
+          nextAxis.range = [...liveRange]
+          nextAxis.autorange = false
+        }
+      }
+    }
 
     // Update all traces. `opts.traces` is `Data[]`; each entry carries the
     // QC-app trace shape (`AppPlotlyTrace`) including numeric `x`/`y`.
