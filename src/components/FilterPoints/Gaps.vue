@@ -1,46 +1,56 @@
 <template>
   <v-card>
-    <v-card-title class="text-body-1">Find time gaps in the data</v-card-title>
-
-    <v-divider></v-divider>
+    <v-card-title class="text-body-1">Find time gaps</v-card-title>
 
     <v-card-text>
-      <div class="mb-4">
-        <DatePickerField
-          placeholder="From"
-          :modelValue="fromDate"
-          @update:modelValue="onFromDateChange"
-          class="mb-2"
-        />
-        <DatePickerField
-          placeholder="To"
-          :modelValue="toDate"
-          @update:modelValue="onToDateChange"
-        />
-      </div>
+      <div class="text-caption text-medium-emphasis mb-2">Date range</div>
+      <DatePickerField
+        placeholder="From"
+        :modelValue="fromDate"
+        @update:modelValue="onFromDateChange"
+        class="mb-2"
+      />
+      <DatePickerField
+        placeholder="To"
+        :modelValue="toDate"
+        @update:modelValue="onToDateChange"
+      />
 
-      <p class="text-body-1 mb-4"><b>Find</b> gaps of at least:</p>
-      <div class="d-flex gap-1">
+      <div class="text-caption text-medium-emphasis mt-4 mb-2">
+        Find gaps of at least
+      </div>
+      <div class="d-flex gap-2">
         <v-text-field
-          width="30"
           label="Amount"
           type="number"
           v-model="gapAmount"
-        >
-        </v-text-field>
-
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
         <v-select
-          label="Gap Unit"
+          label="Unit"
           :items="gapUnits"
           v-model="selectedGapUnit"
-        ></v-select>
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
       </div>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn :disabled="isUpdating" @click="onFindGaps">Find Gaps</v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating"
+        @click="onFindGaps"
+      >
+        Find gaps
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

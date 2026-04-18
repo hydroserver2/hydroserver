@@ -1,21 +1,18 @@
 <template>
   <v-card>
     <v-card-title>Qualifying comments</v-card-title>
-    <v-card-subtitle class="mb-4">
-      <div>
-        {{ selectedData?.length ?? 0 }} Data Point{{
-          selectedData?.length === 1 ? '' : 's'
-        }}
-        selected
-      </div>
+    <v-card-subtitle>
+      <v-icon icon="mdi-selection-ellipse" size="14" class="mr-1" />
+      {{ selectedData?.length ?? 0 }} point{{
+        selectedData?.length === 1 ? '' : 's'
+      }}
+      selected
     </v-card-subtitle>
 
-    <v-divider></v-divider>
-
     <v-card-text>
-      <p class="text-body-2 mb-3">
-        Choose one or more qualifiers to apply to the selected data points.
-      </p>
+      <div class="text-caption text-medium-emphasis mb-2">
+        Pick one or more qualifier flags to apply.
+      </div>
 
       <v-autocomplete
         v-model="selectedQualifierIds"
@@ -31,9 +28,9 @@
         :disabled="!selectedData?.length"
       />
 
-      <div class="d-flex justify-end mt-n2 mb-4">
+      <div class="d-flex justify-end mt-n2 mb-3">
         <v-btn
-          size="small"
+          size="x-small"
           variant="text"
           prepend-icon="mdi-plus"
           @click="openNewQualifier = true"
@@ -42,31 +39,34 @@
         </v-btn>
       </div>
 
-      <div v-if="existingAtSelection.length" class="text-caption">
-        <div class="font-weight-medium mb-1">
-          Already applied to one or more selected points:
+      <div v-if="existingAtSelection.length">
+        <div class="text-caption font-weight-medium mb-1">
+          Already applied
         </div>
-        <v-chip
-          v-for="code in existingAtSelection"
-          :key="code"
-          size="x-small"
-          class="mr-1 mb-1"
-          color="primary"
-          variant="tonal"
-        >
-          {{ code }}
-        </v-chip>
+        <div class="d-flex flex-wrap gap-1">
+          <v-chip
+            v-for="code in existingAtSelection"
+            :key="code"
+            size="x-small"
+            color="primary"
+            variant="tonal"
+          >
+            {{ code }}
+          </v-chip>
+        </div>
       </div>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
       <v-btn
-        :disabled="!canApply"
         color="primary"
+        variant="flat"
+        :disabled="!canApply"
         @click="onApply"
-      >Apply</v-btn>
+      >
+        Apply
+      </v-btn>
     </v-card-actions>
   </v-card>
 

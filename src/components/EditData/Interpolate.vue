@@ -1,36 +1,39 @@
 <template>
   <v-card>
     <v-card-title>Interpolate</v-card-title>
-    <v-card-subtitle class="mb-4">
-      <div>
-        {{ selectedData?.length }} Data Point{{
-          selectedData?.length === 1 ? '' : 's'
-        }}
-        selected
-      </div>
+    <v-card-subtitle>
+      <v-icon icon="mdi-selection-ellipse" size="14" class="mr-1" />
+      {{ selectedData?.length }} point{{
+        selectedData?.length === 1 ? '' : 's'
+      }}
+      selected
     </v-card-subtitle>
 
-    <v-divider></v-divider>
-
     <v-card-text>
-      <div class="d-flex gap-1">
-        <v-radio-group
-          hide-details
-          color="primary"
-          v-model="selectedInterpolationMethod"
-        >
-          <v-radio
-            label="Linear Interpolation"
-            :value="InterpolationMethods.LINEAR"
-          ></v-radio>
-        </v-radio-group>
-      </div>
+      <div class="text-caption text-medium-emphasis mb-2">Method</div>
+      <v-radio-group
+        hide-details
+        color="primary"
+        v-model="selectedInterpolationMethod"
+        density="compact"
+      >
+        <v-radio
+          label="Linear interpolation"
+          :value="InterpolationMethods.LINEAR"
+        />
+      </v-radio-group>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn @click="onInterpolate">Interpolate</v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating || !selectedData?.length"
+        @click="onInterpolate"
+      >
+        Interpolate
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

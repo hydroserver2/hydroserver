@@ -26,6 +26,10 @@ export const useUIStore = defineStore('userInterface', () => {
   // View
   const currentView = ref<View>(DrawerType.Select)
 
+  // Operation panel — which operation's details are shown in the right
+  // sidebar below the edit history. `null` means no panel is open.
+  const selectedOperation = ref<string | null>(null)
+
   // Selection view content
   const cardHeight = ref(40)
   const tableHeight = ref(35)
@@ -86,6 +90,7 @@ export const useUIStore = defineStore('userInterface', () => {
     selectedDrawer,
     isDrawerOpen,
     currentView,
+    selectedOperation,
     cardHeight,
     tableHeight,
     onRailItemClicked,

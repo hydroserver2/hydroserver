@@ -1,35 +1,43 @@
 <template>
-  <v-card rounded>
+  <v-card>
     <v-card-title class="text-body-1">Filter by change</v-card-title>
-    <v-divider></v-divider>
 
     <v-card-text>
-      <v-label class="mb-4"
-        >Select points where the change threshold is</v-label
-      >
+      <div class="text-caption text-medium-emphasis mb-2">
+        Select points where the change between consecutive samples is
+      </div>
       <v-select
-        label="Comparison operator"
+        label="Comparator"
         :items="logicalComparators"
         v-model="selectedChangeComparator"
         return-object
-      ></v-select>
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mb-3"
+      />
       <v-text-field
         label="Change"
         type="number"
-        clearable
         step="1"
+        clearable
         v-model="changeValue"
+        density="comfortable"
+        variant="outlined"
+        hide-details
       />
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
       <v-btn
-        @click="onFilter(selectedChangeComparator?.title, changeValue)"
+        color="primary"
+        variant="flat"
         :disabled="isUpdating || changeValue == null"
-        >Filter</v-btn
+        @click="onFilter(selectedChangeComparator?.title, changeValue)"
       >
+        Apply filter
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

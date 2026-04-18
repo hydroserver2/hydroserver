@@ -1,77 +1,92 @@
 <template>
   <v-card>
-    <v-card-title>Drift Correction</v-card-title>
-
-    <v-divider></v-divider>
+    <v-card-title>Drift correction</v-card-title>
+    <v-card-subtitle v-if="selectedGroups.length">
+      <v-icon icon="mdi-chart-sankey" size="14" class="mr-1" />
+      {{ selectedGroups.length }} consecutive group{{
+        selectedGroups.length === 1 ? '' : 's'
+      }}
+    </v-card-subtitle>
 
     <v-card-text>
       <v-alert
-        v-if="selectedGroups.length == 0"
+        v-if="selectedGroups.length === 0"
         type="warning"
         density="compact"
-        variant="outlined"
-        class="text-body-2 mb-2"
+        variant="tonal"
+        class="text-body-2 mb-3"
       >
-        You have not selected any groups of consecutive points.
+        Select two or more consecutive points on the plot. Multiple groups are
+        allowed — each will be corrected independently.
       </v-alert>
       <v-alert
-        v-if="selectedGroups.length > 1"
+        v-else-if="selectedGroups.length > 1"
         type="info"
         density="compact"
-        variant="outlined"
-        class="text-body-2 mb-2"
+        variant="tonal"
+        class="text-body-2 mb-3"
       >
-        You have selected <b>{{ selectedGroups.length }}</b> groups of
-        consecutive points. Drift correction will be applied to each group.
+        Drift correction will be applied to each group individually.
       </v-alert>
 
-      <v-card class="timeline-container my-6" variant="outlined" border="thin">
-        <v-card-text>
-          <v-timeline direction="horizontal" align="center" side="end">
-            <v-timeline-item
-              v-for="group of selectedGroups"
-              dot-color="green"
-              size="x-small"
-              fill-dot
-            >
-              <template v-slot:icon>
-                <v-icon v-tooltip="getDotTooltip(group)"
-                  >mdi-dots-horizontal</v-icon
-                >
-              </template>
-              <v-label>{{ group.length }} Points</v-label>
-            </v-timeline-item>
-          </v-timeline>
-        </v-card-text>
-      </v-card>
+      <div v-if="selectedGroups.length" class="mb-3">
+        <div class="text-caption text-medium-emphasis mb-1">Groups</div>
+        <div class="drift-groups d-flex flex-column">
+          <div
+            v-for="(group, i) of selectedGroups"
+            :key="i"
+            class="drift-groups__row d-flex align-center py-1"
+          >
+            <v-avatar size="20" color="primary" variant="tonal" class="mr-2">
+              <span class="text-caption">{{ i + 1 }}</span>
+            </v-avatar>
+            <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
+              <span class="text-body-2 font-weight-medium">
+                {{ group.length }} points
+              </span>
+              <span class="text-caption text-medium-emphasis text-truncate">
+                starts {{ getGroupStart(group) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="text-caption text-medium-emphasis mb-1">Drift amount</div>
       <v-text-field
-        label="Drift"
-        type="number"
-        class="mt-2"
-        step="0.1"
         v-model="driftGapWidth"
-      >
-      </v-text-field>
+        type="number"
+        step="0.1"
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mb-3"
+      />
 
+      <div class="text-caption text-medium-emphasis mb-1">Method</div>
       <v-radio-group
         hide-details
         color="primary"
         v-model="selectedDriftCorrectionMethod"
+        density="compact"
       >
         <v-radio
-          label="Linear Drift Correction"
+          label="Linear drift correction"
           :value="DriftCorrectionMethods.LINEAR"
-        ></v-radio>
+        />
       </v-radio-group>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn :disabled="selectedGroups.length == 0" @click="onDriftCorrection"
-        >Apply Drift Correction</v-btn
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="selectedGroups.length === 0 || isUpdating"
+        @click="onDriftCorrection"
       >
+        Apply
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
@@ -135,16 +150,23 @@ const onDriftCorrection = async () => {
   })
 }
 
-const getDotTooltip = (group: number[]) => {
+const getGroupStart = (group: number[]) => {
   const xData = plotlyRef.value?.data[0].x
-  const start = formatDate(new Date(xData[group[0] as number]))
-  return `${group.length} Points starting at ${start}`
+  if (!xData) return ''
+  return formatDate(new Date(xData[group[0] as number]))
 }
 </script>
 
-<style scoped lang="scss">
-.timeline-container {
-  max-width: 100%;
-  overflow-x: auto;
+<style scoped>
+.drift-groups {
+  max-height: 10rem;
+  overflow-y: auto;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.drift-groups__row + .drift-groups__row {
+  border-top: 1px dashed rgba(var(--v-theme-on-surface), 0.06);
 }
 </style>

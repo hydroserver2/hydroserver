@@ -1,38 +1,50 @@
 <template>
   <v-card>
-    <v-card-title>Shift Datetimes</v-card-title>
-    <v-card-subtitle class="mb-4">
-      <div>
-        {{ selectedData?.length }} Data Point{{
-          selectedData?.length === 1 ? '' : 's'
-        }}
-        selected
-      </div>
+    <v-card-title>Shift datetimes</v-card-title>
+    <v-card-subtitle>
+      <v-icon icon="mdi-selection-ellipse" size="14" class="mr-1" />
+      {{ selectedData?.length }} point{{
+        selectedData?.length === 1 ? '' : 's'
+      }}
+      selected
     </v-card-subtitle>
 
-    <v-divider></v-divider>
-
     <v-card-text>
-      <v-row>
-        <v-col>
-          <v-text-field label="Amount" type="number" v-model="shiftAmount" />
-        </v-col>
-        <v-col>
-          <v-select
-            label="Time Unit"
-            :items="shiftUnits"
-            v-model="selectedShiftUnit"
-          />
-        </v-col>
-      </v-row>
+      <div class="text-caption text-medium-emphasis mb-2">
+        Shift selected timestamps by
+      </div>
+      <div class="d-flex gap-2">
+        <v-text-field
+          label="Amount"
+          type="number"
+          v-model="shiftAmount"
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
+        <v-select
+          label="Unit"
+          :items="shiftUnits"
+          v-model="selectedShiftUnit"
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
+      </div>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn :disabled="isUpdating" @click="onShiftDatetimes"
-        >Shift Datetimes</v-btn
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating || !selectedData?.length"
+        @click="onShiftDatetimes"
       >
+        Shift
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

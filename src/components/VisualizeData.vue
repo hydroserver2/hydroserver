@@ -107,7 +107,7 @@
     </div>
 
     <aside
-      class="edit-view__col edit-view__col--aux d-flex flex-column overflow-y-auto bg-surface border-s"
+      class="edit-view__col edit-view__col--aux d-flex flex-column overflow-hidden bg-surface border-s"
     >
       <div
         class="edit-view__exit-bar d-flex align-center flex-wrap px-3 py-2 border-b"
@@ -158,8 +158,20 @@
         style="height: 12px"
       />
 
-      <section class="flex-grow-1 d-flex flex-column bg-surface">
-        <EditHistory />
+      <section class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface">
+        <div
+          class="edit-view__history d-flex flex-column"
+          :class="{ 'edit-view__history--split': selectedOperation }"
+        >
+          <EditHistory />
+        </div>
+
+        <div
+          v-if="selectedOperation"
+          class="edit-view__op-panel d-flex flex-column border-t"
+        >
+          <OperationPanel />
+        </div>
       </section>
     </aside>
 
@@ -237,6 +249,7 @@
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'
+import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -262,7 +275,8 @@ const {
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
-const { currentView, selectedDrawer, isDrawerOpen } = storeToRefs(useUIStore())
+const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
+  storeToRefs(useUIStore())
 const { editHistory, isUpdating, isSubmitting, selectedSeries } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
@@ -562,6 +576,35 @@ function goToEdit() {
 
 .edit-view__col--aux {
   flex: 0 0 25%;
+  min-width: 320px;
+}
+
+/* Split the lower sidebar between Edit History and the Operation Panel
+   when an operation is selected. Each half scrolls independently; the
+   outer aux column already has `overflow-y-auto`, but we tighten that
+   to `hidden` so the page doesn't inherit a scrollbar — each child
+   owns its own scroll region. */
+.edit-view__aux-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-view__history {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-view__history--split {
+  /* Keep a usable amount of history visible (~40% of the lower column)
+     when the operation panel is open. */
+  flex: 0 0 40%;
+}
+
+.edit-view__op-panel {
+  flex: 1 1 60%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 960px) {
