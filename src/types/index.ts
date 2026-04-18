@@ -18,10 +18,23 @@ export enum TimeUnit {
 export enum EnumEditOperations {
   ADD_POINTS = "ADD_POINTS",
   CHANGE_VALUES = "CHANGE_VALUES",
+  /**
+   * Single-operation assignment of distinct values at distinct indices.
+   * Args: `(indices: number[], values: number[])` — parallel arrays where
+   * `values[i]` is written to `dataY[indices[i]]`. No workers, no per-row
+   * ceremony. Intended for table-driven edits.
+   */
+  ASSIGN_VALUES_BULK = "ASSIGN_VALUES_BULK",
   DELETE_POINTS = "DELETE_POINTS",
   DRIFT_CORRECTION = "DRIFT_CORRECTION",
   INTERPOLATE = "INTERPOLATE",
   SHIFT_DATETIMES = "SHIFT_DATETIMES",
+  /**
+   * Single-operation assignment of distinct datetimes at distinct indices.
+   * Args: `(indices: number[], datetimes: number[])` — parallel arrays of
+   * epoch-milliseconds. Runs one combined delete + add under the hood.
+   */
+  ASSIGN_DATETIMES_BULK = "ASSIGN_DATETIMES_BULK",
   FILL_GAPS = "FILL_GAPS",
 }
 

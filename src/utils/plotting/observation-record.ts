@@ -43,6 +43,14 @@ import ChangeValuesWorker from "./change-values.worker?worker&inline";
  */
 export const INCREASE_AMOUNT = 20 * 1000;
 
+/**
+ * Below this selection size, CHANGE_VALUES runs inline on the main thread
+ * instead of spawning inline workers. The worker-startup overhead (Windows
+ * in particular can take ~100 ms each) dwarfs the write cost for small
+ * edits, so the fast path cuts "3 edits" from seconds to microseconds.
+ */
+const CHANGE_VALUES_WORKER_THRESHOLD = 1024;
+
 const components = ["date", "value", "qualifier"]; // TODO: `qualifier` unused for now...
 
 export class ObservationRecord {
@@ -241,10 +249,12 @@ export class ObservationRecord {
     const actions: EnumDictionary<EnumEditOperations, Function> = {
       [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
+      [EnumEditOperations.ASSIGN_VALUES_BULK]: this._assignValuesBulk,
       [EnumEditOperations.DELETE_POINTS]: this._deleteDataPoints,
       [EnumEditOperations.DRIFT_CORRECTION]: this._driftCorrection,
       [EnumEditOperations.INTERPOLATE]: this._interpolate,
       [EnumEditOperations.SHIFT_DATETIMES]: this._shift,
+      [EnumEditOperations.ASSIGN_DATETIMES_BULK]: this._assignDatetimesBulk,
       [EnumEditOperations.FILL_GAPS]: this._fillGaps,
     };
 
@@ -252,10 +262,12 @@ export class ObservationRecord {
     const editIcons: EnumDictionary<EnumEditOperations, string> = {
       [EnumEditOperations.ADD_POINTS]: "mdi-plus",
       [EnumEditOperations.CHANGE_VALUES]: "mdi-pencil",
+      [EnumEditOperations.ASSIGN_VALUES_BULK]: "mdi-pencil",
       [EnumEditOperations.DELETE_POINTS]: "mdi-trash-can",
       [EnumEditOperations.DRIFT_CORRECTION]: "mdi-chart-sankey",
       [EnumEditOperations.INTERPOLATE]: "mdi-transit-connection-horizontal",
       [EnumEditOperations.SHIFT_DATETIMES]: "mdi-calendar",
+      [EnumEditOperations.ASSIGN_DATETIMES_BULK]: "mdi-calendar",
       [EnumEditOperations.FILL_GAPS]: "mdi-keyboard-space",
     };
 
@@ -394,6 +406,14 @@ export class ObservationRecord {
     if (!selection || selection.length === 0) return [];
 
     const N = selection.length;
+
+    // Fast path: for small selections, the worker-startup cost dominates the
+    // actual work. A plain in-place loop is orders of magnitude faster.
+    if (N < CHANGE_VALUES_WORKER_THRESHOLD) {
+      this._applyOperatorInPlace(selection, operator, value);
+      return [];
+    }
+
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
     const chunkSize = Math.ceil(N / numWorkers);
 
@@ -430,6 +450,83 @@ export class ObservationRecord {
 
     workers.forEach((worker) => worker.terminate());
 
+    return [];
+  }
+
+  /**
+   * Apply an arithmetic operator to Y in-place on the main thread. Used by
+   * the small-selection fast path and by CHANGE_VALUES_BULK, where worker
+   * startup cost would dwarf the actual write cost.
+   */
+  private _applyOperatorInPlace(
+    indexes: ArrayLike<number>,
+    operator: Operator,
+    value: number,
+  ): void {
+    const arr = this.dataY;
+    const n = indexes.length;
+    if (operator === Operator.ADD) {
+      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] + value;
+    } else if (operator === Operator.SUB) {
+      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] - value;
+    } else if (operator === Operator.MULT) {
+      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] * value;
+    } else if (operator === Operator.DIV) {
+      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] / value;
+    } else if (operator === Operator.ASSIGN) {
+      for (let i = 0; i < n; i++) arr[indexes[i]] = value;
+    }
+  }
+
+  /**
+   * One-shot assignment of distinct Y-values at the indices logged by the
+   * previous SELECTION filter entry. Args: `(values: number[])`, where
+   * `values[i]` is written to `dataY[selection[i]]`. Runs as a single
+   * tight loop on the main thread — no workers, no per-row dispatch
+   * ceremony. Intended for table-driven edits.
+   *
+   * Expected dispatch order (matches CHANGE_VALUES):
+   *   [[SELECTION, indices], [ASSIGN_VALUES_BULK, values]]
+   * The SELECTION entry carries the indices for history, so this op does
+   * not log them again.
+   */
+  private async _assignValuesBulk(values: number[]): Promise<number[]> {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || !selection.length || !values?.length) return [];
+
+    const n = Math.min(selection.length, values.length);
+    const arr = this.dataY;
+    for (let i = 0; i < n; i++) arr[selection[i]] = values[i];
+    return [];
+  }
+
+  /**
+   * One-shot assignment of distinct datetimes (epoch-ms) at the indices
+   * logged by the previous SELECTION filter entry. Internally: compute
+   * the replacement (x, y) pairs, do a single delete + single add — so
+   * the reindex-and-sort step runs once regardless of how many rows changed.
+   *
+   * Expected dispatch order (matches SHIFT_DATETIMES pattern):
+   *   [[SELECTION, indices], [ASSIGN_DATETIMES_BULK, datetimes]]
+   */
+  private async _assignDatetimesBulk(
+    datetimes: number[],
+  ): Promise<number[]> {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || !selection.length || !datetimes?.length) return [];
+
+    const n = Math.min(selection.length, datetimes.length);
+    const collection: [number, number][] = new Array(n);
+    const sortedIndices = new Array<number>(n);
+    for (let i = 0; i < n; i++) {
+      collection[i] = [datetimes[i], this.dataY[selection[i]]];
+      sortedIndices[i] = selection[i];
+    }
+
+    // `_deleteDataPoints` requires ascending indices.
+    sortedIndices.sort((a, b) => a - b);
+    await this._deleteDataPoints(sortedIndices);
+    await this._addDataPoints(collection);
     return [];
   }
 
