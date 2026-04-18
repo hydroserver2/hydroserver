@@ -281,12 +281,18 @@ export class ObservationRecord {
         isLoading: true,
       };
       this.history.push(historyItem);
+      const itemIdx = this.history.length - 1;
       const measurement = await measureEllapsedTime(async () => {
         return await actions[action].apply(this, args);
       });
       newSelection = measurement.response;
-      historyItem.duration = measurement.duration;
-      historyItem.isLoading = false;
+      // Mutate via `this.history[itemIdx]` so writes flow through Vue's
+      // reactive array proxy (the callsite invokes us through a proxied
+      // ObservationRecord). Writing to the captured `historyItem` ref
+      // directly mutates the raw object, bypasses the proxy, and leaves
+      // the history entry's spinner stuck on "loading" in the UI.
+      this.history[itemIdx].duration = measurement.duration;
+      this.history[itemIdx].isLoading = false;
     } catch (e) {
       console.log(
         `Failed to execute operation: ${action} with arguments: `,
@@ -334,6 +340,7 @@ export class ObservationRecord {
     const filters: EnumDictionary<EnumFilterOperations, Function> = {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,
+      [EnumFilterOperations.DATETIME_RANGE]: this._datetimeRange,
       [EnumFilterOperations.PERSISTENCE]: this._persistence,
       [EnumFilterOperations.CHANGE]: this._change,
       [EnumFilterOperations.RATE_OF_CHANGE]: this._rateOfChange,
@@ -347,6 +354,7 @@ export class ObservationRecord {
       [EnumFilterOperations.CHANGE]: "mdi-plus",
       [EnumFilterOperations.RATE_OF_CHANGE]: "mdi-plus",
       [EnumFilterOperations.VALUE_THRESHOLD]: "mdi-plus",
+      [EnumFilterOperations.DATETIME_RANGE]: "mdi-plus",
       [EnumFilterOperations.SELECTION]: "mdi-plus",
     };
 
@@ -363,19 +371,27 @@ export class ObservationRecord {
       const lastItem = this.history[this.history.length - 1];
 
       // If the last history item is a filter, replace it
+      let itemIdx: number;
       if (EnumFilterOperations[lastItem?.method as EnumFilterOperations]) {
-        this.history[this.history.length - 1] = historyItem
+        itemIdx = this.history.length - 1;
+        this.history[itemIdx] = historyItem;
       }
       else {
         this.history.push(historyItem);
+        itemIdx = this.history.length - 1;
       }
       const measurement = await measureEllapsedTime(async () => {
         return await filters[action].apply(this, args);
       });
       response = measurement.response;
-      historyItem.duration = measurement.duration;
-      historyItem.selected = measurement.response;
-      historyItem.isLoading = false;
+      // Mutate via `this.history[itemIdx]` so writes flow through Vue's
+      // reactive array proxy (the callsite invokes us through a proxied
+      // ObservationRecord). Writing to the captured `historyItem` ref
+      // directly mutates the raw object, bypasses the proxy, and leaves
+      // the history entry's spinner stuck on "loading" in the UI.
+      this.history[itemIdx].duration = measurement.duration;
+      this.history[itemIdx].selected = measurement.response;
+      this.history[itemIdx].isLoading = false;
     } catch (e) {
       console.log(
         `Failed to execute filter operation: ${action} with arguments: `,
@@ -1122,8 +1138,6 @@ export class ObservationRecord {
       [FilterOperation.GT]: 2,
       [FilterOperation.GTE]: 3,
       [FilterOperation.E]: 4,
-      [FilterOperation.START]: 4,
-      [FilterOperation.END]: 4,
     };
     const ops = keys.map((k) => opMap[k] ?? 4);
     const values = keys.map((k) => appliedFilters[k]);
@@ -1231,6 +1245,32 @@ export class ObservationRecord {
       const arr = results[w];
       for (let k = 0; k < arr.length; k++) selection.push(arr[k]);
     }
+    return selection;
+  }
+
+  /**
+   * Select all points whose datetime falls inside `[from, to]` (inclusive).
+   * `dataX` is sorted ascending, so binary search bounds the range in
+   * O(log n) — no workers required. Pass `undefined` for either bound to
+   * leave that side unconstrained; omitting both selects the full series.
+   */
+  private async _datetimeRange(
+    from?: number,
+    to?: number,
+  ): Promise<number[]> {
+    const dataX = this.dataset.source.x;
+    const total = dataX.length;
+    if (total === 0) return [];
+
+    const startIdx =
+      from == null ? 0 : findFirstGreaterOrEqual(dataX, from);
+    const endIdx =
+      to == null ? total - 1 : findLastLessOrEqual(dataX, to);
+
+    if (startIdx > endIdx) return [];
+
+    const selection: number[] = new Array(endIdx - startIdx + 1);
+    for (let i = startIdx; i <= endIdx; i++) selection[i - startIdx] = i;
     return selection;
   }
 

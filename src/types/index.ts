@@ -44,6 +44,7 @@ export enum EnumFilterOperations {
   CHANGE = "CHANGE",
   RATE_OF_CHANGE = "RATE_OF_CHANGE",
   VALUE_THRESHOLD = "VALUE_THRESHOLD",
+  DATETIME_RANGE = "DATETIME_RANGE",
   SELECTION = "SELECTION",
 }
 
@@ -53,8 +54,6 @@ export enum FilterOperation {
   GT = "Greater than",
   GTE = "Greater than or equal to",
   E = "Equal",
-  START = "Start datetime",
-  END = "End datetime",
 }
 
 export enum Operator {
