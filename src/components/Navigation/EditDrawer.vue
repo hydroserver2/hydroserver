@@ -5,55 +5,12 @@
       <div class="text-caption text-medium-emphasis">
         Detect issues and edit observations
       </div>
-
-      <div
-        class="selection-banner mt-3 pa-2 pl-3 d-flex align-center"
-        :class="{ 'selection-banner--active': hasSelection }"
-      >
-        <v-icon
-          :icon="hasSelection ? 'mdi-checkbox-marked-circle' : 'mdi-selection-drag'"
-          :color="hasSelection ? 'red' : 'grey'"
-          size="22"
-          class="mr-3"
-        />
-        <div class="flex-grow-1 d-flex flex-column">
-          <div class="d-flex align-baseline gap-1">
-            <span
-              class="selection-banner__count text-h5 font-weight-bold"
-              :class="hasSelection ? 'text-red' : 'text-medium-emphasis'"
-            >
-              {{ selectedData?.length ?? 0 }}
-            </span>
-            <span
-              class="text-body-2 font-weight-medium"
-              :class="hasSelection ? 'text-red' : 'text-medium-emphasis'"
-            >
-              point{{ selectedData?.length === 1 ? '' : 's' }} selected
-            </span>
-          </div>
-          <div
-            v-if="!hasSelection"
-            class="text-caption text-medium-emphasis"
-          >
-            Box-select or click points on the plot
-          </div>
-        </div>
-        <v-btn
-          v-if="hasSelection"
-          size="x-small"
-          variant="text"
-          color="red"
-          icon="mdi-close"
-          aria-label="Clear selection"
-          @click="clearSelected"
-        />
-      </div>
     </div>
 
     <v-divider />
 
     <div class="edit-drawer__scroll flex-grow-1 overflow-y-auto">
-      <v-list class="py-2" density="compact" nav lines="two">
+      <v-list class="py-2" density="compact" nav>
         <v-list-subheader class="text-uppercase text-caption font-weight-bold">
           Filter Points
         </v-list-subheader>
@@ -62,7 +19,7 @@
           v-for="(item, i) in filterPoints"
           :key="`fp-${i}`"
           rounded="lg"
-          class="mx-2 mb-1"
+          class="mb-1"
           @click="item.clickAction"
         >
           <template v-slot:prepend>
@@ -88,7 +45,7 @@
           v-for="(item, i) in editData"
           :key="`ed-${i}`"
           rounded="lg"
-          class="mx-2 mb-1"
+          class="mb-1"
           :disabled="item.isDisabled?.()"
           @click="item.clickAction"
         >
@@ -107,21 +64,32 @@
           <v-list-item-subtitle class="text-caption">
             {{ item.description }}
           </v-list-item-subtitle>
-          <template
-            v-if="item.requiresSelection && !selectedData?.length"
-            v-slot:append
-          >
-            <v-tooltip location="start" text="Select points on the plot first">
-              <template v-slot:activator="{ props: tooltipProps }">
-                <v-icon
-                  v-bind="tooltipProps"
-                  size="14"
-                  icon="mdi-information-outline"
-                  class="text-medium-emphasis"
-                />
-              </template>
-            </v-tooltip>
+        </v-list-item>
+
+        <v-list-subheader
+          class="text-uppercase text-caption font-weight-bold mt-2"
+        >
+          Add Data
+        </v-list-subheader>
+
+        <v-list-item
+          v-for="(item, i) in addData"
+          :key="`ad-${i}`"
+          rounded="lg"
+          class="mb-1"
+          @click="item.clickAction"
+        >
+          <template v-slot:prepend>
+            <v-avatar size="32" color="primary" variant="flat">
+              <v-icon size="18" color="white" :icon="item.props.prependIcon" />
+            </v-avatar>
           </template>
+          <v-list-item-title class="text-body-2 font-weight-medium">
+            {{ item.title }}
+          </v-list-item-title>
+          <v-list-item-subtitle class="text-caption">
+            {{ item.description }}
+          </v-list-item-subtitle>
         </v-list-item>
       </v-list>
     </div>
@@ -185,8 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { ref } from 'vue'
 
 import ValueThreshold from '@/components/FilterPoints/ValueThreshold.vue'
 import Change from '@/components/FilterPoints/Change.vue'
@@ -256,8 +223,6 @@ const filterPoints = [
 ]
 
 const { selectedData } = storeToRefs(useDataVisStore())
-const { clearSelected } = useDataSelection()
-const hasSelection = computed(() => !!selectedData.value?.length)
 
 const editData = [
   {
@@ -308,6 +273,9 @@ const editData = [
     isDisabled: () => !selectedData.value?.length,
     requiresSelection: true,
   },
+]
+
+const addData = [
   {
     title: 'Add points',
     description: 'Insert new data points manually',
@@ -338,22 +306,52 @@ const editData = [
   min-height: 0;
 }
 
-.selection-banner {
-  border: 1px dashed rgba(var(--v-border-color), 0.35);
-  border-radius: 8px;
-  background-color: transparent;
-  transition: background-color 150ms ease, border-color 150ms ease;
+/* Allow multi-line titles and descriptions instead of Vuetify's default
+   single-line-with-ellipsis. Vuetify sets `overflow: hidden; text-overflow:
+   ellipsis; white-space: nowrap` on these with high specificity (including
+   variants like `.v-list-item--two-line .v-list-item-title`), and also
+   applies `-webkit-line-clamp` via the `lines="two"` prop. We override
+   with !important so the row can grow vertically for long descriptions. */
+:deep(.v-list-item-title),
+:deep(.v-list-item-subtitle) {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  display: block !important;
+  line-height: 1.3 !important;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
-.selection-banner--active {
-  border: 1px solid rgb(var(--v-theme-error));
-  background-color: rgba(var(--v-theme-error), 0.08);
-  box-shadow: 0 0 0 2px rgba(var(--v-theme-error), 0.12);
+/* Let the text column use the full available width inside the list
+   item. Vuetify's default padding on `.v-list-item__content` and
+   `.v-list-item` itself leaves ~10–12 px wasted on each side, which
+   measurably narrows multi-line descriptions in a 220 px drawer. */
+:deep(.v-list-item) {
+  padding-inline: 10px !important;
 }
 
-.selection-banner__count {
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+:deep(.v-list-item__content) {
+  overflow: visible !important;
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+:deep(.v-list-item__spacer) {
+  width: 10px !important;
+}
+
+:deep(.v-list-item-subtitle) {
+  opacity: 0.75;
+}
+
+/* Align the icon avatar to the top so it doesn't drift down next to
+   two-line text blocks. */
+:deep(.v-list-item__prepend) {
+  align-self: flex-start;
+  padding-top: 4px;
 }
 
 :deep(.v-list-item--disabled) {

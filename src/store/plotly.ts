@@ -15,7 +15,6 @@ import type {
   PlotlyChartOptions,
 } from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
-import { useHydroServer } from './hydroserver'
 import { Datastream } from '@hydroserver/client'
 
 export const usePlotlyStore = defineStore('Plotly', () => {
@@ -30,6 +29,15 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const hover = ref({ x: 0, y: 0 })
 
   const graphSeriesArray = ref<GraphSeries[]>([])
+
+  /**
+   * Toggles a lightweight preview layout in `createPlotlyOption`: the
+   * qualifier flag band, the plot title, select/lasso modebar buttons,
+   * and the custom Y-autoscale button are all suppressed. Plot.vue
+   * flips this based on its `preview` prop so the Select-view chart
+   * stays uncluttered.
+   */
+  const previewMode = ref(false)
   /** The index of the series that represents the datastream selected for quality control */
   const selectedSeriesIndex = computed(() => {
     const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -118,37 +126,26 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     end: Date
   ): Promise<GraphSeries> => {
     const { fetchObservationsInRange } = useObservationStore()
-    const { hs } = storeToRefs(useHydroServer())
 
-    const observationsPromise = fetchObservationsInRange(datastream, start, end)
-
-    const fetchUnitPromise = hs.value.units
-      .get(datastream.unitId)
-      .catch((error) => {
-        console.error('Failed to fetch Unit:', error)
-        return null
-      })
-    const fetchObservedPropertyPromise = hs.value.observedProperties
-      .get(datastream.observedPropertyId)
-      .catch((error) => {
-        console.error('Failed to fetch ObservedProperty:', error)
-        return null
-      })
-
-    const [data, unit, observedProperty] = await Promise.all([
-      observationsPromise,
-      fetchUnitPromise,
-      fetchObservedPropertyPromise,
-    ])
+    const data = await fetchObservationsInRange(datastream, start, end)
 
     if (!data.dataset.source.x) {
       await data.reload()
     }
 
+    // `Datastream` already carries its `observedProperty` and `unit`
+    // inline (see @hydroserver/client types), so use those directly.
+    // The previous implementation re-fetched them via `hs.*.get()` and
+    // indexed `.data.name` / `.data.symbol` on the `ApiResponse`
+    // wrapper, which produced "undefined (undefined)" when the fetch
+    // failed or the response shape shifted. Reading the embedded values
+    // avoids both pitfalls and skips two superfluous network round trips.
+    const propName = datastream.observedProperty?.name
+    const unitSymbol = datastream.unit?.symbol
     const yAxisLabel =
-      observedProperty && unit
-        ? `${observedProperty.data.name} (${unit.data.symbol})`
-        : 'Unknown'
+      propName && unitSymbol
+        ? `${propName} (${unitSymbol})`
+        : propName || unitSymbol || 'Unknown'
 
     return {
       id: datastream.id,
@@ -178,5 +175,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     areTooltipsEnabled,
     showCoordinates,
     hover,
+    previewMode,
   }
 })

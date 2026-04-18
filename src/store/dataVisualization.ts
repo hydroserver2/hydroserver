@@ -84,36 +84,30 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
-  function matchesSelectedObservedProperty(datastream: Datastream) {
+  // Note: datastreams are loaded with `expand_related: true`, so these carry
+  // nested `thing`/`observedProperty`/`processingLevel` objects rather than
+  // the flat `*Id` fields on the bare Datastream type.
+  function matchesSelectedObservedProperty(
+    datastream: Datastream & DatastreamExtended
+  ) {
     if (selectedObservedPropertyNames.value.length === 0) return true
-
-    const OPName = observedProperties.value.find(
-      (op) => op.id === datastream.observedPropertyId
-    )?.name
-    return (
-      OPName !== undefined &&
-      selectedObservedPropertyNames.value.includes(OPName)
-    )
+    const name = datastream.observedProperty?.name
+    return !!name && selectedObservedPropertyNames.value.includes(name)
   }
 
-  function matchesSelectedProcessingLevel(datastream: Datastream) {
+  function matchesSelectedProcessingLevel(
+    datastream: Datastream & DatastreamExtended
+  ) {
     if (selectedProcessingLevelNames.value.length === 0) return true
-
-    const PLName = processingLevels.value.find(
-      (pl) => pl.id === datastream.processingLevelId
-    )?.definition
-    return (
-      PLName !== undefined &&
-      selectedProcessingLevelNames.value.includes(PLName)
-    )
+    const def = datastream.processingLevel?.definition
+    return !!def && selectedProcessingLevelNames.value.includes(def)
   }
 
-  function matchesSelectedThing(datastream: Datastream) {
+  function matchesSelectedThing(datastream: Datastream & DatastreamExtended) {
     if (selectedThings.value.length === 0) return true
-
+    const thingId = datastream.thing?.id
     return (
-      selectedThings.value.length === 0 ||
-      selectedThings.value.some((thing) => thing.id === datastream.thingId)
+      !!thingId && selectedThings.value.some((thing) => thing.id === thingId)
     )
   }
 
@@ -126,21 +120,29 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   })
 
+  const getEarliestBeginTime = () =>
+    plottedDatastreams.value.reduce((earliest, ds) => {
+      if (!ds.phenomenonBeginTime) return earliest
+      const dsBegin = new Date(ds.phenomenonBeginTime)
+      return !earliest || dsBegin < earliest ? dsBegin : earliest
+    }, null as Date | null)
+
   const dateOptions = ref([
     {
       id: 0,
-      icon: 'mdi-calendar',
-      label: 'Last Year',
+      icon: 'mdi-calendar-week',
+      label: '1w',
+      title: 'Last week',
       calculateBeginDate: () => {
         const now = endDate.value
-        // TODO
-        return new Date(now.getFullYear() - 10, now.getMonth(), now.getDate())
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
       },
     },
     {
       id: 1,
       icon: 'mdi-calendar-month',
-      label: 'Last Month',
+      label: '1m',
+      title: 'Last month',
       calculateBeginDate: () => {
         const now = endDate.value
         return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
@@ -148,11 +150,45 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     },
     {
       id: 2,
-      icon: 'mdi-calendar-week',
-      label: 'Last Week',
+      icon: 'mdi-calendar-range',
+      label: '6m',
+      title: 'Last 6 months',
       calculateBeginDate: () => {
         const now = endDate.value
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+        return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
+      },
+    },
+    {
+      id: 3,
+      icon: 'mdi-calendar-today',
+      label: 'YTD',
+      title: 'Year to date',
+      calculateBeginDate: () => {
+        const now = endDate.value
+        return new Date(now.getFullYear(), 0, 1)
+      },
+    },
+    {
+      id: 4,
+      icon: 'mdi-calendar',
+      label: '1y',
+      title: 'Last year',
+      calculateBeginDate: () => {
+        const now = endDate.value
+        return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+      },
+    },
+    {
+      id: 5,
+      icon: 'mdi-infinity',
+      label: 'All',
+      title: 'Full history',
+      calculateBeginDate: () => {
+        const earliest = getEarliestBeginTime()
+        if (earliest) return earliest
+        // Fallback: 10 years back if no plotted series / missing metadata.
+        const now = endDate.value
+        return new Date(now.getFullYear() - 10, now.getMonth(), now.getDate())
       },
     },
   ])

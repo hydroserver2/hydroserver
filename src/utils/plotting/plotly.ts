@@ -263,19 +263,27 @@ function buildQualifierBand(
 export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
-  const { qcDatastream } = storeToRefs(useDataVisStore())
+  const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
+  const { previewMode } = storeToRefs(usePlotlyStore())
+  const isPreview = previewMode?.value ?? false
 
   const traces: AppPlotlyTrace[] = []
   const yaxis: Partial<Layout> = {}
 
   let maxDatetime = -Infinity
   let minDatetime = Infinity
-  const axisPlotFraction = 0.075 // Between 0 and 1
 
   let qcTrace: AppPlotlyTrace | undefined
-  let qcYaxis: Partial<LayoutAxis> | undefined
-  let counter = 0
-  let axisSuffix: string | number = counter > 0 ? counter + 1 : ''
+
+  // Axis-naming scheme:
+  //   yaxis       (no suffix, primary)        — QC series
+  //   yaxis2, yaxis3, … (overlaying, right)   — every non-QC series
+  // Every non-QC axis gets `autoshift: true`, which requires `overlaying`
+  // to take effect. When the first non-QC ran at the primary `y` slot
+  // (old logic) it could not autoshift and collided with the first
+  // shifted sibling — that's the "missing axis, overlapping neighbour"
+  // bug.
+  let nonQcAxisCount = 0
 
   seriesArray.forEach((s, index) => {
     const color = COLORS[index + 1] // The first color is reserved for the QC datastream
@@ -289,11 +297,17 @@ export const createPlotlyOption = (
       minDatetime = Math.min(xDataStart, minDatetime)
     }
 
+    const isQc = s.id === qcDatastream.value?.id
+    // QC goes on the primary `y`; each non-QC gets a fresh `yaxisN+2`.
+    const axisSuffix: string | number = isQc ? '' : nonQcAxisCount + 2
+    const axisKey = `yaxis${axisSuffix}`
+    const axisRef = `y${axisSuffix}`
+
     const trace: AppPlotlyTrace = {
       id: s.id,
       x: s.data?.dataX,
       y: s.data?.dataY,
-      yaxis: `y${axisSuffix}`,
+      yaxis: axisRef,
       type: 'scattergl',
       mode: 'lines+markers',
       // https://github.com/plotly/plotly.js/issues/5927
@@ -301,85 +315,87 @@ export const createPlotlyOption = (
       // hoverinfo: 'x+y',
       name: s.name,
       showLegend: false,
-      marker: {
-        color,
-      },
-      line: {
-        color,
-      },
+      marker: { color },
+      line: { color },
     }
 
-    if (s.id === qcDatastream.value?.id) {
-      // The trace for the QC datastream needs to be added last so it's drawn on top.
+    if (isQc) {
+      // The QC trace is drawn last (on top); we stash it here and push
+      // it after the loop.
       qcTrace = trace
       qcTrace.marker = { ...(qcTrace.marker ?? {}), color: COLORS[0] }
       qcTrace.line = { ...(qcTrace.line ?? {}), color: COLORS[0] }
-      qcTrace.selected = {
-        marker: {
-          color: 'red',
-        },
-      }
-      qcYaxis = {
+      qcTrace.selected = { marker: { color: 'red' } }
+
+      ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
         title: {
           text: s.yAxisLabel,
           font: { color: COLORS[0], weight: 'bold' },
         },
         tickfont: { color: COLORS[0] },
         side: 'left',
-        anchor: 'free',
-        position: 0,
         showline: true,
         linecolor: COLORS[0],
-      }
+        // Let Plotly compute the margin needed for ticks + title so they
+        // never get clipped, regardless of label length.
+        automargin: true,
+        // Force SI tick abbreviation ("2k" instead of "2000") and keep
+        // it stable across pans. Plotly's default `exponentformat` can
+        // flip between SI and decimal depending on the visible range;
+        // pinning `tickformat` makes it consistent.
+        tickformat: '~s',
+      } as Partial<LayoutAxis>
+
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
     } else {
       traces.push(trace)
 
+      // Every non-QC axis is an overlay on the primary `y` with
+      // `autoshift`, so Plotly stacks them pixel-wise on the right side
+      // without collisions, regardless of label widths.
       const yAxis: Partial<LayoutAxis> = {
         title: {
           text: s.yAxisLabel,
-          font: { color, weight: 'bold' }
+          font: { color, weight: 'bold' },
         },
         tickfont: { color },
         side: 'right',
         anchor: 'free',
-        position: 1 - axisPlotFraction * counter,
+        overlaying: 'y',
         zeroline: false,
         showgrid: false,
         showline: true,
         linecolor: color,
-        // fixedrange: true,
-        // autorange: true,
+        automargin: true,
+        // Force SI tick abbreviation ("2k" instead of "2000") and keep
+        // it stable across pans (see primary yaxis above).
+        tickformat: '~s',
+        // `autoshift` is not in the published @types/plotly.js surface
+        // yet, but is supported at runtime.
+        ...({ autoshift: true } as object),
       }
-      if (axisSuffix) {
-        yAxis.overlaying = 'y'
-      }
-
-      // Plotly accepts dynamic axis keys (`yaxis`, `yaxis2`, …) on the
-      // layout object; keep the assignment indexed off `Partial<Layout>`.
-      ; (yaxis as Record<string, Partial<LayoutAxis>>)[`yaxis${axisSuffix}`] = yAxis
-      counter++
-      axisSuffix = counter > 0 ? counter + 1 : ''
+      ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
+      nonQcAxisCount++
     }
   })
 
   if (qcTrace) {
-    qcTrace.yaxis = `y${axisSuffix}`
+    // Ensure the QC trace is drawn on top of the overlaying non-QC traces.
     traces.push(qcTrace)
   }
-  if (qcYaxis && axisSuffix) {
-    qcYaxis.overlaying = 'y'
-  }
-  if (qcYaxis) {
-    ; (yaxis as Record<string, Partial<LayoutAxis>>)[`yaxis${axisSuffix}`] = qcYaxis
-  }
+
+  // Kept for the qualifier-band helper which reads these to pick its own
+  // axis suffix.
+  const counter = nonQcAxisCount
+  const axisSuffix: string | number = ''
 
   // Qualifier flag band at the bottom of the plot.
   // One scatter trace per unique qualifier code; stacked by row in a dedicated y-axis.
   // `qcDatastream` may be undefined here during the pinia circular-init from
   // `plotlyStore` <-> `dataVisStore`; skip safely in that case.
-  const qualifierBand = seriesArray.length
+  // Suppressed in preview mode — the qualifier band is an editing affordance.
+  const qualifierBand = !isPreview && seriesArray.length
     ? buildQualifierBand(
         seriesArray,
         qcDatastream?.value?.id,
@@ -402,21 +418,39 @@ export const createPlotlyOption = (
     }
   }
 
+  // Clip to the user's selected begin/end when available, so choosing a
+  // preset or typing a custom range on the sidebar pins the x-axis to
+  // that exact window regardless of whether the returned observations
+  // reach both ends. Falls back to the data extent if the store hasn't
+  // resolved a range yet (first render, no datastream plotted).
+  const storeBegin = beginDate?.value?.getTime?.()
+  const storeEnd = endDate?.value?.getTime?.()
+  const xRangeStart =
+    typeof storeBegin === 'number' && Number.isFinite(storeBegin)
+      ? storeBegin
+      : minDatetime
+  const xRangeEnd =
+    typeof storeEnd === 'number' && Number.isFinite(storeEnd)
+      ? storeEnd
+      : maxDatetime
+
   const xaxis: Partial<LayoutAxis> = {
     type: 'date',
-    title: { text: 'Datetime' },
-    rangeselector: selectorOptions,
-    range: [minDatetime, maxDatetime],
-    // minallowed: minDatetime,
-    // maxallowed: maxDatetime,
+    // Drop the "Datetime" axis title and the rangeselector buttons —
+    // both live in the custom toolbar above the chart now, so keeping
+    // them inside Plotly only wastes chart height.
+    title: undefined,
+    rangeselector: undefined,
+    range: [xRangeStart, xRangeEnd],
     autorange: false,
     showline: true,
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
   }
 
-  if (seriesArray.length > 2) {
-    xaxis.domain = [0, 1 - axisPlotFraction * (seriesArray.length - 2)]
-  }
+  // Secondary right-side axes now rely on Plotly's `autoshift` +
+  // `automargin` (see the non-QC yaxis block above) to stack themselves
+  // outside the plot area without collisions, so the hand-rolled xaxis
+  // domain shrink is no longer needed.
 
   const layout: Partial<Layout> = {
     spikedistance: 0, // https://github.com/plotly/plotly.js/issues/5927#issuecomment-1697679087
@@ -425,28 +459,42 @@ export const createPlotlyOption = (
     ...yaxis,
     dragmode: 'pan',
     hovermode: 'closest', // Disable if hovering is too costly
-    title: {
-      text: qcTrace?.name,
-      font: { color: COLORS[0], weight: 'bold' },
-    },
+    // Title is omitted everywhere — the custom toolbar above the chart
+    // (both in Select preview and Edit) already names the series, and
+    // Plotly's built-in title steals a whole row of chart height.
+    title: undefined,
+    // Tight margins reclaim the generous default whitespace around the
+    // chart. Per-axis `automargin: true` lets Plotly grow l/r as needed
+    // to fit stacked y-axes and their titles. In edit we keep a small
+    // top margin so the modebar (top-right) doesn't collide with the
+    // first tick label.
+    margin: isPreview
+      ? { l: 16, r: 16, t: 8, b: 32, pad: 0 }
+      : { l: 16, r: 16, t: 24, b: 32, pad: 0 },
     showlegend: false,
   }
 
   const config = {
     displayModeBar: true,
     showlegend: false,
-    modeBarButtonsToRemove: ['toImage', 'autoScale'],
+    // `select2d` / `lasso2d` are editing affordances — strip them from
+    // the preview modebar along with the custom Autoscale-Y button.
+    modeBarButtonsToRemove: isPreview
+      ? ['toImage', 'autoScale', 'select2d', 'lasso2d']
+      : ['toImage', 'autoScale'],
     scrollZoom: true,
     responsive: true,
     doubleClick: false,
-    modeBarButtonsToAdd: [
-      {
-        name: 'Autoscale Y axis',
-        icon: iconRescaleY,
-        direction: 'up',
-        click: cropYaxisRange,
-      },
-    ],
+    modeBarButtonsToAdd: isPreview
+      ? []
+      : [
+          {
+            name: 'Autoscale Y axis',
+            icon: iconRescaleY,
+            direction: 'up',
+            click: cropYaxisRange,
+          },
+        ],
     // plotGlPixelRatio: 1,
   } as unknown as Partial<Config>
 

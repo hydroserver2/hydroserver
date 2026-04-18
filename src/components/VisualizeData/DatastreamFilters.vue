@@ -1,112 +1,123 @@
 <template>
-  <v-btn
-    color="primary-lighten-2"
-    @click="clearFilters"
-    variant="outlined"
-    rounded
-    append-icon="mdi-close"
-    class="mb-4"
-    >Clear filters</v-btn
-  >
+  <div class="ds-filters">
+    <!-- Inline strip with count + clear, collapsed to a single row. -->
+    <div
+      v-if="appliedCount"
+      class="d-flex align-center justify-space-between text-caption text-medium-emphasis mb-1"
+    >
+      <span>
+        {{ appliedCount }} filter{{ appliedCount === 1 ? '' : 's' }} applied
+      </span>
+      <v-btn
+        size="x-small"
+        variant="text"
+        density="compact"
+        prepend-icon="mdi-close-circle-outline"
+        @click="clearFilters"
+      >
+        Clear
+      </v-btn>
+    </div>
 
-  <v-expansion-panels color="blue-grey-darken-2" multiple v-model="panels">
-    <v-expansion-panel title="Sites">
-      <v-expansion-panel-text class="bg-blue-grey-darken-4">
-        <v-text-field
-          class="my-4"
-          clearable
-          @click:clear="searchThing = ''"
-          v-model="searchThing"
-          prepend-inner-icon="mdi-magnify"
-          label="Search"
-          density="compact"
-          hide-details
-        />
+    <v-expansion-panels
+      v-model="panels"
+      multiple
+      variant="accordion"
+      class="ds-filters__panels"
+    >
+      <FilterPanel
+        icon="mdi-map-marker-outline"
+        label="Sites"
+        :total="sortedThings.length"
+        :selected-count="selectedThings.length"
+        v-model:search="searchThing"
+      >
+        <template #default>
+          <v-virtual-scroll
+            :items="sortedThings"
+            :height="sortedThings.length < 6 ? 'auto' : 180"
+            item-height="28"
+          >
+            <template #default="{ item }">
+              <v-checkbox
+                :key="item.id"
+                v-model="selectedThings"
+                :label="item.name"
+                :value="item"
+                hide-details
+                density="compact"
+                color="primary"
+                class="ds-filters__checkbox"
+              />
+            </template>
+          </v-virtual-scroll>
+        </template>
+      </FilterPanel>
 
-        <v-virtual-scroll
-          :items="sortedThings"
-          :height="sortedThings.length < 6 ? 'auto' : 250"
-        >
-          <template #default="{ item }">
-            <v-checkbox
-              :key="item.id"
-              v-model="selectedThings"
-              :label="item.name"
-              :value="item"
-              hide-details
-              density="compact"
-            />
-          </template>
-        </v-virtual-scroll>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
+      <FilterPanel
+        icon="mdi-chart-bell-curve-cumulative"
+        label="Observed properties"
+        :total="sortedObservedPropertyNames.length"
+        :selected-count="selectedObservedPropertyNames.length"
+        v-model:search="searchObservedProperty"
+      >
+        <template #default>
+          <v-virtual-scroll
+            :items="sortedObservedPropertyNames"
+            :height="sortedObservedPropertyNames.length < 6 ? 'auto' : 180"
+            item-height="28"
+          >
+            <template #default="{ item }">
+              <v-checkbox
+                v-model="selectedObservedPropertyNames"
+                :label="item"
+                :value="item"
+                hide-details
+                density="compact"
+                color="primary"
+                class="ds-filters__checkbox"
+              />
+            </template>
+          </v-virtual-scroll>
+        </template>
+      </FilterPanel>
 
-    <v-expansion-panel title="Observed properties">
-      <v-expansion-panel-text class="bg-blue-grey-darken-4">
-        <v-text-field
-          class="my-4"
-          clearable
-          @click:clear="searchObservedProperty = ''"
-          v-model="searchObservedProperty"
-          prepend-inner-icon="mdi-magnify"
-          label="Search"
-          density="compact"
-          hide-details
-        />
-
-        <v-virtual-scroll
-          :items="sortedObservedPropertyNames"
-          :height="sortedObservedPropertyNames.length < 6 ? 'auto' : 250"
-        >
-          <template #default="{ item }">
-            <v-checkbox
-              v-model="selectedObservedPropertyNames"
-              :label="item"
-              :value="item"
-              hide-details
-              density="compact"
-            />
-          </template>
-        </v-virtual-scroll>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel title="Processing levels">
-      <v-expansion-panel-text class="bg-blue-grey-darken-4">
-        <v-text-field
-          class="my-4"
-          clearable
-          @click:clear="searchProcessingLevel = ''"
-          v-model="searchProcessingLevel"
-          prepend-inner-icon="mdi-magnify"
-          label="Search"
-          density="compact"
-          hide-details
-        />
-
-        <v-virtual-scroll
-          :items="sortedProcessingLevelNames"
-          :height="sortedProcessingLevelNames.length < 6 ? 'auto' : 250"
-        >
-          <template #default="{ item }">
-            <v-checkbox
-              v-model="selectedProcessingLevelNames"
-              :label="item"
-              :value="item"
-              hide-details
-              density="compact"
-            />
-          </template>
-        </v-virtual-scroll>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-  </v-expansion-panels>
+      <FilterPanel
+        icon="mdi-layers-triple-outline"
+        label="Processing levels"
+        :total="sortedProcessingLevelNames.length"
+        :selected-count="selectedProcessingLevelNames.length"
+        v-model:search="searchProcessingLevel"
+      >
+        <template #default>
+          <v-virtual-scroll
+            :items="sortedProcessingLevelNames"
+            :height="sortedProcessingLevelNames.length < 6 ? 'auto' : 180"
+            item-height="28"
+          >
+            <template #default="{ item }">
+              <v-checkbox
+                v-model="selectedProcessingLevelNames"
+                :label="item"
+                :value="item"
+                hide-details
+                density="compact"
+                color="primary"
+                class="ds-filters__checkbox"
+              />
+            </template>
+          </v-virtual-scroll>
+        </template>
+      </FilterPanel>
+    </v-expansion-panels>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
+import FilterPanel from '@/components/VisualizeData/FilterPanel.vue'
 
 const {
   matchesSelectedObservedProperty,
@@ -205,6 +216,13 @@ watch(sortedProcessingLevelNames, (newVal, oldVal) => {
   }
 })
 
+const appliedCount = computed(
+  () =>
+    selectedThings.value.length +
+    selectedObservedPropertyNames.value.length +
+    selectedProcessingLevelNames.value.length
+)
+
 const clearFilters = () => {
   selectedThings.value = []
   selectedObservedPropertyNames.value = []
@@ -215,10 +233,46 @@ const clearFilters = () => {
   searchProcessingLevel.value = ''
 }
 
-const panels = ref([])
+// Start with Sites expanded so the user sees at least one list immediately.
+const panels = ref<number[]>([0])
 </script>
 
 <style scoped>
+.ds-filters :deep(.v-expansion-panel) {
+  background: transparent;
+}
+
+.ds-filters :deep(.v-expansion-panel-title) {
+  min-height: 32px;
+  padding: 2px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background-color 120ms ease;
+}
+
+.ds-filters :deep(.v-expansion-panel-title--active) {
+  min-height: 32px;
+}
+
+.ds-filters :deep(.v-expansion-panel-title:hover),
+.ds-filters :deep(.v-expansion-panel-title--active) {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+
+.ds-filters :deep(.v-expansion-panel-text__wrapper) {
+  padding: 4px 2px 8px;
+}
+
+/* Tight checkbox rows so the 180 px virtual viewport fits more items. */
+.ds-filters__checkbox {
+  min-height: 28px;
+}
+
+.ds-filters__checkbox :deep(.v-selection-control) {
+  min-height: 28px;
+}
+
 :deep(.v-selection-control),
 :deep(.v-label) {
   align-items: start;

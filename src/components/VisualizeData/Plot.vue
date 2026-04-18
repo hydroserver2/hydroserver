@@ -1,25 +1,120 @@
 <template>
-  <div class="d-flex flex-column">
-    <div class="d-flex px-4 py-1 justify-space-between align-center">
-      <div class="d-flex align-center gap-2">
-        <v-switch
-          v-model="areTooltipsEnabled"
-          @update:model-value="handleRelayout"
+  <div class="plot-root d-flex flex-column">
+    <!-- Two-line plot header:
+         • Row 1 — the plot title (the QC datastream name) with a quiet
+           loading indicator to its right.
+         • Row 2 — controls: view switch, selection chip, date range,
+           tooltips toggle, help menu.
+         Splitting the title onto its own line gives it the prominence
+         it deserves and keeps the controls row at a predictable
+         height regardless of title length. -->
+    <div v-if="!preview" class="plot-header">
+      <div class="plot-header__title-row px-3 py-1 d-flex align-center gap-2">
+        <v-icon
+          icon="mdi-chart-line"
           color="primary"
-          label="Tooltips"
-          :disabled="visiblePoints > tooltipsMaxDataPoints"
-          hide-details
+          size="18"
+          class="flex-shrink-0"
         />
-
-        <v-progress-circular v-if="isUpdating" color="primary" indeterminate />
+        <div
+          class="plot-header__title text-subtitle-2 font-weight-bold text-truncate flex-grow-1"
+          :title="qcDatastream?.name"
+        >
+          {{ qcDatastream?.name ?? 'Data preview' }}
+        </div>
+        <v-progress-circular
+          v-if="isUpdating"
+          color="primary"
+          size="16"
+          width="2"
+          indeterminate
+        />
       </div>
 
-      <div v-if="showCoordinates" class="text-medium-emphasis text-body-2">
-        <div>{{ hover.y }}</div>
-        <div>{{ formatDate(new Date(hover.x)) }}</div>
-      </div>
+      <v-divider />
 
-      <div class="d-flex align-center gap-1">
+      <div class="plot-toolbar d-flex align-center flex-wrap gap-2 px-3 py-1">
+        <!-- Plot ↔ Table segmented control. -->
+        <v-btn-toggle
+          v-model="tab"
+          density="compact"
+          color="primary"
+          variant="flat"
+          mandatory
+          rounded="lg"
+          class="plot-toolbar__tabs"
+          @update:model-value="onTabChange"
+        >
+          <v-btn value="plot" size="small" prepend-icon="mdi-chart-line">
+            Plot
+          </v-btn>
+          <v-btn value="table" size="small" prepend-icon="mdi-table">
+            Table
+          </v-btn>
+        </v-btn-toggle>
+
+        <!-- Active selection indicator. Doubles as a shortcut to clear
+             the selection. Hidden when nothing is selected. -->
+        <v-chip
+          v-if="selectedData?.length"
+          class="plot-toolbar__selection"
+          size="small"
+          color="red"
+          variant="tonal"
+          prepend-icon="mdi-checkbox-marked-circle"
+          closable
+          close-icon="mdi-close"
+          @click:close="clearSelected()"
+        >
+          <b class="mr-1">{{ selectedData.length }}</b>
+          point{{ selectedData.length === 1 ? '' : 's' }} selected
+        </v-chip>
+
+        <v-spacer />
+
+        <v-btn-toggle
+          v-model="selectedDateBtnId"
+          density="compact"
+          color="primary"
+          variant="text"
+          mandatory
+          class="plot-toolbar__range"
+          @update:model-value="(id: any) => onDateBtnClick(id as number)"
+        >
+          <v-btn
+            v-for="opt in dateOptions"
+            :key="opt.id"
+            :value="opt.id"
+            size="small"
+            :title="(opt as any).title ?? opt.label"
+          >
+            {{ opt.label }}
+          </v-btn>
+        </v-btn-toggle>
+
+        <v-tooltip
+          location="bottom"
+          :text="
+            visiblePoints > tooltipsMaxDataPoints
+              ? 'Too many points visible — tooltips disabled'
+              : areTooltipsEnabled
+                ? 'Tooltips on'
+                : 'Tooltips off'
+          "
+        >
+          <template #activator="{ props: tp }">
+            <v-btn
+              v-bind="tp"
+              size="small"
+              variant="text"
+              :disabled="visiblePoints > tooltipsMaxDataPoints"
+              :icon="areTooltipsEnabled ? 'mdi-tooltip' : 'mdi-tooltip-outline'"
+              :color="areTooltipsEnabled ? 'primary' : undefined"
+              @click="toggleTooltips"
+            />
+          </template>
+        </v-tooltip>
+
         <v-menu
           v-model="showHelp"
           :close-on-content-click="false"
@@ -31,117 +126,94 @@
               v-bind="menuProps"
               variant="text"
               size="small"
-              prepend-icon="mdi-help-circle-outline"
-            >
-              Plot controls
-            </v-btn>
+              icon="mdi-help-circle-outline"
+              title="Plot controls"
+              aria-label="Plot controls"
+            />
           </template>
 
-          <v-card max-width="360" class="plot-help">
-            <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
-              <v-icon icon="mdi-gesture-tap" size="20" />
-              Plot controls
-            </v-card-title>
-            <v-divider />
-            <v-list density="compact" class="py-1" lines="two">
-              <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-                Gestures
-              </v-list-subheader>
-              <v-list-item
-                v-for="(g, i) in gestures"
-                :key="`g-${i}`"
-                class="px-4"
-              >
-                <template v-slot:prepend>
-                  <v-icon :icon="g.icon" size="18" class="mr-2" />
-                </template>
-                <v-list-item-title class="text-body-2 font-weight-medium">
-                  {{ g.title }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  {{ g.desc }}
-                </v-list-item-subtitle>
-              </v-list-item>
+        <v-card max-width="360" class="plot-help">
+          <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
+            <v-icon icon="mdi-gesture-tap" size="20" />
+            Plot controls
+          </v-card-title>
+          <v-divider />
+          <v-list density="compact" class="py-1" lines="two">
+            <v-list-subheader
+              class="text-uppercase text-caption font-weight-bold"
+            >
+              Gestures
+            </v-list-subheader>
+            <v-list-item
+              v-for="(g, i) in gestures"
+              :key="`g-${i}`"
+              class="px-4"
+            >
+              <template v-slot:prepend>
+                <v-icon :icon="g.icon" size="18" class="mr-2" />
+              </template>
+              <v-list-item-title class="text-body-2 font-weight-medium">
+                {{ g.title }}
+              </v-list-item-title>
+              <v-list-item-subtitle class="text-caption">
+                {{ g.desc }}
+              </v-list-item-subtitle>
+            </v-list-item>
 
-              <v-divider class="my-1" />
+            <v-divider class="my-1" />
 
-              <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-                Toolbar icons
-              </v-list-subheader>
-              <v-list-item
-                v-for="(b, i) in modebarIcons"
-                :key="`mb-${i}`"
-                class="px-4"
-              >
-                <template v-slot:prepend>
-                  <v-icon :icon="b.icon" size="18" class="mr-2" />
-                </template>
-                <v-list-item-title class="text-body-2 font-weight-medium">
-                  {{ b.title }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  {{ b.desc }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-card>
-        </v-menu>
+            <v-list-subheader
+              class="text-uppercase text-caption font-weight-bold"
+            >
+              Toolbar icons
+            </v-list-subheader>
+            <v-list-item
+              v-for="(b, i) in modebarIcons"
+              :key="`mb-${i}`"
+              class="px-4"
+            >
+              <template v-slot:prepend>
+                <v-icon :icon="b.icon" size="18" class="mr-2" />
+              </template>
+              <v-list-item-title class="text-body-2 font-weight-medium">
+                {{ b.title }}
+              </v-list-item-title>
+              <v-list-item-subtitle class="text-caption">
+                {{ b.desc }}
+              </v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
       </div>
     </div>
 
-    <div
-      v-if="showTip && !selectedData?.length"
-      class="plot-tip px-4 py-1 d-flex align-center gap-2 text-caption"
-    >
-      <v-icon icon="mdi-lightbulb-on-outline" size="16" color="primary" />
-      <span>
-        <b>Tip:</b>
-        drag across the plot to select points, drag the edges of the axes to
-        rescale, or scroll on the plot to zoom.
-      </span>
-      <v-spacer />
-      <v-btn
-        size="x-small"
-        variant="text"
-        icon="mdi-close"
-        @click="showTip = false"
-      />
-    </div>
-
-    <v-divider></v-divider>
+    <v-divider v-if="!preview"></v-divider>
 
     <div class="d-flex flex-row flex-grow-1">
-      <v-tabs
-        v-model="tab"
-        @update:model-value="onTabChange"
-        direction="vertical"
-        style="width: 50px; border-right: 1px solid #ddd"
-        class="bg-grey-lighten-4"
-      >
-        <v-tooltip location="end" text="Plot view">
-          <template v-slot:activator="{ props: tooltipProps }">
-            <v-tab v-bind="tooltipProps" value="plot">
-              <v-icon icon="mdi-chart-line"></v-icon>
-            </v-tab>
-          </template>
-        </v-tooltip>
-        <v-tooltip location="end" text="Table view">
-          <template v-slot:activator="{ props: tooltipProps }">
-            <v-tab v-bind="tooltipProps" value="table">
-              <v-icon icon="mdi-table"></v-icon>
-            </v-tab>
-          </template>
-        </v-tooltip>
-      </v-tabs>
-
       <v-tabs-window v-model="tab" class="flex-grow-1">
         <v-tabs-window-item value="plot" class="fill-height">
-          <div ref="plot" class="fill-height"></div>
+          <div class="plot-container fill-height">
+            <div ref="plot" class="fill-height"></div>
+            <!-- Floating hover-coordinates chip, anchored inside the
+                 plot area. Absolute positioning means it appears and
+                 disappears without touching the toolbar layout. -->
+            <div
+              v-show="showCoordinates && tab === 'plot'"
+              class="plot-coords"
+              aria-live="polite"
+            >
+              <span class="mr-2">
+                <b>x</b> {{ formatDate(new Date(hover.x)) }}
+              </span>
+              <span> <b>y</b> {{ hover.y }} </span>
+            </div>
+          </div>
         </v-tabs-window-item>
 
         <v-tabs-window-item value="table" class="fill-height">
           <!-- Important to NOT keep the DataTable component in memory if the tab is not shown -->
-          <DataTable v-if="tab === 'table'" class="fill-height"
+          <DataTable v-if="tab === 'table' && !preview" class="fill-height"
         /></v-tabs-window-item>
       </v-tabs-window>
     </div>
@@ -149,17 +221,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
-import { useDataVisStore } from '@/store/dataVisualization'
 import { handleNewPlot, handleRelayout } from '@/utils/plotting/plotly'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDate } from '@uwrl/qc-utils'
+import { useDataVisStore } from '@/store/dataVisualization'
 
-const { dispatchSelection } = useDataSelection()
+/**
+ * `preview` strips the in-plot chrome (tooltip toggle, plot-controls help
+ * menu, Plot/Table tab rail) for the Select view, where the plot is shown
+ * purely as a data preview and editing affordances aren't relevant yet.
+ */
+const props = defineProps<{
+  preview?: boolean
+}>()
+
+const { dispatchSelection, clearSelected } = useDataSelection()
+const { updateOptions } = usePlotlyStore()
+const dataVisStore = useDataVisStore()
 const plot = ref<HTMLDivElement>()
 const {
   isUpdating,
@@ -168,12 +251,19 @@ const {
   tooltipsMaxDataPoints,
   hover,
   showCoordinates,
+  previewMode,
 } = storeToRefs(usePlotlyStore())
-const { selectedData } = storeToRefs(useDataVisStore())
+const { selectedData, qcDatastream, dateOptions, selectedDateBtnId } =
+  storeToRefs(useDataVisStore())
+const { onDateBtnClick } = dataVisStore
 const tab = ref('plot')
 
+function toggleTooltips() {
+  areTooltipsEnabled.value = !areTooltipsEnabled.value
+  handleRelayout(null)
+}
+
 const showHelp = ref(false)
-const showTip = ref(true)
 
 const gestures = [
   {
@@ -252,10 +342,21 @@ const modebarIcons = [
 ]
 
 onMounted(async () => {
+  // Flip the store's preview flag before `handleNewPlot` so
+  // `createPlotlyOption` emits the preview-friendly layout (no qualifier
+  // band, no built-in title, no select/lasso, tight margins).
+  previewMode.value = !!props.preview
+  updateOptions()
+
   // This timeout halts the execution of handleNewPlot until the view switching animation is complete, and the container has expanded.
   setTimeout(() => {
     handleNewPlot(plot.value)
   }, 200)
+})
+
+onBeforeUnmount(() => {
+  // Reset so a subsequent Plot mount in Edit view doesn't inherit preview.
+  if (previewMode.value) previewMode.value = false
 })
 
 const onTabChange = () => {
@@ -268,9 +369,99 @@ const onTabChange = () => {
 </script>
 
 <style scoped>
-.plot-tip {
-  background-color: rgb(var(--v-theme-primary), 0.06);
-  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.15);
+.plot-root {
+  min-height: 0;
+}
+
+.plot-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.plot-header__title-row {
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  min-height: 32px;
+}
+
+.plot-header__title {
+  min-width: 0;
+  letter-spacing: 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.plot-toolbar {
+  background-color: rgba(var(--v-theme-primary), 0.02);
+  min-height: 40px;
+}
+
+.plot-toolbar__tabs {
+  flex: 0 0 auto;
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.plot-toolbar__tabs :deep(.v-btn) {
+  min-width: 72px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  border: none !important;
+}
+
+/* Inactive segment renders as a subtle button on the muted backdrop;
+   the active segment gets Vuetify's colour="primary" treatment already. */
+.plot-toolbar__tabs :deep(.v-btn:not(.v-btn--active)) {
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  background-color: transparent !important;
+}
+
+.plot-toolbar__tabs :deep(.v-btn:not(.v-btn--active):hover) {
+  background-color: rgba(var(--v-theme-on-surface), 0.06) !important;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.plot-toolbar__title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.plot-toolbar__selection {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.plot-toolbar__range :deep(.v-btn) {
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+/* Floating hover-coordinates chip overlaid on the plot. Absolute
+   positioning keeps it out of the toolbar layout so showing/hiding it
+   as the cursor enters and leaves the chart never shifts the range or
+   help controls. Pointer-events off so it doesn't steal hover from the
+   chart beneath it. */
+.plot-container {
+  position: relative;
+}
+
+.plot-coords {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  border-radius: 4px;
+  color: rgba(var(--v-theme-on-surface), 0.75);
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .plot-help :deep(.v-list-item) {
@@ -300,7 +491,9 @@ const onTabChange = () => {
   .drag.cursor-se-resize {
     fill: transparent !important;
     stroke: transparent !important;
-    transition: fill 120ms ease, stroke 120ms ease;
+    transition:
+      fill 120ms ease,
+      stroke 120ms ease;
   }
 
   .drag.cursor-ns-resize:hover,

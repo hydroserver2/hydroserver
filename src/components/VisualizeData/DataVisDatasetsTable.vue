@@ -1,59 +1,97 @@
 <template>
-  <div class="d-flex flex-column">
-    <div class="d-flex align-center justify-space-between my-2 table-title">
-      <h5 class="text-h5">Datastreams</h5>
-
-      <v-select
-        label="Show/Hide columns"
-        v-model="selectedHeaders"
-        :items="selectableHeaders"
-        item-text="title"
-        item-value="key"
-        multiple
-        item-color="green"
-        density="compact"
-        variant="solo"
-        hide-details
-        max-width="200"
-      >
-        <template #selection="{ item, index }">
-          <!-- Leave blank so nothing appears in the v-select box -->
-        </template>
-      </v-select>
-    </div>
-
-    <v-card class="flex-grow-1 d-flex flex-column">
-      <v-toolbar flat color="blue-grey-lighten-4">
-        <v-text-field
-          class="mx-2"
-          clearable
-          v-model="search"
-          prepend-inner-icon="mdi-magnify"
-          label="Search"
-          hide-details
-          density="compact"
-          rounded
-        />
-
-        <v-spacer />
-
-        <v-btn :disabled="!plottedDatastreams.length" @click="clearSelected">
-          Clear Selected
-        </v-btn>
-
-        <v-btn @click="showOnlySelected = !showOnlySelected">
-          {{ showOnlySelected ? 'Show All' : 'Show Selected' }}
-        </v-btn>
-
-        <v-btn
-          :loading="downloading"
-          :disabled="!plottedDatastreams.length"
-          prepend-icon="mdi-download"
-          @click="downloadSelected(plottedDatastreams)"
-          >Download Selected</v-btn
+  <div class="datasets-table d-flex flex-column">
+    <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
+      <div class="d-flex align-center gap-2" style="min-width: 0;">
+        <v-icon icon="mdi-database" color="primary" size="18" />
+        <span class="text-body-2 font-weight-bold">Datastreams</span>
+        <v-chip
+          size="x-small"
+          :color="plottedDatastreams.length ? 'primary' : undefined"
+          :variant="plottedDatastreams.length ? 'tonal' : 'outlined'"
+          label
         >
-      </v-toolbar>
+          {{ plottedDatastreams.length }}/5 plotted
+        </v-chip>
+      </div>
 
+      <v-text-field
+        class="datasets-table__search mx-3 flex-grow-1"
+        clearable
+        v-model="search"
+        prepend-inner-icon="mdi-magnify"
+        placeholder="Search datastreams…"
+        hide-details
+        density="compact"
+        variant="outlined"
+      />
+
+      <v-menu location="bottom end" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <v-btn
+            v-bind="menuProps"
+            icon="mdi-dots-vertical"
+            size="small"
+            variant="text"
+            aria-label="Table options"
+            title="Table options"
+          />
+        </template>
+
+        <v-card min-width="260" class="py-1">
+          <v-list density="compact" nav>
+            <v-list-item
+              prepend-icon="mdi-close-circle-outline"
+              :disabled="!plottedDatastreams.length"
+              @click="clearSelected"
+            >
+              <v-list-item-title>Clear selected</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              :prepend-icon="
+                showOnlySelected ? 'mdi-filter' : 'mdi-filter-outline'
+              "
+              @click="showOnlySelected = !showOnlySelected"
+            >
+              <v-list-item-title>
+                {{ showOnlySelected ? 'Show all' : 'Show selected only' }}
+              </v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-download"
+              :disabled="!plottedDatastreams.length || downloading"
+              @click="downloadSelected(plottedDatastreams)"
+            >
+              <v-list-item-title>
+                {{ downloading ? 'Downloading…' : 'Download selected' }}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+
+          <v-divider />
+
+          <div class="pa-3">
+            <div class="text-caption text-medium-emphasis mb-1">
+              Visible columns
+            </div>
+            <v-checkbox
+              v-for="h in selectableHeaders"
+              :key="h.key"
+              density="compact"
+              hide-details
+              :label="h.title"
+              :model-value="h.visible"
+              @update:model-value="h.visible = !!$event"
+            />
+          </div>
+        </v-card>
+      </v-menu>
+    </v-toolbar>
+
+    <v-divider />
+
+    <div class="datasets-table__body flex-grow-1 d-flex flex-column">
       <v-data-table-virtual
         data-testid="datastreams-table"
         :headers="headers.filter((header) => header.visible)"
@@ -61,11 +99,12 @@
         :sort-by="sortBy"
         multi-sort
         :search="search"
-        style="min-height: 30vh; height: 0"
+        style="height: 0"
+        class="datasets-table__table flex-grow-1"
         fixed-header
-        class="elevation-2 flex-grow-1"
         color="secondary"
         density="compact"
+        :row-props="getRowProps"
         @click:row="onRowClick"
         hover
       >
@@ -85,17 +124,42 @@
           </template>
         </template>
         <template v-slot:item.plot="{ item }">
-          <v-checkbox
-            :model-value="isChecked(item)"
-            :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-            :data-testid="`plot-checkbox-${item.id}`"
-            class="d-flex align-self-center"
-            density="compact"
-            @change="() => toggleDatastream(item)"
-          />
+          <v-tooltip
+            :disabled="!isAtCap(item)"
+            location="top"
+            text="Maximum of 5 datastreams plotted — remove one to add another"
+          >
+            <template #activator="{ props: tooltipProps }">
+              <button
+                v-bind="tooltipProps"
+                type="button"
+                class="plot-check"
+                :class="{
+                  'plot-check--checked': isChecked(item),
+                  'plot-check--disabled': isAtCap(item),
+                }"
+                :data-testid="`plot-checkbox-${item.id}`"
+                :aria-disabled="isAtCap(item)"
+                :aria-pressed="isChecked(item)"
+                :aria-label="
+                  isChecked(item) ? 'Remove from plot' : 'Add to plot'
+                "
+                @click.stop="!isAtCap(item) && toggleDatastream(item)"
+              >
+                <v-icon
+                  :icon="
+                    isChecked(item)
+                      ? 'mdi-checkbox-marked'
+                      : 'mdi-checkbox-blank-outline'
+                  "
+                  size="20"
+                />
+              </button>
+            </template>
+          </v-tooltip>
         </template>
       </v-data-table-virtual>
-    </v-card>
+    </div>
 
     <v-dialog v-model="openInfoCard" width="50rem" v-if="selectedDatastream">
       <DatastreamInformationCard
@@ -186,6 +250,18 @@ function clearSelected() {
 const isChecked = (item: Datastream) =>
   plottedDatastreams.value.some((sds) => sds.id === item.id)
 
+/**
+ * True when the plot is at its 5-stream cap and this row is not already
+ * one of the plotted streams — so its checkbox should read as disabled
+ * and the whole row should dim.
+ */
+const isAtCap = (item: Datastream) =>
+  plottedDatastreams.value.length >= 5 && !isChecked(item)
+
+const getRowProps = ({ item }: { item: Datastream }) => ({
+  class: { 'datasets-table__row--at-cap': isAtCap(item) },
+})
+
 const search = ref()
 const headers = reactive([
   { title: '', key: 'status', visible: true, width: 1 },
@@ -230,23 +306,73 @@ const sortBy = [
   { key: 'qualityControlLevelDefinition' },
   // { key: 'valueCount', order: 'desc' },
 ]
-const selectedHeaders = computed({
-  get: () =>
-    headers.filter((header) => header.visible).map((header) => header.key),
-  set: (keys) => {
-    headers.forEach((header) => {
-      header.visible = keys.includes(header.key)
-    })
-  },
-})
 </script>
 
 <style scoped lang="scss">
+.datasets-table {
+  min-height: 0;
+}
+
+.datasets-table__toolbar {
+  background-color: rgb(var(--v-theme-surface));
+}
+
+.datasets-table__body {
+  min-height: 0;
+}
+
 :deep(.v-table .v-data-table__tr:nth-child(even) td) {
   background: #f7f7f7;
 }
 
-.table-title :deep(.v-field__input[data-no-activator]) {
-  display: none;
+:deep(tbody tr:hover > td) {
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
+}
+
+/* When the 5/5 plot cap is hit, make rows whose checkbox is disabled
+   read as clearly unavailable — dim all row content and switch the
+   cursor away from the row-level click affordance. The checkbox's own
+   styling is amplified below. */
+:deep(tbody tr.datasets-table__row--at-cap > td) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+:deep(tbody tr.datasets-table__row--at-cap:hover > td) {
+  background-color: transparent !important;
+}
+
+/* Custom plot-column "checkbox" — rendered as a button + icon so we
+   have complete control over its visual states (Vuetify's
+   `.v-selection-control` internals changed between minor versions and
+   were fighting the previous override). */
+.plot-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.plot-check:hover {
+  background-color: rgba(var(--v-theme-primary), 0.1);
+}
+
+.plot-check--checked {
+  color: rgb(var(--v-theme-primary));
+}
+
+.plot-check--disabled,
+.plot-check--disabled:hover {
+  color: rgba(var(--v-theme-on-surface), 0.25);
+  background-color: transparent;
+  cursor: not-allowed;
 }
 </style>
