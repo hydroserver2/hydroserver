@@ -1,7 +1,16 @@
 <template>
   <div class="plotted-wrapper d-flex flex-column">
-    <div class="plotted-toolbar d-flex align-center justify-end px-2 py-1">
+    <div
+      class="plotted-toolbar d-flex align-center gap-2 px-3 py-2"
+      :class="{ 'plotted-toolbar--section': sectionTitle }"
+    >
+      <template v-if="sectionTitle">
+        <v-icon icon="mdi-chart-multiple" color="primary" size="18" />
+        <span class="text-body-2 font-weight-bold">{{ sectionTitle }}</span>
+      </template>
+      <v-spacer />
       <v-btn
+        v-if="!lockQc"
         :disabled="!plottedDatastreams.length"
         size="x-small"
         variant="text"
@@ -19,6 +28,7 @@
       class="plotted-item"
       :class="{
         'plotted-item--qc': qcDatastream === datastream,
+        'plotted-item--locked': lockQc,
         'plotted-item--hidden': visibleDict[datastream.id] === false,
         'plotted-item--drop-before':
           dragIndex !== null &&
@@ -47,6 +57,7 @@
       />
 
       <button
+        v-if="!lockQc"
         type="button"
         class="plotted-item__dot"
         :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
@@ -99,6 +110,7 @@
       </div>
 
       <button
+        v-if="!(lockQc && qcDatastream === datastream)"
         type="button"
         class="plotted-item__close"
         :title="`Remove ${datastream.name} from plot`"
@@ -107,12 +119,15 @@
       >
         <v-icon icon="mdi-close" size="14" />
       </button>
+      <span v-else />
     </li>
   </ul>
   </div>
 </template>
 
 <script setup lang="ts">
+defineProps<{ sectionTitle?: string; lockQc?: boolean }>()
+
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
@@ -240,6 +255,11 @@ function reorder(from: number, to: number) {
   background-color: rgba(var(--v-theme-primary), 0.02);
 }
 
+.plotted-toolbar--section {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+  min-height: 40px;
+}
+
 .plotted-list {
   list-style: none;
 }
@@ -253,6 +273,10 @@ function reorder(from: number, to: number) {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   transition: background-color 120ms ease;
   position: relative;
+}
+
+.plotted-item--locked {
+  grid-template-columns: 16px 22px 1fr 22px;
 }
 
 .plotted-item:last-child {

@@ -1,6 +1,6 @@
 <template>
-  <div class="edit-drawer d-flex flex-column">
-    <div class="edit-drawer__header px-4 py-3">
+  <div class="edit-drawer d-flex flex-column fill-height">
+    <div class="px-4 py-3 bg-surface">
       <div class="text-subtitle-2 font-weight-bold">Data Tools</div>
       <div class="text-caption text-medium-emphasis">
         Detect issues and edit observations
@@ -9,10 +9,10 @@
 
     <v-divider />
 
-    <div class="edit-drawer__scroll flex-grow-1 overflow-y-auto">
+    <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
       <v-list class="py-2" density="compact" nav>
         <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-          Filter Points
+          Filter Data
         </v-list-subheader>
 
         <v-list-item
@@ -294,17 +294,9 @@ const addData = [
 </script>
 
 <style scoped>
-.edit-drawer {
-  height: 100%;
-}
-
-.edit-drawer__header {
-  background-color: rgb(var(--v-theme-surface));
-}
-
-.edit-drawer__scroll {
-  min-height: 0;
-}
+/* The remaining rules all `:deep()` into Vuetify's v-list-item
+   internals to allow text wrapping and reclaim padding inside a
+   narrow (~220 px) drawer. No utility-class equivalents. */
 
 /* Allow multi-line titles and descriptions instead of Vuetify's default
    single-line-with-ellipsis. Vuetify sets `overflow: hidden; text-overflow:

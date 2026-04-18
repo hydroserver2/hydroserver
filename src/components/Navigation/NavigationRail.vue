@@ -1,58 +1,114 @@
 <template>
   <v-navigation-drawer permanent rail class="bg-navbar">
-    <v-list-item>
-      <v-img :src="HydroServerIcon"></v-img>
+    <v-list-item
+      class="pa-2 d-flex justify-center"
+      role="link"
+      aria-label="Home"
+      @click="guardExit(goHome)"
+    >
+      <v-img :src="HydroServerIcon" width="28" height="28" alt="Home" />
     </v-list-item>
 
     <v-divider />
 
     <v-list density="compact" nav>
-      <v-tooltip bottom :openDelay="500" v-for="item in items">
-        <template v-slot:activator="{ props }">
-          <div v-bind:="props">
-            <v-list-item
-              :prepend-icon="item.icon"
-              :value="item.title"
-              :data-testid="`nav-rail-item-${item.title.toLowerCase()}`"
-              @click="onRailItemClicked(item.title as DrawerType)"
-              :class="{
-                'v-list-item--active':
-                  selectedDrawer === item.title && isDrawerOpen,
-              }"
-              :disabled="item.title === 'Edit' && !qcDatastream"
-            />
-          </div>
+      <v-tooltip
+        v-for="item in items"
+        :key="item.title"
+        location="right"
+        :open-delay="400"
+      >
+        <template #activator="{ props: tipProps }">
+          <v-list-item
+            v-bind="tipProps"
+            class="nav-rail__item"
+            color="primary"
+            :prepend-icon="item.icon"
+            :value="item.title"
+            :active="currentView === item.title"
+            :disabled="item.title === 'Edit' && !qcDatastream"
+            :data-testid="`nav-rail-item-${item.title.toLowerCase()}`"
+            @click="guardExit(() => onRailItemClicked(item.title as DrawerType))"
+          />
         </template>
-        <template #default>
-          <span v-if="item.title === 'Edit' && !qcDatastream">
-            Edit - Select a datastream for quality control before navigating to
-            this view.
-          </span>
-          <span v-else>{{ item.title }}</span>
-        </template>
+        <span v-if="item.title === 'Edit' && !qcDatastream">
+          Edit — select a datastream for quality control before navigating here.
+        </span>
+        <span v-else>{{ item.title }}</span>
       </v-tooltip>
     </v-list>
 
-    <v-spacer />
-
-    <template v-slot:append>
-      <v-list>
-        <v-list-item prepend-icon="mdi-logout" @click.prevent="onLogout" />
+    <template #append>
+      <v-divider />
+      <v-list density="compact" nav>
+        <v-tooltip location="right" :open-delay="400">
+          <template #activator="{ props: tipProps }">
+            <v-list-item
+              v-bind="tipProps"
+              prepend-icon="mdi-logout"
+              @click.prevent="guardExit(onLogout)"
+            />
+          </template>
+          <span>Log out</span>
+        </v-tooltip>
       </v-list>
     </template>
   </v-navigation-drawer>
 
-  <div v-if="isDrawerOpen">
-    <FileDrawer v-if="selectedDrawer === DrawerType.File" />
+  <SelectDrawer v-if="isDrawerOpen && selectedDrawer === DrawerType.Select" />
 
-    <SelectDrawer v-if="selectedDrawer === DrawerType.Select" />
-  </div>
+  <v-dialog v-model="showExitConfirm" max-width="520" persistent>
+    <v-card rounded="lg">
+      <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+        <v-avatar color="warning" variant="tonal" size="40">
+          <v-icon icon="mdi-alert-outline" size="22" />
+        </v-avatar>
+        <div class="d-flex flex-column">
+          <div class="text-h6 font-weight-bold">Unsaved edits</div>
+          <div class="text-caption text-medium-emphasis">
+            {{ editCount }} pending change{{ editCount === 1 ? '' : 's' }} in
+            the editor
+          </div>
+        </div>
+      </div>
+      <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+        Save your edits before leaving, or discard them to continue. Discarded
+        edits cannot be recovered.
+      </v-card-text>
+      <v-divider />
+      <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+        <v-btn variant="text" :disabled="isBusy" @click="cancelExit">
+          Cancel
+        </v-btn>
+        <v-spacer />
+        <v-btn
+          color="error"
+          variant="tonal"
+          prepend-icon="mdi-delete-outline"
+          :disabled="isBusy"
+          :loading="isBusy && exitAction === 'discard'"
+          @click="discardAndContinue"
+        >
+          Discard
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          prepend-icon="mdi-content-save-outline"
+          :disabled="isBusy"
+          :loading="isBusy && exitAction === 'save'"
+          @click="saveAndContinue"
+        >
+          Save &amp; continue
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import HydroServerIcon from '@/assets/favicon-32x32.png'
-import FileDrawer from '@/components/Navigation/FileDrawer.vue'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
 import { useUIStore, DrawerType } from '@/store/userInterface'
 import { Snackbar } from '@uwrl/qc-utils'
@@ -60,14 +116,97 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import router from '@/router/router'
 import { useHydroServer } from '@/store/hydroserver'
+import { usePlotlyStore } from '@/store/plotly'
+import { useQcSubmission } from '@/composables/useQcSubmission'
+import { useDataSelection } from '@/composables/useDataSelection'
 
 const { onRailItemClicked } = useUIStore()
-const { selectedDrawer, isDrawerOpen } = storeToRefs(useUIStore())
+const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
+const { resetState, refreshGraphSeriesArray } = useDataVisStore()
 const { qcDatastream } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
+const { editHistory, isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
+const { redraw } = usePlotlyStore()
+const { submitQcEdits } = useQcSubmission()
+const { clearSelected } = useDataSelection()
+
+const editCount = computed(() => editHistory.value?.length ?? 0)
+const hasUnsavedEdits = computed(
+  () => currentView.value === DrawerType.Edit && editCount.value > 0
+)
+
+const showExitConfirm = ref(false)
+const exitAction = ref<'save' | 'discard' | null>(null)
+const isBusy = ref(false)
+let pendingAction: (() => void | Promise<void>) | null = null
+
+function guardExit(action: () => void | Promise<void>) {
+  if (hasUnsavedEdits.value) {
+    pendingAction = action
+    showExitConfirm.value = true
+  } else {
+    action()
+  }
+}
+
+function cancelExit() {
+  if (isBusy.value) return
+  pendingAction = null
+  showExitConfirm.value = false
+}
+
+async function saveAndContinue() {
+  if (isBusy.value) return
+  isBusy.value = true
+  exitAction.value = 'save'
+  try {
+    await submitQcEdits()
+    const next = pendingAction
+    pendingAction = null
+    showExitConfirm.value = false
+    await next?.()
+  } finally {
+    isBusy.value = false
+    exitAction.value = null
+  }
+}
+
+async function discardAndContinue() {
+  if (isBusy.value) return
+  isBusy.value = true
+  exitAction.value = 'discard'
+  isUpdating.value = true
+  try {
+    if (selectedSeries.value) selectedSeries.value.data.history = []
+    await refreshGraphSeriesArray()
+    await selectedSeries.value?.data.reload()
+    await clearSelected()
+    await redraw()
+    const next = pendingAction
+    pendingAction = null
+    showExitConfirm.value = false
+    await next?.()
+  } finally {
+    isUpdating.value = false
+    isBusy.value = false
+    exitAction.value = null
+  }
+}
+
+async function goHome() {
+  resetState()
+  qcDatastream.value = null
+  currentView.value = DrawerType.Select
+  selectedDrawer.value = DrawerType.Select
+  isDrawerOpen.value = true
+  if (router.currentRoute.value.name !== 'Home') {
+    await router.push({ name: 'Home', query: {} })
+  } else {
+    await router.replace({ name: 'Home', query: {} })
+  }
+}
 
 const items = ref([
-  { title: 'File', icon: 'mdi-file' },
   { title: 'Select', icon: 'mdi-cursor-default-click-outline' },
   { title: 'Edit', icon: 'mdi-pencil' },
 ])
@@ -78,3 +217,18 @@ async function onLogout() {
   Snackbar.info('You have logged out')
 }
 </script>
+
+<style scoped>
+.nav-rail__item.v-list-item--active {
+  background-color: rgba(var(--v-theme-primary), 0.14);
+}
+
+.nav-rail__item.v-list-item--active::before {
+  content: '';
+  position: absolute;
+  inset: 4px auto 4px 0;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background-color: rgb(var(--v-theme-primary));
+}
+</style>

@@ -76,7 +76,7 @@
           v-model="selectedDateBtnId"
           density="compact"
           color="primary"
-          variant="text"
+          variant="outlined"
           mandatory
           class="plot-toolbar__range"
           @update:model-value="(id: any) => onDateBtnClick(id as number)"
@@ -93,6 +93,7 @@
         </v-btn-toggle>
 
         <v-tooltip
+          v-if="tab === 'plot'"
           location="bottom"
           :text="
             visiblePoints > tooltipsMaxDataPoints
@@ -117,6 +118,7 @@
 
         <v-menu
           v-model="showHelp"
+          v-if="tab === 'plot'"
           :close-on-content-click="false"
           location="bottom end"
           offset="6"
@@ -132,59 +134,59 @@
             />
           </template>
 
-        <v-card max-width="360" class="plot-help">
-          <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
-            <v-icon icon="mdi-gesture-tap" size="20" />
-            Plot controls
-          </v-card-title>
-          <v-divider />
-          <v-list density="compact" class="py-1" lines="two">
-            <v-list-subheader
-              class="text-uppercase text-caption font-weight-bold"
-            >
-              Gestures
-            </v-list-subheader>
-            <v-list-item
-              v-for="(g, i) in gestures"
-              :key="`g-${i}`"
-              class="px-4"
-            >
-              <template v-slot:prepend>
-                <v-icon :icon="g.icon" size="18" class="mr-2" />
-              </template>
-              <v-list-item-title class="text-body-2 font-weight-medium">
-                {{ g.title }}
-              </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                {{ g.desc }}
-              </v-list-item-subtitle>
-            </v-list-item>
+          <v-card max-width="360" class="plot-help">
+            <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
+              <v-icon icon="mdi-gesture-tap" size="20" />
+              Plot controls
+            </v-card-title>
+            <v-divider />
+            <v-list density="compact" class="py-1" lines="two">
+              <v-list-subheader
+                class="text-uppercase text-caption font-weight-bold"
+              >
+                Gestures
+              </v-list-subheader>
+              <v-list-item
+                v-for="(g, i) in gestures"
+                :key="`g-${i}`"
+                class="px-4"
+              >
+                <template v-slot:prepend>
+                  <v-icon :icon="g.icon" size="18" class="mr-2" />
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium">
+                  {{ g.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ g.desc }}
+                </v-list-item-subtitle>
+              </v-list-item>
 
-            <v-divider class="my-1" />
+              <v-divider class="my-1" />
 
-            <v-list-subheader
-              class="text-uppercase text-caption font-weight-bold"
-            >
-              Toolbar icons
-            </v-list-subheader>
-            <v-list-item
-              v-for="(b, i) in modebarIcons"
-              :key="`mb-${i}`"
-              class="px-4"
-            >
-              <template v-slot:prepend>
-                <v-icon :icon="b.icon" size="18" class="mr-2" />
-              </template>
-              <v-list-item-title class="text-body-2 font-weight-medium">
-                {{ b.title }}
-              </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                {{ b.desc }}
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-menu>
+              <v-list-subheader
+                class="text-uppercase text-caption font-weight-bold"
+              >
+                Toolbar icons
+              </v-list-subheader>
+              <v-list-item
+                v-for="(b, i) in modebarIcons"
+                :key="`mb-${i}`"
+                class="px-4"
+              >
+                <template v-slot:prepend>
+                  <v-icon :icon="b.icon" size="18" class="mr-2" />
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium">
+                  {{ b.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ b.desc }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-menu>
       </div>
     </div>
 
@@ -379,8 +381,9 @@ const onTabChange = () => {
 }
 
 .plot-header__title-row {
-  background-color: rgba(var(--v-theme-primary), 0.05);
-  min-height: 32px;
+  background-color: rgba(var(--v-theme-primary), 0.12);
+  border-bottom: 1px solid rgba(var(--v-theme-primary), 0.18);
+  min-height: 36px;
 }
 
 .plot-header__title {

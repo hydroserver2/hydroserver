@@ -23,18 +23,25 @@
     />
   </div>
 
-  <v-dialog v-model="showDateDialog" max-width="22rem">
-    <v-card>
-      <v-card-title class="d-flex pt-4">
-        Select {{ placeholder }}
+  <v-dialog v-model="showDateDialog" max-width="20rem">
+    <v-card class="date-picker-card">
+      <div class="d-flex align-center px-4 py-2">
+        <span class="text-subtitle-1 font-weight-medium">
+          Select {{ placeholder }}
+        </span>
         <v-spacer />
-        <v-icon color="grey-darken-1" @click="showDateDialog = false">
-          mdi-close
-        </v-icon>
-      </v-card-title>
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          density="comfortable"
+          @click="showDateDialog = false"
+        />
+      </div>
       <v-divider />
       <v-date-picker
         hide-header
+        show-adjacent-months
         v-model="pickerDate"
         @update:modelValue="onDatePicked"
       />
@@ -156,3 +163,31 @@ const handleTimeBlur = () => {
   timeInput.value = formatTimeStr(props.modelValue)
 }
 </script>
+
+<style scoped>
+.date-picker-card :deep(.v-date-picker-controls) {
+  justify-content: center;
+  gap: 0.25rem;
+  height: 48px;
+  padding: 4px 8px;
+}
+
+.date-picker-card :deep(.v-date-picker-controls__month),
+.date-picker-card :deep(.v-date-picker-controls__year) {
+  align-items: center;
+}
+
+.date-picker-card :deep(.v-date-picker-controls__month-btn),
+.date-picker-card :deep(.v-date-picker-controls__year-btn) {
+  font-weight: 600;
+  padding: 0 8px;
+}
+
+.date-picker-card :deep(.v-picker) {
+  box-shadow: none;
+}
+
+.date-picker-card :deep(.v-date-picker-month) {
+  padding: 0 8px 8px;
+}
+</style>

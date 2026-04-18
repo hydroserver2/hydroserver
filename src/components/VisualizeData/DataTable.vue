@@ -1,73 +1,68 @@
 <template>
   <div class="data-table d-flex flex-column fill-height">
-    <div
-      class="data-table__toolbar px-4 py-2 d-flex align-center gap-3 flex-wrap"
-    >
-      <div class="d-flex align-center">
+    <div class="data-table__toolbar px-4 py-2 d-flex align-center flex-wrap">
+      <div class="d-flex align-center flex-shrink-0">
         <v-icon icon="mdi-table-edit" class="mr-2" color="primary" size="20" />
-        <span class="text-subtitle-2 font-weight-bold">Observations</span>
+        <div class="d-flex flex-column">
+          <span class="text-subtitle-2 font-weight-bold lh-1">
+            Observations
+          </span>
+          <span class="text-caption text-medium-emphasis lh-1 mt-1">
+            Click <b>Datetime</b> or <b>Value</b> cells to edit
+          </span>
+        </div>
       </div>
 
-      <v-divider vertical />
+      <v-divider vertical class="mx-8"></v-divider>
 
-      <div class="text-caption text-medium-emphasis">
-        <span v-if="rowCount">
+      <div
+        class="d-flex align-center justify-space-between gap-1 flex-wrap flex-grow-1"
+      >
+        <v-chip
+          v-if="rowCount"
+          size="small"
+          variant="tonal"
+          color="grey-darken-1"
+          prepend-icon="mdi-format-list-numbered"
+        >
           {{ rowCount.toLocaleString() }} row{{ rowCount === 1 ? '' : 's' }}
-        </span>
+        </v-chip>
+
+        <v-spacer></v-spacer>
+
+        <v-chip
+          v-if="pendingEditCount"
+          size="small"
+          color="warning"
+          variant="tonal"
+          prepend-icon="mdi-pencil-circle"
+        >
+          {{ pendingEditCount }} unsaved
+        </v-chip>
+
+        <v-btn
+          :disabled="!pendingEditCount || isUpdating"
+          variant="text"
+          size="small"
+          color="grey-darken-1"
+          prepend-icon="mdi-undo-variant"
+          @click="discardEdits"
+        >
+          Discard
+        </v-btn>
+
+        <v-btn
+          :disabled="!pendingEditCount || isUpdating"
+          :loading="isSaving"
+          color="primary"
+          variant="flat"
+          size="small"
+          prepend-icon="mdi-content-save-outline"
+          @click="onSaveChanges"
+        >
+          Save changes
+        </v-btn>
       </div>
-
-      <v-chip
-        v-if="selectedData?.length"
-        size="small"
-        color="red"
-        variant="tonal"
-        prepend-icon="mdi-checkbox-marked-circle"
-      >
-        {{ selectedData.length }} selected
-      </v-chip>
-
-      <v-spacer />
-
-      <v-chip
-        v-if="pendingEditCount"
-        size="small"
-        color="warning"
-        variant="tonal"
-        prepend-icon="mdi-pencil-circle"
-      >
-        {{ pendingEditCount }} unsaved edit{{ pendingEditCount === 1 ? '' : 's' }}
-      </v-chip>
-
-      <v-btn
-        :disabled="!pendingEditCount || isUpdating"
-        variant="text"
-        size="small"
-        color="grey-darken-1"
-        prepend-icon="mdi-undo-variant"
-        @click="discardEdits"
-      >
-        Discard
-      </v-btn>
-
-      <v-btn
-        :disabled="!pendingEditCount || isUpdating"
-        :loading="isSaving"
-        color="primary"
-        variant="flat"
-        size="small"
-        prepend-icon="mdi-content-save-outline"
-        @click="onSaveChanges"
-      >
-        Save changes
-      </v-btn>
-    </div>
-
-    <v-divider />
-
-    <div class="data-table__hint px-4 py-1 text-caption text-medium-emphasis">
-      <v-icon size="14" icon="mdi-information-outline" class="mr-1" />
-      Click a cell in the <b>Datetime</b> or <b>Value</b> column to edit it.
-      Saving dispatches bulk shift / change operations.
     </div>
 
     <v-divider />
@@ -121,9 +116,7 @@
             :edited="valueEdits.has(index)"
             :original-display="formatNumber(selectedSeries?.data.dataY[index])"
             :edited-display="
-              valueEdits.has(index)
-                ? formatNumber(valueEdits.get(index)!)
-                : ''
+              valueEdits.has(index) ? formatNumber(valueEdits.get(index)!) : ''
             "
             input-type="number"
             align="end"
@@ -197,15 +190,11 @@ const headers = [
   { title: 'Value', align: 'end' as const, key: 'value' },
 ]
 
-const rowCount = computed(
-  () => selectedSeries?.value?.data.dataX.length ?? 0
-)
+const rowCount = computed(() => selectedSeries?.value?.data.dataX.length ?? 0)
 
 const virtualData = computed(() => new Array(rowCount.value).fill(null))
 
-const pendingEditCount = computed(
-  () => valueEdits.size + datetimeEdits.size
-)
+const pendingEditCount = computed(() => valueEdits.size + datetimeEdits.size)
 
 function onSelectChange(isSelected: boolean, index: number) {
   if (isSelected) {

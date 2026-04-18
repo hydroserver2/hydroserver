@@ -11,7 +11,6 @@ export enum DriftCorrectionMethods {
 }
 
 export enum DrawerType {
-  File = 'File',
   Edit = 'Edit',
   Select = 'Select',
   None = '',

@@ -7,13 +7,12 @@
          "Start editing" CTA, and the Plotted toggle. Below that, a split
          body: plot on the left, plotted-list on the right. -->
     <v-card class="select-view__card d-flex flex-column mb-3">
-      <div class="select-view__header d-flex align-center flex-wrap gap-3 px-4 py-3">
+      <div
+        class="select-view__header d-flex align-center flex-wrap gap-3 px-4 py-3"
+      >
         <v-icon icon="mdi-chart-line" color="primary" size="24" class="mr-1" />
-        <div class="d-flex flex-column" style="min-width: 0; flex: 1 1 auto;">
-          <span
-            v-if="qcDatastream"
-            class="text-subtitle-1 font-weight-bold"
-          >
+        <div class="d-flex flex-column" style="min-width: 0; flex: 1 1 auto">
+          <span v-if="qcDatastream" class="text-subtitle-1 font-weight-bold">
             {{ qcDatastream.name }}
           </span>
           <span v-else class="text-subtitle-1 font-weight-bold">
@@ -89,28 +88,148 @@
 
   <div
     v-else-if="currentView === DrawerType.Edit"
-    class="edit-view pa-4"
+    class="edit-view d-flex bg-background"
   >
-    <div class="edit-view__col edit-view__col--drawer edit-view__scroll">
-      <v-card class="fill-height">
-        <EditDrawer />
-      </v-card>
-    </div>
-    <div class="edit-view__col edit-view__col--plot">
-      <v-card class="fill-height d-flex flex-column">
-        <div class="flex-grow-1" style="min-height: 0;">
+    <aside
+      class="edit-view__col edit-view__col--drawer d-flex flex-column overflow-y-auto bg-surface border-e"
+    >
+      <EditDrawer />
+    </aside>
+
+    <div
+      class="edit-view__col edit-view__col--plot d-flex flex-column pa-3 overflow-hidden"
+    >
+      <v-card class="fill-height d-flex flex-column" elevation="1">
+        <div class="flex-grow-1" style="min-height: 0">
           <DataVisualization />
         </div>
       </v-card>
     </div>
-    <div class="edit-view__col edit-view__col--aux edit-view__scroll">
-      <v-card>
-        <v-card-title class="text-body-1">Plotted Datastreams</v-card-title>
-        <v-divider></v-divider>
-        <PlottedDatastreams></PlottedDatastreams>
+
+    <aside
+      class="edit-view__col edit-view__col--aux d-flex flex-column overflow-y-auto bg-surface border-s"
+    >
+      <div
+        class="edit-view__exit-bar d-flex align-center flex-wrap px-3 py-2 border-b"
+      >
+        <v-btn
+          data-testid="exit-save-btn"
+          size="small"
+          variant="flat"
+          color="primary"
+          prepend-icon="mdi-content-save-outline"
+          :disabled="!editCount || isUpdating || isSubmitting"
+          :loading="isSubmitting && exitIntent === 'save'"
+          @click="requestSave"
+        >
+          Save
+        </v-btn>
+        <v-btn
+          data-testid="exit-save-close-btn"
+          size="small"
+          variant="tonal"
+          color="primary"
+          prepend-icon="mdi-content-save-move-outline"
+          :disabled="!editCount || isUpdating || isSubmitting"
+          :loading="isSubmitting && exitIntent === 'save-close'"
+          @click="requestSaveAndClose"
+        >
+          Save &amp; Close
+        </v-btn>
+        <v-spacer />
+        <v-btn
+          data-testid="exit-close-btn"
+          size="small"
+          variant="text"
+          prepend-icon="mdi-close"
+          :disabled="isSubmitting"
+          @click="requestClose"
+        >
+          Close
+        </v-btn>
+      </div>
+
+      <section class="bg-surface">
+        <PlottedDatastreams section-title="Plotted Datastreams" lock-qc />
+      </section>
+
+      <div
+        class="bg-background border-t border-b flex-shrink-0"
+        style="height: 12px"
+      />
+
+      <section class="flex-grow-1 d-flex flex-column bg-surface">
+        <EditHistory />
+      </section>
+    </aside>
+
+    <v-dialog v-model="showSaveConfirm" max-width="520">
+      <v-card rounded="lg">
+        <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+          <v-avatar color="primary" variant="tonal" size="40">
+            <v-icon icon="mdi-cloud-upload-outline" size="22" />
+          </v-avatar>
+          <div class="d-flex flex-column">
+            <div class="text-h6 font-weight-bold">Submit QC observations?</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} pending
+            </div>
+          </div>
+        </div>
+        <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+          This will
+          <strong>overwrite existing server observations</strong> in the
+          submitted time range (replace mode). This action cannot be undone.
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+          <v-btn variant="text" @click="showSaveConfirm = false">Cancel</v-btn>
+          <v-spacer />
+          <v-btn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-cloud-upload-outline"
+            :loading="isSubmitting"
+            @click="confirmSave"
+          >
+            Submit
+          </v-btn>
+        </v-card-actions>
       </v-card>
-      <EditHistory />
-    </div>
+    </v-dialog>
+
+    <v-dialog v-model="showCloseConfirm" max-width="520">
+      <v-card rounded="lg">
+        <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+          <v-avatar color="error" variant="tonal" size="40">
+            <v-icon icon="mdi-alert-outline" size="22" />
+          </v-avatar>
+          <div class="d-flex flex-column">
+            <div class="text-h6 font-weight-bold">Discard unsaved edits?</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} will be lost
+            </div>
+          </div>
+        </div>
+        <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+          Closing will leave the editor without submitting your changes.
+          Discarded edits cannot be recovered.
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+          <v-btn variant="text" @click="showCloseConfirm = false">Cancel</v-btn>
+          <v-spacer />
+          <v-btn
+            color="error"
+            variant="flat"
+            prepend-icon="mdi-delete-outline"
+            @click="confirmClose"
+          >
+            Discard &amp; close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -123,9 +242,12 @@ import EditDrawer from '@/components/Navigation/EditDrawer.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useUIStore, DrawerType } from '@/store/userInterface'
-import { onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
+import { usePlotlyStore } from '@/store/plotly'
+import { useQcSubmission } from '@/composables/useQcSubmission'
+import { useDataSelection } from '@/composables/useDataSelection'
 
 const { resetState } = useDataVisStore()
 const {
@@ -141,6 +263,69 @@ const {
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
 const { currentView, selectedDrawer, isDrawerOpen } = storeToRefs(useUIStore())
+const { editHistory, isUpdating, isSubmitting, selectedSeries } =
+  storeToRefs(usePlotlyStore())
+const { redraw } = usePlotlyStore()
+const { refreshGraphSeriesArray } = useDataVisStore()
+const { clearSelected } = useDataSelection()
+const { submitQcEdits } = useQcSubmission()
+
+const editCount = computed(() => editHistory.value?.length ?? 0)
+const showSaveConfirm = ref(false)
+const showCloseConfirm = ref(false)
+const exitIntent = ref<'save' | 'save-close' | null>(null)
+
+function exitToSelect() {
+  currentView.value = DrawerType.Select
+  selectedDrawer.value = DrawerType.Select
+  isDrawerOpen.value = true
+}
+
+function requestSave() {
+  exitIntent.value = 'save'
+  showSaveConfirm.value = true
+}
+
+function requestSaveAndClose() {
+  exitIntent.value = 'save-close'
+  showSaveConfirm.value = true
+}
+
+async function confirmSave() {
+  const intent = exitIntent.value
+  showSaveConfirm.value = false
+  await submitQcEdits()
+  if (intent === 'save-close') exitToSelect()
+  exitIntent.value = null
+}
+
+function requestClose() {
+  if (editCount.value > 0) {
+    showCloseConfirm.value = true
+  } else {
+    exitToSelect()
+  }
+}
+
+async function discardEdits() {
+  if (!editCount.value) return
+  isUpdating.value = true
+  try {
+    if (selectedSeries.value) selectedSeries.value.data.history = []
+    await refreshGraphSeriesArray()
+    await selectedSeries.value?.data.reload()
+    await clearSelected()
+    await redraw()
+  } finally {
+    isUpdating.value = false
+  }
+}
+
+async function confirmClose() {
+  showCloseConfirm.value = false
+  await discardEdits()
+  exitToSelect()
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -254,9 +439,7 @@ watch(
       'observedProperties',
       'processingLevels',
     ]
-    const unchanged = keys.every(
-      (k) => (current[k] ?? '') === (query[k] ?? '')
-    )
+    const unchanged = keys.every((k) => (current[k] ?? '') === (query[k] ?? ''))
     if (unchanged) return
 
     router.replace({ query })
@@ -349,37 +532,25 @@ function goToEdit() {
   }
 }
 
-/* Edit view layout: pinned to the viewport so the page never gets its
-   own scrollbar. Each column scrolls internally when its content
-   overflows. Using a bespoke flex div (instead of v-row/v-col) because
-   the Vuetify classes wrap each column in their own stacking context
-   whose `height:100%` wasn't resolving against v-main's `min-height`. */
+/* Edit view: pinned to the viewport so the page never gets its own
+   scrollbar. Sizing & overflow expressed in CSS because Vuetify has no
+   utility for the calc() against v-layout offsets. Everything else
+   (flex, gap, bg, borders, overflow-y) lives on the template as
+   utility classes. */
 .edit-view {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  height: calc(
-    100vh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
-  );
+  height: calc(100vh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   max-height: 100vh;
   min-height: 0;
   overflow: hidden;
-  box-sizing: border-box;
 }
 
 .edit-view__col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   min-height: 0;
   min-width: 0;
   max-height: 100%;
 }
 
 .edit-view__col--drawer {
-  /* Reasonable fixed width for the Data-Tools list. Description text
-     wraps inside the list items (see EditDrawer.vue `:deep()` rules)
-     so the column doesn't need to grow to fit long labels. */
   flex: 0 0 220px;
   min-width: 200px;
   max-width: 260px;
@@ -387,17 +558,10 @@ function goToEdit() {
 
 .edit-view__col--plot {
   flex: 1 1 auto;
-  /* Plot column: no internal scroll. The DataVisualization component
-     fills the fixed height of the column via its own flex layout. */
-  overflow: hidden;
 }
 
 .edit-view__col--aux {
   flex: 0 0 25%;
-}
-
-.edit-view__scroll {
-  overflow-y: auto;
 }
 
 @media (max-width: 960px) {

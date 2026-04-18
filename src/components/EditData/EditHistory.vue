@@ -1,6 +1,6 @@
 <template>
-  <v-card class="edit-history d-flex flex-column">
-    <!-- Compact header: title, edit count, save button — all on one row. -->
+  <div class="edit-history d-flex flex-column" style="min-height: 0">
+    <!-- Compact header: title + edit count chip. -->
     <div class="edit-history__header px-3 py-2 d-flex align-center gap-2">
       <v-icon icon="mdi-history" color="primary" size="18" />
       <span class="text-body-2 font-weight-bold">Edit history</span>
@@ -12,19 +12,6 @@
       >
         {{ editCount }}
       </v-chip>
-      <v-spacer />
-      <v-btn
-        data-testid="save-changes-btn"
-        size="small"
-        variant="flat"
-        color="primary"
-        prepend-icon="mdi-cloud-upload-outline"
-        :disabled="editCount === 0 || isUpdating || isSubmitting"
-        :loading="isSubmitting"
-        @click="onSaveChanges"
-      >
-        Save
-      </v-btn>
     </div>
 
     <v-divider />
@@ -32,7 +19,10 @@
     <!-- Scrollable list body. Each entry is a single tight row (icon,
          method, duration, actions). The timeline + nested expansion
          panel layout used to cost ~100 px per entry; this is ~32. -->
-    <div class="edit-history__body flex-grow-1 overflow-y-auto">
+    <div
+      class="flex-grow-1 overflow-y-auto"
+      style="min-height: 0"
+    >
       <!-- Baseline: "Data loaded" status row with its own reload action. -->
       <div class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center">
         <v-icon
@@ -104,7 +94,7 @@
           >
             <button
               type="button"
-              class="edit-history__expand"
+              class="edit-history__expand mr-1"
               :title="openIndex === index ? 'Collapse' : 'Expand arguments'"
               :aria-label="openIndex === index ? 'Collapse' : 'Expand arguments'"
               :aria-expanded="openIndex === index"
@@ -124,7 +114,9 @@
               class="mr-2"
             />
 
-            <span class="edit-history__method flex-grow-1 text-truncate">
+            <span
+              class="edit-history__method flex-grow-1 text-truncate font-weight-medium"
+            >
               {{ formatMethod(entry.method) }}
             </span>
 
@@ -176,13 +168,14 @@
 
           <div v-if="openIndex === index" class="edit-history__args px-3 py-2">
             <div class="text-caption text-medium-emphasis mb-1">Arguments</div>
-            <ul class="edit-history__args-list">
+            <ul class="edit-history__args-list pa-0 ma-0">
               <li
                 v-for="(arg, argIdx) of entry.args"
                 :key="argIdx"
-                class="text-caption"
+                class="text-caption px-1 py-1"
+                style="word-break: break-all"
               >
-                <code>{{ formatArg(arg) }}</code>
+                <code class="text-caption">{{ formatArg(arg) }}</code>
               </li>
             </ul>
           </div>
@@ -192,28 +185,7 @@
       </div>
     </div>
 
-    <!-- Save confirmation dialog stays as-is. -->
-    <v-dialog v-model="openConfirm" max-width="500">
-      <v-card>
-        <v-card-title>Submit quality-controlled observations?</v-card-title>
-        <v-card-text>
-          <p class="mb-2">
-            This will
-            <strong>overwrite existing server observations</strong> in the
-            submitted time range (replace mode). This action cannot be undone.
-          </p>
-          <p class="text-body-2">{{ editCount }} edit(s) pending.</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="openConfirm = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="isSubmitting" @click="onConfirmSubmit">
-            Submit
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -221,17 +193,13 @@ import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
-import { useQcSubmission } from '@/composables/useQcSubmission'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
-const { editHistory, selectedSeries, isUpdating, isSubmitting } =
-  storeToRefs(usePlotlyStore())
+const { editHistory, selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, dispatchSelection } = useDataSelection()
-const { submitQcEdits } = useQcSubmission()
 
-const openConfirm = ref(false)
 /** Index of the expanded entry (for the inline arguments drawer). */
 const openIndex = ref<number | null>(null)
 
@@ -272,15 +240,6 @@ function formatArg(arg: unknown): string {
     }
   }
   return String(arg)
-}
-
-const onSaveChanges = () => {
-  openConfirm.value = true
-}
-
-const onConfirmSubmit = async () => {
-  openConfirm.value = false
-  await submitQcEdits()
 }
 
 const onReload = async () => {
@@ -331,17 +290,13 @@ const onRemoveHistoryItem = async (index: number) => {
 </script>
 
 <style scoped>
-.edit-history {
-  min-height: 0;
-}
-
+/* Tinted backgrounds, transitions, and the left-accent border on the
+   args panel don't have Vuetify utility equivalents. Layout,
+   overflow, and spacing have all been moved into utility classes on
+   the template. */
 .edit-history__header {
   background-color: rgba(var(--v-theme-primary), 0.04);
   min-height: 40px;
-}
-
-.edit-history__body {
-  min-height: 0;
 }
 
 .edit-history__row {
@@ -377,7 +332,6 @@ const onRemoveHistoryItem = async (index: number) => {
   border-radius: 3px;
   cursor: pointer;
   color: rgba(var(--v-theme-on-surface), 0.6);
-  margin-right: 4px;
 }
 
 .edit-history__expand:hover {
@@ -386,7 +340,6 @@ const onRemoveHistoryItem = async (index: number) => {
 
 .edit-history__method {
   font-size: 0.8125rem;
-  font-weight: 500;
   min-width: 0;
 }
 
@@ -397,18 +350,7 @@ const onRemoveHistoryItem = async (index: number) => {
 
 .edit-history__args-list {
   list-style: none;
-  padding: 0;
-  margin: 0;
   max-height: 12rem;
   overflow-y: auto;
-}
-
-.edit-history__args-list li {
-  padding: 2px 4px;
-  word-break: break-all;
-}
-
-.edit-history__args-list code {
-  font-size: 0.75rem;
 }
 </style>
