@@ -1,6 +1,7 @@
 import { markRaw, type Component } from 'vue'
 
 import ValueThreshold from '@/components/FilterPoints/ValueThreshold.vue'
+import DatetimeRange from '@/components/FilterPoints/DatetimeRange.vue'
 import Change from '@/components/FilterPoints/Change.vue'
 import RateOfChange from '@/components/FilterPoints/RateOfChange.vue'
 import Persistence from '@/components/FilterPoints/Persistence.vue'
@@ -41,6 +42,15 @@ export const operations: OperationMeta[] = [
     component: markRaw(ValueThreshold),
   },
   {
+    id: 'datetimeRange',
+    title: 'Datetime range',
+    description: 'Select points within a datetime range',
+    icon: 'mdi-calendar-range',
+    group: 'filter',
+    requiresSelection: false,
+    component: markRaw(DatetimeRange),
+  },
+  {
     id: 'change',
     title: 'Change threshold',
     description: 'Flag abrupt changes between consecutive points',
@@ -77,15 +87,6 @@ export const operations: OperationMeta[] = [
     component: markRaw(Persistence),
   },
   // Edit Data
-  {
-    id: 'qualifyingComments',
-    title: 'Qualifying comments',
-    description: 'Attach qualifier flags to selected points',
-    icon: 'mdi-flag',
-    group: 'edit',
-    requiresSelection: true,
-    component: markRaw(QualifyingComments),
-  },
   {
     id: 'driftCorrection',
     title: 'Drift correction',
@@ -132,6 +133,15 @@ export const operations: OperationMeta[] = [
     component: markRaw(DeletePoints),
   },
   // Add Data
+  {
+    id: 'qualifyingComments',
+    title: 'Qualifying comments',
+    description: 'Attach qualifier flags to selected points',
+    icon: 'mdi-flag',
+    group: 'add',
+    requiresSelection: true,
+    component: markRaw(QualifyingComments),
+  },
   {
     id: 'addPoints',
     title: 'Add points',

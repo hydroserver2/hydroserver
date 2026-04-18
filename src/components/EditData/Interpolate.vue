@@ -2,11 +2,13 @@
   <v-card>
     <v-card-title>Interpolate</v-card-title>
     <v-card-subtitle>
-      <v-icon icon="mdi-selection-ellipse" size="14" class="mr-1" />
-      {{ selectedData?.length }} point{{
-        selectedData?.length === 1 ? '' : 's'
-      }}
-      selected
+      <span class="selected-count-badge">
+        <v-icon icon="mdi-vector-selection" size="14" />
+        {{ selectedData?.length }} point{{
+          selectedData?.length === 1 ? '' : 's'
+        }}
+        selected
+      </span>
     </v-card-subtitle>
 
     <v-card-text>

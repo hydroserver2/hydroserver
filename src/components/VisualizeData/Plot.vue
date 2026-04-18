@@ -61,7 +61,7 @@
           size="small"
           color="red"
           variant="tonal"
-          prepend-icon="mdi-checkbox-marked-circle"
+          prepend-icon="mdi-selection-drag"
           closable
           close-icon="mdi-close"
           @click:close="clearSelected()"

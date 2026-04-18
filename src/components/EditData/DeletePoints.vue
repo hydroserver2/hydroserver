@@ -2,11 +2,13 @@
   <v-card>
     <v-card-title>Delete points</v-card-title>
     <v-card-subtitle>
-      <v-icon icon="mdi-selection-ellipse" size="14" class="mr-1" />
-      <span class="text-error font-weight-bold">
-        {{ selectedData?.length }}
+      <span class="selected-count-badge">
+        <v-icon icon="mdi-vector-selection" size="14" />
+        <span class="text-error font-weight-bold">
+          {{ selectedData?.length }}
+        </span>
+        point{{ selectedData?.length === 1 ? '' : 's' }} selected
       </span>
-      point{{ selectedData?.length === 1 ? '' : 's' }} selected
     </v-card-subtitle>
 
     <v-card-text>
