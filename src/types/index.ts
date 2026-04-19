@@ -80,6 +80,16 @@ export type HistoryItem = {
   duration?: number;
   selected?: number[];
   status?: "success" | "failed";
+  /**
+   * Whether the operation actually ran on a web worker or inline on
+   * the main thread. Populated by the `ObservationRecord` dispatch
+   * site based on the calibration decision and any always-inline /
+   * always-worker handler behaviour. Mainly useful in dev for
+   * verifying that the calibration layer is routing as expected —
+   * the qc-app surfaces a small badge per history entry when
+   * `import.meta.env.DEV` is truthy.
+   */
+  executionMode?: "worker" | "inline";
 };
 
 export type DataPoint = {

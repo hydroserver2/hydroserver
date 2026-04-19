@@ -34,6 +34,16 @@ import RateOfChangeWorker from "./rate-of-change.worker?worker&inline";
 import ValueThresholdWorker from "./value-threshold.worker?worker&inline";
 // @ts-ignore
 import ChangeValuesWorker from "./change-values.worker?worker&inline";
+import {
+  changeCore,
+  changeValuesCore,
+  driftCorrectionCore,
+  findGapsCore,
+  persistenceCore,
+  rateOfChangeCore,
+  valueThresholdCore,
+} from "./operation-cores";
+import { shouldUseWorker } from "./calibration";
 
 /**
  * This number should approximate the number of observations that a dataset could increase by during a session.
@@ -97,6 +107,14 @@ export class ObservationRecord {
    * dispatch, so the stack survives the internal replay.
    */
   private _isReplaying: boolean = false;
+  /**
+   * Set by each operation handler to record whether it actually spawned
+   * workers or ran inline. Read by the dispatch wrappers and written onto
+   * the history item so the UI can show a dev-only badge. Defaulted to
+   * `"worker"` on every dispatch (matches the pre-calibration baseline);
+   * handlers that call `shouldUseWorker` or are always-inline override.
+   */
+  private _pendingExecutionMode: "worker" | "inline" = "worker";
   loadingTime: number | null = null;
   isLoading: boolean = true;
   rawData: {
@@ -338,6 +356,10 @@ export class ObservationRecord {
       };
       this.history.push(historyItem);
       const itemIdx = this.history.length - 1;
+      // Default to "worker" before the handler runs; handlers that take
+      // the inline path (via calibration or because they're always-inline)
+      // overwrite this to "inline" before returning.
+      this._pendingExecutionMode = "worker";
       const measurement = await measureEllapsedTime(async () => {
         return await actions[action].apply(this, args);
       });
@@ -353,6 +375,7 @@ export class ObservationRecord {
       const stored = this.history[itemIdx];
       if (stored) {
         stored.duration = measurement.duration;
+        stored.executionMode = this._pendingExecutionMode;
         stored.isLoading = false;
       }
     } catch (e) {
@@ -447,6 +470,10 @@ export class ObservationRecord {
         this.history.push(historyItem);
         itemIdx = this.history.length - 1;
       }
+      // Default to "worker" before the handler runs; handlers that take
+      // the inline path (via calibration or because they're always-inline)
+      // overwrite this to "inline" before returning.
+      this._pendingExecutionMode = "worker";
       const measurement = await measureEllapsedTime(async () => {
         return await filters[action].apply(this, args);
       });
@@ -464,6 +491,7 @@ export class ObservationRecord {
       const stored = this.history[itemIdx];
       if (stored) {
         stored.duration = measurement.duration;
+        stored.executionMode = this._pendingExecutionMode;
         stored.selected = measurement.response;
         stored.isLoading = false;
       }
@@ -499,11 +527,20 @@ export class ObservationRecord {
     const N = selection.length;
 
     // Fast path: for small selections, the worker-startup cost dominates the
-    // actual work. A plain in-place loop is orders of magnitude faster.
-    if (N < CHANGE_VALUES_WORKER_THRESHOLD) {
-      this._applyOperatorInPlace(selection, operator, value);
+    // actual work. The calibration layer predicts the crossover per-device;
+    // the static `CHANGE_VALUES_WORKER_THRESHOLD` is kept as a belt-and-
+    // suspenders fallback so an un-calibrated profile still short-circuits
+    // tiny edits.
+    const decision = shouldUseWorker(EnumEditOperations.CHANGE_VALUES, {
+      datasetSize: this.dataset.source.y.length,
+      selectionSize: N,
+    });
+    if (!decision.useWorker || N < CHANGE_VALUES_WORKER_THRESHOLD) {
+      this._pendingExecutionMode = "inline";
+      changeValuesCore(this.dataY, selection, operator, value);
       return [];
     }
+    this._pendingExecutionMode = "worker";
 
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
     const chunkSize = Math.ceil(N / numWorkers);
@@ -545,28 +582,17 @@ export class ObservationRecord {
   }
 
   /**
-   * Apply an arithmetic operator to Y in-place on the main thread. Used by
-   * the small-selection fast path and by CHANGE_VALUES_BULK, where worker
-   * startup cost would dwarf the actual write cost.
+   * Apply an arithmetic operator to Y in-place on the main thread. Thin
+   * wrapper around {@link changeValuesCore} kept so `_assignValuesBulk`
+   * and callers outside this module can use the same routine the
+   * CHANGE_VALUES fast path does.
    */
   private _applyOperatorInPlace(
     indexes: ArrayLike<number>,
     operator: Operator,
     value: number,
   ): void {
-    const arr = this.dataY;
-    const n = indexes.length;
-    if (operator === Operator.ADD) {
-      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] + value;
-    } else if (operator === Operator.SUB) {
-      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] - value;
-    } else if (operator === Operator.MULT) {
-      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] * value;
-    } else if (operator === Operator.DIV) {
-      for (let i = 0; i < n; i++) arr[indexes[i]] = arr[indexes[i]] / value;
-    } else if (operator === Operator.ASSIGN) {
-      for (let i = 0; i < n; i++) arr[indexes[i]] = value;
-    }
+    changeValuesCore(this.dataY, indexes, operator, value);
   }
 
   /**
@@ -582,6 +608,7 @@ export class ObservationRecord {
    * not log them again.
    */
   private async _assignValuesBulk(values: number[]): Promise<number[]> {
+    this._pendingExecutionMode = "inline";
     const selection = this.history[this.history.length - 2]?.selected;
     if (!selection || !selection.length || !values?.length) return [];
 
@@ -1005,6 +1032,25 @@ export class ObservationRecord {
     const xData = this.dataset.source.x;
     const hwConcurrency = navigator.hardwareConcurrency || 1;
 
+    // Inline fast path: sum the range extents so the calibration
+    // layer can compare the total work against worker spawn cost.
+    // For tiny drift corrections (a handful of points across one
+    // range) this skips `numWorkers` worker spawns entirely.
+    let totalWork = 0;
+    for (const [start, end] of ranges) {
+      if (end > start) totalWork += end - start;
+    }
+    const decision = shouldUseWorker(EnumEditOperations.DRIFT_CORRECTION, {
+      datasetSize: xData.length,
+      selectionSize: totalWork,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      driftCorrectionCore(xData, this.dataY, ranges);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
+
     type DriftJob = {
       chunkStart: number;
       chunkEnd: number;
@@ -1221,6 +1267,15 @@ export class ObservationRecord {
     const total = dataY.length;
     if (total === 0) return [];
 
+    const decision = shouldUseWorker(EnumFilterOperations.VALUE_THRESHOLD, {
+      datasetSize: total,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      return valueThresholdCore(dataY, 0, total, ops, values);
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
     const chunkSize = Math.ceil(total / numWorkers);
 
@@ -1283,6 +1338,16 @@ export class ObservationRecord {
     const start = 1;
     const end = dataY.length;
     const total = end - start;
+
+    const decision = shouldUseWorker(EnumFilterOperations.RATE_OF_CHANGE, {
+      datasetSize: dataY.length,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      return rateOfChangeCore(dataY, start, end, comparator, value);
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
     const chunkSize = Math.ceil(total / numWorkers);
 
@@ -1333,6 +1398,7 @@ export class ObservationRecord {
     from?: number,
     to?: number,
   ): Promise<number[]> {
+    this._pendingExecutionMode = "inline";
     const dataX = this.dataset.source.x;
     const total = dataX.length;
     if (total === 0) return [];
@@ -1354,6 +1420,7 @@ export class ObservationRecord {
    * @returns
    */
   private async _selection(index: number[]): Promise<number[]> {
+    this._pendingExecutionMode = "inline";
     // If clearing selection, remove the history item
     if (!index || !index.length) {
       this.history.pop();
@@ -1381,6 +1448,16 @@ export class ObservationRecord {
     const start = 1;
     const end = dataY.length;
     const total = end - start;
+
+    const decision = shouldUseWorker(EnumFilterOperations.CHANGE, {
+      datasetSize: dataY.length,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      return changeCore(dataY, start, end, comparator, value);
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
     const chunkSize = Math.ceil(total / numWorkers);
 
@@ -1447,6 +1524,18 @@ export class ObservationRecord {
     if (end <= start) return [];
 
     const threshold = value * timeUnitMultipliers[unit] * 1000;
+
+    const decision = shouldUseWorker(EnumFilterOperations.FIND_GAPS, {
+      datasetSize: end - start,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      const pairs = findGapsCore(dataX, start, end - 1, threshold);
+      const selection = new Set<number>();
+      for (let k = 0; k < pairs.length; k++) selection.add(pairs[k]);
+      return [...selection];
+    }
+    this._pendingExecutionMode = "worker";
     const total = end - start;
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
     const chunkSize = Math.ceil(total / numWorkers);
@@ -1515,6 +1604,25 @@ export class ObservationRecord {
     if (end <= start) return [];
 
     const total = end - start;
+
+    const decision = shouldUseWorker(EnumFilterOperations.PERSISTENCE, {
+      datasetSize: total,
+    });
+    if (!decision.useWorker) {
+      this._pendingExecutionMode = "inline";
+      const triplets = persistenceCore(dataY, start, end);
+      const selection: number[] = [];
+      for (let k = 0; k < triplets.length; k += 3) {
+        const runStart = triplets[k];
+        const runLength = triplets[k + 1];
+        if (runLength >= times) {
+          for (let j = 0; j < runLength; j++) selection.push(runStart + j);
+        }
+      }
+      return selection;
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, total);
     const chunkSize = Math.ceil(total / numWorkers);
 
