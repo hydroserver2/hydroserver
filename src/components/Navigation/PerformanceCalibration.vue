@@ -122,6 +122,19 @@
                 Operation table
               </v-expansion-panel-title>
               <v-expansion-panel-text class="text-caption">
+                <p class="text-medium-emphasis mb-2">
+                  Weight is the operation's relative per-element cost
+                  against the reference
+                  <code>VALUE_THRESHOLD</code> scan (weight 1.0). It
+                  describes the algorithm, not the machine — so it's
+                  shipped with qc-utils, not measured at runtime.
+                  Recalibration only re-measures the three device
+                  primitives above; weights stay fixed. The dispatch
+                  formula is
+                  <code>weight × N / throughput</code>, so one
+                  universal weight per op plus your per-device
+                  throughputs covers the full operation catalog.
+                </p>
                 <table class="calibration-table op-table">
                   <thead>
                     <tr>
