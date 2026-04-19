@@ -482,6 +482,18 @@ export const createPlotlyOption = (
     range: [xRangeStart, xRangeEnd],
     autorange: false,
     showline: true,
+    // Vertical crosshair that follows the cursor — far cleaner than the
+    // custom coordinate chip alone and respects scattergl. Only fires
+    // when hover is active (i.e. visible points under the threshold),
+    // so no extra cost when zoomed out.
+    showspikes: true,
+    ...({
+      spikemode: 'across',
+      spikesnap: 'cursor',
+      spikedash: 'dot',
+      spikethickness: 1,
+    } as object),
+    spikecolor: 'rgba(60,60,60,0.45)',
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
   }
 
@@ -491,7 +503,10 @@ export const createPlotlyOption = (
   // domain shrink is no longer needed.
 
   const layout: Partial<Layout> = {
-    spikedistance: 0, // https://github.com/plotly/plotly.js/issues/5927#issuecomment-1697679087
+    // `-1` means "use hoverdistance". Spikes only fire when hover does,
+    // so when `handleRelayout` sets hoverinfo: 'skip' past the tooltip
+    // threshold the crosshair also disappears — matching user intent.
+    spikedistance: -1,
     // hoverdistance: 20,
     xaxis,
     ...yaxis,
@@ -756,6 +771,18 @@ export const handleNewPlot = async (
   plotlyRef.value?.addEventListener('mouseout', handleMouseOut);
 }
 
+// Perf cache for `handleRelayout`: when a relayout fires but the visible
+// x-range hasn't appreciably moved (drag-state toggles, redraws that
+// re-apply the same range), skip the O(traces) binary-search scan. The
+// scan is cheap for a few traces but noticeable past ~5 on slower
+// machines. A null event means "forced recompute" (fresh plot, data
+// edit) and bypasses the cache.
+let lastVisibleRange: [number, number] | null = null
+
+export const invalidateVisibleRangeCache = () => {
+  lastVisibleRange = null
+}
+
 export const handleRelayout = async (
   eventData: PlotRelayoutEvent | null
 ) => {
@@ -807,6 +834,28 @@ export const handleRelayout = async (
         xRange[1] = Date.parse(xRange[1] as string)
       }
 
+      const xStart = Number(xRange?.[0])
+      const xEnd = Number(xRange?.[1])
+
+      // Only rescan when the visible x-range actually moved. Threshold
+      // is 0.1% of the span, so idle relayouts (drag-state toggles,
+      // modebar noise) no-op. A null event forces a recompute.
+      if (
+        eventData !== null &&
+        lastVisibleRange &&
+        Number.isFinite(xStart) &&
+        Number.isFinite(xEnd)
+      ) {
+        const span = xEnd - xStart
+        const epsilon = Math.abs(span) * 0.001
+        if (
+          Math.abs(xStart - lastVisibleRange[0]) <= epsilon &&
+          Math.abs(xEnd - lastVisibleRange[1]) <= epsilon
+        ) {
+          return
+        }
+      }
+
       visiblePoints.value = 0
 
       // Find number of visible points
@@ -817,6 +866,10 @@ export const handleRelayout = async (
         const startIdx = findFirstGreaterOrEqual(xs, xRange?.[0])
         const endIdx = findFirstGreaterOrEqual(xs, xRange?.[1])
         visiblePoints.value += endIdx - startIdx
+      }
+
+      if (Number.isFinite(xStart) && Number.isFinite(xEnd)) {
+        lastVisibleRange = [xStart, xEnd]
       }
 
       // Threshold check

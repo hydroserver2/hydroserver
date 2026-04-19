@@ -221,7 +221,9 @@
               <span class="mr-2">
                 <b>x</b> {{ formatDate(new Date(hover.x)) }}
               </span>
-              <span> <b>y</b> {{ hover.y }} </span>
+              <span>
+                <b>{{ yReadoutLabel }}</b> {{ hover.y }}{{ yReadoutUnit }}
+              </span>
             </div>
           </div>
         </v-tabs-window-item>
@@ -295,6 +297,20 @@ const tooltipsActive = computed(
   () => areTooltipsEnabled.value && !tooltipsAutoDisabled.value
 )
 const tab = ref('plot')
+
+// The floating hover readout shows y in the QC trace's native coord
+// space (handleMouseMove converts via the primary yaxis `p2c`). Label
+// and unit come from the QC datastream so users don't have to infer
+// "what series is this and in what units" — especially important when
+// other traces live on their own right-side axes.
+const yReadoutLabel = computed(() => {
+  const name = qcDatastream.value?.observedProperty?.name
+  return name ? name : 'y'
+})
+const yReadoutUnit = computed(() => {
+  const symbol = qcDatastream.value?.unit?.symbol
+  return symbol ? ` ${symbol}` : ''
+})
 
 const { graphSeriesArray } = storeToRefs(usePlotlyStore())
 
@@ -446,8 +462,8 @@ const modebarIcons = [
   },
   {
     icon: 'mdi-home-outline',
-    title: 'Reset axes',
-    desc: 'Return all axes to their original range',
+    title: 'Reset view',
+    desc: 'Return to the default zoom. Does not change the begin/end dates in the sidebar.',
   },
   {
     icon: 'mdi-arrow-collapse-horizontal',
