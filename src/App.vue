@@ -86,15 +86,21 @@ watch(selectedWorkspaceId, async (id, prev) => {
 })
 
 onMounted(async () => {
-  // Seed the catalog on the first mount if the user arrives already
-  // authenticated with a persisted workspace selection (the common
-  // reload case). The selection is restored by `useWorkspaceStore`
-  // during `loadWorkspaces()` in `main.ts`.
-  if (!hs.value?.session?.isAuthenticated) return
+  // Seed the catalog on the first mount when we already know which
+  // workspace the user is in. We used to gate this on
+  // `hs.session.isAuthenticated`, but the session endpoint returns
+  // 401 for anonymous callers on cross-origin dev setups even when
+  // the actual resource endpoints accept the request — the gate left
+  // the Select view's datastream table empty after every page
+  // refresh. Just attempt the fetches: if they fail we log and keep
+  // empty arrays; no worse than the gated behaviour.
+  if (!hs.value) return
   if (!selectedWorkspaceId.value) return
   isLoading.value = true
   try {
     await loadWorkspaceCatalog(selectedWorkspaceId.value)
+  } catch (err) {
+    console.error('Failed to load workspace catalog', err)
   } finally {
     isLoading.value = false
   }

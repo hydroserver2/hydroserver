@@ -155,6 +155,26 @@
               {{ formatMethod(entry.method) }}
             </span>
 
+            <!-- Dev-only execution mode badge. Surfaces whether the
+                 calibration layer routed this dispatch to a worker or
+                 inline main-thread path — quick feedback for tuning
+                 thresholds without opening devtools. Hidden in prod
+                 via `import.meta.env.DEV`. -->
+            <v-chip
+              v-if="isDev && entry.executionMode"
+              size="x-small"
+              variant="tonal"
+              :color="entry.executionMode === 'inline' ? 'success' : 'primary'"
+              class="mr-1 flex-shrink-0 edit-history__mode-chip"
+              :title="
+                entry.executionMode === 'inline'
+                  ? 'Ran on the main thread (inline)'
+                  : 'Ran on a web worker'
+              "
+            >
+              {{ entry.executionMode }}
+            </v-chip>
+
             <span
               v-if="entry.duration"
               class="text-caption text-medium-emphasis flex-shrink-0 mr-1"
@@ -244,6 +264,9 @@ const { clearSelected, dispatchSelection } = useDataSelection()
 
 /** Index of the expanded entry (for the inline arguments drawer). */
 const openIndex = ref<number | null>(null)
+
+/** Dev-only execution-mode badge is gated on Vite's DEV flag. */
+const isDev = import.meta.env.DEV
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
 
@@ -467,5 +490,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   list-style: none;
   max-height: 12rem;
   overflow-y: auto;
+}
+
+/* Keep the dev execution-mode chip compact so it doesn't push the
+   duration/actions out of the row. */
+.edit-history__mode-chip {
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  height: 16px;
+  padding-inline: 6px;
 }
 </style>

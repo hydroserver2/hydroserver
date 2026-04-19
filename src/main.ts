@@ -11,6 +11,7 @@ import { useUserStore } from '@/store/user'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { loadAppSettings } from '@/config/settings'
+import { ensureCalibration } from '@uwrl/qc-utils'
 
 const app = createApp(App)
 
@@ -63,6 +64,22 @@ async function initializeApp() {
   app.use(router)
   app.use(vuetify)
   app.mount('#app')
+
+  // Run qc-utils' worker/inline calibration when the browser is idle so
+  // the crossover thresholds match this device. Results are cached in
+  // `localStorage`; the "Recalibrate" button in the nav rail can force
+  // a rerun. Non-critical — failures just fall back to conservative
+  // defaults baked into qc-utils.
+  const kickoffCalibration = () => {
+    ensureCalibration().catch((err) => {
+      console.warn('qc-utils calibration failed', err)
+    })
+  }
+  if (typeof (window as any).requestIdleCallback === 'function') {
+    ;(window as any).requestIdleCallback(kickoffCalibration, { timeout: 2000 })
+  } else {
+    setTimeout(kickoffCalibration, 500)
+  }
 
   if (
     import.meta.env.DEV ||

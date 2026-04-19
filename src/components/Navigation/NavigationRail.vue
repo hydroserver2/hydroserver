@@ -41,6 +41,7 @@
     <template #append>
       <v-divider />
       <v-list density="compact" nav>
+        <PerformanceCalibration />
         <v-tooltip location="right" :open-delay="400">
           <template #activator="{ props: tipProps }">
             <v-list-item
@@ -125,6 +126,7 @@
 import { computed, ref } from 'vue'
 import HydroServerIcon from '@/assets/favicon-32x32.png'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
+import PerformanceCalibration from '@/components/Navigation/PerformanceCalibration.vue'
 import { useUIStore, DrawerType } from '@/store/userInterface'
 import { Snackbar } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'
