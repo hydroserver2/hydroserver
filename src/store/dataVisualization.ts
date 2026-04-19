@@ -4,6 +4,7 @@ import { usePlotlyStore } from './plotly'
 import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
+import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import {
   Datastream,
   type DatastreamExtended,
@@ -127,56 +128,51 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       return !earliest || dsBegin < earliest ? dsBegin : earliest
     }, null as Date | null)
 
+  // All relative presets (1w/1m/6m/1y) anchor to the working window's
+  // end so the range always lands on data. The subtractors clamp
+  // day-of-month correctly across month/year boundaries (see
+  // `src/utils/dateMath.ts`) — the old `new Date(y, m - N, d)`
+  // constructor silently overflowed on `Aug 31 - 6 months` and friends.
   const dateOptions = ref([
     {
       id: 0,
       icon: 'mdi-calendar-week',
       label: '1w',
       title: 'Last week',
-      calculateBeginDate: () => {
-        const now = endDate.value
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
-      },
+      calculateBeginDate: () => subtractDays(endDate.value, 7),
     },
     {
       id: 1,
       icon: 'mdi-calendar-month',
       label: '1m',
       title: 'Last month',
-      calculateBeginDate: () => {
-        const now = endDate.value
-        return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-      },
+      calculateBeginDate: () => subtractMonths(endDate.value, 1),
     },
     {
       id: 2,
       icon: 'mdi-calendar-range',
       label: '6m',
       title: 'Last 6 months',
-      calculateBeginDate: () => {
-        const now = endDate.value
-        return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
-      },
-    },
-    {
-      id: 3,
-      icon: 'mdi-calendar-today',
-      label: 'YTD',
-      title: 'Year to date',
-      calculateBeginDate: () => {
-        const now = endDate.value
-        return new Date(now.getFullYear(), 0, 1)
-      },
+      calculateBeginDate: () => subtractMonths(endDate.value, 6),
     },
     {
       id: 4,
       icon: 'mdi-calendar',
       label: '1y',
       title: 'Last year',
-      calculateBeginDate: () => {
-        const now = endDate.value
-        return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-      },
+      calculateBeginDate: () => subtractYears(endDate.value, 1),
+    },
+    {
+      id: 3,
+      icon: 'mdi-calendar-today',
+      label: 'YTD',
+      title: 'Year to date',
+      // Jan 1 of the year containing the working window's end. The
+      // editor overrides this to real calendar year in
+      // `Plot.vue#onEditorDatePreset` since zoom-only semantics want
+      // "this calendar year so far" regardless of the loaded window.
+      calculateBeginDate: () =>
+        new Date(endDate.value.getFullYear(), 0, 1),
     },
     {
       id: 5,
@@ -225,7 +221,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     ) {
       const { redraw } = usePlotlyStore()
       await refreshGraphSeriesArray()
-      redraw()
+      // The user explicitly changed the date filter — they expect the
+      // new window to actually apply, so opt out of the zoom-preserving
+      // path in `redraw` (which otherwise copies the live range over
+      // the fresh layout and the plot would stay on the old window).
+      redraw(false, false)
     }
   }
 

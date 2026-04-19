@@ -101,8 +101,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /**
    * Use this function to update the chart after the data has mutated.
    * @param recomputeXaxisRange Useful for when an operation can add or delete elements in the array and the axis range needs to be updated.
+   * @param preserveZoom When true (default), the current live x/y ranges
+   *   are copied onto the fresh layout so QC edits don't reset the user's
+   *   zoom. Pass `false` when the caller *wants* the new layout's default
+   *   range to apply — notably when the user changed the date filter
+   *   (`useDataVisStore#setDateRange`), where preserving the old range
+   *   would defeat the action.
    */
-  async function redraw(recomputeXaxisRange?: boolean) {
+  async function redraw(
+    recomputeXaxisRange?: boolean,
+    preserveZoom: boolean = true
+  ) {
     updateOptions()
 
     const opts = plotlyOptions.value
@@ -114,9 +123,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     // ranges from the current plot into the fresh layout so the viewport
     // survives the update. `recomputeXaxisRange` below re-clips the
     // x-axis when an operation can change the data extent.
-    const liveLayout = plotlyRef.value?.layout as
-      | Record<string, Partial<LayoutAxis> | unknown>
-      | undefined
+    const liveLayout = preserveZoom
+      ? (plotlyRef.value?.layout as
+          | Record<string, Partial<LayoutAxis> | unknown>
+          | undefined)
+      : undefined
     if (liveLayout) {
       const layoutRecord = opts.layout as Record<string, unknown>
       for (const key of Object.keys(layoutRecord)) {

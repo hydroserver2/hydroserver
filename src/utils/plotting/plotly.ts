@@ -502,11 +502,11 @@ export const createPlotlyOption = (
     // chart. Per-axis `automargin: true` lets Plotly grow l/r as needed
     // to fit stacked y-axes and their titles. The top margin leaves
     // headroom for Plotly's modebar (top-right) so it doesn't overlap
-    // the first tick label — preview needs roughly the same budget as
-    // edit because the modebar is the same height either way.
+    // the first tick label — preview and edit use roughly the same
+    // budget because the modebar is the same height either way.
     margin: isPreview
       ? { l: 24, r: 24, t: 28, b: 32, pad: 0 }
-      : { l: 16, r: 16, t: 24, b: 32, pad: 0 },
+      : { l: 24, r: 24, t: 32, b: 32, pad: 0 },
     showlegend: false,
   }
 
@@ -897,6 +897,24 @@ export const handleMouseMove = async (event: MouseEvent) => {
 export const handleMouseOut = () => {
   const { showCoordinates } = storeToRefs(usePlotlyStore())
   showCoordinates.value = false
+}
+
+/**
+ * Zoom the x-axis to an explicit [start, end] window without touching
+ * the data. Used by the editor's preset buttons, which should be a
+ * visual-only zoom — unlike the Select-view sidebar presets, which
+ * drive a fresh fetch + redraw via `useDataVisStore#onDateBtnClick`.
+ */
+export const zoomXaxisTo = async (
+  gd: PlotlyHTMLElement | null,
+  start: number,
+  end: number
+): Promise<void> => {
+  if (!gd) return
+  await Plotly.relayout(gd as Plotly.Root, {
+    'xaxis.range': [start, end],
+    'xaxis.autorange': false,
+  } as unknown as Partial<Layout>)
 }
 
 /**

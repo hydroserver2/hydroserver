@@ -33,7 +33,7 @@
 
       <v-divider />
 
-      <div class="plot-toolbar d-flex align-center flex-wrap gap-2 px-3 py-1">
+      <div class="plot-toolbar d-flex align-center flex-wrap gap-1 px-3 py-1">
         <!-- Plot ↔ Table segmented control. -->
         <v-btn-toggle
           v-model="tab"
@@ -72,49 +72,40 @@
 
         <v-spacer />
 
-        <v-btn-toggle
-          v-model="selectedDateBtnId"
-          density="compact"
-          color="primary"
-          variant="outlined"
-          mandatory
-          class="plot-toolbar__range"
-          @update:model-value="(id: any) => onDateBtnClick(id as number)"
-        >
-          <v-btn
-            v-for="opt in dateOptions"
-            :key="opt.id"
-            :value="opt.id"
-            size="small"
-            :title="(opt as any).title ?? opt.label"
-          >
-            {{ opt.label }}
-          </v-btn>
-        </v-btn-toggle>
+        <!-- Right group reads right-to-left: date range (rightmost),
+             help menu, tooltip toggle, and finally the conditional
+             tooltips-hidden notice to the left of the toggle so it
+             explains the toggle's disabled/off state inline. -->
 
-        <v-tooltip
+        <v-btn
           v-if="tab === 'plot'"
-          location="bottom"
-          :text="
-            visiblePoints > tooltipsMaxDataPoints
-              ? 'Too many points visible — tooltips disabled'
-              : areTooltipsEnabled
-                ? 'Tooltips on'
-                : 'Tooltips off'
+          size="small"
+          variant="text"
+          density="compact"
+          class="plot-toolbar__icon-btn"
+          :disabled="visiblePoints > tooltipsMaxDataPoints"
+          :icon="areTooltipsEnabled ? 'mdi-tooltip' : 'mdi-tooltip-outline'"
+          :color="areTooltipsEnabled ? 'primary' : undefined"
+          @click="toggleTooltips"
+        />
+
+        <div
+          v-if="tab === 'plot' && !tooltipsActive && tooltipsAutoDisabled"
+          class="plot-toolbar__tooltips-notice d-inline-flex align-center"
+          aria-live="polite"
+          :title="
+            tooltipsAutoDisabled
+              ? 'Tooltips disabled while more points are visible than the performance threshold.'
+              : 'Tooltips are turned off. Toggle them back on with the button to the right.'
           "
         >
-          <template #activator="{ props: tp }">
-            <v-btn
-              v-bind="tp"
-              size="small"
-              variant="text"
-              :disabled="visiblePoints > tooltipsMaxDataPoints"
-              :icon="areTooltipsEnabled ? 'mdi-tooltip' : 'mdi-tooltip-outline'"
-              :color="areTooltipsEnabled ? 'primary' : undefined"
-              @click="toggleTooltips"
-            />
-          </template>
-        </v-tooltip>
+          <div class="plot-toolbar__tooltips-notice-text">
+            <template v-if="tooltipsAutoDisabled">
+              <div>Tooltips hidden</div>
+              <div>zoom in to re-enable</div>
+            </template>
+          </div>
+        </div>
 
         <v-menu
           v-model="showHelp"
@@ -128,6 +119,8 @@
               v-bind="menuProps"
               variant="text"
               size="small"
+              density="compact"
+              class="plot-toolbar__icon-btn"
               icon="mdi-help-circle-outline"
               title="Plot controls"
               aria-label="Plot controls"
@@ -187,6 +180,26 @@
             </v-list>
           </v-card>
         </v-menu>
+
+        <v-btn-toggle
+          v-model="selectedDateBtnId"
+          density="compact"
+          color="primary"
+          variant="outlined"
+          mandatory
+          class="plot-toolbar__range"
+          @update:model-value="(id: any) => onEditorDatePreset(id as number)"
+        >
+          <v-btn
+            v-for="opt in dateOptions"
+            :key="opt.id"
+            :value="opt.id"
+            size="small"
+            :title="(opt as any).title ?? opt.label"
+          >
+            {{ opt.label }}
+          </v-btn>
+        </v-btn-toggle>
       </div>
     </div>
 
@@ -223,11 +236,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
-import { handleNewPlot, handleRelayout } from '@/utils/plotting/plotly'
+import {
+  handleNewPlot,
+  handleRelayout,
+  zoomXaxisTo,
+} from '@/utils/plotting/plotly'
+import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDate } from '@uwrl/qc-utils'
@@ -244,7 +262,6 @@ const props = defineProps<{
 
 const { dispatchSelection, clearSelected } = useDataSelection()
 const { updateOptions } = usePlotlyStore()
-const dataVisStore = useDataVisStore()
 const plot = ref<HTMLDivElement>()
 const {
   isUpdating,
@@ -254,11 +271,112 @@ const {
   hover,
   showCoordinates,
   previewMode,
+  plotlyRef,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, qcDatastream, dateOptions, selectedDateBtnId } =
-  storeToRefs(useDataVisStore())
-const { onDateBtnClick } = dataVisStore
+const {
+  selectedData,
+  qcDatastream,
+  dateOptions,
+  selectedDateBtnId,
+  endDate,
+} = storeToRefs(useDataVisStore())
+
+/**
+ * Mirrors the logic in `handleRelayout` that decides whether Plotly's
+ * `hoverinfo` gets set to `'skip'`: tooltips are hidden when the user
+ * toggled them off, or when the visible point count exceeds the perf
+ * threshold. The overlay notice in the template uses these to decide
+ * whether to show and which copy to show.
+ */
+const tooltipsAutoDisabled = computed(
+  () => visiblePoints.value > tooltipsMaxDataPoints.value
+)
+const tooltipsActive = computed(
+  () => areTooltipsEnabled.value && !tooltipsAutoDisabled.value
+)
 const tab = ref('plot')
+
+const { graphSeriesArray } = storeToRefs(usePlotlyStore())
+
+/**
+ * Minimum x-value across every plotted trace. Used by the "All"
+ * preset to zoom out to the actual rendered data extent rather than
+ * trusting the store's `beginDate`, which is the *requested* window
+ * start and can precede the earliest returned observation.
+ */
+const earliestDataX = computed<number | null>(() => {
+  let min = Infinity
+  for (const s of graphSeriesArray.value) {
+    const xs = s.data?.dataX
+    if (!xs?.length) continue
+    const first = xs[0] as number
+    if (first < min) min = first
+  }
+  return Number.isFinite(min) ? min : null
+})
+
+/**
+ * Editor-mode date presets are a visual x-axis zoom, not a data
+ * refetch. The Select-view sidebar's sibling buttons drive
+ * `useDataVisStore#onDateBtnClick`, which changes `beginDate` /
+ * `endDate` and reloads observations — appropriate when the user is
+ * picking a working window before they start editing. Once editing
+ * begins, refetching would blow away pending edits and the history
+ * stack; we just zoom the already-loaded window instead.
+ *
+ * Relative presets (1w / 1m / 6m / 1y) anchor to the loaded data's
+ * end so they always land on real data. YTD is the exception: it
+ * means "current calendar year so far" regardless of where the data
+ * sits. "All" snaps to the actual data extent.
+ */
+function onEditorDatePreset(id: number) {
+  const option = dateOptions.value.find((o) => o.id === id)
+  if (!option) return
+  selectedDateBtnId.value = id
+
+  const dataEnd = endDate.value
+  let begin: Date | null = null
+  let end: Date | null = null
+
+  switch (option.label) {
+    case '1w':
+      if (!dataEnd) return
+      end = dataEnd
+      begin = subtractDays(dataEnd, 7)
+      break
+    case '1m':
+      if (!dataEnd) return
+      end = dataEnd
+      begin = subtractMonths(dataEnd, 1)
+      break
+    case '6m':
+      if (!dataEnd) return
+      end = dataEnd
+      begin = subtractMonths(dataEnd, 6)
+      break
+    case '1y':
+      if (!dataEnd) return
+      end = dataEnd
+      begin = subtractYears(dataEnd, 1)
+      break
+    case 'YTD': {
+      const now = new Date()
+      end = now
+      begin = new Date(now.getFullYear(), 0, 1)
+      break
+    }
+    case 'All':
+      if (!dataEnd || earliestDataX.value == null) return
+      end = dataEnd
+      begin = new Date(earliestDataX.value)
+      break
+    default:
+      return
+  }
+
+  if (!begin || !end) return
+  zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
+}
 
 function toggleTooltips() {
   areTooltipsEnabled.value = !areTooltipsEnabled.value
@@ -470,6 +588,32 @@ const onTabChange = () => {
   pointer-events: none;
   z-index: 2;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Inline notice in the plot toolbar, sits to the left of the tooltip
+   toggle. Subtle so it doesn't compete with the primary controls. The
+   two-line variant stacks its copy so the toolbar stays the same
+   height as a single-line row. */
+.plot-toolbar__tooltips-notice {
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  white-space: nowrap;
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.plot-toolbar__tooltips-notice-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Tighten the icon-only tooltip toggle and help button so they sit
+   closer to their neighbours. `density="compact"` on v-btn already
+   trims ~8px of vertical padding; pairing it with a narrower min-width
+   removes the extra horizontal slack Vuetify keeps around icon buttons. */
+.plot-toolbar__icon-btn.v-btn {
+  min-width: 28px;
+  padding-inline: 4px;
 }
 
 .plot-help :deep(.v-list-item) {

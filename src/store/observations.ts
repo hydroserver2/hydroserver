@@ -55,8 +55,11 @@ export const useObservationStore = defineStore(
           observationsRaw.value[id].datetimes[0] as number
         )
 
-        // Check if new data before the stored data is needed
-        if (beginTime <= rawBeginDatetime) {
+        // Strict `<` — skip the request entirely when the requested
+        // begin is at or inside the cached window. `<=` used to fire a
+        // 1-second range request on exact matches (e.g. re-clicking
+        // the same preset), which is pure waste.
+        if (beginTime < rawBeginDatetime) {
           // Results in range will be inclusive, so we need to offset by 1
           rawBeginDatetime.setSeconds(rawBeginDatetime.getSeconds() - 1)
           beginDataPromise = fetchObservationsSync(
@@ -72,8 +75,9 @@ export const useObservationStore = defineStore(
           ] as number
         )
 
-        // Check if new data after the stored data is needed
-        if (endTime >= rawEndDatetime) {
+        // Same note as above: only fetch the trailing segment when the
+        // requested end is *past* what we've already cached.
+        if (endTime > rawEndDatetime) {
           rawEndDatetime.setSeconds(rawEndDatetime.getSeconds() + 1)
           endDataPromise = fetchObservationsSync(
             datastream,

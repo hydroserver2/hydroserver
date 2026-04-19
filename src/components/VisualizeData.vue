@@ -100,7 +100,7 @@
       class="edit-view__col edit-view__col--plot d-flex flex-column pa-3 overflow-hidden"
     >
       <v-card class="fill-height d-flex flex-column" elevation="1">
-        <div class="flex-grow-1" style="min-height: 0">
+        <div class="flex-grow-1 pa-2" style="min-height: 0">
           <DataVisualization />
         </div>
       </v-card>
