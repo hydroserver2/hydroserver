@@ -10,7 +10,10 @@ import {
   handleSelected,
   setSelectedPoints,
 } from '@/utils/plotting/plotly'
-import type { AppPlotRelayoutEvent } from '@/utils/plotting/plotly'
+import type {
+  AppPlotlyTrace,
+  AppPlotRelayoutEvent,
+} from '@/utils/plotting/plotly'
 import { storeToRefs } from 'pinia'
 
 import { computed } from 'vue'
@@ -20,9 +23,33 @@ export function useDataSelection() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
 
+  /**
+   * Locate the plotly trace index for the QC series we're editing.
+   * Traces are rendered in the order: non-QC → QC → qualifier band, so
+   * the old `data.length - 1` shortcut targeted the last qualifier-band
+   * trace whenever a qualifier band was present — selected points were
+   * written to an invisible trace, which matched the reported bug: the
+   * "N points selected" label still tracked `selectedData`, but the QC
+   * trace had no `selectedpoints` and nothing was highlighted. Match by
+   * the series id (the QC trace is tagged with `selectedSeries.id` in
+   * `createPlotlyOption`) and fall back to the trailing trace only when
+   * a match can't be found.
+   */
+  const qcTraceIndex = (): number => {
+    const data = plotlyRef.value?.data
+    if (!data?.length) return -1
+    const id = selectedSeries.value?.id
+    if (id) {
+      const idx = data.findIndex((t) => (t as AppPlotlyTrace).id == id)
+      if (idx !== -1) return idx
+    }
+    return data.length - 1
+  }
+
   /** Dispatch selection  */
   const dispatchSelection = async (selection: number[]) => {
-    const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
+    const traceIndex = qcTraceIndex()
+    if (traceIndex < 0) return
     await setSelectedPoints(plotlyRef.value, traceIndex, selection)
 
     // Authoritative assignment: we already hold the indices returned by
@@ -48,8 +75,10 @@ export function useDataSelection() {
   }: { dispatchFilter?: boolean } = {}) => {
     const { selectedData } = storeToRefs(useDataVisStore())
 
-    const traceIndex = (plotlyRef.value?.data.length ?? 0) - 1
-    await clearSelection(plotlyRef.value, traceIndex)
+    const traceIndex = qcTraceIndex()
+    if (traceIndex >= 0) {
+      await clearSelection(plotlyRef.value, traceIndex)
+    }
 
     selectedData.value = []
 
