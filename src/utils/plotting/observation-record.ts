@@ -347,8 +347,14 @@ export class ObservationRecord {
       // ObservationRecord). Writing to the captured `historyItem` ref
       // directly mutates the raw object, bypasses the proxy, and leaves
       // the history entry's spinner stuck on "loading" in the UI.
-      this.history[itemIdx].duration = measurement.duration;
-      this.history[itemIdx].isLoading = false;
+      //
+      // Guard the writes in case the action handler popped the entry
+      // itself (see the matching guard in `dispatchFilter`).
+      const stored = this.history[itemIdx];
+      if (stored) {
+        stored.duration = measurement.duration;
+        stored.isLoading = false;
+      }
     } catch (e) {
       console.log(
         `Failed to execute operation: ${action} with arguments: `,
@@ -450,9 +456,17 @@ export class ObservationRecord {
       // ObservationRecord). Writing to the captured `historyItem` ref
       // directly mutates the raw object, bypasses the proxy, and leaves
       // the history entry's spinner stuck on "loading" in the UI.
-      this.history[itemIdx].duration = measurement.duration;
-      this.history[itemIdx].selected = measurement.response;
-      this.history[itemIdx].isLoading = false;
+      //
+      // Some filter handlers (notably `_selection` on an empty/undefined
+      // selection) `history.pop()` themselves — in that case the slot at
+      // `itemIdx` is gone, so guard the writes or we TypeError on
+      // `undefined.duration`.
+      const stored = this.history[itemIdx];
+      if (stored) {
+        stored.duration = measurement.duration;
+        stored.selected = measurement.response;
+        stored.isLoading = false;
+      }
     } catch (e) {
       console.log(
         `Failed to execute filter operation: ${action} with arguments: `,
