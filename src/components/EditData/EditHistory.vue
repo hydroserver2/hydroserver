@@ -5,6 +5,7 @@
       <v-icon icon="mdi-history" color="primary" size="18" />
       <span class="text-body-2 font-weight-bold">Edit history</span>
       <v-chip
+        v-if="editCount"
         size="x-small"
         :color="editCount ? 'primary' : undefined"
         :variant="editCount ? 'tonal' : 'outlined'"
@@ -49,14 +50,17 @@
     <!-- Scrollable list body. Each entry is a single tight row (icon,
          method, duration, actions). The timeline + nested expansion
          panel layout used to cost ~100 px per entry; this is ~32. -->
-    <div
-      class="flex-grow-1 overflow-y-auto"
-      style="min-height: 0"
-    >
+    <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
       <!-- Baseline: "Data loaded" status row with its own reload action. -->
-      <div class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center">
+      <div
+        class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
+      >
         <v-icon
-          :icon="selectedSeries?.data.isLoading ? 'mdi-progress-download' : 'mdi-database-check'"
+          :icon="
+            selectedSeries?.data.isLoading
+              ? 'mdi-progress-download'
+              : 'mdi-database-check'
+          "
           size="16"
           :color="selectedSeries?.data.isLoading ? 'grey' : 'success'"
           class="mr-2"
@@ -95,10 +99,7 @@
       <v-divider />
 
       <!-- Empty state (no edits yet). -->
-      <div
-        v-if="editCount === 0"
-        class="edit-history__empty pa-4 text-center"
-      >
+      <div v-if="editCount === 0" class="edit-history__empty pa-4 text-center">
         <v-icon icon="mdi-clock-outline" size="28" color="grey" class="mb-2" />
         <div class="text-caption text-medium-emphasis">
           Edit operations will appear here.
@@ -126,12 +127,16 @@
               type="button"
               class="edit-history__expand mr-1"
               :title="openIndex === index ? 'Collapse' : 'Expand arguments'"
-              :aria-label="openIndex === index ? 'Collapse' : 'Expand arguments'"
+              :aria-label="
+                openIndex === index ? 'Collapse' : 'Expand arguments'
+              "
               :aria-expanded="openIndex === index"
               @click="toggle(index)"
             >
               <v-icon
-                :icon="openIndex === index ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                :icon="
+                  openIndex === index ? 'mdi-chevron-down' : 'mdi-chevron-right'
+                "
                 size="16"
               />
             </button>
@@ -221,7 +226,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -233,7 +237,8 @@ import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
-const { editHistory, selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
+const { editHistory, selectedSeries, isUpdating } =
+  storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, dispatchSelection } = useDataSelection()
 
@@ -329,9 +334,7 @@ const onReloadHistory = async (index: number) => {
  * without pushing an extra SELECTION entry into the history we just
  * replayed.
  */
-const applyReplayedSelection = async (
-  newSelection: number[] | undefined
-) => {
+const applyReplayedSelection = async (newSelection: number[] | undefined) => {
   await redraw()
   if (newSelection && newSelection.length) {
     await dispatchSelection(newSelection)

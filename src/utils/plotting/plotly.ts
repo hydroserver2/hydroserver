@@ -84,7 +84,7 @@ const traceXAsNumbers = (
 // of d3's category20 with red and pink removed — those reserved hues
 // clash with the red highlight used on selected points.
 export const COLORS = [
-  '#3f3f3f', // QC — dark grey
+  '#3f3f3f', // QC — medium grey
   '#aec7e8', // light blue
   '#ffbb78', // light orange
   '#98df8a', // light green
@@ -250,8 +250,8 @@ function buildQualifierBand(
       const when = isNaN(ts.getTime()) ? e.appliedAt : ts.toLocaleString()
       texts.push(
         `<b>${code}</b>${e.description ? ' — ' + e.description : ''}` +
-          `<br>Applied: ${when}` +
-          `<br>By: ${e.appliedBy}`
+        `<br>Applied: ${when}` +
+        `<br>By: ${e.appliedBy}`
       )
     }
     const color = QUALIFIER_COLORS[row % QUALIFIER_COLORS.length]
@@ -356,24 +356,24 @@ export const createPlotlyOption = (
       trace.line = { ...(trace.line ?? {}), color: COLORS[0] }
       trace.selected = { marker: { color: 'red' } }
 
-      ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
-        title: {
-          text: s.yAxisLabel,
-          font: { color: COLORS[0], weight: 'bold' },
-        },
-        tickfont: { color: COLORS[0] },
-        side: 'left',
-        showline: true,
-        linecolor: COLORS[0],
-        // Let Plotly compute the margin needed for ticks + title so they
-        // never get clipped, regardless of label length.
-        automargin: true,
-        // Force SI tick abbreviation ("2k" instead of "2000") and keep
-        // it stable across pans. Plotly's default `exponentformat` can
-        // flip between SI and decimal depending on the visible range;
-        // pinning `tickformat` makes it consistent.
-        tickformat: '~s',
-      } as Partial<LayoutAxis>
+        ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
+          title: {
+            text: s.yAxisLabel,
+            font: { color: COLORS[0], weight: 'bold' },
+          },
+          tickfont: { color: COLORS[0] },
+          side: 'left',
+          showline: true,
+          linecolor: COLORS[0],
+          // Let Plotly compute the margin needed for ticks + title so they
+          // never get clipped, regardless of label length.
+          automargin: true,
+          // Force SI tick abbreviation ("2k" instead of "2000") and keep
+          // it stable across pans. Plotly's default `exponentformat` can
+          // flip between SI and decimal depending on the visible range;
+          // pinning `tickformat` makes it consistent.
+          tickformat: '~s',
+        } as Partial<LayoutAxis>
 
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
@@ -405,7 +405,7 @@ export const createPlotlyOption = (
         // yet, but is supported at runtime.
         ...({ autoshift: true } as object),
       }
-      ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
+        ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
       nonQcAxisCount++
     }
 
@@ -432,11 +432,11 @@ export const createPlotlyOption = (
   // Suppressed in preview mode — the qualifier band is an editing affordance.
   const qualifierBand = !isPreview && seriesArray.length
     ? buildQualifierBand(
-        seriesArray,
-        qcDatastream?.value?.id,
-        counter,
-        axisSuffix
-      )
+      seriesArray,
+      qcDatastream?.value?.id,
+      counter,
+      axisSuffix
+    )
     : null
   if (qualifierBand) {
     // Shrink main y-axes so the qualifier band has room at the bottom.
@@ -523,18 +523,18 @@ export const createPlotlyOption = (
     modeBarButtonsToAdd: isPreview
       ? []
       : [
-          {
-            name: 'Fit X to visible',
-            icon: iconRescaleX,
-            click: fitXaxisToVisible,
-          },
-          {
-            name: 'Fit Y to visible',
-            icon: iconRescaleY,
-            direction: 'up',
-            click: fitYaxisToVisible,
-          },
-        ],
+        {
+          name: 'Fit X to visible',
+          icon: iconRescaleX,
+          click: fitXaxisToVisible,
+        },
+        {
+          name: 'Fit Y to visible',
+          icon: iconRescaleY,
+          direction: 'up',
+          click: fitYaxisToVisible,
+        },
+      ],
     // plotGlPixelRatio: 1,
   } as unknown as Partial<Config>
 

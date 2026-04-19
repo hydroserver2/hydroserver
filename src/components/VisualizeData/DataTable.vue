@@ -124,6 +124,24 @@
             @clear="clearValueEdit(index)"
           />
         </template>
+
+        <template #item.qualifiers="{ index }">
+          <div
+            v-if="qualifierApplicationsAt(index).length"
+            class="d-flex gap-1 flex-wrap"
+          >
+            <v-chip
+              v-for="a in qualifierApplicationsAt(index)"
+              :key="a.qualifierId"
+              size="x-small"
+              variant="tonal"
+              color="primary"
+              :title="qualifierTooltip(a)"
+            >
+              {{ qualifierCode(a.qualifierId) }}
+            </v-chip>
+          </div>
+        </template>
       </v-data-table-virtual>
     </div>
   </div>
@@ -141,12 +159,16 @@ import {
   formatDate,
 } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
 
 const { isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { selectedData } = storeToRefs(useDataVisStore())
+const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { clearSelected } = useDataSelection()
+
+const qualifierStore = useQualifierStore()
+const { qualifierById, applied } = storeToRefs(qualifierStore)
 
 const isSaving = ref(false)
 
@@ -188,7 +210,34 @@ const headers = [
   { title: '', align: 'start' as const, key: 'actions', width: '50px' },
   { title: 'Datetime', align: 'start' as const, key: 'datetime' },
   { title: 'Value', align: 'end' as const, key: 'value' },
+  { title: 'Qualifiers', align: 'start' as const, key: 'qualifiers' },
 ]
+
+/**
+ * Qualifier applications for the current QC datastream, indexed by row.
+ * Read `applied` as a ref so the table re-renders as qualifiers are
+ * added/removed; `qcDatastream.id` is the lookup key since qualifiers
+ * are scoped to the series under active QC.
+ */
+const qualifierApplicationsAt = (index: number) => {
+  const id = qcDatastream.value?.id
+  if (!id) return []
+  return applied.value[id]?.[index] ?? []
+}
+
+const qualifierCode = (qualifierId: string) =>
+  qualifierById.value[qualifierId]?.code ?? ''
+
+const qualifierTooltip = (a: {
+  qualifierId: string
+  appliedAt: string
+  appliedBy: string
+}) => {
+  const q = qualifierById.value[a.qualifierId]
+  if (!q) return ''
+  const who = a.appliedBy ? ` — ${a.appliedBy}` : ''
+  return `${q.code}: ${q.description}${who}`
+}
 
 const rowCount = computed(() => selectedSeries?.value?.data.dataX.length ?? 0)
 
