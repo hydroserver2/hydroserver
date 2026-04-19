@@ -1,4 +1,5 @@
 import { useHydroServer } from '@/store/hydroserver'
+import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 
@@ -63,6 +64,20 @@ export const guards: RouteGuard[] = [
       // if (!thing?.ownsThing) return { name: 'PageNotFound' }
     }
     return null
+  },
+
+  // hasWorkspaceGuard — every data-bearing route needs an active
+  // HydroServer workspace context. If none is selected, bounce to the
+  // picker and carry a `next` hint so we can come back here once the
+  // user commits to a workspace.
+  (to, _from, _next) => {
+    if (!to.meta?.hasWorkspaceGuard) return null
+    const { hasSelection } = useWorkspaceStore()
+    if (hasSelection) return null
+    return {
+      name: 'Workspaces',
+      query: { next: typeof to.name === 'string' ? to.name : 'Home' },
+    }
   },
 
   // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head

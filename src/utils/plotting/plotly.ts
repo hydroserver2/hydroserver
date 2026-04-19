@@ -500,11 +500,12 @@ export const createPlotlyOption = (
     title: undefined,
     // Tight margins reclaim the generous default whitespace around the
     // chart. Per-axis `automargin: true` lets Plotly grow l/r as needed
-    // to fit stacked y-axes and their titles. In edit we keep a small
-    // top margin so the modebar (top-right) doesn't collide with the
-    // first tick label.
+    // to fit stacked y-axes and their titles. The top margin leaves
+    // headroom for Plotly's modebar (top-right) so it doesn't overlap
+    // the first tick label — preview needs roughly the same budget as
+    // edit because the modebar is the same height either way.
     margin: isPreview
-      ? { l: 16, r: 16, t: 8, b: 32, pad: 0 }
+      ? { l: 24, r: 24, t: 28, b: 32, pad: 0 }
       : { l: 16, r: 16, t: 24, b: 32, pad: 0 },
     showlegend: false,
   }
@@ -1089,73 +1090,76 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 }
 
 /**
- * Crops the y axis to only contain the extent of currently visible points.
+ * Crops the QC trace's y axis to the extent of its currently visible
+ * points. Only the primary `yaxis` (where QC always lives, per
+ * `createPlotlyOption`) is rescaled — every non-QC overlay keeps the
+ * range the user set on it, so clicking this button never reshuffles
+ * the companion axes. The data considered is exclusively the QC
+ * trace's y-values within the current live x-range.
  * @param _eventData unused; preserved for the original modebar click signature.
  */
 export const fitYaxisToVisible = async (_eventData?: unknown) => {
-  const { plotlyOptions, plotlyRef, isUpdating, graphSeriesArray } =
-    storeToRefs(usePlotlyStore())
+  const { plotlyOptions, plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
+  const { qcDatastream } = storeToRefs(useDataVisStore())
 
   isUpdating.value = true
 
   try {
-    const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {}
+    const qcId = qcDatastream.value?.id
+    if (!qcId) return
+
+    const qcTraceIndex =
+      plotlyRef.value?.data.findIndex(
+        (t) => (t as AppPlotlyTrace).id === qcId
+      ) ?? -1
+    if (qcTraceIndex < 0) return
+
+    const yAxis = (plotlyOptions.value.layout as Record<string, Partial<LayoutAxis>>)
+      .yaxis
+    if (!yAxis) return
 
     const liveXRange = (
       plotlyRef.value?.layout.xaxis.range as Array<string | number> | undefined
     )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
 
-    // Find visible points count
-    for (let i = 0; i < graphSeriesArray.value.length; i++) {
-      // Plotly does not return the indexes of current axis range. We must find them using binary search.
-      const xs = traceXAsNumbers(plotlyRef.value, i)
-      const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
-      const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+    const xs = traceXAsNumbers(plotlyRef.value, qcTraceIndex)
+    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
+    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+    if (endIdx - startIdx <= 0) return
 
-      const axisKey = i == 0 ? 'yaxis' : `yaxis${i + 1}`
-      const yAxis = (plotlyOptions.value.layout as Record<string, Partial<LayoutAxis>>)[axisKey]
-      if (!yAxis) continue
+    const yData = (plotlyRef.value?.data[qcTraceIndex].y ?? []) as ArrayLike<number>
 
-      const traceData = plotlyRef.value?.data[i]
-      // `Plotly.PlotData.y` is `Datum[] | Datum[][] | TypedArray`; this app
-      // populates it with numeric arrays only — narrow at the use site.
-      const yData = (traceData?.y ?? []) as ArrayLike<number>
+    // Clamp to the QC axis's stored range to keep edge outliers
+    // (Infinity / sentinel values) from blowing the crop open. Strict
+    // inequalities match the original seam so a finite point exactly
+    // at the stored bound is still excluded as a likely sentinel.
+    const yRange = yAxis.range ?? []
+    const yRangeMin = Number(yRange[0])
+    const yRangeMax = Number(yRange[1])
 
-      // Find all y-values within the current x-axis range
-      let yMin = Infinity
-      let yMax = -Infinity
-
-      // `LayoutAxis.range` is typed `any[]` in @types/plotly.js; for QC
-      // axes the runtime values are numbers — read positions explicitly.
-      const yRange = yAxis.range ?? []
-      const yRangeMin = Number(yRange[0])
-      const yRangeMax = Number(yRange[1])
-
-      // Could use Math.max and Math.min and spread operator, but this is more memory efficient
-      for (let j = startIdx; j < endIdx; j++) {
-        const val = Number(yData[j])
-        if (yMin > val && val > yRangeMin) {
-          yMin = val
-        }
-
-        if (yMax < val && val < yRangeMax) {
-          yMax = val
-        }
-      }
-
-      // Calculate new y-axis range with padding
-      if (endIdx - startIdx != 0 && yMax !== yMin) {
-        const padding = (yMax - yMin) * 0.1 // 10% padding
-
-        layoutUpdates[axisKey] = {
-          ...yAxis,
-          range: [yMin - padding, yMax + padding],
-          autorange: false,
-        }
-      }
+    let yMin = Infinity
+    let yMax = -Infinity
+    for (let j = startIdx; j < endIdx; j++) {
+      const val = Number(yData[j])
+      if (yMin > val && val > yRangeMin) yMin = val
+      if (yMax < val && val < yRangeMax) yMax = val
     }
 
-    // Update axis range
+    if (yMax === yMin || !Number.isFinite(yMin) || !Number.isFinite(yMax)) return
+
+    const padding = (yMax - yMin) * 0.1
+
+    // Reuse the Plotly.update layout-object form (same shape the old
+    // loop-over-all-axes seam used) — a previous attempt with
+    // Plotly.relayout + dot-path keys silently no-op'd in some cases
+    // and left the y-axis showing the whole extent.
+    const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {
+      yaxis: {
+        ...yAxis,
+        range: [yMin - padding, yMax + padding],
+        autorange: false,
+      },
+    }
     await Plotly.update(plotlyRef.value as Plotly.Root, {}, layoutUpdates)
   } finally {
     isUpdating.value = false

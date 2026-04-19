@@ -45,6 +45,21 @@
           <template #activator="{ props: tipProps }">
             <v-list-item
               v-bind="tipProps"
+              prepend-icon="mdi-view-grid-outline"
+              @click.prevent="guardExit(onSwitchWorkspace)"
+            />
+          </template>
+          <span>
+            <template v-if="selectedWorkspace">
+              Workspace: {{ selectedWorkspace.name }} · click to switch
+            </template>
+            <template v-else>Select a workspace</template>
+          </span>
+        </v-tooltip>
+        <v-tooltip location="right" :open-delay="400">
+          <template #activator="{ props: tipProps }">
+            <v-list-item
+              v-bind="tipProps"
               prepend-icon="mdi-logout"
               @click.prevent="guardExit(onLogout)"
             />
@@ -116,6 +131,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import router from '@/router/router'
 import { useHydroServer } from '@/store/hydroserver'
+import { useWorkspaceStore } from '@/store/workspaces'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSubmission } from '@/composables/useQcSubmission'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -125,6 +141,8 @@ const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
 const { resetState, refreshGraphSeriesArray } = useDataVisStore()
 const { qcDatastream } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
+const workspaceStore = useWorkspaceStore()
+const { selectedWorkspace } = storeToRefs(workspaceStore)
 const { editHistory, isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { submitQcEdits } = useQcSubmission()
@@ -213,8 +231,21 @@ const items = ref([
 
 async function onLogout() {
   await hs.value.session.logout()
+  // Drop the cached workspace selection; another user on the same
+  // browser shouldn't land in the previous session's workspace.
+  workspaceStore.clearSelection()
   await router.push({ name: 'Login' })
   Snackbar.info('You have logged out')
+}
+
+async function onSwitchWorkspace() {
+  // Reset view state before leaving so the picker doesn't flash an
+  // editor session tied to the old workspace. The watcher in App.vue
+  // clears the catalog as soon as the selection is dropped.
+  resetState()
+  qcDatastream.value = null
+  workspaceStore.clearSelection()
+  await router.push({ name: 'Workspaces' })
 }
 </script>
 

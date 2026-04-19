@@ -448,4 +448,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     toggleDatastream,
     // updateOrFetchGraphSeries,
   }
+}, {
+  // Persist only the user's time-range preset choice. Everything else
+  // in this store (server catalogs, in-flight loading maps, live
+  // filters) should refetch cleanly on every load — persisting them
+  // would surface stale data after catalog or role changes. `dateOptions`
+  // in particular can't be serialized because it carries closure
+  // functions (`calculateBeginDate`).
+  persist: {
+    pick: ['selectedDateBtnId'],
+  },
 })

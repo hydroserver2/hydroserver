@@ -63,7 +63,7 @@
       <v-divider />
 
       <div class="select-view__card-body d-flex flex-grow-1">
-        <div class="select-view__plot-body flex-grow-1">
+        <div class="select-view__plot-body flex-grow-1 pa-2">
           <DataVisualization preview />
         </div>
 

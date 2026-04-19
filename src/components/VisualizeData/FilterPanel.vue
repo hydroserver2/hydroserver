@@ -26,7 +26,11 @@
     </v-expansion-panel-title>
 
     <v-expansion-panel-text>
+      <!-- Hide the search input on small categories — typing to narrow
+           a list of <10 items is more friction than just scanning it.
+           The threshold matches the chip shown in the panel header. -->
       <v-text-field
+        v-if="total >= 10"
         :model-value="search"
         @update:model-value="$emit('update:search', $event ?? '')"
         clearable
