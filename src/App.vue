@@ -13,28 +13,26 @@
 import Notifications from '@/components/base/Notifications.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
-import router, { setupRouteGuards } from '@/router/router'
-import { ref, watch } from 'vue'
+import { setupRouteGuards } from '@/router/router'
+import { ref, watch, onMounted } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
-import {
-  HydroServer,
-  Datastream,
-  type DatastreamExtended,
-} from '@hydroserver/client'
+import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 
-// Use stores
-const isLoading = ref(true)
+// Session init + user/workspace rehydration now lives in `src/main.ts`
+// (mirrors the data-management-app boot flow) and runs before the
+// router is installed, so the auth guard can already see
+// `hs.session.isAuthenticated` on the first navigation. This component
+// only drives the workspace-scoped catalog load.
+const isLoading = ref(false)
 
 const { things, processingLevels, observedProperties, datastreams } =
   storeToRefs(useDataVisStore())
 
 const { hs } = storeToRefs(useHydroServer())
-const workspaceStore = useWorkspaceStore()
-const { selectedWorkspaceId, availableWorkspaces } =
-  storeToRefs(workspaceStore)
+const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 
 /**
  * Fetch workspace-scoped catalogs (things / datastreams / processing
@@ -66,34 +64,6 @@ async function loadWorkspaceCatalog(workspaceId: string) {
   observedProperties.value = observedPropertiesResponse.data
 }
 
-const initializeHydroServer = async () => {
-  hs.value = await HydroServer.initialize({
-    host: import.meta.env.VITE_APP_API_URL,
-  })
-  await hs.value.session.login(
-    import.meta.env.VITE_APP_HS_USER,
-    import.meta.env.VITE_APP_HS_PW
-  )
-
-  // Populate the workspace list first; the route guard depends on this
-  // to know whether to send the user to the picker. If the persisted
-  // workspace id is still in the user's accessible list, the store
-  // restores the selection — otherwise selection stays null and the
-  // guard redirects to /workspaces.
-  await workspaceStore.loadWorkspaces()
-
-  if (selectedWorkspaceId.value) {
-    await loadWorkspaceCatalog(selectedWorkspaceId.value)
-  } else if (!availableWorkspaces.value.length) {
-    // No accessible workspaces — leave the catalog empty. The picker
-    // page surfaces a "contact your admin" message.
-  } else {
-    router.replace({ name: 'Workspaces' })
-  }
-
-  isLoading.value = false
-}
-
 // Reload the catalog whenever the user commits to a different
 // workspace. Clearing the selection wipes the catalogs so stale data
 // from the old workspace can't leak into the picker transition.
@@ -115,7 +85,21 @@ watch(selectedWorkspaceId, async (id, prev) => {
   }
 })
 
-initializeHydroServer()
+onMounted(async () => {
+  // Seed the catalog on the first mount if the user arrives already
+  // authenticated with a persisted workspace selection (the common
+  // reload case). The selection is restored by `useWorkspaceStore`
+  // during `loadWorkspaces()` in `main.ts`.
+  if (!hs.value?.session?.isAuthenticated) return
+  if (!selectedWorkspaceId.value) return
+  isLoading.value = true
+  try {
+    await loadWorkspaceCatalog(selectedWorkspaceId.value)
+  } finally {
+    isLoading.value = false
+  }
+})
+
 // TODO: use route guard setup in Router v3
 setupRouteGuards()
 </script>

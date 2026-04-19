@@ -74,8 +74,10 @@ import { rules } from '@/utils/rules'
 import OAuth from '@/components/account/OAuth.vue'
 import { Snackbar } from '@uwrl/qc-utils'
 import router from '@/router/router'
+import { useRoute } from 'vue-router'
 import hs from '@hydroserver/client'
 import { useUserStore } from '@/store/user'
+import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 
 const email = ref('')
@@ -87,6 +89,7 @@ const disableAccountCreation =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
 
 const { user } = storeToRefs(useUserStore())
+const route = useRoute()
 
 const formLogin = async () => {
   if (!valid) return
@@ -96,8 +99,21 @@ const formLogin = async () => {
     const resUser = res.data?.account
     if (resUser) {
       user.value = resUser
+      // Seed the workspace list so the post-login destination (Home,
+      // picker, or a deep-linked route) has workspace context without
+      // waiting for App.vue's watcher to fire.
+      try {
+        await useWorkspaceStore().loadWorkspaces()
+      } catch (err) {
+        console.error('Failed to load workspaces after login', err)
+      }
       Snackbar.success('You have logged in!')
-      await router.push({ name: 'Sites' })
+      const nextQuery = typeof route.query.next === 'string' ? route.query.next : null
+      if (nextQuery) {
+        await router.push(nextQuery.startsWith('/') ? nextQuery : { name: nextQuery })
+      } else {
+        await router.push({ name: 'Home' })
+      }
     }
   } else {
     if (hs.session.inEmailVerificationFlow) {

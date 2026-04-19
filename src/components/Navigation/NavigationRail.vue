@@ -239,20 +239,24 @@ async function onLogout() {
 }
 
 async function onSwitchWorkspace() {
-  // Reset view state before leaving so the picker doesn't flash an
-  // editor session tied to the old workspace. The watcher in App.vue
-  // clears the catalog as soon as the selection is dropped. Forcing
-  // the view back to Select also means coming back from the picker
-  // lands on the Select view even if the user was mid-edit when they
-  // hit the switch button — the old QC target and edit history are
-  // gone, so staying in Edit would show a broken empty editor.
-  resetState()
+  // Navigate FIRST, then reset state. VisualizeData.vue has a deep
+  // watcher that syncs its Home-page filters to `router.replace({ query })`
+  // whenever `plottedDatastreams`, `qcDatastream`, `currentView`, etc.
+  // change. If we mutated those refs first, that watcher would fire
+  // in parallel with our `router.push` and win the race — the user
+  // would stay on Home and the nav-rail button would appear to do
+  // nothing. Pushing first unmounts VisualizeData (its onUnmounted
+  // already calls `resetState`), so the post-navigation mutations
+  // below are free of observers.
+  //
+  // `switch=1` tells the Workspaces page / picker guard not to
+  // auto-redirect the user straight back when a selection already
+  // exists, so they actually get to see the picker.
+  await router.push({ name: 'Workspaces', query: { switch: '1' } })
   qcDatastream.value = null
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select
   isDrawerOpen.value = true
-  workspaceStore.clearSelection()
-  await router.push({ name: 'Workspaces' })
 }
 </script>
 

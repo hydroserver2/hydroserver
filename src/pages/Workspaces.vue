@@ -34,6 +34,7 @@
         <v-list-item
           :title="ws.name"
           :active="selectedWorkspace?.id === ws.id"
+          :class="{ 'workspace-picker__item--current': selectedWorkspace?.id === ws.id }"
           @click="onPick(ws.id)"
         >
           <template #prepend>
@@ -208,22 +209,13 @@ async function loadDatastreamCounts() {
 onMounted(async () => {
   // Always refresh when we land here — role changes on the server side
   // (added/removed from a workspace) should show up without a hard
-  // reload.
+  // reload. The "skip picker when a selection already exists" redirect
+  // lives in `router/guards.ts` so it fires before the component
+  // mounts (otherwise the picker flashes briefly on a reload).
   await store.loadWorkspaces()
 
-  // Kick off the count fetches in parallel with the redirect check;
-  // the picker may never render if we redirect away, but if it does
-  // the chips light up as soon as the listings resolve.
   void loadDatastreamCounts()
   void loadQualifierCounts()
-
-  // If the user already has a valid selection (e.g. returning from a
-  // deep-linked URL after a reload), skip the picker and continue to
-  // the originally-requested route.
-  if (selectedWorkspace.value) {
-    const next = typeof route.query.next === 'string' ? route.query.next : 'Home'
-    router.replace({ name: next })
-  }
 })
 
 function onPick(id: string) {
@@ -240,3 +232,24 @@ function roleLabel(ws: Workspace): string {
   return ws.collaboratorRole.name || 'Collaborator'
 }
 </script>
+
+<style scoped>
+/* Vuetify's default `:active` state on v-list-item is a barely-visible
+   tint — easy to miss on a list of ten workspaces. Strengthen it with
+   a primary-tinted background plus a left accent bar so the currently
+   selected workspace is obvious at a glance. */
+.workspace-picker__item--current {
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  position: relative;
+}
+
+.workspace-picker__item--current::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: rgb(var(--v-theme-primary));
+}
+</style>
