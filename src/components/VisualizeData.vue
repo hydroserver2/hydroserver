@@ -126,6 +126,7 @@
         </v-btn>
         <v-btn
           data-testid="exit-save-close-btn"
+          class="ml-1"
           size="small"
           variant="tonal"
           color="primary"
@@ -158,7 +159,9 @@
         style="height: 12px"
       />
 
-      <section class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface">
+      <section
+        class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface"
+      >
         <div
           class="edit-view__history d-flex flex-column"
           :class="{ 'edit-view__history--split': selectedOperation }"

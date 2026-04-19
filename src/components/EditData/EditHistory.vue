@@ -1,6 +1,6 @@
 <template>
   <div class="edit-history d-flex flex-column" style="min-height: 0">
-    <!-- Compact header: title + edit count chip. -->
+    <!-- Compact header: title + edit count chip + undo/redo toolbar. -->
     <div class="edit-history__header px-3 py-2 d-flex align-center gap-2">
       <v-icon icon="mdi-history" color="primary" size="18" />
       <span class="text-body-2 font-weight-bold">Edit history</span>
@@ -12,6 +12,36 @@
       >
         {{ editCount }}
       </v-chip>
+
+      <v-spacer />
+
+      <v-tooltip location="bottom" text="Undo (Ctrl+Z)">
+        <template #activator="{ props: tp }">
+          <v-btn
+            v-bind="tp"
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-undo-variant"
+            :disabled="isUpdating || !canUndo"
+            @click="onUndo"
+          />
+        </template>
+      </v-tooltip>
+
+      <v-tooltip location="bottom" text="Redo (Ctrl+Y)">
+        <template #activator="{ props: tp }">
+          <v-btn
+            v-bind="tp"
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-redo-variant"
+            :disabled="isUpdating || !canRedo"
+            @click="onRedo"
+          />
+        </template>
+      </v-tooltip>
     </div>
 
     <v-divider />
@@ -150,7 +180,14 @@
               </template>
             </v-tooltip>
 
-            <v-tooltip location="start" text="Undo this step">
+            <!-- Per-item undo is only exposed on the trailing entry —
+                 undoing a middle entry is handled via "Reload from this
+                 step". The toolbar button above drives global Ctrl+Z. -->
+            <v-tooltip
+              v-if="index === editHistory.length - 1"
+              location="start"
+              text="Undo this step"
+            >
               <template #activator="{ props: tp }">
                 <v-btn
                   v-bind="tp"
@@ -160,7 +197,7 @@
                   icon="mdi-undo-variant"
                   color="error"
                   :disabled="isUpdating"
-                  @click="onRemoveHistoryItem(index)"
+                  @click="onUndo"
                 />
               </template>
             </v-tooltip>
@@ -189,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -204,6 +241,13 @@ const { clearSelected, dispatchSelection } = useDataSelection()
 const openIndex = ref<number | null>(null)
 
 const editCount = computed(() => editHistory.value?.length ?? 0)
+
+const canUndo = computed(
+  () => !!selectedSeries.value?.data && (editHistory.value?.length ?? 0) > 0
+)
+const canRedo = computed(
+  () => (selectedSeries.value?.data.redoStack?.length ?? 0) > 0
+)
 
 function toggle(index: number) {
   openIndex.value = openIndex.value === index ? null : index
@@ -249,6 +293,8 @@ const onReload = async () => {
     const { refreshGraphSeriesArray } = useDataVisStore()
     if (selectedSeries.value) {
       selectedSeries.value.data.history = []
+      // A fresh server-side reload invalidates the redo chain.
+      selectedSeries.value.data.redoStack.length = 0
     }
     await refreshGraphSeriesArray()
     await selectedSeries.value?.data.reload()
@@ -273,20 +319,86 @@ const onReloadHistory = async (index: number) => {
   }
 }
 
-const onRemoveHistoryItem = async (index: number) => {
+/**
+ * After an undo or redo, restore the selection to match whatever the
+ * replay returned: a non-empty array becomes the new plot selection; an
+ * empty array (or `undefined`) clears it. `isUpdating` stays `true`
+ * across `redraw` + selection sync so Plotly's debounced relayout
+ * handler bails out early and doesn't overwrite the selection mid-flight.
+ * `clearSelected({ dispatchFilter: false })` wipes the plot highlight
+ * without pushing an extra SELECTION entry into the history we just
+ * replayed.
+ */
+const applyReplayedSelection = async (
+  newSelection: number[] | undefined
+) => {
+  await redraw()
+  if (newSelection && newSelection.length) {
+    await dispatchSelection(newSelection)
+  } else {
+    await clearSelected({ dispatchFilter: false })
+  }
+}
+
+const onUndo = async () => {
+  if (!canUndo.value || isUpdating.value) return
   isUpdating.value = true
-
   setTimeout(async () => {
-    const newSelection =
-      await selectedSeries.value?.data.removeHistoryItem(index)
-
-    isUpdating.value = false
-    await redraw()
-    if (newSelection) {
-      dispatchSelection(newSelection)
+    try {
+      const newSelection = await selectedSeries.value?.data.undo()
+      await applyReplayedSelection(newSelection)
+    } finally {
+      isUpdating.value = false
     }
   })
 }
+
+const onRedo = async () => {
+  if (!canRedo.value || isUpdating.value) return
+  isUpdating.value = true
+  setTimeout(async () => {
+    try {
+      const newSelection = await selectedSeries.value?.data.redo()
+      await applyReplayedSelection(newSelection)
+    } finally {
+      isUpdating.value = false
+    }
+  })
+}
+
+/**
+ * Keyboard: Ctrl/Cmd+Z = undo, Ctrl+Y or Ctrl/Cmd+Shift+Z = redo.
+ * Attached to `window` so the shortcuts work regardless of what has
+ * focus inside the app, but we bail when the user is typing into an
+ * input/textarea/contenteditable so native browser undo on text fields
+ * still wins.
+ */
+const onKeydown = (e: KeyboardEvent) => {
+  const mod = e.ctrlKey || e.metaKey
+  if (!mod) return
+
+  const target = e.target as HTMLElement | null
+  if (
+    target &&
+    (target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable)
+  ) {
+    return
+  }
+
+  const key = e.key.toLowerCase()
+  if (key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    onUndo()
+  } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+    e.preventDefault()
+    onRedo()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>
