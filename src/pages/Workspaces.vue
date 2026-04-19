@@ -53,15 +53,55 @@
           </template>
 
           <template #append>
-            <v-btn
-              size="small"
-              variant="flat"
-              color="primary"
-              :disabled="selectedWorkspace?.id === ws.id"
-              @click.stop="onPick(ws.id)"
-            >
-              {{ selectedWorkspace?.id === ws.id ? 'Selected' : 'Select' }}
-            </v-btn>
+            <div class="d-flex align-center gap-3">
+              <v-tooltip
+                location="top"
+                :text="datastreamCountTooltip(ws.id)"
+              >
+                <template #activator="{ props: tp }">
+                  <v-chip
+                    v-bind="tp"
+                    size="x-small"
+                    variant="tonal"
+                    color="grey-darken-1"
+                    prepend-icon="mdi-chart-timeline-variant"
+                  >
+                    <template v-if="datastreamCountsLoading">…</template>
+                    <template v-else>
+                      {{ datastreamCount(ws.id).toLocaleString() }}
+                    </template>
+                  </v-chip>
+                </template>
+              </v-tooltip>
+              <v-tooltip
+                location="top"
+                :text="qualifierCountTooltip(ws.id)"
+              >
+                <template #activator="{ props: tp }">
+                  <v-chip
+                    v-bind="tp"
+                    size="x-small"
+                    variant="tonal"
+                    color="grey-darken-1"
+                    prepend-icon="mdi-flag-outline"
+                  >
+                    <template v-if="qualifierCountsLoading">…</template>
+                    <template v-else>
+                      {{ qualifierCount(ws.id).toLocaleString() }}
+                    </template>
+                  </v-chip>
+                </template>
+              </v-tooltip>
+              <v-btn
+                size="small"
+                variant="flat"
+                color="primary"
+                :disabled="selectedWorkspace?.id === ws.id"
+                @click.stop="onPick(ws.id)"
+              >
+                {{ selectedWorkspace?.id === ws.id ? 'Selected' : 'Select' }}
+              </v-btn>
+            </div>
           </template>
         </v-list-item>
         <v-divider v-if="idx < availableWorkspaces.length - 1" />
@@ -71,22 +111,111 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
-import { Workspace } from '@hydroserver/client'
+import { Workspace, Datastream, ResultQualifier } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useHydroServer } from '@/store/hydroserver'
 
 const router = useRouter()
 const route = useRoute()
 const store = useWorkspaceStore()
 const { availableWorkspaces, selectedWorkspace, isLoading } = storeToRefs(store)
+const { hs } = storeToRefs(useHydroServer())
+
+/**
+ * Datastream count per workspace id. Populated by a single
+ * `hs.datastreams.list({ fetch_all: true })` call — the server's
+ * RBAC filters to only datastreams the signed-in user can see
+ * (which spans every workspace in `availableWorkspaces`), so one
+ * listing bucketed by `workspaceId` is cheaper than N scoped
+ * listings.
+ */
+const datastreamCounts = ref<Record<string, number>>({})
+const datastreamCountsLoading = ref(true)
+
+const datastreamCount = (workspaceId: string) =>
+  datastreamCounts.value[workspaceId] ?? 0
+
+const datastreamCountTooltip = (workspaceId: string) => {
+  if (datastreamCountsLoading.value) return 'Counting datastreams…'
+  const n = datastreamCount(workspaceId)
+  return `${n.toLocaleString()} datastream${n === 1 ? '' : 's'} in this workspace`
+}
+
+/**
+ * ResultQualifier count per workspace id — same bucket-by-`workspaceId`
+ * pattern as the datastream count. Useful for answering "which
+ * workspace has qualifiers already defined?" at a glance in the picker.
+ */
+const qualifierCounts = ref<Record<string, number>>({})
+const qualifierCountsLoading = ref(true)
+
+const qualifierCount = (workspaceId: string) =>
+  qualifierCounts.value[workspaceId] ?? 0
+
+const qualifierCountTooltip = (workspaceId: string) => {
+  if (qualifierCountsLoading.value) return 'Counting qualifiers…'
+  const n = qualifierCount(workspaceId)
+  return `${n.toLocaleString()} result qualifier${n === 1 ? '' : 's'} defined in this workspace`
+}
+
+async function loadQualifierCounts() {
+  qualifierCountsLoading.value = true
+  try {
+    const response = await hs.value.resultQualifiers.list({
+      fetch_all: true,
+    })
+    const list = (response.data ?? []) as ResultQualifier[]
+    const counts: Record<string, number> = {}
+    for (const q of list) {
+      const wsId = q.workspaceId
+      if (!wsId) continue
+      counts[wsId] = (counts[wsId] ?? 0) + 1
+    }
+    qualifierCounts.value = counts
+  } catch (e) {
+    console.error('Failed to load qualifier counts:', e)
+    qualifierCounts.value = {}
+  } finally {
+    qualifierCountsLoading.value = false
+  }
+}
+
+async function loadDatastreamCounts() {
+  datastreamCountsLoading.value = true
+  try {
+    const response = await hs.value.datastreams.list({
+      fetch_all: true,
+    })
+    const list = (response.data ?? []) as Datastream[]
+    const counts: Record<string, number> = {}
+    for (const ds of list) {
+      const wsId = ds.workspaceId
+      if (!wsId) continue
+      counts[wsId] = (counts[wsId] ?? 0) + 1
+    }
+    datastreamCounts.value = counts
+  } catch (e) {
+    console.error('Failed to load datastream counts:', e)
+    datastreamCounts.value = {}
+  } finally {
+    datastreamCountsLoading.value = false
+  }
+}
 
 onMounted(async () => {
   // Always refresh when we land here — role changes on the server side
   // (added/removed from a workspace) should show up without a hard
   // reload.
   await store.loadWorkspaces()
+
+  // Kick off the count fetches in parallel with the redirect check;
+  // the picker may never render if we redirect away, but if it does
+  // the chips light up as soon as the listings resolve.
+  void loadDatastreamCounts()
+  void loadQualifierCounts()
 
   // If the user already has a valid selection (e.g. returning from a
   // deep-linked URL after a reload), skip the picker and continue to

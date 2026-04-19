@@ -117,17 +117,20 @@ export const labelColorFor = (lineColor: string): string => {
   return idx >= 0 ? LABEL_COLORS[idx] : LABEL_COLORS[0]
 }
 
-// Colour palette for qualifier-flag markers along the bottom of the plot.
-// Assigned deterministically per qualifier code (by sorted order).
+// Colour palette for qualifier-flag markers along the bottom of the
+// plot. Assigned deterministically per qualifier code (by sorted
+// order). Reds and pinks are deliberately excluded — red is reserved
+// for the point-selection highlight, so reusing it here confused
+// "this point is selected" with "this point carries a qualifier".
 export const QUALIFIER_COLORS = [
-  '#d62728',
-  '#ff7f0e',
-  '#2ca02c',
-  '#9467bd',
-  '#17becf',
-  '#bcbd22',
-  '#e377c2',
-  '#8c564b',
+  '#ff7f0e', // orange
+  '#2ca02c', // green
+  '#9467bd', // purple
+  '#17becf', // teal
+  '#bcbd22', // olive
+  '#8c564b', // brown
+  '#1f77b4', // blue
+  '#7f7f7f', // grey
 ]
 
 const selectorOptions: Partial<RangeSelector> = {

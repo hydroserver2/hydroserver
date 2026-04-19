@@ -241,9 +241,16 @@ async function onLogout() {
 async function onSwitchWorkspace() {
   // Reset view state before leaving so the picker doesn't flash an
   // editor session tied to the old workspace. The watcher in App.vue
-  // clears the catalog as soon as the selection is dropped.
+  // clears the catalog as soon as the selection is dropped. Forcing
+  // the view back to Select also means coming back from the picker
+  // lands on the Select view even if the user was mid-edit when they
+  // hit the switch button — the old QC target and edit history are
+  // gone, so staying in Edit would show a broken empty editor.
   resetState()
   qcDatastream.value = null
+  currentView.value = DrawerType.Select
+  selectedDrawer.value = DrawerType.Select
+  isDrawerOpen.value = true
   workspaceStore.clearSelection()
   await router.push({ name: 'Workspaces' })
 }

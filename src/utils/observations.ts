@@ -21,8 +21,15 @@ export const fetchObservationsSync = async (
     let datetimes: number[] = []
     let dataValues: number[] = []
     while (page <= maxPages) {
-      // TODO: this endpoint now returns a single array of objects which contain datetime and values, but also more redundant properties.
-      // All endpoints seem to return Promise<ApiResponse<any>>. We need to strongly type each one.
+      // Reverted to columnar format after the row format timed out on
+      // a 35k-point fetch (>1.5 min). Row responses carry the extra
+      // fields Phase 2 of the qualifier integration needs
+      // (`resultQualifierCodes`) and eventually per-point ids for
+      // value tracking, but they're not yet practical at QC-app
+      // scales. Filed upstream with the HydroServer API team — we
+      // want either an opt-in column (`include=resultQualifierCodes`
+      // / equivalent) on the columnar response, or a much faster
+      // row mode.
       const result = await hs.value.datastreams.getObservations(
         id,
         {
@@ -31,7 +38,7 @@ export const fetchObservationsSync = async (
           phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
           phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
           page: page,
-          order_by: ["phenomenonTime"],
+          order_by: ['phenomenonTime'],
           format: 'column',
         }
       )

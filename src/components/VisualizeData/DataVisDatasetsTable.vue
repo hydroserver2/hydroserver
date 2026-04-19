@@ -222,22 +222,33 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const displayDatastreams = computed(() => {
+  // Guard against `filteredDatastreams` being momentarily undefined
+  // (workspace-switch transition, store-reset race) — `.map` on
+  // undefined throws during render.
+  const rows = filteredDatastreams.value ?? []
   if (showOnlySelected.value) {
-    return filteredDatastreams.value.filter((ds) =>
+    return rows.filter((ds) =>
       plottedDatastreams.value.some((sds) => sds.id === ds.id)
     )
-  } else {
-    return filteredDatastreams.value
   }
+  return rows
 })
 
 const tableItems = computed(() => {
+  // Defensive optional-chaining: these nested fields come from
+  // `expand_related: true` on the datastream fetch. During a catalog
+  // refresh (workspace switch, re-fetch after plot changes) the store
+  // can briefly hold rows whose related objects haven't landed yet —
+  // dereferencing `ds.thing.samplingFeatureCode` then threw, which
+  // surfaced as an error during table render and tore the whole
+  // `v-data-table-virtual` out of the DOM. Falling back to an empty
+  // string keeps the row visible (and sort-stable).
   return displayDatastreams.value.map((ds) => {
     return {
       ...ds,
-      siteCodeName: ds.thing.samplingFeatureCode,
-      observedPropertyName: ds.observedProperty.name,
-      qualityControlLevelDefinition: ds.processingLevel.definition,
+      siteCodeName: ds.thing?.samplingFeatureCode ?? '',
+      observedPropertyName: ds.observedProperty?.name ?? '',
+      qualityControlLevelDefinition: ds.processingLevel?.definition ?? '',
     }
   })
 })

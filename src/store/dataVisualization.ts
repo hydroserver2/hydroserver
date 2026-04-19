@@ -113,11 +113,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   const filteredDatastreams = computed(() => {
-    return datastreams.value?.filter(
-      (datastream) =>
-        matchesSelectedThing(datastream) &&
-        matchesSelectedObservedProperty(datastream) &&
-        matchesSelectedProcessingLevel(datastream)
+    // `?? []` — during a workspace switch `datastreams.value` is
+    // briefly cleared in App.vue before the new catalog lands. Without
+    // the fallback this computed returns `undefined`, which then
+    // propagates into `tableItems.map(...)` in DataVisDatasetsTable
+    // and throws during render, tearing the table out of the DOM.
+    return (
+      datastreams.value?.filter(
+        (datastream) =>
+          matchesSelectedThing(datastream) &&
+          matchesSelectedObservedProperty(datastream) &&
+          matchesSelectedProcessingLevel(datastream)
+      ) ?? []
     )
   })
 

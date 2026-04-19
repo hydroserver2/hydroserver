@@ -169,10 +169,13 @@ function closeNewQualifier() {
   newDescription.value = ''
 }
 
-function onCreateQualifier() {
+async function onCreateQualifier() {
   const code = newCode.value.trim()
   if (!code) return
-  const q = qualifierStore.createQualifier(code, newDescription.value)
+  // `createQualifier` is now async — it POSTs to
+  // `hs.resultQualifiers` so the code persists on the server for the
+  // active workspace.
+  const q = await qualifierStore.createQualifier(code, newDescription.value)
   if (!selectedQualifierIds.value.includes(q.id)) {
     selectedQualifierIds.value = [...selectedQualifierIds.value, q.id]
   }
