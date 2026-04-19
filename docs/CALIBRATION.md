@@ -96,12 +96,14 @@ Every op lives in one of three modes:
 
 - **`always-inline`** — never benefits from worker. Binary searches,
   single-shot bookkeeping, small tight loops.
-- **`always-worker`** — the worker path does nontrivial work (buffer
-  allocation, shard merges, resizable `SharedArrayBuffer` operations)
-  that hasn't been ported to an inline fallback yet. Calibration
-  still plans for future promotion.
 - **`calibrated`** — the dispatch site asks `shouldUseWorker()` per
   call and branches accordingly.
+- **`always-worker`** — escape hatch for ops that can't express an
+  inline fallback (e.g. because the algorithm only parallelises
+  well via actual thread-level concurrency). No op is in this
+  mode today; all are either always-inline or calibrated. Kept
+  in the type union because future kernels might legitimately
+  belong here.
 
 | Operation                 | Mode             | Weight | Primary cost driver                          | Notes                                            |
 | ------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------ |
@@ -115,12 +117,12 @@ Every op lives in one of three modes:
 | `FIND_GAPS`               | calibrated       | 0.9    | `datasetSize`                                | Scan X only; usually few gaps                    |
 | `PERSISTENCE`             | calibrated       | 1.3    | `datasetSize`                                | Chunk-boundary stitch adds constant factor       |
 | `CHANGE_VALUES`           | calibrated       | 0.7    | `selectionSize`                              | In-place arithmetic, cache-friendly              |
-| `INTERPOLATE`             | always-worker    | 1.5    | `selectionSize` + per-group anchor math      | Inline fallback pending (see TODOs below)        |
+| `INTERPOLATE`             | calibrated       | 1.5    | `selectionSize` + per-group anchor math      | Linear interp per consecutive group; in place    |
 | `DRIFT_CORRECTION`        | calibrated       | 1.2    | total range extent                           | O(range total) in-place math; one pass per range |
-| `SHIFT_DATETIMES`         | always-worker    | 1.1    | `selectionSize`                              | Inline fallback pending                          |
-| `ADD_POINTS`              | always-worker    | 1.8    | `datasetSize + k·log(datasetSize)`           | Merges + resize; inline fallback pending         |
-| `DELETE_POINTS`           | always-worker    | 1.4    | `datasetSize`                                | Segmented copy + resize; inline fallback pending |
-| `FILL_GAPS`               | always-worker    | 1.3    | `datasetSize + fill count`                   | Output buffer sizing; inline fallback pending    |
+| `SHIFT_DATETIMES`         | calibrated       | 1.1    | `selectionSize`                              | Inline skips SAB allocation; delete+add still worker-backed |
+| `ADD_POINTS`              | calibrated       | 1.8    | `datasetSize + k·log(datasetSize)`           | Single merge pass; fresh SAB per call            |
+| `DELETE_POINTS`           | calibrated       | 1.4    | `datasetSize`                                | Single skip-on-delete pass; fresh SAB per call   |
+| `FILL_GAPS`               | calibrated       | 1.3    | `datasetSize + fill count`                   | Single copy-with-fills pass; fresh SAB per call  |
 
 ### Why these modes
 
@@ -144,24 +146,6 @@ The crossover sits roughly at `spawnOverheadMs * inlineThroughput`
 elements — ~50 000 on Windows, ~500 000 on Mac — but the formula
 accounts for per-op `weight` and selection size, so you don't have to
 remember those numbers.
-
-**Always-worker ops** are the TODO list. Every one of them has a
-worker implementation that allocates large `SharedArrayBuffer`s,
-shards inserts/deletes across workers, then either writes in place
-or swaps in new buffers. Porting these to an inline fallback is
-mechanical but not trivial — follow the pattern established for
-`VALUE_THRESHOLD`:
-
-1. Extract the hot loop into a pure function in `operation-cores.ts`.
-2. Update the worker file to call the core.
-3. In `observation-record.ts`, replace the pre-existing dispatch with
-   a `shouldUseWorker()` check; on `useWorker: false`, call the core
-   directly over `[0, dataX.length)` (or the appropriate range).
-
-For ops that allocate a new buffer (`ADD_POINTS`, `DELETE_POINTS`,
-`FILL_GAPS`), the inline fallback can skip the `SharedArrayBuffer`
-allocation entirely and use a regular `ArrayBuffer` since nothing
-else will read it.
 
 ---
 
@@ -276,13 +260,19 @@ trigger exists precisely so a bad measurement doesn't stick.
 
 ## Extending
 
-### Promoting an `always-worker` op to `calibrated`
+### Adding a new operation
 
-1. Identify the worker's hot loop. Most are ~20 lines.
-2. Move the loop to `operation-cores.ts` as a pure exported function.
-3. Update the worker to `import` and call the core — no behaviour
-   change.
-4. In `observation-record.ts`'s dispatch method for that op, add:
+The full checklist, in the order the existing ops were added:
+
+1. Identify the worker's hot loop. Most are 20–60 lines.
+2. Move the loop to `operation-cores.ts` as a pure exported
+   function that can run on either a shared or a plain typed
+   array. Allocation should happen outside the core so both the
+   worker (pre-allocated SAB) and the inline path (fresh buffer)
+   can reuse it.
+3. Update the worker file to `import` and call the core — no
+   behaviour change.
+4. In `observation-record.ts`'s dispatch method for the op, add:
    ```ts
    const decision = shouldUseWorker(EnumEditOperations.FOO, {
      datasetSize: this.dataset.source.y.length,
@@ -292,10 +282,18 @@ trigger exists precisely so a bad measurement doesn't stick.
      fooCore(/* whole-range args */);
      return;
    }
+   this._pendingExecutionMode = "worker";
    ```
-5. Flip the op's `mode` in `OPERATION_TABLE` (calibration.ts) from
-   `'always-worker'` to `'calibrated'`.
-6. Verify the unit tests, then calibrate locally to confirm
+   The `_pendingExecutionMode = "worker"` line is what lights up
+   the dev badge; the field is sticky-upgrade, so sub-ops that
+   spawn workers will already have set it for you by the time the
+   outer op returns.
+5. Add the op to `OPERATION_TABLE` in `calibration.ts`, picking
+   `'calibrated'` (with a weight relative to `VALUE_THRESHOLD`)
+   or `'always-inline'` (for pure bookkeeping / O(log n) ops).
+   Reserve `'always-worker'` for kernels that genuinely require
+   thread-level parallelism to stay within a frame budget.
+6. Verify the unit tests, then calibrate locally to confirm the
    crossover matches expectation.
 
 ### Adjusting weights

@@ -1,3 +1,5 @@
+import { deleteDataPointsCore } from './operation-cores'
+
 self.onmessage = (e) => {
   const {
     bufferX,
@@ -13,24 +15,15 @@ self.onmessage = (e) => {
   const arrayY = new Float32Array(bufferY)
   const outputArrayX = new Float64Array(outputBufferX)
   const outputArrayY = new Float32Array(outputBufferY)
-
-  let deletePtr = 0
-  let writePtr = startTarget
-
-  // Copy non-deleted elements to output buffer
-  for (let readPtr = start; readPtr <= end; readPtr++) {
-    if (
-      deletePtr < deleteSegment.length &&
-      readPtr === deleteSegment[deletePtr]
-    ) {
-      deletePtr++ // Skip deleted index
-    } else {
-      outputArrayX[writePtr] = arrayX[readPtr]
-      outputArrayY[writePtr] = arrayY[readPtr]
-      writePtr++
-    }
-  }
-
-
+  deleteDataPointsCore(
+    arrayX,
+    arrayY,
+    deleteSegment,
+    outputArrayX,
+    outputArrayY,
+    start,
+    end,
+    startTarget
+  )
   self.postMessage('Done')
 }

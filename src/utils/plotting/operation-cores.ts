@@ -187,6 +187,241 @@ export function persistenceCore(
 }
 
 /**
+ * Copy `[start, end]` of `sourceX` / `sourceY` into `outX` / `outY`
+ * starting at `outStart`, inserting synthesized fill points after each
+ * gap whose left index falls in the read range. `gaps` is a list of
+ * `[leftIdx, rightIdx]` pairs, sorted by left index. `fillDelta` is
+ * the spacing between inserted points in the same unit as `sourceX`.
+ * When `interpolate` is true the filled Y values are linearly
+ * interpolated between the gap's endpoints; otherwise `fillValue` is
+ * written (used for "sentinel" -9999 fills).
+ *
+ * Shared by the `FillGapsWorker`'s per-segment write and the inline
+ * full-array path. Returns the number of elements written so callers
+ * can double-check contiguity against their pre-computed fill totals.
+ */
+export function fillGapsCore(
+  sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
+  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  gaps: ReadonlyArray<[number, number]>,
+  outX: Float64Array | Float64Array<SharedArrayBuffer>,
+  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  start: number,
+  end: number,
+  outStart: number,
+  fillDelta: number,
+  interpolate: boolean,
+  fillValue: number
+): number {
+  let gapPtr = 0
+  let writePtr = outStart
+  for (let readPtr = start; readPtr <= end; readPtr++) {
+    outX[writePtr] = sourceX[readPtr]
+    outY[writePtr] = sourceY[readPtr]
+    writePtr++
+
+    if (gapPtr < gaps.length && readPtr === gaps[gapPtr][0]) {
+      const leftIdx = gaps[gapPtr][0]
+      const rightIdx = gaps[gapPtr][1]
+      const leftDatetime = sourceX[leftIdx]
+      const rightDatetime = sourceX[rightIdx]
+      const leftValue = sourceY[leftIdx]
+      const rightValue = sourceY[rightIdx]
+      const span = rightDatetime - leftDatetime
+      const valueSpan = rightValue - leftValue
+
+      let nextFillDatetime = leftDatetime + fillDelta
+      while (nextFillDatetime < rightDatetime) {
+        outX[writePtr] = nextFillDatetime
+        outY[writePtr] = interpolate
+          ? leftValue + ((nextFillDatetime - leftDatetime) * valueSpan) / span
+          : fillValue
+        writePtr++
+        nextFillDatetime += fillDelta
+      }
+      gapPtr++
+    }
+  }
+  return writePtr - outStart
+}
+
+/**
+ * Merge a slice `[origStart, origEnd)` of `sourceX` / `sourceY` with
+ * a pre-sorted list of `(x, y)` insertions into `outX` / `outY`
+ * starting at `outStart`. Originals win on datetime ties so the
+ * merged order matches `findLastLessOrEqual` semantics (insertion
+ * lands after equal-valued originals). Writes in order; caller is
+ * responsible for pre-allocating output buffers sized to
+ * `origEnd - origStart + insertions.length`.
+ *
+ * Shared by the `AddDataWorker`'s segment merge and the inline
+ * full-array path. Returns the number of elements written so callers
+ * can double-check contiguity.
+ */
+export function addDataPointsCore(
+  sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
+  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  insertions: ReadonlyArray<[number, number]>,
+  outX: Float64Array | Float64Array<SharedArrayBuffer>,
+  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  origStart: number,
+  origEnd: number,
+  outStart: number
+): number {
+  let origPtr = origStart
+  let insPtr = 0
+  let writePtr = outStart
+  const insLen = insertions.length
+
+  while (origPtr < origEnd && insPtr < insLen) {
+    const insX = insertions[insPtr][0]
+    if (sourceX[origPtr] <= insX) {
+      outX[writePtr] = sourceX[origPtr]
+      outY[writePtr] = sourceY[origPtr]
+      origPtr++
+    } else {
+      outX[writePtr] = insX
+      outY[writePtr] = insertions[insPtr][1]
+      insPtr++
+    }
+    writePtr++
+  }
+  while (origPtr < origEnd) {
+    outX[writePtr] = sourceX[origPtr]
+    outY[writePtr] = sourceY[origPtr]
+    origPtr++
+    writePtr++
+  }
+  while (insPtr < insLen) {
+    outX[writePtr] = insertions[insPtr][0]
+    outY[writePtr] = insertions[insPtr][1]
+    insPtr++
+    writePtr++
+  }
+  return writePtr - outStart
+}
+
+/**
+ * Copy `[readStart, readEnd]` of `sourceX` / `sourceY` into
+ * `outX` / `outY` starting at `outStart`, skipping any index that
+ * appears in `deleteIndices` (which must be sorted ascending and
+ * bounded to the read range). Shared by the worker's per-segment
+ * write path and the inline full-array path. Returns the number of
+ * elements written so callers can double-check contiguity.
+ */
+export function deleteDataPointsCore(
+  sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
+  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  deleteIndices: ArrayLike<number>,
+  outX: Float64Array | Float64Array<SharedArrayBuffer>,
+  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  readStart: number,
+  readEnd: number,
+  outStart: number
+): number {
+  let deletePtr = 0
+  let writePtr = outStart
+  for (let readPtr = readStart; readPtr <= readEnd; readPtr++) {
+    if (
+      deletePtr < deleteIndices.length &&
+      readPtr === deleteIndices[deletePtr]
+    ) {
+      deletePtr++
+    } else {
+      outX[writePtr] = sourceX[readPtr]
+      outY[writePtr] = sourceY[readPtr]
+      writePtr++
+    }
+  }
+  return writePtr - outStart
+}
+
+/** Params for `shiftDatetimesCollection`; mirrors the worker payload. */
+export interface ShiftDatetimesParams {
+  amount: number
+  isMonth: boolean
+  isYear: boolean
+  /** Precomputed scalar ms offset; unused when `isMonth || isYear`. */
+  deltaMs: number
+}
+
+/**
+ * Compute shifted `(x, y)` pairs for each index in `indexes` without
+ * allocating a `SharedArrayBuffer`. Mirrors the shift worker's branches
+ * for month / year / scalar units. Returned in the same order as
+ * `indexes` so the caller can hand the collection straight to
+ * `_addDataPoints` after a `_deleteDataPoints(indexes)`.
+ */
+export function shiftDatetimesCollection(
+  arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
+  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  indexes: ArrayLike<number>,
+  params: ShiftDatetimesParams
+): [number, number][] {
+  const n = indexes.length
+  const out: [number, number][] = new Array(n)
+  if (params.isMonth) {
+    for (let i = 0; i < n; i++) {
+      const idx = indexes[i]
+      const d = new Date(arrayX[idx])
+      d.setMonth(d.getMonth() + params.amount)
+      out[i] = [d.getTime(), arrayY[idx]]
+    }
+  } else if (params.isYear) {
+    for (let i = 0; i < n; i++) {
+      const idx = indexes[i]
+      const d = new Date(arrayX[idx])
+      d.setFullYear(d.getFullYear() + params.amount)
+      out[i] = [d.getTime(), arrayY[idx]]
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      const idx = indexes[i]
+      out[i] = [arrayX[idx] + params.deltaMs, arrayY[idx]]
+    }
+  }
+  return out
+}
+
+/** Prepared group shape shared by `_interpolate` and its worker. */
+export interface InterpolateGroup {
+  indexes: number[]
+  lowerIdx: number
+  upperIdx: number
+}
+
+/**
+ * Linear-interpolate Y-values at each group's `indexes` between the
+ * anchor points at `lowerIdx` / `upperIdx`. Writes in place. Matches
+ * the worker's degenerate-span semantics: if `lowerIdx === upperIdx`
+ * (group sits at a buffer edge with no valid anchor on one side) we
+ * paste the lone anchor value for every point in the group.
+ */
+export function interpolateCore(
+  arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
+  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  groups: InterpolateGroup[]
+): void {
+  for (let gi = 0; gi < groups.length; gi++) {
+    const { indexes, lowerIdx, upperIdx } = groups[gi]
+    const lowerX = arrayX[lowerIdx]
+    const lowerY = arrayY[lowerIdx]
+    const upperX = arrayX[upperIdx]
+    const upperY = arrayY[upperIdx]
+    const xSpan = upperX - lowerX
+    const ySpan = upperY - lowerY
+    if (xSpan === 0) {
+      for (let i = 0; i < indexes.length; i++) arrayY[indexes[i]] = lowerY
+      continue
+    }
+    for (let i = 0; i < indexes.length; i++) {
+      const idx = indexes[i]
+      arrayY[idx] = lowerY + ((arrayX[idx] - lowerX) * ySpan) / xSpan
+    }
+  }
+}
+
+/**
  * Apply linear drift correction over one or more `[start, end, value]`
  * ranges in place on `arrayY`, using `arrayX` only to compute each
  * range's time anchors. Per-point formula:

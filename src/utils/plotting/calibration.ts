@@ -108,9 +108,8 @@ const listeners = new Set<CalibrationListener>()
  * (weight 1). `mode`:
  *   - `always-inline`: never worth the worker hop (O(log n), pure
  *     bookkeeping, or already single-shot loops),
- *   - `always-worker`: operations that allocate large shared buffers
- *     and depend on multi-threaded merges; we leave their default
- *     behaviour alone until an inline fallback is written,
+ *   - `always-worker`: escape hatch for kernels that genuinely
+ *     need thread-level parallelism (none in the current catalog),
  *   - `calibrated`: dispatch decides per-call using the estimator.
  */
 type OperationMode = 'always-inline' | 'always-worker' | 'calibrated'
@@ -187,9 +186,9 @@ const OPERATION_TABLE: Record<
     rationale: 'Composes delete+add which handle their own dispatch',
   },
   [EnumEditOperations.INTERPOLATE]: {
-    mode: 'always-worker',
+    mode: 'calibrated',
     weight: 1.5,
-    rationale: 'Complex per-group math; inline fallback pending',
+    rationale: 'Linear interp per consecutive group; in-place writes',
   },
   [EnumEditOperations.DRIFT_CORRECTION]: {
     mode: 'calibrated',
@@ -197,24 +196,24 @@ const OPERATION_TABLE: Record<
     rationale: 'O(range total) in-place math; one pass per range',
   },
   [EnumEditOperations.SHIFT_DATETIMES]: {
-    mode: 'always-worker',
+    mode: 'calibrated',
     weight: 1.1,
-    rationale: 'Shared output buffers + merge; inline fallback pending',
+    rationale: 'O(k) per-point shift math; inline skips SAB allocation',
   },
   [EnumEditOperations.ADD_POINTS]: {
-    mode: 'always-worker',
+    mode: 'calibrated',
     weight: 1.8,
-    rationale: 'Sharded merge with resize; inline fallback pending',
+    rationale: 'Single merge pass over Y/X + insertions; fresh SAB per call',
   },
   [EnumEditOperations.DELETE_POINTS]: {
-    mode: 'always-worker',
+    mode: 'calibrated',
     weight: 1.4,
-    rationale: 'Sharded segment copy with resize; inline fallback pending',
+    rationale: 'Single skip-on-delete pass over Y/X; fresh SAB per call',
   },
   [EnumEditOperations.FILL_GAPS]: {
-    mode: 'always-worker',
+    mode: 'calibrated',
     weight: 1.3,
-    rationale: 'Output buffer sizing + interpolated fills; inline fallback pending',
+    rationale: 'Single copy-with-fills pass; fresh SAB sized to newLength',
   },
 }
 

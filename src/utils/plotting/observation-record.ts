@@ -35,12 +35,17 @@ import ValueThresholdWorker from "./value-threshold.worker?worker&inline";
 // @ts-ignore
 import ChangeValuesWorker from "./change-values.worker?worker&inline";
 import {
+  addDataPointsCore,
   changeCore,
   changeValuesCore,
+  deleteDataPointsCore,
   driftCorrectionCore,
+  fillGapsCore,
   findGapsCore,
+  interpolateCore,
   persistenceCore,
   rateOfChangeCore,
+  shiftDatetimesCollection,
   valueThresholdCore,
 } from "./operation-cores";
 import { shouldUseWorker } from "./calibration";
@@ -108,13 +113,16 @@ export class ObservationRecord {
    */
   private _isReplaying: boolean = false;
   /**
-   * Set by each operation handler to record whether it actually spawned
-   * workers or ran inline. Read by the dispatch wrappers and written onto
-   * the history item so the UI can show a dev-only badge. Defaulted to
-   * `"worker"` on every dispatch (matches the pre-calibration baseline);
-   * handlers that call `shouldUseWorker` or are always-inline override.
+   * Set by each operation handler (or any of its subroutines) to record
+   * whether a worker was actually spawned during this dispatch. Sticky-
+   * upgrade semantics: the wrapper resets it to `"inline"` before the
+   * handler runs, and any code that spawns a worker flips it to
+   * `"worker"`. Once flipped it stays flipped for the rest of the
+   * dispatch — so an op whose top-level decision is "inline" but whose
+   * sub-op (e.g. `_shift` → `_deleteDataPoints`) still spawns workers
+   * will honestly show `"worker"` on its history entry.
    */
-  private _pendingExecutionMode: "worker" | "inline" = "worker";
+  private _pendingExecutionMode: "worker" | "inline" = "inline";
   loadingTime: number | null = null;
   isLoading: boolean = true;
   rawData: {
@@ -356,10 +364,10 @@ export class ObservationRecord {
       };
       this.history.push(historyItem);
       const itemIdx = this.history.length - 1;
-      // Default to "worker" before the handler runs; handlers that take
-      // the inline path (via calibration or because they're always-inline)
-      // overwrite this to "inline" before returning.
-      this._pendingExecutionMode = "worker";
+      // Reset to "inline"; any worker spawn in the handler or its
+      // subroutines will sticky-upgrade this to "worker" before the
+      // dispatch returns.
+      this._pendingExecutionMode = "inline";
       const measurement = await measureEllapsedTime(async () => {
         return await actions[action].apply(this, args);
       });
@@ -470,10 +478,9 @@ export class ObservationRecord {
         this.history.push(historyItem);
         itemIdx = this.history.length - 1;
       }
-      // Default to "worker" before the handler runs; handlers that take
-      // the inline path (via calibration or because they're always-inline)
-      // overwrite this to "inline" before returning.
-      this._pendingExecutionMode = "worker";
+      // Reset to "inline"; any worker spawn in the handler or its
+      // subroutines will sticky-upgrade this to "worker".
+      this._pendingExecutionMode = "inline";
       const measurement = await measureEllapsedTime(async () => {
         return await filters[action].apply(this, args);
       });
@@ -536,7 +543,6 @@ export class ObservationRecord {
       selectionSize: N,
     });
     if (!decision.useWorker || N < CHANGE_VALUES_WORKER_THRESHOLD) {
-      this._pendingExecutionMode = "inline";
       changeValuesCore(this.dataY, selection, operator, value);
       return [];
     }
@@ -608,7 +614,6 @@ export class ObservationRecord {
    * not log them again.
    */
   private async _assignValuesBulk(values: number[]): Promise<number[]> {
-    this._pendingExecutionMode = "inline";
     const selection = this.history[this.history.length - 2]?.selected;
     if (!selection || !selection.length || !values?.length) return [];
 
@@ -664,6 +669,19 @@ export class ObservationRecord {
       lowerIdx: Math.max(0, g[0] - 1),
       upperIdx: Math.min(len - 1, g[g.length - 1] + 1),
     }));
+
+    // Inline fast path: for small selections the worker-per-group-bucket
+    // orchestration dominates. `selectionSize` is the point count we
+    // actually touch; `datasetSize` stays informational.
+    const decision = shouldUseWorker(EnumEditOperations.INTERPOLATE, {
+      datasetSize: len,
+      selectionSize: index.length,
+    });
+    if (!decision.useWorker) {
+      interpolateCore(this.dataX, this.dataY, preparedGroups);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
 
     const numWorkers = Math.min(
       navigator.hardwareConcurrency || 1,
@@ -735,6 +753,31 @@ export class ObservationRecord {
       !isMonth && !isYear ? amount * timeUnitMultipliers[unit] * 1000 : 0;
 
     const N = index.length;
+
+    // Inline fast path: skip SAB allocation + the per-chunk shift
+    // workers entirely; compute the collection on the main thread and
+    // hand straight off to delete+add. For small selections the
+    // hwConcurrency worker spawns dominate the actual shift math.
+    // The downstream `_deleteDataPoints` / `_addDataPoints` make their
+    // own inline-vs-worker decisions; if either spawns a worker the
+    // dispatch's `_pendingExecutionMode` sticky-upgrades to "worker",
+    // which is the honest label for the history badge.
+    const decision = shouldUseWorker(EnumEditOperations.SHIFT_DATETIMES, {
+      datasetSize: this.dataset.source.x.length,
+      selectionSize: N,
+    });
+    if (!decision.useWorker) {
+      const collection = shiftDatetimesCollection(
+        this.dataX,
+        this.dataY,
+        index,
+        { amount, isMonth, isYear, deltaMs }
+      );
+      await this._deleteDataPoints(index);
+      await this._addDataPoints(collection);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
 
     // Output buffers hold the shifted (x, y) pairs for the selection, in the same order as `index`
     const outputBufferX = new SharedArrayBuffer(
@@ -847,6 +890,50 @@ export class ObservationRecord {
 
     if (totalFills === 0) return;
 
+    const newLength = len + totalFills;
+
+    // Output buffers sized for the new length — same allocation in
+    // both the inline and worker paths.
+    const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
+      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
+    });
+    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
+      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
+    });
+
+    // Inline fast path: single copy-with-fills pass over the whole
+    // array. Skips the segment partitioning + prefix-sum accounting
+    // and the `hwConcurrency` worker spawns entirely. `allGaps` is
+    // already in ascending order from the gap-detection scan above.
+    const decision = shouldUseWorker(EnumEditOperations.FILL_GAPS, {
+      datasetSize: len,
+      selectionSize: totalFills,
+    });
+    if (!decision.useWorker) {
+      const outX = new Float64Array(outputBufferX);
+      const outY = new Float32Array(outputBufferY);
+      fillGapsCore(
+        this.dataX,
+        this.dataY,
+        allGaps,
+        outX,
+        outY,
+        0,
+        len - 1,
+        0,
+        fillDelta,
+        interpolateValues,
+        fillValue
+      );
+      this.dataset.source.x = outX;
+      this.dataset.source.y = outY;
+      this._resizeTo(newLength);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = navigator.hardwareConcurrency || 1;
     const segmentSize = Math.ceil(len / numWorkers);
 
@@ -876,18 +963,6 @@ export class ObservationRecord {
     for (let i = 1; i < numWorkers; i++) {
       prefixFills[i] = prefixFills[i - 1] + segments[i - 1].fillsInSegment;
     }
-
-    const newLength = len + totalFills;
-
-    // Output buffers sized for the new length
-    const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
-    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
-    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
-      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
-    });
-    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
-      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
-    });
 
     const workers: Worker[] = [];
     const promises: Promise<any>[] = [];
@@ -938,6 +1013,46 @@ export class ObservationRecord {
     * @param deleteIndices 
    */
   private async _deleteDataPoints(deleteIndices: number[]) {
+    const oldLen = this.dataX.length;
+    const newLength = oldLen - deleteIndices.length;
+
+    // Inline fast path: skip segmentation + worker spawns; allocate
+    // fresh output buffers and run a single skip-on-delete pass over
+    // the whole array on the main thread. For mid-sized datasets this
+    // beats the per-segment worker orchestration handily because the
+    // copy itself is just a typed-array assignment loop — spawning
+    // `hwConcurrency` workers for it adds ~50–400 ms of pure overhead
+    // on most devices.
+    const decision = shouldUseWorker(EnumEditOperations.DELETE_POINTS, {
+      datasetSize: oldLen,
+      selectionSize: deleteIndices.length,
+    });
+    if (!decision.useWorker) {
+      const outputBufferX = new SharedArrayBuffer(this.dataX.buffer.byteLength, {
+        maxByteLength: this.dataX.buffer.maxByteLength,
+      });
+      const outputBufferY = new SharedArrayBuffer(this.dataY.buffer.byteLength, {
+        maxByteLength: this.dataY.buffer.maxByteLength,
+      });
+      const outX = new Float64Array(outputBufferX);
+      const outY = new Float32Array(outputBufferY);
+      deleteDataPointsCore(
+        this.dataX,
+        this.dataY,
+        deleteIndices,
+        outX,
+        outY,
+        0,
+        oldLen - 1,
+        0
+      );
+      this.dataset.source.x = outX;
+      this.dataset.source.y = outY;
+      this._resizeTo(newLength);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
+
     const numWorkers = navigator.hardwareConcurrency || 1;
     const segmentSize = Math.ceil(this.dataX.length / numWorkers);
     const workers: Worker[] = [];
@@ -963,7 +1078,6 @@ export class ObservationRecord {
     }
 
     const promises = [];
-    const newLength = this.dataX.length - deleteIndices.length;
 
     // // To avoid workers reading from a memory address where another working is writing to, we use separate output buffers.
     const outputBufferX = new SharedArrayBuffer(this.dataX.buffer.byteLength, {
@@ -1045,7 +1159,6 @@ export class ObservationRecord {
       selectionSize: totalWork,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       driftCorrectionCore(xData, this.dataY, ranges);
       return;
     }
@@ -1157,11 +1270,6 @@ export class ObservationRecord {
     // Sort insertions by datetime ascending
     dataPoints.sort((a, b) => a[0] - b[0]);
 
-    // Insert index in the ORIGINAL array for each point
-    const insertIndex = dataPoints.map(
-      (point) => findLastLessOrEqual(this.dataX, point[0]) + 1,
-    );
-
     // Output buffers sized for the new length
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
     const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
@@ -1171,6 +1279,43 @@ export class ObservationRecord {
     const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
       maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
     });
+
+    // Inline fast path: single merge pass over the whole array with
+    // no worker spawns, no per-segment insertIndex binary searches,
+    // and no prefix-sum accounting. Cost is dominated by the new-
+    // buffer allocation (same for both paths) plus the merge loop.
+    // For small/mid datasets the spawn tax on `hwConcurrency` workers
+    // (~100 ms × 4 on Windows) dwarfs the entire merge.
+    const decision = shouldUseWorker(EnumEditOperations.ADD_POINTS, {
+      datasetSize: oldLen,
+      selectionSize: dataPoints.length,
+    });
+    if (!decision.useWorker) {
+      const outX = new Float64Array(outputBufferX);
+      const outY = new Float32Array(outputBufferY);
+      addDataPointsCore(
+        this.dataX,
+        this.dataY,
+        dataPoints,
+        outX,
+        outY,
+        0,
+        oldLen,
+        0
+      );
+      this.dataset.source.x = outX;
+      this.dataset.source.y = outY;
+      this._resizeTo(newLength);
+      return;
+    }
+    this._pendingExecutionMode = "worker";
+
+    // Insert index in the ORIGINAL array for each point — only the
+    // worker path needs this, because it assigns insertions to a
+    // specific segment via `findFirstGreaterOrEqual`.
+    const insertIndex = dataPoints.map(
+      (point) => findLastLessOrEqual(this.dataX, point[0]) + 1,
+    );
 
     const numWorkers = Math.max(
       1,
@@ -1271,7 +1416,6 @@ export class ObservationRecord {
       datasetSize: total,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       return valueThresholdCore(dataY, 0, total, ops, values);
     }
     this._pendingExecutionMode = "worker";
@@ -1343,7 +1487,6 @@ export class ObservationRecord {
       datasetSize: dataY.length,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       return rateOfChangeCore(dataY, start, end, comparator, value);
     }
     this._pendingExecutionMode = "worker";
@@ -1398,7 +1541,6 @@ export class ObservationRecord {
     from?: number,
     to?: number,
   ): Promise<number[]> {
-    this._pendingExecutionMode = "inline";
     const dataX = this.dataset.source.x;
     const total = dataX.length;
     if (total === 0) return [];
@@ -1420,7 +1562,6 @@ export class ObservationRecord {
    * @returns
    */
   private async _selection(index: number[]): Promise<number[]> {
-    this._pendingExecutionMode = "inline";
     // If clearing selection, remove the history item
     if (!index || !index.length) {
       this.history.pop();
@@ -1453,7 +1594,6 @@ export class ObservationRecord {
       datasetSize: dataY.length,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       return changeCore(dataY, start, end, comparator, value);
     }
     this._pendingExecutionMode = "worker";
@@ -1529,7 +1669,6 @@ export class ObservationRecord {
       datasetSize: end - start,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       const pairs = findGapsCore(dataX, start, end - 1, threshold);
       const selection = new Set<number>();
       for (let k = 0; k < pairs.length; k++) selection.add(pairs[k]);
@@ -1609,7 +1748,6 @@ export class ObservationRecord {
       datasetSize: total,
     });
     if (!decision.useWorker) {
-      this._pendingExecutionMode = "inline";
       const triplets = persistenceCore(dataY, start, end);
       const selection: number[] = [];
       for (let k = 0; k < triplets.length; k += 3) {
