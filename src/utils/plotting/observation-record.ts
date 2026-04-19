@@ -84,6 +84,19 @@ export class ObservationRecord {
       },
     };
   history: HistoryItem[] = [];
+  /**
+   * Items popped off `history` by `undo()`, in undo order (top of stack
+   * at the end). `redo()` re-dispatches the top. A fresh `dispatchAction`
+   * / `dispatchFilter` call clears the stack — Word-style behavior where
+   * a new edit invalidates the redo chain.
+   */
+  redoStack: HistoryItem[] = [];
+  /**
+   * True while `undo()` / `redo()` is replaying a captured history entry.
+   * Suppresses the redo-stack clearing that otherwise fires on every new
+   * dispatch, so the stack survives the internal replay.
+   */
+  private _isReplaying: boolean = false;
   loadingTime: number | null = null;
   isLoading: boolean = true;
   rawData: {
@@ -214,6 +227,7 @@ export class ObservationRecord {
    */
   async reloadHistory(index: number): Promise<number[]> {
     const newHistory = this.history.slice(0, index + 1);
+    this.redoStack.length = 0;
     await this.reload();
 
     return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
@@ -226,8 +240,45 @@ export class ObservationRecord {
   async removeHistoryItem(index: number): Promise<number[]> {
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
+    this.redoStack.length = 0;
     await this.reload();
     return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+  }
+
+  /**
+   * Undo the most recent history entry. Pushes it onto `redoStack` so a
+   * subsequent `redo()` can re-apply it, then reloads from the raw
+   * dataset and replays the remaining history in order.
+   */
+  async undo(): Promise<number[]> {
+    if (!this.history.length) return [];
+    const popped = this.history[this.history.length - 1];
+    const newHistory = this.history.slice(0, -1);
+    await this.reload();
+    this.redoStack.push(popped);
+    this._isReplaying = true;
+    try {
+      return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+    } finally {
+      this._isReplaying = false;
+    }
+  }
+
+  /**
+   * Re-apply the most recently undone entry from `redoStack`. The replay
+   * runs through `dispatch`, which pushes a fresh history entry for it;
+   * `_isReplaying` guards the redo stack from being wiped during the
+   * dispatch.
+   */
+  async redo(): Promise<number[]> {
+    if (!this.redoStack.length) return [];
+    const item = this.redoStack.pop()!;
+    this._isReplaying = true;
+    try {
+      return await this.dispatch([[item.method, ...(item.args || [])]]);
+    } finally {
+      this._isReplaying = false;
+    }
   }
 
   get beginTime(): Date | null {
@@ -274,6 +325,11 @@ export class ObservationRecord {
     let newSelection: number[] = [];
 
     try {
+      // A fresh dispatch breaks the redo chain (Word-style). Replays
+      // from `undo()` / `redo()` set `_isReplaying` so the stack
+      // survives the internal re-dispatch.
+      if (!this._isReplaying) this.redoStack.length = 0;
+
       const historyItem: HistoryItem = {
         method: action,
         args,
@@ -361,6 +417,11 @@ export class ObservationRecord {
     let response = [];
 
     try {
+      // A fresh filter dispatch breaks the redo chain (Word-style).
+      // Replays from `undo()` / `redo()` set `_isReplaying` so the stack
+      // survives the internal re-dispatch.
+      if (!this._isReplaying) this.redoStack.length = 0;
+
       const historyItem: HistoryItem = {
         method: action,
         args: args,
