@@ -62,7 +62,7 @@
         class="plotted-item__dot"
         :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
         :style="{
-          color: qcDatastream === datastream ? COLORS[0] : COLORS[index + 1],
+          color: colorForDatastream(datastream.id),
         }"
         :disabled="isUpdating"
         :title="
@@ -88,15 +88,16 @@
             visibleDict[datastream.id] === false ? 'mdi-eye-off' : 'mdi-eye'
           "
           size="16"
-          :color="qcDatastream === datastream ? COLORS[0] : COLORS[index + 1]"
+          :color="colorForDatastream(datastream.id)"
         />
       </button>
 
+      <!-- Text uses the darker companion of the line colour so the
+           row reads as "tied to this axis" while staying legible; the
+           raw pastel is too washed out at body-text weight. -->
       <div
         class="plotted-item__text"
-        :style="{
-          color: qcDatastream === datastream ? COLORS[0] : COLORS[index + 1],
-        }"
+        :style="{ color: labelColorForDatastream(datastream.id) }"
       >
         <div class="plotted-item__title" :title="datastream.name">
           {{ datastream.name }}
@@ -131,13 +132,13 @@ defineProps<{ sectionTitle?: string; lockQc?: boolean }>()
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
-  COLORS,
   handleNewPlot,
   toggleTraceVisibility,
 } from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { usePlotlyStore } from '@/store/plotly'
-const { updateOptions } = usePlotlyStore()
+const { updateOptions, colorForDatastream, labelColorForDatastream } =
+  usePlotlyStore()
 const { plotlyRef, graphSeriesArray } = storeToRefs(usePlotlyStore())
 import { Ref, ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
@@ -150,7 +151,7 @@ const visibleDict: Ref<{ [key: string]: boolean }> = ref({})
 const setQcDatastream = async (datastream: Datastream) => {
   qcDatastream.value = datastream
   updateOptions()
-  await handleNewPlot()
+  await handleNewPlot(undefined, { preserveZoom: true })
 }
 
 const isUpdating = computed(() =>
@@ -217,7 +218,7 @@ async function onDrop(index: number) {
   if (from === null || from === index) return
   reorder(from, index)
   updateOptions()
-  await handleNewPlot()
+  await handleNewPlot(undefined, { preserveZoom: true })
 }
 
 function onDragEnd() {

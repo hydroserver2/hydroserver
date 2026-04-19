@@ -298,7 +298,24 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
     })
 
-    return Promise.all(updateOrFetchPromises)
+    const results = await Promise.all(updateOrFetchPromises)
+
+    // `updateOrFetchGraphSeries` pushes new series into `graphSeriesArray`
+    // in whatever order the parallel fetches resolve. For URL preload
+    // (multiple datastream ids loading cold at once) that completion
+    // order usually doesn't match the user-facing `plottedDatastreams`
+    // order — so the plot iterated traces out of legend order, breaking
+    // the draw-layering and per-series colour mapping. Re-sort the
+    // array to mirror `plottedDatastreams` now that every fetch has
+    // landed; the iteration order downstream is the legend order again.
+    const indexByDs = new Map(
+      plottedDatastreams.value.map((ds, i) => [ds.id, i])
+    )
+    graphSeriesArray.value.sort(
+      (a, b) => (indexByDs.get(a.id) ?? 0) - (indexByDs.get(b.id) ?? 0)
+    )
+
+    return results
   }
 
   // TODO: avoid using watchers!

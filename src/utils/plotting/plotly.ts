@@ -79,20 +79,43 @@ const traceXAsNumbers = (
   return (x ?? []) as number[]
 }
 
-// TODO: import these directly from Plotly
-// https://github.com/plotly/plotly.js/blob/v2.14.0/src/components/color/attributes.js#L5-L16
+// Slot 0 is reserved for the QC datastream (dark grey so it stands out
+// from the lighter non-QC companions). Slots 1..8 are the light half
+// of d3's category20 with red and pink removed — those reserved hues
+// clash with the red highlight used on selected points.
 export const COLORS = [
-  '#1f77b4', // muted blue
-  '#ff7f0e', // safety orange
-  '#2ca02c', // cooked asparagus green
-  '#d62728', // brick red
-  '#9467bd', // muted purple
-  '#8c564b', // chestnut brown
-  '#e377c2', // raspberry yogurt pink
-  '#7f7f7f', // middle gray
-  '#bcbd22', // curry yellow-green
-  '#17becf', // blue-teal
+  '#3f3f3f', // QC — dark grey
+  '#aec7e8', // light blue
+  '#ffbb78', // light orange
+  '#98df8a', // light green
+  '#c5b0d5', // light purple
+  '#c49c94', // light brown
+  '#c7c7c7', // light gray
+  '#dbdb8d', // light olive
+  '#9edae5', // light cyan
 ]
+
+// Darkened companion palette used for tick labels and axis titles. Each
+// slot keeps the hue of its `COLORS[i]` pastel so readers still match
+// text to its axis line, but the lightness drops enough to clear WCAG
+// AA contrast on white — the pastels alone read as washed-out text.
+export const LABEL_COLORS = [
+  '#3f3f3f', // QC — dark grey (unchanged)
+  '#1f77b4', // blue
+  '#c06a00', // orange
+  '#208020', // green
+  '#7a4da3', // purple
+  '#8c564b', // brown
+  '#707070', // grey
+  '#8a8c14', // olive
+  '#117a85', // cyan
+]
+
+/** Companion text colour for a `COLORS[i]` line; falls back to QC grey. */
+export const labelColorFor = (lineColor: string): string => {
+  const idx = COLORS.indexOf(lineColor)
+  return idx >= 0 ? LABEL_COLORS[idx] : LABEL_COLORS[0]
+}
 
 // Colour palette for qualifier-flag markers along the bottom of the plot.
 // Assigned deterministically per qualifier code (by sorted order).
@@ -280,8 +303,6 @@ export const createPlotlyOption = (
   let maxDatetime = -Infinity
   let minDatetime = Infinity
 
-  let qcTrace: AppPlotlyTrace | undefined
-
   // Axis-naming scheme:
   //   yaxis       (no suffix, primary)        — QC series
   //   yaxis2, yaxis3, … (overlaying, right)   — every non-QC series
@@ -292,8 +313,12 @@ export const createPlotlyOption = (
   // bug.
   let nonQcAxisCount = 0
 
-  seriesArray.forEach((s, index) => {
-    const color = COLORS[index + 1] // The first color is reserved for the QC datastream
+  seriesArray.forEach((s) => {
+    // Colour is persisted on the GraphSeries at fetch time (see
+    // `store/plotly.ts#assignFreeColor`), so dragging a row up or down
+    // in PlottedDatastreams leaves its line colour intact. QC always
+    // overrides with `COLORS[0]` (black) below.
+    const color = s.color ?? COLORS[1]
     const xData = s.data?.dataX
 
     if (xData?.length) {
@@ -327,12 +352,9 @@ export const createPlotlyOption = (
     }
 
     if (isQc) {
-      // The QC trace is drawn last (on top); we stash it here and push
-      // it after the loop.
-      qcTrace = trace
-      qcTrace.marker = { ...(qcTrace.marker ?? {}), color: COLORS[0] }
-      qcTrace.line = { ...(qcTrace.line ?? {}), color: COLORS[0] }
-      qcTrace.selected = { marker: { color: 'red' } }
+      trace.marker = { ...(trace.marker ?? {}), color: COLORS[0] }
+      trace.line = { ...(trace.line ?? {}), color: COLORS[0] }
+      trace.selected = { marker: { color: 'red' } }
 
       ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
         title: {
@@ -356,17 +378,18 @@ export const createPlotlyOption = (
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
     } else {
-      traces.push(trace)
-
       // Every non-QC axis is an overlay on the primary `y` with
       // `autoshift`, so Plotly stacks them pixel-wise on the right side
-      // without collisions, regardless of label widths.
+      // without collisions, regardless of label widths. Label text uses
+      // the paired darker shade of the pastel (see `LABEL_COLORS`) so
+      // the title/ticks match the axis line but are legible on white.
+      const labelColor = labelColorFor(color)
       const yAxis: Partial<LayoutAxis> = {
         title: {
           text: s.yAxisLabel,
-          font: { color, weight: 'bold' },
+          font: { color: labelColor, weight: 'bold' },
         },
-        tickfont: { color },
+        tickfont: { color: labelColor },
         side: 'right',
         anchor: 'free',
         overlaying: 'y',
@@ -385,12 +408,17 @@ export const createPlotlyOption = (
       ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
       nonQcAxisCount++
     }
+
+    traces.push(trace)
   })
 
-  if (qcTrace) {
-    // Ensure the QC trace is drawn on top of the overlaying non-QC traces.
-    traces.push(qcTrace)
-  }
+  // Plotly paints traces in array order, so later indices land on top.
+  // Reverse so the top of the legend paints last — dragging a row up in
+  // PlottedDatastreams brings it visually in front, which matches how
+  // layer panels work in design tools. Axis numbering was already
+  // resolved above via `nonQcAxisCount`, so flipping the trace order
+  // here doesn't affect the axis assignments.
+  traces.reverse()
 
   // Kept for the qualifier-band helper which reads these to pick its own
   // axis suffix.
@@ -627,11 +655,66 @@ export const handleSelected = async (
 //   // TODO: prevent selection on other traces
 // }
 
-export const handleNewPlot = async (element?: HTMLElement) => {
+export const handleNewPlot = async (
+  element?: HTMLElement,
+  opts?: { preserveZoom?: boolean }
+) => {
   const { plotlyOptions, plotlyRef } = storeToRefs(usePlotlyStore())
 
+  // Rebuild cases like reordering the legend or changing the QC target
+  // re-run `Plotly.newPlot`, which otherwise reverts every axis to the
+  // defaults baked into `createPlotlyOption`. When asked to preserve
+  // zoom, copy the live ranges off the outgoing figure: x is shared so
+  // it goes straight across; per-series y ranges are keyed by series id
+  // so they follow the series to whatever yaxis slot it lands on after
+  // the reshuffle (e.g. `yaxis2` → `yaxis3` when a non-QC trace moves
+  // past the QC target).
+  if (
+    opts?.preserveZoom &&
+    !element &&
+    plotlyRef.value?.layout &&
+    plotlyRef.value?.data
+  ) {
+    const oldLayout = plotlyRef.value.layout as Record<string, unknown>
+    const newLayout = plotlyOptions.value.layout as Record<string, unknown>
+
+    const oldXRange = (oldLayout.xaxis as Partial<LayoutAxis> | undefined)
+      ?.range as Array<string | number> | undefined
+    const newXAxis = newLayout.xaxis as Partial<LayoutAxis> | undefined
+    if (oldXRange && newXAxis) {
+      newXAxis.range = [...oldXRange]
+      newXAxis.autorange = false
+    }
+
+    const yAxisKey = (yref: string | undefined) =>
+      `yaxis${(yref ?? 'y').slice(1)}`
+
+    const yRangesBySeriesId: Record<string, Array<string | number>> = {}
+    for (const trace of plotlyRef.value.data) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const key = yAxisKey(t.yaxis as string | undefined)
+      const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
+        ?.range as Array<string | number> | undefined
+      if (range) yRangesBySeriesId[t.id] = range
+    }
+
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const oldRange = yRangesBySeriesId[t.id]
+      if (!oldRange) continue
+      const key = yAxisKey(t.yaxis as string | undefined)
+      const nextAxis = newLayout[key] as Partial<LayoutAxis> | undefined
+      if (nextAxis) {
+        nextAxis.range = [...oldRange]
+        nextAxis.autorange = false
+      }
+    }
+  }
+
   // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
-  // `plotlyRef` is now typed as `PlotlyHTMLElement | null` 
+  // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
   const newElement = await Plotly.newPlot(
     element || plotlyRef.value as Plotly.Root,
     plotlyOptions.value.traces,

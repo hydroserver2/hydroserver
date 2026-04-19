@@ -193,7 +193,7 @@ async function onApply() {
   await clearSelected()
   // Rebuild the plot so newly-added qualifier band traces are drawn.
   updateOptions()
-  if (plotlyRef.value) await handleNewPlot()
+  if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
   emit('close')
 }
 </script>

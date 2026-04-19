@@ -7,8 +7,11 @@ import { useDataVisStore } from './dataVisualization'
 
 import {
   applyTraceUpdate,
+  COLORS,
   createPlotlyOption,
   cropXaxisRange,
+  labelColorFor,
+  LABEL_COLORS,
 } from '@/utils/plotting/plotly'
 import type {
   AppPlotlyHTMLElement,
@@ -178,7 +181,53 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       name: datastream.name,
       data,
       yAxisLabel,
+      // Persist the non-QC colour on the series itself so reorders in
+      // PlottedDatastreams don't reshuffle line colours. QC always renders
+      // as COLORS[0] (black); we still assign a slot here so the series
+      // retains its colour if it's ever demoted from QC.
+      color: assignFreeColor(),
     } as GraphSeries
+  }
+
+  /**
+   * Pick the first colour in `COLORS[1..]` that no currently-plotted
+   * series is using. If every slot is taken, wrap back to the second
+   * colour rather than reusing black (`COLORS[0]`), which is reserved
+   * for the QC datastream.
+   */
+  function assignFreeColor(): string {
+    const used = new Set(graphSeriesArray.value.map((s) => s.color))
+    for (let i = 1; i < COLORS.length; i++) {
+      if (!used.has(COLORS[i])) return COLORS[i]
+    }
+    return COLORS[1]
+  }
+
+  /**
+   * Resolve the render colour for a plotted datastream. The QC
+   * datastream is always black; every other datastream uses the colour
+   * persisted on its `GraphSeries` when it was added to the plot.
+   */
+  function colorForDatastream(id: string | undefined): string {
+    if (!id) return COLORS[1]
+    const { qcDatastream } = storeToRefs(useDataVisStore())
+    if (qcDatastream.value?.id === id) return COLORS[0]
+    const series = graphSeriesArray.value.find((s) => s.id === id)
+    return series?.color ?? COLORS[1]
+  }
+
+  /**
+   * Darker companion of `colorForDatastream` for legend text. Keeps the
+   * hue of the series so the row visually ties to its line colour, but
+   * shifts to the darker `LABEL_COLORS` shade so the text stays legible
+   * against the row background (the pastel line colours don't).
+   */
+  function labelColorForDatastream(id: string | undefined): string {
+    if (!id) return LABEL_COLORS[1]
+    const { qcDatastream } = storeToRefs(useDataVisStore())
+    if (qcDatastream.value?.id === id) return LABEL_COLORS[0]
+    const series = graphSeriesArray.value.find((s) => s.id === id)
+    return series ? labelColorFor(series.color) : LABEL_COLORS[1]
   }
 
   return {
@@ -191,6 +240,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     updateOptions,
     redraw,
     clearChartState,
+    colorForDatastream,
+    labelColorForDatastream,
     fetchGraphSeries,
     plotlyOptions,
     plotlyRef,
