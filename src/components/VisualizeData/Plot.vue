@@ -332,8 +332,13 @@ const modebarIcons = [
     desc: 'Return all axes to their original range',
   },
   {
+    icon: 'mdi-arrow-collapse-horizontal',
+    title: 'Fit X to visible',
+    desc: 'Fit the X axis to currently visible data',
+  },
+  {
     icon: 'mdi-arrow-collapse-vertical',
-    title: 'Autoscale Y',
+    title: 'Fit Y to visible',
     desc: 'Fit the Y axis to currently visible data',
   },
   {

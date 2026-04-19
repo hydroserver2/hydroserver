@@ -68,7 +68,7 @@ export type AppPlotSelectionEvent = PlotSelectionEvent
 // DATA-CAST: Plotly.Data.x is typed broadly (Datum[] | Datum[][] | TypedArray
 // | undefined) but every trace this app produces stores numeric epoch
 // timestamps in `x`. Centralise the cast here so binary-search call sites
-// (findFirstGreaterOrEqual in handleRelayout / cropYaxisRange) get number[]
+// (findFirstGreaterOrEqual in handleRelayout / fitYaxisToVisible) get number[]
 // without scattering `as number[]` across the file. If we ever introduce
 // non-numeric x data, this is the single place to reconsider.
 const traceXAsNumbers = (
@@ -144,6 +144,13 @@ const iconRescaleY = {
   width: 500,
   height: 600,
   path: 'M182.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 109.3l0 293.5L86.6 361.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 402.7l0-293.5 41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96z',
+}
+// Horizontal double-arrow — FontAwesome `arrows-alt-h`. Sibling of
+// `iconRescaleY` used for the custom Autoscale-X modebar button.
+const iconRescaleX = {
+  width: 512,
+  height: 512,
+  path: 'M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 109.3 224l41.4-41.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 288l293.5 0-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96z',
 }
 
 /**
@@ -489,10 +496,15 @@ export const createPlotlyOption = (
       ? []
       : [
           {
-            name: 'Autoscale Y axis',
+            name: 'Fit X to visible',
+            icon: iconRescaleX,
+            click: fitXaxisToVisible,
+          },
+          {
+            name: 'Fit Y to visible',
             icon: iconRescaleY,
             direction: 'up',
-            click: cropYaxisRange,
+            click: fitYaxisToVisible,
           },
         ],
     // plotGlPixelRatio: 1,
@@ -926,10 +938,78 @@ export const cropXaxisRange = async () => {
 }
 
 /**
+ * Crops the x axis to only contain the extent of currently visible
+ * points. Mirror of `fitYaxisToVisible`: for each trace we consider the
+ * points already within the live x-range, keep those whose y also falls
+ * inside the trace's live y-range, and shrink the x-axis to span their
+ * min/max x (with 10% padding — same amount as the Y variant).
+ * @param _eventData unused; preserved for the modebar click signature.
+ */
+export const fitXaxisToVisible = async (_eventData?: unknown) => {
+  const { plotlyRef, isUpdating, graphSeriesArray } = storeToRefs(usePlotlyStore())
+
+  isUpdating.value = true
+
+  try {
+    const liveLayout = plotlyRef.value?.layout as
+      | Record<string, Partial<LayoutAxis> | unknown>
+      | undefined
+    const liveXRange = (
+      (liveLayout?.xaxis as Partial<LayoutAxis> | undefined)?.range as
+      | Array<string | number>
+      | undefined
+    )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
+
+    let xMin = Infinity
+    let xMax = -Infinity
+
+    for (let i = 0; i < graphSeriesArray.value.length; i++) {
+      const xs = traceXAsNumbers(plotlyRef.value, i)
+      if (!xs.length) continue
+      const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
+      const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+      if (endIdx - startIdx <= 0) continue
+
+      const axisKey = i == 0 ? 'yaxis' : `yaxis${i + 1}`
+      const liveYAxis = liveLayout?.[axisKey] as
+        | Partial<LayoutAxis>
+        | undefined
+      const yRange = (liveYAxis?.range ?? []) as Array<number>
+      const yRangeMin = Number(yRange[0])
+      const yRangeMax = Number(yRange[1])
+      const hasYClamp = Number.isFinite(yRangeMin) && Number.isFinite(yRangeMax)
+
+      const traceData = plotlyRef.value?.data[i]
+      const yData = (traceData?.y ?? []) as ArrayLike<number>
+
+      for (let j = startIdx; j < endIdx; j++) {
+        if (hasYClamp) {
+          const v = Number(yData[j])
+          if (v < yRangeMin || v > yRangeMax) continue
+        }
+        const x = xs[j]
+        if (x < xMin) xMin = x
+        if (x > xMax) xMax = x
+      }
+    }
+
+    if (!Number.isFinite(xMin) || !Number.isFinite(xMax) || xMin === xMax) return
+
+    const padding = (xMax - xMin) * 0.1
+    await Plotly.relayout(plotlyRef.value as Plotly.Root, {
+      'xaxis.range': [xMin - padding, xMax + padding],
+      'xaxis.autorange': false,
+    } as unknown as Partial<Layout>)
+  } finally {
+    isUpdating.value = false
+  }
+}
+
+/**
  * Crops the y axis to only contain the extent of currently visible points.
  * @param _eventData unused; preserved for the original modebar click signature.
  */
-export const cropYaxisRange = async (_eventData?: unknown) => {
+export const fitYaxisToVisible = async (_eventData?: unknown) => {
   const { plotlyOptions, plotlyRef, isUpdating, graphSeriesArray } =
     storeToRefs(usePlotlyStore())
 
