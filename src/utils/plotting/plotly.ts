@@ -592,6 +592,15 @@ export const createPlotlyOption = (
     responsive: true,
     doubleClick: false,
     modeBarButtons: modebarGroups,
+    // Enables drag-to-resize on the staging band. `edits.shapePosition`
+    // is a global baseline that Plotly uses to wire up shape-edit
+    // hit-testers; without it per-shape `editable: true` is ignored
+    // and the band can't be resized. The tradeoff is that every
+    // shape on the plot becomes hit-testable for edits even with
+    // `editable: false`, which is why `staging.ts` drops the stage
+    // shape entirely in zoom / select / lasso modes instead of
+    // rendering an inert visual clone.
+    edits: { shapePosition: true },
     // plotGlPixelRatio: 1,
   } as unknown as Partial<Config>
 

@@ -3,85 +3,95 @@
     <v-card-title class="text-body-1">Filter by datetime range</v-card-title>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">Date range</div>
-      <DatePickerField
-        placeholder="From"
-        :modelValue="fromDate"
-        @update:modelValue="onFromDateChange"
-        class="mb-2"
-      />
-      <DatePickerField
-        placeholder="To"
-        :modelValue="toDate"
-        @update:modelValue="onToDateChange"
-      />
+      <!-- Shared range picker owns the date pickers, presets, plot
+           overlay, data-bounds clamping, and range warning. -->
+      <RangeStager ref="stager" />
 
       <v-alert
-        v-if="!isRangeValid"
-        type="error"
-        density="compact"
+        v-if="!rangeWarning"
+        class="mt-4"
+        :color="selectedCount > 0 ? 'info' : 'success'"
+        :icon="
+          selectedCount > 0
+            ? 'mdi-selection-ellipse-arrow-inside'
+            : 'mdi-check-circle-outline'
+        "
         variant="tonal"
-        class="mt-3"
+        density="compact"
       >
-        End datetime must be after the start datetime.
+        <div class="d-flex align-center gap-2">
+          <v-progress-circular
+            v-if="isComputing"
+            size="14"
+            width="2"
+            indeterminate
+            color="primary"
+          />
+          <div class="text-caption">
+            <template v-if="isComputing">Updating selection…</template>
+            <template v-else-if="selectedCount > 0">
+              <b>{{ selectedCount }}</b>
+              point{{ selectedCount === 1 ? '' : 's' }} selected in range.
+            </template>
+            <template v-else>No points in the selected range.</template>
+          </div>
+        </div>
       </v-alert>
     </v-card-text>
-
-    <v-card-actions>
-      <v-spacer />
-      <v-btn
-        color="primary"
-        variant="flat"
-        :disabled="isUpdating || !isRangeValid"
-        @click="onApply"
-      >
-        Apply filter
-      </v-btn>
-    </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { EnumFilterOperations } from '@uwrl/qc-utils'
-import { usePlotlyStore } from '@/store/plotly'
+/**
+ * Filter-by-datetime-range panel. Uses the shared `RangeStager`
+ * for the range-picking UI (pickers, presets, plot overlay,
+ * bounds clamping) and dispatches a live point selection every
+ * time the range changes. The commit button is gone — the result
+ * of the operation is the visible selection on the plot, exactly
+ * like Find Gaps' live-commit behaviour.
+ */
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useDataSelection } from '@/composables/useDataSelection'
-import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
+import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 
-const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
-const { dispatchSelection, clearSelected, startDate, endDate } =
-  useDataSelection()
-const emit = defineEmits(['close'])
+const { dispatchSelection } = useDataSelection()
 
-const fromDate = ref<Date>(startDate.value)
-const toDate = ref<Date>(endDate.value)
-
-const isRangeValid = computed(
-  () => fromDate.value.getTime() <= toDate.value.getTime()
+const stager = useTemplateRef<InstanceType<typeof RangeStager>>('stager')
+const rangeIndices = computed<[number, number] | null>(
+  () => stager.value?.rangeIndices ?? null
+)
+const rangeWarning = computed<string | null>(
+  () => stager.value?.rangeWarning ?? null
 )
 
-const onFromDateChange = (date: Date) => {
-  fromDate.value = date
-}
-const onToDateChange = (date: Date) => {
-  toDate.value = date
-}
+const selectedCount = computed(() => {
+  const r = rangeIndices.value
+  return r ? r[1] - r[0] + 1 : 0
+})
 
-const onApply = async () => {
-  isUpdating.value = true
-  setTimeout(async () => {
-    await clearSelected()
-    const selection = await selectedSeries.value?.data.dispatchFilter(
-      EnumFilterOperations.DATETIME_RANGE,
-      fromDate.value.getTime(),
-      toDate.value.getTime()
-    )
-    if (selection) {
+// Live "commit" — expand the index bounds into a flat selection
+// list and push it to the plot. `flush: 'post'` keeps the Plotly
+// restyle behind Vue's DOM reconciliation; `immediate: true` seeds
+// the initial selection on open without waiting for the first
+// interaction.
+const isComputing = ref(false)
+watch(
+  rangeIndices,
+  async (r) => {
+    isComputing.value = true
+    try {
+      if (!r) {
+        await dispatchSelection([])
+        return
+      }
+      const [startIdx, endIdx] = r
+      const selection: number[] = []
+      for (let i = startIdx; i <= endIdx; i++) selection.push(i)
       await dispatchSelection(selection)
+    } finally {
+      isComputing.value = false
     }
-    isUpdating.value = false
-    emit('close')
-  })
-}
+  },
+  { immediate: true, flush: 'post' }
+)
 </script>

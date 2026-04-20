@@ -651,6 +651,7 @@ const onTabChange = () => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+
 /* Inline notice in the plot toolbar, sits to the left of the tooltip
    toggle. Subtle so it doesn't compete with the primary controls. The
    two-line variant stacks its copy so the toolbar stays the same

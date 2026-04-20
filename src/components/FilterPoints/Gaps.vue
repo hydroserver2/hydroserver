@@ -3,113 +3,65 @@
     <v-card-title class="text-body-1">Find time gaps</v-card-title>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">Date range</div>
-      <DatePickerField
-        placeholder="From"
-        :modelValue="fromDate"
-        @update:modelValue="onFromDateChange"
-        class="mb-2"
-      />
-      <DatePickerField
-        placeholder="To"
-        :modelValue="toDate"
-        @update:modelValue="onToDateChange"
-      />
-
-      <div class="text-caption text-medium-emphasis mt-4 mb-2">
-        Find gaps of at least
-      </div>
-      <div class="d-flex gap-2">
-        <v-text-field
-          label="Amount"
-          type="number"
-          v-model="gapAmount"
-          density="comfortable"
-          variant="outlined"
-          hide-details
-          style="flex: 1 1 0"
-        />
-        <v-select
-          label="Unit"
-          :items="gapUnits"
-          v-model="selectedGapUnit"
-          density="comfortable"
-          variant="outlined"
-          hide-details
-          style="flex: 1 1 0"
-        />
-      </div>
+      <!-- `GapFinder` owns every bit of the detection UX. The
+           `auto-select-endpoints` prop makes it live-commit the
+           gap endpoints as a point selection on every change — the
+           Find Gaps operation's "no button, result is the selection"
+           contract. -->
+      <GapFinder
+        ref="gapFinder"
+        auto-select-endpoints
+        computing-hint="Updating gap selection…"
+      >
+        <template #gap-count-message="{ count }">
+          <b>{{ count }}</b> gap{{ count === 1 ? '' : 's' }}
+          in the selected range. Endpoints are selected on the plot.
+        </template>
+      </GapFinder>
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
+      <!-- Re-apply the gap selection. Useful when the user has used
+           box-select / lasso (or any other tool that replaced the
+           selection) and wants to get back to the found gaps
+           without retuning the threshold. -->
       <v-btn
+        variant="tonal"
         color="primary"
-        variant="flat"
-        :disabled="isUpdating"
-        @click="onFindGaps"
+        prepend-icon="mdi-selection-ellipse-arrow-inside"
+        :disabled="gapCount === 0"
+        @click="reselectGaps"
       >
-        Find gaps
+        Re-select gaps
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useDataVisStore } from '@/store/dataVisualization'
+import { computed, useTemplateRef } from 'vue'
 import { useDataSelection } from '@/composables/useDataSelection'
-import { EnumFilterOperations, TimeUnit } from '@uwrl/qc-utils'
-import { usePlotlyStore } from '@/store/plotly'
-import { useUIStore } from '@/store/userInterface'
-import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
+import GapFinder from '@/components/FilterPoints/GapFinder.vue'
 
-const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
-const { gapAmount, gapUnits, selectedGapUnit } = storeToRefs(useUIStore())
-const { selectedData } = storeToRefs(useDataVisStore())
-const { dispatchSelection, startDate, endDate, selectDateRange } =
-  useDataSelection()
+const { dispatchSelection, clearSelected } = useDataSelection()
 
-const emit = defineEmits(['close'])
+const gapFinder = useTemplateRef<InstanceType<typeof GapFinder>>('gapFinder')
 
-const fromDate = ref<Date>(startDate.value)
-const toDate = ref<Date>(endDate.value)
+const gapCount = computed<number>(
+  () => gapFinder.value?.gapPlans.length ?? 0
+)
 
-const onFromDateChange = async (date: Date) => {
-  fromDate.value = date
-  await selectDateRange(date, toDate.value)
-}
-
-const onToDateChange = async (date: Date) => {
-  toDate.value = date
-  await selectDateRange(fromDate.value, date)
-}
-
-const onFindGaps = async () => {
-  isUpdating.value = true
-
-  setTimeout(async () => {
-    const newSelection = await selectedSeries.value?.data.dispatchFilter(
-      EnumFilterOperations.FIND_GAPS,
-      +gapAmount.value,
-      // @ts-ignore
-      TimeUnit[selectedGapUnit.value],
-      // TODO: this operation should now receive datetimes instead of indexes, so that it can be represented as such in histories
-      selectedData.value
-        ? [
-            selectedData.value[0],
-            selectedData.value[selectedData.value.length - 1],
-          ]
-        : undefined
-    )
-
-    if (newSelection) {
-      await dispatchSelection(newSelection)
-    }
-
-    isUpdating.value = false
-    emit('close')
-  })
+const reselectGaps = async () => {
+  // Wipe any prior selection first — including box-select / lasso
+  // rectangles, which `dispatchSelection` alone doesn't clear
+  // (its underlying `setSelectedPoints` puts `selections: []` into
+  // the data update instead of the layout update, so any lasso'd
+  // rectangle sticks around). `clearSelected({ dispatchFilter: false
+  // })` does a full layout-level clear without the extra
+  // ObservationRecord round-trip we don't need here.
+  await clearSelected({ dispatchFilter: false })
+  const indices = gapFinder.value?.endpointIndices ?? []
+  await dispatchSelection(indices)
 }
 </script>
