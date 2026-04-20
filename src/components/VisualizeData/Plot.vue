@@ -730,6 +730,25 @@ const onTabChange = () => {
   }
 }
 
+/*
+ * Plotly drives the select/lasso cursor through a dynamically injected
+ * `.cursor-crosshair { cursor: crosshair }` rule. On this app the
+ * `crosshair` keyword renders as no cursor at all in Chromium — the
+ * same is true of any element we apply it to, so it's a platform-level
+ * quirk with the keyword (reproducible under cross-origin-isolated
+ * contexts, which this app is because of the SharedArrayBuffer-gated
+ * COEP/COOP headers in vite.config.ts). Supplying an inline SVG cursor
+ * sidesteps the keyword lookup entirely; `crosshair` stays as a
+ * fallback for browsers that don't honour the URL form.
+ */
+:deep(.js-plotly-plot .plotly .cursor-crosshair),
+:deep(.js-plotly-plot .plotly .cursor-crosshair *) {
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 1v22M1 12h22' stroke='white' stroke-width='3' stroke-linecap='round'/><path d='M12 1v22M1 12h22' stroke='black' stroke-width='1' stroke-linecap='round'/></svg>")
+      12 12,
+    crosshair !important;
+}
+
 /* Give the modebar buttons a clearer hover state so icons feel clickable. */
 :deep(.js-plotly-plot .modebar-btn:hover) {
   background-color: rgba(var(--v-theme-primary), 0.12) !important;
