@@ -337,7 +337,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     update = true,
     custom = true,
   }: SetDateRangeParams) => {
-    // resetChartZoom()
+    // No-op when neither bound actually moved. Every sidebar path —
+    // clicking the already-active preset, date-text-field blur,
+    // time-text-field blur, calendar picker confirming the current
+    // day — calls this with fresh Date references whose timestamps
+    // often match the current range. Without this guard each of those
+    // clicks triggers a full data refetch + plot redraw that resets
+    // the user's zoom for no reason.
+    const sameBegin =
+      !begin || begin.getTime() === beginDate.value?.getTime()
+    const sameEnd = !end || end.getTime() === endDate.value?.getTime()
+    if (sameBegin && sameEnd) return
+
     if (begin) beginDate.value = begin
     if (end) endDate.value = end
     if (custom) selectedDateBtnId.value = -1
