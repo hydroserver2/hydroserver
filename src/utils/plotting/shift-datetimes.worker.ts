@@ -43,3 +43,9 @@ self.onmessage = (e) => {
 
   self.postMessage('Done')
 }
+
+// Worker body is a side-effect script — no imports or exports would
+// otherwise mark it a TS module, so `import('./shift-datetimes.worker')`
+// in the test harness fails with TS2306. The empty export opts this
+// file into the module system without changing runtime behaviour.
+export {}
