@@ -21,6 +21,13 @@ import type {
 import { useObservationStore } from './observations'
 import { Datastream } from '@hydroserver/client'
 
+export interface ZoomState {
+  xRange: [number, number] | null
+  yRanges: Record<string, [number, number]>
+  /** Where the state came from; drives tooltip wording on the undo/redo buttons. */
+  source: 'init' | 'user' | 'preset' | 'fitX' | 'fitY'
+}
+
 export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
@@ -87,8 +94,42 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   //   return '#000000'
   // }
 
+  /**
+   * Zoom history — separate from `editHistory` (which tracks QC data
+   * edits). Each entry captures the plot's visible ranges at a point in
+   * time so the user can step back/forward through viewport changes.
+   *
+   * The stacks are mutated by the debounced recorder in
+   * `utils/plotting/plotly.ts` and restored via `undoZoom` / `redoZoom`.
+   * `suppressZoomHistory` is flipped on during programmatic restores to
+   * keep the recorder from re-capturing what we just set.
+   */
+  const zoomUndoStack = ref<ZoomState[]>([])
+  const zoomRedoStack = ref<ZoomState[]>([])
+  const suppressZoomHistory = ref(false)
+  const ZOOM_HISTORY_CAP = 50
+
+  const canUndoZoom = computed(() => zoomUndoStack.value.length > 1)
+  const canRedoZoom = computed(() => zoomRedoStack.value.length > 0)
+
+  function clearZoomHistory() {
+    zoomUndoStack.value = []
+    zoomRedoStack.value = []
+  }
+
+  /** Push `state` onto the undo stack. Called by the debounced recorder. */
+  function pushZoomState(state: ZoomState) {
+    zoomUndoStack.value.push(state)
+    if (zoomUndoStack.value.length > ZOOM_HISTORY_CAP) {
+      zoomUndoStack.value.shift()
+    }
+    // Any new user-initiated zoom invalidates the redo history.
+    zoomRedoStack.value = []
+  }
+
   const clearChartState = () => {
     graphSeriesArray.value = []
+    clearZoomHistory()
   }
 
   /**
@@ -264,5 +305,13 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     showCoordinates,
     hover,
     previewMode,
+    // Zoom history
+    zoomUndoStack,
+    zoomRedoStack,
+    suppressZoomHistory,
+    canUndoZoom,
+    canRedoZoom,
+    clearZoomHistory,
+    pushZoomState,
   }
 })

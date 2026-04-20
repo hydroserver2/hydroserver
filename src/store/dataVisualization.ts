@@ -226,8 +226,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       endDate.value &&
       plottedDatastreams.value.length
     ) {
-      const { redraw } = usePlotlyStore()
+      const { redraw, clearZoomHistory } = usePlotlyStore()
       await refreshGraphSeriesArray()
+      // A date-filter change refetches data and drops the zoom window —
+      // the recorded zoom stack refers to the OLD time range and would
+      // be meaningless after redraw, so clear it.
+      clearZoomHistory()
       // The user explicitly changed the date filter — they expect the
       // new window to actually apply, so opt out of the zoom-preserving
       // path in `redraw` (which otherwise copies the live range over
@@ -362,6 +366,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
         }
 
         if (newDatastreamIds !== prevDatastreamIds) {
+          // The plotted datastream set changed — axes are rebuilt and
+          // old zoom-history entries no longer reference the live
+          // layout. Drop them before `handleNewPlot` re-seeds the
+          // initial state.
+          const { clearZoomHistory } = usePlotlyStore()
+          clearZoomHistory()
+
           await refreshGraphSeriesArray()
           // Call above will make data available and show plot before updateOptions
           updateOptions()

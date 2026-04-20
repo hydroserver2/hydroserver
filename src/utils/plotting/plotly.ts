@@ -1,4 +1,4 @@
-import { usePlotlyStore } from '@/store/plotly'
+import { usePlotlyStore, type ZoomState } from '@/store/plotly'
 import { GraphSeries } from '@/types'
 import Plotly from 'plotly.js-dist'
 import type {
@@ -133,39 +133,6 @@ export const QUALIFIER_COLORS = [
   '#7f7f7f', // grey
 ]
 
-const selectorOptions: Partial<RangeSelector> = {
-  yanchor: 'top',
-  y: -0.15,
-  buttons: [
-    {
-      step: 'month',
-      stepmode: 'backward',
-      count: 1,
-      label: '1m',
-    },
-    {
-      step: 'month',
-      stepmode: 'backward',
-      count: 6,
-      label: '6m',
-    },
-    {
-      step: 'year',
-      stepmode: 'todate',
-      count: 1,
-      label: 'YTD',
-    },
-    {
-      step: 'year',
-      stepmode: 'backward',
-      count: 1,
-      label: '1y',
-    },
-    {
-      step: 'all',
-    },
-  ],
-}
 const iconRescaleY = {
   width: 500,
   height: 600,
@@ -177,6 +144,19 @@ const iconRescaleX = {
   width: 512,
   height: 512,
   path: 'M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 109.3 224l41.4-41.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 288l293.5 0-41.4 41.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96z',
+}
+
+// FontAwesome `rotate-left` / `rotate-right` — curved arrows. Used for the
+// zoom-history Undo / Redo modebar buttons.
+const iconUndoZoom = {
+  width: 512,
+  height: 512,
+  path: 'M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z',
+}
+const iconRedoZoom = {
+  width: 512,
+  height: 512,
+  path: 'M386.3 160L336 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-128c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0s-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3s163.8-62.5 226.3 0L386.3 160z',
 }
 
 /**
@@ -528,32 +508,72 @@ export const createPlotlyOption = (
     showlegend: false,
   }
 
+  // Full modebar button list (`modeBarButtons`) — overrides Plotly's
+  // defaults entirely so we control ordering. Undo/Redo zoom sit to the
+  // left of the zoom tool; Fit X/Y stay at the far right. `isPreview`
+  // drops select/lasso and the Fit buttons to keep the Select-view
+  // chart uncluttered.
+  const undoZoomButton = {
+    name: 'Undo zoom',
+    title: 'Undo zoom',
+    icon: iconUndoZoom,
+    click: () => {
+      // Local import to avoid touching module-init ordering — the store
+      // is already initialised by the time a user clicks a modebar button.
+      void undoZoom()
+    },
+  }
+  const redoZoomButton = {
+    name: 'Redo zoom',
+    title: 'Redo zoom',
+    icon: iconRedoZoom,
+    click: () => {
+      void redoZoom()
+    },
+  }
+  const fitXButton = {
+    name: 'Fit X to visible',
+    icon: iconRescaleX,
+    click: fitXaxisToVisible,
+  }
+  const fitYButton = {
+    name: 'Fit Y to visible',
+    icon: iconRescaleY,
+    direction: 'up',
+    click: fitYaxisToVisible,
+  }
+
+  const modebarGroup = isPreview
+    ? [
+      undoZoomButton,
+      redoZoomButton,
+      'zoom2d',
+      'pan2d',
+      'zoomIn2d',
+      'zoomOut2d',
+      'resetScale2d',
+    ]
+    : [
+      undoZoomButton,
+      redoZoomButton,
+      'zoom2d',
+      'pan2d',
+      'select2d',
+      'lasso2d',
+      'zoomIn2d',
+      'zoomOut2d',
+      'resetScale2d',
+      fitXButton,
+      fitYButton,
+    ]
+
   const config = {
     displayModeBar: true,
     showlegend: false,
-    // `select2d` / `lasso2d` are editing affordances — strip them from
-    // the preview modebar along with the custom Autoscale-Y button.
-    modeBarButtonsToRemove: isPreview
-      ? ['toImage', 'autoScale', 'select2d', 'lasso2d']
-      : ['toImage', 'autoScale'],
     scrollZoom: true,
     responsive: true,
     doubleClick: false,
-    modeBarButtonsToAdd: isPreview
-      ? []
-      : [
-        {
-          name: 'Fit X to visible',
-          icon: iconRescaleX,
-          click: fitXaxisToVisible,
-        },
-        {
-          name: 'Fit Y to visible',
-          icon: iconRescaleY,
-          direction: 'up',
-          click: fitYaxisToVisible,
-        },
-      ],
+    modeBarButtons: [modebarGroup],
     // plotGlPixelRatio: 1,
   } as unknown as Partial<Config>
 
@@ -757,6 +777,20 @@ export const handleNewPlot = async (
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
   )
+  // Zoom-history recorder — runs on its own 350 ms debouncer so a single
+  // drag/scroll gesture collapses to one entry. Kept independent of the
+  // relayout handler above, which does tooltip/visible-point work.
+  plotlyRef.value?.on('plotly_relayout', () => recordZoomDebounced())
+  // Seed the initial auto-fit state so the user can always undo back to
+  // the plot's starting viewport. Runs after `handleRelayout(null)`
+  // above so the layout ranges are populated.
+  {
+    const store = usePlotlyStore()
+    if (!store.zoomUndoStack.length) {
+      const initial = captureCurrentZoomState('init')
+      if (initial) store.pushZoomState(initial)
+    }
+  }
   // plotlyRef.value?.on(
   //   'plotly_selected',
   //   debounce(handleSelected, debounceDelay)
@@ -782,6 +816,161 @@ let lastVisibleRange: [number, number] | null = null
 export const invalidateVisibleRangeCache = () => {
   lastVisibleRange = null
 }
+
+// --- Zoom history -----------------------------------------------------------
+//
+// State lives on the plotly store (stacks + suppressZoomHistory flag). This
+// seam owns the Plotly-specific pieces: reading the live layout into a
+// ZoomState snapshot, applying a snapshot back onto the plot, and the
+// debounced recorder that listens to `plotly_relayout` on its own timer so
+// it's independent of the existing relayout handler (tooltip/visible-point
+// work) in `handleRelayout`.
+
+const Y_AXIS_KEY_RE = /^yaxis\d*$/
+
+/**
+ * Read the current xaxis + yaxisN ranges from the live plot into a
+ * serialisable snapshot. Returns `null` if the plot hasn't mounted yet.
+ */
+export const captureCurrentZoomState = (
+  source: ZoomState['source'] = 'user'
+): ZoomState | null => {
+  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const gd = plotlyRef.value as
+    | (PrivatePlotlyHTMLElement & { layout?: Partial<Layout> })
+    | null
+  if (!gd?.layout) return null
+
+  const layout = gd.layout as Partial<Layout> & Record<string, unknown>
+
+  const xAxis = layout.xaxis as Partial<LayoutAxis> | undefined
+  const xR = xAxis?.range as Array<number | string> | undefined
+  const xStart = xR ? Number(typeof xR[0] === 'string' ? Date.parse(xR[0]) : xR[0]) : NaN
+  const xEnd = xR ? Number(typeof xR[1] === 'string' ? Date.parse(xR[1]) : xR[1]) : NaN
+  const xRange: [number, number] | null =
+    Number.isFinite(xStart) && Number.isFinite(xEnd) ? [xStart, xEnd] : null
+
+  const yRanges: Record<string, [number, number]> = {}
+  for (const key of Object.keys(layout)) {
+    if (!Y_AXIS_KEY_RE.test(key)) continue
+    const axis = layout[key] as Partial<LayoutAxis> | undefined
+    const r = axis?.range as Array<number> | undefined
+    if (!r || !Number.isFinite(r[0]) || !Number.isFinite(r[1])) continue
+    yRanges[key] = [Number(r[0]), Number(r[1])]
+  }
+
+  return { xRange, yRanges, source }
+}
+
+/**
+ * Push a snapshot of the live plot onto the undo stack. No-ops when the
+ * snapshot would be identical to (or an imperceptible move from) the
+ * current top of the stack, which keeps drag-gesture churn from flooding
+ * the history.
+ */
+const THRESHOLD = 0.005 // 0.5% of span
+const sameRange = (
+  a: [number, number] | null,
+  b: [number, number] | null
+): boolean => {
+  if (!a || !b) return a === b
+  const span = Math.max(Math.abs(a[1] - a[0]), Math.abs(b[1] - b[0]), 1)
+  return (
+    Math.abs(a[0] - b[0]) / span < THRESHOLD &&
+    Math.abs(a[1] - b[1]) / span < THRESHOLD
+  )
+}
+const sameZoomState = (a: ZoomState, b: ZoomState): boolean => {
+  if (!sameRange(a.xRange, b.xRange)) return false
+  const keys = new Set([...Object.keys(a.yRanges), ...Object.keys(b.yRanges)])
+  for (const k of keys) {
+    if (!sameRange(a.yRanges[k] ?? null, b.yRanges[k] ?? null)) return false
+  }
+  return true
+}
+
+export const recordZoomIfSettled = (
+  source: ZoomState['source'] = 'user'
+) => {
+  const store = usePlotlyStore()
+  if (store.suppressZoomHistory) return
+  if (!store.graphSeriesArray.length) return
+  const snap = captureCurrentZoomState(source)
+  if (!snap) return
+  const top = store.zoomUndoStack[store.zoomUndoStack.length - 1]
+  if (top && sameZoomState(top, snap)) return
+  store.pushZoomState(snap)
+}
+
+/** 350 ms debounce — slightly longer than the relayout handler so a single
+ * drag gesture collapses to one entry even when the user pauses briefly
+ * mid-gesture. */
+const recordZoomDebounced = debounce(
+  () => recordZoomIfSettled('user'),
+  350
+)
+
+/**
+ * Apply a ZoomState snapshot to the live plot. Gates with
+ * `suppressZoomHistory` so the recorder doesn't re-capture what we just
+ * set. Does nothing when the plot hasn't mounted.
+ */
+export const applyZoomState = async (state: ZoomState): Promise<void> => {
+  const store = usePlotlyStore()
+  const gd = store.plotlyRef as
+    | (PrivatePlotlyHTMLElement & { layout?: Partial<Layout> })
+    | null
+  if (!gd) return
+
+  const update: Record<string, unknown> = {}
+  if (state.xRange) {
+    update['xaxis.range'] = [state.xRange[0], state.xRange[1]]
+    update['xaxis.autorange'] = false
+  } else {
+    update['xaxis.autorange'] = true
+  }
+  for (const [key, range] of Object.entries(state.yRanges)) {
+    update[`${key}.range`] = [range[0], range[1]]
+    update[`${key}.autorange`] = false
+  }
+
+  store.suppressZoomHistory = true
+  try {
+    await Plotly.relayout(gd as unknown as HTMLElement, update)
+  } finally {
+    // Let the debounced recorder tick past (350 ms + slack) before
+    // re-arming. The recorder bails anyway via `suppressZoomHistory`,
+    // but flushing here matches intuition and spares future-us from
+    // chasing timing oddities.
+    setTimeout(() => {
+      store.suppressZoomHistory = false
+    }, 450)
+  }
+}
+
+/** Step one entry back in the zoom history. */
+export const undoZoom = async (): Promise<void> => {
+  const store = usePlotlyStore()
+  if (!store.canUndoZoom) return
+  // Top of undo stack is the CURRENT viewport. Pop it onto the redo
+  // stack, then apply the new top (the previous viewport).
+  const current = store.zoomUndoStack.pop()
+  if (current) store.zoomRedoStack.push(current)
+  const target = store.zoomUndoStack[store.zoomUndoStack.length - 1]
+  if (target) await applyZoomState(target)
+}
+
+/** Step one entry forward in the zoom history. */
+export const redoZoom = async (): Promise<void> => {
+  const store = usePlotlyStore()
+  if (!store.canRedoZoom) return
+  const target = store.zoomRedoStack.pop()
+  if (!target) return
+  store.zoomUndoStack.push(target)
+  await applyZoomState(target)
+}
+
+// ----------------------------------------------------------------------------
 
 export const handleRelayout = async (
   eventData: PlotRelayoutEvent | null
