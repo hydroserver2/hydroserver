@@ -102,14 +102,13 @@ test.describe('QC golden path (live)', () => {
     // app-side test hook installed from main.ts. The hook registers a Pinia
     // `watch` on useDataVisStore().selectedData and resolves as soon as
     // length >= 1. This replaces the previous waitForTimeout + force-click
-    // workaround (Phase 1 CARRY-01).
     await page.waitForFunction(
       () => typeof window.__vbwTestHooks?.waitForSelectedData === 'function',
       undefined,
       { timeout: 10_000 }
     )
     await page.evaluate(() =>
-      window.__vbwTestHooks!.waitForSelectedData(1, 10_000).then(() => {})
+      window.__vbwTestHooks!.waitForSelectedData(1, 10_000).then(() => { })
     )
     await page.getByTestId('op-changeValues').click()
 

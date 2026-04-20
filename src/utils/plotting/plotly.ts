@@ -480,6 +480,11 @@ export const createPlotlyOption = (
     range: [xRangeStart, xRangeEnd],
     autorange: false,
     showline: true,
+    // Let Plotly grow the bottom margin to fit rotated tick labels.
+    // Without this the fixed `margin.b` clips the last few pixels of
+    // vertical date/time labels at zoom levels where Plotly rotates
+    // them 90°.
+    automargin: true,
     // Vertical crosshair spike tied to hover. When hover is disabled
     // past `tooltipsMaxDataPoints` the spike disappears with it — an
     // intentional tradeoff: the crosshair coexists with the numeric
@@ -1031,7 +1036,12 @@ const computeIntendedTickvals = (
   if (span <= 0) return null
 
   const TARGET_TICKS = 8
-  const MAX_TICKS = 30
+  // Cap tick count before rotated labels start colliding. The old
+  // ceiling of 30 let awkward zoom levels emit enough custom ticks that
+  // the 90°-rotated date/time labels overlapped each other; at 15 the
+  // array path either produces comfortable spacing or hands back to
+  // Plotly's auto picker, which thins labels on its own.
+  const MAX_TICKS = 15
   const raw = span / (unit * TARGET_TICKS)
 
   // `niceMultipliers` preserves the rhythm of the intended spacing —
@@ -1187,7 +1197,7 @@ export const handleRelayout = async (
       visiblePoints.value = 0
 
       // Find number of visible points — per trace so we can adjust
-      // density-dependent rendering (mode + marker opacity) per series.
+      // density-dependent rendering (marker opacity) per series.
       const traceCount = plotlyRef.value?.data.length ?? 0
       const perTraceVisible: number[] = new Array(traceCount).fill(0)
       for (let i = 0; i < traceCount; i++) {
@@ -1205,30 +1215,19 @@ export const handleRelayout = async (
       }
 
       // Density-responsive marker rendering — scattergl becomes ink soup
-      // above a few hundred points per trace. Rather than stripping
+      // above a few thousand points per trace. Rather than stripping
       // markers (which breaks box-select / lasso, since Plotly's
       // selection hit-tests against marker glyphs, not line segments),
-      // keep `mode: 'lines+markers'` throughout and fade marker opacity
-      // toward zero. At opacity 0 the markers are invisible but still
-      // present and selectable, and scattergl short-circuits their
-      // fragment shader so the perf cost is negligible.
+      // keep `mode: 'lines+markers'` throughout and drop marker opacity
+      // to 0 past the threshold. At opacity 0 the markers are invisible
+      // but still present and selectable, and scattergl short-circuits
+      // their fragment shader so the perf cost is negligible. Below the
+      // threshold markers render at full opacity — no partial fade, so
+      // points either show normally or disappear cleanly.
       const DENSITY_HIDE_MARKERS = 2000
-      const DENSITY_DIM = 500
-      const perTraceOpacity: number[] = []
-      for (let i = 0; i < traceCount; i++) {
-        const n = perTraceVisible[i]
-        if (n > DENSITY_HIDE_MARKERS) {
-          perTraceOpacity.push(0)
-        } else if (n > DENSITY_DIM) {
-          // Linear fade from 1.0 at DENSITY_DIM down to 0 at the
-          // hide-markers threshold so the transition doesn't feel
-          // abrupt when the user pans across a density boundary.
-          const t = (n - DENSITY_DIM) / (DENSITY_HIDE_MARKERS - DENSITY_DIM)
-          perTraceOpacity.push(1 - t)
-        } else {
-          perTraceOpacity.push(1)
-        }
-      }
+      const perTraceOpacity = perTraceVisible.map((n) =>
+        n > DENSITY_HIDE_MARKERS ? 0 : 1
+      )
 
       // Only restyle when the opacity vector has actually changed —
       // Plotly.restyle on scattergl is cheap but not free, and pans
@@ -1240,7 +1239,7 @@ export const handleRelayout = async (
         return m?.opacity ?? 1
       })
       const opacitiesChanged = perTraceOpacity.some(
-        (o, i) => Math.abs(o - (currentOpacities[i] ?? 1)) > 0.02
+        (o, i) => o !== (currentOpacities[i] ?? 1)
       )
       if (opacitiesChanged && plotlyRef.value) {
         // Per-trace restyle: Plotly maps an N-length array to each of
