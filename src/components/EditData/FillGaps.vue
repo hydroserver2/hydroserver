@@ -10,6 +10,7 @@
            commit. -->
       <GapFinder
         ref="gapFinder"
+        auto-select-endpoints
         computing-hint="Rebuilding fill preview…"
       />
 
@@ -168,7 +169,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -182,6 +190,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { saveOpParams } from '@/composables/useOperationParams'
 import {
   clearGhostFills,
+  enterPanMode,
   setGhostFills,
 } from '@/utils/plotting/staging'
 import GapFinder from '@/components/FilterPoints/GapFinder.vue'
@@ -443,6 +452,24 @@ const onFillGaps = async () => {
     emit('close')
   })
 }
+
+// On open: switch the plot into pan mode so the staging band is
+// visible + interactive (we hide it in zoom/select/lasso), then
+// wipe any existing selection — including box-select / lasso
+// rectangles — so a stale prior selection doesn't linger visually
+// while the user is staging the fill. The explicit re-dispatch
+// afterwards mirrors the fix in Find Gaps: GapFinder's
+// `autoSelectEndpoints` watcher runs in the post-flush queue on
+// mount and can interleave with `clearSelected`, so we apply the
+// endpoints again here to make the end state deterministic.
+onMounted(async () => {
+  await enterPanMode()
+  await clearSelected({ dispatchFilter: false })
+  const indices = gapFinder.value?.endpointIndices ?? []
+  if (indices.length) {
+    await dispatchSelection(indices)
+  }
+})
 
 // Ghost-marker trace is owned by this panel (GapFinder handles the
 // red bands + stage shape). Tear it down when the panel closes so

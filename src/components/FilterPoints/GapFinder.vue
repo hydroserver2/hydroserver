@@ -94,13 +94,7 @@
  * plot's existing selection stays untouched (Fill Gaps' behaviour —
  * it owns the selection lifecycle through `dispatchAction`).
  */
-import {
-  computed,
-  onBeforeUnmount,
-  ref,
-  useTemplateRef,
-  watch,
-} from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -111,10 +105,6 @@ import {
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { saveOpParams } from '@/composables/useOperationParams'
-import {
-  clearGapBands,
-  setGapBands,
-} from '@/utils/plotting/staging'
 import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 
 export interface GapPlan {
@@ -220,10 +210,9 @@ const isComputing = ref(false)
 
 watch(
   gapPlans,
-  async (plans) => {
+  async () => {
     isComputing.value = true
     try {
-      await setGapBands(plans.map((p) => [p.leftTs, p.rightTs]))
       if (props.autoSelectEndpoints) {
         await dispatchSelection(endpointIndices.value)
       }
@@ -281,10 +270,6 @@ watch(
   },
   { flush: 'post' }
 )
-
-onBeforeUnmount(async () => {
-  await clearGapBands()
-})
 
 defineExpose({
   gapPlans,

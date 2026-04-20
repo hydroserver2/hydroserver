@@ -12,6 +12,15 @@
  * strings, unknown fields like `name` get stripped) which made the
  * older "read, filter by name, write" pattern lose track of its own
  * shapes on the second call.
+ *
+ * Gap bands used to live here as secondary red rectangles marking
+ * detected gaps. They were removed because `edits.shapePosition:
+ * true` (required for the stage band drag) forces every shape on
+ * the plot to be hit-testable regardless of `editable: false`, so
+ * the bands presented drag cursors and accepted edit gestures they
+ * couldn't actually honour. The selection on the plot (gap
+ * endpoints lit as red points) is now the sole visual indicator
+ * for where the detected gaps are.
  */
 
 import Plotly from 'plotly.js-dist'
@@ -27,7 +36,6 @@ type PlotlyShape = Partial<NonNullable<Layout['shapes']>[number]> & {
 }
 
 let stageShape: PlotlyShape | null = null
-let gapBandShapes: PlotlyShape[] = []
 /** True when the plot is in pan mode, meaning the editable stage
  *  shape should be rendered. In zoom / select / lasso modes we drop
  *  the shape from the flushed array entirely so it can't swallow
@@ -49,18 +57,11 @@ function getRoot(): HTMLElement | null {
 async function flushShapes() {
   const root = getRoot()
   if (!root) return
-  // Drop the stage shape entirely outside pan mode. We can't swap
-  // in an `editable: false` visual clone — `edits.shapePosition:
-  // true` makes Plotly hit-test every shape regardless, so the
-  // clone would still swallow zoom / select / lasso mousedowns.
-  // Red gap bands are fine to keep: they're editable: false AND
-  // the user's intent-to-draw-a-box is communicated before they
-  // hit a band, so the band's hit-capture doesn't matter much
-  // in practice. (If it does we'd have to drop those too.)
-  const shapes: PlotlyShape[] = [
-    ...gapBandShapes,
-    ...(stageShape && stagePanMode.value ? [stageShape] : []),
-  ]
+  // The stage shape is the only shape we own. Drop it outside pan
+  // mode so zoom / select / lasso gestures aren't captured by the
+  // shape-edit hit-tester.
+  const shapes: PlotlyShape[] =
+    stageShape && stagePanMode.value ? [stageShape] : []
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
 
@@ -74,6 +75,21 @@ function currentDragmode(): string {
   return (
     (root?.layout as { dragmode?: string } | undefined)?.dragmode ?? 'pan'
   )
+}
+
+/**
+ * Force the plot back into pan mode. Called by the staging-based
+ * operation panels (Find Gaps / Fill Gaps) when they open so the
+ * range overlay is immediately interactive — otherwise a user who
+ * was last in zoom/select/lasso mode would open the panel to a
+ * hidden band (we drop it outside pan mode to keep those tools
+ * unobstructed) and have to switch tools themselves to resize it.
+ */
+export async function enterPanMode(): Promise<void> {
+  const root = getRoot()
+  if (!root) return
+  if (currentDragmode() === 'pan') return
+  await Plotly.relayout(root, { dragmode: 'pan' } as unknown as Partial<Layout>)
 }
 
 /**
@@ -121,39 +137,6 @@ export function readStageShape(): [number, number] | null {
 }
 
 /**
- * Replace the set of read-only "found gap" bands on the x-axis. Each
- * band renders as a translucent red rectangle so the gap positions
- * stand out against the normal data line. Called with an empty list
- * to clear all bands in one relayout.
- */
-export async function setGapBands(bands: Array<[number, number]>) {
-  gapBandShapes = bands.map(
-    ([x0, x1]) =>
-      ({
-        type: 'rect',
-        xref: 'x',
-        yref: 'paper',
-        x0,
-        x1,
-        y0: 0,
-        y1: 1,
-        fillcolor: 'rgba(229, 57, 53, 0.18)',
-        line: { width: 0 },
-        layer: 'below',
-        // The plot has `edits.shapePosition: true` enabled for the
-        // stage shape; opt these out so bands stay inert.
-        editable: false,
-      }) as PlotlyShape
-  )
-  await flushShapes()
-}
-
-export async function clearGapBands() {
-  gapBandShapes = []
-  await flushShapes()
-}
-
-/**
  * Render a scatter trace of ghost markers at the supplied parallel
  * (x, y) coordinates to preview the points Fill Gaps would insert.
  * Callers typically compute y by linear interpolation between the
@@ -180,10 +163,14 @@ export async function setGhostFills(xs: number[], ys: number[]) {
     x: xs,
     y: ys,
     marker: {
-      color: 'rgba(25, 118, 210, 0.55)',
-      size: 7,
-      symbol: 'x-thin',
-      line: { width: 1.5, color: 'rgba(25, 118, 210, 0.9)' },
+      // Bumped from 0.55/0.9 with a thin X-glyph: barely readable
+      // over a dense data line. Fully opaque primary blue + bigger
+      // dot-style glyph with a white outline so each preview point
+      // pops against both the data and the staging band.
+      color: 'rgb(25, 118, 210)',
+      size: 10,
+      symbol: 'circle',
+      line: { width: 2, color: 'white' },
     },
     hoverinfo: 'skip',
     showlegend: false,
@@ -247,9 +234,9 @@ export function onStageDrag(
       return
     }
 
-    // Stage shape is always last in our flushed order, so its index
-    // equals `gapBandShapes.length`.
-    const stageIdx = gapBandShapes.length
+    // Stage shape is the only shape we flush, so its index is
+    // always 0 in the layout shapes array.
+    const stageIdx = 0
     const x0Key = `shapes[${stageIdx}].x0`
     const x1Key = `shapes[${stageIdx}].x1`
     const y0Key = `shapes[${stageIdx}].y0`

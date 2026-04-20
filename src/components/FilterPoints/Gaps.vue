@@ -40,11 +40,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed, onMounted, useTemplateRef } from 'vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import GapFinder from '@/components/FilterPoints/GapFinder.vue'
+import { enterPanMode } from '@/utils/plotting/staging'
 
 const { dispatchSelection, clearSelected } = useDataSelection()
+
+// Wipe any existing selection (including box-select / lasso
+// rectangles) when the panel opens. Find Gaps will seed its own
+// gap-endpoint selection a tick later via the GapFinder's
+// autoSelect watcher; starting from a clean slate avoids the
+// confusing in-between state where the old unrelated selection
+// lingers visually while the new scan hasn't produced any gaps
+// yet (e.g. on first mount before a threshold is set).
+onMounted(async () => {
+  // Switch the plot back to pan mode so the range overlay is
+  // visible + interactive on open. If the user was last in zoom /
+  // select / lasso the band would otherwise be hidden (staging
+  // drops it outside pan mode so those tools aren't obstructed).
+  await enterPanMode()
+  await clearSelected({ dispatchFilter: false })
+  // The GapFinder's own `autoSelectEndpoints` watcher runs in the
+  // post-flush queue on mount and can interleave with the
+  // `clearSelected` above — whichever finishes last wins, and when
+  // clearSelected loses we end up with an empty selection on
+  // screen. Re-apply the gap-endpoint selection explicitly here so
+  // the final state matches what the user expects regardless of
+  // microtask ordering.
+  const indices = gapFinder.value?.endpointIndices ?? []
+  if (indices.length) {
+    await dispatchSelection(indices)
+  }
+})
 
 const gapFinder = useTemplateRef<InstanceType<typeof GapFinder>>('gapFinder')
 

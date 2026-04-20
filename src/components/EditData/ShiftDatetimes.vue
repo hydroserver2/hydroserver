@@ -19,7 +19,7 @@
         <v-text-field
           label="Amount"
           type="number"
-          v-model="shiftAmount"
+          v-model.number="shiftAmount"
           density="comfortable"
           variant="outlined"
           hide-details
@@ -34,6 +34,20 @@
           hide-details
           style="flex: 1 1 0"
         />
+      </div>
+
+      <div v-if="snapChips.length" class="d-flex gap-1 mt-2 flex-wrap">
+        <v-chip
+          v-for="chip in snapChips"
+          :key="chip.label"
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          :prepend-icon="chip.active ? 'mdi-check' : undefined"
+          @click="applySnap(chip)"
+        >
+          {{ chip.label }}
+        </v-chip>
       </div>
     </v-card-text>
 
@@ -52,19 +66,61 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
-import { useUIStore } from '@/store/userInterface'
+import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { useDataSelection } from '@/composables/useDataSelection'
 
-const { selectedData } = storeToRefs(useDataVisStore())
+const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedShiftUnit, shiftAmount } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
 const { shiftUnits } = useUIStore()
 const { clearSelected } = useDataSelection()
+
+/**
+ * Snap chips based on the QC datastream's intended cadence, mirroring
+ * the Fill Gaps fill-cadence chips. The most common shift is a single
+ * cadence step (users correcting an off-by-one misalignment), with
+ * half- and double-cadence for the less frequent cases. Only rendered
+ * when the datastream exposes intended-spacing metadata — otherwise
+ * there's no anchor to snap against.
+ */
+interface SnapChip {
+  label: string
+  amount: number
+  unit: string
+  active: boolean
+}
+
+const snapChips = computed<SnapChip[]>(() => {
+  const ds = qcDatastream.value as {
+    intendedTimeSpacing?: number
+    intendedTimeSpacingUnit?: string | null
+  } | null
+  const n = Number(ds?.intendedTimeSpacing)
+  const unitKey = timeSpacingUnitToTimeUnitKey(ds?.intendedTimeSpacingUnit)
+  if (!Number.isFinite(n) || n <= 0 || !unitKey) return []
+  return [0.5, 1, 2].map((m) => {
+    const amount = n * m
+    return {
+      label: `${m}× intended (${amount} ${unitKey.toLowerCase()})`,
+      amount,
+      unit: unitKey,
+      active:
+        Number(shiftAmount.value) === amount &&
+        selectedShiftUnit.value === unitKey,
+    }
+  })
+})
+
+const applySnap = (chip: SnapChip) => {
+  shiftAmount.value = chip.amount
+  selectedShiftUnit.value = chip.unit
+}
 
 const emit = defineEmits(['close'])
 
