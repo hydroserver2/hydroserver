@@ -325,18 +325,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     return results
   }
 
-  // TODO: avoid using watchers!
-
-  // If currently selected datastreams are no longer in filteredDatastreams, deselect them
-  watch(
-    () => filteredDatastreams.value,
-    (newDatastreams) => {
-      plottedDatastreams.value = plottedDatastreams.value.filter((ds) =>
-        newDatastreams.some((datastream) => datastream.id === ds.id)
-      )
-    },
-    { deep: true }
-  )
 
   // Set the time range to the qcDatastream's endTime if there is one, otherwise
   // update the time range to the most recent phenomenon endTime

@@ -266,11 +266,28 @@ const panels = ref<number[]>([0])
 
 /* Tight checkbox rows so the 180 px virtual viewport fits more items. */
 .ds-filters__checkbox {
-  min-height: 28px;
+  min-height: 24px;
 }
 
 .ds-filters__checkbox :deep(.v-selection-control) {
-  min-height: 28px;
+  min-height: 24px;
+}
+
+.ds-filters__checkbox :deep(.v-label) {
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  opacity: 0.92;
+  padding-top: 2px;
+}
+
+.ds-filters__checkbox :deep(.v-selection-control__wrapper),
+.ds-filters__checkbox :deep(.v-selection-control__input) {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ds-filters__checkbox :deep(.v-selection-control__input > .v-icon) {
+  font-size: 1.125rem;
 }
 
 :deep(.v-selection-control),
