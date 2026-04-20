@@ -362,18 +362,6 @@ export const createPlotlyOption = (
           // flip between SI and decimal depending on the visible range;
           // pinning `tickformat` makes it consistent.
           tickformat: '~s',
-          // Horizontal crosshair companion to the vertical x-axis spike.
-          // Only on the primary (QC) y-axis — the right-side overlay
-          // axes would each fire their own line, turning the plot into
-          // graffiti when hover crossed multiple series.
-          showspikes: true,
-          ...({
-            spikemode: 'across',
-            spikesnap: 'cursor',
-            spikedash: 'dot',
-            spikethickness: 1,
-          } as object),
-          spikecolor: 'rgba(60,60,60,0.45)',
         } as Partial<LayoutAxis>
 
       const { editHistory } = storeToRefs(usePlotlyStore())
@@ -485,18 +473,6 @@ export const createPlotlyOption = (
     // vertical date/time labels at zoom levels where Plotly rotates
     // them 90°.
     automargin: true,
-    // Vertical crosshair spike tied to hover. When hover is disabled
-    // past `tooltipsMaxDataPoints` the spike disappears with it — an
-    // intentional tradeoff: the crosshair coexists with the numeric
-    // tooltip readout rather than fighting it.
-    showspikes: true,
-    ...({
-      spikemode: 'across',
-      spikesnap: 'cursor',
-      spikedash: 'dot',
-      spikethickness: 1,
-    } as object),
-    spikecolor: 'rgba(60,60,60,0.45)',
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
   }
 
@@ -506,10 +482,6 @@ export const createPlotlyOption = (
   // domain shrink is no longer needed.
 
   const layout: Partial<Layout> = {
-    // `-1` means "use hoverdistance". Spikes only fire when hover does,
-    // so when `handleRelayout` sets hoverinfo: 'skip' past the tooltip
-    // threshold the crosshair also disappears — matching user intent.
-    spikedistance: -1,
     // hoverdistance: 20,
     xaxis,
     ...yaxis,
@@ -789,17 +761,21 @@ export const handleNewPlot = async (
   )
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
 
-  const debounceDelay = 250
+  // Debounce long enough that a rapid scroll-wheel burst collapses
+  // into a single post-gesture sweep. 250 ms used to cut it off
+  // mid-burst, producing a visible "jump" when the downstream
+  // opacity restyle + tickvals relayout landed between wheel ticks.
+  const debounceDelay = 450
 
   handleRelayout(null)
 
-  // `.on('plotly_redraw', cb)` expects `() => void` per the published types,
-  // but we reuse the same debounced relayout handler (which accepts an
-  // optional event). Wrap to satisfy the no-arg overload.
-  plotlyRef.value?.on(
-    'plotly_redraw',
-    debounce(() => handleRelayout(null), debounceDelay)
-  )
+  // Only listen to `plotly_relayout`. We used to also wire
+  // `plotly_redraw`, which fires on every Plotly re-paint — so each
+  // scroll tick routed through BOTH debouncers (one per event
+  // type) and handleRelayout ran twice per gesture, each heavy pass
+  // competing with the user's in-progress zoom. The relayout event
+  // covers every case we care about (range changes, autorange
+  // resets, modebar actions) without the duplicate work.
   plotlyRef.value?.on(
     'plotly_relayout',
     debounce(handleRelayout, debounceDelay)
@@ -1337,7 +1313,29 @@ export const handleRelayout = async (
 //   selectedData.value = []
 // }
 
-export const handleMouseMove = async (event: MouseEvent) => {
+// Throttle the per-pixel mousemove work to one frame. DOM mousemove
+// fires ~hundreds of events/sec on modern displays; each one used to
+// re-run the private-API pixel → data conversion and write to the
+// Pinia `hover` ref, which then triggered a Vue re-render of the
+// hover chip in `Plot.vue`. Under scroll-zoom (where the pointer
+// drifts while the wheel fires) that reactive churn was noticeable.
+// Coalescing to requestAnimationFrame caps the work at ~60 Hz while
+// still keeping the chip responsive.
+let pendingMoveEvent: MouseEvent | null = null
+let pendingMoveFrame: number | null = null
+
+export const handleMouseMove = (event: MouseEvent) => {
+  pendingMoveEvent = event
+  if (pendingMoveFrame != null) return
+  pendingMoveFrame = requestAnimationFrame(() => {
+    pendingMoveFrame = null
+    const ev = pendingMoveEvent
+    pendingMoveEvent = null
+    if (ev) processMouseMove(ev)
+  })
+}
+
+const processMouseMove = (event: MouseEvent) => {
   const { plotlyRef, hover, showCoordinates } = storeToRefs(usePlotlyStore())
 
   // PRIVATE-API: `_fullLayout` (and the `xaxis.p2c` / `yaxis.p2c` pixel-to-data

@@ -206,25 +206,25 @@
           </v-card>
         </v-menu>
 
-        <v-btn-toggle
+        <!-- The old `v-btn-toggle` row (1W / 1M / 6M / 1Y / YTD /
+             ALL) ate a lot of horizontal space in the toolbar.
+             Collapsing to a compact `v-select` keeps the same
+             presets reachable in one click while leaving room for
+             other controls. The trigger shows the active preset's
+             label so at-a-glance the current range is still
+             obvious. -->
+        <v-select
           v-model="selectedDateBtnId"
+          :items="dateOptions"
+          item-title="label"
+          item-value="id"
           density="compact"
-          color="primary"
           variant="outlined"
-          mandatory
+          hide-details
           class="plot-toolbar__range"
+          style="max-width: 7rem"
           @update:model-value="(id: any) => onEditorDatePreset(id as number)"
-        >
-          <v-btn
-            v-for="opt in dateOptions"
-            :key="opt.id"
-            :value="opt.id"
-            size="small"
-            :title="(opt as any).title ?? opt.label"
-          >
-            {{ opt.label }}
-          </v-btn>
-        </v-btn-toggle>
+        />
       </div>
     </div>
 
