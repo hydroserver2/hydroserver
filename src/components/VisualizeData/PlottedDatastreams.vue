@@ -145,13 +145,15 @@ import { Datastream } from '@hydroserver/client'
 
 const { plottedDatastreams, qcDatastream, loadingStates } =
   storeToRefs(useDataVisStore())
-const { toggleDatastream } = useDataVisStore()
+const {
+  toggleDatastream,
+  setQcDatastream: setQcInStore,
+  clearPlottedDatastreams,
+} = useDataVisStore()
 const visibleDict: Ref<{ [key: string]: boolean }> = ref({})
 
 const setQcDatastream = async (datastream: Datastream) => {
-  qcDatastream.value = datastream
-  updateOptions()
-  await handleNewPlot(undefined, { preserveZoom: true })
+  await setQcInStore(datastream.id)
 }
 
 const isUpdating = computed(() =>
@@ -159,17 +161,12 @@ const isUpdating = computed(() =>
 )
 
 /**
- * Remove every plotted datastream at once. Clears the store's
- * `plottedDatastreams` array — the existing watcher on that array
- * rebuilds `graphSeriesArray` and the plot updates naturally.
+ * Remove every plotted datastream at once. The store action handles
+ * clearing graph series, zoom history, and QC in one step.
  */
 async function clearAll() {
-  if (!plottedDatastreams.value.length) return
-  plottedDatastreams.value = []
-  qcDatastream.value = null
   visibleDict.value = {}
-  updateOptions()
-  await handleNewPlot()
+  await clearPlottedDatastreams()
 }
 
 const toggleVisibility = async (datastream: Datastream) => {

@@ -13,7 +13,9 @@
       indeterminate
       class="mb-4"
     />
-    <div class="text-subtitle-1 font-weight-bold mb-1">Loading observations…</div>
+    <div class="text-subtitle-1 font-weight-bold mb-1">
+      Loading observations…
+    </div>
     <div class="text-caption text-medium-emphasis">
       Fetching data for
       {{ plottedDatastreams.length }}
@@ -32,14 +34,19 @@
     v-else-if="plottedDatastreams.length"
     class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
   >
-    <v-icon icon="mdi-calendar-remove-outline" size="56" color="warning" class="mb-3" />
+    <v-icon
+      icon="mdi-calendar-remove-outline"
+      size="56"
+      color="warning"
+      class="mb-3"
+    />
     <div class="text-subtitle-1 font-weight-bold mb-1">
       No observations in this range
     </div>
     <div class="text-body-2 text-medium-emphasis" style="max-width: 360px">
       The selected datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
-      returned no data for the current time window. Try a different range
-      from the drawer on the left.
+      returned no data for the current time window. Try a different range from
+      the drawer on the left.
     </div>
   </div>
 
@@ -49,10 +56,6 @@
     v-else
     class="data-vis-state data-vis-state--empty fill-height d-flex flex-column justify-center align-center pa-6"
   >
-    <div class="text-subtitle-1 font-weight-medium text-medium-emphasis mb-4 text-center">
-      Check the <b>Plot</b> column to preview a datastream.
-    </div>
-
     <div class="data-vis-state__steps">
       <div class="data-vis-state__step">
         <div class="data-vis-state__step-num">1</div>
@@ -65,8 +68,8 @@
         <div class="data-vis-state__step-body">
           <div class="text-subtitle-2 font-weight-bold">Find a datastream</div>
           <div class="text-caption text-medium-emphasis">
-            Use the filters on the left drawer and the search bar at the
-            top of the table to narrow the list.
+            Use the filters on the left drawer and the search bar at the top of
+            the table to narrow the list.
           </div>
         </div>
       </div>
@@ -82,8 +85,8 @@
         <div class="data-vis-state__step-body">
           <div class="text-subtitle-2 font-weight-bold">Pick the QC target</div>
           <div class="text-caption text-medium-emphasis">
-            Click the <b>Plot</b> checkbox on a row. The first one
-            becomes the quality-control target, shown in primary blue.
+            Click the <b>Plot</b> checkbox on a row. The first one becomes the
+            quality-control target, shown in primary blue.
           </div>
         </div>
       </div>
@@ -99,8 +102,8 @@
         <div class="data-vis-state__step-body">
           <div class="text-subtitle-2 font-weight-bold">Set the time range</div>
           <div class="text-caption text-medium-emphasis">
-            Adjust <b>Time filters</b> from the left drawer to cover the
-            period you want to inspect.
+            Adjust <b>Time filters</b> from the left drawer to cover the period
+            you want to inspect.
           </div>
         </div>
       </div>

@@ -1,9 +1,10 @@
 import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
-import { computed, Ref, ref } from 'vue'
+import { computed, Ref, ref, watch } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
 import type { LayoutAxis } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
+import Storage from '@/utils/storage'
 
 import {
   applyTraceUpdate,
@@ -33,7 +34,18 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showTooltip = ref(false)
   const isUpdating = ref(false)
   const isSubmitting = ref(false)
-  const tooltipsMaxDataPoints = ref(10 * 1000)
+  // Persisted as a user preference — large plots are cheap on fast machines
+  // and expensive on slow ones, so let the user pick. Bounded in the UI
+  // but not hard-clamped here so power users can override via storage.
+  const tooltipsMaxDataPointsStorage = new Storage<number>(
+    'qc.plot.tooltipsMaxDataPoints'
+  )
+  const tooltipsMaxDataPoints = ref<number>(
+    Number(tooltipsMaxDataPointsStorage.get()) || 10 * 1000
+  )
+  watch(tooltipsMaxDataPoints, (v) => {
+    if (Number.isFinite(v) && v > 0) tooltipsMaxDataPointsStorage.set(v)
+  })
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
   const showCoordinates = ref(false)

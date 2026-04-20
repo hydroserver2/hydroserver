@@ -30,28 +30,37 @@
       </div>
       <div class="d-flex flex-wrap ga-2 mt-3">
         <v-chip
+          v-if="datastream.thing"
           size="small"
           color="primary"
           variant="tonal"
           prepend-icon="mdi-map-marker"
+          :title="`Filter table by site: ${datastream.thing.name}`"
+          @click="filterBySite"
         >
-          {{ datastream.thing?.samplingFeatureCode || '–' }}
+          {{ datastream.thing.samplingFeatureCode || datastream.thing.name || '–' }}
         </v-chip>
         <v-chip
+          v-if="datastream.observedProperty"
           size="small"
           color="blue-grey"
           variant="tonal"
           prepend-icon="mdi-water"
+          :title="`Filter table by observed property: ${datastream.observedProperty.name}`"
+          @click="filterByObservedProperty"
         >
-          {{ datastream.observedProperty?.name || '–' }}
+          {{ datastream.observedProperty.name || '–' }}
         </v-chip>
         <v-chip
+          v-if="datastream.processingLevel"
           size="small"
           color="deep-purple"
           variant="tonal"
           prepend-icon="mdi-layers"
+          :title="`Filter table by processing level: ${datastream.processingLevel.definition}`"
+          @click="filterByProcessingLevel"
         >
-          {{ datastream.processingLevel?.code || '–' }}
+          {{ datastream.processingLevel.code || '–' }}
         </v-chip>
         <v-chip
           size="small"
@@ -223,10 +232,41 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 
-const { plottedDatastreams } = storeToRefs(useDataVisStore())
+const {
+  selectedThings,
+  selectedObservedPropertyNames,
+  selectedProcessingLevelNames,
+  things,
+} = storeToRefs(useDataVisStore())
+const { plotDatastream, setPlottedDatastreams } = useDataVisStore()
 const downloading = ref(false)
 const tags = ref<Tag[]>([])
 const expandedPanels = ref<string[]>(['general'])
+
+function filterBySite() {
+  const thing = props.datastream.thing
+  if (!thing) return
+  // Resolve to the existing Thing reference in the catalog store so
+  // equality checks in DatastreamFilters' v-checkbox work correctly
+  // (filter state stores the actual Thing object, not a copy).
+  const resolved = things.value.find((t) => t.id === thing.id) ?? thing
+  selectedThings.value = [resolved]
+  emit('close')
+}
+
+function filterByObservedProperty() {
+  const name = props.datastream.observedProperty?.name
+  if (!name) return
+  selectedObservedPropertyNames.value = [name]
+  emit('close')
+}
+
+function filterByProcessingLevel() {
+  const def = props.datastream.processingLevel?.definition
+  if (!def) return
+  selectedProcessingLevelNames.value = [def]
+  emit('close')
+}
 
 // Small inline component for rendering a metadata row with a slot for custom
 // value rendering (used by the tags chip group in the General panel).
@@ -256,18 +296,14 @@ const downloadDatastream = async (id: string) => {
   downloading.value = false
 }
 
-const addToPlot = (datastream: Datastream) => {
-  const index = plottedDatastreams.value.findIndex(
-    (ds) => ds.id === datastream.id
-  )
-  if (index === -1) plottedDatastreams.value.push(datastream)
+const addToPlot = async (datastream: Datastream) => {
   emit('close')
+  await plotDatastream(datastream)
 }
 
-const clearAndPlot = (datastream: Datastream) => {
+const clearAndPlot = async (datastream: Datastream) => {
   emit('close')
-  plottedDatastreams.value = []
-  plottedDatastreams.value.push(datastream)
+  await setPlottedDatastreams([datastream], datastream.id)
 }
 
 const d = computed(() => props.datastream)

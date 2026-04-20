@@ -107,6 +107,18 @@
           </div>
         </div>
 
+        <v-btn
+          v-if="tab === 'plot'"
+          size="small"
+          variant="text"
+          density="compact"
+          class="plot-toolbar__icon-btn"
+          icon="mdi-share-variant-outline"
+          title="Copy shareable link"
+          aria-label="Copy shareable link"
+          @click="copyShareableLink"
+        />
+
         <v-menu
           v-model="showHelp"
           v-if="tab === 'plot'"
@@ -176,6 +188,34 @@
                 <v-list-item-subtitle class="text-caption">
                   {{ b.desc }}
                 </v-list-item-subtitle>
+              </v-list-item>
+
+              <v-divider class="my-1" />
+
+              <v-list-subheader
+                class="text-uppercase text-caption font-weight-bold"
+              >
+                Preferences
+              </v-list-subheader>
+              <v-list-item class="px-4">
+                <v-list-item-title class="text-body-2 font-weight-medium mb-1">
+                  Tooltip point limit
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption mb-2">
+                  Tooltips auto-disable when more than this many points are
+                  visible. Raise on fast machines, lower on slow ones.
+                </v-list-item-subtitle>
+                <v-text-field
+                  v-model.number="tooltipsMaxDataPoints"
+                  type="number"
+                  min="100"
+                  step="1000"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  single-line
+                  suffix="points"
+                />
               </v-list-item>
             </v-list>
           </v-card>
@@ -250,7 +290,7 @@ import {
 import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
-import { formatDate } from '@uwrl/qc-utils'
+import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
 /**
@@ -275,13 +315,8 @@ const {
   previewMode,
   plotlyRef,
 } = storeToRefs(usePlotlyStore())
-const {
-  selectedData,
-  qcDatastream,
-  dateOptions,
-  selectedDateBtnId,
-  endDate,
-} = storeToRefs(useDataVisStore())
+const { selectedData, qcDatastream, dateOptions, selectedDateBtnId, endDate } =
+  storeToRefs(useDataVisStore())
 
 /**
  * Mirrors the logic in `handleRelayout` that decides whether Plotly's
@@ -313,6 +348,36 @@ const yReadoutUnit = computed(() => {
 })
 
 const { graphSeriesArray } = storeToRefs(usePlotlyStore())
+
+/**
+ * Copy the current page URL to the clipboard. `VisualizeData.vue` keeps
+ * the URL query string in sync with plotted datastreams, QC selection,
+ * date range, and sidebar filters, so the address bar is already a
+ * shareable representation of plot state.
+ */
+async function copyShareableLink() {
+  const url = window.location.href
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url)
+    } else {
+      // Legacy fallback for browsers without the Clipboard API.
+      const ta = document.createElement('textarea')
+      ta.value = url
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    Snackbar.success('Shareable link copied to clipboard')
+  } catch (err) {
+    console.error('Failed to copy link', err)
+    Snackbar.error('Could not copy link — copy the address bar manually')
+  }
+}
 
 /**
  * Minimum x-value across every plotted trace. Used by the "All"
@@ -426,11 +491,6 @@ const gestures = [
     icon: 'mdi-arrow-expand-vertical',
     title: 'Resize an axis',
     desc: 'Drag near the ends of a Y axis to rescale that axis only',
-  },
-  {
-    icon: 'mdi-gesture-double-tap',
-    title: 'Double-click axis',
-    desc: 'Double-click a Y or X axis to reset its range',
   },
 ]
 

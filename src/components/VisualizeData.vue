@@ -269,6 +269,7 @@ const { resetState } = useDataVisStore()
 const {
   plottedDatastreams,
   qcDatastream,
+  qcDatastreamId,
   datastreams,
   things,
   beginDate,
@@ -283,7 +284,7 @@ const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
 const { editHistory, isUpdating, isSubmitting, selectedSeries } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { refreshGraphSeriesArray } = useDataVisStore()
+const { refreshGraphSeriesArray, setPlottedDatastreams } = useDataVisStore()
 const { clearSelected } = useDataSelection()
 const { submitQcEdits } = useQcSubmission()
 
@@ -377,11 +378,7 @@ const hydrateFromUrl = () => {
     .map((id) => datastreams.value.find((ds) => ds.id === id))
     .filter((ds): ds is NonNullable<typeof ds> => !!ds)
 
-  plottedDatastreams.value = resolved
-
   const qcId = typeof route.query.qc === 'string' ? route.query.qc : ''
-  const qcMatch = resolved.find((ds) => ds.id === qcId)
-  qcDatastream.value = qcMatch ?? resolved[0] ?? null
 
   const parseDate = (v: unknown) => {
     if (typeof v !== 'string' || !v) return null
@@ -390,12 +387,21 @@ const hydrateFromUrl = () => {
   }
   const begin = parseDate(route.query.begin)
   const end = parseDate(route.query.end)
-  if (begin) beginDate.value = begin
-  if (end) endDate.value = end
 
   const btn = Number(route.query.dateBtn)
   if (Number.isFinite(btn)) selectedDateBtnId.value = btn
   else if (begin || end) selectedDateBtnId.value = -1
+
+  // Use the explicit action so side effects (time-range sync, plot
+  // rebuild, zoom-history reset) run in a predictable order — the
+  // watcher that used to glue these together was removed. The action's
+  // `syncTimeRangeToQc` will derive a begin/end from the QC datastream;
+  // we override with the URL-provided window afterwards so shared
+  // links land on the intended viewport.
+  void setPlottedDatastreams(resolved, qcId || null).then(() => {
+    if (begin) beginDate.value = begin
+    if (end) endDate.value = end
+  })
 }
 
 if (datastreams.value.length) {

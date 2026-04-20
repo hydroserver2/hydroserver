@@ -189,7 +189,7 @@ const {
   observedProperties,
   processingLevels,
 } = storeToRefs(useDataVisStore())
-const { toggleDatastream } = useDataVisStore()
+const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
 
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
@@ -255,7 +255,7 @@ const tableItems = computed(() => {
 
 function clearSelected() {
   showOnlySelected.value = false
-  plottedDatastreams.value = []
+  void clearPlottedDatastreams()
 }
 
 const isChecked = (item: Datastream) =>

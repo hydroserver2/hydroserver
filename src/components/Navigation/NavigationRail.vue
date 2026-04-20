@@ -141,7 +141,7 @@ import { useDataSelection } from '@/composables/useDataSelection'
 const { onRailItemClicked } = useUIStore()
 const { selectedDrawer, isDrawerOpen, currentView } = storeToRefs(useUIStore())
 const { resetState, refreshGraphSeriesArray } = useDataVisStore()
-const { qcDatastream } = storeToRefs(useDataVisStore())
+const { qcDatastream, qcDatastreamId } = storeToRefs(useDataVisStore())
 const { hs } = storeToRefs(useHydroServer())
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace } = storeToRefs(workspaceStore)
@@ -215,7 +215,7 @@ async function discardAndContinue() {
 
 async function goHome() {
   resetState()
-  qcDatastream.value = null
+  qcDatastreamId.value = null
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select
   isDrawerOpen.value = true
@@ -255,7 +255,7 @@ async function onSwitchWorkspace() {
   // auto-redirect the user straight back when a selection already
   // exists, so they actually get to see the picker.
   await router.push({ name: 'Workspaces', query: { switch: '1' } })
-  qcDatastream.value = null
+  qcDatastreamId.value = null
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select
   isDrawerOpen.value = true

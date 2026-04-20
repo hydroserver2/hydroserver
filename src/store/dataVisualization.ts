@@ -36,9 +36,27 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const selectedProcessingLevelNames = ref<string[]>([])
 
   // Datasets
-  /** The datastream selected to go through the quality control process */
-  const qcDatastream = ref<Datastream | null>(null)
   const plottedDatastreams = ref<Datastream[]>([])
+  /**
+   * The datastream selected to go through the quality control process.
+   *
+   * Stored as an id (`qcDatastreamId`) and resolved through a computed
+   * (`qcDatastream`) that looks up the live object in
+   * `plottedDatastreams`. This avoids stale-object bugs where
+   * `qcDatastream` would hold a reference to a datastream no longer in
+   * the plot — in that case the old stored-object approach silently
+   * broke downstream code (notably the `QC is always black` colour
+   * override). With the computed, the QC reference automatically becomes
+   * `null` when the id is no longer plotted.
+   */
+  const qcDatastreamId = ref<string | null>(null)
+  const qcDatastream = computed<Datastream | null>(() => {
+    if (!qcDatastreamId.value) return null
+    return (
+      plottedDatastreams.value.find((ds) => ds.id === qcDatastreamId.value) ??
+      null
+    )
+  })
 
   // Qualifiers
   const qualifierSet = ref<Set<string>>(new Set())
@@ -59,29 +77,133 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   function resetState() {
     selectedThings.value = []
     plottedDatastreams.value = []
+    qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
     endDate.value = new Date()
     beginDate.value = new Date(new Date().getTime() - oneWeek)
     selectedDateBtnId.value = 0
-    // resetChartZoom()
+    // Old watcher used to call clearChartState when plottedDatastreams
+    // emptied; with the watcher gone, do it here explicitly.
+    clearChartState()
   }
 
-  function toggleDatastream(datastream: Datastream) {
-    const index = plottedDatastreams.value.findIndex(
+  async function toggleDatastream(datastream: Datastream) {
+    const exists = plottedDatastreams.value.some(
       (item) => item.id === datastream.id
     )
-    if (index === -1) {
-      plottedDatastreams.value.push(datastream)
-      if (!qcDatastream.value) {
-        qcDatastream.value = datastream
-      }
+    if (exists) await unplotDatastream(datastream.id)
+    else await plotDatastream(datastream)
+  }
+
+  /** Add a datastream to the plot. Promotes it to QC if there isn't one
+   *  already. Triggers an explicit plot rebuild — no watcher. */
+  async function plotDatastream(ds: Datastream) {
+    if (plottedDatastreams.value.some((d) => d.id === ds.id)) return
+    plottedDatastreams.value.push(ds)
+    if (!qcDatastreamId.value) qcDatastreamId.value = ds.id
+    syncTimeRangeToQc()
+    await rebuildPlot()
+  }
+
+  /** Remove a datastream from the plot. If the QC datastream is being
+   *  removed, promote the previous plotted entry (or clear QC). */
+  async function unplotDatastream(id: string) {
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === id)
+    if (idx === -1) return
+    plottedDatastreams.value.splice(idx, 1)
+    if (qcDatastreamId.value === id) {
+      qcDatastreamId.value =
+        plottedDatastreams.value[Math.max(idx - 1, 0)]?.id ?? null
+    }
+    syncTimeRangeToQc()
+    await rebuildPlot()
+  }
+
+  /** Clear every plotted datastream at once. */
+  async function clearPlottedDatastreams() {
+    if (!plottedDatastreams.value.length) return
+    plottedDatastreams.value = []
+    qcDatastreamId.value = null
+    await rebuildPlot()
+  }
+
+  /** Replace the plotted set wholesale (used by URL hydration). Falls
+   *  back to promoting the first item as QC when `qcId` isn't supplied
+   *  or points to a datastream not in `items`. */
+  async function setPlottedDatastreams(
+    items: Datastream[],
+    qcId?: string | null
+  ) {
+    plottedDatastreams.value = items.slice()
+    if (qcId !== undefined) {
+      const valid = items.some((d) => d.id === qcId)
+      qcDatastreamId.value = valid ? (qcId ?? null) : (items[0]?.id ?? null)
+    } else if (!items.some((d) => d.id === qcDatastreamId.value)) {
+      qcDatastreamId.value = items[0]?.id ?? null
+    }
+    syncTimeRangeToQc()
+    await rebuildPlot()
+  }
+
+  /** Change which datastream is under QC. Updates the working time
+   *  range to the new QC's phenomenon range but preserves the current
+   *  zoom (consistent with the old `PlottedDatastreams#setQcDatastream`). */
+  async function setQcDatastream(id: string | null) {
+    if (qcDatastreamId.value === id) return
+    qcDatastreamId.value = id
+    syncTimeRangeToQc()
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) {
+      await handleNewPlot(undefined, { preserveZoom: true })
+    }
+  }
+
+  /** Recompute beginDate / endDate to fit the QC datastream's range
+   *  (falling back to the most recent end time across the plotted set
+   *  when there's no QC). Preserves the current window size. */
+  function syncTimeRangeToQc() {
+    if (
+      !plottedDatastreams.value.length ||
+      !beginDate.value ||
+      !endDate.value
+    ) {
+      return
+    }
+    const oldEnd = endDate.value
+    const oldBegin = beginDate.value
+
+    endDate.value = qcDatastream.value
+      ? new Date(qcDatastream.value.phenomenonEndTime!)
+      : getMostRecentEndTime()
+
+    const selectedOption = dateOptions.value.find(
+      (option) => option.id === selectedDateBtnId.value
+    )
+    if (selectedOption) {
+      beginDate.value = selectedOption.calculateBeginDate()
     } else {
-      plottedDatastreams.value.splice(index, 1)
-      if (qcDatastream.value?.id == datastream.id) {
-        qcDatastream.value =
-          plottedDatastreams.value[Math.max(index - 1, 0)] || null
-      }
+      const timeDifference = oldEnd.getTime() - oldBegin.getTime()
+      beginDate.value = new Date(endDate.value.getTime() - timeDifference)
+    }
+  }
+
+  /** Rebuild the plot from scratch: drop zoom history, rebuild the
+   *  graph-series array from `plottedDatastreams`, regenerate Plotly
+   *  options, and re-render. */
+  async function rebuildPlot() {
+    if (!plottedDatastreams.value.length) {
+      clearChartState()
+      return
+    }
+    const { clearZoomHistory } = usePlotlyStore()
+    clearZoomHistory()
+    await refreshGraphSeriesArray()
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) {
+      await handleNewPlot()
     }
   }
 
@@ -330,64 +452,16 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
 
-  // Set the time range to the qcDatastream's endTime if there is one, otherwise
-  // update the time range to the most recent phenomenon endTime
-  let prevDatastreamIds = ''
-  let prevSelectedDatastreamId = ''
-
-  watch(
-    () => plottedDatastreams.value,
-    async (newDs) => {
-      const newDatastreamIds = JSON.stringify(newDs.map((ds) => ds.id).sort())
-
-      if (!newDs.length || !beginDate.value || !endDate.value) {
-        clearChartState()
-      } else if (
-        newDatastreamIds !== prevDatastreamIds ||
-        prevSelectedDatastreamId !== qcDatastream.value?.id
-      ) {
-        const oldEnd = endDate.value
-        const oldBegin = beginDate.value
-
-        endDate.value = qcDatastream.value
-          ? new Date(qcDatastream.value.phenomenonEndTime!)
-          : getMostRecentEndTime()
-
-        const selectedOption = dateOptions.value.find(
-          (option) => option.id === selectedDateBtnId.value
-        )
-
-        // Keep the previous time window size, now with different start and end times
-        if (selectedOption) {
-          beginDate.value = selectedOption.calculateBeginDate()
-        } else {
-          const timeDifference = oldEnd.getTime() - oldBegin.getTime()
-          beginDate.value = new Date(endDate.value.getTime() - timeDifference)
-        }
-
-        if (newDatastreamIds !== prevDatastreamIds) {
-          // The plotted datastream set changed — axes are rebuilt and
-          // old zoom-history entries no longer reference the live
-          // layout. Drop them before `handleNewPlot` re-seeds the
-          // initial state.
-          const { clearZoomHistory } = usePlotlyStore()
-          clearZoomHistory()
-
-          await refreshGraphSeriesArray()
-          // Call above will make data available and show plot before updateOptions
-          updateOptions()
-
-          const { plotlyRef } = storeToRefs(usePlotlyStore())
-          if (plotlyRef.value) {
-            handleNewPlot()
-          }
-        }
-      }
-      prevDatastreamIds = newDatastreamIds
-      prevSelectedDatastreamId = qcDatastream.value?.id || ''
-    },
-    { deep: true, immediate: true }
-  )
+  // The old watcher on `plottedDatastreams` that computed prev/next id
+  // diffs and forked between "update time range" and "rebuild plot"
+  // has been replaced by explicit actions:
+  //   - plotDatastream / unplotDatastream / toggleDatastream
+  //   - clearPlottedDatastreams
+  //   - setPlottedDatastreams (URL hydration)
+  //   - setQcDatastream
+  // Each mutation site now calls the action so side effects (time range
+  // sync, graph-series rebuild, zoom history clear, Plotly re-render)
+  // happen inline and in a predictable order — no reactive cascade.
 
   // TODO: Revisit this. Does it make sense to convert qualifierValue to a string in preprocessing
   // just to split it into an array of strings here? Maybe just save it as an array of strings instead
@@ -441,6 +515,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     loadingStates,
     selectedDateBtnId,
     qcDatastream,
+    qcDatastreamId,
     qualifierSet,
     selectedQualifier,
     selectedData,
@@ -452,6 +527,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     refreshGraphSeriesArray,
     resetState,
     toggleDatastream,
+    plotDatastream,
+    unplotDatastream,
+    clearPlottedDatastreams,
+    setPlottedDatastreams,
+    setQcDatastream,
+    rebuildPlot,
     // updateOrFetchGraphSeries,
   }
 }, {
