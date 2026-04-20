@@ -45,7 +45,7 @@ export interface PlotlyChartOptions {
 export type AppPlotlyTrace = Partial<PlotData> & {
   id?: string
   showLegend?: boolean
-  selected?: { marker: { color: string } }
+  selected?: { marker: { color: string; opacity?: number } }
 }
 
 /**
@@ -337,7 +337,13 @@ export const createPlotlyOption = (
     if (isQc) {
       trace.marker = { ...(trace.marker ?? {}), color: COLORS[0] }
       trace.line = { ...(trace.line ?? {}), color: COLORS[0] }
-      trace.selected = { marker: { color: 'red' } }
+      // Selected markers override both colour and opacity — the density
+      // logic in `handleRelayout` drops base `marker.opacity` to 0 at
+      // high density (keeps markers hit-testable for box-select without
+      // the ink-soup), so without an explicit selected.marker.opacity
+      // the highlighted points would inherit that zero and stay
+      // invisible after a box-select.
+      trace.selected = { marker: { color: 'red', opacity: 1 } }
 
         ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
           title: {
@@ -979,11 +985,113 @@ export const redoZoom = async (): Promise<void> => {
 
 // ----------------------------------------------------------------------------
 
+/**
+ * Convert a datastream's `intendedTimeSpacing` + `intendedTimeSpacingUnit`
+ * into milliseconds. Returns `null` when either field is missing — caller
+ * falls back to Plotly's auto tick picker in that case.
+ */
+const intendedSpacingMs = (): number | null => {
+  const { qcDatastream } = storeToRefs(useDataVisStore())
+  const ds = qcDatastream.value as
+    | { intendedTimeSpacing?: number; intendedTimeSpacingUnit?: string | null }
+    | null
+  if (!ds) return null
+  const n = Number(ds.intendedTimeSpacing)
+  if (!Number.isFinite(n) || n <= 0) return null
+  switch (ds.intendedTimeSpacingUnit) {
+    case 'seconds':
+      return n * 1000
+    case 'minutes':
+      return n * 60 * 1000
+    case 'hours':
+      return n * 60 * 60 * 1000
+    case 'days':
+      return n * 24 * 60 * 60 * 1000
+    default:
+      return null
+  }
+}
+
+/**
+ * Compute an explicit tick-position array aligned to the datastream's
+ * intended cadence, bounded to the visible x-range. Paired with
+ * `tickmode: 'array'` + `tickvals` when returned non-null; returns
+ * `null` when we should hand back to Plotly's auto tick picker (no QC
+ * datastream, no cadence metadata, or span wide enough that even the
+ * largest "nice" multiplier we'd consider still gives too many ticks).
+ */
+const computeIntendedTickvals = (
+  xStart: number,
+  xEnd: number
+): number[] | null => {
+  const unit = intendedSpacingMs()
+  if (!unit) return null
+  if (!Number.isFinite(xStart) || !Number.isFinite(xEnd)) return null
+  const span = xEnd - xStart
+  if (span <= 0) return null
+
+  const TARGET_TICKS = 8
+  const MAX_TICKS = 30
+  const raw = span / (unit * TARGET_TICKS)
+
+  // `niceMultipliers` preserves the rhythm of the intended spacing —
+  // e.g. for a 15-minute series the ticks step by 15m, 30m, 1h, 2h, 4h,
+  // 12h, 1d … rather than some arbitrary 13m or 47m.
+  const niceMultipliers = [
+    1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 45, 60, 90, 120,
+  ]
+  let chosen = niceMultipliers[niceMultipliers.length - 1]
+  for (const m of niceMultipliers) {
+    if (m >= raw) {
+      chosen = m
+      break
+    }
+  }
+
+  const step = unit * chosen
+  // Even the top end of our multiplier ladder would give too many ticks
+  // — hand back to Plotly's auto algorithm.
+  if (span / step > MAX_TICKS) return null
+
+  // Anchor to the QC datastream's phenomenon start so ticks fall on
+  // real observations. Fall back to xStart if no anchor is available —
+  // ticks then just step from the left edge.
+  const { qcDatastream } = storeToRefs(useDataVisStore())
+  const anchorSource = qcDatastream.value?.phenomenonBeginTime
+  const anchor = anchorSource
+    ? new Date(anchorSource).getTime()
+    : xStart
+
+  const firstK = Math.ceil((xStart - anchor) / step)
+  const ticks: number[] = []
+  for (let k = firstK; ; k++) {
+    const t = anchor + k * step
+    if (t > xEnd) break
+    ticks.push(t)
+    if (ticks.length > MAX_TICKS) break
+  }
+  return ticks.length ? ticks : null
+}
+
+/** True when two numeric arrays match element-wise within a small
+ *  tolerance. Used to skip no-op tickvals relayouts. */
+const tickvalsEqual = (
+  a: number[] | null,
+  b: number[] | null
+): boolean => {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i] - b[i]) > 1) return false
+  }
+  return true
+}
+
 export const handleRelayout = async (
   eventData: PlotRelayoutEvent | null
 ) => {
   const {
-    plotlyOptions,
     plotlyRef,
     isUpdating,
     areTooltipsEnabled,
@@ -1001,6 +1109,7 @@ export const handleRelayout = async (
     | (PlotRelayoutEvent & {
       selections?: unknown
       'selections[0].x0'?: unknown
+      'xaxis.autorange'?: unknown
     })
     | null
   if (
@@ -1013,16 +1122,39 @@ export const handleRelayout = async (
     return
   }
 
+  // `resetScale2d` fires a relayout with `xaxis.autorange: true` — the
+  // user just asked for "back to full view". Reset any imposed tick grid
+  // synchronously before the debounced body runs so we never briefly
+  // render the old zoomed-in `tickvals` against the wide post-reset
+  // span (which was causing the dense unreadable tick mass).
+  if (evt?.['xaxis.autorange'] === true && plotlyRef.value) {
+    try {
+      await Plotly.relayout(plotlyRef.value as unknown as HTMLElement, {
+        'xaxis.tickmode': 'auto',
+        'xaxis.tickvals': null,
+      } as unknown as Partial<Layout>)
+    } catch (err) {
+      // Don't swallow the debounced body below on a transient relayout
+      // error; just log and continue.
+      console.warn('Failed to reset x-axis tick grid on autorange', err)
+    }
+  }
+
   isUpdating.value = true
 
   setTimeout(async () => {
     try {
-      const layoutUpdates: Partial<Layout> = { ...plotlyOptions.value.layout }
-      // `Layout.xaxis.range` is `any[]` in @types/plotly.js; the runtime
-      // values are string|number for date axes. Treat the working copy as
-      // an array we can rewrite in-place without losing precision.
-      const xRange = (layoutUpdates.xaxis as Partial<LayoutAxis> | undefined)
-        ?.range as Array<string | number> | undefined
+      // Always read from the LIVE plotly layout, not from
+      // `plotlyOptions.value.layout` — the stored options object isn't
+      // kept in sync with modebar actions like `resetScale2d`, so after
+      // an autorange reset the stored range still reflects the old
+      // zoomed-in viewport. Downstream tick/density logic needs the
+      // true post-reset range to avoid applying a fine-cadence grid to
+      // a wide view.
+      const liveLayout =
+        (plotlyRef.value as unknown as { layout?: Partial<Layout> })?.layout
+      const liveXaxis = liveLayout?.xaxis as Partial<LayoutAxis> | undefined
+      const xRange = liveXaxis?.range as Array<string | number> | undefined
 
       // Plotly will rewrite timestamps as datestrings. We need to convert them back to timestamps.
       if (xRange && typeof xRange[0] == 'string') {
@@ -1073,58 +1205,79 @@ export const handleRelayout = async (
       }
 
       // Density-responsive marker rendering — scattergl becomes ink soup
-      // above a few hundred points per trace. Drop markers entirely above
-      // DENSITY_LINES_ONLY, fade them between DENSITY_DIM and that
-      // ceiling, and run at full opacity below DENSITY_DIM. Lines stay
-      // on throughout, so the series silhouette never disappears.
-      const DENSITY_LINES_ONLY = 2000
+      // above a few hundred points per trace. Rather than stripping
+      // markers (which breaks box-select / lasso, since Plotly's
+      // selection hit-tests against marker glyphs, not line segments),
+      // keep `mode: 'lines+markers'` throughout and fade marker opacity
+      // toward zero. At opacity 0 the markers are invisible but still
+      // present and selectable, and scattergl short-circuits their
+      // fragment shader so the perf cost is negligible.
+      const DENSITY_HIDE_MARKERS = 2000
       const DENSITY_DIM = 500
-      const perTraceMode: string[] = []
       const perTraceOpacity: number[] = []
       for (let i = 0; i < traceCount; i++) {
         const n = perTraceVisible[i]
-        if (n > DENSITY_LINES_ONLY) {
-          perTraceMode.push('lines')
-          perTraceOpacity.push(1)
+        if (n > DENSITY_HIDE_MARKERS) {
+          perTraceOpacity.push(0)
         } else if (n > DENSITY_DIM) {
-          // Linear fade from 1.0 at DENSITY_DIM down to ~0.25 at the
-          // lines-only threshold so the transition doesn't feel abrupt
-          // when the user pans across a density boundary.
-          const t =
-            (n - DENSITY_DIM) / (DENSITY_LINES_ONLY - DENSITY_DIM)
-          perTraceMode.push('lines+markers')
-          perTraceOpacity.push(1 - t * 0.75)
+          // Linear fade from 1.0 at DENSITY_DIM down to 0 at the
+          // hide-markers threshold so the transition doesn't feel
+          // abrupt when the user pans across a density boundary.
+          const t = (n - DENSITY_DIM) / (DENSITY_HIDE_MARKERS - DENSITY_DIM)
+          perTraceOpacity.push(1 - t)
         } else {
-          perTraceMode.push('lines+markers')
           perTraceOpacity.push(1)
         }
       }
 
-      // Only restyle when the mode or opacity vector has actually
-      // changed — Plotly.restyle on scattergl is cheap but not free,
-      // and pans inside a single density band shouldn't trigger a redraw.
-      const currentModes = (plotlyRef.value?.data ?? []).map(
-        (t) => (t as Partial<PlotData>).mode ?? ''
-      )
-      const currentOpacities = (plotlyRef.value?.data ?? []).map(
-        (t) => {
-          const m = (t as Partial<PlotData>).marker as { opacity?: number } | undefined
-          return m?.opacity ?? 1
-        }
-      )
-      const modesChanged = perTraceMode.some((m, i) => m !== currentModes[i])
+      // Only restyle when the opacity vector has actually changed —
+      // Plotly.restyle on scattergl is cheap but not free, and pans
+      // inside a single density band shouldn't trigger a redraw.
+      const currentOpacities = (plotlyRef.value?.data ?? []).map((t) => {
+        const m = (t as Partial<PlotData>).marker as
+          | { opacity?: number }
+          | undefined
+        return m?.opacity ?? 1
+      })
       const opacitiesChanged = perTraceOpacity.some(
         (o, i) => Math.abs(o - (currentOpacities[i] ?? 1)) > 0.02
       )
-      if ((modesChanged || opacitiesChanged) && plotlyRef.value) {
+      if (opacitiesChanged && plotlyRef.value) {
         // Per-trace restyle: Plotly maps an N-length array to each of
-        // the N traces. The `@types/plotly.js` surface types these as
-        // scalars, but the runtime happily accepts the array form, so
-        // the cast widens past the typed narrow.
+        // the N traces. The `@types/plotly.js` surface types marker
+        // properties as scalars, but the runtime happily accepts the
+        // array form, so the cast widens past the typed narrow.
         await Plotly.restyle(plotlyRef.value, {
-          mode: perTraceMode,
           'marker.opacity': perTraceOpacity,
         } as unknown as Partial<PlotData>)
+      }
+
+      // Align x-axis ticks to the datastream's intended cadence when
+      // the user has zoomed in enough that the cadence becomes legible.
+      // At wider spans we hand back to Plotly's auto tick picker, which
+      // does a better job of calendar-aware breakpoints than a rigid
+      // cadence grid.
+      if (Number.isFinite(xStart) && Number.isFinite(xEnd) && plotlyRef.value) {
+        const wantedTickvals = computeIntendedTickvals(xStart, xEnd)
+        const currentTickmode =
+          (liveXaxis?.tickmode as string | undefined) ?? 'auto'
+        const currentTickvals = Array.isArray(liveXaxis?.tickvals)
+          ? (liveXaxis?.tickvals as number[])
+          : null
+
+        const wantedTickmode = wantedTickvals ? 'array' : 'auto'
+        const tickmodeChanged = wantedTickmode !== currentTickmode
+        const tickvalsChanged = !tickvalsEqual(
+          wantedTickvals,
+          currentTickvals
+        )
+
+        if (tickmodeChanged || tickvalsChanged) {
+          await Plotly.relayout(plotlyRef.value as unknown as HTMLElement, {
+            'xaxis.tickmode': wantedTickvals ? 'array' : 'auto',
+            'xaxis.tickvals': wantedTickvals ?? null,
+          } as unknown as Partial<Layout>)
+        }
       }
 
       // Threshold check
@@ -1176,7 +1329,6 @@ export const handleRelayout = async (
 //   selectedData.value = []
 // }
 
-// TODO: work in progress
 export const handleMouseMove = async (event: MouseEvent) => {
   const { plotlyRef, hover, showCoordinates } = storeToRefs(usePlotlyStore())
 
