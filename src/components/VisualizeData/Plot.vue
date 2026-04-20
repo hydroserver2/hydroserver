@@ -9,30 +9,6 @@
          it deserves and keeps the controls row at a predictable
          height regardless of title length. -->
     <div v-if="!preview" class="plot-header">
-      <div class="plot-header__title-row px-3 py-1 d-flex align-center gap-2">
-        <v-icon
-          icon="mdi-chart-line"
-          color="primary"
-          size="18"
-          class="flex-shrink-0"
-        />
-        <div
-          class="plot-header__title text-subtitle-2 font-weight-bold text-truncate flex-grow-1"
-          :title="qcDatastream?.name"
-        >
-          {{ qcDatastream?.name ?? 'Data preview' }}
-        </div>
-        <v-progress-circular
-          v-if="isUpdating"
-          color="primary"
-          size="16"
-          width="2"
-          indeterminate
-        />
-      </div>
-
-      <v-divider />
-
       <div class="plot-toolbar d-flex align-center flex-wrap gap-1 px-3 py-1">
         <!-- Plot ↔ Table segmented control. -->
         <v-btn-toggle
@@ -52,6 +28,15 @@
             Table
           </v-btn>
         </v-btn-toggle>
+
+        <v-progress-circular
+          v-if="isUpdating"
+          color="primary"
+          size="16"
+          width="2"
+          indeterminate
+          class="ml-1"
+        />
 
         <!-- Active selection indicator. Doubles as a shortcut to clear
              the selection. Hidden when nothing is selected. -->
@@ -749,6 +734,16 @@ const onTabChange = () => {
 :deep(.js-plotly-plot .modebar-btn:hover) {
   background-color: rgba(var(--v-theme-primary), 0.12) !important;
   border-radius: 4px;
+}
+
+/* Wider gap between modebar functional groups. Plotly's default
+   inter-group spacing is ~5px and easy to miss; bumping it keeps the
+   grouping legible without adding a divider line. */
+:deep(.js-plotly-plot .modebar-group) {
+  margin-right: 12px !important;
+}
+:deep(.js-plotly-plot .modebar-group:last-child) {
+  margin-right: 0 !important;
 }
 
 :deep(.v-window__container) {

@@ -356,6 +356,18 @@ export const createPlotlyOption = (
           // flip between SI and decimal depending on the visible range;
           // pinning `tickformat` makes it consistent.
           tickformat: '~s',
+          // Horizontal crosshair companion to the vertical x-axis spike.
+          // Only on the primary (QC) y-axis — the right-side overlay
+          // axes would each fire their own line, turning the plot into
+          // graffiti when hover crossed multiple series.
+          showspikes: true,
+          ...({
+            spikemode: 'across',
+            spikesnap: 'cursor',
+            spikedash: 'dot',
+            spikethickness: 1,
+          } as object),
+          spikecolor: 'rgba(60,60,60,0.45)',
         } as Partial<LayoutAxis>
 
       const { editHistory } = storeToRefs(usePlotlyStore())
@@ -462,10 +474,10 @@ export const createPlotlyOption = (
     range: [xRangeStart, xRangeEnd],
     autorange: false,
     showline: true,
-    // Vertical crosshair that follows the cursor — far cleaner than the
-    // custom coordinate chip alone and respects scattergl. Only fires
-    // when hover is active (i.e. visible points under the threshold),
-    // so no extra cost when zoomed out.
+    // Vertical crosshair spike tied to hover. When hover is disabled
+    // past `tooltipsMaxDataPoints` the spike disappears with it — an
+    // intentional tradeoff: the crosshair coexists with the numeric
+    // tooltip readout rather than fighting it.
     showspikes: true,
     ...({
       spikemode: 'across',
@@ -543,28 +555,23 @@ export const createPlotlyOption = (
     click: fitYaxisToVisible,
   }
 
-  const modebarGroup = isPreview
+  // Modebar is split into functional groups so a visible gap appears
+  // between each cluster — easier to scan than 12 icons in one row.
+  //   [ history | zoom + pan + select | reset | fit ]
+  // The box-zoom, zoom-in, and zoom-out buttons live together so the
+  // three zoom modes sit side by side instead of scattered across the
+  // bar.
+  const modebarGroups: unknown[][] = isPreview
     ? [
-      undoZoomButton,
-      redoZoomButton,
-      'zoom2d',
-      'pan2d',
-      'zoomIn2d',
-      'zoomOut2d',
-      'resetScale2d',
+      [undoZoomButton, redoZoomButton],
+      ['zoom2d', 'zoomIn2d', 'zoomOut2d', 'pan2d'],
+      ['resetScale2d'],
     ]
     : [
-      undoZoomButton,
-      redoZoomButton,
-      'zoom2d',
-      'pan2d',
-      'select2d',
-      'lasso2d',
-      'zoomIn2d',
-      'zoomOut2d',
-      'resetScale2d',
-      fitXButton,
-      fitYButton,
+      [undoZoomButton, redoZoomButton],
+      ['zoom2d', 'zoomIn2d', 'zoomOut2d', 'pan2d', 'select2d', 'lasso2d'],
+      ['resetScale2d'],
+      [fitXButton, fitYButton],
     ]
 
   const config = {
@@ -573,7 +580,7 @@ export const createPlotlyOption = (
     scrollZoom: true,
     responsive: true,
     doubleClick: false,
-    modeBarButtons: [modebarGroup],
+    modeBarButtons: modebarGroups,
     // plotGlPixelRatio: 1,
   } as unknown as Partial<Config>
 
@@ -1047,18 +1054,77 @@ export const handleRelayout = async (
 
       visiblePoints.value = 0
 
-      // Find number of visible points
+      // Find number of visible points — per trace so we can adjust
+      // density-dependent rendering (mode + marker opacity) per series.
       const traceCount = plotlyRef.value?.data.length ?? 0
+      const perTraceVisible: number[] = new Array(traceCount).fill(0)
       for (let i = 0; i < traceCount; i++) {
         // Plotly does not return the indexes of current x-axis extent. We must find them using binary search.
         const xs = traceXAsNumbers(plotlyRef.value, i)
         const startIdx = findFirstGreaterOrEqual(xs, xRange?.[0])
         const endIdx = findFirstGreaterOrEqual(xs, xRange?.[1])
-        visiblePoints.value += endIdx - startIdx
+        const count = endIdx - startIdx
+        perTraceVisible[i] = count
+        visiblePoints.value += count
       }
 
       if (Number.isFinite(xStart) && Number.isFinite(xEnd)) {
         lastVisibleRange = [xStart, xEnd]
+      }
+
+      // Density-responsive marker rendering — scattergl becomes ink soup
+      // above a few hundred points per trace. Drop markers entirely above
+      // DENSITY_LINES_ONLY, fade them between DENSITY_DIM and that
+      // ceiling, and run at full opacity below DENSITY_DIM. Lines stay
+      // on throughout, so the series silhouette never disappears.
+      const DENSITY_LINES_ONLY = 2000
+      const DENSITY_DIM = 500
+      const perTraceMode: string[] = []
+      const perTraceOpacity: number[] = []
+      for (let i = 0; i < traceCount; i++) {
+        const n = perTraceVisible[i]
+        if (n > DENSITY_LINES_ONLY) {
+          perTraceMode.push('lines')
+          perTraceOpacity.push(1)
+        } else if (n > DENSITY_DIM) {
+          // Linear fade from 1.0 at DENSITY_DIM down to ~0.25 at the
+          // lines-only threshold so the transition doesn't feel abrupt
+          // when the user pans across a density boundary.
+          const t =
+            (n - DENSITY_DIM) / (DENSITY_LINES_ONLY - DENSITY_DIM)
+          perTraceMode.push('lines+markers')
+          perTraceOpacity.push(1 - t * 0.75)
+        } else {
+          perTraceMode.push('lines+markers')
+          perTraceOpacity.push(1)
+        }
+      }
+
+      // Only restyle when the mode or opacity vector has actually
+      // changed — Plotly.restyle on scattergl is cheap but not free,
+      // and pans inside a single density band shouldn't trigger a redraw.
+      const currentModes = (plotlyRef.value?.data ?? []).map(
+        (t) => (t as Partial<PlotData>).mode ?? ''
+      )
+      const currentOpacities = (plotlyRef.value?.data ?? []).map(
+        (t) => {
+          const m = (t as Partial<PlotData>).marker as { opacity?: number } | undefined
+          return m?.opacity ?? 1
+        }
+      )
+      const modesChanged = perTraceMode.some((m, i) => m !== currentModes[i])
+      const opacitiesChanged = perTraceOpacity.some(
+        (o, i) => Math.abs(o - (currentOpacities[i] ?? 1)) > 0.02
+      )
+      if ((modesChanged || opacitiesChanged) && plotlyRef.value) {
+        // Per-trace restyle: Plotly maps an N-length array to each of
+        // the N traces. The `@types/plotly.js` surface types these as
+        // scalars, but the runtime happily accepts the array form, so
+        // the cast widens past the typed narrow.
+        await Plotly.restyle(plotlyRef.value, {
+          mode: perTraceMode,
+          'marker.opacity': perTraceOpacity,
+        } as unknown as Partial<PlotData>)
       }
 
       // Threshold check
