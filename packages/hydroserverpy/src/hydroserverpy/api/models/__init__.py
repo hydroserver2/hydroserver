@@ -14,8 +14,19 @@ from .sta.thing import Thing
 from .sta.unit import Unit
 from .etl.data_connection import DataConnection
 from .etl.run import TaskRun
-from .etl.task import Task
-from .etl.mapping import TaskMapping
+from .etl.task import EtlTask
+from .etl.mapping import EtlMapping, EtlDatastreamSummary
+from .orchestration.run import TaskRun as OrchestrationTaskRun
+from .monitoring.task import MonitoringTask
+from .monitoring.rule import MonitoringRule
+from .products.rating_curve import RatingCurve
+from .products.task import DataProductTask
+from .products.transformation import (
+    RatingCurveTransformation,
+    ExpressionTransformation,
+    CompositeExpressionTransformation,
+    AggregationTransformation,
+)
 
 Workspace.model_rebuild()
 Role.model_rebuild()

@@ -13,6 +13,11 @@ from hydroserverpy.api.services import (
     DatastreamService,
     DataConnectionService,
     TaskService,
+    MonitoringTaskService,
+    MonitoringRuleService,
+    RatingCurveService,
+    DataProductTaskService,
+    TransformationService,
 )
 
 
@@ -198,3 +203,33 @@ class HydroServer:
         """Utilities for managing HydroServer ETL tasks."""
 
         return TaskService(self)
+
+    @property
+    def monitoring_tasks(self):
+        """Utilities for managing HydroServer monitoring tasks."""
+
+        return MonitoringTaskService(self)
+
+    @property
+    def monitoring_rules(self):
+        """Utilities for managing HydroServer monitoring rules."""
+
+        return MonitoringRuleService(self)
+
+    @property
+    def rating_curves(self):
+        """Utilities for managing HydroServer rating curves."""
+
+        return RatingCurveService(self)
+
+    @property
+    def data_product_tasks(self):
+        """Utilities for managing HydroServer data product tasks."""
+
+        return DataProductTaskService(self)
+
+    @property
+    def transformations(self):
+        """Utilities for managing HydroServer data product transformations."""
+
+        return TransformationService(self)

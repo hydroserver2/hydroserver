@@ -34,7 +34,7 @@ class HydroServerBaseModel(BaseModel):
         return self._client
 
     @property
-    def service(self) -> "HydroServerBaseService":
+    def service(self) -> Any:
         return self._service
 
     @property
@@ -103,13 +103,13 @@ class HydroServerCollection:
     total_pages: Optional[int] = None
     total_count: Optional[int] = None
 
-    _service: Optional["HydroServerBaseService"] = field(init=False, repr=False)
+    _service: Optional[Any] = field(init=False, repr=False)
 
     def __init__(
         self,
         model: Type["HydroServerBaseModel"],
         client: "HydroServer",
-        service: Optional["HydroServerBaseService"] = None,
+        service: Optional[Any] = None,
         response: Optional[Response] = None,
         **data
     ):

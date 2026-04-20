@@ -1,63 +1,110 @@
 import uuid
-from typing import ClassVar, List, Optional, TYPE_CHECKING
-from pydantic import Field, AliasPath, AliasChoices
+from datetime import datetime
+from typing import ClassVar, List, Literal, Optional, Union, TYPE_CHECKING
+from pydantic import BaseModel, ConfigDict, Field, AliasPath
+from pydantic.alias_generators import to_camel
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
-    from hydroserverpy.api.models import Workspace, Task
+
+
+class TimestampConfig(BaseModel):
+    key: str
+    format: Optional[str] = None
+    timezone_type: Optional[Literal["utc", "offset", "iana"]] = None
+    timezone: Optional[str] = None
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+class CSVPayload(BaseModel):
+    payload_type: Literal["CSV"] = Field(..., alias="type")
+    header_row: Optional[int] = None
+    data_start_row: Optional[int] = None
+    delimiter: Optional[str] = None
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+class JSONPayload(BaseModel):
+    payload_type: Literal["JSON"] = Field(..., alias="type")
+    jmespath: Optional[str] = None
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+class PlaceholderVariable(BaseModel):
+    name: str
+    variable_type: Literal["run_time", "latest_observation_timestamp", "per_task"] = Field(..., alias="type")
+    timestamp_format: Optional[str] = None
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+class NotificationSchedule(BaseModel):
+    enabled: bool = True
+    start_time: Optional[datetime] = None
+    crontab: Optional[str] = None
+    interval: Optional[int] = None
+    interval_period: Optional[Literal["minutes", "hours", "days"]] = None
+    next_run_at: Optional[datetime] = None
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+
+class Notification(BaseModel):
+    schedule: Optional[NotificationSchedule] = None
+    recipient_emails: List[str] = []
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class DataConnection(HydroServerBaseModel):
-    name: str = Field(..., max_length=255)
-    data_connection_type: str = Field(..., max_length=255, alias="type")
-    workspace_id: Optional[uuid.UUID] = Field(
-        None, validation_alias=AliasChoices("workspaceId", AliasPath("workspace", "id"))
-    )
-    extractor_type: str = Field(..., max_length=255, validation_alias=AliasPath("extractor", "type"))
-    extractor_settings: dict = Field(default_factory=dict, validation_alias=AliasPath("extractor", "settings"))
-    transformer_type: str = Field(..., max_length=255, validation_alias=AliasPath("transformer", "type"))
-    transformer_settings: dict = Field(default_factory=dict, validation_alias=AliasPath("transformer", "settings"))
-    loader_type: str = Field(..., max_length=255, validation_alias=AliasPath("loader", "type"))
-    loader_settings: dict = Field(default_factory=dict, validation_alias=AliasPath("loader", "settings"))
+    name: str
+    description: Optional[str] = None
+    source_url: str
+    workspace_id: uuid.UUID = Field(..., validation_alias=AliasPath("workspace", "id"))
+    workspace_name: str = Field(..., validation_alias=AliasPath("workspace", "name"))
+    timestamp: TimestampConfig
+    payload: Union[CSVPayload, JSONPayload]
+    placeholder_variables: List[PlaceholderVariable] = []
+    notification: Optional[Notification] = None
 
-    _editable_fields: ClassVar[set[str]] = {
-        "name",
-        "data_connection_type",
-        "extractor_type",
-        "extractor_settings",
-        "transformer_type",
-        "transformer_settings",
-        "loader_type",
-        "loader_settings",
-    }
+    _editable_fields: ClassVar[set[str]] = set()
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.dataconnections, **data)
 
-        self._workspace = None
-        self._tasks = None
+    def save(self):
+        """Saves changes to this resource to HydroServer."""
+
+        if not self.service:
+            raise NotImplementedError("Saving not enabled for this object.")
+
+        if not self.uid:
+            raise AttributeError("Data cannot be saved: UID is not set.")
+
+        saved_resource = self.service.update(
+            self.uid,
+            name=self.name,
+            source_url=self.source_url,
+            timestamp_key=self.timestamp.key,
+            payload_type=self.payload.payload_type,
+            description=self.description,
+            timestamp_format=self.timestamp.format,
+            timezone_type=self.timestamp.timezone_type,
+            timezone=self.timestamp.timezone,
+            header_row=getattr(self.payload, "header_row", None),
+            data_start_row=getattr(self.payload, "data_start_row", None),
+            delimiter=getattr(self.payload, "delimiter", None),
+            jmespath=getattr(self.payload, "jmespath", None),
+            placeholder_variables=[pv.model_dump(by_alias=False) for pv in self.placeholder_variables],
+            notification=self.notification.model_dump(by_alias=False) if self.notification else None,
+        )
+        self._server_data = saved_resource.dict(by_alias=False).copy()
+        self.__dict__.update(saved_resource.__dict__)
 
     @classmethod
     def get_route(cls):
-        return "etl-data-connections"
-
-    @property
-    def workspace(self) -> "Workspace":
-        """The workspace this ETL data connection belongs to."""
-
-        if self._workspace is None and self.workspace_id:
-            self._workspace = self.client.workspaces.get(uid=self.workspace_id)
-
-        return self._workspace
-
-    @property
-    def tasks(self) -> List["Task"]:
-        """The ETL tasks associated with this ETL data connection."""
-
-        if self._tasks is None:
-            self._tasks = self.client.tasks.list(
-                data_connection=self.uid, fetch_all=True
-            ).items
-
-        return self._tasks
+        return "etl/data-connections"
