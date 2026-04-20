@@ -131,6 +131,29 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     return ws
   }
 
+  /**
+   * Apply a workspace selection by id, falling back to a placeholder
+   * `{ id }` object when the full Workspace isn't in
+   * `availableWorkspaces` yet. Used by shared-link hydration in
+   * `main.ts` and the matching router guard — those can fire before
+   * `loadWorkspaces` has populated the list (e.g. cross-origin dev
+   * setups where the session endpoint 401s silently, or a fresh boot
+   * where the list fetch is still in flight). The downstream catalog
+   * load in App.vue only reads `selectedWorkspaceId`, so a placeholder
+   * is enough to get the right data loaded; `loadWorkspaces` will
+   * promote the placeholder to the real object when it next runs.
+   */
+  function applyWorkspaceById(id: string): Workspace | null {
+    if (!id) return null
+    if (selectedWorkspace.value?.id === id) return selectedWorkspace.value
+    const match =
+      availableWorkspaces.value.find((w) => w.id === id) ??
+      ({ id } as Workspace)
+    selectedWorkspace.value = match
+    writeStoredWorkspace(match)
+    return match
+  }
+
   function clearSelection() {
     selectedWorkspace.value = null
     writeStoredWorkspace(null)
@@ -168,6 +191,7 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     canEditSelected,
     loadWorkspaces,
     selectWorkspace,
+    applyWorkspaceById,
     clearSelection,
   }
 })

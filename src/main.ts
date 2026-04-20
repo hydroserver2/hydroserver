@@ -61,6 +61,23 @@ async function initializeApp() {
     }
   }
 
+  // Honour a shared-link `?workspace=<id>` on initial page load. Runs
+  // before `app.mount` so App.vue's first catalog load targets the
+  // right workspace — otherwise the mount-time load races the router
+  // guard's switch and can leave the user on the stored workspace.
+  // `applyWorkspaceById` falls back to a placeholder when the full
+  // record isn't available yet, which matters in cross-origin dev
+  // setups where `loadWorkspaces` is skipped.
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const urlWorkspace = params.get('workspace')
+    if (urlWorkspace) {
+      useWorkspaceStore().applyWorkspaceById(urlWorkspace)
+    }
+  } catch (err) {
+    console.warn('Failed to apply URL workspace override', err)
+  }
+
   app.use(router)
   app.use(vuetify)
   app.mount('#app')

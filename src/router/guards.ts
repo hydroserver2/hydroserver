@@ -42,6 +42,20 @@ export const guards: RouteGuard[] = [
     return next.startsWith('/') ? { path: next } : { name: next }
   },
 
+  // Shared-link workspace switch — if an incoming URL carries
+  // `?workspace=<id>`, switch the active workspace so recipients of
+  // a shared link land in the sender's workspace without stopping at
+  // the picker. Covers in-app navigations; the fresh-page-load case
+  // is handled synchronously in `main.ts` before `app.mount`.
+  (to) => {
+    const urlId = typeof to.query.workspace === 'string' ? to.query.workspace : ''
+    if (!urlId) return null
+    const ws = useWorkspaceStore()
+    if (ws.selectedWorkspaceId === urlId) return null
+    ws.applyWorkspaceById(urlId)
+    return null
+  },
+
   // Workspaces picker shortcut — if the user already has a selection
   // (typical reload / deep-link case), skip the picker synchronously
   // so it never flashes on the way to the intended page. The nav
@@ -54,17 +68,6 @@ export const guards: RouteGuard[] = [
     if (!hasSelection) return null
     const next = typeof to.query.next === 'string' ? to.query.next : 'Home'
     return next.startsWith('/') ? { path: next } : { name: next }
-  },
-
-  // hasThingOwnershipGuard
-  async (to, _from, _next) => {
-    const { hs } = storeToRefs(useHydroServer())
-    if (to.meta?.hasThingOwnershipGuard) {
-      const thing = (await hs.value.things.get(to.params.id as string)).data
-      // TODO: where to find `ownsThing` property
-      // if (!thing?.ownsThing) return { name: 'PageNotFound' }
-    }
-    return null
   },
 
   // hasWorkspaceGuard — every data-bearing route needs an active

@@ -264,6 +264,7 @@ import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSubmission } from '@/composables/useQcSubmission'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const { resetState } = useDataVisStore()
 const {
@@ -281,6 +282,7 @@ const {
 } = storeToRefs(useDataVisStore())
 const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
   storeToRefs(useUIStore())
+const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const { editHistory, isUpdating, isSubmitting, selectedSeries } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
@@ -431,10 +433,17 @@ watch(
     selectedThings,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
+    selectedWorkspaceId,
   ],
   () => {
     const ids = plottedDatastreams.value.map((ds) => ds.id)
     const query: Record<string, string> = {}
+    // Workspace goes in the query so a shared link lands the recipient
+    // in the same HydroServer context the sender had. The workspace
+    // router guard (`guards.ts`) consumes this on incoming navigation
+    // and switches the active workspace when it differs from the
+    // recipient's current selection.
+    if (selectedWorkspaceId.value) query.workspace = selectedWorkspaceId.value
     if (currentView.value === DrawerType.Edit) query.mode = 'edit'
     else if (currentView.value === DrawerType.Select) query.mode = 'select'
     if (ids.length) query.datastreams = ids.join(',')
@@ -452,6 +461,7 @@ watch(
 
     const current = route.query
     const keys = [
+      'workspace',
       'mode',
       'datastreams',
       'qc',
