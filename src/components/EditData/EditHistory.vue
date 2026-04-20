@@ -20,6 +20,8 @@
         <template #activator="{ props: tp }">
           <v-btn
             v-bind="tp"
+            data-testid="history-undo-btn"
+            aria-label="Undo"
             size="x-small"
             variant="text"
             density="comfortable"
@@ -34,6 +36,8 @@
         <template #activator="{ props: tp }">
           <v-btn
             v-bind="tp"
+            data-testid="history-redo-btn"
+            aria-label="Redo"
             size="x-small"
             variant="text"
             density="comfortable"
@@ -216,6 +220,8 @@
               <template #activator="{ props: tp }">
                 <v-btn
                   v-bind="tp"
+                  :data-testid="`history-undo-${index}`"
+                  aria-label="Undo this step"
                   size="x-small"
                   variant="text"
                   density="comfortable"

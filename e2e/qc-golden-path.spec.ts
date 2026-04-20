@@ -26,7 +26,15 @@ declare global {
 //   8. Assert CHANGE_VALUES appears in EditHistory.
 //   9. Click Save Changes, confirm, assert success snackbar.
 
-test.describe('QC golden path', () => {
+// Live smoke — talks to playground.hydroserver.org. Opt in with
+// `E2E_LIVE=1 npx playwright test qc-golden-path` so CI runs the fast
+// mocked suite by default; the live smoke is for pre-release confidence.
+test.describe('QC golden path (live)', () => {
+  test.skip(
+    !process.env.E2E_LIVE,
+    'Set E2E_LIVE=1 to run the live-backend smoke'
+  )
+
   test('qc golden path: filter, edit, submit', async ({ page }) => {
     // First-run Vite + createHydroServer + qc-utils calibration + observation
     // fetch can exceed the default 30s test timeout. 180s gives the whole
