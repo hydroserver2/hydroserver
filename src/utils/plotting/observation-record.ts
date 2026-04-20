@@ -853,6 +853,7 @@ export class ObservationRecord {
     gap: [number, TimeUnit],
     fill: [number, TimeUnit],
     interpolateValues: boolean,
+    fillValue: number,
     range?: [number, number],
   ) {
     const len = this.dataX.length;
@@ -860,7 +861,6 @@ export class ObservationRecord {
 
     const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
     const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
-    const fillValue = -9999;
 
     const rangeStart = range?.[0] ?? 0;
     const rangeEnd = range?.[1] ?? len - 1;

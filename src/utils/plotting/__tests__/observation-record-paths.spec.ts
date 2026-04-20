@@ -232,7 +232,8 @@ describe('ObservationRecord — worker paths', () => {
       EnumEditOperations.FILL_GAPS,
       [30, TimeUnit.MINUTE],
       [1, TimeUnit.HOUR],
-      true
+      true,
+      -9999
     )
     await flushMicrotasks()
     const last = local.history[local.history.length - 1]

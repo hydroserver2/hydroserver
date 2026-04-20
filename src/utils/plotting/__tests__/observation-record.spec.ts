@@ -360,6 +360,7 @@ describe('ObservationRecord', () => {
         [30, TimeUnit.MINUTE],
         [1, TimeUnit.HOUR],
         true,
+        -9999,
       );
 
       expect(local.dataX.length).toBeGreaterThan(originalLen);
@@ -382,6 +383,7 @@ describe('ObservationRecord', () => {
         [1, TimeUnit.HOUR],
         [15, TimeUnit.MINUTE],
         false,
+        -9999,
       );
       expect(local.dataX.length).toBe(before);
     });
