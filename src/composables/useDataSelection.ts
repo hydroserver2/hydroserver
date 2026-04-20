@@ -89,37 +89,33 @@ export function useDataSelection() {
     }
   }
 
+  // `startDate` / `endDate` bracket the current selection, or the full
+  // series when nothing is selected. The `|| fallback` arm that used to
+  // sit on `new Date(...)` was dead code — `new Date()` is truthy even
+  // when given `undefined` (it just produces an Invalid Date) — so the
+  // fallback was unreachable. The computeds now always return a Date,
+  // and the downstream string helpers stop guarding against a value
+  // that can't appear.
   const startDate = computed(() => {
-    let datetime = selectedSeries.value?.data.beginTime
     if (selectedData.value?.length) {
       const startIndex = selectedData.value[0] as number
-      datetime =
-        new Date(plotlyRef.value?.data[0].x[startIndex]) ||
-        selectedSeries.value?.data.beginTime
+      return new Date(plotlyRef.value?.data[0].x[startIndex])
     }
-    return datetime ?? new Date()
+    return selectedSeries.value?.data.beginTime ?? new Date()
   })
 
   const endDate = computed(() => {
-    let datetime = selectedSeries.value?.data.endTime
     if (selectedData.value?.length) {
       const endIndex = selectedData.value[
         selectedData.value.length - 1
       ] as number
-      datetime =
-        new Date(plotlyRef.value?.data[0].x[endIndex]) ||
-        selectedSeries.value?.data.endTime
+      return new Date(plotlyRef.value?.data[0].x[endIndex])
     }
-    return datetime ?? new Date()
+    return selectedSeries.value?.data.endTime ?? new Date()
   })
 
-  const startDateString = computed(() =>
-    startDate.value ? formatDate(startDate.value) : ''
-  )
-
-  const endDateString = computed(() =>
-    endDate.value ? formatDate(endDate.value) : ''
-  )
+  const startDateString = computed(() => formatDate(startDate.value))
+  const endDateString = computed(() => formatDate(endDate.value))
 
   /** Select all data points within the given date range */
   const selectDateRange = async (from: Date, to: Date) => {
