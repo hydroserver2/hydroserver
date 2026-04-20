@@ -13,6 +13,7 @@
     "test": "vitest",
     "test:e2e": "playwright test --headed",
     "test:e2e:ci": "playwright test",
+    "test:e2e:live": "cross-env E2E_LIVE=1 playwright test qc-golden-path --headed",
     "coverage": "vitest run --coverage --environment jsdom",
     "link-qc-utils": "npm link @uwrl/qc-utils"
   },
@@ -50,6 +51,7 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.24",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "rxjs": "^7.8.2",
