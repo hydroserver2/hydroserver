@@ -1,70 +1,68 @@
 <template>
   <v-card>
-    <v-card-title>Change Values</v-card-title>
-    <v-card-subtitle class="mb-4">
-      <div>
-        {{ selectedData?.length }} Data Point{{
+    <v-card-title>Change values</v-card-title>
+    <v-card-subtitle>
+      <span class="selected-count-badge">
+        <v-icon icon="mdi-vector-selection" size="14" />
+        {{ selectedData?.length }} point{{
           selectedData?.length === 1 ? '' : 's'
         }}
         selected
-      </div>
+      </span>
     </v-card-subtitle>
 
-    <v-divider></v-divider>
-
     <v-card-text>
-      <div class="d-flex flex-column gap-2">
-        <div>
-          <v-label class="mb-2 d-block"
-            >Operation: <b>{{ operators[selectedOperator] }}</b></v-label
-          >
-          <v-btn-toggle
-            v-model="selectedOperator"
-            variant="outlined"
-            color="primary"
-            mandatory
-            divided
-          >
-            <v-btn title="Add">
-              <v-icon color="green">mdi-plus</v-icon>
-            </v-btn>
+      <div class="text-caption text-medium-emphasis mb-2">Operator</div>
+      <v-btn-toggle
+        v-model="selectedOperator"
+        color="primary"
+        variant="outlined"
+        divided
+        mandatory
+        density="comfortable"
+        class="mb-3 d-flex"
+      >
+        <v-btn title="Add" class="flex-grow-1" style="min-width: 0">
+          <v-icon color="green">mdi-plus</v-icon>
+        </v-btn>
+        <v-btn title="Subtract" class="flex-grow-1" style="min-width: 0">
+          <v-icon color="red">mdi-minus</v-icon>
+        </v-btn>
+        <v-btn title="Multiply" class="flex-grow-1" style="min-width: 0">
+          <v-icon color="blue">mdi-multiplication</v-icon>
+        </v-btn>
+        <v-btn title="Divide" class="flex-grow-1" style="min-width: 0">
+          <v-icon color="orange">mdi-division</v-icon>
+        </v-btn>
+        <v-btn title="Assign" class="flex-grow-1" style="min-width: 0">
+          <v-icon>mdi-equal</v-icon>
+        </v-btn>
+      </v-btn-toggle>
 
-            <v-btn title="Subtract">
-              <v-icon color="red">mdi-minus</v-icon>
-            </v-btn>
-
-            <v-btn title="Multiply">
-              <v-icon color="blue">mdi-multiplication</v-icon>
-            </v-btn>
-
-            <v-btn title="Divide">
-              <v-icon color="orange">mdi-division</v-icon>
-            </v-btn>
-
-            <v-btn title="Assign">
-              <v-icon>mdi-equal</v-icon>
-            </v-btn>
-          </v-btn-toggle>
-        </div>
-
-        <v-text-field
-          label="Value"
-          v-model="operationValue"
-          step="0.1"
-          type="number"
-          block
-          hide-details
-        >
-        </v-text-field>
+      <div class="text-caption text-medium-emphasis mb-2">
+        New value = old <b>{{ operators[selectedOperator] }}</b> input
       </div>
+      <v-text-field
+        label="Value"
+        v-model="operationValue"
+        step="0.1"
+        type="number"
+        density="comfortable"
+        variant="outlined"
+        hide-details
+      />
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn :disabled="isUpdating" @click="onChangeValues"
-        >Change Values</v-btn
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating || !selectedData?.length"
+        @click="onChangeValues"
       >
+        Apply
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
@@ -95,9 +93,8 @@ const onChangeValues = async () => {
 
   isUpdating.value = true
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.CHANGE_VALUES,
-      selectedData.value,
       operator,
       +operationValue.value
     )

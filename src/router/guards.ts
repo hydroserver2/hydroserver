@@ -1,4 +1,7 @@
-import { api } from '@uwrl/qc-utils'
+import { useHydroServer } from '@/store/hydroserver'
+import { useWorkspaceStore } from '@/store/workspaces'
+import hs from '@hydroserver/client'
+import { storeToRefs } from 'pinia'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 
 export type RouteGuard = (
@@ -9,57 +12,76 @@ export type RouteGuard = (
 
 /** Guards are executed in the order they appear in this array */
 export const guards: RouteGuard[] = [
-  // Check if the refresh token is expired each page change
-  // (_to, _from, _next) => {
-  //   const { isRefreshTokenExpired, logout } = useAuthStore()
-
-  //   if (isRefreshTokenExpired()) {
-  //     Snackbar.info('Session expired. Please login')
-  //     logout()
+  // TODO(oauth): re-enable the auth guard once OAuth sign-in is wired
+  // end-to-end (see the TODO in `components/account/OAuth.vue`).
+  // Blocking protected routes now would strand the user on the Login
+  // page with only email/password available — fine on its own, but
+  // the UX goal is to ship Google OAuth first. Until then every route
+  // loads regardless of session state.
+  // (to) => {
+  //   if (!to.meta?.hasAuthGuard) return null
+  //   if (hs.session?.isAuthenticated) return null
+  //   return {
+  //     name: 'Login',
+  //     query: { next: to.fullPath },
   //   }
-  //   return null
   // },
 
-  // hasAuthGuard
-  // (to, _from, _next) => {
-  //   if (to.meta?.hasAuthGuard) {
-  //     const { isLoggedIn } = storeToRefs(useAuthStore())
-  //     const { user } = storeToRefs(useUserStore())
+  // hasLoggedOutGuard — the Login page is only useful when the user
+  // isn't logged in; once they are, bounce them to the home route
+  // (or the route named in `meta.redirectAfterLogin`).
+  (to) => {
+    if (!to.meta?.hasLoggedOutGuard) return null
+    if (!hs.session?.isAuthenticated) return null
+    const next =
+      (typeof to.query.next === 'string' && to.query.next) ||
+      (typeof to.meta.redirectAfterLogin === 'string'
+        ? to.meta.redirectAfterLogin
+        : 'Home')
+    // `next` may be a path (from the auth guard) or a route name.
+    return next.startsWith('/') ? { path: next } : { name: next }
+  },
 
-  //     if (!isLoggedIn.value) return { name: 'Login', query: { next: to.name } }
-  //     if (user.value?.isVerified) return null
-  //     if (user.value?.email) return { name: 'VerifyEmail' }
-  //     return { name: 'CompleteProfile' }
-  //   }
-  //   return null
-  // },
-
-  // // hasLoggedOutGuard
-  // (to, _from, _next) => {
-  //   if (to.meta?.hasLoggedOutGuard) {
-  //     const { isLoggedIn } = useAuthStore()
-  //     if (isLoggedIn) return { name: 'PageNotFound' }
-  //   }
-  //   return null
-  // },
-
-  // // hasUnverifiedAuthGuard
-  // (to, _from, _next) => {
-  //   if (to.meta?.hasUnverifiedAuthGuard) {
-  //     const { isLoggedIn } = useAuthStore()
-  //     const { user } = storeToRefs(useUserStore())
-  //     if (isLoggedIn && user.value?.isVerified) return { name: 'PageNotFound' }
-  //   }
-  //   return null
-  // },
-
-  // hasThingOwnershipGuard
-  async (to, _from, _next) => {
-    if (to.meta?.hasThingOwnershipGuard) {
-      const thing = await api.fetchThing(to.params.id as string)
-      if (!thing?.ownsThing) return { name: 'PageNotFound' }
-    }
+  // Shared-link workspace switch — if an incoming URL carries
+  // `?workspace=<id>`, switch the active workspace so recipients of
+  // a shared link land in the sender's workspace without stopping at
+  // the picker. Covers in-app navigations; the fresh-page-load case
+  // is handled synchronously in `main.ts` before `app.mount`.
+  (to) => {
+    const urlId = typeof to.query.workspace === 'string' ? to.query.workspace : ''
+    if (!urlId) return null
+    const ws = useWorkspaceStore()
+    if (ws.selectedWorkspaceId === urlId) return null
+    ws.applyWorkspaceById(urlId)
     return null
+  },
+
+  // Workspaces picker shortcut — if the user already has a selection
+  // (typical reload / deep-link case), skip the picker synchronously
+  // so it never flashes on the way to the intended page. The nav
+  // rail's "Switch workspace" action sets `?switch=1` to opt into
+  // showing the picker even with a selection.
+  (to) => {
+    if (to.name !== 'Workspaces') return null
+    if (to.query.switch === '1') return null
+    const { hasSelection } = useWorkspaceStore()
+    if (!hasSelection) return null
+    const next = typeof to.query.next === 'string' ? to.query.next : 'Home'
+    return next.startsWith('/') ? { path: next } : { name: next }
+  },
+
+  // hasWorkspaceGuard — every data-bearing route needs an active
+  // HydroServer workspace context. If none is selected, bounce to the
+  // picker and carry a `next` hint so we can come back here once the
+  // user commits to a workspace.
+  (to, _from, _next) => {
+    if (!to.meta?.hasWorkspaceGuard) return null
+    const { hasSelection } = useWorkspaceStore()
+    if (hasSelection) return null
+    return {
+      name: 'Workspaces',
+      query: { next: typeof to.name === 'string' ? to.name : 'Home' },
+    }
   },
 
   // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head

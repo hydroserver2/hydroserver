@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_GOOGLE_OAUTH_ENABLED: string
   readonly VITE_APP_ORCID_OAUTH_ENABLED: string
   readonly VITE_APP_HYDROSHARE_OAUTH_ENABLED: string
+  readonly VITE_APP_E2E_HOOKS?: string
 }
 
 interface ImportMeta {

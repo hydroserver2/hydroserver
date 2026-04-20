@@ -1,67 +1,77 @@
 <template>
   <v-form ref="form">
     <v-card>
-      <v-card-title class="d-flex justify-space-between align-center"
-        ><span>Add Data Points</span>
-        <v-btn @click="addRow" title="Add Row" variant="outlined" rounded
-          ><v-icon>mdi-plus</v-icon></v-btn
-        ></v-card-title
-      >
-
-      <v-divider></v-divider>
+      <v-card-title class="d-flex align-center">
+        <span class="flex-grow-1">Add points</span>
+        <v-btn
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="addRow"
+        >
+          Row
+        </v-btn>
+      </v-card-title>
 
       <v-card-text>
-        <div class="mt-4">
-          <v-row v-for="(point, index) of dataPoints" :key="index">
-            <v-col cols="1"
-              ><v-badge
-                class="mt-4"
-                color="info"
-                :content="index + 1"
-                inline
-              ></v-badge
-            ></v-col>
-            <v-col
-              ><v-text-field
-                v-maska="options"
-                label="Datetime"
-                placeholder="YYYY-MM-DD HH:MM:SS"
-                hint="i.e: 2024-12-30 18:00:00"
-                v-model="point[0]"
-                :rules="[...required, ...dateTimeFormat]"
-                clearable
-              />
-            </v-col>
-            <v-col
-              ><v-text-field
-                type="number"
-                label="Value"
-                :rules="requiredNumber"
-                v-model.number="point[1]"
-            /></v-col>
-            <v-col cols="1"
-              ><v-btn
-                class="mt-2"
+        <div class="add-points__list d-flex flex-column gap-3">
+          <div
+            v-for="(point, index) of dataPoints"
+            :key="index"
+            class="add-points__row"
+          >
+            <div class="d-flex align-center mb-1">
+              <v-chip size="x-small" color="primary" variant="tonal" label>
+                #{{ index + 1 }}
+              </v-chip>
+              <v-spacer />
+              <v-btn
                 icon="mdi-close"
+                size="x-small"
                 variant="text"
                 color="error"
-                rounded
-                title="Remove"
+                density="comfortable"
+                title="Remove row"
                 @click="dataPoints.splice(index, 1)"
               />
-            </v-col>
-          </v-row>
+            </div>
+            <v-text-field
+              v-maska="options"
+              label="Datetime"
+              placeholder="YYYY-MM-DD HH:MM:SS"
+              hint="e.g. 2024-12-30 18:00:00"
+              v-model="point[0]"
+              :rules="[...required, ...dateTimeFormat]"
+              density="comfortable"
+              variant="outlined"
+              clearable
+            />
+            <v-text-field
+              type="number"
+              label="Value"
+              :rules="requiredNumber"
+              v-model.number="point[1]"
+              density="comfortable"
+              variant="outlined"
+              hide-details
+            />
+          </div>
         </div>
       </v-card-text>
 
-      <v-divider></v-divider>
-
       <v-card-actions>
         <v-spacer />
-        <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn @click="onAddDataPoints" :disabled="!form?.isValid"
-          >Add Data Points</v-btn
+        <v-btn
+          color="primary"
+          variant="flat"
+          :disabled="!form?.isValid || isUpdating"
+          @click="onAddDataPoints"
         >
+          Add {{ dataPoints.length }} point{{
+            dataPoints.length === 1 ? '' : 's'
+          }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-form>
@@ -132,7 +142,7 @@ const onAddDataPoints = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.ADD_POINTS,
       transformedDataPoints
     )
@@ -149,9 +159,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.v-card-text {
-  height: 500px;
-  resize: vertical;
-  overflow-y: auto;
+.add-points__row {
+  padding: 8px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 4px;
+  background: rgba(var(--v-theme-primary), 0.02);
 }
 </style>

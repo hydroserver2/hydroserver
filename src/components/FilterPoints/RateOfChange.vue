@@ -1,36 +1,46 @@
 <template>
-  <v-card rounded>
+  <v-card>
     <v-card-title class="text-body-1">Filter by rate of change</v-card-title>
-    <v-divider></v-divider>
 
     <v-card-text>
-      <v-label class="mb-4">Select points where the rate of change is</v-label>
+      <div class="text-caption text-medium-emphasis mb-2">
+        Select points where the rate of change is
+      </div>
       <v-select
-        label="Comparison operator"
+        label="Comparator"
         :items="logicalComparators"
         v-model="selectedRateOfChangeComparator"
         return-object
-      ></v-select>
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mb-3"
+      />
       <v-text-field
         label="Rate of change"
         type="number"
-        clearable
         step="1"
+        clearable
         append-inner-icon="mdi-percent-outline"
         v-model="rateOfChangeValue"
+        density="comfortable"
+        variant="outlined"
+        hide-details
       />
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
       <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating || rateOfChangeValue == null"
         @click="
           onFilter(selectedRateOfChangeComparator?.title, rateOfChangeValue)
         "
-        :disabled="isUpdating || rateOfChangeValue == null"
-        >Filter</v-btn
       >
+        Apply filter
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

@@ -1,8 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { Datastream } from '@/types'
-import { fetchObservationsSync } from '@/utils/observationsUtils'
+import { fetchObservationsSync } from '@/utils/observations'
 import { ObservationRecord } from "@uwrl/qc-utils"
+import { Datastream } from '@hydroserver/client'
+
+export type ObservationData = {
+  datetimes: Float64Array<ArrayBuffer>
+  dataValues: Float32Array<ArrayBuffer>
+}
 
 export const useObservationStore = defineStore(
   'observations',
@@ -11,10 +16,7 @@ export const useObservationStore = defineStore(
     const observationsRaw = ref<
       Record<
         string,
-        {
-          datetimes: Float64Array<ArrayBuffer>
-          dataValues: Float32Array<ArrayBuffer>
-        }
+        ObservationData
       >
     >({})
 
@@ -38,10 +40,6 @@ export const useObservationStore = defineStore(
     ): Promise<ObservationRecord> => {
       const id = datastream.id
 
-      // If nothing is stored yet, create a new record
-      if (!observations.value[id]) {
-        observations.value[id] = new ObservationRecord(observationsRaw.value[datastream.id])
-      }
 
       let beginDataPromise: Promise<{
         datetimes: number[]
@@ -54,11 +52,14 @@ export const useObservationStore = defineStore(
 
       if (observationsRaw.value[id]?.dataValues.length) {
         const rawBeginDatetime = new Date(
-          observationsRaw.value[id].datetimes[0]
+          observationsRaw.value[id].datetimes[0] as number
         )
 
-        // Check if new data before the stored data is needed
-        if (beginTime <= rawBeginDatetime) {
+        // Strict `<` — skip the request entirely when the requested
+        // begin is at or inside the cached window. `<=` used to fire a
+        // 1-second range request on exact matches (e.g. re-clicking
+        // the same preset), which is pure waste.
+        if (beginTime < rawBeginDatetime) {
           // Results in range will be inclusive, so we need to offset by 1
           rawBeginDatetime.setSeconds(rawBeginDatetime.getSeconds() - 1)
           beginDataPromise = fetchObservationsSync(
@@ -71,11 +72,12 @@ export const useObservationStore = defineStore(
         const rawEndDatetime = new Date(
           observationsRaw.value[id].datetimes[
           observationsRaw.value[id].datetimes.length - 1
-          ]
+          ] as number
         )
 
-        // Check if new data after the stored data is needed
-        if (endTime >= rawEndDatetime) {
+        // Same note as above: only fetch the trailing segment when the
+        // requested end is *past* what we've already cached.
+        if (endTime > rawEndDatetime) {
           rawEndDatetime.setSeconds(rawEndDatetime.getSeconds() + 1)
           endDataPromise = fetchObservationsSync(
             datastream,
@@ -133,7 +135,12 @@ export const useObservationStore = defineStore(
         observationsRaw.value[id].dataValues = newArrayY
       }
 
-      const obsRecord = observations.value[id]
+      // If nothing is stored yet, create a new record
+      if (!observations.value[id] && observationsRaw.value[datastream.id]) {
+        observations.value[id] = new ObservationRecord(observationsRaw.value[datastream.id] as ObservationData)
+      }
+
+      const obsRecord = observations.value[id] as ObservationRecord
       if (beginData.dataValues.length || endData.dataValues.length) {
         obsRecord.loadData(observationsRaw.value[id])
         obsRecord.rawData = observationsRaw.value[id]

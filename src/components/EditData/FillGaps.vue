@@ -1,85 +1,99 @@
 <template>
   <v-card>
-    <v-card-title>Fill Gaps</v-card-title>
-
-    <v-divider></v-divider>
+    <v-card-title>Fill gaps</v-card-title>
 
     <v-card-text>
-      <v-timeline
-        v-if="selectedData?.length"
-        direction="horizontal"
-        align="center"
-        side="start"
-        hide-opposite
-      >
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">From:</div>
-            <strong>{{ startDateString }}</strong>
-          </div>
-        </v-timeline-item>
+      <div class="text-caption text-medium-emphasis mb-2">Date range</div>
+      <DatePickerField
+        placeholder="From"
+        :modelValue="fromDate"
+        @update:modelValue="onFromDateChange"
+        class="mb-2"
+      />
+      <DatePickerField
+        placeholder="To"
+        :modelValue="toDate"
+        @update:modelValue="onToDateChange"
+      />
 
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">To:</div>
-            <strong>{{ endDateString }}</strong>
-          </div>
-        </v-timeline-item>
-      </v-timeline>
-
-      <p class="text-body-1 mb-4"><b>Find</b> gaps of at least:</p>
-      <div class="d-flex gap-1">
+      <div class="text-caption text-medium-emphasis mt-4 mb-2">
+        Find gaps of at least
+      </div>
+      <div class="d-flex gap-2">
         <v-text-field
-          width="30"
           label="Amount"
           type="number"
           v-model="gapAmount"
-        >
-        </v-text-field>
-
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
         <v-select
-          label="Gap Unit"
+          label="Unit"
           :items="gapUnits"
           v-model="selectedGapUnit"
-        ></v-select>
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
       </div>
-      <p class="text-body-1 mb-4"><b>Fill</b> these gaps with values every:</p>
-      <div class="mt-4 d-flex gap-1">
+
+      <div class="text-caption text-medium-emphasis mt-4 mb-2">
+        Fill with a value every
+      </div>
+      <div class="d-flex gap-2">
         <v-text-field
-          width="30"
           label="Amount"
           type="number"
           v-model="fillAmount"
-        >
-        </v-text-field>
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
         <v-select
-          label="Fill Unit"
+          label="Unit"
           :items="fillUnits"
           v-model="selectedFillUnit"
-        ></v-select>
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          style="flex: 1 1 0"
+        />
       </div>
 
       <v-checkbox
-        label="Interpolate Fill Values"
         v-model="interpolateValues"
+        label="Interpolate fill values"
         :hint="
           interpolateValues
-            ? ''
-            : 'NoData values (e.g., -9999) will be inserted to fill the gaps.'
+            ? 'Values between endpoints will be linearly interpolated.'
+            : 'NoData values (e.g. -9999) will be inserted.'
         "
         persistent-hint
-      ></v-checkbox>
+        density="compact"
+        class="mt-2"
+      />
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn :disabled="isUpdating" @click="onFillGaps">Fill Gaps</v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating"
+        @click="onFillGaps"
+      >
+        Fill gaps
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useUIStore } from '@/store/userInterface'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -93,19 +107,34 @@ const {
 } = storeToRefs(useUIStore())
 import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
-const { clearSelected, startDateString, endDateString } = useDataSelection()
+const { clearSelected, startDate, endDate, selectDateRange } =
+  useDataSelection()
+
+const fromDate = ref<Date>(startDate.value)
+const toDate = ref<Date>(endDate.value)
+
+const onFromDateChange = async (date: Date) => {
+  fromDate.value = date
+  await selectDateRange(date, toDate.value)
+}
+
+const onToDateChange = async (date: Date) => {
+  toDate.value = date
+  await selectDateRange(fromDate.value, date)
+}
 
 const emit = defineEmits(['close'])
 const onFillGaps = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatch(
+    await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.FILL_GAPS,
       // @ts-ignore
       [+gapAmount.value, TimeUnit[selectedGapUnit.value]],

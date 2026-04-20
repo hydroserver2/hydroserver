@@ -11,7 +11,6 @@ export enum DriftCorrectionMethods {
 }
 
 export enum DrawerType {
-  File = 'File',
   Edit = 'Edit',
   Select = 'Select',
   None = '',
@@ -26,6 +25,10 @@ export const useUIStore = defineStore('userInterface', () => {
 
   // View
   const currentView = ref<View>(DrawerType.Select)
+
+  // Operation panel — which operation's details are shown in the right
+  // sidebar below the edit history. `null` means no panel is open.
+  const selectedOperation = ref<string | null>(null)
 
   // Selection view content
   const cardHeight = ref(40)
@@ -50,13 +53,13 @@ export const useUIStore = defineStore('userInterface', () => {
   // GAP ANALYSYS
   const interpolateValues = ref(false)
   const selectedInterpolationMethod = ref(InterpolationMethods.LINEAR)
-  const gapUnits = [...Object.keys(TimeUnit)]
-  const selectedGapUnit = ref(gapUnits[1])
+  const gapUnits = ref([...Object.keys(TimeUnit)])
+  const selectedGapUnit = ref(gapUnits.value[1])
   const gapAmount = ref(15)
 
   // FILL
-  const fillUnits = [...Object.keys(TimeUnit)]
-  const selectedFillUnit = ref(fillUnits[1])
+  const fillUnits = ref([...Object.keys(TimeUnit)])
+  const selectedFillUnit = ref(fillUnits.value[1])
   const fillAmount = ref(15)
 
   // DRIFT CORRECTION
@@ -64,8 +67,8 @@ export const useUIStore = defineStore('userInterface', () => {
   const driftGapWidth = ref(1)
 
   // SHIFT VALUES
-  const shiftUnits = [...Object.keys(TimeUnit)]
-  const selectedShiftUnit = ref(shiftUnits[1])
+  const shiftUnits = ref([...Object.keys(TimeUnit)])
+  const selectedShiftUnit = ref(shiftUnits.value[1])
   const shiftAmount = ref(15)
 
   // RATE OF CHANGE
@@ -87,6 +90,7 @@ export const useUIStore = defineStore('userInterface', () => {
     selectedDrawer,
     isDrawerOpen,
     currentView,
+    selectedOperation,
     cardHeight,
     tableHeight,
     onRailItemClicked,

@@ -54,6 +54,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       globals: true,
+      exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
       environmentMatchGlobs: [['src/components/**', 'jsdom']],
       server: {
         deps: {
@@ -71,9 +72,7 @@ export default defineConfig(({ mode }) => {
           '**/src/types/**',
           '**/src/config/**',
           '**/src/utils/mdi-icons.ts',
-          '**/src/utils/materialColors.ts',
-          '**/src/utils/CSVDownloadUtils.ts',
-          '**/src/utils/observationsUtils.ts',
+          '**/src/utils/observations.ts',
           '**/src/utils/test/**',
           '**/src/utils/rules.ts',
           '**/src/App.vue',

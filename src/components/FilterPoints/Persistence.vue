@@ -2,47 +2,45 @@
   <v-card>
     <v-card-title class="text-body-1">Find persistent values</v-card-title>
 
-    <v-divider></v-divider>
-
     <v-card-text>
-      <v-timeline
+      <div
         v-if="selectedData?.length"
-        direction="horizontal"
-        align="center"
-        side="start"
-        hide-opposite
+        class="mb-3 pa-2 rounded bg-info-lighten-5"
+        style="
+          background-color: rgba(var(--v-theme-primary), 0.04);
+          border-left: 2px solid rgb(var(--v-theme-primary));
+        "
       >
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">From:</div>
-            <strong>{{ startDateString }}</strong>
-          </div>
-        </v-timeline-item>
+        <div class="text-caption text-medium-emphasis">Within selection</div>
+        <div class="text-body-2 font-weight-medium">
+          {{ startDateString }} → {{ endDateString }}
+        </div>
+      </div>
 
-        <v-timeline-item dot-color="green" size="small">
-          <div class="text-center">
-            <div class="text-caption">To:</div>
-            <strong>{{ endDateString }}</strong>
-          </div>
-        </v-timeline-item>
-      </v-timeline>
-
-      Select points where the values are the same at least:
-
+      <div class="text-caption text-medium-emphasis mb-2">
+        Flag runs of identical values that repeat at least
+      </div>
       <v-text-field
-        class="mt-2"
         v-model.number="times"
         type="number"
-        max-width="15rem"
         suffix="times in a row"
         min="2"
+        density="comfortable"
+        variant="outlined"
+        hide-details
       />
     </v-card-text>
 
     <v-card-actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn @click="onPersistence">Filter</v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        :disabled="isUpdating"
+        @click="onPersistence"
+      >
+        Apply filter
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
