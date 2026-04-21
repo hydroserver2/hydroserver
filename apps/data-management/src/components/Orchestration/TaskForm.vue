@@ -22,17 +22,19 @@
           density="comfortable"
         />
 
-        <p class="font-weight-bold mb-2 required-label">Task type</p>
-        <v-select
-          v-model="(task as any).type"
-          :items="taskTypeOptions"
-          item-title="title"
-          item-value="value"
-          label="Task type"
-          density="comfortable"
-        />
+        <template v-if="!isDataConnectionScopedCreate">
+          <p class="font-weight-bold mb-2 required-label">Task type</p>
+          <v-select
+            v-model="(task as any).type"
+            :items="taskTypeOptions"
+            item-title="title"
+            item-value="value"
+            label="Task type"
+            density="comfortable"
+          />
+        </template>
 
-        <template v-if="!isAggregationTask">
+        <template v-if="!isAggregationTask && !isDataConnectionScopedCreate">
           <p class="font-weight-bold mb-2 required-label">
             Select data connection
           </p>
@@ -47,6 +49,9 @@
           />
         </template>
 
+        <!-- Aggregation timezone controls are intentionally hidden here.
+             Keep this block for reuse in a dedicated aggregation form. -->
+        <!--
         <div v-else class="mb-4">
           <p class="font-weight-bold mb-2 required-label">Aggregation timezone</p>
           <v-btn-toggle
@@ -83,6 +88,7 @@
             density="comfortable"
           />
         </div>
+        -->
 
         <div v-if="perTaskPlaceholders.length" class="mb-4">
           <p class="font-weight-bold mb-2">Template variables</p>
@@ -223,6 +229,9 @@ const { items: workspaceDataConnections } = useTableLogic(
 const emit = defineEmits(['created', 'updated', 'close'])
 
 const isEdit = computed(() => !!props.oldTask || undefined)
+const isDataConnectionScopedCreate = computed(
+  () => !isEdit.value && !!props.initialDataConnection
+)
 const valid = ref<boolean | null>(null)
 const myForm = ref<VForm>()
 const swimlanesRef = ref<any>(null)
@@ -376,6 +385,7 @@ function hydrateTask(source?: TaskExpanded) {
     : new Task()
 
   if (!source && props.initialDataConnection) {
+    ;(base as any).type = 'ETL'
     base.dataConnectionId = String(props.initialDataConnection.id)
     ;(base as any).dataConnection = JSON.parse(
       JSON.stringify(props.initialDataConnection)
@@ -492,6 +502,10 @@ async function onSubmit() {
   submitLoading.value = true
   try {
     ;(task.value as any).workspaceId = taskWorkspaceId.value || ''
+    if (isDataConnectionScopedCreate.value) {
+      ;(task.value as any).type = 'ETL'
+      task.value.dataConnectionId = String(props.initialDataConnection?.id ?? '')
+    }
     if (!task.value.schedule) task.value.schedule = defaultSchedule()
     if (isAggregationTask.value) {
       task.value.dataConnectionId = null as any
