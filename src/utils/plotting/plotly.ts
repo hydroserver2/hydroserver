@@ -538,16 +538,13 @@ export const createPlotlyOption = (
     // (both in Select preview and Edit) already names the series, and
     // Plotly's built-in title steals a whole row of chart height.
     title: undefined,
-    // Tight margins reclaim the generous default whitespace around the
-    // chart. Per-axis `automargin: true` lets Plotly grow l/r as needed
-    // to fit stacked y-axes. The axis-title chips (see `.plot-axis-chip`
-    // in Plot.vue) are HTML overlays, not Plotly-reserved content — so
-    // they don't need their own slice of `margin.t`; letting them
-    // float over the top of the plot area is cheaper than giving them
-    // their own headroom and ending up with a band of whitespace.
+    // `margin.b` pre-allocates headroom for rotated date-time tick
+    // labels so the plot doesn't jump vertically every time zoom
+    // flips label orientation. `automargin: true` on xaxis still
+    // grows past this floor if a label really needs more.
     margin: isPreview
-      ? { l: 24, r: 24, t: 28, b: 32, pad: 0 }
-      : { l: 24, r: 24, t: 32, b: 32, pad: 0 },
+      ? { l: 24, r: 24, t: 28, b: 64, pad: 0 }
+      : { l: 24, r: 24, t: 32, b: 64, pad: 0 },
     showlegend: false,
   }
 
