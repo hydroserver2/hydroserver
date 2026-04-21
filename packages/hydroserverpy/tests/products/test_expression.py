@@ -1,9 +1,10 @@
-import polars as pl
+import numpy as np
+import pandas as pd
 import pytest
 from datetime import datetime, timezone
 
 from hydroserverpy.products.expression import validate_expression, apply_expression
-from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, SCHEMA
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL
 
 
 # ---------------------------------------------------------------------------
@@ -15,10 +16,9 @@ def _utc(year, month, day, hour=0, minute=0):
 
 
 def _make_df(timestamps, values):
-    us = [int(t.timestamp() * 1_000_000) for t in timestamps]
-    return pl.DataFrame({
-        TIMESTAMP_COL: pl.Series(us, dtype=pl.Int64).cast(pl.Datetime("us", "UTC")),
-        RESULT_COL: pl.Series(list(values), dtype=pl.Float64),
+    return pd.DataFrame({
+        TIMESTAMP_COL: pd.DatetimeIndex(timestamps).as_unit("us"),
+        RESULT_COL: np.array(list(values), dtype=np.float64),
     })
 
 
@@ -131,74 +131,74 @@ class TestApplyExpression:
         ts = _hourly(3)
         df = _make_df(ts, [1.0, 2.0, 3.0])
         result = apply_expression({"x": df}, formula="x")
-        assert result.height == 3
+        assert len(result) == 3
 
     def test_multiply_by_scalar(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
         result = apply_expression({"x": df}, formula="x * 2")
-        assert result[RESULT_COL].to_list() == pytest.approx([2.0, 4.0, 6.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([2.0, 4.0, 6.0])
 
     def test_add_constant(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
         result = apply_expression({"x": df}, formula="x + 10")
-        assert result[RESULT_COL].to_list() == pytest.approx([11.0, 12.0, 13.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([11.0, 12.0, 13.0])
 
     def test_subtract_constant(self):
         df = _make_df(_hourly(3), [5.0, 10.0, 15.0])
         result = apply_expression({"x": df}, formula="x - 5")
-        assert result[RESULT_COL].to_list() == pytest.approx([0.0, 5.0, 10.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([0.0, 5.0, 10.0])
 
     def test_divide_by_constant(self):
         df = _make_df(_hourly(3), [2.0, 4.0, 6.0])
         result = apply_expression({"x": df}, formula="x / 2")
-        assert result[RESULT_COL].to_list() == pytest.approx([1.0, 2.0, 3.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([1.0, 2.0, 3.0])
 
     def test_sqrt_function(self):
         df = _make_df(_hourly(3), [1.0, 4.0, 9.0])
         result = apply_expression({"x": df}, formula="sqrt(x)")
-        assert result[RESULT_COL].to_list() == pytest.approx([1.0, 2.0, 3.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([1.0, 2.0, 3.0])
 
     def test_abs_function(self):
         df = _make_df(_hourly(3), [-1.0, 0.0, 1.0])
         result = apply_expression({"x": df}, formula="abs(x)")
-        assert result[RESULT_COL].to_list() == pytest.approx([1.0, 0.0, 1.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([1.0, 0.0, 1.0])
 
     def test_multiple_inputs_addition(self):
         ts = _hourly(3)
         df_x = _make_df(ts, [1.0, 2.0, 3.0])
         df_y = _make_df(ts, [4.0, 5.0, 6.0])
         result = apply_expression({"x": df_x, "y": df_y}, formula="x + y", interval="1h")
-        assert result[RESULT_COL].to_list() == pytest.approx([5.0, 7.0, 9.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([5.0, 7.0, 9.0])
 
     def test_multiple_inputs_formula_with_constants(self):
         ts = _hourly(3)
         df_x = _make_df(ts, [2.0, 4.0, 6.0])
         df_y = _make_df(ts, [1.0, 2.0, 3.0])
         result = apply_expression({"x": df_x, "y": df_y}, formula="x / y", interval="1h")
-        assert result[RESULT_COL].to_list() == pytest.approx([2.0, 2.0, 2.0])
+        assert result[RESULT_COL].tolist() == pytest.approx([2.0, 2.0, 2.0])
 
     def test_output_result_dtype_is_float64(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
         result = apply_expression({"x": df}, formula="x")
-        assert result.schema[RESULT_COL] == pl.Float64
+        assert pd.api.types.is_float_dtype(result[RESULT_COL])
 
     def test_output_timestamp_dtype_matches_canonical_schema(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
         result = apply_expression({"x": df}, formula="x")
-        assert result.schema[TIMESTAMP_COL] == SCHEMA[TIMESTAMP_COL]
+        assert pd.api.types.is_datetime64_any_dtype(result[TIMESTAMP_COL])
 
     def test_on_missing_drop_removes_unmatched_grid_points(self):
         ts = [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 2)]
         df = _make_df(ts, [1.0, 3.0])
         result = apply_expression({"x": df}, formula="x", interval="1h", on_missing="drop")
-        assert result.height == 2
+        assert len(result) == 2
 
     def test_on_missing_interpolate_fills_gaps(self):
         ts = [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 2)]
         df = _make_df(ts, [0.0, 2.0])
         result = apply_expression({"x": df}, formula="x", interval="1h", on_missing="interpolate")
-        assert result.height == 3
-        mid_val = result.sort(TIMESTAMP_COL)[RESULT_COL][1]
+        assert len(result) == 3
+        mid_val = result.sort_values(TIMESTAMP_COL)[RESULT_COL].iloc[1]
         assert mid_val == pytest.approx(1.0)
 
     def test_multi_input_inner_join_drops_unaligned_timestamps(self):
@@ -207,4 +207,4 @@ class TestApplyExpression:
         df_x = _make_df(ts_x, [1.0, 2.0, 3.0])
         df_y = _make_df(ts_y, [10.0, 30.0])
         result = apply_expression({"x": df_x, "y": df_y}, formula="x + y", interval="1h", on_missing="drop")
-        assert result.height == 2
+        assert len(result) == 2

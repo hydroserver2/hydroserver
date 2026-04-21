@@ -1,7 +1,8 @@
 import uuid
 import uuid6
 import logging
-import polars as pl
+import numpy as np
+import pandas as pd
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -20,7 +21,7 @@ from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from core.sta.models.observation import Observation
-from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, SCHEMA
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL
 from processing.orchestration.services import TaskService
 from processing.monitoring.exceptions import MonitoringError
 from processing.monitoring.models import MonitoringTask, MonitoringNotificationRecipient, MonitoringRule
@@ -235,8 +236,8 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         ])
 
     @staticmethod
-    def _fetch_observations(datastream, after=None) -> pl.DataFrame:
-        """Fetch observations for a datastream as a canonical Polars timeseries DataFrame."""
+    def _fetch_observations(datastream, after=None) -> pd.DataFrame:
+        """Fetch observations for a datastream as a canonical pandas timeseries DataFrame."""
 
         qs = Observation.objects.filter(datastream=datastream).order_by("phenomenon_time")
         if after is not None:
@@ -244,16 +245,16 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         data = list(qs.values_list("phenomenon_time", "result"))
         if not data:
-            return pl.DataFrame(schema=SCHEMA)
+            return pd.DataFrame({
+                TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
+                RESULT_COL: pd.Series([], dtype=np.float64),
+            })
 
         timestamps, results = zip(*data)
-        return pl.DataFrame({
-            TIMESTAMP_COL: list(timestamps),
-            RESULT_COL: list(results),
-        }).with_columns([
-            pl.col(TIMESTAMP_COL).cast(SCHEMA[TIMESTAMP_COL]),
-            pl.col(RESULT_COL).cast(pl.Float64),
-        ])
+        return pd.DataFrame({
+            TIMESTAMP_COL: pd.DatetimeIndex(timestamps).as_unit("us"),
+            RESULT_COL: np.array(results, dtype=np.float64),
+        })
 
     @staticmethod
     def _rule_fetch_start(rule: MonitoringRule, datastream) -> datetime | None:
@@ -273,7 +274,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             return datastream.phenomenon_begin_time
 
     @staticmethod
-    def _slice_df_for_rule(df: pl.DataFrame, rule: MonitoringRule) -> pl.DataFrame:
+    def _slice_df_for_rule(df: pd.DataFrame, rule: MonitoringRule) -> pd.DataFrame:
         """Slice the full datastream DataFrame to the range required by this rule."""
 
         if rule.window_interval and rule.window_interval_units:
@@ -284,9 +285,9 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         if rule.last_checked_at is not None:
             if window_td:
                 start = rule.last_checked_at - window_td
-                return df.filter(pl.col(TIMESTAMP_COL) >= start)
+                return df[df[TIMESTAMP_COL] >= start].reset_index(drop=True)
             else:
-                return df.filter(pl.col(TIMESTAMP_COL) > rule.last_checked_at)
+                return df[df[TIMESTAMP_COL] > rule.last_checked_at].reset_index(drop=True)
 
         return df
 
@@ -342,7 +343,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
             logger.debug(
                 "Fetched %d observation(s) for datastream %s.",
-                df.height, datastream_id,
+                len(df), datastream_id,
             )
 
             successful_rule_ids = []

@@ -1,4 +1,5 @@
-import polars as pl
+import numpy as np
+import pandas as pd
 import pytest
 from datetime import datetime, timezone
 
@@ -15,10 +16,9 @@ def _utc(year, month, day, hour=0, minute=0, second=0):
 
 
 def _make_df(timestamps, values):
-    us = [int(t.timestamp() * 1_000_000) for t in timestamps]
-    return pl.DataFrame({
-        TIMESTAMP_COL: pl.Series(us, dtype=pl.Int64).cast(pl.Datetime("us", "UTC")),
-        RESULT_COL: pl.Series(list(values), dtype=pl.Float64),
+    return pd.DataFrame({
+        TIMESTAMP_COL: pd.DatetimeIndex(timestamps).as_unit("us"),
+        RESULT_COL: np.array(list(values), dtype=np.float64),
     })
 
 
@@ -28,9 +28,9 @@ def _hourly(values, start_hour=0):
 
 
 def _empty_df():
-    return pl.DataFrame({
-        TIMESTAMP_COL: pl.Series([], dtype=pl.Datetime("us", "UTC")),
-        RESULT_COL: pl.Series([], dtype=pl.Float64),
+    return pd.DataFrame({
+        TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
+        RESULT_COL: pd.Series([], dtype=np.float64),
     })
 
 

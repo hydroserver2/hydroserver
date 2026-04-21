@@ -1,7 +1,7 @@
 import uuid
 import pytest
-import polars as pl
 import numpy as np
+import pandas as pd
 from collections import Counter
 from datetime import datetime, timezone as dt_timezone
 from ninja.errors import HttpError
@@ -286,12 +286,12 @@ def test_delete_rating_curve_nonexistent(get_principal):
 # --- apply_rating_curve ---
 
 def _make_stage_df(values):
-    """Build a minimal canonical Polars timeseries DataFrame for rating curve tests."""
+    """Build a minimal canonical pandas timeseries DataFrame for rating curve tests."""
     timestamps = [datetime(2025, 1, 1, tzinfo=dt_timezone.utc)] * len(values)
-    return pl.DataFrame({
-        "timestamp": timestamps,
-        "result": list(values),
-    }).with_columns(pl.col("timestamp").cast(pl.Datetime("us", "UTC")))
+    return pd.DataFrame({
+        "timestamp": pd.DatetimeIndex(timestamps).as_unit("us"),
+        "result": np.array(list(values), dtype=np.float64),
+    })
 
 
 def test_apply_rating_curve_linear_within_range():
@@ -304,7 +304,7 @@ def test_apply_rating_curve_linear_within_range():
         method="linear",
         out_of_range="drop",
     )
-    np.testing.assert_allclose(result_df["result"].to_list(), [2.0, 3.0, 4.0])
+    np.testing.assert_allclose(result_df["result"].tolist(), [2.0, 3.0, 4.0])
 
 
 def test_apply_rating_curve_linear_outside_range_dropped():
@@ -317,7 +317,7 @@ def test_apply_rating_curve_linear_outside_range_dropped():
         method="linear",
         out_of_range="drop",
     )
-    assert result_df.is_empty()
+    assert len(result_df) == 0
 
 
 def test_apply_rating_curve_too_few_breakpoints_raises():
@@ -347,7 +347,7 @@ def test_apply_rating_curve_power_law(get_principal):
         method="power_law",
         out_of_range="drop",
     )
-    np.testing.assert_allclose(result_df["result"].to_list(), [2.0, 8.0, 32.0], rtol=1e-4)
+    np.testing.assert_allclose(result_df["result"].tolist(), [2.0, 8.0, 32.0], rtol=1e-4)
 
 
 def test_apply_rating_curve_power_law_non_positive_input_dropped(get_principal):
@@ -366,4 +366,4 @@ def test_apply_rating_curve_power_law_non_positive_input_dropped(get_principal):
         method="power_law",
         out_of_range="drop",
     )
-    assert result_df.height == 1
+    assert len(result_df) == 1

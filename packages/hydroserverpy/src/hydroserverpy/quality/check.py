@@ -1,20 +1,19 @@
 import logging
-import polars as pl
+import pandas as pd
 
 from datetime import timedelta
 from pydantic import ConfigDict, validate_call
 
 from hydroserverpy.core.duration import Duration, duration_to_us
-from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, validate_timeseries, accept_pandas
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, validate_timeseries
 
 
 logger = logging.getLogger(__name__)
 
 
-@accept_pandas
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def check_range(
-    df: pl.DataFrame,
+    df: pd.DataFrame,
     *,
     min_value: float | None = None,
     max_value: float | None = None,
@@ -26,7 +25,7 @@ def check_range(
     At least one bound must be provided. Bounds are inclusive.
     """
 
-    validate_timeseries(df)
+    df = validate_timeseries(df)
 
     if min_value is None and max_value is None:
         raise ValueError("At least one of min_value or max_value must be provided.")
@@ -35,37 +34,36 @@ def check_range(
         raise ValueError("min_value must be less than max_value.")
 
     if no_data_value is not None:
-        df = df.filter(pl.col(RESULT_COL) != no_data_value)
+        df = df[df[RESULT_COL] != no_data_value].reset_index(drop=True)
 
     logger.debug(
         "Running range check on %d row(s) (minValue=%r, maxValue=%r, noDataValue=%r).",
-        df.height, min_value, max_value, no_data_value,
+        len(df), min_value, max_value, no_data_value,
     )
 
-    mask = pl.lit(False)
+    mask = pd.Series(False, index=df.index)
     if min_value is not None:
-        mask = mask | (pl.col(RESULT_COL) < min_value)
+        mask = mask | (df[RESULT_COL] < min_value)
     if max_value is not None:
-        mask = mask | (pl.col(RESULT_COL) > max_value)
+        mask = mask | (df[RESULT_COL] > max_value)
 
-    violations = df.filter(mask)
+    violations = df[mask]
 
     logger.info(
         "Range check found %d violation(s) in %d row(s).",
-        violations.height, df.height,
+        len(violations), len(df),
     )
 
     return {
-        "violation_count": violations.height,
-        "timestamps": violations[TIMESTAMP_COL].to_list(),
-        "values": violations[RESULT_COL].to_list(),
+        "violation_count": len(violations),
+        "timestamps": violations[TIMESTAMP_COL].tolist(),
+        "values": violations[RESULT_COL].tolist(),
     }
 
 
-@accept_pandas
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def check_rate_of_change(
-    df: pl.DataFrame,
+    df: pd.DataFrame,
     *,
     window: Duration,
     max_change: float,
@@ -83,68 +81,65 @@ def check_rate_of_change(
     compared to its immediate predecessor.
     """
 
-    validate_timeseries(df)
+    df = validate_timeseries(df)
 
     if no_data_value is not None:
-        df = df.filter(pl.col(RESULT_COL) != no_data_value)
+        df = df[df[RESULT_COL] != no_data_value].reset_index(drop=True)
 
     window_us = duration_to_us(window)
 
     logger.debug(
         "Running rate-of-change check on %d row(s) (window=%r, maxChange=%r, noDataValue=%r).",
-        df.height, window, max_change, no_data_value,
+        len(df), window, max_change, no_data_value,
     )
 
-    df_sorted = df.sort(TIMESTAMP_COL)
+    df_sorted = df.sort_values(TIMESTAMP_COL).reset_index(drop=True)
     first_ts = df_sorted[TIMESTAMP_COL].min()
 
-    if first_ts is None:
+    if pd.isna(first_ts):
         return {"violation_count": 0, "timestamps": [], "changes": []}
 
     start_threshold = first_ts + timedelta(microseconds=window_us)
 
-    df_ref = df_sorted.select([
-        pl.col(TIMESTAMP_COL).alias("_ref_ts"),
-        pl.col(RESULT_COL).alias("_prev_result"),
-    ])
-
-    eligible = (
-        df_sorted
-        .filter(pl.col(TIMESTAMP_COL) >= start_threshold)
-        .with_columns(
-            (pl.col(TIMESTAMP_COL) - pl.duration(microseconds=window_us)).alias("_lookback_ts")
-        )
-        .join_asof(df_ref, left_on="_lookback_ts", right_on="_ref_ts", strategy="backward")
-        .drop("_lookback_ts")
-        .filter(pl.col("_prev_result").is_not_null())
+    df_ref = df_sorted[[TIMESTAMP_COL, RESULT_COL]].rename(
+        columns={TIMESTAMP_COL: "_ref_ts", RESULT_COL: "_prev_result"}
     )
 
-    if eligible.is_empty():
+    eligible = df_sorted[df_sorted[TIMESTAMP_COL] >= start_threshold].copy()
+    eligible["_lookback_ts"] = (eligible[TIMESTAMP_COL] - pd.Timedelta(microseconds=window_us)).dt.as_unit("us")
+
+    eligible = pd.merge_asof(
+        eligible.sort_values("_lookback_ts"),
+        df_ref.sort_values("_ref_ts"),
+        left_on="_lookback_ts",
+        right_on="_ref_ts",
+        direction="backward",
+    ).drop(columns=["_lookback_ts", "_ref_ts"])
+
+    eligible = eligible[eligible["_prev_result"].notna()].reset_index(drop=True)
+
+    if len(eligible) == 0:
         logger.info("Rate-of-change check: no eligible observations, 0 violations.")
         return {"violation_count": 0, "timestamps": [], "changes": []}
 
-    violations = eligible.filter(
-        (pl.col(RESULT_COL) - pl.col("_prev_result")).abs() > max_change
-    ).with_columns(
-        (pl.col(RESULT_COL) - pl.col("_prev_result")).abs().alias("_change")
-    )
+    eligible["_change"] = (eligible[RESULT_COL] - eligible["_prev_result"]).abs()
+    violations = eligible[eligible["_change"] > max_change]
 
     logger.info(
         "Rate-of-change check found %d violation(s) in %d eligible row(s).",
-        violations.height, eligible.height,
+        len(violations), len(eligible),
     )
 
     return {
-        "violation_count": violations.height,
-        "timestamps": violations[TIMESTAMP_COL].to_list(),
-        "changes": violations["_change"].to_list(),
+        "violation_count": len(violations),
+        "timestamps": violations[TIMESTAMP_COL].tolist(),
+        "changes": violations["_change"].tolist(),
     }
 
 
-@accept_pandas
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def check_persistence(
-    df: pl.DataFrame,
+    df: pd.DataFrame,
     *,
     window: Duration,
     min_value: float | None = None,
@@ -160,50 +155,51 @@ def check_persistence(
     frozen at a suspicious value rather than legitimately constant readings.
     """
 
-    validate_timeseries(df)
+    df = validate_timeseries(df)
 
     if no_data_value is not None:
-        df = df.filter(pl.col(RESULT_COL) != no_data_value)
+        df = df[df[RESULT_COL] != no_data_value].reset_index(drop=True)
 
     window_us = duration_to_us(window)
 
     logger.debug(
         "Running persistence check on %d row(s) (window=%r, minValue=%r, maxValue=%r, noDataValue=%r).",
-        df.height, window, min_value, max_value, no_data_value,
+        len(df), window, min_value, max_value, no_data_value,
     )
 
-    df_sorted = df.sort(TIMESTAMP_COL)
+    df_sorted = df.sort_values(TIMESTAMP_COL).reset_index(drop=True)
     first_ts = df_sorted[TIMESTAMP_COL].min()
 
-    if first_ts is None:
+    if pd.isna(first_ts):
         return {"violation_count": 0, "timestamps": [], "values": []}
 
     start_threshold = first_ts + timedelta(microseconds=window_us)
 
-    df_rolling = df_sorted.with_columns([
-        pl.col(RESULT_COL).rolling_min_by(TIMESTAMP_COL, window_size=window, closed="both").alias("_rolling_min"),
-        pl.col(RESULT_COL).rolling_max_by(TIMESTAMP_COL, window_size=window, closed="both").alias("_rolling_max"),
-    ])
+    window_td = pd.Timedelta(microseconds=window_us)
+    rolling = df_sorted.rolling(window=window_td, on=TIMESTAMP_COL, closed="both")
+    df_sorted = df_sorted.copy()
+    df_sorted["_rolling_min"] = rolling[RESULT_COL].min()
+    df_sorted["_rolling_max"] = rolling[RESULT_COL].max()
 
     mask = (
-        (pl.col(TIMESTAMP_COL) >= start_threshold) &
-        (pl.col("_rolling_min") == pl.col("_rolling_max"))
+        (df_sorted[TIMESTAMP_COL] >= start_threshold) &
+        (df_sorted["_rolling_min"] == df_sorted["_rolling_max"])
     )
 
     if min_value is not None:
-        mask = mask & (pl.col(RESULT_COL) >= min_value)
+        mask = mask & (df_sorted[RESULT_COL] >= min_value)
     if max_value is not None:
-        mask = mask & (pl.col(RESULT_COL) <= max_value)
+        mask = mask & (df_sorted[RESULT_COL] <= max_value)
 
-    violations = df_rolling.filter(mask)
+    violations = df_sorted[mask]
 
     logger.info(
         "Persistence check found %d violation(s) in %d row(s).",
-        violations.height, df.height,
+        len(violations), len(df),
     )
 
     return {
-        "violation_count": violations.height,
-        "timestamps": violations[TIMESTAMP_COL].to_list(),
-        "values": violations[RESULT_COL].to_list(),
+        "violation_count": len(violations),
+        "timestamps": violations[TIMESTAMP_COL].tolist(),
+        "values": violations[RESULT_COL].tolist(),
     }

@@ -17,7 +17,7 @@ def _validate_duration(v: str) -> str:
     if not _DURATION_RE.match(v):
         raise ValueError(
             f"Invalid duration string '{v}'. "
-            "Expected a Polars duration string (e.g. '1h', '30m', '1d')."
+            "Expected a duration string such as '1h', '30m', or '1d'."
         )
     return v
 

@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-import polars as pl
+import pandas as pd
 
 from typing import Literal
 from pydantic import ConfigDict, validate_call
@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def apply_rating_curve(
-    df: pl.DataFrame,
+    df: pd.DataFrame,
     *,
     breakpoints: list[tuple[float, float]],
     method: Literal["linear", "power_law"] = "linear",
     out_of_range: Literal["drop", "raise", "stop"] = "drop",
     no_data_value: float | None = None,
-) -> pl.DataFrame:
+) -> pd.DataFrame:
     """
     Apply a rating curve to a stage timeseries to produce a discharge timeseries.
 
@@ -33,17 +33,17 @@ def apply_rating_curve(
     a ValueError, and 'stop' returns rows up to the first out-of-range value.
     """
 
-    validate_timeseries(df)
+    df = validate_timeseries(df)
 
-    input_rows = df.height
+    input_rows = len(df)
     logger.debug(
         "Applying rating curve to %d row(s) (method=%r, breakpoints=%d, outOfRange=%r, noDataValue=%r).",
         input_rows, method, len(breakpoints), out_of_range, no_data_value,
     )
 
     if no_data_value is not None:
-        df = df.filter(pl.col(RESULT_COL) != no_data_value)
-        dropped = input_rows - df.height
+        df = df[df[RESULT_COL] != no_data_value].reset_index(drop=True)
+        dropped = input_rows - len(df)
         if dropped:
             logger.debug("Dropped %d no-data row(s) (noDataValue=%r).", dropped, no_data_value)
 
@@ -58,7 +58,7 @@ def apply_rating_curve(
         if (xs <= 0).any() or (ys <= 0).any():
             raise ValueError("power_law requires all breakpoint values to be positive.")
 
-    stage = df[RESULT_COL].to_numpy(allow_copy=True)
+    stage = df[RESULT_COL].to_numpy()
 
     # For power_law, non-positive stage values are also considered out-of-range.
     if method == "power_law":
@@ -74,7 +74,7 @@ def apply_rating_curve(
 
     elif out_of_range == "stop":
         first_out_of_range = int(np.argmax(out_of_range_mask)) if out_of_range_mask.any() else len(stage)
-        df = df.slice(0, first_out_of_range)
+        df = df.iloc[:first_out_of_range].reset_index(drop=True)
         stage = stage[:first_out_of_range]
         out_of_range_mask = out_of_range_mask[:first_out_of_range]
 
@@ -90,19 +90,17 @@ def apply_rating_curve(
 
     result = np.where(out_of_range_mask, np.nan, result)  # noqa
 
-    output_df = pl.DataFrame(
-        {
-            TIMESTAMP_COL: df[TIMESTAMP_COL],
-            RESULT_COL: result,
-        }
-    ).with_columns(pl.col(RESULT_COL).cast(pl.Float64))
+    output_df = pd.DataFrame({
+        TIMESTAMP_COL: df[TIMESTAMP_COL],
+        RESULT_COL: result.astype(np.float64),
+    })
 
     if out_of_range == "drop":
-        output_df = output_df.filter(pl.col(RESULT_COL).is_not_nan())
+        output_df = output_df[output_df[RESULT_COL].notna()].reset_index(drop=True)
 
     logger.info(
         "Rating curve produced %d row(s) from %d input row(s).",
-        output_df.height, input_rows,
+        len(output_df), input_rows,
     )
 
     return output_df

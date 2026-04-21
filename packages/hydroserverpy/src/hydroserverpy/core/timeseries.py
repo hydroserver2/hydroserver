@@ -1,9 +1,9 @@
 import logging
 import math
 import re
-import functools
+import numpy as np
+import pandas as pd
 import pytz
-import polars as pl
 
 from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
@@ -15,112 +15,66 @@ from .duration import Duration, duration_to_us
 TIMESTAMP_COL = "timestamp"
 RESULT_COL = "result"
 
-SCHEMA = pl.Schema(
-    {
-        TIMESTAMP_COL: pl.Datetime(time_unit="us", time_zone="UTC"),
-        RESULT_COL: pl.Float64,
-    }
-)
-
 _OFFSET_RE = re.compile(r"^([+-])(\d{2}):?(\d{2})$")
 _SIGN_FLIP = {"+": "-", "-": "+"}
 
 logger = logging.getLogger(__name__)
 
 
-def accept_pandas(func):
-    """
-    Decorator that converts pandas DataFrame arguments to Polars before calling
-    func, then converts the result back to pandas if any input was a pandas DataFrame.
-
-    Handles plain DataFrame args/kwargs and dict-of-DataFrame kwargs (e.g., the
-    'inputs' parameter of apply_expression). Casts the timestamp column to the
-    canonical schema dtype on conversion in.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            import pandas as pd
-        except ImportError:
-            return func(*args, **kwargs)
-
-        was_pandas = False
-
-        def _convert(obj):
-            nonlocal was_pandas
-            if isinstance(obj, pd.DataFrame):
-                was_pandas = True
-                pl_df = pl.from_pandas(obj)
-                if TIMESTAMP_COL in pl_df.schema:
-                    pl_df = pl_df.with_columns(
-                        pl.col(TIMESTAMP_COL).cast(SCHEMA[TIMESTAMP_COL])
-                    )
-                return pl_df
-            return obj
-
-        new_args = [_convert(a) for a in args]
-        new_kwargs = {
-            k: (
-                {ik: _convert(iv) for ik, iv in v.items()}
-                if isinstance(v, dict) else _convert(v)
-            )
-            for k, v in kwargs.items()
-        }
-
-        result = func(*new_args, **new_kwargs)
-
-        if was_pandas and isinstance(result, pl.DataFrame):
-            return result.to_pandas()
-
-        return result
-
-    return wrapper
-
-
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-def validate_timeseries(
-    df: pl.DataFrame
-) -> None:
+def validate_timeseries(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Raise ValueError if df does not match the canonical schema.
+    Validate and coerce a DataFrame to the canonical timeseries schema.
 
-    Checks that both required columns are present with the correct dtypes.
-    Extra columns are allowed.
+    Attempts to coerce the timestamp column to datetime64[us, UTC] and the
+    result column to float64. Raises ValueError if required columns are missing,
+    if any timestamp values are NaT, or if any result values are NaN after coercion.
+    Extra columns are preserved unchanged.
     """
 
-    if missing := [column for column in SCHEMA.keys() if column not in df.schema]:
+    if missing := [col for col in [TIMESTAMP_COL, RESULT_COL] if col not in df.columns]:
         raise ValueError(
             f"Timeseries DataFrame is missing required columns: {missing}."
         )
 
-    for col_name, expected_dtype in SCHEMA.items():
-        if df.schema[col_name] != expected_dtype:
-            raise ValueError(
-                f"Timeseries DataFrame has invalid dtype for column '{col_name}': "
-                f"{df.schema[col_name]}; expected {expected_dtype}."
-            )
+    df = df.copy()
+
+    ts_coerced = pd.to_datetime(df[TIMESTAMP_COL], utc=True, errors="coerce").dt.as_unit("us")
+    if ts_coerced.isna().any():
+        raise ValueError(
+            f"Column '{TIMESTAMP_COL}' contains NaT or values that could not be converted to UTC datetime."
+        )
+    df[TIMESTAMP_COL] = ts_coerced
+
+    result_coerced = pd.to_numeric(df[RESULT_COL], errors="coerce").astype("float64")
+    if result_coerced.isna().any():
+        raise ValueError(
+            f"Column '{RESULT_COL}' contains NaN or non-numeric values that could not be converted to float."
+        )
+    df[RESULT_COL] = result_coerced
+
+    return df
 
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def align_timeseries(
-    df: pl.DataFrame,
+    df: pd.DataFrame,
     *,
     interval: Duration,
     anchor: Optional[datetime] = None,
     on_missing: Literal["drop", "interpolate", "stop", "raise"] = "drop",
     interpolation: Literal["linear", "nearest"] = "linear",
     max_gap: Optional[Duration] = None,
-) -> pl.DataFrame:
+) -> pd.DataFrame:
     """
     Align a timeseries DataFrame to a regular interval grid.
 
     Generates a grid spanning the full range of the input timestamps and
-    left-joins the input onto it. Grid points with no matching observation
+    re-indexes the input onto it. Grid points with no matching observation
     are handled according to on_missing.
     """
 
-    validate_timeseries(df)
+    df = validate_timeseries(df)
 
     if max_gap is not None and on_missing != "interpolate":
         raise ValueError("max_gap requires on_missing='interpolate'.")
@@ -130,7 +84,7 @@ def align_timeseries(
 
     logger.debug(
         "Aligning %d row(s) to grid (interval=%r, onMissing=%r, interpolation=%r, maxGap=%r).",
-        df.height, interval, on_missing, interpolation, max_gap,
+        len(df), interval, on_missing, interpolation, max_gap,
     )
 
     interval_us = duration_to_us(interval)
@@ -143,33 +97,34 @@ def align_timeseries(
     )
     epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-    grid_start = df[TIMESTAMP_COL].min()
-    grid_end = df[TIMESTAMP_COL].max()
+    grid_start_dt = df[TIMESTAMP_COL].min().to_pydatetime()
+    grid_end_dt = df[TIMESTAMP_COL].max().to_pydatetime()
 
     # Find the first grid point >= grid_start that is aligned to the anchor.
     # ceil((grid_start - anchor) / interval) gives the number of steps needed.
-    delta_us = int((grid_start.replace(tzinfo=timezone.utc) - epoch).total_seconds() * 1_000_000)
+    delta_us = int((grid_start_dt - epoch).total_seconds() * 1_000_000)
     anchor_us = int((anchor_utc - epoch).total_seconds() * 1_000_000)
     n = math.ceil((delta_us - anchor_us) / interval_us)
     grid_start = anchor_utc + timedelta(microseconds=n * interval_us)
 
-    grid = pl.DataFrame({
-        TIMESTAMP_COL: pl.datetime_range(
-            grid_start, grid_end, interval,
-            time_unit="us", time_zone="UTC", eager=True,
-        )
-    })
+    grid_idx = pd.date_range(
+        start=grid_start,
+        end=grid_end_dt,
+        freq=pd.Timedelta(microseconds=interval_us),
+        tz="UTC",
+    ).as_unit("us")
 
-    # Left join preserves all grid points; observations that fall exactly on a
-    # grid timestamp are matched, all others produce null in RESULT_COL.
-    aligned_timeseries = grid.join(
-        df.select([TIMESTAMP_COL, RESULT_COL]),
-        on=TIMESTAMP_COL,
-        how="left",
+    # Reindex preserves all grid points; observations that fall exactly on a
+    # grid timestamp are matched, all others produce NaN in RESULT_COL.
+    aligned = (
+        df.set_index(TIMESTAMP_COL)[RESULT_COL]
+        .reindex(grid_idx)
+        .rename_axis(TIMESTAMP_COL)
+        .reset_index()
     )
 
-    grid_size = aligned_timeseries.height
-    missing_count = aligned_timeseries[RESULT_COL].null_count()
+    grid_size = len(aligned)
+    missing_count = int(aligned[RESULT_COL].isna().sum())
     logger.debug(
         "Grid has %d point(s); %d matched, %d missing.",
         grid_size, grid_size - missing_count, missing_count,
@@ -180,66 +135,60 @@ def align_timeseries(
             raise ValueError(
                 "Timeseries has missing values at one or more grid points."
             )
-        logger.info("Alignment produced %d row(s) from %d input row(s).", aligned_timeseries.height, df.height)
-        return aligned_timeseries
+        logger.info("Alignment produced %d row(s) from %d input row(s).", len(aligned), len(df))
+        return aligned
 
     if on_missing == "stop":
-        # Truncate at the first null — returns a contiguous series up to the first gap.
-        first_null = aligned_timeseries[RESULT_COL].is_null().arg_true()
+        # Truncate at the first NaN — returns a contiguous series up to the first gap.
+        first_null = np.where(aligned[RESULT_COL].isna())[0]
         if len(first_null) > 0:
-            aligned_timeseries = aligned_timeseries.slice(0, first_null[0])
-        logger.info("Alignment produced %d row(s) from %d input row(s).", aligned_timeseries.height, df.height)
-        return aligned_timeseries
+            aligned = aligned.iloc[:first_null[0]].reset_index(drop=True)
+        logger.info("Alignment produced %d row(s) from %d input row(s).", len(aligned), len(df))
+        return aligned
 
     if on_missing == "drop":
-        result = aligned_timeseries.drop_nulls(subset=[RESULT_COL])
-        logger.info("Alignment produced %d row(s) from %d input row(s).", result.height, df.height)
+        result = aligned.dropna(subset=[RESULT_COL]).reset_index(drop=True)
+        logger.info("Alignment produced %d row(s) from %d input row(s).", len(result), len(df))
         return result
 
-    # interpolate: fill nulls using the chosen method.
-    # With max_gap, gaps wider than the threshold are left as null rather than
+    # interpolate: fill NaNs using the chosen method.
+    # With max_gap, gaps wider than the threshold are left as NaN rather than
     # interpolated — prevents silently bridging long outages.
     max_gap_us = duration_to_us(max_gap) if max_gap else None
 
     if max_gap_us is None:
-        result = aligned_timeseries.with_columns(pl.col(RESULT_COL).interpolate(method=interpolation))
-        logger.info("Alignment produced %d row(s) from %d input row(s).", result.height, df.height)
-        return result
+        aligned = aligned.copy()
+        aligned[RESULT_COL] = aligned[RESULT_COL].interpolate(method=interpolation)
+        logger.info("Alignment produced %d row(s) from %d input row(s).", len(aligned), len(df))
+        return aligned
 
-    # Mark which rows were originally null and record the timestamp of each
-    # real observation so we can measure the gap around each null later.
-    aligned_timeseries = aligned_timeseries.with_columns([
-        pl.col(RESULT_COL).is_null().alias("_was_null"),
-        pl.when(pl.col(RESULT_COL).is_not_null())
-          .then(pl.col(TIMESTAMP_COL).cast(pl.Int64))
-          .otherwise(None)
-          .alias("_real_ts"),
-    ]).with_columns([
-        # Forward/backward fill gives each null row the timestamps of its
-        # nearest real neighbors on both sides.
-        pl.col("_real_ts").forward_fill().alias("_prev_real_ts"),
-        pl.col("_real_ts").backward_fill().alias("_next_real_ts"),
-    ]).with_columns(
-        pl.col(RESULT_COL).interpolate(method=interpolation)
-    ).with_columns(
-        # Restore null for any row that was interpolated across a gap wider
-        # than max_gap (measured between the surrounding real observations).
-        pl.when(
-            pl.col("_was_null") &
-            ((pl.col("_next_real_ts") - pl.col("_prev_real_ts")) > max_gap_us)
-        ).then(None)
-        .otherwise(pl.col(RESULT_COL))
-        .alias(RESULT_COL)
-    ).drop(["_was_null", "_real_ts", "_prev_real_ts", "_next_real_ts"])
+    # Mark which rows were originally NaN and record the timestamp (in µs since
+    # epoch) of each real observation so we can measure the gap around each null.
+    was_null = aligned[RESULT_COL].isna()
+    epoch_ts = pd.Timestamp("1970-01-01", tz="UTC")
+    real_ts_us = (
+        (aligned[TIMESTAMP_COL] - epoch_ts)
+        .dt.total_seconds()
+        .mul(1_000_000)
+        .where(~was_null)
+    )
+    prev_real_ts_us = real_ts_us.ffill()
+    next_real_ts_us = real_ts_us.bfill()
 
-    logger.info("Alignment produced %d row(s) from %d input row(s).", aligned_timeseries.height, df.height)
+    aligned = aligned.copy()
+    aligned[RESULT_COL] = aligned[RESULT_COL].interpolate(method=interpolation)
 
-    return aligned_timeseries
+    # Restore NaN for any row interpolated across a gap wider than max_gap.
+    too_wide = was_null & ((next_real_ts_us - prev_real_ts_us) > max_gap_us)
+    aligned.loc[too_wide, RESULT_COL] = np.nan
+
+    logger.info("Alignment produced %d row(s) from %d input row(s).", len(aligned), len(df))
+    return aligned
 
 
 def normalize_tz(tz: str) -> str:
     """
-    Normalize a timezone string to a Polars and zoneinfo compatible IANA name.
+    Normalize a timezone string to a pandas and zoneinfo compatible IANA name.
 
     Accepts any of the following:
       - IANA timezone names (e.g. 'America/Denver', 'UTC')

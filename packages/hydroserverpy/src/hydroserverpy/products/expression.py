@@ -1,8 +1,8 @@
 import ast
 import logging
 
-import polars as pl
 import numpy as np
+import pandas as pd
 
 from datetime import datetime
 from typing import Literal
@@ -107,7 +107,7 @@ def validate_expression(formula: str, variables: list[str]) -> None:
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def apply_expression(
-    inputs: dict[str, pl.DataFrame],
+    inputs: dict[str, pd.DataFrame],
     formula: str,
     *,
     interval: Duration | None = None,
@@ -116,7 +116,7 @@ def apply_expression(
     interpolation: Literal["linear", "nearest"] = "linear",
     max_gap: Duration | None = None,
     no_data_value: float | None = None,
-) -> pl.DataFrame:
+) -> pd.DataFrame:
     """
     Apply a mathematical formula to one or more input timeseries DataFrames.
 
@@ -149,16 +149,16 @@ def apply_expression(
 
     validate_expression(formula, list(inputs.keys()))
 
-    input_rows = {k: v.height for k, v in inputs.items()}
+    input_rows = {k: len(v) for k, v in inputs.items()}
     logger.debug(
         "Evaluating expression (formula=%r, variables=%r, interval=%r, noDataValue=%r, rows=%r).",
         formula, list(inputs.keys()), interval, no_data_value, input_rows,
     )
 
     if no_data_value is not None:
-        inputs = {k: v.filter(pl.col(RESULT_COL) != no_data_value) for k, v in inputs.items()}
+        inputs = {k: v[v[RESULT_COL] != no_data_value].reset_index(drop=True) for k, v in inputs.items()}
         for k, before in input_rows.items():
-            dropped = before - inputs[k].height
+            dropped = before - len(inputs[k])
             if dropped:
                 logger.debug("Dropped %d no-data row(s) from %r (noDataValue=%r).", dropped, k, no_data_value)
 
@@ -185,24 +185,17 @@ def apply_expression(
     # on_missing="drop" during alignment), ensuring the formula always
     # receives a complete set of values at every output timestamp.
     variables = list(inputs.keys())
-    combined = (
-        aligned[variables[0]]
-        .select([TIMESTAMP_COL, RESULT_COL])
-        .rename({RESULT_COL: variables[0]})
-    )
+    combined = aligned[variables[0]][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: variables[0]})
     for var in variables[1:]:
-        other = aligned[var].select([TIMESTAMP_COL, RESULT_COL]).rename({RESULT_COL: var})
-        combined = combined.join(other, on=TIMESTAMP_COL, how="inner")
-    combined = combined.sort(TIMESTAMP_COL)
+        other = aligned[var][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: var})
+        combined = combined.merge(other, on=TIMESTAMP_COL, how="inner")
+    combined = combined.sort_values(TIMESTAMP_COL).reset_index(drop=True)
 
     # Compile the formula once, then evaluate it against numpy arrays extracted
     # from each variable column. __builtins__ is stripped to prevent any access
     # to Python builtins outside the approved math namespace.
     compiled = compile(ast.parse(formula.strip(), mode="eval"), "<formula>", "eval")
-    namespace = {
-        var: combined[var].to_numpy(allow_copy=True)
-        for var in inputs
-    }
+    namespace = {var: combined[var].to_numpy() for var in inputs}
     namespace.update(_MATH_NAMESPACE)
 
     try:
@@ -210,16 +203,14 @@ def apply_expression(
     except Exception as e:
         raise ValueError(f"Formula evaluation failed: {e}") from e
 
-    result = pl.DataFrame(
-        {
-            TIMESTAMP_COL: combined[TIMESTAMP_COL],
-            RESULT_COL: result_array,
-        }
-    ).with_columns(pl.col(RESULT_COL).cast(pl.Float64))
+    result = pd.DataFrame({
+        TIMESTAMP_COL: combined[TIMESTAMP_COL],
+        RESULT_COL: np.asarray(result_array, dtype=np.float64),
+    })
 
     logger.info(
         "Expression produced %d row(s) from %d input variable(s).",
-        result.height, len(inputs),
+        len(result), len(inputs),
     )
 
     return result

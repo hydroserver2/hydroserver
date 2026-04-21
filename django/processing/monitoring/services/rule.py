@@ -1,7 +1,5 @@
 import uuid
 import uuid6
-import polars as pl
-
 from datetime import timedelta
 from typing import Optional, Union, Literal
 
@@ -285,7 +283,7 @@ class MonitoringRuleService(ServiceUtils):
     @staticmethod
     def check_rule(
         rule: MonitoringRule,
-        df: pl.DataFrame,
+        df,
         datastream: Datastream,
     ) -> dict:
         """

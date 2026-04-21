@@ -1,7 +1,8 @@
 import uuid
 import uuid6
 import logging
-import polars as pl
+import numpy as np
+import pandas as pd
 from datetime import datetime, timedelta, timezone as dt_timezone
 from typing import Union, Literal
 
@@ -10,7 +11,7 @@ from django.db import transaction
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 
-from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, SCHEMA, normalize_tz
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, normalize_tz
 from hydroserverpy.products.expression import validate_expression, apply_expression
 from hydroserverpy.products.aggregation import apply_aggregation
 from hydroserverpy.products.rating_curve import apply_rating_curve
@@ -605,7 +606,7 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if input_df.is_empty():
+        if len(input_df) == 0:
             return 0
 
         breakpoints = [
@@ -621,7 +622,7 @@ class DataProductTransformationService(ServiceUtils):
             no_data_value=input_ds.no_data_value,
         )
 
-        if result_df.is_empty():
+        if len(result_df) == 0:
             return 0
 
         return self._load_to_datastream(transformation, result_df)
@@ -648,7 +649,7 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if input_df.is_empty():
+        if len(input_df) == 0:
             return 0
 
         result_df = apply_expression(
@@ -657,7 +658,7 @@ class DataProductTransformationService(ServiceUtils):
             no_data_value=input_ds.no_data_value,
         )
 
-        if result_df.is_empty():
+        if len(result_df) == 0:
             return 0
 
         return self._load_to_datastream(transformation, result_df)
@@ -704,7 +705,7 @@ class DataProductTransformationService(ServiceUtils):
         inputs = {}
         for entry in input_entries:
             df = self._fetch_observations(entry.datastream, after=start, through=end)
-            if df.is_empty():
+            if len(df) == 0:
                 return 0
             inputs[entry.variable_name] = df
 
@@ -717,7 +718,7 @@ class DataProductTransformationService(ServiceUtils):
             no_data_value=input_entries[0].datastream.no_data_value,
         )
 
-        if result_df.is_empty():
+        if len(result_df) == 0:
             return 0
 
         return self._load_to_datastream(transformation, result_df)
@@ -770,7 +771,7 @@ class DataProductTransformationService(ServiceUtils):
             return 0
 
         input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if input_df.is_empty():
+        if len(input_df) == 0:
             return 0
 
         result_df = apply_aggregation(
@@ -785,16 +786,15 @@ class DataProductTransformationService(ServiceUtils):
 
         # Discard the last bucket if its end extends beyond the available input data,
         # as it may be incomplete (i.e., the current period is still in progress).
-        if not result_df.is_empty():
+        if len(result_df) > 0:
             from hydroserverpy.core.duration import duration_to_us
             interval_us = duration_to_us(interval)
             end_utc = end if end.tzinfo else end.replace(tzinfo=dt_timezone.utc)
-            result_df = result_df.filter(
-                pl.col(TIMESTAMP_COL) + pl.duration(microseconds=interval_us)
-                <= pl.lit(end_utc)
-            )
+            result_df = result_df[
+                result_df[TIMESTAMP_COL] + pd.Timedelta(microseconds=interval_us) <= end_utc
+            ].reset_index(drop=True)
 
-        if result_df.is_empty():
+        if len(result_df) == 0:
             return 0
 
         return self._load_to_datastream(transformation, result_df)
@@ -804,9 +804,9 @@ class DataProductTransformationService(ServiceUtils):
         datastream: Datastream,
         after=None,
         through=None,
-    ) -> pl.DataFrame:
+    ) -> pd.DataFrame:
         """
-        Fetch observations for a datastream as a canonical Polars timeseries DataFrame.
+        Fetch observations for a datastream as a canonical pandas timeseries DataFrame.
         """
 
         qs = Observation.objects.filter(datastream=datastream).order_by("phenomenon_time")
@@ -819,27 +819,25 @@ class DataProductTransformationService(ServiceUtils):
         data = list(qs.values_list("phenomenon_time", "result"))
 
         if not data:
-            return pl.DataFrame(schema=SCHEMA)
+            return pd.DataFrame({
+                TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
+                RESULT_COL: pd.Series([], dtype=np.float64),
+            })
 
         timestamps, results = zip(*data)
 
-        return pl.DataFrame(
-            {
-                TIMESTAMP_COL: list(timestamps),
-                RESULT_COL: list(results),
-            }
-        ).with_columns([
-            pl.col(TIMESTAMP_COL).cast(SCHEMA[TIMESTAMP_COL]),
-            pl.col(RESULT_COL).cast(pl.Float64),
-        ])
+        return pd.DataFrame({
+            TIMESTAMP_COL: pd.DatetimeIndex(timestamps).as_unit("us"),
+            RESULT_COL: np.array(results, dtype=np.float64),
+        })
 
     @staticmethod
     def _load_to_datastream(
         transformation: DataProductTransformation,
-        result_df: pl.DataFrame,
+        result_df: pd.DataFrame,
     ) -> int:
         """
-        Write a canonical Polars timeseries DataFrame to the output datastream.
+        Write a canonical pandas timeseries DataFrame to the output datastream.
         Uses the task's workspace owner as the principal.
         """
 
@@ -847,8 +845,8 @@ class DataProductTransformationService(ServiceUtils):
         principal = transformation.task.thing.workspace.owner
 
         data = list(zip(
-            result_df[TIMESTAMP_COL].to_list(),
-            result_df[RESULT_COL].to_list(),
+            result_df[TIMESTAMP_COL].tolist(),
+            result_df[RESULT_COL].tolist(),
         ))
         loaded = 0
 
