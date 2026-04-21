@@ -203,19 +203,16 @@
               >
                 <template #activator="{ props: tooltipProps }">
                   <span v-bind="tooltipProps" class="inline-flex">
-                    <v-btn
-                      variant="outlined"
-                      color="cyan-darken-3"
-                      size="small"
+                    <v-btn-add
+                      color="white"
                       class="text-none"
-                      :prepend-icon="mdiPlus"
                       :disabled="
                         !canEditOrchestration || !group.dataConnection
                       "
                       @click.stop="openCreateTaskDialog(group.dataConnection!)"
                     >
                       Add task
-                    </v-btn>
+                    </v-btn-add>
                   </span>
                 </template>
                 <span>{{ groupActionDisabledReason(group) }}</span>
@@ -290,23 +287,6 @@
                         </span>
                       </button>
                     </th>
-                    <th class="px-3 py-3 text-left w-[17%]">
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('type')"
-                        title="Click to sort, click again to reverse, click again to clear"
-                      >
-                        <span>Type</span>
-                        <v-icon :icon="sortIcon('type')" size="16" />
-                        <span
-                          v-if="sortBadge('type')"
-                          class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
-                        >
-                          {{ sortBadge('type') }}
-                        </span>
-                      </button>
-                    </th>
                     <th class="px-3 py-3 text-left w-[10%]">
                       <button
                         type="button"
@@ -364,7 +344,7 @@
                 <tbody v-if="group.items.length === 0">
                   <tr>
                     <td
-                      colspan="6"
+                      colspan="5"
                       class="px-3 py-6 text-center text-sm text-slate-500"
                     >
                       No tasks registered for this data connection.
@@ -376,7 +356,7 @@
                     class="border-0"
                     :style="{ height: `${virtualPaddingTopFor(group.name)}px` }"
                   >
-                    <td colspan="6"></td>
+                    <td colspan="5"></td>
                   </tr>
                   <tr
                     v-for="row in virtualRowsFor(group)"
@@ -388,11 +368,6 @@
                       class="px-3 py-2 font-medium text-slate-800 whitespace-normal break-words"
                     >
                       {{ row.name || '—' }}
-                    </td>
-                    <td
-                      class="px-3 py-2 text-slate-600 whitespace-normal break-words"
-                    >
-                      {{ row.type || '—' }}
                     </td>
                     <td class="px-3 py-2">
                       <v-tooltip
@@ -517,7 +492,7 @@
                     class="border-0"
                     :style="{ height: `${virtualPaddingBottomFor(group)}px` }"
                   >
-                    <td colspan="6"></td>
+                    <td colspan="5"></td>
                   </tr>
                 </tbody>
               </table>
@@ -600,7 +575,6 @@ import {
   mdiPause,
   mdiPencil,
   mdiPlay,
-  mdiPlus,
   mdiTrashCanOutline,
   mdiChevronRight,
   mdiChevronDown,
@@ -691,7 +665,7 @@ const groupActionDisabledReason = (group: {
   return ''
 }
 
-type SortKey = 'name' | 'type' | 'status' | 'lastRunAt' | 'nextRunAt'
+type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
 type SortSpec = { key: SortKey; dir: 'asc' | 'desc' }
 
 const sortSpecs = ref<SortSpec[]>([{ key: 'name', dir: 'asc' }])
@@ -947,7 +921,6 @@ const compareNullableDate = (a: unknown, b: unknown) => {
 
 const buildComparatorForKey = (key: SortKey) => {
   if (key === 'name') return (a: any, b: any) => compareText(a?.name, b?.name)
-  if (key === 'type') return (a: any, b: any) => compareText(a?.type, b?.type)
   if (key === 'status')
     return (a: any, b: any) => compareText(a?.statusSort, b?.statusSort)
   if (key === 'lastRunAt')
