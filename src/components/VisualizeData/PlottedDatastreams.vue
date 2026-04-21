@@ -1,16 +1,8 @@
 <template>
   <div class="plotted-wrapper d-flex flex-column">
-    <div
-      class="plotted-toolbar d-flex align-center gap-2 px-3 py-2"
-      :class="{ 'plotted-toolbar--section': sectionTitle }"
-    >
-      <template v-if="sectionTitle">
-        <v-icon icon="mdi-chart-multiple" color="primary" size="18" />
-        <span class="text-body-2 font-weight-bold">{{ sectionTitle }}</span>
-      </template>
-      <v-spacer />
+    <div v-if="!lockQc" class="plotted-toolbar d-flex align-center px-3 py-2">
+      <v-spacer></v-spacer>
       <v-btn
-        v-if="!lockQc"
         :disabled="!plottedDatastreams.length"
         size="x-small"
         variant="text"
@@ -21,108 +13,110 @@
       </v-btn>
     </div>
     <v-divider />
-  <ul class="plotted-list pa-0 ma-0">
-    <li
-      v-for="(datastream, index) of plottedDatastreams"
-      :key="datastream.id"
-      class="plotted-item"
-      :class="{
-        'plotted-item--qc': qcDatastream === datastream,
-        'plotted-item--locked': lockQc,
-        'plotted-item--hidden': visibleDict[datastream.id] === false,
-        'plotted-item--drop-before':
-          dragIndex !== null &&
-          dropIndex === index &&
-          dropIndex !== dragIndex &&
-          (dragIndex as number) > index,
-        'plotted-item--drop-after':
-          dragIndex !== null &&
-          dropIndex === index &&
-          dropIndex !== dragIndex &&
-          (dragIndex as number) < index,
-      }"
-      draggable="true"
-      @dragstart="onDragStart(index, $event)"
-      @dragover.prevent="onDragOver(index, $event)"
-      @dragleave="onDragLeave(index)"
-      @drop.prevent="onDrop(index)"
-      @dragend="onDragEnd"
-    >
-      <v-icon
-        class="plotted-item__drag"
-        icon="mdi-drag-vertical"
-        size="16"
-        :color="plottedDatastreams.length > 1 ? 'grey' : 'grey-lighten-2'"
-        title="Drag to reorder"
-      />
-
-      <button
-        v-if="!lockQc"
-        type="button"
-        class="plotted-item__dot"
-        :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
-        :style="{
-          color: colorForDatastream(datastream.id),
+    <ul class="plotted-list pa-0 ma-0">
+      <li
+        v-for="(datastream, index) of plottedDatastreams"
+        :key="datastream.id"
+        class="plotted-item"
+        :class="{
+          'plotted-item--qc': qcDatastream === datastream,
+          'plotted-item--locked': lockQc,
+          'plotted-item--hidden': visibleDict[datastream.id] === false,
+          'plotted-item--drop-before':
+            dragIndex !== null &&
+            dropIndex === index &&
+            dropIndex !== dragIndex &&
+            (dragIndex as number) > index,
+          'plotted-item--drop-after':
+            dragIndex !== null &&
+            dropIndex === index &&
+            dropIndex !== dragIndex &&
+            (dragIndex as number) < index,
         }"
-        :disabled="isUpdating"
-        :title="
-          qcDatastream === datastream
-            ? 'Current QC target'
-            : 'Set as QC target'
-        "
-        :aria-pressed="qcDatastream === datastream"
-        @click="setQcDatastream(datastream)"
-      />
-
-      <button
-        type="button"
-        class="plotted-item__visibility"
-        :title="
-          visibleDict[datastream.id] === false ? 'Show on plot' : 'Hide from plot'
-        "
-        :disabled="isUpdating"
-        @click="toggleVisibility(datastream)"
+        draggable="true"
+        @dragstart="onDragStart(index, $event)"
+        @dragover.prevent="onDragOver(index, $event)"
+        @dragleave="onDragLeave(index)"
+        @drop.prevent="onDrop(index)"
+        @dragend="onDragEnd"
       >
         <v-icon
-          :icon="
-            visibleDict[datastream.id] === false ? 'mdi-eye-off' : 'mdi-eye'
-          "
+          class="plotted-item__drag"
+          icon="mdi-drag-vertical"
           size="16"
-          :color="colorForDatastream(datastream.id)"
+          :color="plottedDatastreams.length > 1 ? 'grey' : 'grey-lighten-2'"
+          title="Drag to reorder"
         />
-      </button>
 
-      <!-- Text uses the darker companion of the line colour so the
+        <button
+          v-if="!lockQc"
+          type="button"
+          class="plotted-item__dot"
+          :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
+          :style="{
+            color: colorForDatastream(datastream.id),
+          }"
+          :disabled="isUpdating"
+          :title="
+            qcDatastream === datastream
+              ? 'Current QC target'
+              : 'Set as QC target'
+          "
+          :aria-pressed="qcDatastream === datastream"
+          @click="setQcDatastream(datastream)"
+        />
+
+        <button
+          type="button"
+          class="plotted-item__visibility"
+          :title="
+            visibleDict[datastream.id] === false
+              ? 'Show on plot'
+              : 'Hide from plot'
+          "
+          :disabled="isUpdating"
+          @click="toggleVisibility(datastream)"
+        >
+          <v-icon
+            :icon="
+              visibleDict[datastream.id] === false ? 'mdi-eye-off' : 'mdi-eye'
+            "
+            size="16"
+            :color="colorForDatastream(datastream.id)"
+          />
+        </button>
+
+        <!-- Text uses the darker companion of the line colour so the
            row reads as "tied to this axis" while staying legible; the
            raw pastel is too washed out at body-text weight. -->
-      <div
-        class="plotted-item__text"
-        :style="{ color: labelColorForDatastream(datastream.id) }"
-      >
-        <div class="plotted-item__title" :title="datastream.name">
-          {{ datastream.name }}
+        <div
+          class="plotted-item__text"
+          :style="{ color: labelColorForDatastream(datastream.id) }"
+        >
+          <div class="plotted-item__title" :title="datastream.name">
+            {{ datastream.name }}
+          </div>
+          <div class="plotted-item__subtitle">
+            {{
+              datastream.valueCount?.toLocaleString?.() ?? datastream.valueCount
+            }}
+            obs
+          </div>
         </div>
-        <div class="plotted-item__subtitle">
-          {{
-            datastream.valueCount?.toLocaleString?.() ?? datastream.valueCount
-          }}
-          obs
-        </div>
-      </div>
 
-      <button
-        v-if="!(lockQc && qcDatastream === datastream)"
-        type="button"
-        class="plotted-item__close"
-        :title="`Remove ${datastream.name} from plot`"
-        aria-label="Remove from plot"
-        @click="toggleDatastream(datastream)"
-      >
-        <v-icon icon="mdi-close" size="14" />
-      </button>
-      <span v-else />
-    </li>
-  </ul>
+        <button
+          v-if="!(lockQc && qcDatastream === datastream)"
+          type="button"
+          class="plotted-item__close"
+          :title="`Remove ${datastream.name} from plot`"
+          aria-label="Remove from plot"
+          @click="toggleDatastream(datastream)"
+        >
+          <v-icon icon="mdi-close" size="14" />
+        </button>
+        <span v-else />
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -131,10 +125,7 @@ defineProps<{ sectionTitle?: string; lockQc?: boolean }>()
 
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import {
-  handleNewPlot,
-  toggleTraceVisibility,
-} from '@/utils/plotting/plotly'
+import { handleNewPlot, toggleTraceVisibility } from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions, colorForDatastream, labelColorForDatastream } =
@@ -253,11 +244,6 @@ function reorder(from: number, to: number) {
   background-color: rgba(var(--v-theme-primary), 0.02);
 }
 
-.plotted-toolbar--section {
-  background-color: rgba(var(--v-theme-primary), 0.06);
-  min-height: 40px;
-}
-
 .plotted-list {
   list-style: none;
 }
@@ -346,7 +332,9 @@ function reorder(from: number, to: number) {
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
-  transition: background-color 120ms ease, box-shadow 120ms ease;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .plotted-item__dot:hover:not(:disabled) {

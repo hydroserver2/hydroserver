@@ -1,14 +1,32 @@
 <template>
   <div class="edit-history d-flex flex-column" style="min-height: 0">
-    <!-- Compact header: title + edit count chip + undo/redo toolbar. -->
-    <div class="edit-history__header px-3 py-2 d-flex align-center gap-2">
-      <v-icon icon="mdi-history" color="primary" size="18" />
-      <span class="text-body-2 font-weight-bold">Edit history</span>
+    <!-- Header. Mirrors the section-header pattern used by Plotted
+         Datastreams in the parent (chevron + caption) so the
+         sidebar reads as a consistent stack of collapsible panels.
+         The undo / redo / pop-out actions trail on the right; they
+         stop propagation so clicking them doesn't also toggle the
+         collapse. -->
+    <div
+      class="edit-history__header px-3 d-flex align-center gap-1"
+      :class="{ 'edit-history__header--collapsible': collapsible }"
+      :role="collapsible ? 'button' : undefined"
+      :tabindex="collapsible ? 0 : undefined"
+      @click="collapsible && toggleCollapsed()"
+      @keydown.enter.prevent="collapsible && toggleCollapsed()"
+      @keydown.space.prevent="collapsible && toggleCollapsed()"
+    >
+      <v-icon
+        v-if="collapsible"
+        size="16"
+        :icon="isCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+      />
+      <v-icon icon="mdi-history" color="primary" size="16" />
+      <span class="text-caption font-weight-medium">Edit history</span>
       <v-chip
         v-if="editCount"
         size="x-small"
-        :color="editCount ? 'primary' : undefined"
-        :variant="editCount ? 'tonal' : 'outlined'"
+        color="primary"
+        variant="tonal"
         label
       >
         {{ editCount }}
@@ -27,7 +45,7 @@
             density="comfortable"
             icon="mdi-undo-variant"
             :disabled="isUpdating || !canUndo"
-            @click="onUndo"
+            @click.stop="onUndo"
           />
         </template>
       </v-tooltip>
@@ -43,7 +61,25 @@
             density="comfortable"
             icon="mdi-redo-variant"
             :disabled="isUpdating || !canRedo"
-            @click="onRedo"
+            @click.stop="onRedo"
+          />
+        </template>
+      </v-tooltip>
+
+      <v-tooltip
+        v-if="popOutEnabled"
+        location="bottom"
+        text="Open in window"
+      >
+        <template #activator="{ props: tp }">
+          <v-btn
+            v-bind="tp"
+            aria-label="Open history in a modal window"
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-open-in-new"
+            @click.stop="emit('pop-out')"
           />
         </template>
       </v-tooltip>
@@ -54,7 +90,11 @@
     <!-- Scrollable list body. Each entry is a single tight row (icon,
          method, duration, actions). The timeline + nested expansion
          panel layout used to cost ~100 px per entry; this is ~32. -->
-    <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
+    <div
+      v-show="!isCollapsed"
+      class="flex-grow-1 overflow-y-auto"
+      style="min-height: 0"
+    >
       <!-- Baseline: "Data loaded" status row with its own reload action. -->
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
@@ -263,6 +303,41 @@ import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
+const props = withDefaults(
+  defineProps<{
+    /** When true (default) the header shows a chevron and the body
+     *  hides while `collapsed`. Pass `false` inside the pop-out
+     *  modal — the modal IS the expanded view, so a second collapse
+     *  control would be redundant. */
+    collapsible?: boolean
+    /** Controlled collapse state. Pair with `@update:collapsed` for
+     *  v-model. Ignored when `collapsible` is false. */
+    collapsed?: boolean
+    /** Show the "open in window" icon button in the header. Hidden
+     *  inside the pop-out modal so the modal doesn't offer to open
+     *  itself. */
+    popOutEnabled?: boolean
+  }>(),
+  {
+    collapsible: true,
+    collapsed: false,
+    popOutEnabled: true,
+  }
+)
+
+const emit = defineEmits<{
+  (e: 'update:collapsed', value: boolean): void
+  (e: 'pop-out'): void
+}>()
+
+const isCollapsed = computed(
+  () => props.collapsible && !!props.collapsed
+)
+const toggleCollapsed = () => {
+  if (!props.collapsible) return
+  emit('update:collapsed', !props.collapsed)
+}
+
 const { editHistory, selectedSeries, isUpdating } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
@@ -440,7 +515,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
    the template. */
 .edit-history__header {
   background-color: rgba(var(--v-theme-primary), 0.04);
-  min-height: 40px;
+  min-height: 32px;
+}
+
+/* Matches the section-header treatment used by Plotted
+   Datastreams in the parent so both collapsible sidebar panels
+   have the same hover + focus affordance when the chevron is
+   available. */
+.edit-history__header--collapsible {
+  cursor: pointer;
+}
+.edit-history__header--collapsible:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+.edit-history__header--collapsible:focus {
+  outline: none;
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
 .edit-history__row {

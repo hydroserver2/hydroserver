@@ -214,7 +214,7 @@
              label so at-a-glance the current range is still
              obvious. -->
         <v-select
-          v-model="selectedDateBtnId"
+          v-model="editorDateBtnId"
           :items="dateOptions"
           item-title="label"
           item-value="id"
@@ -300,8 +300,24 @@ const {
   previewMode,
   plotlyRef,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, qcDatastream, dateOptions, selectedDateBtnId, endDate } =
+const { selectedData, qcDatastream, dateOptions, endDate } =
   storeToRefs(useDataVisStore())
+
+// Editor-toolbar preset is intentionally NOT the Select view's
+// `selectedDateBtnId`. The two controls share labels (1w / 1m / …)
+// but do very different things: Select's buttons pick the data
+// window to fetch (drives `beginDate` / `endDate` + reloads
+// observations); this selector only zooms the x-axis of the
+// already-loaded data. Sharing state made picking "1Y" in the
+// editor silently reset the Select view's filter, and vice versa.
+// Default to "All" so the editor opens showing the full loaded
+// window rather than whatever residual zoom Plotly inherited from
+// newPlot — the `onMounted` hook applies the preset after the plot
+// is up so the x-axis actually spans the data.
+const allPresetId = computed(
+  () => dateOptions.value.find((o) => o.label === 'All')?.id ?? null
+)
+const editorDateBtnId = ref<number | null>(allPresetId.value)
 
 /**
  * Mirrors the logic in `handleRelayout` that decides whether Plotly's
@@ -398,7 +414,8 @@ const earliestDataX = computed<number | null>(() => {
 function onEditorDatePreset(id: number) {
   const option = dateOptions.value.find((o) => o.id === id)
   if (!option) return
-  selectedDateBtnId.value = id
+  // v-model already wrote `id` into `editorDateBtnId`; no need to
+  // touch the Select view's `selectedDateBtnId`.
 
   const dataEnd = endDate.value
   let begin: Date | null = null
@@ -537,6 +554,14 @@ onMounted(async () => {
   // This timeout halts the execution of handleNewPlot until the view switching animation is complete, and the container has expanded.
   setTimeout(() => {
     handleNewPlot(plot.value)
+    // In the editor, seed the toolbar's initial "All" preset by
+    // running the same zoom handler a user click would trigger.
+    // Done after `handleNewPlot` so the Plotly instance is ready
+    // to receive the relayout. Skipped in preview mode because the
+    // preset control isn't visible there.
+    if (!props.preview && editorDateBtnId.value != null) {
+      onEditorDatePreset(editorDateBtnId.value)
+    }
   }, 200)
 })
 

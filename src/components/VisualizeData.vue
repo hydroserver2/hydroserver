@@ -90,11 +90,49 @@
     v-else-if="currentView === DrawerType.Edit"
     class="edit-view d-flex bg-background"
   >
+    <!-- Left sidebar. Width is driven by the persisted
+         `drawerWidth`; the handle to the right of the aside drags
+         it. Collapsed state swaps in a narrow rail whose only
+         affordance is the expand toggle. -->
     <aside
-      class="edit-view__col edit-view__col--drawer d-flex flex-column overflow-y-auto bg-surface border-e"
+      class="edit-view__col edit-view__col--drawer d-flex flex-column bg-surface border-e"
+      :class="{ 'edit-view__col--collapsed': drawerCollapsed }"
+      :style="drawerCollapsed ? undefined : { width: drawerWidth + 'px' }"
     >
-      <EditDrawer />
+      <div
+        class="edit-view__sidebar-bar d-flex align-center px-1 py-1 border-b"
+        :class="{ 'justify-center': drawerCollapsed }"
+      >
+        <span
+          v-if="!drawerCollapsed"
+          class="text-caption text-medium-emphasis pl-2"
+        >
+          Operations
+        </span>
+        <v-spacer v-if="!drawerCollapsed" />
+        <v-btn
+          size="x-small"
+          variant="text"
+          density="comfortable"
+          :icon="drawerCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left'"
+          :title="drawerCollapsed ? 'Expand operations' : 'Collapse operations'"
+          @click="drawerCollapsed = !drawerCollapsed"
+        />
+      </div>
+      <div v-if="!drawerCollapsed" class="flex-grow-1 overflow-y-auto">
+        <EditDrawer />
+      </div>
     </aside>
+
+    <!-- Resize grip between drawer and plot. Hidden while the
+         drawer is collapsed (no width to change). -->
+    <div
+      v-if="!drawerCollapsed"
+      class="edit-view__grip edit-view__grip--vertical"
+      :class="{ 'edit-view__grip--active': drawerDragging }"
+      title="Drag to resize"
+      @mousedown="startDrawerDrag"
+    />
 
     <div
       class="edit-view__col edit-view__col--plot d-flex flex-column pa-3 overflow-hidden"
@@ -106,77 +144,189 @@
       </v-card>
     </div>
 
+    <!-- Resize grip between plot and aux. -->
+    <div
+      v-if="!auxCollapsed"
+      class="edit-view__grip edit-view__grip--vertical"
+      :class="{ 'edit-view__grip--active': auxDragging }"
+      title="Drag to resize"
+      @mousedown="startAuxDrag"
+    />
+
     <aside
       class="edit-view__col edit-view__col--aux d-flex flex-column overflow-hidden bg-surface border-s"
+      :class="{ 'edit-view__col--collapsed': auxCollapsed }"
+      :style="auxCollapsed ? undefined : { width: auxWidth + 'px' }"
     >
-      <div
-        class="edit-view__exit-bar d-flex align-center flex-wrap px-3 py-2 border-b"
-      >
-        <v-btn
-          data-testid="exit-save-btn"
-          size="small"
-          variant="flat"
-          color="primary"
-          prepend-icon="mdi-content-save-outline"
-          :disabled="!editCount || isUpdating || isSubmitting"
-          :loading="isSubmitting && exitIntent === 'save'"
-          @click="requestSave"
-        >
-          Save
-        </v-btn>
-        <v-btn
-          data-testid="exit-save-close-btn"
-          class="ml-1"
-          size="small"
-          variant="tonal"
-          color="primary"
-          prepend-icon="mdi-content-save-move-outline"
-          :disabled="!editCount || isUpdating || isSubmitting"
-          :loading="isSubmitting && exitIntent === 'save-close'"
-          @click="requestSaveAndClose"
-        >
-          Save &amp; Close
-        </v-btn>
-        <v-spacer />
-        <v-btn
-          data-testid="exit-close-btn"
-          size="small"
-          variant="text"
-          prepend-icon="mdi-close"
-          :disabled="isSubmitting"
-          @click="requestClose"
-        >
-          Close
-        </v-btn>
-      </div>
-
-      <section class="bg-surface">
-        <PlottedDatastreams section-title="Plotted Datastreams" lock-qc />
-      </section>
-
-      <div
-        class="bg-background border-t border-b flex-shrink-0"
-        style="height: 12px"
-      />
-
-      <section
-        class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface"
-      >
+      <!-- Collapsed rail: single expand toggle, nothing else. -->
+      <template v-if="auxCollapsed">
         <div
-          class="edit-view__history d-flex flex-column"
-          :class="{ 'edit-view__history--split': selectedOperation }"
+          class="edit-view__sidebar-bar d-flex justify-center align-center py-1"
         >
-          <EditHistory />
+          <v-btn
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-chevron-left"
+            title="Expand panel"
+            @click="auxCollapsed = false"
+          />
+        </div>
+      </template>
+
+      <template v-else>
+        <div
+          class="edit-view__exit-bar d-flex align-center flex-wrap px-3 py-2 border-b"
+        >
+          <v-btn
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-chevron-right"
+            title="Collapse panel"
+            class="mr-1"
+            @click="auxCollapsed = true"
+          />
+          <v-btn
+            data-testid="exit-save-btn"
+            size="small"
+            variant="flat"
+            color="primary"
+            prepend-icon="mdi-content-save-outline"
+            :disabled="!editCount || isUpdating || isSubmitting"
+            :loading="isSubmitting && exitIntent === 'save'"
+            @click="requestSave"
+          >
+            Save
+          </v-btn>
+          <v-btn
+            data-testid="exit-save-close-btn"
+            class="ml-1"
+            size="small"
+            variant="tonal"
+            color="primary"
+            prepend-icon="mdi-content-save-move-outline"
+            :disabled="!editCount || isUpdating || isSubmitting"
+            :loading="isSubmitting && exitIntent === 'save-close'"
+            @click="requestSaveAndClose"
+          >
+            Save &amp; Close
+          </v-btn>
+          <v-spacer />
+          <v-btn
+            data-testid="exit-close-btn"
+            size="small"
+            variant="text"
+            prepend-icon="mdi-close"
+            :disabled="isSubmitting"
+            @click="requestClose"
+          >
+            Close
+          </v-btn>
         </div>
 
+        <!-- Plotted Datastreams: collapsible by itself so the user
+             can reclaim vertical room for history / operation
+             details without losing the sidebar. -->
+        <section class="bg-surface">
+          <div
+            class="edit-view__section-header d-flex align-center gap-1 px-3 py-1"
+            role="button"
+            tabindex="0"
+            @click="plottedCollapsed = !plottedCollapsed"
+            @keydown.enter.prevent="plottedCollapsed = !plottedCollapsed"
+            @keydown.space.prevent="plottedCollapsed = !plottedCollapsed"
+          >
+            <v-icon
+              size="16"
+              :icon="
+                plottedCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'
+              "
+            />
+            <!-- Matches the Edit History header treatment (small
+                 primary-tinted section icon between the chevron and
+                 the title) so both collapsible panels read as the
+                 same family of controls. -->
+            <v-icon icon="mdi-chart-line" color="primary" size="16" />
+            <span class="text-caption font-weight-medium">
+              Plotted Datastreams
+            </span>
+          </div>
+          <!-- Body height is a persisted `plottedHeight` ref driven
+               by the grip below. `overflow-y: auto` means long
+               plotted lists scroll inside their allocation rather
+               than pushing the edit history off-screen. -->
+          <div
+            v-show="!plottedCollapsed"
+            class="edit-view__plotted-body"
+            :style="{ height: plottedHeight + 'px' }"
+          >
+            <PlottedDatastreams lock-qc />
+          </div>
+        </section>
+
+        <!-- Drag grip between Plotted Datastreams and Edit history.
+             Hidden while Plotted is collapsed because there's no
+             body height to adjust. -->
         <div
-          v-if="selectedOperation"
-          class="edit-view__op-panel d-flex flex-column border-t"
+          v-if="!plottedCollapsed"
+          class="edit-view__grip edit-view__grip--horizontal"
+          :class="{ 'edit-view__grip--active': plottedDragging }"
+          title="Drag to resize"
+          @mousedown="startPlottedDrag"
+        />
+
+        <section
+          ref="auxBodyEl"
+          class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface"
         >
-          <OperationPanel />
-        </div>
-      </section>
+          <!-- History + OperationPanel split. When an operation is
+               staged we give the user a drag grip to rebalance the
+               vertical share between the two. The history pane
+               uses a flex-basis in percent so the grip location
+               tracks the slider. -->
+          <div
+            class="edit-view__history d-flex flex-column"
+            :style="historyPaneStyle"
+          >
+            <EditHistory
+              v-model:collapsed="historyCollapsed"
+              @pop-out="historyModalOpen = true"
+            />
+          </div>
+
+          <!-- Only show the split grip when BOTH sides are actually
+               expanded. If the history is collapsed there's nothing
+               to rebalance; the op panel naturally takes the
+               remaining space. -->
+          <div
+            v-if="selectedOperation && !historyCollapsed"
+            class="edit-view__grip edit-view__grip--horizontal"
+            :class="{ 'edit-view__grip--active': auxSplitDragging }"
+            title="Drag to resize"
+            @mousedown="startAuxSplitDrag"
+          />
+
+          <div
+            v-if="selectedOperation"
+            class="edit-view__op-panel d-flex flex-column flex-grow-1 border-t"
+          >
+            <OperationPanel />
+          </div>
+        </section>
+      </template>
     </aside>
+
+    <!-- Pop-out view of EditHistory. Same component, rendered with
+         `:collapsible="false"` so the modal isn't offering its own
+         collapse control, and `:pop-out-enabled="false"` so the
+         header doesn't show an "open in window" button that would
+         ask to open the modal we're already in. -->
+    <v-dialog v-model="historyModalOpen" max-width="720">
+      <v-card class="d-flex flex-column" style="max-height: 80vh">
+        <EditHistory :collapsible="false" :pop-out-enabled="false" />
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="showSaveConfirm" max-width="520">
       <v-card rounded="lg">
@@ -258,13 +408,14 @@ import EditDrawer from '@/components/Navigation/EditDrawer.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useUIStore, DrawerType } from '@/store/userInterface'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSubmission } from '@/composables/useQcSubmission'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 
 const { resetState } = useDataVisStore()
 const {
@@ -294,6 +445,87 @@ const editCount = computed(() => editHistory.value?.length ?? 0)
 const showSaveConfirm = ref(false)
 const showCloseConfirm = ref(false)
 const exitIntent = ref<'save' | 'save-close' | null>(null)
+
+// --- Editor layout: sidebar sizes + collapse flags ------------------
+// Persisted to localStorage so the user's preferred layout survives
+// reloads. Widths / percentages share the same `qc:editorLayout`
+// namespace; flags are boolean keys alongside.
+const {
+  size: drawerWidth,
+  onStart: startDrawerDrag,
+  dragging: drawerDragging,
+} = useResizable({
+  initial: 220,
+  min: 180,
+  max: 420,
+  storageKey: 'qc:editorLayout:drawerWidth',
+})
+const {
+  size: auxWidth,
+  onStart: startAuxDrag,
+  dragging: auxDragging,
+} = useResizable({
+  initial: 360,
+  min: 280,
+  max: 720,
+  // Right sidebar — the drag grip is on its LEFT (plot-facing)
+  // edge, so dragging the grip LEFT should grow the sidebar. That
+  // means the x-delta needs to be inverted.
+  invert: true,
+  storageKey: 'qc:editorLayout:auxWidth',
+})
+// Template ref used by `useResizable` to convert pixel deltas into
+// percent-of-container during the History / OperationPanel split
+// drag. Without the conversion a small pointer move would add raw
+// pixels onto the percent value, making the panel lunge.
+const auxBodyEl = useTemplateRef<HTMLElement>('auxBodyEl')
+const {
+  size: historyPercent,
+  onStart: startAuxSplitDrag,
+  dragging: auxSplitDragging,
+} = useResizable({
+  initial: 40,
+  min: 20,
+  max: 80,
+  direction: 'vertical',
+  storageKey: 'qc:editorLayout:historyPercent',
+  getContainerPx: () => auxBodyEl.value?.clientHeight ?? 0,
+})
+const drawerCollapsed = usePersistedFlag(
+  'qc:editorLayout:drawerCollapsed',
+  false
+)
+const auxCollapsed = usePersistedFlag('qc:editorLayout:auxCollapsed', false)
+const plottedCollapsed = usePersistedFlag(
+  'qc:editorLayout:plottedCollapsed',
+  false
+)
+const {
+  size: plottedHeight,
+  onStart: startPlottedDrag,
+  dragging: plottedDragging,
+} = useResizable({
+  initial: 200,
+  min: 80,
+  max: 600,
+  direction: 'vertical',
+  storageKey: 'qc:editorLayout:plottedHeight',
+})
+const historyCollapsed = usePersistedFlag(
+  'qc:editorLayout:historyCollapsed',
+  false
+)
+const historyModalOpen = ref(false)
+
+// The history pane has four layout states depending on whether an
+// operation is staged AND whether history is collapsed. Collapsed
+// collapses to just the header; otherwise it either fills the aux
+// body or takes its percentage share when the split is active.
+const historyPaneStyle = computed(() => {
+  if (historyCollapsed.value) return { flex: '0 0 auto' }
+  if (selectedOperation.value) return { flex: `0 0 ${historyPercent.value}%` }
+  return { flex: '1 1 auto' }
+})
 
 function exitToSelect() {
   currentView.value = DrawerType.Select
@@ -584,9 +816,9 @@ function goToEdit() {
 }
 
 .edit-view__col--drawer {
-  flex: 0 0 220px;
-  min-width: 200px;
-  max-width: 260px;
+  /* Width is driven inline via `drawerWidth`; flex settings here
+     just prevent the sidebar from growing past its set width. */
+  flex: 0 0 auto;
 }
 
 .edit-view__col--plot {
@@ -594,34 +826,101 @@ function goToEdit() {
 }
 
 .edit-view__col--aux {
-  flex: 0 0 25%;
-  min-width: 320px;
+  flex: 0 0 auto;
 }
 
-/* Split the lower sidebar between Edit History and the Operation Panel
-   when an operation is selected. Each half scrolls independently; the
-   outer aux column already has `overflow-y-auto`, but we tighten that
-   to `hidden` so the page doesn't inherit a scrollbar — each child
-   owns its own scroll region. */
+.edit-view__col--collapsed {
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+}
+
+.edit-view__sidebar-bar {
+  min-height: 32px;
+}
+
+/* Column resize grip. Renders as a 4px hit target with a subtle
+   center rule so it's discoverable but not heavy. `--active` keeps
+   the primary tint on throughout a drag even when the cursor leaves
+   the grip element — important because the drag listeners live on
+   the window. */
+.edit-view__grip {
+  flex: 0 0 auto;
+  position: relative;
+  user-select: none;
+}
+.edit-view__grip--vertical {
+  width: 4px;
+  cursor: col-resize;
+}
+.edit-view__grip--vertical::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1px;
+  width: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.edit-view__grip--vertical:hover::after,
+.edit-view__grip--active.edit-view__grip--vertical::after {
+  background: rgba(var(--v-theme-primary), 0.55);
+}
+.edit-view__grip--horizontal {
+  height: 4px;
+  cursor: row-resize;
+}
+.edit-view__grip--horizontal::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 1px;
+  height: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.edit-view__grip--horizontal:hover::after,
+.edit-view__grip--active.edit-view__grip--horizontal::after {
+  background: rgba(var(--v-theme-primary), 0.55);
+}
+
+/* Clickable section header (Plotted Datastreams, etc.). Subtle
+   hover so the affordance reads without competing with the
+   surrounding chrome. */
+.edit-view__section-header {
+  cursor: pointer;
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  min-height: 28px;
+}
+.edit-view__section-header:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+.edit-view__section-header:focus {
+  outline: none;
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
+/* Plotted Datastreams body. Fixed height driven inline by the
+   persisted `plottedHeight`; the horizontal grip below adjusts it
+   live. `overflow-y: auto` keeps long plotted lists from pushing
+   the Edit history panel off-screen. */
+.edit-view__plotted-body {
+  overflow-y: auto;
+  min-height: 0;
+}
+
 .edit-view__aux-body {
   min-height: 0;
   overflow: hidden;
 }
 
 .edit-view__history {
-  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
 
-.edit-view__history--split {
-  /* Keep a usable amount of history visible (~40% of the lower column)
-     when the operation panel is open. */
-  flex: 0 0 40%;
-}
-
 .edit-view__op-panel {
-  flex: 1 1 60%;
   min-height: 0;
   overflow: hidden;
 }
