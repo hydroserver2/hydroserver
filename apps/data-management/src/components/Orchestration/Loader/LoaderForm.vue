@@ -6,37 +6,21 @@
       variant="outlined"
       rounded="lg"
     >
-      <v-toolbar title="Loader configurations" color="blue-grey-darken-2">
-        <v-select
-          class="mx-4"
-          v-model="loader.type"
-          :items="LOADER_OPTIONS"
-          label="Type"
-          density="compact"
-          rounded="lg"
-          :prepend-inner-icon="mdiWeb"
-          hide-details
-          max-width="250px"
-          variant="outlined"
-        />
-      </v-toolbar>
+      <v-toolbar title="Loader" color="blue-grey-darken-2" />
       <v-card-text>
-        No additional configurations needed for loading into HydroServer.
+        Data will be loaded into HydroServer. No additional configuration
+        needed.
       </v-card-text>
     </v-card>
   </v-form>
 </template>
 
 <script setup lang="ts">
-import { useDataConnectionStore } from '@/store/dataConnection'
-
-import { storeToRefs } from 'pinia'
-import { LOADER_OPTIONS } from '@hydroserver/client'
 import { ref } from 'vue'
 import { VForm } from 'vuetify/lib/components/index.mjs'
-import { mdiWeb } from '@mdi/js'
 
 const localForm = ref<VForm>()
+const isValid = ref(true)
 
 async function validate() {
   await localForm.value?.validate()
@@ -44,6 +28,4 @@ async function validate() {
 }
 
 defineExpose({ validate })
-
-const { loader, isLoaderValid: isValid } = storeToRefs(useDataConnectionStore())
 </script>

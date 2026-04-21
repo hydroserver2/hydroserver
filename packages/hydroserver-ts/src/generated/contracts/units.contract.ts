@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace UnitContract {
   export const route = 'units' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_unit_get_units']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_unit_get_units']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_sta_unit_get_units']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_unit_get_units']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['UnitSummaryResponse']
   export type DetailResponse  = Data.components['schemas']['UnitDetailResponse']
   export type PostBody        = Data.components['schemas']['UnitPostBody']

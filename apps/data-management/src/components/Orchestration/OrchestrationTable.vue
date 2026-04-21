@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar flat color="cyan-darken-3" class="gap-3">
       <v-toolbar-title class="flex-shrink-0">
-        Orchestration systems
+        Data connections
       </v-toolbar-title>
       <div class="ml-auto flex min-w-0 items-center gap-3">
         <v-text-field
@@ -47,19 +47,21 @@
             </v-chip>
           </template>
         </v-autocomplete>
-        <v-btn
-          class="mr-4"
-          @click="
-            openDataConnectionTableDialog = !openDataConnectionTableDialog
-          "
-          rounded="xl"
-          color="white"
-          variant="outlined"
-          density="comfortable"
-          :append-icon="openDataConnectionTableDialog ? mdiMenuUp : mdiMenuDown"
-        >
-          Manage data connections
-        </v-btn>
+        <v-tooltip location="top" :disabled="canEditOrchestration">
+          <template #activator="{ props: tooltipProps }">
+            <span v-bind="tooltipProps" class="inline-flex">
+              <v-btn-add
+                class="mr-4"
+                color="white"
+                :disabled="!canEditOrchestration"
+                @click="openCreateDialog"
+              >
+                Add data connection
+              </v-btn-add>
+            </span>
+          </template>
+          <span>{{ readOnlyTooltip }}</span>
+        </v-tooltip>
       </div>
     </v-toolbar>
 
@@ -76,7 +78,7 @@
               width="2"
               color="blue-grey-darken-1"
             />
-            <span class="font-medium">Loading orchestration tasks...</span>
+            <span class="font-medium">Loading...</span>
           </div>
         </div>
         <v-skeleton-loader type="table" class="rounded-md" />
@@ -90,7 +92,7 @@
           class="mt-2 text-base font-semibold text-slate-700"
           v-if="statusFilter.length === 0 && !`${search || ''}`.trim()"
         >
-          You have not registered any orchestration systems.
+          No data connections have been registered yet.
         </h4>
         <h4 class="mt-2 text-base font-semibold text-slate-700" v-else>
           No tasks match your search/filter.
@@ -99,7 +101,7 @@
           class="mt-2"
           v-if="statusFilter.length === 0 && !`${search || ''}`.trim()"
         >
-          Click the 'download Streaming Data Loader' button to get started or
+          Click 'Add data connection' to get started or
           <a
             href="https://hydroserver.org"
             target="_blank"
@@ -201,16 +203,39 @@
               >
                 <template #activator="{ props: tooltipProps }">
                   <span v-bind="tooltipProps" class="inline-flex">
-                    <v-btn-add
-                      class="hidden md:inline-flex"
-                      color="white"
-                      @click.stop="openCreateDialog(group.orchestrationSystem)"
+                    <v-btn
+                      variant="outlined"
+                      color="cyan-darken-3"
+                      size="small"
+                      class="text-none"
+                      :prepend-icon="mdiPlus"
                       :disabled="
-                        !canEditOrchestration || !group.orchestrationSystem
+                        !canEditOrchestration || !group.dataConnection
                       "
+                      @click.stop="openCreateTaskDialog(group.dataConnection!)"
                     >
                       Add task
-                    </v-btn-add>
+                    </v-btn>
+                  </span>
+                </template>
+                <span>{{ groupActionDisabledReason(group) }}</span>
+              </v-tooltip>
+              <v-tooltip
+                location="top"
+                :disabled="!groupActionDisabledReason(group)"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <span v-bind="tooltipProps" class="inline-flex">
+                    <v-btn
+                      variant="text"
+                      color="blue-grey-darken-2"
+                      :icon="mdiPencil"
+                      class="hidden md:inline-flex"
+                      :disabled="
+                        !canEditOrchestration || !group.dataConnection
+                      "
+                      @click.stop="openEditDialog(group.dataConnection!)"
+                    />
                   </span>
                 </template>
                 <span>{{ groupActionDisabledReason(group) }}</span>
@@ -225,10 +250,10 @@
                       variant="text"
                       color="red-darken-2"
                       :icon="mdiTrashCanOutline"
-                      @click.stop="openDeleteDialog(group.orchestrationSystem)"
                       :disabled="
-                        !canEditOrchestration || !group.orchestrationSystem
+                        !canEditOrchestration || !group.dataConnection
                       "
+                      @click.stop="openDeleteDialog(group.dataConnection!)"
                     />
                   </span>
                 </template>
@@ -269,16 +294,16 @@
                       <button
                         type="button"
                         class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('dataConnection')"
+                        @click="toggleSort('type')"
                         title="Click to sort, click again to reverse, click again to clear"
                       >
-                        <span>Data connection</span>
-                        <v-icon :icon="sortIcon('dataConnection')" size="16" />
+                        <span>Type</span>
+                        <v-icon :icon="sortIcon('type')" size="16" />
                         <span
-                          v-if="sortBadge('dataConnection')"
+                          v-if="sortBadge('type')"
                           class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
                         >
-                          {{ sortBadge('dataConnection') }}
+                          {{ sortBadge('type') }}
                         </span>
                       </button>
                     </th>
@@ -342,7 +367,7 @@
                       colspan="6"
                       class="px-3 py-6 text-center text-sm text-slate-500"
                     >
-                      No tasks registered for this orchestration system.
+                      No tasks registered for this data connection.
                     </td>
                   </tr>
                 </tbody>
@@ -367,7 +392,7 @@
                     <td
                       class="px-3 py-2 text-slate-600 whitespace-normal break-words"
                     >
-                      {{ row.dataConnection?.name || '—' }}
+                      {{ row.type || '—' }}
                     </td>
                     <td class="px-3 py-2">
                       <v-tooltip
@@ -382,7 +407,7 @@
                           <span v-bind="tooltipProps" class="inline-flex">
                             <TaskStatus
                               :status="row.statusName"
-                              :paused="row.schedule?.paused"
+                              :paused="row.schedule ? !row.schedule.enabled : false"
                             />
                           </span>
                         </template>
@@ -440,28 +465,24 @@
                                   variant="text"
                                   color="black"
                                   :icon="
-                                    row.schedule?.paused ? mdiPlay : mdiPause
+                                    row.schedule?.enabled ? mdiPause : mdiPlay
                                   "
                                   :disabled="!canEditOrchestration"
                                   @click.stop="togglePaused(row)"
-                                  aria-label="Pause or run task"
+                                  aria-label="Pause or resume task"
                                 />
                               </span>
                             </template>
                             <span>{{
                               !canEditOrchestration
                                 ? readOnlyTooltip
-                                : row.schedule?.paused
-                                ? 'Resume task'
-                                : 'Pause task'
+                                : row.schedule?.enabled
+                                  ? 'Pause task'
+                                  : 'Resume task'
                             }}</span>
                           </v-tooltip>
                           <v-btn
-                            v-if="
-                              canEditOrchestration &&
-                              isInternalSystem(row) &&
-                              !row.userClickedRunNow
-                            "
+                            v-if="canEditOrchestration && !row.userClickedRunNow"
                             variant="outlined"
                             color="green-darken-3"
                             :append-icon="mdiPlay"
@@ -470,11 +491,7 @@
                             Run now
                           </v-btn>
                           <span
-                            v-else-if="
-                              canEditOrchestration &&
-                              isInternalSystem(row) &&
-                              row.userClickedRunNow
-                            "
+                            v-else-if="canEditOrchestration && row.userClickedRunNow"
                             class="text-sm font-semibold text-slate-500"
                           >
                             Run requested
@@ -511,23 +528,42 @@
     </div>
   </v-card>
 
-  <v-dialog v-model="openCreate" v-if="selectedOrchestrationSystem">
+  <v-dialog v-model="openCreateDataConnection" width="60rem">
+    <DataConnectionForm
+      @close="openCreateDataConnection = false"
+      @created="onDataConnectionCreated"
+    />
+  </v-dialog>
+
+  <v-dialog v-if="selectedTaskDataConnection" v-model="openCreateTask" width="80rem">
     <TaskForm
-      :orchestration-system="selectedOrchestrationSystem"
-      @close="openCreate = false"
-      @created="refreshTable"
+      :initial-data-connection="selectedTaskDataConnection"
+      @close="closeCreateTaskDialog"
+      @created="onTaskCreated"
     />
   </v-dialog>
 
   <v-dialog
-    v-if="selectedOrchestrationSystem"
-    v-model="openDelete"
+    v-if="selectedDataConnection"
+    v-model="openEditDataConnection"
+    width="80rem"
+  >
+    <DataConnectionForm
+      :dataConnection="selectedDataConnection"
+      @close="openEditDataConnection = false"
+      @updated="onDataConnectionUpdated"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-if="selectedDataConnection"
+    v-model="openDeleteDataConnection"
     width="40rem"
   >
-    <DeleteOrchestrationSystemCard
-      :orchestration-system="selectedOrchestrationSystem"
-      @close="openDelete = false"
-      @delete="refreshTable"
+    <DeleteDataConnectionCard
+      :itemName="selectedDataConnection.name"
+      @close="openDeleteDataConnection = false"
+      @delete="onDataConnectionDeleted"
     />
   </v-dialog>
 </template>
@@ -552,18 +588,21 @@ import {
 } from '@/utils/orchestration/taskRunDetails'
 import { formatTime } from '@/utils/time'
 import hs, {
-  OrchestrationSystem,
+  DataConnection,
   PermissionAction,
   PermissionResource,
   Task,
   TaskExpanded,
   TaskRun,
+  TaskSchedule,
 } from '@hydroserver/client'
 import {
   mdiFilterVariant,
   mdiMagnify,
   mdiPause,
+  mdiPencil,
   mdiPlay,
+  mdiPlus,
   mdiTrashCanOutline,
   mdiChevronRight,
   mdiChevronDown,
@@ -574,35 +613,40 @@ import {
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
-import { useDataConnectionStore } from '@/store/dataConnection'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 
+const DataConnectionForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/DataConnectionForm.vue')
+)
 const TaskForm = defineAsyncComponent(
   () => import('@/components/Orchestration/TaskForm.vue')
 )
-const DeleteOrchestrationSystemCard = defineAsyncComponent(
-  () => import('@/components/Orchestration/DeleteOrchestrationSystemCard.vue')
+const DeleteDataConnectionCard = defineAsyncComponent(
+  () => import('@/components/Orchestration/DeleteDataConnectionCard.vue')
 )
 
 const props = defineProps<{
   workspaceId: string
 }>()
 
-const { openDataConnectionTableDialog } = storeToRefs(useDataConnectionStore())
 const { workspaceTasks, orchestrationSearch, orchestrationStatusFilter } =
   storeToRefs(useOrchestrationStore())
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
-const openCreate = ref(false)
-const openDelete = ref(false)
 const search = orchestrationSearch
-const orchestrationSystems = ref<OrchestrationSystem[]>([])
-const selectedOrchestrationSystem = ref<OrchestrationSystem>()
 const loading = ref(false)
 const runNowTriggeredByTaskId = reactive<Record<string, boolean>>({})
 const statusFilter = orchestrationStatusFilter
+
+const dataConnections = ref<DataConnection[]>([])
+const selectedDataConnection = ref<DataConnection | null>(null)
+const selectedTaskDataConnection = ref<DataConnection | null>(null)
+const openCreateDataConnection = ref(false)
+const openCreateTask = ref(false)
+const openEditDataConnection = ref(false)
+const openDeleteDataConnection = ref(false)
 
 const openGroupName = ref<string | null>(null)
 const hasAutoOpened = ref(false)
@@ -616,16 +660,12 @@ const ROW_HEIGHT = 80
 const OVERSCAN = 6
 const POLL_INTERVAL_MS = 4000
 const POLL_MAX_ATTEMPTS = 150
-const GLOBAL_WORKSPACE_FILTER = 'null'
 
 const taskPollTimeouts = new Map<string, number>()
 let orchestrationFetchRequestId = 0
 
 const workspaceForPage = computed(() =>
   workspaces.value.find((workspace) => workspace.id === props.workspaceId)
-)
-const orchestrationSystemsById = computed(
-  () => new Map(orchestrationSystems.value.map((os) => [os.id, os]))
 )
 
 const canEditOrchestration = computed(() => {
@@ -645,18 +685,17 @@ const readOnlyTooltip =
   'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
 const groupActionDisabledReason = (group: {
-  orchestrationSystem?: OrchestrationSystem
+  dataConnection: DataConnection | null
 }) => {
   if (!canEditOrchestration.value) return readOnlyTooltip
-  if (!group?.orchestrationSystem)
-    return 'No orchestration system is available for this action.'
+  if (!group.dataConnection)
+    return 'No data connection is available for this action.'
   return ''
 }
 
-type SortKey = 'name' | 'dataConnection' | 'status' | 'lastRunAt' | 'nextRunAt'
+type SortKey = 'name' | 'type' | 'status' | 'lastRunAt' | 'nextRunAt'
 type SortSpec = { key: SortKey; dir: 'asc' | 'desc' }
 
-// Multi-sort: first clicked column is primary, subsequent clicks add secondary sorts.
 const sortSpecs = ref<SortSpec[]>([{ key: 'name', dir: 'asc' }])
 
 watch(
@@ -742,25 +781,19 @@ const fetchOrchestrationData = async (newId: string) => {
   const requestId = ++orchestrationFetchRequestId
   loading.value = true
   try {
-    const [orchestrationSystemResponse, taskItems] = await Promise.all([
-      hs.orchestrationSystems.listAllItems({
-        workspace_id: [newId, GLOBAL_WORKSPACE_FILTER] as any,
-      }),
+    const [dcItems, taskItems] = await Promise.all([
+      hs.dataConnections.listAllItems({
+        workspace_id: newId,
+        order_by: 'name',
+      } as any),
       hs.tasks.listAllItems({
-        expand_related: true,
-        workspace_id: [newId],
-        include_mappings: false,
-        include_latest_run_result: false,
-        include_data_connection_settings: false,
+        workspace_id: newId,
       } as any),
     ])
 
     if (requestId !== orchestrationFetchRequestId) return
 
-    // TODO: Allow HydroShare as an option once we have archival functionality in the orchestration system
-    orchestrationSystems.value = orchestrationSystemResponse.filter(
-      (os) => os.type !== 'HydroShare'
-    )
+    dataConnections.value = dcItems
     workspaceTasks.value = taskItems as any
   } catch (error) {
     if (requestId !== orchestrationFetchRequestId) return
@@ -786,38 +819,88 @@ watch(
   { immediate: true }
 )
 
+const openCreateDialog = () => {
+  if (!canEditOrchestration.value) return
+  openCreateDataConnection.value = true
+}
+
+const openCreateTaskDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedTaskDataConnection.value = dc
+  openCreateTask.value = true
+}
+
+const closeCreateTaskDialog = () => {
+  openCreateTask.value = false
+  selectedTaskDataConnection.value = null
+}
+
+const openEditDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedDataConnection.value = dc
+  openEditDataConnection.value = true
+}
+
+const openDeleteDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedDataConnection.value = dc
+  openDeleteDataConnection.value = true
+}
+
+const onDataConnectionCreated = async () => {
+  openCreateDataConnection.value = false
+  const items = await hs.dataConnections.listAllItems({
+    workspace_id: props.workspaceId,
+    order_by: 'name',
+  } as any)
+  dataConnections.value = items
+}
+
+const onTaskCreated = async (created: TaskExpanded) => {
+  const groupName =
+    created?.dataConnection?.name ?? selectedTaskDataConnection.value?.name
+  closeCreateTaskDialog()
+  await refreshTable()
+  if (groupName) {
+    openGroupName.value = groupName
+  }
+}
+
+const onDataConnectionUpdated = (updated: DataConnection) => {
+  openEditDataConnection.value = false
+  const idx = dataConnections.value.findIndex((dc) => dc.id === updated.id)
+  if (idx !== -1) dataConnections.value[idx] = updated
+}
+
+const onDataConnectionDeleted = async () => {
+  if (!selectedDataConnection.value) return
+  const id = selectedDataConnection.value.id
+  try {
+    await hs.dataConnections.delete(id)
+    dataConnections.value = dataConnections.value.filter((dc) => dc.id !== id)
+    openDeleteDataConnection.value = false
+  } catch (error) {
+    console.error('Error deleting data connection', error)
+  }
+}
+
 const searchText = computed(() => `${search.value || ''}`.trim().toLowerCase())
 
-const resolveGroupName = (task: any) => {
-  const directName = task?.orchestrationSystem?.name
-  if (directName) return directName
-  const matched = orchestrationSystemsById.value.get(task?.orchestrationSystemId)
-  return matched?.name ?? 'Unknown'
-}
-
-const resolveOrchestrationSystem = (task: any) => {
-  if (task?.orchestrationSystem) return task.orchestrationSystem
-  const matchedById = orchestrationSystemsById.value.get(
-    task?.orchestrationSystemId
-  )
-  if (matchedById) return matchedById
-  return orchestrationSystems.value.find(
-    (os) => os.name === resolveGroupName(task)
-  )
-}
+const resolveDataConnectionName = (task: any) =>
+  task?.dataConnection?.name ?? 'No data connection'
 
 const taskRows = computed(() =>
   workspaceTasks.value.map((t) => ({
     ...t,
     schedule: t.schedule ?? null,
-    statusName: getTaskStatusText(t),
-    statusSort: getDisplayedTaskStatus(t),
-    lastRun: !!t.latestRun?.startedAt ? formatTime(t.latestRun.startedAt) : '-',
-    nextRun: t.schedule?.nextRunAt ? formatTime(t.schedule?.nextRunAt) : '-',
+    statusName: getTaskStatusText(t as any),
+    statusSort: getDisplayedTaskStatus(t as any),
+    lastRun: t.latestRun?.startedAt ? formatTime(t.latestRun.startedAt) : '-',
+    nextRun: t.schedule?.nextRunAt ? formatTime(t.schedule.nextRunAt) : '-',
     lastRunAt: t.latestRun?.startedAt ?? null,
     nextRunAt: t.schedule?.nextRunAt ?? null,
     lastRunMessage: getTaskRunMessage(t.latestRun as any),
-    orchestrationSystemName: resolveGroupName(t),
+    dataConnectionName: resolveDataConnectionName(t),
     isPlaceholder: false,
     userClickedRunNow: !!runNowTriggeredByTaskId[t.id],
   }))
@@ -827,11 +910,11 @@ const matchesSearch = (task: any, term: string) => {
   if (!term) return true
   const haystack = [
     task.name,
-    task.dataConnection?.name,
+    task.dataConnectionName,
+    task.type,
     task.statusSort ?? task.statusName,
     task.lastRun,
     task.nextRun,
-    task.orchestrationSystemName,
   ]
     .filter(Boolean)
     .join(' ')
@@ -856,7 +939,6 @@ const compareText = (a: unknown, b: unknown) =>
   })
 
 const compareNullableDate = (a: unknown, b: unknown) => {
-  // Treat missing dates as "last" when sorting ascending.
   const aVal = a ? new Date(a as any).getTime() : null
   const bVal = b ? new Date(b as any).getTime() : null
   if (aVal == null && bVal == null) return 0
@@ -867,9 +949,7 @@ const compareNullableDate = (a: unknown, b: unknown) => {
 
 const buildComparatorForKey = (key: SortKey) => {
   if (key === 'name') return (a: any, b: any) => compareText(a?.name, b?.name)
-  if (key === 'dataConnection')
-    return (a: any, b: any) =>
-      compareText(a?.dataConnection?.name, b?.dataConnection?.name)
+  if (key === 'type') return (a: any, b: any) => compareText(a?.type, b?.type)
   if (key === 'status')
     return (a: any, b: any) => compareText(a?.statusSort, b?.statusSort)
   if (key === 'lastRunAt')
@@ -919,37 +999,36 @@ const groupList = computed(() => {
     string,
     {
       name: string
+      dataConnection: DataConnection | null
       items: any[]
-      orchestrationSystem?: OrchestrationSystem
       summary: ReturnType<typeof groupHealthSummary>
     }
   >()
 
   if (includeEmptyGroups.value) {
-    orchestrationSystems.value.forEach((os) => {
-      map.set(os.name, {
-        name: os.name,
+    dataConnections.value.forEach((dc) => {
+      map.set(dc.name, {
+        name: dc.name,
+        dataConnection: dc,
         items: [],
-        orchestrationSystem: os,
         summary: groupHealthSummary([]),
       })
     })
   }
 
   filteredTaskRows.value.forEach((row) => {
-    const name = row.orchestrationSystemName ?? 'Unknown'
-    const orchestrationSystem = resolveOrchestrationSystem(row)
+    const name = row.dataConnectionName
     const existing = map.get(name)
     if (existing) {
       existing.items.push(row)
-      if (!existing.orchestrationSystem && orchestrationSystem) {
-        existing.orchestrationSystem = orchestrationSystem
+      if (!existing.dataConnection && row.dataConnection) {
+        existing.dataConnection = row.dataConnection
       }
     } else {
       map.set(name, {
         name,
+        dataConnection: row.dataConnection ?? null,
         items: [row],
-        orchestrationSystem,
         summary: groupHealthSummary([row]),
       })
     }
@@ -1116,7 +1195,9 @@ const scheduleTaskPoll = (
     try {
       if (requestedRunId) {
         const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
-        const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
+        const updatedRun = runResponse.ok
+          ? ((runResponse.data as TaskRun) ?? null)
+          : null
 
         if (workspaceId !== props.workspaceId) {
           runNowTriggeredByTaskId[taskId] = false
@@ -1191,7 +1272,9 @@ async function runTaskNow(task: Partial<Task> & Pick<Task, 'id'>) {
     if (!response.ok) {
       throw new Error(response.message || 'Unable to run task now.')
     }
-    const requestedRun = response.ok ? ((response.data as TaskRun) ?? null) : null
+    const requestedRun = response.ok
+      ? ((response.data as TaskRun) ?? null)
+      : null
     if (requestedRun?.id) {
       syncTaskLatestRun(task.id, requestedRun)
     }
@@ -1211,18 +1294,17 @@ async function runTaskNow(task: Partial<Task> & Pick<Task, 'id'>) {
 async function togglePaused(task: Partial<Task> & Pick<Task, 'id'>) {
   if (!canEditOrchestration.value) return
   if (!task.schedule) return
-  const previous = !!task.schedule.paused
-  task.schedule.paused = !previous
+  const previousEnabled = !!(task.schedule as TaskSchedule).enabled
+  ;(task.schedule as TaskSchedule).enabled = !previousEnabled
   try {
     await hs.tasks.update({
       id: task.id,
       schedule: task.schedule,
     } as any)
-    // Avoid full-table reload; refresh just this row so next/last run times stay accurate.
-    const updated = await hs.tasks.getItem(task.id, { expand_related: true })
+    const updated = await hs.tasks.getItem(task.id)
     upsertWorkspaceTask(updated as any)
   } catch (error) {
-    task.schedule.paused = previous
+    ;(task.schedule as TaskSchedule).enabled = previousEnabled
     console.error('Error toggling task paused state', error)
   }
 }
@@ -1268,35 +1350,6 @@ onBeforeUnmount(() => {
   stopAllTaskPolling()
 })
 
-const isInternalSystem = (item: any) => {
-  const isInternalType = (value: unknown) =>
-    typeof value === 'string' && value.trim().toUpperCase() === 'INTERNAL'
-
-  const directType =
-    item?.orchestrationSystem?.type ??
-    item?.orchestrationSystem?.orchestrationSystemType ??
-    item?.orchestrationSystem?.orchestration_system_type ??
-    item?.orchestrationSystemType ??
-    item?.orchestration_system_type
-  if (isInternalType(directType)) return true
-
-  const systemId = item?.orchestrationSystemId ?? item?.orchestrationSystem?.id
-  const matched = orchestrationSystemsById.value.get(systemId)
-  return isInternalType((matched as any)?.type)
-}
-
-const openCreateDialog = (selectedItem: any) => {
-  if (!canEditOrchestration.value) return
-  selectedOrchestrationSystem.value = selectedItem
-  openCreate.value = true
-}
-
-const openDeleteDialog = (selectedItem: any) => {
-  if (!canEditOrchestration.value) return
-  selectedOrchestrationSystem.value = selectedItem
-  openDelete.value = true
-}
-
 const goToTask = async (item: any) => {
   if (item.isPlaceholder) return
   const currentQuery = router.currentRoute.value.query ?? {}
@@ -1326,7 +1379,6 @@ const toggleSort = (key: SortKey) => {
     return
   }
 
-  // Third click clears this sort key.
   next.splice(idx, 1)
   sortSpecs.value = normalizeSortSpecs(next)
 }

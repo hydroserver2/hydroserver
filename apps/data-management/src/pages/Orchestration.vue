@@ -17,12 +17,6 @@
         </template>
       </WorkspaceToolbar>
 
-      <v-expand-transition>
-        <div v-if="!!selectedWorkspace && openDataConnectionTableDialog">
-          <DataConnectionTable :workspace-id="selectedWorkspace.id" />
-        </div>
-      </v-expand-transition>
-
       <template v-if="!!selectedWorkspace">
         <OrchestrationTable :workspace-id="selectedWorkspace.id" />
       </template>
@@ -69,8 +63,6 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import hs from '@hydroserver/client'
 import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
-import DataConnectionTable from '@/components/Orchestration/DataConnectionTable.vue'
-import { useDataConnectionStore } from '@/store/dataConnection'
 import { mdiChevronRight } from '@mdi/js'
 import { useRoute } from 'vue-router'
 import router from '@/router/router'
@@ -80,8 +72,6 @@ const TaskDetails = defineAsyncComponent(() => import('@/pages/TaskDetails.vue')
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { setWorkspaces, setSelectedWorkspaceById } = workspaceStore
-
-const { openDataConnectionTableDialog } = storeToRefs(useDataConnectionStore())
 
 const route = useRoute()
 

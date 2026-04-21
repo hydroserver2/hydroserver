@@ -122,12 +122,12 @@ describe('task run detail helpers', () => {
   })
 
   it('uses failure counts and target status to detect failed runs', () => {
-    const leanFailure: TaskRun = {
+    const leanFailure = {
       id: 'run-0',
       status: 'SUCCESS',
       failureCount: 2,
       result: null,
-    }
+    } as any as TaskRun
 
     const countedFailure: TaskRun = {
       id: 'run-1',

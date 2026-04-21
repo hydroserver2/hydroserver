@@ -1,34 +1,34 @@
 <template>
-  <v-row v-if="transformer.type === 'JSON'">
-    <v-col cols="12">
+  <v-row>
+    <v-col cols="12" md="6">
       <v-card-item>
         <v-card-title>JMESPath</v-card-title>
       </v-card-item>
       <v-card-text>
         <v-text-field
-          v-model="transformer.settings.JMESPath"
-          label="JMESPath *"
+          v-model="jsonPayload.jmespath"
+          label="JMESPath expression"
           density="compact"
           rounded="lg"
           :prepend-inner-icon="mdiFileTree"
-          :rules="rules.required"
+          clearable
         />
       </v-card-text>
     </v-col>
-  </v-row>
-  <v-row class="mt-0">
-    <v-col md="6">
+    <v-col cols="12" md="6">
       <TimestampFields />
     </v-col>
   </v-row>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { storeToRefs } from 'pinia'
 import TimestampFields from '@/components/Orchestration/Timestamp/TimestampFields.vue'
-import { rules } from '@/utils/rules'
+import type { JSONPayload } from '@hydroserver/client'
 import { mdiFileTree } from '@mdi/js'
 
-const { transformer } = storeToRefs(useDataConnectionStore())
+const { dataConnection } = storeToRefs(useDataConnectionStore())
+const jsonPayload = computed(() => dataConnection.value.payload as JSONPayload)
 </script>

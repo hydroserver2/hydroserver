@@ -29,18 +29,9 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     const ids = new Set<string>()
 
     for (const task of workspaceTasks.value) {
-      const targetIdentifiers =
-        task.targetIdentifiers?.length
-          ? task.targetIdentifiers
-          : (task.mappings ?? []).flatMap((mapping) =>
-              (mapping.paths ?? []).map((path) => path.targetIdentifier)
-            )
-
-      for (const targetIdentifier of targetIdentifiers) {
-        if (targetIdentifier === undefined || targetIdentifier === null) continue
-        const normalized = String(targetIdentifier)
-        if (!normalized) continue
-        ids.add(normalized)
+      for (const mapping of task.mappings ?? []) {
+        const id = mapping.targetDatastream?.id
+        if (id) ids.add(String(id))
       }
     }
 

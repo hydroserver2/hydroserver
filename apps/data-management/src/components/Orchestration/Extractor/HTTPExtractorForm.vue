@@ -76,7 +76,7 @@
         </v-radio-group>
       </v-col>
 
-      <v-col v-if="variable.type == 'runTime'">
+      <v-col v-if="(variable as any).type == 'runTime'">
         <v-select
           v-model="variable.runTimeValue"
           :items="runTimeOptions"
@@ -113,7 +113,8 @@ import { computed, ref, watch } from 'vue'
 import TimestampFormat from '../Timestamp/TimestampFormat.vue'
 import { mdiCodeBraces, mdiHelpCircleOutline } from '@mdi/js'
 
-const { extractor } = storeToRefs(useDataConnectionStore())
+const { dataConnection } = storeToRefs(useDataConnectionStore())
+const extractor = (dataConnection.value as any).extractor
 const showUrlHelp = ref(false)
 
 const runTimeOptions = [
@@ -126,7 +127,7 @@ const runTimeOptions = [
 
 type HTTPSettings = {
   sourceUri: string
-  placeholderVariables: PlaceholderVariable[]
+  placeholderVariables: any[]
 }
 
 const httpExtractor = computed<HTTPExtractor & { settings: HTTPSettings }>(
@@ -173,11 +174,11 @@ watch(
         )
       return existingVar
         ? existingVar
-        : ({
+        : {
             name,
             type: 'perTask',
             runTimeValue: '',
-          } as PlaceholderVariable)
+          }
     })
 
     httpExtractor.value.settings.placeholderVariables = newVariables
@@ -195,8 +196,8 @@ watch(
   () => {
     httpExtractor.value.settings.placeholderVariables.forEach(
       (v: PlaceholderVariable) => {
-        if (v.type === 'runTime') {
-          const rt = v as RunTimePlaceholder
+        if ((v as any).type === 'runTime') {
+          const rt = v as any
           if (!rt.timestamp) {
             rt.runTimeValue = rt.runTimeValue || runTimeOptions[0].value
             rt.timestamp = {

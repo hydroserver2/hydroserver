@@ -26,8 +26,8 @@
         {{ isAggregationTask ? 'Target datastream' : 'Target' }}
       </div>
 
-      <template v-for="(m, mi) in task.mappings" :key="mi">
-        <template v-for="(p, pi) in m.paths" :key="pi">
+      <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+        <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
           <div
             :class="[
               'cell',
@@ -481,11 +481,11 @@ function enforceAggregationShape() {
   if (!isAggregationTask.value) return
 
   if (!task.value.mappings?.length) {
-    task.value.mappings = [
+    ;(task.value as any).mappings = [
       {
         sourceIdentifier: '',
         paths: [{ targetIdentifier: '', dataTransformations: [] }],
-      } as Mapping,
+      },
     ]
   }
 
@@ -540,12 +540,12 @@ async function validate() {
 
   const nextMissingKeys = new Set<string>()
 
-  task.value.mappings.forEach((m, mi) => {
+  task.value.mappings.forEach((m: any, mi) => {
     const hasAnyTarget =
-      Array.isArray(m.paths) && m.paths.some((p) => !!p.targetIdentifier)
+      Array.isArray(m.paths) && m.paths.some((p: any) => !!p.targetIdentifier)
     if (!hasAnyTarget) ok = false
 
-    m.paths?.forEach((p, pi) => {
+    m.paths?.forEach((p: any, pi: any) => {
       if (!p.targetIdentifier) nextMissingKeys.add(`${mi}:${pi}`)
     })
   })
@@ -604,8 +604,8 @@ function openAggregationDatastreamSelector(
 
 function referencedTargetIds(): Set<string> {
   const ids = new Set<string>()
-  for (const m of task.value.mappings) {
-    for (const p of m.paths) {
+  for (const m of task.value.mappings as any[]) {
+    for (const p of (m as any).paths) {
       const id = p.targetIdentifier
       if (id !== undefined && id !== null && String(id) !== '') {
         ids.add(String(id))
@@ -653,7 +653,7 @@ function onTargetSelected(event: DatastreamExtended) {
   const mi = activeMi.value,
     pi = activePi.value
   if (mi == null || pi == null) return
-  const m = task.value.mappings[mi]
+  const m = task.value.mappings[mi] as any
   const p = m?.paths?.[pi]
 
   p.targetIdentifier = event.id
@@ -676,7 +676,7 @@ function onAggregationDatastreamSelected(event: DatastreamExtended) {
   const pi = aggregationSelectorPi.value
   if (mi == null || pi == null) return
 
-  const mapping = task.value.mappings[mi]
+  const mapping = task.value.mappings[mi] as any
   const path = mapping?.paths?.[pi]
   if (!mapping || !path) return
 
@@ -735,7 +735,7 @@ function removeMapping(mi: number) {
 
 function removeMappingRow(mi: number, pi: number) {
   const mappings = task.value.mappings
-  const m = mappings[mi]
+  const m = mappings[mi] as any
   if (!m) return
 
   m.paths.splice(pi, 1)
@@ -745,9 +745,9 @@ function removeMappingRow(mi: number, pi: number) {
 
 function onAddPath(mi: number) {
   if (isAggregationTask.value) return
-  const m = task.value.mappings[mi]
+  const m = task.value.mappings[mi] as any
   if (!m) return
-  if (!Array.isArray(m.paths)) (m as any).paths = []
+  if (!Array.isArray(m.paths)) m.paths = []
   m.paths.push({
     targetIdentifier: '',
     dataTransformations: [],
@@ -770,7 +770,7 @@ function onAddMapping() {
   if (isAggregationTask.value) {
     ensureAggregationTransformation(newMapping.paths[0])
   }
-  task.value.mappings.push(newMapping)
+  ;(task.value.mappings as any[]).push(newMapping)
 }
 
 watch(

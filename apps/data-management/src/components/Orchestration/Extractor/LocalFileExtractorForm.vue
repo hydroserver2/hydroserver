@@ -20,5 +20,6 @@ import { storeToRefs } from 'pinia'
 import { LocalFileExtractor } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 
-const { extractor } = storeToRefs(useDataConnectionStore())
+const { dataConnection } = storeToRefs(useDataConnectionStore())
+const extractor = (dataConnection.value as any).extractor as LocalFileExtractor
 </script>

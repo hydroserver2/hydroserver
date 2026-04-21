@@ -6,7 +6,6 @@ import { ProcessingLevelService } from './services/processing-level.service'
 import { ResultQualifierService } from './services/result-qualifier.service'
 import { DatastreamService } from './services/datastream.service'
 import { SensorService } from './services/sensor.service'
-import { OrchestrationSystemService } from './services/orchestration-system.service'
 import { DataConnectionService } from './services/data-connection.service'
 import { TaskService } from './services/task.service'
 import { ThingFileAttachmentService } from './services/thing-file-attachment.service'
@@ -21,7 +20,7 @@ export class HydroServer {
   readonly host: string
   readonly baseRoute: string
   readonly authBase: string
-  readonly etlBase: string
+  readonly etlDataBase: string
   readonly providerBase: string
 
   private _workspaces?: WorkspaceService
@@ -32,7 +31,6 @@ export class HydroServer {
   private _resultQualifiers?: ResultQualifierService
   private _sensors?: SensorService
   private _datastreams?: DatastreamService
-  private _orchestrationSystems?: OrchestrationSystemService
   private _session?: SessionService
   private _user?: UserService
 
@@ -45,7 +43,7 @@ export class HydroServer {
     this.host = host.trim().replace(/\/+$/, '')
     this.baseRoute = `${this.host}/api/data`
     this.authBase = `${this.host}/api/auth`
-    this.etlBase = `${this.host}/api/etl`
+    this.etlDataBase = `${this.host}/api/data/etl`
     this.providerBase = `${this.authBase}/browser/provider`
   }
 
@@ -90,9 +88,6 @@ export class HydroServer {
   }
   get datastreams(): DatastreamService {
     return (this._datastreams ??= new DatastreamService(this))
-  }
-  get orchestrationSystems(): OrchestrationSystemService {
-    return (this._orchestrationSystems ??= new OrchestrationSystemService(this))
   }
   get dataConnections(): DataConnectionService {
     return (this._dataConnections ??= new DataConnectionService(this))

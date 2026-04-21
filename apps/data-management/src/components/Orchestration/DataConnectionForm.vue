@@ -120,7 +120,6 @@ const loaded = ref(false)
 const isSubmitting = ref(false)
 const notificationRecipientInput = ref('')
 const notificationRecipientInputError = ref('')
-// const scheduleType = ref('interval')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -153,10 +152,11 @@ const normalizeNotificationRecipients = (values: readonly unknown[]) => {
 const isValidNotificationRecipient = (value: string) => emailPattern.test(value)
 
 const notificationRecipientEmails = computed<string[]>({
-  get: () => formDataConnection.value.notificationRecipientEmails ?? [],
+  get: () => (formDataConnection.value as any).notification?.recipientEmails ?? [],
   set: (value) => {
-    formDataConnection.value.notificationRecipientEmails =
-      normalizeNotificationRecipients(value)
+    const dc = formDataConnection.value as any
+    if (!dc.notification) dc.notification = {}
+    dc.notification.recipientEmails = normalizeNotificationRecipients(value)
   },
 })
 
@@ -200,57 +200,6 @@ watch(notificationRecipientInput, () => {
   }
 })
 
-// let prevDataConnection = undefined
-// if (props.isEdit) prevDataConnection = JSON.parse(JSON.stringify(toRaw(dataConnection.value)))
-// else {
-//   // let workflowType = 'SDL'
-//   // if (props.orchestrationSystem?.type === 'airflow') {
-//   const workflowType: WorkflowType = 'ETL'
-//   // }
-//   dataConnection.value = new DataConnection({
-//     extractor: JSON.parse(JSON.stringify(extractorDefaults['local'])),
-//     transformer: JSON.parse(JSON.stringify(transformerDefaults['CSV'])),
-//     loader: JSON.parse(JSON.stringify(loaderDefaults['HydroServer'])),
-//     workspaceId: selectedWorkspace.value!.id,
-//   })
-// }
-
-// const orchestrationOptions = computed(() => [
-//   { title: 'Celery Task Queue', value: null }, // default/null option
-//   ...orchestrationSystems.value.map((os) => ({
-//     title: os.name,
-//     value: os.id,
-//   })),
-// ])
-
-// const startInput = computed<string>({
-//   get: () => isoToInput(dataConnection.value.schedule.startTime, 'local'),
-//   set: (v) => {
-//     dataConnection.value.schedule.startTime = inputToIso(v, 'local')
-//   },
-// })
-
-// const endInput = computed<string>({
-//   get: () => isoToInput(dataConnection.value.schedule.endTime, 'local'),
-//   set: (v) => {
-//     dataConnection.value.schedule.endTime = inputToIso(v, 'local')
-//   },
-// })
-
-// function isoToInput(iso = '', mode: 'local' | 'utc') {
-//   if (!iso) return ''
-//   const d = new Date(ensureIsoUtc(iso))
-//   const ms =
-//     mode === 'utc' ? d.getTime() : d.getTime() - d.getTimezoneOffset() * 60_000
-//   return new Date(ms).toISOString().slice(0, 16)
-// }
-
-// function inputToIso(str = '', mode: 'local' | 'utc') {
-//   if (!str) return ''
-//   const parsed = mode === 'utc' ? new Date(str + 'Z') : new Date(str)
-//   return parsed.toISOString()
-// }
-
 async function validate() {
   const validExtractor = await extractorRef.value.validate()
   const validTransformer = await transformerRef.value.validate()
@@ -273,9 +222,13 @@ async function onSubmit() {
   }
 
   formDataConnection.value.workspace = selectedWorkspace.value
+  const body = {
+    ...formDataConnection.value,
+    workspaceId: selectedWorkspace.value?.id,
+  }
   const res = isEdit.value
     ? await hs.dataConnections.update(formDataConnection.value)
-    : await hs.dataConnections.create(formDataConnection.value)
+    : await hs.dataConnections.create(body as any)
 
   if (res.ok) {
     if (isEdit.value) {
@@ -295,9 +248,6 @@ async function onSubmit() {
 }
 
 onMounted(async () => {
-  // orchestrationSystems.value = await hs.orchestrationSystems.listAllItems({
-  //   workspace_id: [selectedWorkspace.value!.id],
-  // })
   loaded.value = true
 })
 </script>

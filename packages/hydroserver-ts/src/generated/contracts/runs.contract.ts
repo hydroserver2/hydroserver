@@ -4,13 +4,13 @@ import type * as Data from '../data.types'
 
 export namespace RunContract {
   export const route = 'runs' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_run_get_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_run_get_task_runs']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['TaskRunResponse']
   export type DetailResponse  = never
-  export type PostBody        = Data.components['schemas']['TaskRunPostBody']
-  export type PatchBody       = Data.components['schemas']['TaskRunPatchBody']
+  export type PostBody        = never
+  export type PatchBody       = never
   export type DeleteBody      = never
-  export const writableKeys = ["finishedAt","result","startedAt","status"] as const
+  export const writableKeys = [] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

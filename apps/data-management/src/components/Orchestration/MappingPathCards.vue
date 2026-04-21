@@ -28,7 +28,7 @@
 
     <v-card-text class="pt-4">
       <v-row
-        v-for="(t, ti) in p.dataTransformations"
+        v-for="(t, ti) in (p.dataTransformations as any[])"
         :key="ti"
         class="align-center mb-2"
       >
@@ -143,20 +143,20 @@ import {
   mdiTrashCanOutline,
 } from '@mdi/js'
 
-const mapping = defineModel<Mapping>('mapping', { required: true })
+const mapping = defineModel<{ paths: any[]; [k: string]: any }>('mapping', { required: true })
 
-function addExpression(p: MappingPath) {
+function addExpression(p: any) {
   const t: ExpressionDataTransformation = { type: 'expression', expression: '' }
   p.dataTransformations.push(t)
 }
 
-function addLookup(p: MappingPath) {
+function addLookup(p: any) {
   const t: any = { type: 'rating_curve', ratingCurveUrl: '' }
   setRatingCurveReference(t, '')
   p.dataTransformations.push(t)
 }
 
-function removeTransform(p: MappingPath, tIndex: number) {
+function removeTransform(p: any, tIndex: number) {
   p.dataTransformations.splice(tIndex, 1)
 }
 

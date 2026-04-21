@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace ObservedPropertyContract {
   export const route = 'observed-properties' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_observed_property_get_observed_properties']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_observed_property_get_observed_properties']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_sta_observed_property_get_observed_properties']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_observed_property_get_observed_properties']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['ObservedPropertySummaryResponse']
   export type DetailResponse  = Data.components['schemas']['ObservedPropertyDetailResponse']
   export type PostBody        = Data.components['schemas']['ObservedPropertyPostBody']

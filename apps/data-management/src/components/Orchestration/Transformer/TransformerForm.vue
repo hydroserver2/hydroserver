@@ -2,44 +2,37 @@
   <v-form ref="localForm" v-model="isValid" validate-on="input">
     <v-card class="mt-4" color="green-darken-4" variant="outlined" rounded="lg">
       <v-toolbar color="green">
-        <v-card-title>Transformer configurations</v-card-title>
+        <v-card-title>Payload &amp; Timestamp</v-card-title>
         <v-spacer />
         <v-select
           class="mx-4"
-          v-model="transformer.type"
-          :items="TRANSFORMER_OPTIONS"
-          label="Type"
+          v-model="payloadType"
+          :items="['CSV', 'JSON']"
+          label="Payload type"
           density="compact"
           rounded="lg"
-          :prepend-inner-icon="mdiWeb"
           hide-details
-          max-width="250px"
+          max-width="200px"
           variant="outlined"
         />
       </v-toolbar>
 
-      <JSONTransformerForm v-if="transformer.type === 'JSON'" />
-      <CSVTransformerForm v-else-if="transformer.type === 'CSV'" />
+      <JSONTransformerForm v-if="payloadType === 'JSON'" />
+      <CSVTransformerForm v-else-if="payloadType === 'CSV'" />
     </v-card>
   </v-form>
 </template>
 
 <script setup lang="ts">
-import JSONTransformerForm from './JSONTransformerForm.vue'
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useDataConnectionStore } from '@/store/dataConnection'
-
 import { storeToRefs } from 'pinia'
+import JSONTransformerForm from './JSONTransformerForm.vue'
 import CSVTransformerForm from './CSVTransformerForm.vue'
-import {
-  switchTransformer,
-  TRANSFORMER_OPTIONS,
-  TransformerConfig,
-} from '@hydroserver/client'
 import { VForm } from 'vuetify/lib/components/index.mjs'
-import { mdiWeb } from '@mdi/js'
 
 const localForm = ref<VForm>()
+const isValid = ref(true)
 
 async function validate() {
   await localForm.value?.validate()
@@ -48,22 +41,16 @@ async function validate() {
 
 defineExpose({ validate })
 
-const {
-  transformer,
-  dataConnection,
-  isTransformerValid: isValid,
-} = storeToRefs(useDataConnectionStore())
+const { dataConnection } = storeToRefs(useDataConnectionStore())
 
-const savedTransformer: TransformerConfig = JSON.parse(
-  JSON.stringify(transformer.value)
-)
-
-watch(
-  () => transformer.value.type,
-  (newType) => {
-    if (savedTransformer.type === newType)
-      transformer.value = JSON.parse(JSON.stringify(savedTransformer))
-    else switchTransformer(dataConnection.value, newType)
-  }
-)
+const payloadType = computed({
+  get: () => dataConnection.value.payload.type,
+  set: (newType: 'CSV' | 'JSON') => {
+    if (newType === 'CSV') {
+      dataConnection.value.payload = { type: 'CSV' }
+    } else {
+      dataConnection.value.payload = { type: 'JSON' }
+    }
+  },
+})
 </script>

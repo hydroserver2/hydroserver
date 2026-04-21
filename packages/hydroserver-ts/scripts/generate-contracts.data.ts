@@ -18,10 +18,9 @@ const resources = [
   'observations',
 
   // ETL
-  'etl-data-connections',
-  'etl-tasks',
+  'data-connections',
+  'tasks',
   'runs',
-  'etl-orchestration-systems',
 ]
 
 generateContracts({

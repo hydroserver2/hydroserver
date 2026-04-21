@@ -27,8 +27,8 @@
       {{ isAggregationTask ? 'Target datastream' : 'Target' }}
     </div>
 
-    <template v-for="(m, mi) in task.mappings" :key="mi">
-      <template v-for="(p, pi) in m.paths" :key="pi">
+    <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+      <template v-for="(p, pi) in (m as any).paths" :key="pi">
         <div class="cell source" :class="{ 'source-empty': pi !== 0 }">
           <template v-if="pi === 0">
             <v-chip size="small" color="primary" variant="flat" class="mr-2">

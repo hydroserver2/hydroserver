@@ -48,7 +48,7 @@
     variant="inset"
   >
     <v-expansion-panel
-      v-for="(m, mi) in task.mappings ?? []"
+      v-for="(m, mi) in anyMappings"
       :key="mi"
       density="compact"
       class="bg-grey-lighten-4"
@@ -97,7 +97,7 @@
           class="mt-3 mx-2"
         />
 
-        <MappingPathCards v-model:mapping="task.mappings[mi]" />
+        <MappingPathCards v-model:mapping="anyMappings[mi]" />
 
         <v-btn
           size="small"
@@ -114,9 +114,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import MappingPathCards from './MappingPathCards.vue'
-import { Mapping, Task } from '@hydroserver/client'
+import { Task } from '@hydroserver/client'
 import {
   mdiArrowRight,
   mdiChevronDown,
@@ -130,9 +130,10 @@ const task = defineModel<Task>('task', { required: true })
 
 const showHelp = ref(false)
 const openPanels = ref<number[]>([])
+const anyMappings = computed(() => task.value.mappings as any[])
 
 function onAddMapping() {
-  task.value.mappings.push({
+  ;(task.value.mappings as any[]).push({
     sourceIdentifier: '',
     paths: [{ targetIdentifier: '', dataTransformations: [] }],
   })
@@ -145,12 +146,12 @@ function onRemoveMapping(index: number) {
     .map((i) => (i > index ? i - 1 : i))
 }
 
-const targetsCount = (m: Mapping) => {
+const targetsCount = (m: any) => {
   const n = m.paths?.length ?? 0
   return `${n} target${n === 1 ? '' : 's'}`
 }
 
-function addPath(m: Mapping) {
+function addPath(m: any) {
   m.paths.push({ targetIdentifier: '', dataTransformations: [] })
 }
 

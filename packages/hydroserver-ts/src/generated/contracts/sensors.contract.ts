@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace SensorContract {
   export const route = 'sensors' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_sensor_get_sensors']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sensor_get_sensors']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_sta_sensor_get_sensors']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_sensor_get_sensors']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['SensorSummaryResponse']
   export type DetailResponse  = Data.components['schemas']['SensorDetailResponse']
   export type PostBody        = Data.components['schemas']['SensorPostBody']

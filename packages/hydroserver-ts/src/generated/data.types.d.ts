@@ -15,13 +15,13 @@ export interface paths {
          * Get Datastreams
          * @description Get public Datastreams and Datastreams associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_datastream_get_datastreams"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastreams"];
         put?: never;
         /**
          * Create Datastream
          * @description Create a new Datastream.
          */
-        post: operations["interfaces_api_views_datastream_create_datastream"];
+        post: operations["interfaces_api_views_sta_datastream_create_datastream"];
         delete?: never;
         options?: never;
         head?: never;
@@ -39,7 +39,7 @@ export interface paths {
          * Get Datastream Aggregation Statistics
          * @description Get datastream aggregation statistics.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_aggregation_statistics"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -59,7 +59,7 @@ export interface paths {
          * Get File Attachment Types
          * @description Get file attachment types.
          */
-        get: operations["interfaces_api_views_datastream_get_file_attachment_types"];
+        get: operations["interfaces_api_views_sta_datastream_get_file_attachment_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -79,7 +79,7 @@ export interface paths {
          * Get Datastream Sampled Mediums
          * @description Get datastream sampled mediums.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_sampled_mediums"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_sampled_mediums"];
         put?: never;
         post?: never;
         delete?: never;
@@ -99,7 +99,7 @@ export interface paths {
          * Get Datastream Statuses
          * @description Get datastream statuses.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_statuses"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_statuses"];
         put?: never;
         post?: never;
         delete?: never;
@@ -119,7 +119,7 @@ export interface paths {
          * Get Datastream Tag Keys
          * @description Get all existing unique datastream tag keys.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_tag_keys"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
         put?: never;
         post?: never;
         delete?: never;
@@ -139,7 +139,7 @@ export interface paths {
          * Get Datastream Visualization Bootstrap
          * @description Get the lean metadata required to bootstrap the visualization page.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_visualization_bootstrap"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
         put?: never;
         post?: never;
         delete?: never;
@@ -159,21 +159,21 @@ export interface paths {
          * Get Datastream
          * @description Get a Datastream.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream"];
         put?: never;
         post?: never;
         /**
          * Delete Datastream
          * @description Delete a Datastream.
          */
-        delete: operations["interfaces_api_views_datastream_delete_datastream"];
+        delete: operations["interfaces_api_views_sta_datastream_delete_datastream"];
         options?: never;
         head?: never;
         /**
          * Update Datastream
          * @description Update a Datastream.
          */
-        patch: operations["interfaces_api_views_datastream_update_datastream"];
+        patch: operations["interfaces_api_views_sta_datastream_update_datastream"];
         trace?: never;
     };
     "/api/data/datastreams/{datastream_id}/csv": {
@@ -187,7 +187,7 @@ export interface paths {
          * Get Datastream Csv
          * @description Get a CSV representation of the Datastream.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_csv"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_csv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -207,22 +207,22 @@ export interface paths {
          * Get Datastream File Attachments
          * @description Get all file attachments associated with a Datastream.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_file_attachments"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_file_attachments"];
         /**
          * Replace Datastream File Attachment
          * @description Replace a file attachment for a datastream.
          */
-        put: operations["interfaces_api_views_datastream_replace_datastream_file_attachment"];
+        put: operations["interfaces_api_views_sta_datastream_replace_datastream_file_attachment"];
         /**
          * Add Datastream File Attachment
          * @description Add a file attachment to a datastream.
          */
-        post: operations["interfaces_api_views_datastream_add_datastream_file_attachment"];
+        post: operations["interfaces_api_views_sta_datastream_add_datastream_file_attachment"];
         /**
          * Remove Datastream File Attachment
          * @description Remove a file attachment from a datastream.
          */
-        delete: operations["interfaces_api_views_datastream_remove_datastream_file_attachment"];
+        delete: operations["interfaces_api_views_sta_datastream_remove_datastream_file_attachment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -239,13 +239,13 @@ export interface paths {
          * Get Observations
          * @description Get Datastream Observations.
          */
-        get: operations["interfaces_api_views_observation_get_observations"];
+        get: operations["interfaces_api_views_sta_observation_get_observations"];
         put?: never;
         /**
          * Create Observation
          * @description Create a new Observation.
          */
-        post: operations["interfaces_api_views_observation_create_observation"];
+        post: operations["interfaces_api_views_sta_observation_create_observation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -265,7 +265,7 @@ export interface paths {
          * Insert Observations
          * @description Insert Datastream Observations.
          */
-        post: operations["interfaces_api_views_observation_insert_observations"];
+        post: operations["interfaces_api_views_sta_observation_insert_observations"];
         delete?: never;
         options?: never;
         head?: never;
@@ -285,7 +285,7 @@ export interface paths {
          * Delete Observations
          * @description Delete Datastream Observations between the given phenomenon start and end times.
          */
-        post: operations["interfaces_api_views_observation_delete_observations"];
+        post: operations["interfaces_api_views_sta_observation_delete_observations"];
         delete?: never;
         options?: never;
         head?: never;
@@ -303,14 +303,14 @@ export interface paths {
          * Get Observation
          * @description Get an Observation.
          */
-        get: operations["interfaces_api_views_observation_get_observation"];
+        get: operations["interfaces_api_views_sta_observation_get_observation"];
         put?: never;
         post?: never;
         /**
          * Delete Observation
          * @description Delete an Observation.
          */
-        delete: operations["interfaces_api_views_observation_delete_observation"];
+        delete: operations["interfaces_api_views_sta_observation_delete_observation"];
         options?: never;
         head?: never;
         patch?: never;
@@ -327,28 +327,28 @@ export interface paths {
          * Get Datastream Tags
          * @description Get all tags associated with a Datastream.
          */
-        get: operations["interfaces_api_views_datastream_get_datastream_tags"];
+        get: operations["interfaces_api_views_sta_datastream_get_datastream_tags"];
         /**
          * Edit Datastream Tag
          * @description Edit a tag of a Datastream.
          */
-        put: operations["interfaces_api_views_datastream_edit_datastream_tag"];
+        put: operations["interfaces_api_views_sta_datastream_edit_datastream_tag"];
         /**
          * Add Datastream Tag
          * @description Add a tag to a Datastream.
          */
-        post: operations["interfaces_api_views_datastream_add_datastream_tag"];
+        post: operations["interfaces_api_views_sta_datastream_add_datastream_tag"];
         /**
          * Remove Datastream Tag
          * @description Remove a tag from a Datastream.
          */
-        delete: operations["interfaces_api_views_datastream_remove_datastream_tag"];
+        delete: operations["interfaces_api_views_sta_datastream_remove_datastream_tag"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-data-connections": {
+    "/api/data/etl/data-connections": {
         parameters: {
             query?: never;
             header?: never;
@@ -359,20 +359,20 @@ export interface paths {
          * Get Data Connections
          * @description Get ETL Data Connections associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_data_connection_get_data_connections"];
+        get: operations["interfaces_api_views_etl_data_connection_get_data_connections"];
         put?: never;
         /**
          * Create Data Connection
          * @description Create a new ETL Data Connection.
          */
-        post: operations["interfaces_api_views_data_connection_create_data_connection"];
+        post: operations["interfaces_api_views_etl_data_connection_create_data_connection"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-data-connections/{data_connection_id}": {
+    "/api/data/etl/data-connections/{data_connection_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -383,24 +383,24 @@ export interface paths {
          * Get Data Connection
          * @description Get an ETL Data Connection.
          */
-        get: operations["interfaces_api_views_data_connection_get_data_connection"];
+        get: operations["interfaces_api_views_etl_data_connection_get_data_connection"];
         put?: never;
         post?: never;
         /**
          * Delete Data Connection
          * @description Delete an ETL Data Connection.
          */
-        delete: operations["interfaces_api_views_data_connection_delete_data_connection"];
+        delete: operations["interfaces_api_views_etl_data_connection_delete_data_connection"];
         options?: never;
         head?: never;
         /**
          * Update Data Connection
-         * @description Update a ETL Data Connection.
+         * @description Update an ETL Data Connection.
          */
-        patch: operations["interfaces_api_views_data_connection_update_data_connection"];
+        patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
     };
-    "/api/data/etl-orchestration-systems": {
+    "/api/data/etl/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -408,75 +408,23 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Orchestration Systems
-         * @description Get public Orchestration Systems and Orchestration Systems associated with the authenticated user.
+         * Get Etl Tasks
+         * @description Get ETL Tasks accessible to the authenticated user.
          */
-        get: operations["interfaces_api_views_orchestration_system_get_orchestration_systems"];
+        get: operations["interfaces_api_views_etl_task_get_etl_tasks"];
         put?: never;
         /**
-         * Create Orchestration System
-         * @description Create a new Orchestration System.
-         */
-        post: operations["interfaces_api_views_orchestration_system_create_orchestration_system"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/etl-orchestration-systems/{orchestration_system_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Orchestration System
-         * @description Get an Orchestration System.
-         */
-        get: operations["interfaces_api_views_orchestration_system_get_orchestration_system"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Orchestration System
-         * @description Delete an ETL Orchestration System.
-         */
-        delete: operations["interfaces_api_views_orchestration_system_delete_orchestration_system"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Orchestration System
-         * @description Update an Orchestration System.
-         */
-        patch: operations["interfaces_api_views_orchestration_system_update_orchestration_system"];
-        trace?: never;
-    };
-    "/api/data/etl-tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Tasks
-         * @description Get ETL Tasks associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_task_get_tasks"];
-        put?: never;
-        /**
-         * Create Task
+         * Create Etl Task
          * @description Create a new ETL Task.
          */
-        post: operations["interfaces_api_views_task_create_task"];
+        post: operations["interfaces_api_views_etl_task_create_etl_task"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/data/etl-tasks/{task_id}": {
+    "/api/data/etl/tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -484,80 +432,248 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Task
+         * Get Etl Task
          * @description Get an ETL Task.
          */
-        get: operations["interfaces_api_views_task_get_task"];
-        put?: never;
-        /**
-         * Run Task
-         * @description Run an ETL Task.
-         */
-        post: operations["interfaces_api_views_task_run_task"];
-        /**
-         * Delete Task
-         * @description Delete an ETL Task.
-         */
-        delete: operations["interfaces_api_views_task_delete_task"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Task
-         * @description Update an ETL Task.
-         */
-        patch: operations["interfaces_api_views_task_update_task"];
-        trace?: never;
-    };
-    "/api/data/etl-tasks/{task_id}/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Task Runs
-         * @description Get all runs for an ETL Task.
-         */
-        get: operations["interfaces_api_views_run_get_task_runs"];
-        put?: never;
-        /**
-         * Create Task Run
-         * @description Create a new ETL Task run.
-         */
-        post: operations["interfaces_api_views_run_create_task_run"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/etl-tasks/{task_id}/runs/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Task Run
-         * @description Get an ETL Task Run.
-         */
-        get: operations["interfaces_api_views_run_get_task_run"];
+        get: operations["interfaces_api_views_etl_task_get_etl_task"];
         put?: never;
         post?: never;
         /**
-         * Delete Task Run
-         * @description Delete an ETL Task run.
+         * Delete Etl Task
+         * @description Delete an ETL Task.
          */
-        delete: operations["interfaces_api_views_run_delete_task_run"];
+        delete: operations["interfaces_api_views_etl_task_delete_etl_task"];
         options?: never;
         head?: never;
         /**
-         * Update Task Run
-         * @description Update an ETL Task run.
+         * Update Etl Task
+         * @description Update an ETL Task.
          */
-        patch: operations["interfaces_api_views_run_update_task_run"];
+        patch: operations["interfaces_api_views_etl_task_update_etl_task"];
+        trace?: never;
+    };
+    "/api/data/etl/tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Task Runs
+         * @description Get runs for an ETL Task.
+         */
+        get: operations["interfaces_api_views_etl_task_get_etl_task_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/etl/tasks/{task_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Etl Task Run
+         * @description Get a single run for an ETL Task.
+         */
+        get: operations["interfaces_api_views_etl_task_get_etl_task_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/etl/tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger Etl Task
+         * @description Trigger an immediate run of an ETL Task on a Celery worker.
+         */
+        post: operations["interfaces_api_views_etl_task_trigger_etl_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Tasks
+         * @description Get monitoring tasks accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_monitoring_task_get_monitoring_tasks"];
+        put?: never;
+        /**
+         * Create Monitoring Task
+         * @description Create a new monitoring task.
+         */
+        post: operations["interfaces_api_views_monitoring_task_create_monitoring_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Task
+         * @description Get a monitoring task.
+         */
+        get: operations["interfaces_api_views_monitoring_task_get_monitoring_task"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Task
+         * @description Delete a monitoring task.
+         */
+        delete: operations["interfaces_api_views_monitoring_task_delete_monitoring_task"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Task
+         * @description Update a monitoring task.
+         */
+        patch: operations["interfaces_api_views_monitoring_task_update_monitoring_task"];
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rules
+         * @description Get rules for a monitoring task.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rules"];
+        put?: never;
+        /**
+         * Create Monitoring Rule
+         * @description Create a monitoring rule on a datastream belonging to the given task.
+         */
+        post: operations["interfaces_api_views_monitoring_rule_create_monitoring_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Rule
+         * @description Get a monitoring rule.
+         */
+        get: operations["interfaces_api_views_monitoring_rule_get_monitoring_rule"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Rule
+         * @description Delete a monitoring rule.
+         */
+        delete: operations["interfaces_api_views_monitoring_rule_delete_monitoring_rule"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Rule
+         * @description Update a monitoring rule's parameters.
+         */
+        patch: operations["interfaces_api_views_monitoring_rule_update_monitoring_rule"];
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Task Runs
+         * @description Get runs for a monitoring task.
+         */
+        get: operations["interfaces_api_views_monitoring_task_get_monitoring_task_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Task Run
+         * @description Get a single run for a monitoring task.
+         */
+        get: operations["interfaces_api_views_monitoring_task_get_monitoring_task_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring/tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger Monitoring Task
+         * @description Trigger an immediate run of a monitoring task on a Celery worker.
+         */
+        post: operations["interfaces_api_views_monitoring_task_trigger_monitoring_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/data/observed-properties": {
@@ -571,13 +687,13 @@ export interface paths {
          * Get Observed Properties
          * @description Get public Observed Properties and Observed Properties associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_observed_property_get_observed_properties"];
+        get: operations["interfaces_api_views_sta_observed_property_get_observed_properties"];
         put?: never;
         /**
          * Create Observed Property
          * @description Create a new Observed Property.
          */
-        post: operations["interfaces_api_views_observed_property_create_observed_property"];
+        post: operations["interfaces_api_views_sta_observed_property_create_observed_property"];
         delete?: never;
         options?: never;
         head?: never;
@@ -595,7 +711,7 @@ export interface paths {
          * Get Datastream Aggregation Statistics
          * @description Get variable types.
          */
-        get: operations["interfaces_api_views_observed_property_get_datastream_aggregation_statistics"];
+        get: operations["interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -615,21 +731,21 @@ export interface paths {
          * Get Observed Property
          * @description Get an Observed Property.
          */
-        get: operations["interfaces_api_views_observed_property_get_observed_property"];
+        get: operations["interfaces_api_views_sta_observed_property_get_observed_property"];
         put?: never;
         post?: never;
         /**
          * Delete Observed Property
          * @description Delete an Observed Property.
          */
-        delete: operations["interfaces_api_views_observed_property_delete_observed_property"];
+        delete: operations["interfaces_api_views_sta_observed_property_delete_observed_property"];
         options?: never;
         head?: never;
         /**
          * Update Observed Property
          * @description Update an Observed Property.
          */
-        patch: operations["interfaces_api_views_observed_property_update_observed_property"];
+        patch: operations["interfaces_api_views_sta_observed_property_update_observed_property"];
         trace?: never;
     };
     "/api/data/processing-levels": {
@@ -643,13 +759,13 @@ export interface paths {
          * Get Processing Levels
          * @description Get public Processing Levels and Processing Levels associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_processing_level_get_processing_levels"];
+        get: operations["interfaces_api_views_sta_processing_level_get_processing_levels"];
         put?: never;
         /**
          * Create Processing Level
          * @description Create a new Processing Level.
          */
-        post: operations["interfaces_api_views_processing_level_create_processing_level"];
+        post: operations["interfaces_api_views_sta_processing_level_create_processing_level"];
         delete?: never;
         options?: never;
         head?: never;
@@ -667,21 +783,393 @@ export interface paths {
          * Get Processing Level
          * @description Get a Processing Level.
          */
-        get: operations["interfaces_api_views_processing_level_get_processing_level"];
+        get: operations["interfaces_api_views_sta_processing_level_get_processing_level"];
         put?: never;
         post?: never;
         /**
          * Delete Processing Level
          * @description Delete a Processing Level.
          */
-        delete: operations["interfaces_api_views_processing_level_delete_processing_level"];
+        delete: operations["interfaces_api_views_sta_processing_level_delete_processing_level"];
         options?: never;
         head?: never;
         /**
          * Update Processing Level
          * @description Update a Processing Level.
          */
-        patch: operations["interfaces_api_views_processing_level_update_processing_level"];
+        patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
+        trace?: never;
+    };
+    "/api/data/products/rating-curves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curves
+         * @description Get rating curves accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curves"];
+        put?: never;
+        /**
+         * Create Rating Curve
+         * @description Create a new rating curve.
+         */
+        post: operations["interfaces_api_views_products_rating_curve_create_rating_curve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/rating-curves/{rating_curve_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curve
+         * @description Get a rating curve.
+         */
+        get: operations["interfaces_api_views_products_rating_curve_get_rating_curve"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rating Curve
+         * @description Delete a rating curve.
+         */
+        delete: operations["interfaces_api_views_products_rating_curve_delete_rating_curve"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Rating Curve
+         * @description Update a rating curve.
+         */
+        patch: operations["interfaces_api_views_products_rating_curve_update_rating_curve"];
+        trace?: never;
+    };
+    "/api/data/products/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Tasks
+         * @description Get data product tasks accessible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_tasks"];
+        put?: never;
+        /**
+         * Create Data Product Task
+         * @description Create a new data product task.
+         */
+        post: operations["interfaces_api_views_products_task_create_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task
+         * @description Get a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Data Product Task
+         * @description Delete a data product task.
+         */
+        delete: operations["interfaces_api_views_products_task_delete_data_product_task"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Data Product Task
+         * @description Update a data product task.
+         */
+        patch: operations["interfaces_api_views_products_task_update_data_product_task"];
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Runs
+         * @description Get runs for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Data Product Task Run
+         * @description Get a single run for a data product task.
+         */
+        get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/aggregation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aggregation Transformations
+         * @description Get aggregation transformations for a data product task.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_aggregation_transformations"];
+        put?: never;
+        /**
+         * Create Aggregation Transformation
+         * @description Create an aggregation transformation on a data product task.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_aggregation_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/aggregation/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aggregation Transformation
+         * @description Get an aggregation transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_aggregation_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Aggregation Transformation
+         * @description Delete an aggregation transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_aggregation_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Aggregation Transformation
+         * @description Update an aggregation transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_aggregation_transformation"];
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/composite-expression": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Composite Expression Transformations
+         * @description Get composite expression transformations for a data product task.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_composite_expression_transformations"];
+        put?: never;
+        /**
+         * Create Composite Expression Transformation
+         * @description Create a composite expression transformation on a data product task.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_composite_expression_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/composite-expression/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Composite Expression Transformation
+         * @description Get a composite expression transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_composite_expression_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Composite Expression Transformation
+         * @description Delete a composite expression transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_composite_expression_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Composite Expression Transformation
+         * @description Update a composite expression transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_composite_expression_transformation"];
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/expression": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Expression Transformations
+         * @description Get expression transformations for a data product task.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_expression_transformations"];
+        put?: never;
+        /**
+         * Create Expression Transformation
+         * @description Create an expression transformation on a data product task.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_expression_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/expression/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Expression Transformation
+         * @description Get an expression transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_expression_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Expression Transformation
+         * @description Delete an expression transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_expression_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Expression Transformation
+         * @description Update an expression transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_expression_transformation"];
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/rating-curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curve Transformations
+         * @description Get rating curve transformations for a data product task.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_rating_curve_transformations"];
+        put?: never;
+        /**
+         * Create Rating Curve Transformation
+         * @description Create a rating curve transformation on a data product task.
+         */
+        post: operations["interfaces_api_views_products_transformation_create_rating_curve_transformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/transformations/rating-curve/{transformation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rating Curve Transformation
+         * @description Get a rating curve transformation.
+         */
+        get: operations["interfaces_api_views_products_transformation_get_rating_curve_transformation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rating Curve Transformation
+         * @description Delete a rating curve transformation.
+         */
+        delete: operations["interfaces_api_views_products_transformation_delete_rating_curve_transformation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Rating Curve Transformation
+         * @description Update a rating curve transformation.
+         */
+        patch: operations["interfaces_api_views_products_transformation_update_rating_curve_transformation"];
+        trace?: never;
+    };
+    "/api/data/products/tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger Data Product Task
+         * @description Trigger an immediate run of a data product task on a Celery worker.
+         */
+        post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/data/result-qualifiers": {
@@ -695,13 +1183,13 @@ export interface paths {
          * Get Result Qualifiers
          * @description Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_result_qualifier_get_result_qualifiers"];
+        get: operations["interfaces_api_views_sta_result_qualifier_get_result_qualifiers"];
         put?: never;
         /**
          * Create Result Qualifier
          * @description Create a new Result Qualifier.
          */
-        post: operations["interfaces_api_views_result_qualifier_create_result_qualifier"];
+        post: operations["interfaces_api_views_sta_result_qualifier_create_result_qualifier"];
         delete?: never;
         options?: never;
         head?: never;
@@ -719,21 +1207,21 @@ export interface paths {
          * Get Result Qualifier
          * @description Get a Result Qualifier.
          */
-        get: operations["interfaces_api_views_result_qualifier_get_result_qualifier"];
+        get: operations["interfaces_api_views_sta_result_qualifier_get_result_qualifier"];
         put?: never;
         post?: never;
         /**
          * Delete Result Qualifier
          * @description Delete a Result Qualifier.
          */
-        delete: operations["interfaces_api_views_result_qualifier_delete_result_qualifier"];
+        delete: operations["interfaces_api_views_sta_result_qualifier_delete_result_qualifier"];
         options?: never;
         head?: never;
         /**
          * Update Result Qualifier
          * @description Update a Result Qualifier.
          */
-        patch: operations["interfaces_api_views_result_qualifier_update_result_qualifier"];
+        patch: operations["interfaces_api_views_sta_result_qualifier_update_result_qualifier"];
         trace?: never;
     };
     "/api/data/roles": {
@@ -747,7 +1235,7 @@ export interface paths {
          * Get Roles
          * @description Get public Roles and Roles associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_role_get_roles"];
+        get: operations["interfaces_api_views_iam_role_get_roles"];
         put?: never;
         post?: never;
         delete?: never;
@@ -767,7 +1255,7 @@ export interface paths {
          * Get Role
          * @description Get a Role.
          */
-        get: operations["interfaces_api_views_role_get_role"];
+        get: operations["interfaces_api_views_iam_role_get_role"];
         put?: never;
         post?: never;
         delete?: never;
@@ -787,13 +1275,13 @@ export interface paths {
          * Get Sensors
          * @description Get public Sensors and Sensors associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_sensor_get_sensors"];
+        get: operations["interfaces_api_views_sta_sensor_get_sensors"];
         put?: never;
         /**
          * Create Sensor
          * @description Create a new Sensor.
          */
-        post: operations["interfaces_api_views_sensor_create_sensor"];
+        post: operations["interfaces_api_views_sta_sensor_create_sensor"];
         delete?: never;
         options?: never;
         head?: never;
@@ -811,7 +1299,7 @@ export interface paths {
          * Get Sensor Encoding Types
          * @description Get sensor encoding types.
          */
-        get: operations["interfaces_api_views_sensor_get_sensor_encoding_types"];
+        get: operations["interfaces_api_views_sta_sensor_get_sensor_encoding_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -831,7 +1319,7 @@ export interface paths {
          * Get Method Types
          * @description Get method types.
          */
-        get: operations["interfaces_api_views_sensor_get_method_types"];
+        get: operations["interfaces_api_views_sta_sensor_get_method_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -851,21 +1339,21 @@ export interface paths {
          * Get Sensor
          * @description Get a Sensor.
          */
-        get: operations["interfaces_api_views_sensor_get_sensor"];
+        get: operations["interfaces_api_views_sta_sensor_get_sensor"];
         put?: never;
         post?: never;
         /**
          * Delete Sensor
          * @description Delete a Sensor.
          */
-        delete: operations["interfaces_api_views_sensor_delete_sensor"];
+        delete: operations["interfaces_api_views_sta_sensor_delete_sensor"];
         options?: never;
         head?: never;
         /**
          * Update Sensor
          * @description Update a Sensor.
          */
-        patch: operations["interfaces_api_views_sensor_update_sensor"];
+        patch: operations["interfaces_api_views_sta_sensor_update_sensor"];
         trace?: never;
     };
     "/api/data/things": {
@@ -879,13 +1367,13 @@ export interface paths {
          * Get Things
          * @description Get public Things and Things associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_thing_get_things"];
+        get: operations["interfaces_api_views_sta_thing_get_things"];
         put?: never;
         /**
          * Create Thing
          * @description Create a new Thing.
          */
-        post: operations["interfaces_api_views_thing_create_thing"];
+        post: operations["interfaces_api_views_sta_thing_create_thing"];
         delete?: never;
         options?: never;
         head?: never;
@@ -903,7 +1391,7 @@ export interface paths {
          * Get File Attachment Types
          * @description Get file attachment types.
          */
-        get: operations["interfaces_api_views_thing_get_file_attachment_types"];
+        get: operations["interfaces_api_views_sta_thing_get_file_attachment_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -923,7 +1411,7 @@ export interface paths {
          * Get Thing Markers
          * @description Get lean marker data for public Things plus private Things visible to the authenticated user.
          */
-        get: operations["interfaces_api_views_thing_get_thing_markers"];
+        get: operations["interfaces_api_views_sta_thing_get_thing_markers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -943,7 +1431,7 @@ export interface paths {
          * Get Sampling Feature Types
          * @description Get sampling feature types.
          */
-        get: operations["interfaces_api_views_thing_get_sampling_feature_types"];
+        get: operations["interfaces_api_views_sta_thing_get_sampling_feature_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -963,7 +1451,7 @@ export interface paths {
          * Get Thing Site Summaries
          * @description Get lean site summary data for public Things and Things associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_thing_get_thing_site_summaries"];
+        get: operations["interfaces_api_views_sta_thing_get_thing_site_summaries"];
         put?: never;
         post?: never;
         delete?: never;
@@ -983,7 +1471,7 @@ export interface paths {
          * Get Site Types
          * @description Get site types.
          */
-        get: operations["interfaces_api_views_thing_get_site_types"];
+        get: operations["interfaces_api_views_sta_thing_get_site_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1003,7 +1491,7 @@ export interface paths {
          * Get Thing Tag Keys
          * @description Get all existing unique thing tag keys.
          */
-        get: operations["interfaces_api_views_thing_get_thing_tag_keys"];
+        get: operations["interfaces_api_views_sta_thing_get_thing_tag_keys"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1023,21 +1511,21 @@ export interface paths {
          * Get Thing
          * @description Get a Thing.
          */
-        get: operations["interfaces_api_views_thing_get_thing"];
+        get: operations["interfaces_api_views_sta_thing_get_thing"];
         put?: never;
         post?: never;
         /**
          * Delete Thing
          * @description Delete a Thing.
          */
-        delete: operations["interfaces_api_views_thing_delete_thing"];
+        delete: operations["interfaces_api_views_sta_thing_delete_thing"];
         options?: never;
         head?: never;
         /**
          * Update Thing
          * @description Update a Thing.
          */
-        patch: operations["interfaces_api_views_thing_update_thing"];
+        patch: operations["interfaces_api_views_sta_thing_update_thing"];
         trace?: never;
     };
     "/api/data/things/{thing_id}/file-attachments": {
@@ -1051,22 +1539,22 @@ export interface paths {
          * Get Thing File Attachments
          * @description Get all file attachments associated with a Thing.
          */
-        get: operations["interfaces_api_views_thing_get_thing_file_attachments"];
+        get: operations["interfaces_api_views_sta_thing_get_thing_file_attachments"];
         /**
          * Replace Thing File Attachment
          * @description Replace a file attachment for a thing.
          */
-        put: operations["interfaces_api_views_thing_replace_thing_file_attachment"];
+        put: operations["interfaces_api_views_sta_thing_replace_thing_file_attachment"];
         /**
          * Add Thing File Attachment
          * @description Add a file attachment to a thing.
          */
-        post: operations["interfaces_api_views_thing_add_thing_file_attachment"];
+        post: operations["interfaces_api_views_sta_thing_add_thing_file_attachment"];
         /**
          * Remove Thing File Attachment
          * @description Remove a file attachment from a thing.
          */
-        delete: operations["interfaces_api_views_thing_remove_thing_file_attachment"];
+        delete: operations["interfaces_api_views_sta_thing_remove_thing_file_attachment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1083,22 +1571,22 @@ export interface paths {
          * Get Thing Tags
          * @description Get all tags associated with a Thing.
          */
-        get: operations["interfaces_api_views_thing_get_thing_tags"];
+        get: operations["interfaces_api_views_sta_thing_get_thing_tags"];
         /**
          * Edit Thing Tag
          * @description Edit a tag of a Thing.
          */
-        put: operations["interfaces_api_views_thing_edit_thing_tag"];
+        put: operations["interfaces_api_views_sta_thing_edit_thing_tag"];
         /**
          * Add Thing Tag
          * @description Add a tag to a Thing.
          */
-        post: operations["interfaces_api_views_thing_add_thing_tag"];
+        post: operations["interfaces_api_views_sta_thing_add_thing_tag"];
         /**
          * Remove Thing Tag
          * @description Remove a tag from a Thing.
          */
-        delete: operations["interfaces_api_views_thing_remove_thing_tag"];
+        delete: operations["interfaces_api_views_sta_thing_remove_thing_tag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1115,13 +1603,13 @@ export interface paths {
          * Get Units
          * @description Get public Units and Units associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_unit_get_units"];
+        get: operations["interfaces_api_views_sta_unit_get_units"];
         put?: never;
         /**
          * Create Unit
          * @description Create a new Unit.
          */
-        post: operations["interfaces_api_views_unit_create_unit"];
+        post: operations["interfaces_api_views_sta_unit_create_unit"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1139,7 +1627,7 @@ export interface paths {
          * Get Unit Types
          * @description Get unit types.
          */
-        get: operations["interfaces_api_views_unit_get_unit_types"];
+        get: operations["interfaces_api_views_sta_unit_get_unit_types"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1159,21 +1647,21 @@ export interface paths {
          * Get Unit
          * @description Get a Unit.
          */
-        get: operations["interfaces_api_views_unit_get_unit"];
+        get: operations["interfaces_api_views_sta_unit_get_unit"];
         put?: never;
         post?: never;
         /**
          * Delete Unit
          * @description Delete a Unit.
          */
-        delete: operations["interfaces_api_views_unit_delete_unit"];
+        delete: operations["interfaces_api_views_sta_unit_delete_unit"];
         options?: never;
         head?: never;
         /**
          * Update Unit
          * @description Update a Unit.
          */
-        patch: operations["interfaces_api_views_unit_update_unit"];
+        patch: operations["interfaces_api_views_sta_unit_update_unit"];
         trace?: never;
     };
     "/api/data/workspaces": {
@@ -1187,13 +1675,13 @@ export interface paths {
          * Get Workspaces
          * @description Get public workspaces and workspaces associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_workspace_get_workspaces"];
+        get: operations["interfaces_api_views_iam_workspace_get_workspaces"];
         put?: never;
         /**
          * Create Workspace
          * @description Create a new workspace owned by the authenticated user.
          */
-        post: operations["interfaces_api_views_workspace_create_workspace"];
+        post: operations["interfaces_api_views_iam_workspace_create_workspace"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1211,21 +1699,21 @@ export interface paths {
          * Get Workspace
          * @description Get workspace details.
          */
-        get: operations["interfaces_api_views_workspace_get_workspace"];
+        get: operations["interfaces_api_views_iam_workspace_get_workspace"];
         put?: never;
         post?: never;
         /**
          * Delete Workspace
          * @description Delete a workspace owned by the authenticated user.
          */
-        delete: operations["interfaces_api_views_workspace_delete_workspace"];
+        delete: operations["interfaces_api_views_iam_workspace_delete_workspace"];
         options?: never;
         head?: never;
         /**
          * Update Workspace
          * @description Update a workspace owned by the authenticated user.
          */
-        patch: operations["interfaces_api_views_workspace_update_workspace"];
+        patch: operations["interfaces_api_views_iam_workspace_update_workspace"];
         trace?: never;
     };
     "/api/data/workspaces/{workspace_id}/api-keys": {
@@ -1239,13 +1727,13 @@ export interface paths {
          * Get Api Keys
          * @description Get API keys associated with the authenticated user.
          */
-        get: operations["interfaces_api_views_api_key_get_api_keys"];
+        get: operations["interfaces_api_views_iam_api_key_get_api_keys"];
         put?: never;
         /**
          * Create Api Key
          * @description Create a new API key for the workspace.
          */
-        post: operations["interfaces_api_views_api_key_create_api_key"];
+        post: operations["interfaces_api_views_iam_api_key_create_api_key"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1263,21 +1751,21 @@ export interface paths {
          * Get Api Key
          * @description Get API key details.
          */
-        get: operations["interfaces_api_views_api_key_get_api_key"];
+        get: operations["interfaces_api_views_iam_api_key_get_api_key"];
         put?: never;
         post?: never;
         /**
          * Delete Api Key
          * @description Delete an API key.
          */
-        delete: operations["interfaces_api_views_api_key_delete_api_key"];
+        delete: operations["interfaces_api_views_iam_api_key_delete_api_key"];
         options?: never;
         head?: never;
         /**
          * Update Api Key
          * @description Update an API key.
          */
-        patch: operations["interfaces_api_views_api_key_update_api_key"];
+        patch: operations["interfaces_api_views_iam_api_key_update_api_key"];
         trace?: never;
     };
     "/api/data/workspaces/{workspace_id}/api-keys/{api_key_id}/regenerate": {
@@ -1292,7 +1780,7 @@ export interface paths {
          * Regenerate Api Key
          * @description Regenerate an API key using existing settings.
          */
-        put: operations["interfaces_api_views_api_key_regenerate_api_key"];
+        put: operations["interfaces_api_views_iam_api_key_regenerate_api_key"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1311,22 +1799,22 @@ export interface paths {
          * Get Collaborators
          * @description Get all collaborators associated with a workspace.
          */
-        get: operations["interfaces_api_views_collaborator_get_collaborators"];
+        get: operations["interfaces_api_views_iam_collaborator_get_collaborators"];
         /**
          * Edit Collaborator Role
          * @description Edit a collaborator's role in a workspace.
          */
-        put: operations["interfaces_api_views_collaborator_edit_collaborator_role"];
+        put: operations["interfaces_api_views_iam_collaborator_edit_collaborator_role"];
         /**
          * Add Collaborator
          * @description Add a collaborator to a workspace.
          */
-        post: operations["interfaces_api_views_collaborator_add_collaborator"];
+        post: operations["interfaces_api_views_iam_collaborator_add_collaborator"];
         /**
          * Remove Collaborator
          * @description Remove a collaborator from a workspace.
          */
-        delete: operations["interfaces_api_views_collaborator_remove_collaborator"];
+        delete: operations["interfaces_api_views_iam_collaborator_remove_collaborator"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1344,17 +1832,17 @@ export interface paths {
          * Accept Workspace Transfer
          * @description Accept a pending workspace transfer.
          */
-        put: operations["interfaces_api_views_workspace_accept_workspace_transfer"];
+        put: operations["interfaces_api_views_iam_workspace_accept_workspace_transfer"];
         /**
          * Transfer Workspace
          * @description Transfer a workspace owned by the authenticated user to another HydroServer user.
          */
-        post: operations["interfaces_api_views_workspace_transfer_workspace"];
+        post: operations["interfaces_api_views_iam_workspace_transfer_workspace"];
         /**
          * Reject Workspace Transfer
          * @description Reject a pending workspace transfer.
          */
-        delete: operations["interfaces_api_views_workspace_reject_workspace_transfer"];
+        delete: operations["interfaces_api_views_iam_workspace_reject_workspace_transfer"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1454,13 +1942,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Role Id
              * @description Filter API keys by role ID.
@@ -1550,6 +2040,126 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** AggregationTransformationPatchBody */
+        AggregationTransformationPatchBody: {
+            /**
+             * Aggregationmethod
+             * @enum {string}
+             */
+            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last";
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId?: string;
+            /** Minvalues */
+            minValues?: number | null;
+            /** Outputinterval */
+            outputInterval?: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits?: "minutes" | "hours" | "days" | "weeks" | "months";
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** AggregationTransformationPostBody */
+        AggregationTransformationPostBody: {
+            /**
+             * Aggregationmethod
+             * @enum {string}
+             */
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /** Minvalues */
+            minValues?: number | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** AggregationTransformationResponse */
+        AggregationTransformationResponse: {
+            /**
+             * Aggregationmethod
+             * @enum {string}
+             */
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Minvalues */
+            minValues?: number | null;
+            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** CSVPayloadPostBody */
+        CSVPayloadPostBody: {
+            /** Datastartrow */
+            dataStartRow?: number | null;
+            /** Delimiter */
+            delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
+            /** Headerrow */
+            headerRow?: number | null;
+            /**
+             * Type
+             * @constant
+             * @enum {string}
+             */
+            type: "CSV";
+        };
+        /** CSVPayloadResponse */
+        CSVPayloadResponse: {
+            /** Datastartrow */
+            dataStartRow?: number | null;
+            /** Delimiter */
+            delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
+            /** Headerrow */
+            headerRow?: number | null;
+            /**
+             * Type
+             * @constant
+             * @enum {string}
+             */
+            type: "CSV";
+        };
         /** CollaboratorDeleteBody */
         CollaboratorDeleteBody: {
             /**
@@ -1581,13 +2191,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Role Id
              * @description Filter collaborators by role ID.
@@ -1595,142 +2207,332 @@ export interface components {
              */
             role_id: string[];
         };
-        /** DataConnectionDetailResponse */
-        DataConnectionDetailResponse: {
-            extractor?: components["schemas"]["DataConnectionSettingsResponse"] | null;
+        /** CompositeExpressionTransformationPatchBody */
+        CompositeExpressionTransformationPatchBody: {
+            /** Formula */
+            formula?: string;
+            /** Inputdatastreams */
+            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
+            /** Maxgapinterval */
+            maxGapInterval?: number | null;
+            /** Maxgapintervalunits */
+            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /** Outputinterval */
+            outputInterval?: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits?: "minutes" | "hours" | "days" | "weeks" | "months";
+        };
+        /** CompositeExpressionTransformationPostBody */
+        CompositeExpressionTransformationPostBody: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
+            /** Maxgapinterval */
+            maxGapInterval?: number | null;
+            /** Maxgapintervalunits */
+            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
+        };
+        /** CompositeExpressionTransformationResponse */
+        CompositeExpressionTransformationResponse: {
+            /** Formula */
+            formula: string;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            loader?: components["schemas"]["DataConnectionSettingsResponse"] | null;
-            /** Name */
-            name: string;
-            /** Notificationrecipientemails */
-            notificationRecipientEmails?: string[];
-            transformer?: components["schemas"]["DataConnectionSettingsResponse"] | null;
-            /** Type */
-            type: string;
-            workspace?: components["schemas"]["WorkspaceSummaryResponse"] | null;
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
+            /** Maxgapinterval */
+            maxGapInterval?: number | null;
+            /** Maxgapintervalunits */
+            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
         };
+        /**
+         * DataConnectionOrderBy
+         * @enum {string}
+         */
+        DataConnectionOrderBy: "id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName";
         /** DataConnectionPatchBody */
         DataConnectionPatchBody: {
-            extractor?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
-            loader?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
+            /** Description */
+            description?: string | null;
             /** Name */
             name?: string;
-            /** Notificationrecipientemails */
-            notificationRecipientEmails?: string[];
-            transformer?: components["schemas"]["DataConnectionSettingsPatchBody"] | null;
-            /** Type */
-            type?: string;
+            /** Notification */
+            notification?: components["schemas"]["NotificationPatchBody"] | null;
+            /** Payload */
+            payload?: components["schemas"]["PayloadPatchBody"];
+            /** Placeholdervariables */
+            placeholderVariables?: components["schemas"]["PlaceholderVariablePatchBody"][];
+            /** Sourceurl */
+            sourceUrl?: string;
+            /** Timestamp */
+            timestamp?: components["schemas"]["TimestampPatchBody"];
         };
         /** DataConnectionPostBody */
         DataConnectionPostBody: {
-            extractor?: components["schemas"]["DataConnectionSettingsPostBody"] | null;
-            /** Id */
-            id?: string | null;
-            loader?: components["schemas"]["DataConnectionSettingsPostBody"] | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
             /** Name */
             name: string;
-            /** Notificationrecipientemails */
-            notificationRecipientEmails?: string[];
-            transformer?: components["schemas"]["DataConnectionSettingsPostBody"] | null;
-            /** Type */
-            type: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
+            notification?: components["schemas"]["NotificationPostBody"] | null;
+            /** Payload */
+            payload: components["schemas"]["CSVPayloadPostBody"] | components["schemas"]["JSONPayloadPostBody"];
+            /** Placeholdervariables */
+            placeholderVariables: components["schemas"]["PlaceholderVariablePostBody"][];
+            /** Sourceurl */
+            sourceUrl: string;
+            timestamp: components["schemas"]["TimestampPostBody"];
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** DataConnectionQueryParameters */
         DataConnectionQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Extractor Type
-             * @description Filters by the extractor type of the data connection.
-             * @default []
-             */
-            extractor_type: (string | "null")[];
-            /**
-             * Loader Type
-             * @description Filters by the loader type of the data connection.
-             * @default []
-             */
-            loader_type: (string | "null")[];
             /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("name" | "type" | "extractorType" | "transformerType" | "loaderType" | "-name" | "-type" | "-extractorType" | "-transformerType" | "-loaderType")[] | null;
+            order_by: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
-             * Transformer Type
-             * @description Filters by the transformer type of the data connection.
+             * Payload Type
+             * @description Filter data connections by payload type.
              * @default []
              */
-            transformer_type: (string | "null")[];
-            /**
-             * Type
-             * @description Filters by the type of the data connection.
-             * @default []
-             */
-            type: string[];
+            payload_type: string[];
             /**
              * Workspace Id
              * @description Filter data connections by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspace_id: string[];
         };
-        /** DataConnectionSettingsPatchBody */
-        DataConnectionSettingsPatchBody: {
-            /** Settings */
-            settings?: Record<string, never>;
-            /** Type */
-            type?: string;
-        };
-        /** DataConnectionSettingsPostBody */
-        DataConnectionSettingsPostBody: {
-            /** Settings */
-            settings: Record<string, never>;
-            /** Type */
-            type: string;
-        };
-        /** DataConnectionSettingsResponse */
-        DataConnectionSettingsResponse: {
-            /** Settings */
-            settings: Record<string, never>;
-            /** Type */
-            type: string;
-        };
-        /** DataConnectionSummaryResponse */
-        DataConnectionSummaryResponse: {
-            extractor?: components["schemas"]["DataConnectionSettingsResponse"] | null;
+        /** DataConnectionResponse */
+        DataConnectionResponse: {
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            loader?: components["schemas"]["DataConnectionSettingsResponse"] | null;
             /** Name */
             name: string;
-            /** Notificationrecipientemails */
-            notificationRecipientEmails?: string[];
-            transformer?: components["schemas"]["DataConnectionSettingsResponse"] | null;
-            /** Type */
-            type: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
+            notification?: components["schemas"]["NotificationResponse"] | null;
+            /** Payload */
+            payload: components["schemas"]["CSVPayloadResponse"] | components["schemas"]["JSONPayloadResponse"];
+            /** Placeholdervariables */
+            placeholderVariables: components["schemas"]["PlaceholderVariableResponse"][];
+            /** Sourceurl */
+            sourceUrl: string;
+            timestamp: components["schemas"]["TimestampResponse"];
+            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /**
+         * DataProductTaskOrderBy
+         * @enum {string}
+         */
+        DataProductTaskOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        /** DataProductTaskPatchBody */
+        DataProductTaskPatchBody: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string;
+            /** Schedule */
+            schedule?: components["schemas"]["SchedulePatchBody"] | null;
+        };
+        /** DataProductTaskPostBody */
+        DataProductTaskPostBody: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Name */
+            name: string;
+            schedule?: components["schemas"]["SchedulePostBody"] | null;
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+        };
+        /** DataProductTaskQueryParameters */
+        DataProductTaskQueryParameters: {
+            /**
+             * Input Datastream Id
+             * @description Filter data product tasks by input datastream ID.
+             * @default []
+             */
+            input_datastream_id: string[];
+            /**
+             * Latest Run Status
+             * @description Filter data product tasks by their most recent run status.
+             * @default []
+             */
+            latest_run_status: (string | "null")[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            /**
+             * Output Datastream Id
+             * @description Filter data product tasks by output datastream ID.
+             * @default []
+             */
+            output_datastream_id: string[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Rating Curve Id
+             * @description Filter data product tasks by rating curve ID.
+             * @default []
+             */
+            rating_curve_id: string[];
+            /**
+             * Thing Id
+             * @description Filter data product tasks by thing ID.
+             * @default []
+             */
+            thing_id: string[];
+            /**
+             * Transformation Type
+             * @description Filter data product tasks by transformation type.
+             * @default []
+             */
+            transformation_type: string[];
+            /**
+             * Workspace Id
+             * @description Filter data product tasks by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** DataProductTaskResponse */
+        DataProductTaskResponse: {
+            /** Aggregationtransformations */
+            aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
+            /** Compositeexpressiontransformations */
+            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationResponse"][];
+            /** Description */
+            description?: string | null;
+            /** Expressiontransformations */
+            expressionTransformations: components["schemas"]["ExpressionTransformationResponse"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Name */
+            name: string;
+            /** Ratingcurvetransformations */
+            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationResponse"][];
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            thing: components["schemas"]["ThingSummaryResponse"];
+        };
+        /**
+         * DataProductTransformationOrderBy
+         * @enum {string}
+         */
+        DataProductTransformationOrderBy: "id" | "outputDatastreamId" | "-id" | "-outputDatastreamId";
+        /** DataProductTransformationTypeQueryParameters */
+        DataProductTransformationTypeQueryParameters: {
+            /**
+             * Input Datastream Id
+             * @description Filter by input datastream ID.
+             * @default []
+             */
+            input_datastream_id: string[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+            /**
+             * Output Datastream Id
+             * @description Filter by output datastream ID.
+             * @default []
+             */
+            output_datastream_id: string[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
         };
         /** DatastreamDetailResponse */
         DatastreamDetailResponse: {
@@ -1973,13 +2775,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Phenomenon Begin Time Max
              * @description Sets the maximum phenomenon begin time of filtered datastreams.
@@ -2200,6 +3004,204 @@ export interface components {
             /** Things */
             things: components["schemas"]["VisualizationThingResponse"][];
         };
+        /** EtlDataMappingPatchBody */
+        EtlDataMappingPatchBody: {
+            /** Sourceidentifier */
+            sourceIdentifier?: string;
+            /**
+             * Targetdatastreamid
+             * Format: uuid
+             */
+            targetDatastreamId?: string;
+        };
+        /** EtlDataMappingPostBody */
+        EtlDataMappingPostBody: {
+            /** Sourceidentifier */
+            sourceIdentifier: string;
+            /**
+             * Targetdatastreamid
+             * Format: uuid
+             */
+            targetDatastreamId: string;
+        };
+        /** EtlDataMappingResponse */
+        EtlDataMappingResponse: {
+            /** Sourceidentifier */
+            sourceIdentifier: string;
+            targetDatastream: components["schemas"]["DatastreamSummaryResponse"];
+        };
+        /**
+         * EtlTaskOrderBy
+         * @enum {string}
+         */
+        EtlTaskOrderBy: "id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        /** EtlTaskPatchBody */
+        EtlTaskPatchBody: {
+            /** Description */
+            description?: string | null;
+            /** Mappings */
+            mappings?: components["schemas"]["EtlDataMappingPatchBody"][];
+            /** Name */
+            name?: string;
+            /** Schedule */
+            schedule?: components["schemas"]["SchedulePatchBody"] | null;
+            /** Taskvariables */
+            taskVariables?: Record<string, never>;
+        };
+        /** EtlTaskPostBody */
+        EtlTaskPostBody: {
+            /**
+             * Dataconnectionid
+             * Format: uuid
+             */
+            dataConnectionId: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Mappings
+             * @default []
+             */
+            mappings: components["schemas"]["EtlDataMappingPostBody"][];
+            /** Name */
+            name: string;
+            schedule?: components["schemas"]["SchedulePostBody"] | null;
+            /**
+             * Taskvariables
+             * @default {}
+             */
+            taskVariables: Record<string, never>;
+        };
+        /** EtlTaskQueryParameters */
+        EtlTaskQueryParameters: {
+            /**
+             * Data Connection Id
+             * @description Filter ETL tasks by data connection ID.
+             * @default []
+             */
+            data_connection_id: string[];
+            /**
+             * Latest Run Finished At Max
+             * @description Filter tasks whose latest run finished on or before this datetime.
+             */
+            latest_run_finished_at_max?: string | null;
+            /**
+             * Latest Run Finished At Min
+             * @description Filter tasks whose latest run finished on or after this datetime.
+             */
+            latest_run_finished_at_min?: string | null;
+            /**
+             * Latest Run Started At Max
+             * @description Filter tasks whose latest run started on or before this datetime.
+             */
+            latest_run_started_at_max?: string | null;
+            /**
+             * Latest Run Started At Min
+             * @description Filter tasks whose latest run started on or after this datetime.
+             */
+            latest_run_started_at_min?: string | null;
+            /**
+             * Latest Run Status
+             * @description Filter ETL tasks by their most recent run status.
+             * @default []
+             */
+            latest_run_status: (string | "null")[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Workspace Id
+             * @description Filter ETL tasks by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** EtlTaskResponse */
+        EtlTaskResponse: {
+            dataConnection: components["schemas"]["DataConnectionResponse"];
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Mappings */
+            mappings: components["schemas"]["EtlDataMappingResponse"][];
+            /** Name */
+            name: string;
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /** Taskvariables */
+            taskVariables: Record<string, never>;
+        };
+        /** ExpressionTransformationPatchBody */
+        ExpressionTransformationPatchBody: {
+            /** Formula */
+            formula?: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId?: string;
+            /** Variablename */
+            variableName?: string | null;
+        };
+        /** ExpressionTransformationPostBody */
+        ExpressionTransformationPostBody: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Variablename */
+            variableName: string;
+        };
+        /** ExpressionTransformationResponse */
+        ExpressionTransformationResponse: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Variablename */
+            variableName?: string | null;
+        };
         /** FileAttachmentDeleteBody */
         FileAttachmentDeleteBody: {
             /** Name */
@@ -2223,19 +3225,43 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Type
              * @description Filter by file attachment type.
              * @default []
              */
             type: string[];
+        };
+        /** JSONPayloadPostBody */
+        JSONPayloadPostBody: {
+            /** Jmespath */
+            jmespath?: string | null;
+            /**
+             * Type
+             * @constant
+             * @enum {string}
+             */
+            type: "JSON";
+        };
+        /** JSONPayloadResponse */
+        JSONPayloadResponse: {
+            /** Jmespath */
+            jmespath?: string | null;
+            /**
+             * Type
+             * @constant
+             * @enum {string}
+             */
+            type: "JSON";
         };
         /** LocationDetailResponse */
         LocationDetailResponse: {
@@ -2287,6 +3313,262 @@ export interface components {
             latitude: number;
             /** Longitude */
             longitude: number;
+        };
+        /** MonitoredDatastreamResponse */
+        MonitoredDatastreamResponse: {
+            datastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Rules */
+            rules: components["schemas"]["MonitoringRuleDetailResponse"][];
+        };
+        /** MonitoringRuleDetailResponse */
+        MonitoringRuleDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lastcheckedat */
+            lastCheckedAt?: string | null;
+            /** Maxvalue */
+            maxValue?: number | null;
+            /** Minvalue */
+            minValue?: number | null;
+            /**
+             * Ruletype
+             * @enum {string}
+             */
+            ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /** Windowinterval */
+            windowInterval?: number | null;
+            /** Windowintervalunits */
+            windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
+        };
+        /**
+         * MonitoringRuleOrderBy
+         * @enum {string}
+         */
+        MonitoringRuleOrderBy: "id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId";
+        /** MonitoringRulePatchBody */
+        MonitoringRulePatchBody: {
+            /** Maxvalue */
+            maxValue?: number | null;
+            /** Minvalue */
+            minValue?: number | null;
+            /** Windowinterval */
+            windowInterval?: number | null;
+            /** Windowintervalunits */
+            windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
+        };
+        /** MonitoringRulePostBody */
+        MonitoringRulePostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Maxvalue */
+            maxValue?: number | null;
+            /** Minvalue */
+            minValue?: number | null;
+            /**
+             * Ruletype
+             * @enum {string}
+             */
+            ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /** Windowinterval */
+            windowInterval?: number | null;
+            /** Windowintervalunits */
+            windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
+        };
+        /** MonitoringRuleQueryParameters */
+        MonitoringRuleQueryParameters: {
+            /**
+             * Datastream Id
+             * @description Filter rules by datastream ID.
+             * @default []
+             */
+            datastream_id: string[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Rule Type
+             * @description Filter rules by rule type.
+             * @default []
+             */
+            rule_type: string[];
+        };
+        /** MonitoringRuleResponse */
+        MonitoringRuleResponse: {
+            datastream: components["schemas"]["DatastreamSummaryResponse"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lastcheckedat */
+            lastCheckedAt?: string | null;
+            /** Maxvalue */
+            maxValue?: number | null;
+            /** Minvalue */
+            minValue?: number | null;
+            /**
+             * Ruletype
+             * @enum {string}
+             */
+            ruleType: "range" | "rate_of_change" | "persistence" | "missing_data";
+            /** Windowinterval */
+            windowInterval?: number | null;
+            /** Windowintervalunits */
+            windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
+        };
+        /**
+         * MonitoringTaskOrderBy
+         * @enum {string}
+         */
+        MonitoringTaskOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        /** MonitoringTaskPatchBody */
+        MonitoringTaskPatchBody: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string;
+            /** Recipients */
+            recipients?: string[];
+            /** Schedule */
+            schedule?: components["schemas"]["SchedulePatchBody"] | null;
+        };
+        /** MonitoringTaskPostBody */
+        MonitoringTaskPostBody: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Name */
+            name: string;
+            /**
+             * Recipients
+             * @default []
+             */
+            recipients: string[];
+            schedule?: components["schemas"]["SchedulePostBody"] | null;
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+        };
+        /** MonitoringTaskQueryParameters */
+        MonitoringTaskQueryParameters: {
+            /**
+             * Datastream Id
+             * @description Filter monitoring tasks by datastream ID.
+             * @default []
+             */
+            datastream_id: string[];
+            /**
+             * Latest Run Status
+             * @description Filter monitoring tasks by their most recent run status.
+             * @default []
+             */
+            latest_run_status: (string | "null")[];
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Rule Type
+             * @description Filter monitoring tasks by rule type.
+             * @default []
+             */
+            rule_type: string[];
+            /**
+             * Thing Id
+             * @description Filter monitoring tasks by thing ID.
+             * @default []
+             */
+            thing_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter monitoring tasks by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** MonitoringTaskResponse */
+        MonitoringTaskResponse: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Monitoreddatastreams */
+            monitoredDatastreams: components["schemas"]["MonitoredDatastreamResponse"][];
+            /** Name */
+            name: string;
+            /** Recipients */
+            recipients: string[];
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            thing: components["schemas"]["ThingSummaryResponse"];
+        };
+        /** NotificationPatchBody */
+        NotificationPatchBody: {
+            /** Recipientemails */
+            recipientEmails?: string[];
+            /** Schedule */
+            schedule?: components["schemas"]["SchedulePatchBody"];
+        };
+        /** NotificationPostBody */
+        NotificationPostBody: {
+            /** Recipientemails */
+            recipientEmails: string[];
+            schedule: components["schemas"]["SchedulePostBody"];
+        };
+        /** NotificationResponse */
+        NotificationResponse: {
+            /** Recipientemails */
+            recipientEmails: string[];
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
         };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
@@ -2370,13 +3652,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Phenomenon Time Max
              * @description Sets the maximum phenomenon time of filtered observations.
@@ -2496,13 +3780,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Thing Id
              * @description Filter observed properties by thing ID.
@@ -2542,93 +3828,18 @@ export interface components {
             /** Workspaceid */
             workspaceId?: string | null;
         };
-        /** OrchestrationSystemDetailResponse */
-        OrchestrationSystemDetailResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /**
-             * Taskcount
-             * @default 0
-             */
-            taskCount: number;
+        /** PayloadPatchBody */
+        PayloadPatchBody: {
+            /** Datastartrow */
+            dataStartRow?: number | null;
+            /** Delimiter */
+            delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
+            /** Headerrow */
+            headerRow?: number | null;
+            /** Jmespath */
+            jmespath?: string | null;
             /** Type */
-            type: string;
-            workspace?: components["schemas"]["WorkspaceSummaryResponse"] | null;
-        };
-        /** OrchestrationSystemPatchBody */
-        OrchestrationSystemPatchBody: {
-            /** Name */
-            name?: string;
-            /** Type */
-            type?: string;
-        };
-        /** OrchestrationSystemPostBody */
-        OrchestrationSystemPostBody: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
-        };
-        /** OrchestrationSystemQueryParameters */
-        OrchestrationSystemQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "type" | "-name" | "-type")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             */
-            page?: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             */
-            page_size?: number | null;
-            /**
-             * Type
-             * @description Filter orchestration systems by type.
-             * @default []
-             */
-            type: string[];
-            /**
-             * Workspace Id
-             * @description Filter orchestration systems by workspace ID.
-             * @default []
-             */
-            workspace_id: (string | "null")[];
-        };
-        /** OrchestrationSystemSummaryResponse */
-        OrchestrationSystemSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /**
-             * Taskcount
-             * @default 0
-             */
-            taskCount: number;
-            /** Type */
-            type: string;
-            /** Workspaceid */
-            workspaceId?: string | null;
+            type?: ("CSV" | "JSON") | null;
         };
         /** PermissionDetailResponse */
         PermissionDetailResponse: {
@@ -2641,7 +3852,43 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "APIKey" | "Role" | "Collaborator" | "Task" | "DataConnection" | "OrchestrationSystem" | "Thing" | "Datastream" | "Observation" | "Sensor" | "ObservedProperty" | "ProcessingLevel" | "Unit" | "ResultQualifier";
+            resource: "*" | "APIKey" | "Role" | "Collaborator" | "Thing" | "Datastream" | "Observation" | "Sensor" | "ObservedProperty" | "ProcessingLevel" | "Unit" | "ResultQualifier" | "ETL" | "DataProduct" | "DataMonitoring";
+        };
+        /** PlaceholderVariablePatchBody */
+        PlaceholderVariablePatchBody: {
+            /** Name */
+            name?: string;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type?: "run_time" | "latest_observation_timestamp" | "per_task";
+        };
+        /** PlaceholderVariablePostBody */
+        PlaceholderVariablePostBody: {
+            /** Name */
+            name: string;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "run_time" | "latest_observation_timestamp" | "per_task";
+        };
+        /** PlaceholderVariableResponse */
+        PlaceholderVariableResponse: {
+            /** Name */
+            name: string;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "run_time" | "latest_observation_timestamp" | "per_task";
         };
         /** ProcessingLevelDetailResponse */
         ProcessingLevelDetailResponse: {
@@ -2699,13 +3946,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Thing Id
              * @description Filter processing levels by thing ID.
@@ -2734,6 +3983,176 @@ export interface components {
             id: string;
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /**
+         * RatingCurveOrderBy
+         * @enum {string}
+         */
+        RatingCurveOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName";
+        /** RatingCurvePatchBody */
+        RatingCurvePatchBody: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Fittingmethod
+             * @enum {string}
+             */
+            fittingMethod?: "linear" | "power_law";
+            /** Name */
+            name?: string;
+            /** Points */
+            points?: [
+                number,
+                number
+            ][];
+        };
+        /** RatingCurvePostBody */
+        RatingCurvePostBody: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Fittingmethod
+             * @enum {string}
+             */
+            fittingMethod: "linear" | "power_law";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Name */
+            name: string;
+            /**
+             * Points
+             * @default []
+             */
+            points: [
+                number,
+                number
+            ][];
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+        };
+        /** RatingCurveQueryParameters */
+        RatingCurveQueryParameters: {
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName")[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Thing Id
+             * @description Filter rating curves by thing ID.
+             * @default []
+             */
+            thing_id: string[];
+            /**
+             * Workspace Id
+             * @description Filter rating curves by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** RatingCurveResponse */
+        RatingCurveResponse: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Fittingmethod
+             * @enum {string}
+             */
+            fittingMethod: "linear" | "power_law";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Points */
+            points: [
+                number,
+                number
+            ][];
+            thing: components["schemas"]["ThingSummaryResponse"];
+        };
+        /** RatingCurveSummaryResponse */
+        RatingCurveSummaryResponse: {
+            /**
+             * Fittingmethod
+             * @enum {string}
+             */
+            fittingMethod: "linear" | "power_law";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** RatingCurveTransformationPatchBody */
+        RatingCurveTransformationPatchBody: {
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId?: string;
+            /**
+             * Ratingcurveid
+             * Format: uuid
+             */
+            ratingCurveId?: string;
+        };
+        /** RatingCurveTransformationPostBody */
+        RatingCurveTransformationPostBody: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /**
+             * Ratingcurveid
+             * Format: uuid
+             */
+            ratingCurveId: string;
+        };
+        /** RatingCurveTransformationResponse */
+        RatingCurveTransformationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            ratingCurve: components["schemas"]["RatingCurveSummaryResponse"];
         };
         /** ResultQualifierDetailResponse */
         ResultQualifierDetailResponse: {
@@ -2785,13 +4204,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Thing Id
              * @description Filter result qualifiers by thing ID.
@@ -2861,13 +4282,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Workspace Id
              * @description Filter roles by workspace ID.
@@ -2894,6 +4317,50 @@ export interface components {
             permissions: components["schemas"]["PermissionDetailResponse"][];
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /** SchedulePatchBody */
+        SchedulePatchBody: {
+            /** Crontab */
+            crontab?: string | null;
+            /** Enabled */
+            enabled?: boolean;
+            /** Interval */
+            interval?: number | null;
+            /** Intervalperiod */
+            intervalPeriod?: ("minutes" | "hours" | "days") | null;
+            /** Starttime */
+            startTime?: string | null;
+        };
+        /** SchedulePostBody */
+        SchedulePostBody: {
+            /** Crontab */
+            crontab?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Interval */
+            interval?: number | null;
+            /** Intervalperiod */
+            intervalPeriod?: ("minutes" | "hours" | "days") | null;
+            /** Starttime */
+            startTime?: string | null;
+        };
+        /** ScheduleResponse */
+        ScheduleResponse: {
+            /** Crontab */
+            crontab?: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Interval */
+            interval?: number | null;
+            /** Intervalperiod */
+            intervalPeriod?: ("minutes" | "hours" | "days") | null;
+            /** Nextrunat */
+            nextRunAt?: string | null;
+            /** Starttime */
+            startTime?: string | null;
         };
         /** SensorDetailResponse */
         SensorDetailResponse: {
@@ -3005,13 +4472,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Thing Id
              * @description Filter sensors by thing ID.
@@ -3074,311 +4543,11 @@ export interface components {
             /** Value */
             value: string;
         };
-        /** TaskDetailResponse */
-        TaskDetailResponse: {
-            dataConnection?: components["schemas"]["DataConnectionSummaryResponse"] | null;
-            /** Extractorvariables */
-            extractorVariables?: Record<string, never>;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Loadervariables */
-            loaderVariables?: Record<string, never>;
-            /** Mappings */
-            mappings: components["schemas"]["TaskMappingResponse"][];
-            /** Name */
-            name: string;
-            orchestrationSystem: components["schemas"]["OrchestrationSystemSummaryResponse"];
-            schedule?: components["schemas"]["TaskScheduleResponse"] | null;
-            /** Targetidentifiers */
-            targetIdentifiers?: string[];
-            /** Transformervariables */
-            transformerVariables?: Record<string, never>;
-            /**
-             * Type
-             * @default ETL
-             * @enum {string}
-             */
-            type: "ETL" | "Aggregation";
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
-        };
-        /** TaskMappingPathPostBody */
-        TaskMappingPathPostBody: {
-            /** Datatransformations */
-            dataTransformations?: unknown[];
-            /** Targetidentifier */
-            targetIdentifier: string;
-        };
-        /** TaskMappingPathResponse */
-        TaskMappingPathResponse: {
-            /** Datatransformations */
-            dataTransformations?: unknown[];
-            /** Targetidentifier */
-            targetIdentifier: string;
-        };
-        /** TaskMappingPostBody */
-        TaskMappingPostBody: {
-            /** Paths */
-            paths: components["schemas"]["TaskMappingPathPostBody"][];
-            /** Sourceidentifier */
-            sourceIdentifier: string;
-        };
-        /** TaskMappingResponse */
-        TaskMappingResponse: {
-            /** Paths */
-            paths: components["schemas"]["TaskMappingPathResponse"][];
-            /** Sourceidentifier */
-            sourceIdentifier: string;
-        };
-        /** TaskPatchBody */
-        TaskPatchBody: {
-            /** Dataconnectionid */
-            dataConnectionId?: string | null;
-            /** Extractorvariables */
-            extractorVariables?: Record<string, never>;
-            /** Loadervariables */
-            loaderVariables?: Record<string, never>;
-            /** Mappings */
-            mappings?: components["schemas"]["TaskMappingPostBody"][] | null;
-            /** Name */
-            name?: string;
-            /** Orchestrationsystemid */
-            orchestrationSystemId?: string | null;
-            schedule?: components["schemas"]["TaskSchedulePatchBody"] | null;
-            /** Transformervariables */
-            transformerVariables?: Record<string, never>;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type?: "ETL" | "Aggregation";
-        };
-        /** TaskPostBody */
-        TaskPostBody: {
-            /** Dataconnectionid */
-            dataConnectionId?: string | null;
-            /** Extractorvariables */
-            extractorVariables?: Record<string, never>;
-            /** Id */
-            id?: string | null;
-            /** Loadervariables */
-            loaderVariables?: Record<string, never>;
-            /** Mappings */
-            mappings: components["schemas"]["TaskMappingPostBody"][];
-            /** Name */
-            name: string;
-            /**
-             * Orchestrationsystemid
-             * Format: uuid
-             */
-            orchestrationSystemId: string;
-            schedule?: components["schemas"]["TaskSchedulePostBody"] | null;
-            /** Transformervariables */
-            transformerVariables?: Record<string, never>;
-            /**
-             * Type
-             * @default ETL
-             * @enum {string}
-             */
-            type: "ETL" | "Aggregation";
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** TaskQueryParameters */
-        TaskQueryParameters: {
-            /**
-             * Data Connection Id
-             * @description Filter by data connection ID.
-             * @default []
-             */
-            data_connection_id: string[];
-            /**
-             * Data Connection Type
-             * @description Filters by the type of the data connection.
-             * @default []
-             */
-            data_connection_type: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Extractor Type
-             * @description Filters by the extractor type of the data connection.
-             * @default []
-             */
-            extractor_type: (string | "null")[];
-            /**
-             * Include Data Connection Settings
-             * @description Whether to include extractor, transformer, and loader settings when data connections are expanded.
-             */
-            include_data_connection_settings?: boolean | null;
-            /**
-             * Include Latest Run Result
-             * @description Whether to include the full latest run result payload in task responses.
-             */
-            include_latest_run_result?: boolean | null;
-            /**
-             * Include Mappings
-             * @description Whether to include mapping details in task responses.
-             */
-            include_mappings?: boolean | null;
-            /**
-             * Latest Run Finished At Max
-             * @description Filters for tasks whose most recent run finished on or before this date and time.
-             */
-            latest_run_finished_at_max?: string | null;
-            /**
-             * Latest Run Finished At Min
-             * @description Filters for tasks whose most recent run finished on or after this date and time.
-             */
-            latest_run_finished_at_min?: string | null;
-            /**
-             * Latest Run Started At Max
-             * @description Filters for tasks whose most recent run started on or before this date and time.
-             */
-            latest_run_started_at_max?: string | null;
-            /**
-             * Latest Run Started At Min
-             * @description Filters for tasks whose most recent run started on or after this date and time.
-             */
-            latest_run_started_at_min?: string | null;
-            /**
-             * Latest Run Status
-             * @description Filters tasks by the status of their most recent run.
-             * @default []
-             */
-            latest_run_status: (string | "null")[];
-            /**
-             * Loader Type
-             * @description Filters by the loader type of the data connection.
-             * @default []
-             */
-            loader_type: (string | "null")[];
-            /**
-             * Next Run At Max
-             * @description Filters for scheduled tasks with a next run on or before this value.
-             */
-            next_run_at_max?: string | null;
-            /**
-             * Next Run At Min
-             * @description Filters for scheduled tasks with a next run on or after this value.
-             */
-            next_run_at_min?: string | null;
-            /**
-             * Orchestration System  Type
-             * @description Filter by orchestration system type.
-             * @default []
-             */
-            orchestration_system__type: string[];
-            /**
-             * Orchestration System Id
-             * @description Filter by orchestration system ID.
-             * @default []
-             */
-            orchestration_system_id: (string | "null")[];
-            /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "type" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-type" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             */
-            page?: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             */
-            page_size?: number | null;
-            /**
-             * Paused
-             * @description Filters by the paused status of the task.
-             */
-            paused?: boolean | null;
-            /**
-             * Source Identifier
-             * @description Filters by source identifiers associated with the task.
-             * @default []
-             */
-            source_identifier: (string | "null")[];
-            /**
-             * Start Time Max
-             * @description Filters for scheduled tasks with a start time on or before this value.
-             */
-            start_time_max?: string | null;
-            /**
-             * Start Time Min
-             * @description Filters for scheduled tasks with a start time on or after this value.
-             */
-            start_time_min?: string | null;
-            /**
-             * Target Identifier
-             * @description Filters by target identifiers associated with the task.
-             * @default []
-             */
-            target_identifier: (string | "null")[];
-            /**
-             * Transformer Type
-             * @description Filters by the transformer type of the data connection.
-             * @default []
-             */
-            transformer_type: (string | "null")[];
-            /**
-             * Type
-             * @description Filter by task type.
-             * @default []
-             */
-            type: string[];
-            /**
-             * Workspace Id
-             * @description Filter by workspace ID.
-             * @default []
-             */
-            workspace_id: string[];
-        };
-        /** TaskRunPatchBody */
-        TaskRunPatchBody: {
-            /** Finishedat */
-            finishedAt?: string | null;
-            /** Result */
-            result?: Record<string, never> | null;
-            /**
-             * Startedat
-             * Format: date-time
-             */
-            startedAt?: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status?: "RUNNING" | "SUCCESS" | "FAILURE";
-        };
-        /** TaskRunPostBody */
-        TaskRunPostBody: {
-            /** Finishedat */
-            finishedAt?: string | null;
-            /** Id */
-            id?: string | null;
-            /** Result */
-            result?: Record<string, never> | null;
-            /**
-             * Startedat
-             * Format: date-time
-             */
-            startedAt: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "RUNNING" | "SUCCESS" | "FAILURE";
-        };
+        /**
+         * TaskRunOrderBy
+         * @enum {string}
+         */
+        TaskRunOrderBy: "id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt";
         /** TaskRunQueryParameters */
         TaskRunQueryParameters: {
             /**
@@ -3396,25 +4565,27 @@ export interface components {
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("status" | "startedAt" | "finishedAt" | "-status" | "-startedAt" | "-finishedAt")[] | null;
+            order_by: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Started At Max
-             * @description Filters for task runs created on or before this date and time.
+             * @description Filters for task runs started on or before this date and time.
              */
             started_at_max?: string | null;
             /**
              * Started At Min
-             * @description Filters for task runs created on or after this date and time.
+             * @description Filters for task runs started on or after this date and time.
              */
             started_at_min?: string | null;
             /**
@@ -3422,12 +4593,10 @@ export interface components {
              * @description Filters task runs by their status.
              * @default []
              */
-            status: (string | "null")[];
+            status: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
         };
         /** TaskRunResponse */
         TaskRunResponse: {
-            /** Failurecount */
-            failureCount?: number | null;
             /** Finishedat */
             finishedAt?: string | null;
             /**
@@ -3448,92 +4617,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "RUNNING" | "SUCCESS" | "FAILURE";
-        };
-        /** TaskSchedulePatchBody */
-        TaskSchedulePatchBody: {
-            /** Crontab */
-            crontab?: string | null;
-            /** Interval */
-            interval?: number | null;
-            /** Intervalperiod */
-            intervalPeriod?: ("minutes" | "hours" | "days") | null;
-            /** Nextrunat */
-            nextRunAt?: string | null;
-            /** Paused */
-            paused?: boolean;
-            /** Starttime */
-            startTime?: string | null;
-        };
-        /** TaskSchedulePostBody */
-        TaskSchedulePostBody: {
-            /** Crontab */
-            crontab?: string | null;
-            /** Interval */
-            interval?: number | null;
-            /** Intervalperiod */
-            intervalPeriod?: ("minutes" | "hours" | "days") | null;
-            /** Nextrunat */
-            nextRunAt?: string | null;
-            /** Paused */
-            paused: boolean;
-            /** Starttime */
-            startTime?: string | null;
-        };
-        /** TaskScheduleResponse */
-        TaskScheduleResponse: {
-            /** Crontab */
-            crontab?: string | null;
-            /** Interval */
-            interval?: number | null;
-            /** Intervalperiod */
-            intervalPeriod?: ("minutes" | "hours" | "days") | null;
-            /** Nextrunat */
-            nextRunAt?: string | null;
-            /** Paused */
-            paused: boolean;
-            /** Starttime */
-            startTime?: string | null;
-        };
-        /** TaskSummaryResponse */
-        TaskSummaryResponse: {
-            /** Dataconnectionid */
-            dataConnectionId?: string | null;
-            /** Extractorvariables */
-            extractorVariables?: Record<string, never>;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Loadervariables */
-            loaderVariables?: Record<string, never>;
-            /** Mappings */
-            mappings: components["schemas"]["TaskMappingResponse"][];
-            /** Name */
-            name: string;
-            /**
-             * Orchestrationsystemid
-             * Format: uuid
-             */
-            orchestrationSystemId: string;
-            schedule?: components["schemas"]["TaskScheduleResponse"] | null;
-            /** Targetidentifiers */
-            targetIdentifiers?: string[];
-            /** Transformervariables */
-            transformerVariables?: Record<string, never>;
-            /**
-             * Type
-             * @default ETL
-             * @enum {string}
-             */
-            type: "ETL" | "Aggregation";
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
+            status: "PENDING" | "STARTED" | "SUCCESS" | "FAILURE";
         };
         /** ThingDetailResponse */
         ThingDetailResponse: {
@@ -3615,6 +4699,7 @@ export interface components {
             description?: string;
             /** Isprivate */
             isPrivate?: boolean;
+            /** Location */
             location?: components["schemas"]["LocationPatchBody"] | null;
             /** Name */
             name?: string;
@@ -3692,13 +4777,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Sampling Feature Type
              * @description Filter things by sampling feature type.
@@ -3798,6 +4885,55 @@ export interface components {
              */
             workspaceId: string;
         };
+        /** TimestampPatchBody */
+        TimestampPatchBody: {
+            /** Format */
+            format?: string | null;
+            /** Key */
+            key?: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** TimestampPostBody */
+        TimestampPostBody: {
+            /** Format */
+            format?: string | null;
+            /** Key */
+            key: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** TimestampResponse */
+        TimestampResponse: {
+            /** Format */
+            format?: string | null;
+            /** Key */
+            key: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("utc" | "offset" | "iana") | null;
+        };
+        /** TransformationInputPostBody */
+        TransformationInputPostBody: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
+            /** Variablename */
+            variableName: string;
+        };
+        /** TransformationInputResponse */
+        TransformationInputResponse: {
+            datastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Variablename */
+            variableName?: string | null;
+        };
         /** UnitDetailResponse */
         UnitDetailResponse: {
             /** Definition */
@@ -3860,13 +4996,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
             /**
              * Thing Id
              * @description Filter units by thing ID.
@@ -3996,13 +5134,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
         };
         /** WorkspaceDetailResponse */
         WorkspaceDetailResponse: {
@@ -4058,13 +5198,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
         };
         /** WorkspaceSummaryResponse */
         WorkspaceSummaryResponse: {
@@ -4095,7 +5237,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    interfaces_api_views_datastream_get_datastreams: {
+    interfaces_api_views_sta_datastream_get_datastreams: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4178,7 +5320,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_create_datastream: {
+    interfaces_api_views_sta_datastream_create_datastream: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -4240,7 +5382,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_aggregation_statistics: {
+    interfaces_api_views_sta_datastream_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4267,7 +5409,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_file_attachment_types: {
+    interfaces_api_views_sta_datastream_get_file_attachment_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4294,7 +5436,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_sampled_mediums: {
+    interfaces_api_views_sta_datastream_get_datastream_sampled_mediums: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4321,7 +5463,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_statuses: {
+    interfaces_api_views_sta_datastream_get_datastream_statuses: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4348,7 +5490,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_tag_keys: {
+    interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
         parameters: {
             query?: {
                 workspace_id?: string | null;
@@ -4382,7 +5524,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_visualization_bootstrap: {
+    interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
         parameters: {
             query?: {
                 /** @description Filter visualization bootstrap datastreams by workspace ID. */
@@ -4414,7 +5556,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream: {
+    interfaces_api_views_sta_datastream_get_datastream: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -4456,7 +5598,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_delete_datastream: {
+    interfaces_api_views_sta_datastream_delete_datastream: {
         parameters: {
             query?: never;
             header?: never;
@@ -4494,7 +5636,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_update_datastream: {
+    interfaces_api_views_sta_datastream_update_datastream: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -4558,7 +5700,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_csv: {
+    interfaces_api_views_sta_datastream_get_datastream_csv: {
         parameters: {
             query?: never;
             header?: never;
@@ -4596,7 +5738,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_file_attachments: {
+    interfaces_api_views_sta_datastream_get_datastream_file_attachments: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4643,7 +5785,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_replace_datastream_file_attachment: {
+    interfaces_api_views_sta_datastream_replace_datastream_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -4722,7 +5864,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_add_datastream_file_attachment: {
+    interfaces_api_views_sta_datastream_add_datastream_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -4803,7 +5945,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_remove_datastream_file_attachment: {
+    interfaces_api_views_sta_datastream_remove_datastream_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -4863,7 +6005,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_get_observations: {
+    interfaces_api_views_sta_observation_get_observations: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -4919,7 +6061,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_create_observation: {
+    interfaces_api_views_sta_observation_create_observation: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -4983,7 +6125,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_insert_observations: {
+    interfaces_api_views_sta_observation_insert_observations: {
         parameters: {
             query?: {
                 /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
@@ -5028,7 +6170,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_delete_observations: {
+    interfaces_api_views_sta_observation_delete_observations: {
         parameters: {
             query?: never;
             header?: never;
@@ -5070,7 +6212,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_get_observation: {
+    interfaces_api_views_sta_observation_get_observation: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -5113,7 +6255,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observation_delete_observation: {
+    interfaces_api_views_sta_observation_delete_observation: {
         parameters: {
             query?: never;
             header?: never;
@@ -5161,7 +6303,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_get_datastream_tags: {
+    interfaces_api_views_sta_datastream_get_datastream_tags: {
         parameters: {
             query?: never;
             header?: never;
@@ -5201,7 +6343,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_edit_datastream_tag: {
+    interfaces_api_views_sta_datastream_edit_datastream_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -5263,7 +6405,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_add_datastream_tag: {
+    interfaces_api_views_sta_datastream_add_datastream_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -5325,7 +6467,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_datastream_remove_datastream_tag: {
+    interfaces_api_views_sta_datastream_remove_datastream_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -5385,7 +6527,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_data_connection_get_data_connections: {
+    interfaces_api_views_etl_data_connection_get_data_connections: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -5393,18 +6535,11 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "type" | "extractorType" | "transformerType" | "loaderType" | "-name" | "-type" | "-extractorType" | "-transformerType" | "-loaderType")[] | null;
+                order_by?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName")[];
                 /** @description Filter data connections by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filters by the type of the data connection. */
-                type?: string[];
-                /** @description Filters by the extractor type of the data connection. */
-                extractor_type?: (string | "null")[];
-                /** @description Filters by the transformer type of the data connection. */
-                transformer_type?: (string | "null")[];
-                /** @description Filters by the loader type of the data connection. */
-                loader_type?: (string | "null")[];
-                expand_related?: boolean | null;
+                workspace_id?: string[];
+                /** @description Filter data connections by payload type. */
+                payload_type?: string[];
             };
             header?: never;
             path?: never;
@@ -5418,7 +6553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionSummaryResponse"][] | components["schemas"]["DataConnectionDetailResponse"][];
+                    "application/json": components["schemas"]["DataConnectionResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -5432,7 +6567,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_data_connection_create_data_connection: {
+    interfaces_api_views_etl_data_connection_create_data_connection: {
         parameters: {
             query?: never;
             header?: never;
@@ -5451,7 +6586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionDetailResponse"];
+                    "application/json": components["schemas"]["DataConnectionResponse"];
                 };
             };
             /** @description Bad Request */
@@ -5481,6 +6616,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -5492,11 +6636,9 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_data_connection_get_data_connection: {
+    interfaces_api_views_etl_data_connection_get_data_connection: {
         parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 data_connection_id: string;
@@ -5511,7 +6653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionSummaryResponse"] | components["schemas"]["DataConnectionDetailResponse"];
+                    "application/json": components["schemas"]["DataConnectionResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -5532,9 +6674,18 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
-    interfaces_api_views_data_connection_delete_data_connection: {
+    interfaces_api_views_etl_data_connection_delete_data_connection: {
         parameters: {
             query?: never;
             header?: never;
@@ -5581,7 +6732,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_data_connection_update_data_connection: {
+    interfaces_api_views_etl_data_connection_update_data_connection: {
         parameters: {
             query?: never;
             header?: never;
@@ -5602,7 +6753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataConnectionDetailResponse"];
+                    "application/json": components["schemas"]["DataConnectionResponse"];
                 };
             };
             /** @description Bad Request */
@@ -5643,263 +6794,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_orchestration_system_get_orchestration_systems: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "type" | "-name" | "-type")[] | null;
-                /** @description Filter orchestration systems by workspace ID. */
-                workspace_id?: (string | "null")[];
-                /** @description Filter orchestration systems by type. */
-                type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrchestrationSystemSummaryResponse"][] | components["schemas"]["OrchestrationSystemDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_orchestration_system_create_orchestration_system: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrchestrationSystemPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrchestrationSystemSummaryResponse"] | components["schemas"]["OrchestrationSystemDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_orchestration_system_get_orchestration_system: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                orchestration_system_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrchestrationSystemSummaryResponse"] | components["schemas"]["OrchestrationSystemDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_orchestration_system_delete_orchestration_system: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                orchestration_system_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_orchestration_system_update_orchestration_system: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                orchestration_system_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrchestrationSystemPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrchestrationSystemSummaryResponse"] | components["schemas"]["OrchestrationSystemDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_task_get_tasks: {
+    interfaces_api_views_etl_task_get_etl_tasks: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -5907,56 +6802,21 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "type" | "orchestrationSystemType" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "nextRunAt" | "paused" | "startTime" | "dataConnectionType" | "dataConnectionExtractorType" | "dataConnectionTransformerType" | "dataConnectionLoaderType" | "-name" | "-type" | "-orchestrationSystemType" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "-nextRunAt" | "-paused" | "-startTime" | "-dataConnectionType" | "-dataConnectionExtractorType" | "-dataConnectionTransformerType" | "-dataConnectionLoaderType")[] | null;
-                /** @description Filter by workspace ID. */
+                order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter ETL tasks by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter by task type. */
-                type?: string[];
-                /** @description Filter by data connection ID. */
+                /** @description Filter ETL tasks by data connection ID. */
                 data_connection_id?: string[];
-                /** @description Filter by orchestration system ID. */
-                orchestration_system_id?: (string | "null")[];
-                /** @description Filter by orchestration system type. */
-                orchestration_system__type?: string[];
-                /** @description Filters tasks by the status of their most recent run. */
+                /** @description Filter ETL tasks by their most recent run status. */
                 latest_run_status?: (string | "null")[];
-                /** @description Filters for tasks whose most recent run started on or before this date and time. */
-                latest_run_started_at_max?: string | null;
-                /** @description Filters for tasks whose most recent run started on or after this date and time. */
+                /** @description Filter tasks whose latest run started on or after this datetime. */
                 latest_run_started_at_min?: string | null;
-                /** @description Filters for tasks whose most recent run finished on or before this date and time. */
-                latest_run_finished_at_max?: string | null;
-                /** @description Filters for tasks whose most recent run finished on or after this date and time. */
+                /** @description Filter tasks whose latest run started on or before this datetime. */
+                latest_run_started_at_max?: string | null;
+                /** @description Filter tasks whose latest run finished on or after this datetime. */
                 latest_run_finished_at_min?: string | null;
-                /** @description Filters for scheduled tasks with a next run on or before this value. */
-                next_run_at_max?: string | null;
-                /** @description Filters for scheduled tasks with a next run on or after this value. */
-                next_run_at_min?: string | null;
-                /** @description Filters by the paused status of the task. */
-                paused?: boolean | null;
-                /** @description Filters for scheduled tasks with a start time on or before this value. */
-                start_time_max?: string | null;
-                /** @description Filters for scheduled tasks with a start time on or after this value. */
-                start_time_min?: string | null;
-                /** @description Filters by the type of the data connection. */
-                data_connection_type?: string[];
-                /** @description Filters by the extractor type of the data connection. */
-                extractor_type?: (string | "null")[];
-                /** @description Filters by the transformer type of the data connection. */
-                transformer_type?: (string | "null")[];
-                /** @description Filters by the loader type of the data connection. */
-                loader_type?: (string | "null")[];
-                /** @description Filters by source identifiers associated with the task. */
-                source_identifier?: (string | "null")[];
-                /** @description Filters by target identifiers associated with the task. */
-                target_identifier?: (string | "null")[];
-                expand_related?: boolean | null;
-                /** @description Whether to include mapping details in task responses. */
-                include_mappings?: boolean | null;
-                /** @description Whether to include the full latest run result payload in task responses. */
-                include_latest_run_result?: boolean | null;
-                /** @description Whether to include extractor, transformer, and loader settings when data connections are expanded. */
-                include_data_connection_settings?: boolean | null;
+                /** @description Filter tasks whose latest run finished on or before this datetime. */
+                latest_run_finished_at_max?: string | null;
             };
             header?: never;
             path?: never;
@@ -5970,7 +6830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskSummaryResponse"][] | components["schemas"]["TaskDetailResponse"][];
+                    "application/json": components["schemas"]["EtlTaskResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -5984,7 +6844,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_task_create_task: {
+    interfaces_api_views_etl_task_create_etl_task: {
         parameters: {
             query?: never;
             header?: never;
@@ -5993,7 +6853,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskPostBody"];
+                "application/json": components["schemas"]["EtlTaskPostBody"];
             };
         };
         responses: {
@@ -6003,7 +6863,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskDetailResponse"];
+                    "application/json": components["schemas"]["EtlTaskResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6033,6 +6893,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -6044,49 +6913,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_task_get_task: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskSummaryResponse"] | components["schemas"]["TaskDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_task_run_task: {
+    interfaces_api_views_etl_task_get_etl_task: {
         parameters: {
             query?: never;
             header?: never;
@@ -6103,25 +6930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
+                    "application/json": components["schemas"]["EtlTaskResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -6142,8 +6951,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
-            422: {
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6153,7 +6962,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_task_delete_task: {
+    interfaces_api_views_etl_task_delete_etl_task: {
         parameters: {
             query?: never;
             header?: never;
@@ -6189,8 +6998,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Conflict */
-            409: {
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6200,7 +7009,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_task_update_task: {
+    interfaces_api_views_etl_task_update_etl_task: {
         parameters: {
             query?: never;
             header?: never;
@@ -6211,7 +7020,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskPatchBody"];
+                "application/json": components["schemas"]["EtlTaskPatchBody"];
             };
         };
         responses: {
@@ -6221,7 +7030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskDetailResponse"];
+                    "application/json": components["schemas"]["EtlTaskResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6251,6 +7060,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -6262,7 +7080,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_run_get_task_runs: {
+    interfaces_api_views_etl_task_get_etl_task_runs: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -6270,12 +7088,12 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("status" | "startedAt" | "finishedAt" | "-status" | "-startedAt" | "-finishedAt")[] | null;
+                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
                 /** @description Filters task runs by their status. */
-                status?: (string | "null")[];
-                /** @description Filters for task runs created on or before this date and time. */
+                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
+                /** @description Filters for task runs started on or before this date and time. */
                 started_at_max?: string | null;
-                /** @description Filters for task runs created on or after this date and time. */
+                /** @description Filters for task runs started on or after this date and time. */
                 started_at_min?: string | null;
                 /** @description Filters for task runs finished on or before this date and time. */
                 finished_at_max?: string | null;
@@ -6308,50 +7126,6 @@ export interface operations {
                     "application/json": string;
                 };
             };
-        };
-    };
-    interfaces_api_views_run_create_task_run: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TaskRunPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -6361,8 +7135,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
-            422: {
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6372,7 +7146,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_run_get_task_run: {
+    interfaces_api_views_etl_task_get_etl_task_run: {
         parameters: {
             query?: never;
             header?: never;
@@ -6411,15 +7185,236 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
-    interfaces_api_views_run_delete_task_run: {
+    interfaces_api_views_etl_task_trigger_etl_task: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 task_id: string;
-                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_get_monitoring_tasks: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter monitoring tasks by thing ID. */
+                thing_id?: string[];
+                /** @description Filter monitoring tasks by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter monitoring tasks by their most recent run status. */
+                latest_run_status?: (string | "null")[];
+                /** @description Filter monitoring tasks by datastream ID. */
+                datastream_id?: string[];
+                /** @description Filter monitoring tasks by rule type. */
+                rule_type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringTaskResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_create_monitoring_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringTaskPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringTaskResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_get_monitoring_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringTaskResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_delete_monitoring_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
             };
             cookie?: never;
         };
@@ -6450,8 +7445,8 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Conflict */
-            409: {
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6461,19 +7456,18 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_run_update_task_run: {
+    interfaces_api_views_monitoring_task_update_monitoring_task: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 task_id: string;
-                run_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskRunPatchBody"];
+                "application/json": components["schemas"]["MonitoringTaskPatchBody"];
             };
         };
         responses: {
@@ -6483,7 +7477,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskRunResponse"];
+                    "application/json": components["schemas"]["MonitoringTaskResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6513,6 +7507,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -6524,7 +7527,473 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_get_observed_properties: {
+    interfaces_api_views_monitoring_rule_get_monitoring_rules: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "ruleType" | "datastreamId" | "-id" | "-ruleType" | "-datastreamId")[];
+                /** @description Filter rules by datastream ID. */
+                datastream_id?: string[];
+                /** @description Filter rules by rule type. */
+                rule_type?: string[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringRuleResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_create_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringRuleResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_get_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringRuleResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_delete_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_rule_update_monitoring_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringRulePatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringRuleResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_get_monitoring_task_runs: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Filters task runs by their status. */
+                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
+                /** @description Filters for task runs started on or before this date and time. */
+                started_at_max?: string | null;
+                /** @description Filters for task runs started on or after this date and time. */
+                started_at_min?: string | null;
+                /** @description Filters for task runs finished on or before this date and time. */
+                finished_at_max?: string | null;
+                /** @description Filters for task runs finished on or after this date and time. */
+                finished_at_min?: string | null;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_get_monitoring_task_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_monitoring_task_trigger_monitoring_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_observed_property_get_observed_properties: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -6569,7 +8038,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_create_observed_property: {
+    interfaces_api_views_sta_observed_property_create_observed_property: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -6631,7 +8100,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_get_datastream_aggregation_statistics: {
+    interfaces_api_views_sta_observed_property_get_datastream_aggregation_statistics: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -6658,7 +8127,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_get_observed_property: {
+    interfaces_api_views_sta_observed_property_get_observed_property: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -6700,7 +8169,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_delete_observed_property: {
+    interfaces_api_views_sta_observed_property_delete_observed_property: {
         parameters: {
             query?: never;
             header?: never;
@@ -6747,7 +8216,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_observed_property_update_observed_property: {
+    interfaces_api_views_sta_observed_property_update_observed_property: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -6811,7 +8280,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_processing_level_get_processing_levels: {
+    interfaces_api_views_sta_processing_level_get_processing_levels: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -6854,7 +8323,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_processing_level_create_processing_level: {
+    interfaces_api_views_sta_processing_level_create_processing_level: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -6916,7 +8385,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_processing_level_get_processing_level: {
+    interfaces_api_views_sta_processing_level_get_processing_level: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -6958,7 +8427,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_processing_level_delete_processing_level: {
+    interfaces_api_views_sta_processing_level_delete_processing_level: {
         parameters: {
             query?: never;
             header?: never;
@@ -7005,7 +8474,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_processing_level_update_processing_level: {
+    interfaces_api_views_sta_processing_level_update_processing_level: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7069,7 +8538,1938 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_result_qualifier_get_result_qualifiers: {
+    interfaces_api_views_products_rating_curve_get_rating_curves: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName")[];
+                /** @description Filter rating curves by thing ID. */
+                thing_id?: string[];
+                /** @description Filter rating curves by workspace ID. */
+                workspace_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_create_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_get_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_delete_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_rating_curve_update_rating_curve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rating_curve_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurvePatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_tasks: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter data product tasks by thing ID. */
+                thing_id?: string[];
+                /** @description Filter data product tasks by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter data product tasks by their most recent run status. */
+                latest_run_status?: (string | "null")[];
+                /** @description Filter data product tasks by transformation type. */
+                transformation_type?: string[];
+                /** @description Filter data product tasks by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter data product tasks by input datastream ID. */
+                input_datastream_id?: string[];
+                /** @description Filter data product tasks by rating curve ID. */
+                rating_curve_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataProductTaskResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_create_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_delete_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_update_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataProductTaskPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_runs: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt")[];
+                /** @description Filters task runs by their status. */
+                status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
+                /** @description Filters for task runs started on or before this date and time. */
+                started_at_max?: string | null;
+                /** @description Filters for task runs started on or after this date and time. */
+                started_at_min?: string | null;
+                /** @description Filters for task runs finished on or before this date and time. */
+                finished_at_max?: string | null;
+                /** @description Filters for task runs finished on or after this date and time. */
+                finished_at_min?: string | null;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_get_data_product_task_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_aggregation_transformations: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+                /** @description Filter by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter by input datastream ID. */
+                input_datastream_id?: string[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationTransformationResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_aggregation_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AggregationTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_aggregation_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_aggregation_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_aggregation_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AggregationTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_composite_expression_transformations: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+                /** @description Filter by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter by input datastream ID. */
+                input_datastream_id?: string[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_composite_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompositeExpressionTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_composite_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_composite_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_composite_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompositeExpressionTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_expression_transformations: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+                /** @description Filter by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter by input datastream ID. */
+                input_datastream_id?: string[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpressionTransformationResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpressionTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_expression_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpressionTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_rating_curve_transformations: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
+                /** @description Filter by output datastream ID. */
+                output_datastream_id?: string[];
+                /** @description Filter by input datastream ID. */
+                input_datastream_id?: string[];
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveTransformationResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_create_rating_curve_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurveTransformationPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_get_rating_curve_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_delete_rating_curve_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_transformation_update_rating_curve_transformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                transformation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingCurveTransformationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_products_task_trigger_data_product_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_result_qualifier_get_result_qualifiers: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7112,7 +10512,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_result_qualifier_create_result_qualifier: {
+    interfaces_api_views_sta_result_qualifier_create_result_qualifier: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7156,7 +10556,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_result_qualifier_get_result_qualifier: {
+    interfaces_api_views_sta_result_qualifier_get_result_qualifier: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7198,7 +10598,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_result_qualifier_delete_result_qualifier: {
+    interfaces_api_views_sta_result_qualifier_delete_result_qualifier: {
         parameters: {
             query?: never;
             header?: never;
@@ -7245,7 +10645,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_result_qualifier_update_result_qualifier: {
+    interfaces_api_views_sta_result_qualifier_update_result_qualifier: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7300,7 +10700,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_role_get_roles: {
+    interfaces_api_views_iam_role_get_roles: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7343,7 +10743,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_role_get_role: {
+    interfaces_api_views_iam_role_get_role: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7385,7 +10785,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_get_sensors: {
+    interfaces_api_views_sta_sensor_get_sensors: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7434,7 +10834,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_create_sensor: {
+    interfaces_api_views_sta_sensor_create_sensor: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7496,7 +10896,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_get_sensor_encoding_types: {
+    interfaces_api_views_sta_sensor_get_sensor_encoding_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7523,7 +10923,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_get_method_types: {
+    interfaces_api_views_sta_sensor_get_method_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7550,7 +10950,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_get_sensor: {
+    interfaces_api_views_sta_sensor_get_sensor: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7592,7 +10992,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_delete_sensor: {
+    interfaces_api_views_sta_sensor_delete_sensor: {
         parameters: {
             query?: never;
             header?: never;
@@ -7639,7 +11039,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sensor_update_sensor: {
+    interfaces_api_views_sta_sensor_update_sensor: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7703,7 +11103,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_things: {
+    interfaces_api_views_sta_thing_get_things: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7758,7 +11158,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_create_thing: {
+    interfaces_api_views_sta_thing_create_thing: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -7811,7 +11211,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_file_attachment_types: {
+    interfaces_api_views_sta_thing_get_file_attachment_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7838,7 +11238,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing_markers: {
+    interfaces_api_views_sta_thing_get_thing_markers: {
         parameters: {
             query?: {
                 /** @description Filter markers by workspace ID. */
@@ -7874,7 +11274,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_sampling_feature_types: {
+    interfaces_api_views_sta_thing_get_sampling_feature_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7901,7 +11301,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing_site_summaries: {
+    interfaces_api_views_sta_thing_get_thing_site_summaries: {
         parameters: {
             query?: {
                 /** @description Filter site summaries by workspace ID. */
@@ -7935,7 +11335,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_site_types: {
+    interfaces_api_views_sta_thing_get_site_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -7962,7 +11362,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing_tag_keys: {
+    interfaces_api_views_sta_thing_get_thing_tag_keys: {
         parameters: {
             query?: {
                 workspace_id?: string | null;
@@ -7996,7 +11396,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing: {
+    interfaces_api_views_sta_thing_get_thing: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8038,7 +11438,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_delete_thing: {
+    interfaces_api_views_sta_thing_delete_thing: {
         parameters: {
             query?: never;
             header?: never;
@@ -8076,7 +11476,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_update_thing: {
+    interfaces_api_views_sta_thing_update_thing: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8140,7 +11540,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing_file_attachments: {
+    interfaces_api_views_sta_thing_get_thing_file_attachments: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -8187,7 +11587,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_replace_thing_file_attachment: {
+    interfaces_api_views_sta_thing_replace_thing_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8266,7 +11666,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_add_thing_file_attachment: {
+    interfaces_api_views_sta_thing_add_thing_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8347,7 +11747,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_remove_thing_file_attachment: {
+    interfaces_api_views_sta_thing_remove_thing_file_attachment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8407,7 +11807,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_get_thing_tags: {
+    interfaces_api_views_sta_thing_get_thing_tags: {
         parameters: {
             query?: never;
             header?: never;
@@ -8447,7 +11847,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_edit_thing_tag: {
+    interfaces_api_views_sta_thing_edit_thing_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8509,7 +11909,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_add_thing_tag: {
+    interfaces_api_views_sta_thing_add_thing_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8571,7 +11971,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_thing_remove_thing_tag: {
+    interfaces_api_views_sta_thing_remove_thing_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8631,7 +12031,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_get_units: {
+    interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -8676,7 +12076,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_create_unit: {
+    interfaces_api_views_sta_unit_create_unit: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8729,7 +12129,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_get_unit_types: {
+    interfaces_api_views_sta_unit_get_unit_types: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -8756,7 +12156,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_get_unit: {
+    interfaces_api_views_sta_unit_get_unit: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8798,7 +12198,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_delete_unit: {
+    interfaces_api_views_sta_unit_delete_unit: {
         parameters: {
             query?: never;
             header?: never;
@@ -8845,7 +12245,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_unit_update_unit: {
+    interfaces_api_views_sta_unit_update_unit: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8909,7 +12309,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_get_workspaces: {
+    interfaces_api_views_iam_workspace_get_workspaces: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -8950,7 +12350,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_create_workspace: {
+    interfaces_api_views_iam_workspace_create_workspace: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -8994,7 +12394,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_get_workspace: {
+    interfaces_api_views_iam_workspace_get_workspace: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9036,7 +12436,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_delete_workspace: {
+    interfaces_api_views_iam_workspace_delete_workspace: {
         parameters: {
             query?: never;
             header?: never;
@@ -9074,7 +12474,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_update_workspace: {
+    interfaces_api_views_iam_workspace_update_workspace: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9129,7 +12529,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_get_api_keys: {
+    interfaces_api_views_iam_api_key_get_api_keys: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -9170,7 +12570,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_create_api_key: {
+    interfaces_api_views_iam_api_key_create_api_key: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9216,7 +12616,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_get_api_key: {
+    interfaces_api_views_iam_api_key_get_api_key: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9259,7 +12659,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_delete_api_key: {
+    interfaces_api_views_iam_api_key_delete_api_key: {
         parameters: {
             query?: never;
             header?: never;
@@ -9298,7 +12698,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_update_api_key: {
+    interfaces_api_views_iam_api_key_update_api_key: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9354,7 +12754,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_api_key_regenerate_api_key: {
+    interfaces_api_views_iam_api_key_regenerate_api_key: {
         parameters: {
             query?: {
                 expand_related?: boolean | null;
@@ -9415,7 +12815,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_collaborator_get_collaborators: {
+    interfaces_api_views_iam_collaborator_get_collaborators: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -9462,7 +12862,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_collaborator_edit_collaborator_role: {
+    interfaces_api_views_iam_collaborator_edit_collaborator_role: {
         parameters: {
             query?: never;
             header?: never;
@@ -9515,7 +12915,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_collaborator_add_collaborator: {
+    interfaces_api_views_iam_collaborator_add_collaborator: {
         parameters: {
             query?: never;
             header?: never;
@@ -9568,7 +12968,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_collaborator_remove_collaborator: {
+    interfaces_api_views_iam_collaborator_remove_collaborator: {
         parameters: {
             query?: never;
             header?: never;
@@ -9619,7 +13019,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_accept_workspace_transfer: {
+    interfaces_api_views_iam_workspace_accept_workspace_transfer: {
         parameters: {
             query?: never;
             header?: never;
@@ -9668,7 +13068,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_transfer_workspace: {
+    interfaces_api_views_iam_workspace_transfer_workspace: {
         parameters: {
             query?: never;
             header?: never;
@@ -9730,7 +13130,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_workspace_reject_workspace_transfer: {
+    interfaces_api_views_iam_workspace_reject_workspace_transfer: {
         parameters: {
             query?: never;
             header?: never;

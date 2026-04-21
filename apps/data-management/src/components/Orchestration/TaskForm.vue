@@ -94,7 +94,7 @@
               :key="variable.name"
             >
               <v-text-field
-                v-model="(task as any).extractorVariables[variable.name]"
+                v-model="task.taskVariables[variable.name]"
                 :label="`URL template variable: ${variable.name} *`"
                 :rules="rules.requiredAndMaxLength255"
                 density="comfortable"
@@ -182,8 +182,6 @@ import { storeToRefs } from 'pinia'
 import SwimlanesForm from './SwimlanesForm.vue'
 import hs, {
   DataConnection,
-  OrchestrationSystem,
-  PlaceholderVariable,
   Task,
   TaskExpanded,
   TaskSchedule,
@@ -204,7 +202,7 @@ const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id)
 
 const props = defineProps<{
   oldTask?: TaskExpanded
-  orchestrationSystem: OrchestrationSystem
+  initialDataConnection?: DataConnection
 }>()
 
 const { tasks } = storeToRefs(useTaskStore())
@@ -245,19 +243,18 @@ const isAggregationTask = computed(
 )
 const taskWorkspaceId = computed(() => {
   return (
-    task.value.workspaceId ||
+    (task.value as any).workspaceId ||
     (task.value as any)?.workspace?.id ||
-    props.oldTask?.workspace?.id ||
+    (props.oldTask?.dataConnection as any)?.workspace?.id ||
     selectedWorkspace.value?.id ||
     ''
   )
 })
-const perTaskPlaceholders = computed<PlaceholderVariable[]>(() => {
+const perTaskPlaceholders = computed<any[]>(() => {
   if (isAggregationTask.value) return []
   const placeholders =
-    (selectedDataConnection.value as any)?.extractor?.settings
-      ?.placeholderVariables || []
-  return placeholders.filter((v: PlaceholderVariable) => v?.type === 'perTask')
+    (selectedDataConnection.value as any)?.placeholderVariables || []
+  return placeholders.filter((v: any) => v?.type === 'per_task')
 })
 const taskTypeOptions = [
   { title: 'ETL', value: 'ETL' },
@@ -277,7 +274,7 @@ const timezoneLabel = computed(
 function defaultSchedule(): TaskSchedule {
   const now = new Date().toISOString()
   return {
-    paused: false,
+    enabled: true,
     startTime: now,
     nextRunAt: null,
     crontab: null,
@@ -324,7 +321,7 @@ function ensureAggregationTransformation(path: any) {
 }
 
 function hydrateAggregationTimezoneFromMappings() {
-  const first = task.value.mappings?.[0]?.paths?.[0]?.dataTransformations?.find(
+  const first = (task.value.mappings as any)?.[0]?.paths?.[0]?.dataTransformations?.find(
     (t: any) => t?.type === 'aggregation'
   ) as any
   if (!first) {
@@ -378,11 +375,24 @@ function hydrateTask(source?: TaskExpanded) {
     ? new Task(JSON.parse(JSON.stringify(source)))
     : new Task()
 
+  if (!source && props.initialDataConnection) {
+    base.dataConnectionId = String(props.initialDataConnection.id)
+    ;(base as any).dataConnection = JSON.parse(
+      JSON.stringify(props.initialDataConnection)
+    )
+    const workspaceId =
+      (props.initialDataConnection as any)?.workspace?.id ??
+      selectedWorkspace.value?.id
+    if (workspaceId) {
+      ;(base as any).workspaceId = String(workspaceId)
+    }
+  }
+
   ;(base as any).type = (base as any).type || 'ETL'
   if (!base.schedule) base.schedule = defaultSchedule()
   if (!base.mappings) base.mappings = []
-  if (!base.workspaceId && (base as any).workspace?.id)
-    base.workspaceId = String((base as any).workspace.id)
+  if (!(base as any).workspaceId && (base as any).workspace?.id)
+    (base as any).workspaceId = String((base as any).workspace.id)
   if (!base.dataConnectionId && (base as any).dataConnection?.id)
     base.dataConnectionId = String((base as any).dataConnection.id)
   if ((base as any).type === 'Aggregation') base.dataConnectionId = null as any
@@ -408,16 +418,16 @@ watch(
   () => {
     const names = perTaskPlaceholders.value.map((p) => p.name)
     if (!names.length) return
-    if (!task.value.extractorVariables)
-      task.value.extractorVariables = {} as Record<string, any>
+    if (!(task.value as any).taskVariables)
+      (task.value as any).taskVariables = {}
     const next: Record<string, any> = {}
     names.forEach((n) => {
       next[n] =
-        (task.value as any).extractorVariables[n] === undefined
+        (task.value as any).taskVariables[n] === undefined
           ? ''
-          : (task.value as any).extractorVariables[n]
+          : (task.value as any).taskVariables[n]
     })
-    task.value.extractorVariables = next
+    ;(task.value as any).taskVariables = next
   },
   { immediate: true }
 )
@@ -481,9 +491,7 @@ async function onSubmit() {
 
   submitLoading.value = true
   try {
-    task.value.workspaceId = taskWorkspaceId.value || ''
-    task.value.orchestrationSystemId =
-      props.orchestrationSystem?.id || task.value.orchestrationSystemId
+    ;(task.value as any).workspaceId = taskWorkspaceId.value || ''
     if (!task.value.schedule) task.value.schedule = defaultSchedule()
     if (isAggregationTask.value) {
       task.value.dataConnectionId = null as any

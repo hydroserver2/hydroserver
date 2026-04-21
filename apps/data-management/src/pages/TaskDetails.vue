@@ -114,7 +114,7 @@
                   <v-btn
                     variant="text"
                     color="black"
-                    :prepend-icon="task.schedule?.paused ? mdiPlay : mdiPause"
+                    :prepend-icon="task.schedule?.enabled ? mdiPause : mdiPlay"
                     :disabled="!!pauseToggleDisabledReason"
                     @click.stop="togglePaused(task)"
                   >
@@ -511,7 +511,6 @@
   <v-dialog v-model="openEdit" width="80rem" v-if="task">
     <TaskForm
       :old-task="task"
-      :orchestration-system="task?.orchestrationSystem"
       @close="openEdit = false"
       @updated="onTaskUpdated"
     />
@@ -547,7 +546,6 @@ import hs, {
   PermissionResource,
   TaskExpanded,
   TaskRun,
-  WORKFLOW_TYPES,
 } from '@hydroserver/client'
 import router from '@/router/router'
 import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
@@ -636,22 +634,10 @@ const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 // When opened from the orchestration slide-over, default to showing run history.
 const activePanel = ref<TaskDetailsPanel>(props.embedded ? 'runs' : 'details')
 
-const isInternalOrchestrationType = (value: unknown) =>
-  typeof value === 'string' && value.trim().toUpperCase() === 'INTERNAL'
-
-const canRunNow = computed(() => {
-  const orchestrationSystem = task.value?.orchestrationSystem as
-    | Record<string, unknown>
-    | undefined
-  const type =
-    orchestrationSystem?.type ??
-    orchestrationSystem?.orchestrationSystemType ??
-    orchestrationSystem?.orchestration_system_type
-  return isInternalOrchestrationType(type)
-})
+const canRunNow = computed(() => !!task.value)
 
 const canEditTask = computed(() => {
-  const workspace = task.value?.workspace
+  const workspace = task.value?.dataConnection?.workspace
   if (!workspace) return false
 
   const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
@@ -701,27 +687,14 @@ const isTaskExpandedPayload = (value: unknown): value is TaskExpanded => {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<TaskExpanded>
   const hasId = typeof candidate.id === 'string' && candidate.id.length > 0
-  const hasWorkspace =
-    !!candidate.workspace &&
-    typeof candidate.workspace === 'object' &&
-    typeof (candidate.workspace as any).id === 'string' &&
-    (candidate.workspace as any).id.length > 0
-  const hasOrchestrationSystem =
-    !!candidate.orchestrationSystem &&
-    typeof candidate.orchestrationSystem === 'object' &&
-    typeof (candidate.orchestrationSystem as any).id === 'string' &&
-    (candidate.orchestrationSystem as any).id.length > 0
+  const hasDataConnection =
+    !!candidate.dataConnection &&
+    typeof candidate.dataConnection === 'object' &&
+    typeof (candidate.dataConnection as any).id === 'string' &&
+    (candidate.dataConnection as any).id.length > 0
   const hasMappings = Array.isArray(candidate.mappings)
-  const hasTaskType =
-    candidate.type === 'ETL' || candidate.type === 'Aggregation'
 
-  return (
-    hasId &&
-    hasWorkspace &&
-    hasOrchestrationSystem &&
-    hasMappings &&
-    hasTaskType
-  )
+  return hasId && hasDataConnection && hasMappings
 }
 
 const routeToAccessDenied = async () => {
@@ -817,7 +790,7 @@ const runLinkHref = (runId: string) =>
   router.resolve({
     name: 'Orchestration',
     query: {
-      workspaceId: task.value?.workspace?.id,
+      workspaceId: (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id,
       taskId: effectiveTaskId.value,
       runId,
     },
@@ -865,39 +838,33 @@ const getRuntimeUrl = (run?: TaskRun | null) => {
 }
 
 const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
-  const sourceUri = (task.value as any)?.dataConnection?.extractor?.settings
-    ?.sourceUri
-  if (!sourceUri || typeof sourceUri !== 'string') return null
+  const dc: any = task.value?.dataConnection
+  const sourceUrl = dc?.sourceUrl
+  if (!sourceUrl || typeof sourceUrl !== 'string') return null
 
-  const placeholders =
-    ((task.value as any)?.dataConnection?.extractor?.settings
-      ?.placeholderVariables as any[]) || []
+  const placeholders: Array<{ name: string; type?: string }> =
+    dc.placeholderVariables ?? []
 
   const values: Record<string, string> = {}
   for (const placeholder of placeholders) {
     const name = placeholder?.name
     if (!name) continue
 
-    if (placeholder?.type === 'perTask') {
-      const value = (task.value as any)?.extractorVariables?.[name]
+    if (placeholder?.type === 'per_task') {
+      const value = (task.value?.taskVariables as any)?.[name]
       if (value !== undefined && value !== null && value !== '') {
         values[name] = String(value)
       }
       continue
     }
 
-    if (placeholder?.type !== 'runTime') continue
-
-    const runTimeValue =
-      placeholder?.runTimeValue ?? placeholder?.run_time_value
-    if (runTimeValue === 'jobExecutionTime') {
+    if (placeholder?.type === 'run_time') {
       const startedAt = run?.startedAt ?? task.value?.latestRun?.startedAt
       if (startedAt) values[name] = String(startedAt)
-      continue
     }
   }
 
-  return sourceUri.replace(
+  return sourceUrl.replace(
     /\{([^}]+)\}/g,
     (_, key) => values[key] ?? `{${key}}`
   )
@@ -1027,26 +994,15 @@ const taskInformation = computed(() => {
 
 const taskTemplateInformation = computed(() => {
   const dataConnection: any = task.value?.dataConnection
-  const taskType = (task.value as any)?.type ?? dataConnection?.type ?? '–'
-  const notificationRecipientEmails = Array.isArray(
-    dataConnection?.notificationRecipientEmails
+  if (!dataConnection) return []
+
+  const recipientEmails: string[] = Array.isArray(
+    dataConnection?.notification?.recipientEmails
   )
-    ? dataConnection.notificationRecipientEmails
+    ? dataConnection.notification.recipientEmails
     : []
 
-  const rows: any[] = [
-    {
-      icon: mdiInformationOutline,
-      label: 'Template',
-      name: 'Workflow type',
-      value: taskType,
-    },
-  ]
-
-  if (!dataConnection) return rows
-
   return [
-    ...rows,
     {
       icon: mdiCardAccountDetails,
       label: 'Data connection ID',
@@ -1063,8 +1019,8 @@ const taskTemplateInformation = computed(() => {
       icon: mdiEmailOutline,
       label: 'Data connection recipients',
       name: 'Notification recipients',
-      value: notificationRecipientEmails.length ? null : '–',
-      chips: notificationRecipientEmails,
+      value: recipientEmails.length ? null : '–',
+      chips: recipientEmails,
     },
   ].filter(
     (row) =>
@@ -1073,33 +1029,27 @@ const taskTemplateInformation = computed(() => {
 })
 
 const extractorInformation = computed(() => {
-  const extractor: any = task.value?.dataConnection?.extractor
-  if (!extractor) return []
+  const dc: any = task.value?.dataConnection
+  if (!dc) return []
 
-  const placeholders: Array<{
-    name: string
-    type?: string
-    runTimeValue?: string
-  }> = extractor.settings?.placeholderVariables ?? []
+  const placeholders: Array<{ name: string; type?: string }> =
+    dc.placeholderVariables ?? []
   const perTaskList = placeholders
-    .filter((p) => p.type === 'perTask')
-    .map((p) => `${p.name}: ${task.value?.extractorVariables?.[p.name] ?? '–'}`)
+    .filter((p) => p.type === 'per_task')
+    .map(
+      (p) =>
+        `${p.name}: ${(task.value?.taskVariables as any)?.[p.name] ?? '–'}`
+    )
   const runtimeList = placeholders
-    .filter((p) => p.type === 'runTime')
-    .map((p) => `${p.name}: ${p.runTimeValue ?? '–'}`)
+    .filter((p) => p.type === 'run_time' || p.type === 'latest_observation_timestamp')
+    .map((p) => `${p.name}: ${p.type ?? '–'}`)
 
   return [
-    {
-      icon: mdiCogOutline,
-      label: 'Extractor',
-      name: 'Type',
-      value: extractor.type ?? '–',
-    },
     {
       icon: mdiCodeBraces,
       label: 'Extractor',
       name: 'Source URL',
-      value: extractor.settings?.sourceUri ?? '–',
+      value: dc.sourceUrl ?? '–',
     },
     {
       icon: mdiInformationOutline,
@@ -1119,43 +1069,22 @@ const extractorInformation = computed(() => {
 })
 
 const extractorVariables = computed(() => {
-  const extractor: any = task.value?.dataConnection?.extractor
-  if (!extractor) return []
-  const placeholders: Array<{
-    name: string
-    type?: string
-    runTimeValue?: any
-  }> = extractor.settings?.placeholderVariables ?? []
+  const dc: any = task.value?.dataConnection
+  if (!dc) return []
+  const placeholders: Array<{ name: string; type?: string }> =
+    dc.placeholderVariables ?? []
 
   return placeholders.map((p) => ({
     type: p.type ?? '–',
     name: p.name,
     value:
-      p.type === 'perTask'
-        ? task.value?.extractorVariables?.[p.name] ?? '–'
-        : p.runTimeValue ?? '–',
+      p.type === 'per_task'
+        ? (task.value?.taskVariables as any)?.[p.name] ?? '–'
+        : p.type ?? '–',
   }))
 })
 
-const taskTableRows = computed(() => {
-  const baseRows = taskInformation.value
-  const rows: any[] = [...baseRows]
-
-  if (orchestrationSystemInformation.value.length) {
-    rows.push({
-      section: true,
-      label: 'Linked orchestration system',
-    })
-    rows.push(
-      ...orchestrationSystemInformation.value.map((r) => ({
-        ...r,
-        label: r.label,
-      }))
-    )
-  }
-
-  return rows
-})
+const taskTableRows = computed(() => taskInformation.value as any[])
 
 const pipelineRows = computed(() => {
   const rows: any[] = []
@@ -1211,142 +1140,72 @@ const showDataConnectionSection = computed(() => {
 })
 
 const transformerInformation = computed(() => {
-  const transformer: any = task.value?.dataConnection?.transformer
-  if (!transformer) return []
+  const dc: any = task.value?.dataConnection
+  if (!dc) return []
 
+  const payload: any = dc.payload
+  const timestamp: any = dc.timestamp
   const rows: any[] = [
     {
       icon: mdiCogOutline,
       label: 'Transformer',
-      name: 'Type',
-      value: transformer.type ?? '–',
+      name: 'Payload type',
+      value: payload?.type ?? '–',
+    },
+    {
+      icon: mdiClockOutline,
+      label: 'Transformer',
+      name: 'Timestamp key',
+      value: timestamp?.key ?? '–',
+    },
+    {
+      icon: mdiCalendarClock,
+      label: 'Transformer',
+      name: 'Timestamp format',
+      value: timestamp?.format ?? '–',
+    },
+    {
+      icon: mdiClockOutline,
+      label: 'Transformer',
+      name: 'Timezone',
+      value: timestamp?.timezone ?? timestamp?.timezoneType ?? '–',
     },
   ]
 
-  const settings: any = transformer.settings ?? {}
-  if (transformer.type === 'JSON') {
+  if (payload?.type === 'JSON') {
+    rows.push({
+      icon: mdiCodeBraces,
+      label: 'Transformer',
+      name: 'JMESPath',
+      value: payload.jmespath ?? '–',
+    })
+  } else if (payload?.type === 'CSV') {
     rows.push(
-      {
-        icon: mdiCodeBraces,
-        label: 'Transformer',
-        name: 'JMESPath',
-        value: settings.JMESPath ?? '–',
-      },
-      {
-        icon: mdiClockOutline,
-        label: 'Transformer',
-        name: 'Timestamp key',
-        value: settings.timestamp?.key ?? '–',
-      },
-      {
-        icon: mdiCalendarClock,
-        label: 'Transformer',
-        name: 'Timestamp format',
-        value: settings.timestamp?.format ?? '–',
-      },
-      {
-        icon: mdiClockOutline,
-        label: 'Transformer',
-        name: 'Timezone mode',
-        value: settings.timestamp?.timezoneMode ?? '–',
-      }
-    )
-  } else if (transformer.type === 'CSV') {
-    rows.push(
-      {
-        icon: mdiFormatListNumbered,
-        label: 'Transformer',
-        name: 'Identifier type',
-        value: settings.identifierType ?? '–',
-      },
       {
         icon: mdiTable,
         label: 'Transformer',
         name: 'Header row',
-        value: settings.headerRow ?? '–',
+        value: payload.headerRow ?? '–',
       },
       {
         icon: mdiTable,
         label: 'Transformer',
         name: 'Data start row',
-        value: settings.dataStartRow ?? '–',
+        value: payload.dataStartRow ?? '–',
       },
       {
         icon: mdiDotsHorizontal,
         label: 'Transformer',
         name: 'Delimiter',
-        value: settings.delimiter ?? '–',
-      },
-      {
-        icon: mdiClockOutline,
-        label: 'Transformer',
-        name: 'Timestamp key',
-        value: settings.timestamp?.key ?? '–',
-      },
-      {
-        icon: mdiCalendarClock,
-        label: 'Transformer',
-        name: 'Timestamp format',
-        value: settings.timestamp?.format ?? '–',
-      },
-      {
-        icon: mdiClockOutline,
-        label: 'Transformer',
-        name: 'Timezone mode',
-        value: settings.timestamp?.timezoneMode ?? '–',
+        value: payload.delimiter ?? '–',
       }
     )
-  } else {
-    rows.push({
-      icon: mdiDatabaseSettings,
-      label: 'Transformer',
-      name: 'Settings',
-      value: summarize(settings),
-    })
   }
 
   return rows.filter((row) => row.value !== undefined && row.value !== null)
 })
 
-const loaderInformation = computed(() => {
-  const loader: any = task.value?.dataConnection?.loader
-  if (!loader) return []
-
-  return [
-    {
-      icon: mdiCogOutline,
-      label: 'Loader',
-      name: 'Type',
-      value: loader.type ?? '–',
-    },
-    // {
-    //   icon: mdiDatabaseSettings,
-    //   label: 'Loader',
-    //   name: 'Settings',
-    //   value: summarize(loader.settings),
-    // },
-  ].filter((row) => row.value !== undefined && row.value !== null)
-})
-
-const orchestrationSystemInformation = computed(() => {
-  if (!task.value) return []
-
-  return [
-    {
-      icon: mdiRenameBoxOutline,
-      label: 'Name',
-      value: task.value.orchestrationSystem.name,
-    },
-    {
-      icon: mdiBroadcast,
-      label: 'Type',
-      value:
-        WORKFLOW_TYPES.find(
-          (t) => t.value === task.value?.orchestrationSystem.type
-        )?.title ?? task.value.orchestrationSystem.type,
-    },
-  ].filter(Boolean)
-})
+const loaderInformation = computed(() => [])
 
 const runHistoryRows = computed(() => {
   const seen = new Set<string>()
@@ -1557,8 +1416,8 @@ async function togglePaused(
 ) {
   if (!canEditTask.value) return
   if (!task.schedule) return
-  task.schedule.paused = !task.schedule.paused
-  await hs.tasks.update(task)
+  task.schedule.enabled = !task.schedule.enabled
+  await hs.tasks.update(task as any)
 }
 
 function upsertWorkspaceTask(t: TaskExpanded | null) {
@@ -1571,7 +1430,7 @@ function upsertWorkspaceTask(t: TaskExpanded | null) {
 }
 
 async function ensureMappingDatastreams() {
-  const workspaceId = task.value?.workspace?.id
+  const workspaceId = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
   if (!workspaceId) return
   try {
     await ensureWorkspaceDatastreams(workspaceId)
@@ -1707,12 +1566,11 @@ const fetchData = async () => {
 
   const fetchedTask = taskResponse.data
 
+  const fetchedTaskWorkspaceId = (fetchedTask as any).workspace?.id ?? fetchedTask.dataConnection?.workspace?.id
   if (
-    fetchedTask.workspace?.id &&
+    fetchedTaskWorkspaceId &&
     workspaces.value.length &&
-    !workspaces.value.some(
-      (workspace) => workspace.id === fetchedTask.workspace.id
-    )
+    !workspaces.value.some((workspace) => workspace.id === fetchedTaskWorkspaceId)
   ) {
     await routeToAccessDenied()
     return
@@ -1733,8 +1591,9 @@ const fetchData = async () => {
   }
 
   // If the user deep-linked to a task/run in a different workspace, select it so the list matches.
-  if (task.value?.workspace?.id && workspaces.value.length) {
-    setSelectedWorkspaceById(task.value.workspace.id)
+  const taskWorkspaceId = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
+  if (taskWorkspaceId && workspaces.value.length) {
+    setSelectedWorkspaceById(taskWorkspaceId)
   }
 
   if (effectiveRunId.value) {
@@ -1780,14 +1639,13 @@ watch(
   workspaces,
   (list) => {
     if (!list?.length) return
-    if (task.value?.workspace?.id) {
-      if (
-        !list.some((workspace) => workspace.id === task.value?.workspace?.id)
-      ) {
+    const wid = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
+    if (wid) {
+      if (!list.some((workspace) => workspace.id === wid)) {
         void routeToAccessDenied()
         return
       }
-      setSelectedWorkspaceById(task.value.workspace.id)
+      setSelectedWorkspaceById(wid)
     }
   },
   { immediate: true }

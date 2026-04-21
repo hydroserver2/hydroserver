@@ -143,7 +143,7 @@ export const taskRunHasFailures = (run?: TaskRun | null) => {
 
   const result = getTaskRunResult(run)
   const failureCount = firstNumber(
-    run.failureCount,
+    (run as any).failureCount,
     result.failureCount,
     result.failure_count
   )

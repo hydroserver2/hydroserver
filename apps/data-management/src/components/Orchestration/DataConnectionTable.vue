@@ -31,7 +31,7 @@
               color="teal-lighten-3"
               class="mx-4"
               :disabled="!canEditWorkspace"
-              @click="openCreateDialog(null)"
+              @click="openCreateDialog"
               >Add data connection</v-btn-add
             >
           </span>
@@ -114,7 +114,6 @@ import { computed, ref, toRef } from 'vue'
 import DataConnectionForm from '@/components/Orchestration/DataConnectionForm.vue'
 import hs, {
   DataConnection,
-  OrchestrationSystem,
   PermissionAction,
   PermissionResource,
 } from '@hydroserver/client'
@@ -132,7 +131,6 @@ const props = defineProps<{
 
 const openCreate = ref(false)
 const search = ref()
-const selectedOrchestrationSystem = ref<OrchestrationSystem>()
 const loading = ref(false)
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { openDataConnectionTableDialog } = storeToRefs(useDataConnectionStore())
@@ -179,9 +177,8 @@ const refreshTable = async () => {
   })
 }
 
-const openCreateDialog = (selectedItem: any) => {
+const openCreateDialog = () => {
   if (!canEditWorkspace.value) return
-  selectedOrchestrationSystem.value = selectedItem
   openCreate.value = true
 }
 
