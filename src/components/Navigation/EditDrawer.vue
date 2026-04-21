@@ -10,11 +10,30 @@
     <v-divider />
 
     <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
-      <v-list class="py-2" density="compact" nav>
-        <v-list-subheader class="text-uppercase text-caption font-weight-bold">
-          Filter Data
-        </v-list-subheader>
-
+      <!-- Collapsible Filter Data section. Same chevron + primary-
+           tinted icon + caption treatment as the select drawer so
+           both drawers read as the same family of controls. -->
+      <div
+        class="edit-drawer__section-header d-flex align-center gap-1 px-3 py-1"
+        role="button"
+        tabindex="0"
+        @click="filterCollapsed = !filterCollapsed"
+        @keydown.enter.prevent="filterCollapsed = !filterCollapsed"
+        @keydown.space.prevent="filterCollapsed = !filterCollapsed"
+      >
+        <v-icon
+          size="16"
+          :icon="filterCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        />
+        <v-icon icon="mdi-filter-variant" color="primary" size="16" />
+        <span class="text-caption font-weight-medium">Filter Data</span>
+      </div>
+      <v-list
+        v-show="!filterCollapsed"
+        class="py-2"
+        density="compact"
+        nav
+      >
         <v-list-item
           v-for="item in filterPoints"
           :key="item.id"
@@ -36,13 +55,32 @@
             {{ item.description }}
           </v-list-item-subtitle>
         </v-list-item>
+      </v-list>
 
-        <v-list-subheader
-          class="text-uppercase text-caption font-weight-bold mt-2"
-        >
-          Edit Data
-        </v-list-subheader>
+      <v-divider />
 
+      <!-- Collapsible Edit Data section. -->
+      <div
+        class="edit-drawer__section-header d-flex align-center gap-1 px-3 py-1"
+        role="button"
+        tabindex="0"
+        @click="editCollapsed = !editCollapsed"
+        @keydown.enter.prevent="editCollapsed = !editCollapsed"
+        @keydown.space.prevent="editCollapsed = !editCollapsed"
+      >
+        <v-icon
+          size="16"
+          :icon="editCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        />
+        <v-icon icon="mdi-pencil" color="primary" size="16" />
+        <span class="text-caption font-weight-medium">Edit Data</span>
+      </div>
+      <v-list
+        v-show="!editCollapsed"
+        class="py-2"
+        density="compact"
+        nav
+      >
         <v-list-item
           v-for="item in editData"
           :key="item.id"
@@ -69,13 +107,32 @@
             {{ item.description }}
           </v-list-item-subtitle>
         </v-list-item>
+      </v-list>
 
-        <v-list-subheader
-          class="text-uppercase text-caption font-weight-bold mt-2"
-        >
-          Add Data
-        </v-list-subheader>
+      <v-divider />
 
+      <!-- Collapsible Add Data section. -->
+      <div
+        class="edit-drawer__section-header d-flex align-center gap-1 px-3 py-1"
+        role="button"
+        tabindex="0"
+        @click="addCollapsed = !addCollapsed"
+        @keydown.enter.prevent="addCollapsed = !addCollapsed"
+        @keydown.space.prevent="addCollapsed = !addCollapsed"
+      >
+        <v-icon
+          size="16"
+          :icon="addCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        />
+        <v-icon icon="mdi-plus-circle-outline" color="primary" size="16" />
+        <span class="text-caption font-weight-medium">Add Data</span>
+      </div>
+      <v-list
+        v-show="!addCollapsed"
+        class="py-2"
+        density="compact"
+        nav
+      >
         <v-list-item
           v-for="item in addData"
           :key="item.id"
@@ -107,6 +164,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
 import { operationsByGroup } from '@/components/EditData/operations'
+import { usePersistedFlag } from '@/composables/useResizable'
 
 const { selectedData } = storeToRefs(useDataVisStore())
 const { selectedOperation } = storeToRefs(useUIStore())
@@ -115,6 +173,22 @@ const filterPoints = operationsByGroup.filter
 const editData = operationsByGroup.edit
 const addData = operationsByGroup.add
 
+// Persisted collapse flags — keyed under `qc:editorLayout:*` so
+// per-section collapse state survives reloads alongside the
+// sibling drawer/panel widths.
+const filterCollapsed = usePersistedFlag(
+  'qc:editorLayout:opsFilterCollapsed',
+  false
+)
+const editCollapsed = usePersistedFlag(
+  'qc:editorLayout:opsEditCollapsed',
+  false
+)
+const addCollapsed = usePersistedFlag(
+  'qc:editorLayout:opsAddCollapsed',
+  false
+)
+
 function selectOperation(id: string) {
   // Toggle off if the same operation is clicked again, otherwise switch.
   selectedOperation.value = selectedOperation.value === id ? null : id
@@ -122,6 +196,22 @@ function selectOperation(id: string) {
 </script>
 
 <style scoped>
+/* Section header — matches `.select-drawer__section-header` so the
+   filter drawer and the edit drawer's operation list read as a
+   single family of controls. */
+.edit-drawer__section-header {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  cursor: pointer;
+  min-height: 28px;
+}
+.edit-drawer__section-header:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+.edit-drawer__section-header:focus {
+  outline: none;
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
 /* The remaining rules all `:deep()` into Vuetify's v-list-item
    internals to allow text wrapping and reclaim padding inside a
    narrow (~220 px) drawer. No utility-class equivalents. */
