@@ -68,14 +68,19 @@ export type AppPlotSelectionEvent = PlotSelectionEvent
 /**
  * One right-side y-axis's data for the chip overlay in `Plot.vue`.
  * `lineX` is the pixel position of the axis line in container
- * coords. Plot.vue anchors each chip's right edge to `lineX` and
- * lets the chip extend leftward, so overflow into the right gutter
- * is impossible regardless of title length. Entries are emitted in
- * plotted-datastreams order so the stacked chips match the sidebar.
+ * coords; `graphWidth` is the current plot container width so the
+ * overlay can decide, per chip, whether there's room to sit to the
+ * right of the axis without running past the plot's right edge.
+ * When the chip doesn't fit on the right, Plot.vue falls back to
+ * anchoring its right edge at `lineX` so overflow into the right
+ * gutter is impossible regardless of title length. Entries are
+ * emitted in plotted-datastreams order so the stacked chips match
+ * the sidebar.
  */
 export type AxisChip = {
   id: string
   lineX: number
+  graphWidth: number
   title: string
   color: string
 }
@@ -1729,6 +1734,7 @@ const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
   if (!fl) return
 
   const chips: AxisChip[] = []
+  const graphWidth = (gd as HTMLElement).clientWidth
   // Iterate `graphSeriesArray` — it's the authoritative sidebar
   // order; `gd.data` gets reversed so traces paint top-over-bottom
   // (see `createPlotlyOption`), which would flip the stacked chips.
@@ -1749,12 +1755,15 @@ const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
     chips.push({
       id: series.id,
       lineX,
+      graphWidth,
       title: series.yAxisLabel,
       color: labelColorForDatastream(series.id),
     })
   }
 
-  const key = chips.map((c) => `${c.id}:${c.lineX}:${c.title}`).join('|')
+  const key = chips
+    .map((c) => `${c.id}:${c.lineX}:${c.graphWidth}:${c.title}`)
+    .join('|')
   if (key === lastAxisChipsKey) return
   lastAxisChipsKey = key
   axisChips.value = chips

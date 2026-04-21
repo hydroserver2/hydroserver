@@ -241,7 +241,11 @@
             <div
               v-for="(chip, idx) in axisChips"
               :key="chip.id"
+              :ref="(el) => registerChipRef(chip.id, el as Element | null)"
               class="plot-axis-chip"
+              :class="{
+                'plot-axis-chip--right': chipPlacements[chip.id] === 'right',
+              }"
               :style="{
                 '--chip-line': chip.lineX + 'px',
                 '--chip-idx': idx,
@@ -316,7 +320,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
@@ -404,6 +408,48 @@ const yReadoutUnit = computed(() => {
 })
 
 const { graphSeriesArray } = storeToRefs(usePlotlyStore())
+
+/**
+ * Axis-chip placement. Each chip defaults to the left of its axis
+ * line (the fit-always fallback — right edge anchored at `lineX`).
+ * After render we measure the rendered chip and, if there's enough
+ * room between the axis line and the plot's right edge, promote it
+ * to right placement. The measurement doesn't depend on placement
+ * (width is content-driven, capped by max-width), so toggling the
+ * class never oscillates.
+ */
+const chipEls = new Map<string, HTMLElement>()
+const chipPlacements = ref<Record<string, 'left' | 'right'>>({})
+const CHIP_EDGE_BUFFER = 4
+
+const registerChipRef = (id: string, el: Element | null) => {
+  if (el instanceof HTMLElement) chipEls.set(id, el)
+  else chipEls.delete(id)
+}
+
+const computeChipPlacements = () => {
+  const next: Record<string, 'left' | 'right'> = {}
+  for (const chip of axisChips.value) {
+    const el = chipEls.get(chip.id)
+    if (!el) {
+      next[chip.id] = 'left'
+      continue
+    }
+    const width = el.getBoundingClientRect().width
+    const roomRight = chip.graphWidth - chip.lineX - CHIP_EDGE_BUFFER
+    next[chip.id] = width > 0 && roomRight >= width ? 'right' : 'left'
+  }
+  chipPlacements.value = next
+}
+
+watch(
+  axisChips,
+  async () => {
+    await nextTick()
+    computeChipPlacements()
+  },
+  { immediate: true, deep: true }
+)
 
 /**
  * Copy the current page URL to the clipboard. `VisualizeData.vue` keeps
@@ -715,9 +761,13 @@ const onTabChange = () => {
 }
 
 /* Axis-title chips. `--chip-line`, `--chip-idx`, `--chip-color` are
-   set per-chip on the element; everything else is static. Right edge
-   anchored to `lineX + 18px` via `translateX(-100%)`, so the chip
-   body extends leftward and can't overflow the right gutter. */
+   set per-chip on the element; everything else is static. Default
+   (left) placement: right edge anchored to `lineX + 18px` via
+   `translateX(-100%)` so the body extends leftward and can't overflow
+   the right gutter — used when there isn't enough room to place the
+   chip to the right of its axis without running past the plot's
+   right edge. `.plot-axis-chip--right` flips to right placement
+   when the overlay has measured a fit. */
 .plot-axis-chip {
   position: absolute;
   left: calc(var(--chip-line) + 18px);
@@ -730,6 +780,12 @@ const onTabChange = () => {
   pointer-events: none;
   z-index: 2;
   font-variant-numeric: tabular-nums;
+}
+
+.plot-axis-chip--right {
+  left: calc(var(--chip-line) - 18px);
+  transform: none;
+  align-items: flex-start;
 }
 
 .plot-axis-chip__text {
@@ -750,12 +806,19 @@ const onTabChange = () => {
   pointer-events: auto;
 }
 
-/* Pulls the icon back by 18 px to undo the chip's 18 px overhang —
-   net result: apex lands on the axis line. */
+/* Apex lands on the axis line. For the default (left) placement
+   the chip body sits 18 px right of `lineX` and is right-aligned,
+   so we pull the icon back by that 18 px. For the right-placement
+   variant the chip body starts 18 px left of `lineX` and is
+   left-aligned, so the offset is mirrored. */
 .plot-axis-chip__tri {
   margin-top: -7px;
   transform: translateX(calc(50% - 18px));
   color: inherit;
+}
+
+.plot-axis-chip--right .plot-axis-chip__tri {
+  transform: translateX(calc(-50% + 18px));
 }
 
 /* CSS-based crosshair droplines. Two sibling divs inside
