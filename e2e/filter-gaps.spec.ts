@@ -1,8 +1,11 @@
 /**
  * Gaps filter: surfaces timestamps where Δx between adjacent points
- * exceeds a threshold. The default fixture has a perfectly uniform
- * 15-minute grid so a small threshold (e.g. 1 minute) still finds
- * nothing — instead we use a custom fixture with one deliberate gap.
+ * exceeds a threshold. The panel is live-commit via `GapFinder`'s
+ * `auto-select-endpoints` prop — no Apply button, filling the
+ * Amount input is enough to seed a selection once a gap is found.
+ * The default fixture has a perfectly uniform 15-minute grid so a
+ * small threshold still finds nothing — instead we use a custom
+ * fixture with one deliberate gap.
  */
 
 import { expect, test } from '@playwright/test'
@@ -35,15 +38,16 @@ test.describe('filter: find gaps', () => {
 
   test('finds the deliberate gap in the fixture series', async ({ page }) => {
     await openOp(page, 'gaps')
-    // Find gaps >= 30 minutes. Amount defaults to a value; fill a
-    // conservative one that will match only the deliberate ~4h gap.
+    // Find gaps >= 30 minutes (unit defaults to minutes). Conservative
+    // threshold that matches only the deliberate ~4h gap, not the
+    // uniform 15-min spacing.
     await page.getByLabel('Amount').fill('30')
-    await page.getByRole('button', { name: /find gaps/i }).click()
+    // Live-commit: the GapFinder pushes gap-endpoint indices into the
+    // store as soon as the threshold resolves.
     await waitForSelection(page, 1)
 
-    const row = page
-      .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: 'Find Gaps' })
-    await expect(row).toBeVisible()
+    // "N gap(s) in the selected range." alert confirms the detector
+    // found at least one gap.
+    await expect(page.getByText(/gaps? in the selected range/i)).toBeVisible()
   })
 })

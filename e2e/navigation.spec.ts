@@ -34,8 +34,21 @@ test.describe('navigation', () => {
   })
 
   test('picking a workspace lands the user on Home', async ({ page }) => {
-    await gotoHome(page)
-    await expect(page.getByTestId('datastreams-table')).toBeVisible()
+    // Don't use `gotoHome` here — it pre-seeds localStorage and skips
+    // the picker. We want to exercise the actual pick flow.
+    await page.goto('/')
+    const pickButton = page
+      .getByRole('listitem')
+      .filter({ hasText: 'E2E Test Workspace' })
+      .getByRole('button', { name: /^Select$/ })
+    await expect(pickButton).toBeVisible({ timeout: 30_000 })
+    // `force: true` keeps Firefox from stalling on Vuetify's v-list-item
+    // + inner button actionability check (the row itself also carries
+    // a @click handler, which sometimes confuses the stability poll).
+    await pickButton.click({ force: true })
+    await expect(page.getByTestId('datastreams-table')).toBeVisible({
+      timeout: 30_000,
+    })
   })
 
   test('Edit rail item is disabled until a datastream is plotted', async ({

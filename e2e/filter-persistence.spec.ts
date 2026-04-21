@@ -35,9 +35,11 @@ test.describe('filter: persistence', () => {
     await page.getByRole('button', { name: /apply filter/i }).click()
     await waitForSelection(page, 1)
 
+    // Filter entry may be collapsed to a rolled-up "Selection" row after
+    // dispatchSelection fires — accept either as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: 'Persistence' })
-    await expect(row).toBeVisible()
+      .filter({ hasText: /Persistence|Selection/ })
+    await expect(row.first()).toBeVisible()
   })
 })

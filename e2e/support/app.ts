@@ -8,6 +8,7 @@
  */
 
 import { expect, type Page } from '@playwright/test'
+import { WORKSPACE_ID } from './fixtures'
 
 /** Wait for the datastreams table to become visible on Home. */
 export async function waitForHomeReady(page: Page): Promise<void> {
@@ -17,11 +18,46 @@ export async function waitForHomeReady(page: Page): Promise<void> {
 }
 
 /**
+ * Pre-seed the workspace store's localStorage keys so the router's
+ * `hasWorkspaceGuard` passes on the very first navigation and the
+ * picker is skipped entirely. Relying on the UI to click the Select
+ * button is fragile cross-browser (Firefox in particular sometimes
+ * swallows the click when the v-list-item row and its nested Select
+ * button both register click handlers). Seeding storage sidesteps the
+ * picker entirely — equivalent to a user who already chose a
+ * workspace in a previous session.
+ */
+export async function seedWorkspaceSelection(page: Page): Promise<void> {
+  const workspace = {
+    id: WORKSPACE_ID,
+    name: 'E2E Test Workspace',
+    isPrivate: false,
+    owner: { name: 'Test User', email: 'test@example.com' },
+    collaboratorRole: {
+      name: 'owner',
+      permissions: [{ action: '*', resource: '*' }],
+    },
+  }
+  await page.addInitScript(
+    ({ id, ws }) => {
+      try {
+        localStorage.setItem('qc-app.selected-workspace-id', id)
+        localStorage.setItem('qc-app.selected-workspace', JSON.stringify(ws))
+      } catch {
+        // storage disabled — fall back to UI flow
+      }
+    },
+    { id: WORKSPACE_ID, ws: workspace }
+  )
+}
+
+/**
  * Pick the seeded e2e workspace if the router landed us on the
- * `/workspaces` picker. The workspace guard redirects async, so
- * `page.url()` may still show `/` when this is called immediately
- * after `page.goto('/')` — we wait for *either* the Select button or
- * the Home datastreams table and click the former if present.
+ * `/workspaces` picker. With `seedWorkspaceSelection` running in an
+ * init script before `page.goto`, the picker is usually skipped and
+ * the datastreams table shows up directly. This helper remains as a
+ * belt-and-braces fallback for cases where the seed didn't land
+ * (e.g. a test running in a context without localStorage).
  */
 export async function pickWorkspaceIfNeeded(page: Page): Promise<void> {
   const pickButton = page
@@ -34,12 +70,15 @@ export async function pickWorkspaceIfNeeded(page: Page): Promise<void> {
     table.waitFor({ state: 'visible', timeout: 30_000 }),
   ])
   if (await pickButton.isVisible().catch(() => false)) {
-    await pickButton.click()
+    // `force: true` bypasses Firefox's occasional "actionability"
+    // stall on Vuetify buttons that sit inside clickable list items.
+    await pickButton.click({ force: true })
   }
 }
 
 /** Navigate to `/`, pick the workspace, wait for Home to render. */
 export async function gotoHome(page: Page): Promise<void> {
+  await seedWorkspaceSelection(page)
   await page.goto('/')
   await pickWorkspaceIfNeeded(page)
   await waitForHomeReady(page)

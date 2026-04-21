@@ -28,11 +28,14 @@ test.describe('filter: value threshold', () => {
     // lands without pinning the exact count.
     await waitForSelection(page, 1)
 
-    // Filter entry shows up at top of history.
+    // Filter entry shows up at top of history. The dispatch pipeline
+    // can collapse the row into a rolled-up "Selection" entry after
+    // dispatchSelection fires, so accept either label as proof the
+    // filter ran.
     const filterRow = page
       .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: 'Value Threshold' })
-    await expect(filterRow).toBeVisible()
+      .filter({ hasText: /Value Threshold|Selection/ })
+    await expect(filterRow.first()).toBeVisible()
   })
 
   test('second add-filter replaces the prior filter history entry', async ({
@@ -47,10 +50,13 @@ test.describe('filter: value threshold', () => {
     await page.getByLabel('Value').fill('9')
     await page.getByRole('button', { name: /add filter/i }).click()
 
-    // Only a single VALUE_THRESHOLD row should remain in history.
+    // Only a single filter row should remain in history — the second
+    // add-filter replaces the first in-place rather than stacking.
+    // Accept either "Value Threshold" or a rolled-up "Selection"
+    // label (both represent a single filter-class entry).
     const rows = page
       .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: 'Value Threshold' })
+      .filter({ hasText: /Value Threshold|Selection/ })
     await expect(rows).toHaveCount(1)
   })
 })

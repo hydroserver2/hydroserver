@@ -560,7 +560,15 @@ export const createPlotlyOption = (
   const config = {
     displayModeBar: true,
     showlegend: false,
-    scrollZoom: true,
+    // Plotly's built-in `scrollZoom` oscillates the x-range back and
+    // forth during a wheel gesture — Plotly's pivot recomputation
+    // desyncs against mid-gesture layout passes, producing a visible
+    // "zoom in and out repeatedly" effect. We replace it with our own
+    // wheel handler (`handleWheel`) that computes the pivot once per
+    // event and applies a single coalesced relayout per animation
+    // frame, avoiding the internal dragbox path entirely. Related
+    // upstream: plotly/plotly.js#7449, plotly/plotly.py#4798.
+    scrollZoom: false,
     responsive: true,
     doubleClick: false,
     modeBarButtons: modebarGroups,
@@ -806,6 +814,14 @@ export const handleNewPlot = async (
   plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
   plotlyRef.value?.addEventListener('mousemove', handleMouseMove);
   plotlyRef.value?.addEventListener('mouseout', handleMouseOut);
+
+  // Custom wheel handler replaces `scrollZoom` (disabled in config).
+  // Non-passive because we preventDefault when the cursor is over the
+  // plot area.
+  plotlyRef.value?.removeEventListener('wheel', handleWheel as EventListener)
+  plotlyRef.value?.addEventListener('wheel', handleWheel as EventListener, {
+    passive: false,
+  })
 }
 
 // Perf cache for `handleRelayout`: when a relayout fires but the visible
@@ -1366,6 +1382,218 @@ const processMouseMove = (event: MouseEvent) => {
 export const handleMouseOut = () => {
   const { showCoordinates } = storeToRefs(usePlotlyStore())
   showCoordinates.value = false
+}
+
+// --- Custom wheel-zoom ---------------------------------------------------
+//
+// Replaces Plotly's built-in `scrollZoom`. Plotly's implementation
+// recomputes the zoom pivot against `_fullLayout` on every wheel tick,
+// which desyncs when the layout shifts mid-gesture (automargin, tick
+// label relayout, etc.) and produces the visible back-and-forth
+// oscillation (see plotly/plotly.js#7449). Our replacement locks the
+// pivot to the cursor's data coord at event time and coalesces bursts
+// to a single `Plotly.relayout` per animation frame.
+//
+// Emulates Plotly's zone-based zoom behaviour:
+//  - Over the plot area  → zoom x AND every non-fixed y-axis, each
+//    around the cursor's data coord on that axis.
+//  - Over the x gutter   → zoom x only.
+//  - Over the left y gutter  → zoom the primary y-axis only.
+//  - Over the right y area   → zoom every non-primary y-axis (the
+//    QC app stacks non-QC traces on the right via autoshift; we zoom
+//    them together since distinguishing which autoshifted axis the
+//    cursor points at is non-trivial and not obviously desired).
+//
+// `handleRelayout`'s downstream work (marker opacity, tickvals, hover
+// template) still fires because our `Plotly.relayout` emits
+// `plotly_relayout`, so there's no functional regression vs. the
+// built-in scrollZoom path.
+
+/** Per-tick zoom ratio applied to each target axis. 0.85 means each
+ *  full wheel tick shrinks the span to 85% (zoom in) or grows it to
+ *  ~118% (zoom out). Tuned to feel close to Plotly's default
+ *  scrollZoom step. */
+const WHEEL_ZOOM_IN_FACTOR = 0.85
+const WHEEL_ZOOM_OUT_FACTOR = 1 / WHEEL_ZOOM_IN_FACTOR
+
+const Y_AXIS_KEY_RE_WHEEL = /^yaxis\d*$/
+
+type WheelAxisTarget = { key: string; pivot: number; factor: number }
+type WheelPending = { x?: WheelAxisTarget; y: Record<string, WheelAxisTarget> }
+
+let pendingWheelFrame: number | null = null
+let pendingWheelZoom: WheelPending | null = null
+
+export const handleWheel = (event: WheelEvent) => {
+  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const gd = plotlyRef.value as unknown as PrivatePlotlyHTMLElement | null
+  const fullLayout = gd?._fullLayout
+  if (!fullLayout) return
+
+  // PRIVATE-API: `_offset` and `_length` are Plotly internals. They
+  // give the pixel rectangle actually occupied by each axis and are
+  // the only reliable way to tell whether the cursor is over the
+  // plot, the x gutter, or a y gutter when axes use `domain` (e.g.
+  // the qualifier band compresses the primary y to [0.14, 1]).
+  const xaxis = fullLayout.xaxis as (typeof fullLayout.xaxis) & {
+    _offset?: number
+    _length?: number
+    fixedrange?: boolean
+  }
+  const primaryY = fullLayout.yaxis as (typeof fullLayout.yaxis) & {
+    _offset?: number
+    _length?: number
+    fixedrange?: boolean
+  }
+  if (
+    xaxis?._offset == null ||
+    xaxis._length == null ||
+    primaryY?._offset == null ||
+    primaryY._length == null
+  )
+    return
+
+  const bounds = (gd as unknown as HTMLElement).getBoundingClientRect()
+  const pxRel = event.clientX - bounds.x
+  const pyRel = event.clientY - bounds.y
+
+  const xLeft = xaxis._offset
+  const xRight = xaxis._offset + xaxis._length
+  const yTop = primaryY._offset
+  const yBottom = primaryY._offset + primaryY._length
+
+  const overX = pxRel >= xLeft && pxRel <= xRight
+  const overY = pyRel >= yTop && pyRel <= yBottom
+  const overPlot = overX && overY
+  const overBottomGutter = overX && pyRel > yBottom
+  const overLeftGutter = pxRel < xLeft && overY
+  const overRightGutter = pxRel > xRight && overY
+
+  if (!overPlot && !overBottomGutter && !overLeftGutter && !overRightGutter)
+    return
+
+  event.preventDefault()
+
+  const zoomX = (overPlot || overBottomGutter) && !xaxis.fixedrange
+
+  // Pick the y-axis targets for the active zone.
+  const yAxisKeys: string[] = []
+  const collectYAxes = (predicate: (key: string) => boolean) => {
+    for (const key of Object.keys(fullLayout)) {
+      if (!Y_AXIS_KEY_RE_WHEEL.test(key)) continue
+      if (!predicate(key)) continue
+      const ax = (fullLayout as unknown as Record<string, { fixedrange?: boolean }>)[key]
+      if (ax?.fixedrange) continue
+      yAxisKeys.push(key)
+    }
+  }
+  if (overPlot) collectYAxes(() => true)
+  else if (overLeftGutter) collectYAxes((key) => key === 'yaxis')
+  else if (overRightGutter) collectYAxes((key) => key !== 'yaxis')
+
+  if (!zoomX && !yAxisKeys.length) return
+
+  // Normalise across `deltaMode` (lines/pixels/pages) so trackpad
+  // smooth-scrolls and discrete-click wheels both feel like roughly
+  // one step per click after rAF coalescing. Positive deltaY = scroll
+  // toward user = zoom out.
+  const magnitude = Math.min(1, Math.abs(event.deltaY) / 100)
+  const baseFactor = event.deltaY > 0
+    ? WHEEL_ZOOM_OUT_FACTOR
+    : WHEEL_ZOOM_IN_FACTOR
+  const tickFactor = 1 + (baseFactor - 1) * magnitude
+
+  if (!pendingWheelZoom) pendingWheelZoom = { y: {} }
+
+  if (zoomX) {
+    const pivot = Number(xaxis.p2c(pxRel - xLeft))
+    if (Number.isFinite(pivot)) {
+      if (!pendingWheelZoom.x) {
+        pendingWheelZoom.x = { key: 'xaxis', pivot, factor: 1 }
+      }
+      pendingWheelZoom.x.factor *= tickFactor
+    }
+  }
+
+  for (const key of yAxisKeys) {
+    const ax = (fullLayout as unknown as Record<string, {
+      _offset?: number
+      p2c?: (px: number) => number
+    }>)[key]
+    const axOffset = ax?._offset
+    const p2c = ax?.p2c
+    if (axOffset == null || !p2c) continue
+    const pivot = Number(p2c(pyRel - axOffset))
+    if (!Number.isFinite(pivot)) continue
+    if (!pendingWheelZoom.y[key]) {
+      pendingWheelZoom.y[key] = { key, pivot, factor: 1 }
+    }
+    pendingWheelZoom.y[key].factor *= tickFactor
+  }
+
+  if (pendingWheelFrame != null) return
+  pendingWheelFrame = requestAnimationFrame(() => {
+    pendingWheelFrame = null
+    const zoom = pendingWheelZoom
+    pendingWheelZoom = null
+    if (zoom) void applyWheelZoom(zoom)
+  })
+}
+
+const applyWheelZoom = async (zoom: WheelPending): Promise<void> => {
+  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const gd = plotlyRef.value
+  if (!gd) return
+
+  const liveLayout = (gd as unknown as { layout?: Partial<Layout> }).layout
+  if (!liveLayout) return
+
+  const update: Record<string, unknown> = {}
+
+  const parseNum = (v: string | number): number =>
+    typeof v === 'string' ? Date.parse(v) : Number(v)
+
+  const applyAxis = (
+    key: string,
+    pivot: number,
+    factor: number,
+    parse: (v: string | number) => number
+  ): void => {
+    const ax = (liveLayout as unknown as Record<string, unknown>)[key] as
+      | Partial<LayoutAxis>
+      | undefined
+    const range = ax?.range as Array<string | number> | undefined
+    if (!range) return
+    const a = parse(range[0])
+    const b = parse(range[1])
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return
+    const newA = pivot - (pivot - a) * factor
+    const newB = pivot + (b - pivot) * factor
+    // Bail on degenerate ranges (excessive zoom-in past the axis's
+    // native resolution).
+    if (!Number.isFinite(newA) || !Number.isFinite(newB) || newA >= newB) return
+    update[`${key}.range`] = [newA, newB]
+    update[`${key}.autorange`] = false
+  }
+
+  if (zoom.x) {
+    applyAxis(zoom.x.key, zoom.x.pivot, zoom.x.factor, parseNum)
+    // Hand tick placement back to Plotly's auto picker mid-gesture.
+    // Our cadence-aligned `tickvals` (set by `handleRelayout`) are
+    // pinned to the previous visible range, so they clump around the
+    // old centre as the new range slides under them. Clearing them on
+    // every wheel frame lets Plotly spread ticks evenly across the
+    // live range; `handleRelayout` runs 450 ms after the gesture
+    // settles and restores the cadence-aligned grid.
+    update['xaxis.tickmode'] = 'auto'
+    update['xaxis.tickvals'] = null
+  }
+  for (const target of Object.values(zoom.y)) {
+    applyAxis(target.key, target.pivot, target.factor, parseNum)
+  }
+
+  if (!Object.keys(update).length) return
+  await Plotly.relayout(gd as unknown as HTMLElement, update as unknown as Partial<Layout>)
 }
 
 /**

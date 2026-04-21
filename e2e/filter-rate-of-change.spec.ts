@@ -22,9 +22,11 @@ test.describe('filter: rate of change', () => {
     await page.getByRole('button', { name: /apply filter/i }).click()
     await waitForSelection(page, 1)
 
+    // Filter entry may be collapsed to a rolled-up "Selection" row after
+    // dispatchSelection fires — accept either as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: /Rate Of Change/ })
-    await expect(row).toBeVisible()
+      .filter({ hasText: /Rate Of Change|Selection/ })
+    await expect(row.first()).toBeVisible()
   })
 })

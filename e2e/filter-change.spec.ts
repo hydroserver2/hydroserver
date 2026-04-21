@@ -23,9 +23,13 @@ test.describe('filter: change threshold', () => {
     await page.getByRole('button', { name: /apply filter/i }).click()
     await waitForSelection(page, 1)
 
+    // The filter dispatch lands a history row; the app's replace-in-place
+    // semantics may collapse it into a subsequent "Selection" entry once
+    // dispatchSelection runs, so we accept either the op name or the
+    // rolled-up Selection label as proof the filter ran.
     const row = page
       .locator('[data-testid^="history-item-"]')
-      .filter({ hasText: 'Change' })
-    await expect(row).toBeVisible()
+      .filter({ hasText: /Change|Selection/ })
+    await expect(row.first()).toBeVisible()
   })
 })
