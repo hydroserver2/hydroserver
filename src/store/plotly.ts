@@ -17,6 +17,7 @@ import {
 import type {
   AppPlotlyHTMLElement,
   AppPlotlyTrace,
+  AxisChip,
   PlotlyChartOptions,
 } from '@/utils/plotting/plotly'
 import { useObservationStore } from './observations'
@@ -83,6 +84,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * invalidate the preference.
    */
   const hiddenAxisIds = ref<Set<string>>(new Set())
+
+  /**
+   * Horizontal title chips rendered above each non-QC right-side axis
+   * (see `.plot-axis-chip` in Plot.vue). Replaces Plotly's rotated
+   * vertical axis titles — horizontal text is much easier to scan
+   * when several right-side axes stack up. Populated by
+   * `updateAxisChips` after each plot/relayout; each entry carries
+   * the datastream id, the axis line's pixel position (for
+   * alignment), the label text, and the series' label colour.
+   */
+  const axisChips = ref<AxisChip[]>([])
 
   /**
    * Toggles a lightweight preview layout in `createPlotlyOption`: the
@@ -349,6 +361,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     hover,
     crosshair,
     hiddenAxisIds,
+    axisChips,
     previewMode,
     // Zoom history
     zoomUndoStack,

@@ -65,6 +65,21 @@ export type AppPlotMouseEvent = PlotMouseEvent
 export type AppPlotRelayoutEvent = PlotRelayoutEvent
 export type AppPlotSelectionEvent = PlotSelectionEvent
 
+/**
+ * One right-side y-axis's data for the chip overlay in `Plot.vue`.
+ * `lineX` is the pixel position of the axis line in container
+ * coords. Plot.vue anchors each chip's right edge to `lineX` and
+ * lets the chip extend leftward, so overflow into the right gutter
+ * is impossible regardless of title length. Entries are emitted in
+ * plotted-datastreams order so the stacked chips match the sidebar.
+ */
+export type AxisChip = {
+  id: string
+  lineX: number
+  title: string
+  color: string
+}
+
 // DATA-CAST: Plotly.Data.x is typed broadly (Datum[] | Datum[][] | TypedArray
 // | undefined) but every trace this app produces stores numeric epoch
 // timestamps in `x`. Centralise the cast here so binary-search call sites
@@ -300,6 +315,9 @@ export const createPlotlyOption = (
   // shifted sibling — that's the "missing axis, overlapping neighbour"
   // bug.
   let nonQcAxisCount = 0
+  // Counts only rendered overlays so toggled-off axes don't reserve
+  // shift padding on the right.
+  let visibleNonQcCount = 0
 
   seriesArray.forEach((s) => {
     // Colour is persisted on the GraphSeries at fetch time (see
@@ -384,11 +402,13 @@ export const createPlotlyOption = (
       // the paired darker shade of the pastel (see `LABEL_COLORS`) so
       // the title/ticks match the axis line but are legible on white.
       const labelColor = labelColorFor(color)
+      const isAxisVisible = !(s.id && hiddenAxes.has(s.id))
       const yAxis: Partial<LayoutAxis> = {
-        title: {
-          text: s.yAxisLabel,
-          font: { color: labelColor, weight: 'bold' },
-        },
+        // Title rendered as a horizontal HTML chip overlay (see
+        // `axisChips` in the store + `.plot-axis-chip` in Plot.vue)
+        // instead of Plotly's rotated-text title — much easier to
+        // read when multiple right-side axes stack up.
+        title: undefined,
         tickfont: { color: labelColor },
         side: 'right',
         anchor: 'free',
@@ -401,17 +421,26 @@ export const createPlotlyOption = (
         // Force SI tick abbreviation ("2k" instead of "2000") and keep
         // it stable across pans (see primary yaxis above).
         tickformat: '~s',
-        // Per-datastream axis-visibility toggle (driven by the button
-        // in `PlottedDatastreams`). `visible: false` hides the axis
-        // chrome (line, ticks, labels, title) while keeping the trace
-        // rendered; autoshift reclaims the column's horizontal space.
-        visible: !(s.id && hiddenAxes.has(s.id)),
-        // `autoshift` is not in the published @types/plotly.js surface
-        // yet, but is supported at runtime.
-        ...({ autoshift: true } as object),
+        // `visible: false` hides the axis chrome; the trace keeps
+        // rendering on it. Hidden axes also drop out of the
+        // autoshift stack so they don't reserve empty space — Plotly's
+        // shift accumulator runs before the `visible` check, so
+        // `autoshift: true` on a hidden axis would still push the plot
+        // right. `shift: 16` inter-axis padding applies only between
+        // adjacent visible overlays.
+        visible: isAxisVisible,
+        ...(isAxisVisible
+          ? {
+              ...(visibleNonQcCount === 0
+                ? {}
+                : ({ shift: 16 } as object)),
+              ...({ autoshift: true } as object),
+            }
+          : ({ autoshift: false } as object)),
       }
         ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
       nonQcAxisCount++
+      if (isAxisVisible) visibleNonQcCount++
     }
 
     traces.push(trace)
@@ -511,10 +540,11 @@ export const createPlotlyOption = (
     title: undefined,
     // Tight margins reclaim the generous default whitespace around the
     // chart. Per-axis `automargin: true` lets Plotly grow l/r as needed
-    // to fit stacked y-axes and their titles. The top margin leaves
-    // headroom for Plotly's modebar (top-right) so it doesn't overlap
-    // the first tick label — preview and edit use roughly the same
-    // budget because the modebar is the same height either way.
+    // to fit stacked y-axes. The axis-title chips (see `.plot-axis-chip`
+    // in Plot.vue) are HTML overlays, not Plotly-reserved content — so
+    // they don't need their own slice of `margin.t`; letting them
+    // float over the top of the plot area is cheaper than giving them
+    // their own headroom and ending up with a band of whitespace.
     margin: isPreview
       ? { l: 24, r: 24, t: 28, b: 32, pad: 0 }
       : { l: 24, r: 24, t: 32, b: 32, pad: 0 },
@@ -842,13 +872,17 @@ export const handleNewPlot = async (
   })
 
   // Widen each y-axis's drag column (primary QC on the left + every
-  // right-side overlay) to span its full wheel-zoom zone. Runs once
-  // now, and again after every replot (Plotly rebuilds drag rects
-  // back to DRAGGERSIZE on relayout).
+  // right-side overlay) to span its full wheel-zoom zone, and
+  // populate the horizontal axis-title chips. Both depend on
+  // post-render layout state, so they run now and again after every
+  // replot (Plotly rebuilds drag rects back to DRAGGERSIZE on
+  // relayout; chip positions track axis lines that may have shifted).
   const gdEl = plotlyRef.value as unknown as HTMLElement
   widenYAxisDragRects(gdEl)
+  updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
   plotlyRef.value?.on('plotly_afterplot', () => {
     widenYAxisDragRects(gdEl)
+    updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
   })
 }
 
@@ -1629,6 +1663,65 @@ const widenYAxisDragRects = (gd: HTMLElement): void => {
       rect.setAttribute('width', String(newWidth))
     }
   }
+}
+
+/**
+ * Populate the `axisChips` store ref from the current layout. One
+ * chip per non-QC right-side axis that's currently visible, emitted
+ * in plotted-datastreams order so the stacked overlay matches the
+ * sidebar reading order.
+ *
+ * Memoised on a string key so wheel-zoom relayouts (which fire
+ * `plotly_afterplot` without adding or removing chips) don't churn
+ * the store and trigger needless re-renders of the overlay.
+ */
+let lastAxisChipsKey = ''
+const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
+  const { axisChips, graphSeriesArray } = storeToRefs(usePlotlyStore())
+  const { labelColorForDatastream } = usePlotlyStore()
+
+  if (!gd) {
+    if (lastAxisChipsKey !== '') {
+      lastAxisChipsKey = ''
+      axisChips.value = []
+    }
+    return
+  }
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+    | Record<string, unknown>
+    | undefined
+  if (!fl) return
+
+  const chips: AxisChip[] = []
+  // Iterate `graphSeriesArray` — it's the authoritative sidebar
+  // order; `gd.data` gets reversed so traces paint top-over-bottom
+  // (see `createPlotlyOption`), which would flip the stacked chips.
+  for (const series of graphSeriesArray.value) {
+    const trace = gd.data.find(
+      (t) => (t as AppPlotlyTrace).id === series.id
+    ) as AppPlotlyTrace | undefined
+    const axisRef = trace?.yaxis as string | undefined
+    if (!axisRef || axisRef === 'y') continue
+    const ax = fl[`yaxis${axisRef.slice(1)}`] as
+      | { visible?: boolean; _mainLinePosition?: number; _shift?: number }
+      | undefined
+    if (!ax || ax.visible === false) continue
+    if (typeof ax._mainLinePosition !== 'number') continue
+    const lineX = ax._mainLinePosition + (ax._shift ?? 0)
+    if (!Number.isFinite(lineX)) continue
+
+    chips.push({
+      id: series.id,
+      lineX,
+      title: series.yAxisLabel,
+      color: labelColorForDatastream(series.id),
+    })
+  }
+
+  const key = chips.map((c) => `${c.id}:${c.lineX}:${c.title}`).join('|')
+  if (key === lastAxisChipsKey) return
+  lastAxisChipsKey = key
+  axisChips.value = chips
 }
 
 /**

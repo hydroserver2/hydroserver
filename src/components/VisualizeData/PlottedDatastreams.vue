@@ -97,7 +97,7 @@
           @click="toggleAxisVisibility(datastream.id)"
         >
           <v-icon
-            :icon="hiddenAxisIds.has(datastream.id) ? 'mdi-arrow-expand-left' : 'mdi-arrow-collapse-right'"
+            :icon="hiddenAxisIds.has(datastream.id) ? 'mdi-toggle-switch-off-outline' : 'mdi-toggle-switch'"
             size="16"
             :color="colorForDatastream(datastream.id)"
           />

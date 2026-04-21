@@ -235,6 +235,29 @@
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="plot-container fill-height">
             <div ref="plot" class="fill-height"></div>
+            <!-- Horizontal axis-title chips. Replaces Plotly's
+                 rotated vertical titles. Stacked in plotted-
+                 datastreams order via `--chip-idx`. -->
+            <div
+              v-for="(chip, idx) in axisChips"
+              :key="chip.id"
+              class="plot-axis-chip"
+              :style="{
+                '--chip-line': chip.lineX + 'px',
+                '--chip-idx': idx,
+                '--chip-color': chip.color,
+              }"
+              aria-hidden="true"
+            >
+              <span class="plot-axis-chip__text" :title="chip.title">
+                {{ chip.title }}
+              </span>
+              <v-icon
+                class="plot-axis-chip__tri"
+                icon="mdi-triangle-small-down"
+                size="18"
+              />
+            </div>
             <!-- Crosshair droplines. Two absolute-positioned CSS lines
                  driven by `processMouseMove` via the `crosshair` store
                  field. Replaces Plotly's `showspikes`, which (a) lags
@@ -328,6 +351,7 @@ const {
   hover,
   showCoordinates,
   crosshair,
+  axisChips,
   previewMode,
   plotlyRef,
 } = storeToRefs(usePlotlyStore())
@@ -690,6 +714,50 @@ const onTabChange = () => {
   position: relative;
 }
 
+/* Axis-title chips. `--chip-line`, `--chip-idx`, `--chip-color` are
+   set per-chip on the element; everything else is static. Right edge
+   anchored to `lineX + 18px` via `translateX(-100%)`, so the chip
+   body extends leftward and can't overflow the right gutter. */
+.plot-axis-chip {
+  position: absolute;
+  left: calc(var(--chip-line) + 18px);
+  top: calc(36px + var(--chip-idx) * 34px);
+  color: var(--chip-color);
+  transform: translateX(-100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
+
+.plot-axis-chip__text {
+  max-width: 200px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+  border-radius: 4px;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  /* Re-enable pointer-events so the native `title` tooltip fires. */
+  pointer-events: auto;
+}
+
+/* Pulls the icon back by 18 px to undo the chip's 18 px overhang —
+   net result: apex lands on the axis line. */
+.plot-axis-chip__tri {
+  margin-top: -7px;
+  transform: translateX(calc(50% - 18px));
+  color: inherit;
+}
+
 /* CSS-based crosshair droplines. Two sibling divs inside
    `.plot-container`, positioned from the `crosshair` store state.
    Dotted 1px lines tinted just enough to read on white without
@@ -727,7 +795,6 @@ const onTabChange = () => {
   z-index: 2;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
-
 
 /* Inline notice in the plot toolbar, sits to the left of the tooltip
    toggle. Subtle so it doesn't compete with the primary controls. The
