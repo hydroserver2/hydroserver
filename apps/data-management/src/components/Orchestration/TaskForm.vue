@@ -90,6 +90,76 @@
         </div>
         -->
 
+        <div class="mb-4">
+          <p class="font-weight-bold mb-2">Schedule ({{ timezoneLabel }})</p>
+
+          <div class="schedule-control">
+            <label class="schedule-option">
+              <input
+                v-model="scheduleMode"
+                class="schedule-radio"
+                type="radio"
+                value="interval"
+              />
+              <span class="schedule-option-label">Every</span>
+              <v-text-field
+                v-model.number="task.schedule!.interval"
+                class="schedule-interval-input"
+                type="number"
+                min="1"
+                hide-details
+                variant="outlined"
+                density="compact"
+                :rules="[(v) => !!v || 'Interval is required']"
+              />
+              <v-select
+                v-model="task.schedule!.intervalPeriod"
+                class="schedule-unit-select"
+                :items="intervalUnitOptions"
+                item-title="title"
+                item-value="value"
+                hide-details
+                variant="outlined"
+                density="compact"
+                :rules="[(v) => !!v || 'Units are required']"
+              />
+            </label>
+
+            <label class="schedule-option">
+              <input
+                v-model="scheduleMode"
+                class="schedule-radio"
+                type="radio"
+                value="crontab"
+              />
+              <span class="schedule-option-label">Crontab expression</span>
+            </label>
+          </div>
+
+          <v-text-field
+            v-if="scheduleMode === 'crontab'"
+            v-model="task.schedule!.crontab"
+            class="schedule-crontab-input mt-3"
+            label="Crontab expression"
+            hint="Five-field crontab string"
+            persistent-hint
+            variant="outlined"
+            density="compact"
+          />
+
+          <div class="schedule-start-row mt-3">
+            <span class="schedule-start-label">Start:</span>
+            <v-text-field
+              v-model="startInput"
+              class="schedule-start-input"
+              type="datetime-local"
+              hide-details
+              variant="outlined"
+              density="compact"
+            />
+          </div>
+        </div>
+
         <div v-if="perTaskPlaceholders.length" class="mb-4">
           <p class="font-weight-bold mb-2">Template variables</p>
           <v-row>
@@ -107,58 +177,6 @@
               />
             </v-col>
           </v-row>
-        </div>
-
-        <div class="mb-4">
-          <p class="font-weight-bold mb-2">Schedule ({{ timezoneLabel }})</p>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="startInput"
-                label="Start time"
-                type="datetime-local"
-                density="comfortable"
-              />
-            </v-col>
-          </v-row>
-
-          <v-radio-group v-model="scheduleMode" inline>
-            <v-radio label="Interval" value="interval" />
-            <v-radio label="Crontab" value="crontab" />
-          </v-radio-group>
-
-          <v-row v-if="scheduleMode === 'interval'">
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model.number="task.schedule!.interval"
-                label="Interval"
-                type="number"
-                min="1"
-                :rules="[(v) => !!v || 'Interval is required']"
-                density="comfortable"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="task.schedule!.intervalPeriod"
-                :items="intervalUnitOptions"
-                item-title="title"
-                item-value="value"
-                label="Interval Units"
-                :rules="[(v) => !!v || 'Units are required']"
-                density="comfortable"
-              />
-            </v-col>
-          </v-row>
-
-          <v-text-field
-            v-else
-            v-model="task.schedule!.crontab"
-            label="Crontab"
-            hint="Five-field crontab string"
-            persistent-hint
-            density="comfortable"
-          />
         </div>
 
         <v-divider class="mb-6" />
@@ -541,5 +559,50 @@ async function onSubmit() {
 <style scoped>
 :deep(.v-expansion-panel-text__wrapper) {
   padding: 0 !important;
+}
+
+.schedule-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.schedule-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.schedule-radio {
+  margin: 0;
+}
+
+.schedule-option-label,
+.schedule-start-label {
+  font-size: 0.95rem;
+}
+
+.schedule-interval-input {
+  max-width: 6rem;
+}
+
+.schedule-unit-select {
+  max-width: 8.5rem;
+}
+
+.schedule-crontab-input {
+  max-width: 22rem;
+}
+
+.schedule-start-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.schedule-start-input {
+  max-width: 16rem;
 }
 </style>
