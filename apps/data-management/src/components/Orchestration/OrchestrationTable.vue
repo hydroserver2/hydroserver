@@ -265,8 +265,8 @@
           <div v-if="isGroupOpen(group.name)">
             <div
               class="max-h-[62vh] overflow-auto"
-              ref="bodyScrollRef"
-              @scroll.passive="onBodyScroll"
+              :ref="(el) => setBodyScrollRef(group.name, el)"
+              @scroll.passive="onBodyScroll(group.name, $event)"
             >
               <table class="w-full table-fixed text-sm whitespace-nowrap">
                 <thead
@@ -361,7 +361,7 @@
                     <th class="px-3 py-3 text-right w-[20%]">Actions</th>
                   </tr>
                 </thead>
-                <tbody v-if="openGroupRows.length === 0">
+                <tbody v-if="group.items.length === 0">
                   <tr>
                     <td
                       colspan="6"
@@ -374,12 +374,12 @@
                 <tbody v-else>
                   <tr
                     class="border-0"
-                    :style="{ height: `${virtualPaddingTop}px` }"
+                    :style="{ height: `${virtualPaddingTopFor(group.name)}px` }"
                   >
                     <td colspan="6"></td>
                   </tr>
                   <tr
-                    v-for="row in virtualRows"
+                    v-for="row in virtualRowsFor(group)"
                     :key="row.id"
                     class="h-20 border-b border-slate-100"
                     :class="row.isPlaceholder ? 'text-slate-400' : ''"
@@ -515,7 +515,7 @@
                   </tr>
                   <tr
                     class="border-0"
-                    :style="{ height: `${virtualPaddingBottom}px` }"
+                    :style="{ height: `${virtualPaddingBottomFor(group)}px` }"
                   >
                     <td colspan="6"></td>
                   </tr>
@@ -575,8 +575,6 @@ import {
   reactive,
   ref,
   watch,
-  nextTick,
-  onMounted,
   onBeforeUnmount,
 } from 'vue'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
@@ -648,13 +646,13 @@ const openCreateTask = ref(false)
 const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 
-const openGroupName = ref<string | null>(null)
+const openGroupNames = ref<string[]>([])
 const hasAutoOpened = ref(false)
 
-const bodyScrollRef = ref<HTMLElement | HTMLElement[] | null>(null)
-const bodyScrollTop = ref(0)
-const bodyHeight = ref(0)
-let resizeObserver: ResizeObserver | null = null
+const bodyScrollTops = reactive<Record<string, number>>({})
+const bodyHeights = reactive<Record<string, number>>({})
+const bodyScrollEls = new Map<string, HTMLElement>()
+const resizeObservers = new Map<string, ResizeObserver>()
 
 const ROW_HEIGHT = 80
 const OVERSCAN = 6
@@ -861,8 +859,8 @@ const onTaskCreated = async (created: TaskExpanded) => {
     created?.dataConnection?.name ?? selectedTaskDataConnection.value?.name
   closeCreateTaskDialog()
   await refreshTable()
-  if (groupName) {
-    openGroupName.value = groupName
+  if (groupName && !openGroupNames.value.includes(groupName)) {
+    openGroupNames.value = [...openGroupNames.value, groupName]
   }
 }
 
@@ -1043,43 +1041,44 @@ const groupList = computed(() => {
   return groups.sort((a, b) => a.name.localeCompare(b.name))
 })
 
-const openGroupRows = computed(() => {
-  if (!openGroupName.value) return []
-  const group = groupList.value.find((g) => g.name === openGroupName.value)
-  return group?.items ?? []
-})
+const effectiveBodyHeightFor = (groupName: string) =>
+  bodyHeights[groupName] > 0 ? bodyHeights[groupName] : ROW_HEIGHT * 8
 
-const totalRows = computed(() => openGroupRows.value.length)
-
-const effectiveBodyHeight = computed(() =>
-  bodyHeight.value > 0 ? bodyHeight.value : ROW_HEIGHT * 8
-)
-
-const virtualStart = computed(() =>
-  Math.max(0, Math.floor(bodyScrollTop.value / ROW_HEIGHT) - OVERSCAN)
-)
-
-const virtualEnd = computed(() => {
-  const base = Math.ceil(
-    (bodyScrollTop.value + effectiveBodyHeight.value) / ROW_HEIGHT
+const virtualStartFor = (groupName: string) =>
+  Math.max(
+    0,
+    Math.floor((bodyScrollTops[groupName] ?? 0) / ROW_HEIGHT) - OVERSCAN
   )
-  return Math.min(totalRows.value, base + OVERSCAN)
-})
 
-const virtualRows = computed(() =>
-  openGroupRows.value.slice(virtualStart.value, virtualEnd.value)
-)
+const virtualEndFor = (groupName: string, totalRows: number) => {
+  const base = Math.ceil(
+    ((bodyScrollTops[groupName] ?? 0) + effectiveBodyHeightFor(groupName)) /
+      ROW_HEIGHT
+  )
+  return Math.min(totalRows, base + OVERSCAN)
+}
 
-const virtualPaddingTop = computed(() => virtualStart.value * ROW_HEIGHT)
-const virtualPaddingBottom = computed(() => {
-  const rendered = virtualRows.value.length * ROW_HEIGHT
+const virtualRowsFor = (group: { name: string; items: any[] }) => {
+  const start = virtualStartFor(group.name)
+  const end = virtualEndFor(group.name, group.items.length)
+  return group.items.slice(start, end)
+}
+
+const virtualPaddingTopFor = (groupName: string) =>
+  virtualStartFor(groupName) * ROW_HEIGHT
+
+const virtualPaddingBottomFor = (group: { name: string; items: any[] }) => {
+  const rendered = virtualRowsFor(group).length * ROW_HEIGHT
   return Math.max(
     0,
-    totalRows.value * ROW_HEIGHT - virtualPaddingTop.value - rendered
+    group.items.length * ROW_HEIGHT -
+      virtualPaddingTopFor(group.name) -
+      rendered
   )
-})
+}
 
-const isGroupOpen = (groupName: string) => openGroupName.value === groupName
+const isGroupOpen = (groupName: string) =>
+  openGroupNames.value.includes(groupName)
 
 const clearSelection = () => {
   if (typeof window === 'undefined') return
@@ -1087,42 +1086,65 @@ const clearSelection = () => {
 }
 
 const toggleGroup = (groupName: string) => {
-  openGroupName.value = openGroupName.value === groupName ? null : groupName
+  if (isGroupOpen(groupName)) {
+    openGroupNames.value = openGroupNames.value.filter(
+      (name) => name !== groupName
+    )
+    cleanupBodyScrollRef(groupName)
+  } else {
+    openGroupNames.value = [...openGroupNames.value, groupName]
+    resetVirtualScroll(groupName)
+  }
   clearSelection()
   if (typeof window !== 'undefined') {
     window.requestAnimationFrame(clearSelection)
   }
 }
 
-const onBodyScroll = (event: Event) => {
+const onBodyScroll = (groupName: string, event: Event) => {
   const target = event.target as HTMLElement
-  bodyScrollTop.value = target.scrollTop
+  bodyScrollTops[groupName] = target.scrollTop
+  bodyHeights[groupName] = target.clientHeight
 }
 
-const getBodyScrollEl = () => {
-  const value = bodyScrollRef.value
-  if (Array.isArray(value)) return value[0] ?? null
-  return value ?? null
+const cleanupBodyScrollRef = (groupName: string) => {
+  const observer = resizeObservers.get(groupName)
+  if (observer) {
+    observer.disconnect()
+    resizeObservers.delete(groupName)
+  }
+  bodyScrollEls.delete(groupName)
+  delete bodyHeights[groupName]
+  delete bodyScrollTops[groupName]
 }
 
-const resetVirtualScroll = () => {
-  bodyScrollTop.value = 0
-  const el = getBodyScrollEl()
+const setBodyScrollRef = (groupName: string, el: unknown) => {
+  if (!(el instanceof HTMLElement)) {
+    cleanupBodyScrollRef(groupName)
+    return
+  }
+
+  const current = bodyScrollEls.get(groupName)
+  if (current === el) return
+
+  cleanupBodyScrollRef(groupName)
+  bodyScrollEls.set(groupName, el)
+  bodyHeights[groupName] = el.clientHeight
+  bodyScrollTops[groupName] = el.scrollTop
+
+  const observer = new ResizeObserver(() => {
+    bodyHeights[groupName] = el.clientHeight
+  })
+  observer.observe(el)
+  resizeObservers.set(groupName, observer)
+}
+
+const resetVirtualScroll = (groupName: string) => {
+  bodyScrollTops[groupName] = 0
+  const el = bodyScrollEls.get(groupName)
   if (el) {
     el.scrollTop = 0
   }
-}
-
-const observeBody = () => {
-  const el = getBodyScrollEl()
-  if (!el || !(el instanceof Element)) return
-  const updateHeight = () => {
-    bodyHeight.value = el.clientHeight
-  }
-  updateHeight()
-  if (resizeObserver) resizeObserver.disconnect()
-  resizeObserver = new ResizeObserver(updateHeight)
-  resizeObserver.observe(el)
 }
 
 const upsertWorkspaceTask = (t: TaskExpanded | null) => {
@@ -1313,40 +1335,30 @@ watch(
   groupList,
   (groups) => {
     if (!groups.length) {
-      openGroupName.value = null
+      openGroupNames.value = []
       return
     }
     if (!hasAutoOpened.value) {
-      openGroupName.value = groups[0].name
+      openGroupNames.value = [groups[0].name]
       hasAutoOpened.value = true
       return
     }
-    if (
-      openGroupName.value &&
-      !groups.some((group) => group.name === openGroupName.value)
-    ) {
-      openGroupName.value = groups[0].name
+    const availableGroupNames = new Set(groups.map((group) => group.name))
+    const nextOpenGroupNames = openGroupNames.value.filter((name) =>
+      availableGroupNames.has(name)
+    )
+    if (!nextOpenGroupNames.length) {
+      nextOpenGroupNames.push(groups[0].name)
     }
+    openGroupNames.value = nextOpenGroupNames
   },
   { immediate: true }
 )
 
-watch(
-  openGroupName,
-  async () => {
-    await nextTick()
-    observeBody()
-    resetVirtualScroll()
-  },
-  { immediate: false }
-)
-
-onMounted(() => {
-  observeBody()
-})
-
 onBeforeUnmount(() => {
-  if (resizeObserver) resizeObserver.disconnect()
+  resizeObservers.forEach((observer) => observer.disconnect())
+  resizeObservers.clear()
+  bodyScrollEls.clear()
   stopAllTaskPolling()
 })
 
@@ -1400,7 +1412,7 @@ const sortBadge = (key: SortKey) => {
 watch(
   sortSpecs,
   () => {
-    resetVirtualScroll()
+    openGroupNames.value.forEach((groupName) => resetVirtualScroll(groupName))
   },
   { deep: true }
 )
