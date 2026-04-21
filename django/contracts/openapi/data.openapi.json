@@ -8634,22 +8634,22 @@
       },
       "ThingQueryParameters": {
         "properties": {
-          "adminArea1": {
+          "admin_area_1": {
             "default": [],
             "description": "Filter things by admin area 1.",
             "items": {
               "type": "string"
             },
-            "title": "Adminarea1",
+            "title": "Admin Area 1",
             "type": "array"
           },
-          "adminArea2": {
+          "admin_area_2": {
             "default": [],
             "description": "Filter things by admin area 2.",
             "items": {
               "type": "string"
             },
-            "title": "Adminarea2",
+            "title": "Admin Area 2",
             "type": "array"
           },
           "bbox": {
@@ -23195,7 +23195,7 @@
           {
             "description": "Filter things by admin area 1.",
             "in": "query",
-            "name": "adminArea1",
+            "name": "admin_area_1",
             "required": false,
             "schema": {
               "default": [],
@@ -23203,14 +23203,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Adminarea1",
+              "title": "Admin Area 1",
               "type": "array"
             }
           },
           {
             "description": "Filter things by admin area 2.",
             "in": "query",
-            "name": "adminArea2",
+            "name": "admin_area_2",
             "required": false,
             "schema": {
               "default": [],
@@ -23218,7 +23218,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Adminarea2",
+              "title": "Admin Area 2",
               "type": "array"
             }
           },
