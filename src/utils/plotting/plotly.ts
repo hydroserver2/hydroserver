@@ -94,6 +94,13 @@ const traceXAsNumbers = (
   return (x ?? []) as number[]
 }
 
+// Marker-density threshold. Above this many visible points per trace,
+// scattergl markers are rendered at `opacity: 0` (still hit-testable for
+// select/lasso, just invisible) so the plot doesn't turn into ink soup.
+// Consumed by `createPlotlyOption` (initial paint) and `handleRelayout`
+// (zoom-driven updates).
+const DENSITY_HIDE_MARKERS = 2000
+
 // Slot 0 is reserved for the QC datastream (dark grey so it stands out
 // from the lighter non-QC companions). Slots 1..8 are the light half
 // of d3's category20 with red and pink removed — those reserved hues
@@ -292,13 +299,33 @@ export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
-  const { previewMode, hiddenAxisIds } = storeToRefs(usePlotlyStore())
+  const { previewMode, hiddenAxisIds, plotlyRef } = storeToRefs(
+    usePlotlyStore()
+  )
   const isPreview = previewMode?.value ?? false
   // `hiddenAxisIds` may be undefined during the pinia circular-init
   // that first calls `createPlotlyOption([])` before the store's own
   // refs are exposed (same pattern as `previewMode` above). The empty
   // set keeps the downstream `.has(id)` check happy.
   const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
+
+  // Density range for pre-seeding marker opacity. Prefer the live
+  // plot's x-range so reorders / QC swaps keep dense traces hidden
+  // across the replot (otherwise Plotly.newPlot renders markers at
+  // full opacity and `handleRelayout` only kicks in 450 ms later).
+  // Falls back to the store's begin/end dates when no plot exists.
+  const live = (plotlyRef?.value as unknown as { layout?: Partial<Layout> } | null)
+    ?.layout?.xaxis?.range as Array<string | number> | undefined
+  const parseCoord = (v: string | number): number =>
+    typeof v === 'string' ? Date.parse(v) : Number(v)
+  const densityStart = live
+    ? parseCoord(live[0])
+    : Number(beginDate?.value?.getTime?.())
+  const densityEnd = live
+    ? parseCoord(live[1])
+    : Number(endDate?.value?.getTime?.())
+  const densityRangeValid =
+    Number.isFinite(densityStart) && Number.isFinite(densityEnd)
 
   const traces: AppPlotlyTrace[] = []
   const yaxis: Partial<Layout> = {}
@@ -341,6 +368,19 @@ export const createPlotlyOption = (
     const axisKey = `yaxis${axisSuffix}`
     const axisRef = `y${axisSuffix}`
 
+    // Pre-seed marker opacity from the current visible density so
+    // Plotly.newPlot renders dense traces invisible from frame 0 —
+    // `handleRelayout` would otherwise catch up 450 ms later, which
+    // shows up as a flash on reorder / QC swap.
+    let markerOpacity = 1
+    if (densityRangeValid && xData?.length) {
+      const xs = xData as number[]
+      const count =
+        findFirstGreaterOrEqual(xs, densityEnd) -
+        findFirstGreaterOrEqual(xs, densityStart)
+      if (count > DENSITY_HIDE_MARKERS) markerOpacity = 0
+    }
+
     const trace: AppPlotlyTrace = {
       id: s.id,
       x: s.data?.dataX,
@@ -353,7 +393,7 @@ export const createPlotlyOption = (
       // hoverinfo: 'x+y',
       name: s.name,
       showLegend: false,
-      marker: { color },
+      marker: { color, opacity: markerOpacity },
       line: { color },
     }
 
@@ -1284,7 +1324,6 @@ export const handleRelayout = async (
       // their fragment shader so the perf cost is negligible. Below the
       // threshold markers render at full opacity — no partial fade, so
       // points either show normally or disappear cleanly.
-      const DENSITY_HIDE_MARKERS = 2000
       const perTraceOpacity = perTraceVisible.map((n) =>
         n > DENSITY_HIDE_MARKERS ? 0 : 1
       )
