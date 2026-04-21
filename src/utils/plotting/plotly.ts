@@ -1460,25 +1460,25 @@ export const handleMouseOut = () => {
 // Replaces Plotly's built-in `scrollZoom`. Plotly's implementation
 // recomputes the zoom pivot against `_fullLayout` on every wheel tick,
 // which desyncs when the layout shifts mid-gesture (automargin, tick
-// label relayout, etc.) and produces the visible back-and-forth
-// oscillation (see plotly/plotly.js#7449). Our replacement locks the
-// pivot to the cursor's data coord at event time and coalesces bursts
-// to a single `Plotly.relayout` per animation frame.
+// label relayout, etc.) and produces a visible back-and-forth zoom
+// oscillation (see plotly/plotly.js#7449). We pin the pivot to the
+// cursor's data coord at event time and coalesce bursts to a single
+// `Plotly.relayout` per animation frame.
 //
-// Emulates Plotly's zone-based zoom behaviour:
-//  - Over the plot area  → zoom x AND every non-fixed y-axis, each
-//    around the cursor's data coord on that axis.
-//  - Over the x gutter   → zoom x only.
-//  - Over the left y gutter  → zoom the primary y-axis only.
-//  - Over the right y area   → zoom every non-primary y-axis (the
-//    QC app stacks non-QC traces on the right via autoshift; we zoom
-//    them together since distinguishing which autoshifted axis the
-//    cursor points at is non-trivial and not obviously desired).
+// Zone-based targeting matches user expectations for a multi-axis
+// layout:
+//  - Over the plot area   → zoom x AND every non-fixed y-axis, each
+//                           around the cursor's own data coord.
+//  - Over the x gutter    → zoom x only.
+//  - Over the left gutter → zoom the primary y-axis only.
+//  - Over a right-side y  → zoom just the axis whose column contains
+//                           the cursor (see `pickRightYAxisAtCursor`);
+//                           falls back to zoom-all if we can't
+//                           identify one.
 //
 // `handleRelayout`'s downstream work (marker opacity, tickvals, hover
 // template) still fires because our `Plotly.relayout` emits
-// `plotly_relayout`, so there's no functional regression vs. the
-// built-in scrollZoom path.
+// `plotly_relayout`.
 
 /** Per-tick zoom ratio applied to each target axis. 0.85 means each
  *  full wheel tick shrinks the span to 85% (zoom in) or grows it to
@@ -1622,24 +1622,11 @@ const widenYAxisDragRects = (gd: HTMLElement): void => {
 }
 
 /**
- * Pick the specific non-primary y-axis the cursor is over. Returns
- * `null` when we can't identify one — caller falls back to "zoom
- * every right-side axis" in that case.
- *
- * Ownership rule: axis N owns the column that starts at its own line
- * and ends at the *next* axis's line — so labels, drag rect, and
- * title of axis N all live inside axis N's zone. For a cursor at x,
- * the correct target is the axis whose line is the largest lineX
- * still at-or-left-of x (i.e., we walk axes left-to-right and keep
- * the most recent one we've passed). The right-most axis extends its
- * zone to the right edge of the graph.
- *
- * Axis line position is read from Plotly's private
- * `ax._mainLinePosition` (pixels, relative to the gd root). When
- * that's not populated we fall back to the left edge of the axis's
- * tick layer — for `side: 'right'` axes the labels start right at
- * the line, so `tickLayer.getBoundingClientRect().left` is a tight
- * proxy for the axis line's x.
+ * Pick the specific non-primary y-axis whose column contains the
+ * cursor. Axis N owns `[N.lineX, (N+1).lineX)`; the rightmost axis
+ * extends to the graph's right edge. Returns `null` when the cursor
+ * is left of every axis line (shouldn't happen in the right gutter,
+ * but caller falls back to zoom-all if so).
  */
 const pickRightYAxisAtCursor = (
   gd: HTMLElement,
@@ -1648,20 +1635,14 @@ const pickRightYAxisAtCursor = (
 ): string | null => {
   const axes = collectRightAxes(fullLayout)
   if (!axes.length) return null
-
-  const gdRect = gd.getBoundingClientRect()
-  const cursorXGdRelative = event.clientX - gdRect.left
-
-  // Walk left-to-right and keep the most recent axis whose line we've
-  // passed — that's the one whose zone contains the cursor.
+  const cursorXGdRelative = event.clientX - gd.getBoundingClientRect().left
+  // axes are sorted ascending; the owner is the last axis whose line
+  // we've passed.
   let owner: RightAxisInfo | null = null
   for (const a of axes) {
-    if (a.lineX <= cursorXGdRelative) owner = a
-    else break
+    if (a.lineX > cursorXGdRelative) break
+    owner = a
   }
-  // Cursor to the left of every axis line (shouldn't happen in the
-  // right gutter — plot edge sits at or to the left of the first
-  // axis line — but handle defensively): fall back to zoom-all.
   return owner ? owner.key : null
 }
 
@@ -1737,23 +1718,17 @@ export const handleWheel = (event: WheelEvent) => {
   if (overPlot) collectYAxes(() => true)
   else if (overLeftGutter) collectYAxes((key) => key === 'yaxis')
   else if (overRightGutter) {
-    // Multiple non-QC traces stack on autoshifted right-side axes.
-    // Zooming ALL of them when the user targets one feels wrong — the
-    // user wants to rescale the specific axis under the cursor. Use
-    // `_boundingBox` (Plotly private layout state, populated after
-    // render) which gives the axis's rendered pixel rect. Fallback to
-    // zooming every right-side axis if Plotly hasn't populated the
-    // boundingbox yet (e.g. first render).
+    // Pick the single axis whose zone contains the cursor. Fall back
+    // to zoom-all if Plotly's layout state isn't populated yet (e.g.
+    // first frame after plot mount).
     const pickedKey = pickRightYAxisAtCursor(
       gd as unknown as HTMLElement,
       fullLayout as unknown as Record<string, unknown>,
       event
     )
-    if (pickedKey) {
-      collectYAxes((key) => key === pickedKey)
-    } else {
-      collectYAxes((key) => key !== 'yaxis')
-    }
+    collectYAxes(
+      pickedKey ? (key) => key === pickedKey : (key) => key !== 'yaxis'
+    )
   }
 
   if (!zoomX && !yAxisKeys.length) return
@@ -1770,12 +1745,12 @@ export const handleWheel = (event: WheelEvent) => {
 
   if (!pendingWheelZoom) pendingWheelZoom = { y: {} }
 
+  // Pin the pivot to the first event of the burst; subsequent events
+  // in the same frame compose their factors against that pivot.
   if (zoomX) {
     const pivot = Number(xaxis.p2c(pxRel - xLeft))
     if (Number.isFinite(pivot)) {
-      if (!pendingWheelZoom.x) {
-        pendingWheelZoom.x = { key: 'xaxis', pivot, factor: 1 }
-      }
+      pendingWheelZoom.x ??= { key: 'xaxis', pivot, factor: 1 }
       pendingWheelZoom.x.factor *= tickFactor
     }
   }
@@ -1785,14 +1760,10 @@ export const handleWheel = (event: WheelEvent) => {
       _offset?: number
       p2c?: (px: number) => number
     }>)[key]
-    const axOffset = ax?._offset
-    const p2c = ax?.p2c
-    if (axOffset == null || !p2c) continue
-    const pivot = Number(p2c(pyRel - axOffset))
+    if (ax?._offset == null || !ax.p2c) continue
+    const pivot = Number(ax.p2c(pyRel - ax._offset))
     if (!Number.isFinite(pivot)) continue
-    if (!pendingWheelZoom.y[key]) {
-      pendingWheelZoom.y[key] = { key, pivot, factor: 1 }
-    }
+    pendingWheelZoom.y[key] ??= { key, pivot, factor: 1 }
     pendingWheelZoom.y[key].factor *= tickFactor
   }
 
@@ -1808,57 +1779,49 @@ export const handleWheel = (event: WheelEvent) => {
 const applyWheelZoom = async (zoom: WheelPending): Promise<void> => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
   const gd = plotlyRef.value
-  if (!gd) return
-
-  const liveLayout = (gd as unknown as { layout?: Partial<Layout> }).layout
-  if (!liveLayout) return
+  const liveLayout = gd?.layout as Record<string, Partial<LayoutAxis>> | undefined
+  if (!gd || !liveLayout) return
 
   const update: Record<string, unknown> = {}
 
-  const parseNum = (v: string | number): number =>
+  // Plotly serialises date-axis range endpoints as ISO strings; convert
+  // back to epoch ms so the pivot arithmetic matches `p2c`'s space.
+  const toNumber = (v: string | number): number =>
     typeof v === 'string' ? Date.parse(v) : Number(v)
 
-  const applyAxis = (
-    key: string,
-    pivot: number,
-    factor: number,
-    parse: (v: string | number) => number
-  ): void => {
-    const ax = (liveLayout as unknown as Record<string, unknown>)[key] as
-      | Partial<LayoutAxis>
-      | undefined
-    const range = ax?.range as Array<string | number> | undefined
+  const applyAxis = (key: string, pivot: number, factor: number): void => {
+    const range = liveLayout[key]?.range as Array<string | number> | undefined
     if (!range) return
-    const a = parse(range[0])
-    const b = parse(range[1])
+    const a = toNumber(range[0])
+    const b = toNumber(range[1])
     if (!Number.isFinite(a) || !Number.isFinite(b)) return
     const newA = pivot - (pivot - a) * factor
     const newB = pivot + (b - pivot) * factor
-    // Bail on degenerate ranges (excessive zoom-in past the axis's
-    // native resolution).
+    // Bail on degenerate ranges (excessive zoom past axis resolution).
     if (!Number.isFinite(newA) || !Number.isFinite(newB) || newA >= newB) return
     update[`${key}.range`] = [newA, newB]
     update[`${key}.autorange`] = false
   }
 
   if (zoom.x) {
-    applyAxis(zoom.x.key, zoom.x.pivot, zoom.x.factor, parseNum)
+    applyAxis(zoom.x.key, zoom.x.pivot, zoom.x.factor)
     // Hand tick placement back to Plotly's auto picker mid-gesture.
-    // Our cadence-aligned `tickvals` (set by `handleRelayout`) are
-    // pinned to the previous visible range, so they clump around the
-    // old centre as the new range slides under them. Clearing them on
-    // every wheel frame lets Plotly spread ticks evenly across the
-    // live range; `handleRelayout` runs 450 ms after the gesture
-    // settles and restores the cadence-aligned grid.
+    // Cadence-aligned `tickvals` from `handleRelayout` are pinned to
+    // the previous visible range and clump around the old centre as
+    // the new range slides under them. `handleRelayout` restores the
+    // cadence grid 450 ms after the gesture settles.
     update['xaxis.tickmode'] = 'auto'
     update['xaxis.tickvals'] = null
   }
   for (const target of Object.values(zoom.y)) {
-    applyAxis(target.key, target.pivot, target.factor, parseNum)
+    applyAxis(target.key, target.pivot, target.factor)
   }
 
   if (!Object.keys(update).length) return
-  await Plotly.relayout(gd as unknown as HTMLElement, update as unknown as Partial<Layout>)
+  await Plotly.relayout(
+    gd as unknown as HTMLElement,
+    update as unknown as Partial<Layout>
+  )
 }
 
 /**
