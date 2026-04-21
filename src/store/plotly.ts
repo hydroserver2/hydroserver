@@ -51,6 +51,26 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showCoordinates = ref(false)
   const hover = ref({ x: 0, y: 0 })
 
+  /**
+   * Crosshair droplines (horizontal to the QC y-axis, vertical to the
+   * x-axis) rendered as CSS lines in `Plot.vue`. Positions are pixels
+   * relative to the plot root element and are written by
+   * `processMouseMove` on every frame. Lives outside Plotly's
+   * `showspikes` because the built-in spikes are gated on
+   * `hoverinfo !== 'skip'` and so disappear when tooltips auto-
+   * disable at high point counts — users want the crosshair to stay
+   * regardless of tooltip state. The CSS driver also avoids the
+   * noticeable lag behind the cursor that Plotly's spike layer has
+   * on scattergl.
+   */
+  const crosshair = ref({
+    visible: false,
+    cursorX: 0,
+    cursorY: 0,
+    plotLeft: 0,
+    plotBottom: 0,
+  })
+
   const graphSeriesArray = ref<GraphSeries[]>([])
 
   /**
@@ -316,6 +336,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     areTooltipsEnabled,
     showCoordinates,
     hover,
+    crosshair,
     previewMode,
     // Zoom history
     zoomUndoStack,

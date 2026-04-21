@@ -362,6 +362,12 @@ export const createPlotlyOption = (
           // flip between SI and decimal depending on the visible range;
           // pinning `tickformat` makes it consistent.
           tickformat: '~s',
+          // Note: crosshair droplines live outside of Plotly. We render
+          // two CSS lines driven by `processMouseMove` (see the
+          // `crosshair` store field + `.plot-crosshair` in Plot.vue)
+          // instead of Plotly's `showspikes`, because the built-in
+          // spikes are gated on `hoverinfo !== 'skip'` and so vanish
+          // together with tooltips at high point counts.
         } as Partial<LayoutAxis>
 
       const { editHistory } = storeToRefs(usePlotlyStore())
@@ -473,6 +479,8 @@ export const createPlotlyOption = (
     // vertical date/time labels at zoom levels where Plotly rotates
     // them 90°.
     automargin: true,
+    // Note: vertical crosshair dropline lives outside of Plotly — see
+    // the companion note on the primary yaxis above.
     // range slider compatibility for Scattergl: https://github.com/plotly/plotly.js/issues/2627
   }
 
@@ -821,6 +829,16 @@ export const handleNewPlot = async (
   plotlyRef.value?.removeEventListener('wheel', handleWheel as EventListener)
   plotlyRef.value?.addEventListener('wheel', handleWheel as EventListener, {
     passive: false,
+  })
+
+  // Widen each y-axis's drag column (primary QC on the left + every
+  // right-side overlay) to span its full wheel-zoom zone. Runs once
+  // now, and again after every replot (Plotly rebuilds drag rects
+  // back to DRAGGERSIZE on relayout).
+  const gdEl = plotlyRef.value as unknown as HTMLElement
+  widenYAxisDragRects(gdEl)
+  plotlyRef.value?.on('plotly_afterplot', () => {
+    widenYAxisDragRects(gdEl)
   })
 }
 
@@ -1352,7 +1370,9 @@ export const handleMouseMove = (event: MouseEvent) => {
 }
 
 const processMouseMove = (event: MouseEvent) => {
-  const { plotlyRef, hover, showCoordinates } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, hover, showCoordinates, crosshair } = storeToRefs(
+    usePlotlyStore()
+  )
 
   // PRIVATE-API: `_fullLayout` (and the `xaxis.p2c` / `yaxis.p2c` pixel-to-data
   // converters it exposes) are undocumented Plotly internals used here for
@@ -1364,24 +1384,75 @@ const processMouseMove = (event: MouseEvent) => {
   const fullLayout = gd?._fullLayout
   if (!fullLayout) return
 
-  const xaxis = fullLayout.xaxis
-  const yaxis = fullLayout.yaxis
-  const marginleft = fullLayout.margin.l
-  const marginTop = fullLayout.margin.t
+  // Use `_offset`/`_length` over plain `margin` because axes with a
+  // `domain` less than [0,1] (e.g. the primary y when the qualifier
+  // band compresses it to [0.14,1]) sit inside the margins. These are
+  // the actual pixel bounds of the axis and line up with the crosshair
+  // termination points we want.
+  const xaxis = fullLayout.xaxis as (typeof fullLayout.xaxis) & {
+    _offset?: number
+    _length?: number
+  }
+  const yaxis = fullLayout.yaxis as (typeof fullLayout.yaxis) & {
+    _offset?: number
+    _length?: number
+  }
+  if (
+    xaxis._offset == null ||
+    xaxis._length == null ||
+    yaxis._offset == null ||
+    yaxis._length == null
+  )
+    return
 
   const bounds = plotlyRef.value?.getBoundingClientRect()
-  if (bounds) {
-    const xInDataCoord = xaxis.p2c(event.x - marginleft - bounds.x);
-    const yInDataCoord = yaxis.p2c(event.y - marginTop - bounds.y);
-    hover.value.x = xInDataCoord
-    hover.value.y = yInDataCoord.toFixed(4)
-    showCoordinates.value = true
+  if (!bounds) return
+
+  const cursorX = event.clientX - bounds.x
+  const cursorY = event.clientY - bounds.y
+
+  const plotLeft = xaxis._offset
+  const plotRight = xaxis._offset + xaxis._length
+  const plotTop = yaxis._offset
+  const plotBottom = yaxis._offset + yaxis._length
+
+  const insidePlot =
+    cursorX >= plotLeft &&
+    cursorX <= plotRight &&
+    cursorY >= plotTop &&
+    cursorY <= plotBottom
+
+  if (!insidePlot) {
+    // Leaving the plot area while still over the root element (e.g.
+    // cursor dropped onto the qualifier band or a tick gutter) should
+    // hide the readout and crosshair — otherwise they freeze at the
+    // last in-plot position.
+    showCoordinates.value = false
+    if (crosshair.value.visible) crosshair.value.visible = false
+    return
+  }
+
+  hover.value.x = Number(xaxis.p2c(cursorX - plotLeft))
+  hover.value.y = Number(yaxis.p2c(cursorY - plotTop)).toFixed(4)
+  showCoordinates.value = true
+
+  // Crosshair droplines: vertical line goes from cursor down to the
+  // x-axis (plot bottom); horizontal line goes from the QC y-axis
+  // (plot left) to the cursor. Plot.vue reads these to position the
+  // two CSS line divs.
+  crosshair.value = {
+    visible: true,
+    cursorX,
+    cursorY,
+    plotLeft,
+    plotBottom,
   }
 }
 
 export const handleMouseOut = () => {
-  const { showCoordinates } = storeToRefs(usePlotlyStore())
+  const { showCoordinates, crosshair } = storeToRefs(usePlotlyStore())
   showCoordinates.value = false
+  if (crosshair.value.visible) crosshair.value.visible = false
 }
 
 // --- Custom wheel-zoom ---------------------------------------------------
@@ -1416,7 +1487,183 @@ export const handleMouseOut = () => {
 const WHEEL_ZOOM_IN_FACTOR = 0.85
 const WHEEL_ZOOM_OUT_FACTOR = 1 / WHEEL_ZOOM_IN_FACTOR
 
-const Y_AXIS_KEY_RE_WHEEL = /^yaxis\d*$/
+/**
+ * Compute the rendered x-pixel of each non-primary y-axis's line, in
+ * gd-root coordinates. Uses Plotly's private `_mainLinePosition`
+ * (pre-shift position against the counter-axis) plus `_shift` (the
+ * autoshift offset that stacks overlays out to the right). Returns a
+ * list sorted by `lineX` ascending, skipping fixed-range axes.
+ * Caller uses this both for the zone picker and for widening the
+ * visible drag columns.
+ */
+type RightAxisInfo = {
+  key: string
+  lineX: number
+  subplotId: string
+}
+const collectRightAxes = (
+  fullLayout: Record<string, unknown>
+): RightAxisInfo[] => {
+  const axes: RightAxisInfo[] = []
+  for (const key of Object.keys(fullLayout)) {
+    if (!Y_AXIS_KEY_RE.test(key) || key === 'yaxis') continue
+    const ax = fullLayout[key] as
+      | {
+          fixedrange?: boolean
+          _mainLinePosition?: number
+          _shift?: number
+          _mainSubplot?: string
+          _subplotsWith?: string[]
+        }
+      | undefined
+    if (!ax || ax.fixedrange) continue
+    if (typeof ax._mainLinePosition !== 'number') continue
+    const lineX = ax._mainLinePosition + (ax._shift ?? 0)
+    if (!Number.isFinite(lineX)) continue
+    const subplotId = ax._mainSubplot ?? ax._subplotsWith?.[0]
+    if (!subplotId) continue
+    axes.push({ key, lineX, subplotId })
+  }
+  axes.sort((a, b) => a.lineX - b.lineX)
+  return axes
+}
+
+/**
+ * Widen each y-axis's drag rects so the blue hover / drag-rescale
+ * column spans the full zone the wheel-zoom picker uses:
+ *   - Primary (QC) y on the left: zone is `[0, primaryLineX]`.
+ *   - Each right-side overlay: zone is `[lineX, nextLineX]`, with
+ *     the rightmost axis extending to `gd.clientWidth`.
+ * Plotly normally sizes these rects to `DRAGGERSIZE` (20 px), which
+ * leaves narrow slivers of un-highlighted space between columns and
+ * makes the hit target for drag-to-rescale feel small.
+ *
+ * DOM structure we rely on (from plotly.js source, v3.x):
+ *   g.draglayer > g.{subplotId} > rect.nsdrag   (main middle drag)
+ *                               > rect.ndrag    (top edge drag)
+ *                               > rect.sdrag    (bottom edge drag)
+ * For the primary y-axis the rects' default `x` is
+ * `_mainLinePosition - DRAGGERSIZE` (20 px left of the line); for
+ * right-side overlays Plotly already adds `_shift` into `x` inside
+ * `makeDragBox`, so the default `x` equals `lineX`. We set both `x`
+ * and `width` explicitly to normalise both cases.
+ *
+ * Plotly rebuilds drag rects on every plot/relayout, so this needs
+ * to re-run after each `plotly_afterplot` event to survive layout
+ * changes.
+ */
+const widenYAxisDragRects = (gd: HTMLElement): void => {
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+    | Record<string, unknown>
+    | undefined
+  if (!fl) return
+
+  type Span = { subplotId: string; zoneLeft: number; zoneRight: number }
+  const spans: Span[] = []
+
+  // Primary y-axis (side: 'left'). No `_shift` — autoshift only
+  // applies to overlays with `anchor: 'free'`. Zone is from the
+  // graph's left edge out to the axis line.
+  const primaryY = fl.yaxis as
+    | {
+        fixedrange?: boolean
+        _mainLinePosition?: number
+        _mainSubplot?: string
+        _subplotsWith?: string[]
+      }
+    | undefined
+  if (
+    primaryY &&
+    !primaryY.fixedrange &&
+    typeof primaryY._mainLinePosition === 'number'
+  ) {
+    const subplotId = primaryY._mainSubplot ?? primaryY._subplotsWith?.[0]
+    if (subplotId && primaryY._mainLinePosition > 0) {
+      spans.push({
+        subplotId,
+        zoneLeft: 0,
+        zoneRight: primaryY._mainLinePosition,
+      })
+    }
+  }
+
+  // Right-side overlays.
+  const rightAxes = collectRightAxes(fl)
+  const graphWidth = gd.clientWidth
+  for (let i = 0; i < rightAxes.length; i++) {
+    const current = rightAxes[i]
+    const rightEdge =
+      i + 1 < rightAxes.length ? rightAxes[i + 1].lineX : graphWidth
+    spans.push({
+      subplotId: current.subplotId,
+      zoneLeft: current.lineX,
+      zoneRight: rightEdge,
+    })
+  }
+
+  const DRAG_CLASSES = ['rect.nsdrag', 'rect.ndrag', 'rect.sdrag']
+
+  for (const span of spans) {
+    const newWidth = span.zoneRight - span.zoneLeft
+    if (newWidth <= 0) continue
+
+    const subplotGroup = gd.querySelector(
+      `g.draglayer > g.${CSS.escape(span.subplotId)}`
+    ) as SVGGraphicsElement | null
+    if (!subplotGroup) continue
+
+    for (const sel of DRAG_CLASSES) {
+      const rect = subplotGroup.querySelector(sel) as SVGRectElement | null
+      if (!rect) continue
+      rect.setAttribute('x', String(span.zoneLeft))
+      rect.setAttribute('width', String(newWidth))
+    }
+  }
+}
+
+/**
+ * Pick the specific non-primary y-axis the cursor is over. Returns
+ * `null` when we can't identify one — caller falls back to "zoom
+ * every right-side axis" in that case.
+ *
+ * Ownership rule: axis N owns the column that starts at its own line
+ * and ends at the *next* axis's line — so labels, drag rect, and
+ * title of axis N all live inside axis N's zone. For a cursor at x,
+ * the correct target is the axis whose line is the largest lineX
+ * still at-or-left-of x (i.e., we walk axes left-to-right and keep
+ * the most recent one we've passed). The right-most axis extends its
+ * zone to the right edge of the graph.
+ *
+ * Axis line position is read from Plotly's private
+ * `ax._mainLinePosition` (pixels, relative to the gd root). When
+ * that's not populated we fall back to the left edge of the axis's
+ * tick layer — for `side: 'right'` axes the labels start right at
+ * the line, so `tickLayer.getBoundingClientRect().left` is a tight
+ * proxy for the axis line's x.
+ */
+const pickRightYAxisAtCursor = (
+  gd: HTMLElement,
+  fullLayout: Record<string, unknown>,
+  event: WheelEvent
+): string | null => {
+  const axes = collectRightAxes(fullLayout)
+  if (!axes.length) return null
+
+  const gdRect = gd.getBoundingClientRect()
+  const cursorXGdRelative = event.clientX - gdRect.left
+
+  // Walk left-to-right and keep the most recent axis whose line we've
+  // passed — that's the one whose zone contains the cursor.
+  let owner: RightAxisInfo | null = null
+  for (const a of axes) {
+    if (a.lineX <= cursorXGdRelative) owner = a
+    else break
+  }
+  // Cursor to the left of every axis line (shouldn't happen in the
+  // right gutter — plot edge sits at or to the left of the first
+  // axis line — but handle defensively): fall back to zoom-all.
+  return owner ? owner.key : null
+}
 
 type WheelAxisTarget = { key: string; pivot: number; factor: number }
 type WheelPending = { x?: WheelAxisTarget; y: Record<string, WheelAxisTarget> }
@@ -1480,7 +1727,7 @@ export const handleWheel = (event: WheelEvent) => {
   const yAxisKeys: string[] = []
   const collectYAxes = (predicate: (key: string) => boolean) => {
     for (const key of Object.keys(fullLayout)) {
-      if (!Y_AXIS_KEY_RE_WHEEL.test(key)) continue
+      if (!Y_AXIS_KEY_RE.test(key)) continue
       if (!predicate(key)) continue
       const ax = (fullLayout as unknown as Record<string, { fixedrange?: boolean }>)[key]
       if (ax?.fixedrange) continue
@@ -1489,7 +1736,25 @@ export const handleWheel = (event: WheelEvent) => {
   }
   if (overPlot) collectYAxes(() => true)
   else if (overLeftGutter) collectYAxes((key) => key === 'yaxis')
-  else if (overRightGutter) collectYAxes((key) => key !== 'yaxis')
+  else if (overRightGutter) {
+    // Multiple non-QC traces stack on autoshifted right-side axes.
+    // Zooming ALL of them when the user targets one feels wrong — the
+    // user wants to rescale the specific axis under the cursor. Use
+    // `_boundingBox` (Plotly private layout state, populated after
+    // render) which gives the axis's rendered pixel rect. Fallback to
+    // zooming every right-side axis if Plotly hasn't populated the
+    // boundingbox yet (e.g. first render).
+    const pickedKey = pickRightYAxisAtCursor(
+      gd as unknown as HTMLElement,
+      fullLayout as unknown as Record<string, unknown>,
+      event
+    )
+    if (pickedKey) {
+      collectYAxes((key) => key === pickedKey)
+    } else {
+      collectYAxes((key) => key !== 'yaxis')
+    }
+  }
 
   if (!zoomX && !yAxisKeys.length) return
 

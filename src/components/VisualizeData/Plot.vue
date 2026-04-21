@@ -235,6 +235,36 @@
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="plot-container fill-height">
             <div ref="plot" class="fill-height"></div>
+            <!-- Crosshair droplines. Two absolute-positioned CSS lines
+                 driven by `processMouseMove` via the `crosshair` store
+                 field. Replaces Plotly's `showspikes`, which (a) lags
+                 the cursor noticeably on scattergl and (b) disappears
+                 together with tooltips when visible points exceed
+                 `tooltipsMaxDataPoints` because its render path is
+                 gated on `hoverinfo !== 'skip'`. CSS driver stays
+                 active regardless of tooltip state. -->
+            <div
+              v-show="crosshair.visible && tab === 'plot'"
+              class="plot-crosshair plot-crosshair--v"
+              :style="{
+                left: crosshair.cursorX + 'px',
+                top: crosshair.cursorY + 'px',
+                height:
+                  Math.max(0, crosshair.plotBottom - crosshair.cursorY) + 'px',
+              }"
+              aria-hidden="true"
+            />
+            <div
+              v-show="crosshair.visible && tab === 'plot'"
+              class="plot-crosshair plot-crosshair--h"
+              :style="{
+                left: crosshair.plotLeft + 'px',
+                top: crosshair.cursorY + 'px',
+                width:
+                  Math.max(0, crosshair.cursorX - crosshair.plotLeft) + 'px',
+              }"
+              aria-hidden="true"
+            />
             <!-- Floating hover-coordinates chip, anchored inside the
                  plot area. Absolute positioning means it appears and
                  disappears without touching the toolbar layout. -->
@@ -297,6 +327,7 @@ const {
   tooltipsMaxDataPoints,
   hover,
   showCoordinates,
+  crosshair,
   previewMode,
   plotlyRef,
 } = storeToRefs(usePlotlyStore())
@@ -657,6 +688,27 @@ const onTabChange = () => {
    chart beneath it. */
 .plot-container {
   position: relative;
+}
+
+/* CSS-based crosshair droplines. Two sibling divs inside
+   `.plot-container`, positioned from the `crosshair` store state.
+   Dotted 1px lines tinted just enough to read on white without
+   competing with the plot's own tick grid. `pointer-events: none` so
+   they never steal the mousemove that drives them. */
+.plot-crosshair {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.plot-crosshair--v {
+  width: 0;
+  border-left: 1px dotted rgba(60, 60, 60, 0.45);
+}
+
+.plot-crosshair--h {
+  height: 0;
+  border-top: 1px dotted rgba(60, 60, 60, 0.45);
 }
 
 .plot-coords {
