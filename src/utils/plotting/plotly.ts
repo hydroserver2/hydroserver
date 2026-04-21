@@ -277,8 +277,13 @@ export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
-  const { previewMode } = storeToRefs(usePlotlyStore())
+  const { previewMode, hiddenAxisIds } = storeToRefs(usePlotlyStore())
   const isPreview = previewMode?.value ?? false
+  // `hiddenAxisIds` may be undefined during the pinia circular-init
+  // that first calls `createPlotlyOption([])` before the store's own
+  // refs are exposed (same pattern as `previewMode` above). The empty
+  // set keeps the downstream `.has(id)` check happy.
+  const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
 
   const traces: AppPlotlyTrace[] = []
   const yaxis: Partial<Layout> = {}
@@ -396,6 +401,11 @@ export const createPlotlyOption = (
         // Force SI tick abbreviation ("2k" instead of "2000") and keep
         // it stable across pans (see primary yaxis above).
         tickformat: '~s',
+        // Per-datastream axis-visibility toggle (driven by the button
+        // in `PlottedDatastreams`). `visible: false` hides the axis
+        // chrome (line, ticks, labels, title) while keeping the trace
+        // rendered; autoshift reclaims the column's horizontal space.
+        visible: !(s.id && hiddenAxes.has(s.id)),
         // `autoshift` is not in the published @types/plotly.js surface
         // yet, but is supported at runtime.
         ...({ autoshift: true } as object),
@@ -1854,6 +1864,45 @@ export const toggleTraceVisibility = async (
 ): Promise<void> => {
   if (!gd) return
   await Plotly.restyle(gd, { visible }, [traceIndex])
+}
+
+/**
+ * Toggle whether a non-QC datastream's right-side y-axis is rendered.
+ * The trace keeps plotting on that axis; only the chrome (line, ticks,
+ * labels, title) is hidden, and autoshift reclaims the horizontal
+ * space so neighbouring axes pack in against the plot.
+ *
+ * A dot-path relayout (`{'yaxisN.visible': false}`) hides the chrome
+ * but doesn't rerun the autoshift pass, so the column stays reserved.
+ * We rebuild via `handleNewPlot(preserveZoom)` — the same replot path
+ * used for QC swaps and trace reorders — which regenerates the layout
+ * from `createPlotlyOption` with the updated `hiddenAxisIds` and
+ * preserves the user's viewport.
+ *
+ * No-op for the QC datastream (lives on the primary yaxis) and for
+ * datastreams that aren't currently plotted.
+ */
+export const toggleAxisVisibility = async (
+  datastreamId: string
+): Promise<void> => {
+  const { plotlyRef, hiddenAxisIds } = storeToRefs(usePlotlyStore())
+  const { updateOptions } = usePlotlyStore()
+  const gd = plotlyRef.value as unknown as PlotlyHTMLElement | null
+  if (!gd) return
+
+  const trace = gd.data.find(
+    (t) => (t as AppPlotlyTrace).id === datastreamId
+  ) as AppPlotlyTrace | undefined
+  if (!trace || trace.yaxis === 'y') return
+
+  const ids = hiddenAxisIds.value
+  if (ids.has(datastreamId)) ids.delete(datastreamId)
+  else ids.add(datastreamId)
+
+  // `handleNewPlot` reads `plotlyOptions` directly; without a fresh
+  // `updateOptions` the flipped state never reaches the new layout.
+  updateOptions()
+  await handleNewPlot(undefined, { preserveZoom: true })
 }
 
 /**

@@ -86,6 +86,24 @@
           />
         </button>
 
+        <!-- Y-axis visibility. QC rows sit on the primary left axis
+             (always rendered), so the toggle is non-QC only. -->
+        <button
+          v-if="qcDatastream !== datastream"
+          type="button"
+          class="plotted-item__axis-toggle"
+          :title="hiddenAxisIds.has(datastream.id) ? 'Show Y axis' : 'Hide Y axis'"
+          :disabled="isUpdating"
+          @click="toggleAxisVisibility(datastream.id)"
+        >
+          <v-icon
+            :icon="hiddenAxisIds.has(datastream.id) ? 'mdi-arrow-expand-left' : 'mdi-arrow-collapse-right'"
+            size="16"
+            :color="colorForDatastream(datastream.id)"
+          />
+        </button>
+        <span v-else />
+
         <!-- Text uses the darker companion of the line colour so the
            row reads as "tied to this axis" while staying legible; the
            raw pastel is too washed out at body-text weight. -->
@@ -125,12 +143,18 @@ defineProps<{ sectionTitle?: string; lockQc?: boolean }>()
 
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { handleNewPlot, toggleTraceVisibility } from '@/utils/plotting/plotly'
+import {
+  handleNewPlot,
+  toggleAxisVisibility,
+  toggleTraceVisibility,
+} from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions, colorForDatastream, labelColorForDatastream } =
   usePlotlyStore()
-const { plotlyRef, graphSeriesArray } = storeToRefs(usePlotlyStore())
+const { plotlyRef, graphSeriesArray, hiddenAxisIds } = storeToRefs(
+  usePlotlyStore()
+)
 import { Ref, ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 
@@ -250,7 +274,8 @@ function reorder(from: number, to: number) {
 
 .plotted-item {
   display: grid;
-  grid-template-columns: 16px 18px 22px 1fr 22px;
+  /* drag | qc-dot | eye | axis-toggle | text | close */
+  grid-template-columns: 16px 18px 22px 22px 1fr 22px;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
@@ -260,7 +285,8 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item--locked {
-  grid-template-columns: 16px 22px 1fr 22px;
+  /* drag | eye | axis-toggle | text | close */
+  grid-template-columns: 16px 22px 22px 1fr 22px;
 }
 
 .plotted-item:last-child {
@@ -352,6 +378,7 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item__visibility,
+.plotted-item__axis-toggle,
 .plotted-item__close {
   display: inline-flex;
   align-items: center;
@@ -366,11 +393,13 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item__visibility:hover:not(:disabled),
+.plotted-item__axis-toggle:hover:not(:disabled),
 .plotted-item__close:hover {
   background-color: rgba(0, 0, 0, 0.06);
 }
 
-.plotted-item__visibility:disabled {
+.plotted-item__visibility:disabled,
+.plotted-item__axis-toggle:disabled {
   cursor: default;
   opacity: 0.5;
 }

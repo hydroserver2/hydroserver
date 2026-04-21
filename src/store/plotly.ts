@@ -74,6 +74,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const graphSeriesArray = ref<GraphSeries[]>([])
 
   /**
+   * Datastream IDs whose non-QC right-side y-axis is currently hidden.
+   * `createPlotlyOption` reads this while building overlay axes and
+   * sets `visible: false` on matches — the trace itself keeps
+   * rendering, only the axis chrome (line, ticks, labels, title) goes
+   * away, and autoshift reclaims the column's horizontal space. Keyed
+   * by datastream id so trace reorders and QC promotions don't
+   * invalidate the preference.
+   */
+  const hiddenAxisIds = ref<Set<string>>(new Set())
+
+  /**
    * Toggles a lightweight preview layout in `createPlotlyOption`: the
    * qualifier flag band, the plot title, select/lasso modebar buttons,
    * and the custom Y-autoscale button are all suppressed. Plot.vue
@@ -337,6 +348,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     showCoordinates,
     hover,
     crosshair,
+    hiddenAxisIds,
     previewMode,
     // Zoom history
     zoomUndoStack,
