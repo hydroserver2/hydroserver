@@ -189,10 +189,62 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
+  // Coalescing lock for `rebuildPlot`. Rapid checkbox toggles in the
+  // Select view call `plotDatastream` in quick succession; each call
+  // pushes into `plottedDatastreams` and then awaits `rebuildPlot`.
+  // Without a lock, the rebuilds interleave: two concurrent
+  // `refreshGraphSeriesArray` passes both see the same
+  // `graphSeriesArray` before either has pushed, both enter the
+  // "fetch new series" branch for the same datastream, and each
+  // pushes its own copy — so the downstream `createPlotlyOption`
+  // emits duplicate right-side y-axes. The `handleNewPlot` calls
+  // also race, which can leave stale axis chrome from the earlier
+  // render on top of the latest plot.
+  //
+  // Strategy: serialize rebuilds and coalesce queued ones. While a
+  // rebuild is in flight, extra callers just flip `rebuildQueued`
+  // and await the outcome. When the in-flight rebuild finishes and
+  // there's at least one queued request, we run exactly one more
+  // rebuild with the latest `plottedDatastreams` snapshot. N rapid
+  // clicks therefore settle into at most two rebuilds (in-flight +
+  // final), with no concurrent fetches or concurrent `newPlot`s.
+  let rebuildInFlight: Promise<void> | null = null
+  let rebuildQueued = false
+
+  async function rebuildPlot(): Promise<void> {
+    if (rebuildInFlight) {
+      rebuildQueued = true
+      try {
+        await rebuildInFlight
+      } catch {
+        /* swallow — original error already surfaced to its caller */
+      }
+      // Another queued caller may have already claimed the follow-up
+      // rebuild (and cleared the flag). Only the caller that still
+      // sees the flag kicks off the coalesced final rebuild.
+      if (!rebuildQueued) return
+      rebuildQueued = false
+      return rebuildPlot()
+    }
+    rebuildInFlight = doRebuildPlot()
+    try {
+      await rebuildInFlight
+    } finally {
+      rebuildInFlight = null
+    }
+    // A rebuild queued while we were running needs exactly one more
+    // pass to reflect the latest state.
+    if (rebuildQueued) {
+      rebuildQueued = false
+      return rebuildPlot()
+    }
+  }
+
   /** Rebuild the plot from scratch: drop zoom history, rebuild the
    *  graph-series array from `plottedDatastreams`, regenerate Plotly
-   *  options, and re-render. */
-  async function rebuildPlot() {
+   *  options, and re-render. Must run serialized — see the lock in
+   *  `rebuildPlot` above. */
+  async function doRebuildPlot() {
     if (!plottedDatastreams.value.length) {
       clearChartState()
       return
@@ -415,9 +467,19 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
           graphSeriesArray.value[seriesIndex].data = obsRecord
         }
       } else {
-        // Add new graph series
+        // Add new graph series. The await spans a network fetch, so
+        // another caller may have already pushed a series for this
+        // datastream by the time we resume (the `rebuildPlot` lock
+        // prevents the main rapid-click path, but other callers of
+        // `refreshGraphSeriesArray` — edit history, navigation rail —
+        // aren't serialized with it). Re-check before pushing so we
+        // don't stack duplicate series, which would each spawn their
+        // own right-side y-axis in `createPlotlyOption`.
         const newSeries = await fetchGraphSeries(datastream, start, end)
-        graphSeriesArray.value.push(newSeries)
+        const alreadyPresent = graphSeriesArray.value.some(
+          (s) => s.id === datastream.id
+        )
+        if (!alreadyPresent) graphSeriesArray.value.push(newSeries)
       }
     } catch (error) {
       console.error(
