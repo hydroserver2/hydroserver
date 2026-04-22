@@ -629,20 +629,34 @@ export const createPlotlyOption = (
   }
 
   // Modebar is split into functional groups so a visible gap appears
-  // between each cluster — easier to scan than 12 icons in one row.
-  //   [ history | zoom + pan + select | reset | fit ]
-  // The box-zoom, zoom-in, and zoom-out buttons live together so the
-  // three zoom modes sit side by side instead of scattered across the
-  // bar.
+  // between each cluster. Related tools sit side by side; each cluster
+  // is separated from the next by the inter-group padding applied to
+  // `.modebar-group` in Plot.vue.
+  //
+  //   [ history ] [ zoom controls ] [ drag modes ] [ reset ] [ fit ]
+  //
+  //   history      — undo / redo zoom
+  //   zoom         — box-zoom, step in, step out (all change the
+  //                  viewport scale, grouped together instead of
+  //                  scattered between drag modes)
+  //   drag modes   — pan, box-select, lasso (each changes what a
+  //                  primary drag gesture does)
+  //   reset        — return to the default view
+  //   fit          — autoscale X or Y to the data currently in view
+  //
+  // Preview charts drop select / lasso and fit to keep the toolbar
+  // compact.
   const modebarGroups: unknown[][] = isPreview
     ? [
       [undoZoomButton, redoZoomButton],
-      ['zoom2d', 'zoomIn2d', 'zoomOut2d', 'pan2d'],
+      ['zoom2d', 'zoomIn2d', 'zoomOut2d'],
+      ['pan2d'],
       ['resetScale2d'],
     ]
     : [
       [undoZoomButton, redoZoomButton],
-      ['zoom2d', 'zoomIn2d', 'zoomOut2d', 'pan2d', 'select2d', 'lasso2d'],
+      ['zoom2d', 'zoomIn2d', 'zoomOut2d'],
+      ['pan2d', 'select2d', 'lasso2d'],
       ['resetScale2d'],
       [fitXButton, fitYButton],
     ]
