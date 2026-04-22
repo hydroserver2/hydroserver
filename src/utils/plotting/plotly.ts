@@ -921,9 +921,11 @@ export const handleNewPlot = async (
   // relayout; chip positions track axis lines that may have shifted).
   const gdEl = plotlyRef.value as unknown as HTMLElement
   widenYAxisDragRects(gdEl)
+  suppressHiddenAxisDragRects(gdEl)
   updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
   plotlyRef.value?.on('plotly_afterplot', () => {
     widenYAxisDragRects(gdEl)
+    suppressHiddenAxisDragRects(gdEl)
     updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
   })
 }
@@ -1714,6 +1716,69 @@ const widenYAxisDragRects = (gd: HTMLElement): void => {
       if (!rect) continue
       rect.setAttribute('x', String(span.zoneLeft))
       rect.setAttribute('width', String(newWidth))
+    }
+  }
+}
+
+/**
+ * Plotly still emits `nsdrag/ndrag/sdrag` rects for overlay y-axes
+ * even when we pass `visible: false` + `autoshift: false`. Without
+ * `autoshift`, an `anchor: 'free'` y-axis defaults its position to
+ * the counter-axis origin (plot-left), so the hidden axis's drag
+ * column lands right next to the primary QC axis. With the hover
+ * tint from `.drag.cursor-*:hover` in Plot.vue, that renders as a
+ * stray blue rectangle hugging the QC axis — even though the axis
+ * chrome itself is gone. Reproduces with as few as two plotted
+ * datastreams (one QC + one hidden overlay).
+ *
+ * `widenYAxisDragRects` already skips hidden axes, so it never
+ * re-sizes those rects back to a usable zone. We finish the job
+ * here by collapsing each hidden overlay's drag rects to zero width
+ * and stripping their cursor classes so the `.drag.cursor-*:hover`
+ * selectors in Plot.vue can't match. `pointer-events: none` is a
+ * belt-and-braces in case any sibling CSS still widens them.
+ *
+ * Must re-run after every `plotly_afterplot` — Plotly rebuilds drag
+ * rects on each relayout and our DOM edits don't survive a rebuild.
+ */
+const suppressHiddenAxisDragRects = (gd: HTMLElement): void => {
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+    | Record<string, unknown>
+    | undefined
+  if (!fl) return
+
+  const DRAG_CLASSES = ['rect.nsdrag', 'rect.ndrag', 'rect.sdrag']
+  const CURSOR_CLASSES = [
+    'cursor-ns-resize',
+    'cursor-n-resize',
+    'cursor-s-resize',
+  ]
+
+  for (const key of Object.keys(fl)) {
+    // Guard the primary yaxis — it's always visible and owns the QC
+    // axis's drag column; zeroing it would break rescale-drag on QC.
+    if (!Y_AXIS_KEY_RE.test(key) || key === 'yaxis') continue
+    const ax = fl[key] as
+      | {
+          visible?: boolean
+          _mainSubplot?: string
+          _subplotsWith?: string[]
+        }
+      | undefined
+    if (!ax || ax.visible !== false) continue
+    const subplotId = ax._mainSubplot ?? ax._subplotsWith?.[0]
+    if (!subplotId) continue
+    const group = gd.querySelector(
+      `g.draglayer > g.${CSS.escape(subplotId)}`
+    ) as SVGGraphicsElement | null
+    if (!group) continue
+    for (const sel of DRAG_CLASSES) {
+      const rect = group.querySelector(sel) as SVGRectElement | null
+      if (!rect) continue
+      rect.setAttribute('x', '0')
+      rect.setAttribute('width', '0')
+      rect.setAttribute('pointer-events', 'none')
+      for (const cls of CURSOR_CLASSES) rect.classList.remove(cls)
     }
   }
 }
