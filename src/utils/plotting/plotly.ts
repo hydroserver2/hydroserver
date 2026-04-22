@@ -1595,6 +1595,7 @@ const collectRightAxes = (
     const ax = fullLayout[key] as
       | {
           fixedrange?: boolean
+          visible?: boolean
           _mainLinePosition?: number
           _shift?: number
           _mainSubplot?: string
@@ -1602,6 +1603,17 @@ const collectRightAxes = (
         }
       | undefined
     if (!ax || ax.fixedrange) continue
+    // Skip axes the user has hidden via the sidebar. Their chrome
+    // (`visible: false`) is gone but the trace keeps rendering, and
+    // Plotly still lays out a `_mainLinePosition` + drag rects for
+    // them. Including them here would make `widenYAxisDragRects`
+    // stretch an orphaned hit-zone across part of the plot, so the
+    // user sees the blue hover tint on top of the chart (from the
+    // `.drag.cursor-*:hover` styling in Plot.vue) in a region that
+    // isn't a visible axis column. The wheel-zoom picker has the
+    // same concern — routing scroll to an axis with no visible
+    // chrome is surprising.
+    if (ax.visible === false) continue
     if (typeof ax._mainLinePosition !== 'number') continue
     const lineX = ax._mainLinePosition + (ax._shift ?? 0)
     if (!Number.isFinite(lineX)) continue
