@@ -82,7 +82,11 @@
               visibleDict[datastream.id] === false ? 'mdi-eye-off' : 'mdi-eye'
             "
             size="16"
-            :color="colorForDatastream(datastream.id)"
+            :color="
+              visibleDict[datastream.id] === false
+                ? 'grey'
+                : labelColorForDatastream(datastream.id)
+            "
           />
         </button>
 
@@ -99,7 +103,11 @@
           <v-icon
             :icon="hiddenAxisIds.has(datastream.id) ? 'mdi-toggle-switch-off-outline' : 'mdi-toggle-switch'"
             size="16"
-            :color="colorForDatastream(datastream.id)"
+            :color="
+              hiddenAxisIds.has(datastream.id)
+                ? 'grey'
+                : labelColorForDatastream(datastream.id)
+            "
           />
         </button>
         <span v-else />
