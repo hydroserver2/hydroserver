@@ -3,6 +3,7 @@ import hs, {
   Datastream,
   DatastreamExtended,
   TaskExpanded,
+  Thing,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -14,15 +15,24 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceDatastreams = ref<Datastream[]>([])
   const draftDatastreams = ref<DatastreamExtended[]>([])
   const workspaceTasks = ref<TaskExpanded[]>([])
+  const workspaceThings = ref<Thing[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
+  const loadedWorkspaceThingsId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
+  let workspaceThingsRequestId = 0
 
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
     workspaceDatastreams.value = []
     loadedWorkspaceDatastreamId.value = null
+  }
+
+  const resetWorkspaceThings = () => {
+    workspaceThingsRequestId += 1
+    workspaceThings.value = []
+    loadedWorkspaceThingsId.value = null
   }
 
   const linkedDatastreamIds = computed(() => {
@@ -69,15 +79,46 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     return workspaceDatastreams.value
   }
 
+  const ensureWorkspaceThings = async (
+    requestedWorkspaceId = workspaceId.value,
+    force = false
+  ) => {
+    if (!requestedWorkspaceId) {
+      resetWorkspaceThings()
+      return []
+    }
+
+    if (!force && loadedWorkspaceThingsId.value === requestedWorkspaceId) {
+      return workspaceThings.value
+    }
+
+    const requestId = ++workspaceThingsRequestId
+    const list = await hs.things.listAllItems({
+      workspace_id: [requestedWorkspaceId],
+      order_by: ['name'],
+    } as any)
+    if (requestId !== workspaceThingsRequestId) {
+      return workspaceThings.value
+    }
+    workspaceThings.value = (list ?? []) as Thing[]
+    loadedWorkspaceThingsId.value = requestedWorkspaceId
+    return workspaceThings.value
+  }
+
   watch(
     workspaceId,
     (wsId) => {
       if (!wsId) {
         resetWorkspaceDatastreams()
+        resetWorkspaceThings()
         return
       }
-      if (loadedWorkspaceDatastreamId.value === wsId) return
-      resetWorkspaceDatastreams()
+      if (loadedWorkspaceDatastreamId.value !== wsId) {
+        resetWorkspaceDatastreams()
+      }
+      if (loadedWorkspaceThingsId.value !== wsId) {
+        resetWorkspaceThings()
+      }
     },
     { immediate: true }
   )
@@ -88,9 +129,12 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     linkedDatastreams,
     draftDatastreams,
     workspaceDatastreams,
+    workspaceThings,
     orchestrationSearch,
     orchestrationStatusFilter,
     ensureWorkspaceDatastreams,
+    ensureWorkspaceThings,
     resetWorkspaceDatastreams,
+    resetWorkspaceThings,
   }
 })

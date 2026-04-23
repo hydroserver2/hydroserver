@@ -466,7 +466,7 @@ const highlightedRunId = ref<string | null>(null)
 let highlightTimeoutId: number | null = null
 const orchestrationStore = useOrchestrationStore()
 const { workspaceTasks } = storeToRefs(orchestrationStore)
-const { ensureWorkspaceDatastreams } = orchestrationStore
+const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
 
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { setSelectedWorkspaceById } = useWorkspaceStore()
@@ -965,7 +965,10 @@ async function ensureMappingDatastreams() {
     task.value?.dataConnection?.workspace?.id
   if (!workspaceId) return
   try {
-    await ensureWorkspaceDatastreams(workspaceId)
+    await Promise.all([
+      ensureWorkspaceDatastreams(workspaceId),
+      ensureWorkspaceThings(workspaceId),
+    ])
   } catch (error) {
     console.error('Error fetching workspace datastreams', error)
   }
