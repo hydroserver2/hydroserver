@@ -778,7 +778,7 @@ export const handleClick = async (eventData: PlotMouseEvent) => {
 export const handleSelected = async (
   eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null
 ) => {
-  const { plotlyRef, selectedSeries } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -811,7 +811,15 @@ export const handleSelected = async (
     return
   }
 
-  if (eventData) {
+  // Only dispatch the SELECTION filter when an interactive user gesture
+  // (click / drag-select) triggered this call. Suppressing it when
+  // `isUpdating` is true prevents undo/redo from accidentally clearing
+  // the redo stack: programmatic selection updates via `setSelectedPoints`
+  // inside `dispatchSelection` fire a `plotly_relayout` event that reaches
+  // here via `handleRelayout`, but at that point `isUpdating` is still
+  // `true` (set by `onUndo`/`onRedo`), so we skip the `dispatchFilter`
+  // call that would have zeroed `redoStack` in ObservationRecord.
+  if (eventData && !isUpdating.value) {
     // Use the already-offset indices (same ones stored in selectedData)
     // so the SELECTION history entry carries full-record indices that
     // downstream edit ops (change-values, add-datetimes, etc.) can use.
