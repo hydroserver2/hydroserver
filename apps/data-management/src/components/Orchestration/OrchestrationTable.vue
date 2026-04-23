@@ -232,7 +232,7 @@
                     :style="{ background: activeAccent, color: 'white' }"
                     :disabled="!canEditOrchestration"
                     class="detail-action-btn detail-action-btn--primary text-none"
-                    rounded="pill"
+                    rounded="lg"
                     @click="openCreateTaskDialog(selectedConnection)"
                   >
                     Add task
@@ -427,10 +427,10 @@
                   <v-btn
                     v-if="canEditOrchestration && !row.userClickedRunNow"
                     variant="outlined"
-                    size="small"
                     color="green-darken-3"
-                    :append-icon="mdiPlay"
-                    class="text-none"
+                    :prepend-icon="mdiPlay"
+                    class="detail-action-btn detail-action-btn--compact text-none"
+                    rounded="lg"
                     @click.stop="runTaskNow(row)"
                   >
                     Run now
@@ -1624,6 +1624,10 @@ onBeforeUnmount(() => {
 }
 .detail-action-btn--primary {
   padding-inline: 20px;
+}
+.detail-action-btn--compact {
+  min-height: 32px;
+  padding-inline: 12px;
 }
 .detail-filterbar {
   display: flex;

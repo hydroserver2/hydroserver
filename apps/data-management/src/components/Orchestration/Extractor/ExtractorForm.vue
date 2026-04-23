@@ -58,36 +58,52 @@
           <v-row
             v-for="variable in dataConnection.placeholderVariables"
             :key="variable.name"
-            class="mb-2 align-center"
+            class="mb-2"
           >
-            <v-col cols="auto">
+            <v-col cols="12" md="3">
               <v-chip
                 variant="text"
                 density="compact"
                 :prepend-icon="mdiCodeBraces"
+                class="ma-0"
               >
                 {{ variable.name }}
               </v-chip>
             </v-col>
-            <v-col>
-              <v-radio-group v-model="variable.type" inline hide-details>
-                <v-radio label="Define per task" value="per_task" />
+            <v-col cols="12" md="3">
+              <v-radio-group
+                :model-value="getPlaceholderMode(variable)"
+                hide-details
+                @update:model-value="setPlaceholderMode(variable, $event)"
+              >
                 <v-radio
-                  label="Latest observation timestamp"
-                  value="latest_observation_timestamp"
+                  label="Define this variable per task"
+                  value="per_task"
                 />
-                <v-radio label="Run time" value="run_time" />
+                <v-radio
+                  label="Fetch this variable at run-time"
+                  value="runtime"
+                />
               </v-radio-group>
             </v-col>
-            <v-col v-if="variable.type !== 'per_task'" cols="12" md="4">
-              <v-text-field
-                v-model="variable.timestampFormat"
-                label="Timestamp format (optional)"
-                hint="strftime format string"
-                density="compact"
-                clearable
-                hide-details
-              />
+            <v-col v-if="getPlaceholderMode(variable) === 'runtime'">
+                <v-select
+                  v-model="variable.type"
+                  :items="runtimeSourceOptions"
+                  label="Runtime source *"
+                  density="compact"
+                  rounded="lg"
+                  variant="outlined"
+                  :rules="rules.required"
+                  hide-details
+                  clearable
+                />
+                <div class="mt-8">
+                  <TimestampFormat
+                    :target="getPlaceholderTimestamp(variable)"
+                    color="brown-darken-4"
+                  />
+                </div>
             </v-col>
           </v-row>
         </v-card-text>
@@ -101,12 +117,24 @@ import { ref, watch } from 'vue'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { storeToRefs } from 'pinia'
 import { rules } from '@/utils/rules'
+import TimestampFormat from '../Timestamp/TimestampFormat.vue'
 import { VForm } from 'vuetify/lib/components/index.mjs'
 import { mdiCodeBraces, mdiHelpCircleOutline } from '@mdi/js'
+import type { Timestamp } from '@/models/timestamp'
 
 const localForm = ref<VForm>()
 const isValid = ref(true)
 const showUrlHelp = ref(false)
+const runtimeSourceOptions = [
+  {
+    title: 'Latest observation timestamp',
+    value: 'latest_observation_timestamp',
+  },
+  {
+    title: 'Job execution time',
+    value: 'run_time',
+  },
+] as const
 
 async function validate() {
   await localForm.value?.validate()
@@ -116,6 +144,56 @@ async function validate() {
 defineExpose({ validate })
 
 const { dataConnection } = storeToRefs(useDataConnectionStore())
+
+type PlaceholderVariableForm = {
+  name: string
+  type?: string | null
+  timestampFormat?: string | null
+  timestamp?: Timestamp
+}
+
+function getPlaceholderMode(variable: { type?: string | null }) {
+  return variable.type === 'per_task' ? 'per_task' : 'runtime'
+}
+
+function setPlaceholderMode(
+  variable: PlaceholderVariableForm,
+  mode: string | null
+) {
+  if (mode === 'per_task') {
+    variable.type = 'per_task'
+    variable.timestampFormat = null
+    delete variable.timestamp
+    return
+  }
+
+  if (variable.type === 'per_task' || !variable.type) {
+    variable.type = 'latest_observation_timestamp'
+  }
+
+  getPlaceholderTimestamp(variable)
+}
+
+function getPlaceholderTimestamp(variable: PlaceholderVariableForm): Timestamp {
+  if (!variable.timestamp) {
+    variable.timestamp = {
+      format: variable.timestampFormat ? 'custom' : 'naive',
+      customFormat: variable.timestampFormat ?? undefined,
+      timezoneMode: 'utc',
+      timezone: undefined,
+    }
+  }
+
+  return variable.timestamp
+}
+
+function normalizePlaceholderTimestamp(variable: PlaceholderVariableForm) {
+  const timestamp = variable.timestamp
+  if (!timestamp) return
+
+  variable.timestampFormat =
+    timestamp.format === 'custom' ? timestamp.customFormat ?? '' : null
+}
 
 watch(
   () => dataConnection.value.sourceUrl,
@@ -139,5 +217,16 @@ watch(
     })
   },
   { immediate: true }
+)
+
+watch(
+  () => dataConnection.value.placeholderVariables,
+  (variables) => {
+    for (const variable of variables as PlaceholderVariableForm[]) {
+      if (getPlaceholderMode(variable) !== 'runtime') continue
+      normalizePlaceholderTimestamp(variable)
+    }
+  },
+  { deep: true, immediate: true }
 )
 </script>
