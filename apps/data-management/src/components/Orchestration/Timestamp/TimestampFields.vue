@@ -9,11 +9,12 @@
         <v-text-field
           v-model="dataConnection.timestamp.key"
           placeholder="timestamp"
-          label="Timestamp column *"
+          :label="timestampKeyLabel"
           density="compact"
           rounded="lg"
+          :type="timestampInputType"
           :prepend-inner-icon="mdiTableColumnWidth"
-          :rules="rules.requiredAndMaxLength150"
+          :rules="timestampKeyRules"
         />
       </v-col>
     </v-row>
@@ -105,6 +106,11 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { rules } from '@/utils/rules'
 import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { mdiTableColumnWidth, mdiHelpCircle } from '@mdi/js'
+import { IdentifierType } from '@hydroserver/client'
+
+const props = defineProps<{
+  identifierType?: IdentifierType
+}>()
 
 const { dataConnection } = storeToRefs(useDataConnectionStore())
 
@@ -136,6 +142,26 @@ const formatChoice = computed({
       ts.timezoneType = ts.timezoneType ?? 'utc'
     }
   },
+})
+
+const timestampKeyLabel = computed(() => {
+  if (props.identifierType === IdentifierType.Name) {
+    return 'Timestamp column name *'
+  }
+  if (props.identifierType === IdentifierType.Index) {
+    return 'Timestamp column index *'
+  }
+  return 'Timestamp column *'
+})
+
+const timestampInputType = computed(() => {
+  return props.identifierType === IdentifierType.Index ? 'number' : 'text'
+})
+
+const timestampKeyRules = computed(() => {
+  return props.identifierType === IdentifierType.Index
+    ? rules.requiredNumber
+    : rules.requiredAndMaxLength150
 })
 
 watch(
