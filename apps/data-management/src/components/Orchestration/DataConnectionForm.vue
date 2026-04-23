@@ -68,7 +68,6 @@
 
         <ExtractorForm ref="extractorRef" />
         <TransformerForm ref="transformerRef" />
-        <LoaderForm ref="loaderRef" />
       </div>
     </v-form>
 
@@ -90,7 +89,6 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { useWorkspaceStore } from '@/store/workspaces'
 import ExtractorForm from './Extractor/ExtractorForm.vue'
 import TransformerForm from './Transformer/TransformerForm.vue'
-import LoaderForm from './Loader/LoaderForm.vue'
 import hs, { DataConnection } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 
@@ -114,7 +112,6 @@ const myForm = ref<VForm>()
 
 const extractorRef = ref<any>(null)
 const transformerRef = ref<any>(null)
-const loaderRef = ref<any>(null)
 
 const loaded = ref(false)
 const isSubmitting = ref(false)
@@ -203,8 +200,7 @@ watch(notificationRecipientInput, () => {
 async function validate() {
   const validExtractor = await extractorRef.value.validate()
   const validTransformer = await transformerRef.value.validate()
-  const validLoader = await loaderRef.value.validate()
-  return validExtractor && validTransformer && validLoader
+  return validExtractor && validTransformer
 }
 
 async function onSubmit() {

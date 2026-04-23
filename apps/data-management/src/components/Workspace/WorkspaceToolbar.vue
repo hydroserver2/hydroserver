@@ -1,14 +1,13 @@
 <template>
   <div :class="layout === 'orchestration' ? 'w-full flex flex-col gap-4' : ''">
-    <div v-if="layout === 'orchestration'" class="w-full">
-      <v-card class="w-full rounded-lg border border-slate-200" elevation="2">
-        <div class="px-4 py-4">
-          <v-row class="ma-0 gap-3" align="center" no-gutters>
-            <v-col cols="auto">
-              <h5 class="text-h5 font-weight-bold mb-0">
-                {{ title || 'Job orchestration' }}
-              </h5>
-            </v-col>
+    <div v-if="layout === 'orchestration'" class="orchestration-header w-full">
+      <div class="px-6 py-3">
+        <v-row class="ma-0 gap-3" align="center" no-gutters>
+          <v-col cols="auto">
+            <h1 class="orchestration-header-title mb-0">
+              {{ title || 'Job orchestration' }}
+            </h1>
+          </v-col>
             <v-spacer />
             <v-col cols="auto">
               <WorkspaceSelector />
@@ -28,20 +27,19 @@
             <v-col v-if="$slots.actions" cols="12" sm="auto">
               <slot name="actions" />
             </v-col>
-            <v-col cols="12" sm="auto" v-if="pendingWorkspaces.length">
-              <v-btn
-                @click="openTransferTable = !openTransferTable"
-                rounded="xl"
-                color="blue-darken-4"
-                density="comfortable"
-                variant="tonal"
-              >
-                Pending workspace transfer
-              </v-btn>
-            </v-col>
-          </v-row>
-        </div>
-      </v-card>
+          <v-col cols="12" sm="auto" v-if="pendingWorkspaces.length">
+            <v-btn
+              @click="openTransferTable = !openTransferTable"
+              rounded="xl"
+              color="blue-darken-4"
+              density="comfortable"
+              variant="tonal"
+            >
+              Pending workspace transfer
+            </v-btn>
+          </v-col>
+        </v-row>
+      </div>
     </div>
 
     <div
@@ -475,3 +473,19 @@ const transferHeaders = [
   { title: 'Actions', key: 'actions', align: 'end' },
 ] as const
 </script>
+
+<style scoped>
+.orchestration-header {
+  background: #ffffff;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.orchestration-header-title {
+  font-size: 22px;
+  font-weight: 400;
+  color: #1c1b1f;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+</style>
+

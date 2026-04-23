@@ -1,6 +1,6 @@
 <template>
   <div class="orchestration-page">
-    <div class="mx-auto flex w-full flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div class="orchestration-page-toolbar">
       <WorkspaceToolbar layout="orchestration" title="Job orchestration">
         <template #actions>
           <div class="d-flex flex-wrap ga-2 justify-end">
@@ -16,10 +16,10 @@
           </div>
         </template>
       </WorkspaceToolbar>
+    </div>
 
-      <template v-if="!!selectedWorkspace">
-        <OrchestrationTable :workspace-id="selectedWorkspace.id" />
-      </template>
+    <div v-if="!!selectedWorkspace" class="orchestration-page-body">
+      <OrchestrationTable :workspace-id="selectedWorkspace.id" />
     </div>
 
     <!-- Slide-over task details. Kept under the Orchestration route so page state persists.
@@ -219,10 +219,25 @@ onMounted(async () => {
 
 <style scoped>
 .orchestration-page {
-  background-color: #eef2f6;
-  min-height: calc(
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: calc(
     100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
   );
+  min-height: 0;
+  overflow: hidden;
+}
+
+.orchestration-page-toolbar {
+  flex-shrink: 0;
+}
+
+.orchestration-page-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .taskdetails-overlay {

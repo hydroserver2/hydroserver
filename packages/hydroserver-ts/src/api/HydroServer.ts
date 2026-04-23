@@ -8,6 +8,8 @@ import { DatastreamService } from './services/datastream.service'
 import { SensorService } from './services/sensor.service'
 import { DataConnectionService } from './services/data-connection.service'
 import { TaskService } from './services/task.service'
+import { MonitoringTaskService } from './services/monitoring-task.service'
+import { DataProductTaskService } from './services/data-product-task.service'
 import { ThingFileAttachmentService } from './services/thing-file-attachment.service'
 
 export type AuthTuple = [string, string]
@@ -36,6 +38,8 @@ export class HydroServer {
 
   private _dataConnections?: DataConnectionService
   private _tasks?: TaskService
+  private _monitoringTasks?: MonitoringTaskService
+  private _dataProductTasks?: DataProductTaskService
   private _thingFileAttachments?: ThingFileAttachmentService
 
   constructor(opts: HydroServerOptions) {
@@ -94,6 +98,12 @@ export class HydroServer {
   }
   get tasks(): TaskService {
     return (this._tasks ??= new TaskService(this))
+  }
+  get monitoringTasks(): MonitoringTaskService {
+    return (this._monitoringTasks ??= new MonitoringTaskService(this))
+  }
+  get dataProductTasks(): DataProductTaskService {
+    return (this._dataProductTasks ??= new DataProductTaskService(this))
   }
   get thingFileAttachments(): ThingFileAttachmentService {
     return (this._thingFileAttachments ??= new ThingFileAttachmentService(this))

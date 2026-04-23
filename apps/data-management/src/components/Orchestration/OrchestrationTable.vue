@@ -1,25 +1,269 @@
 <template>
-  <v-card>
-    <v-toolbar flat color="cyan-darken-3" class="gap-3">
-      <v-toolbar-title class="flex-shrink-0">
-        Data connections
-      </v-toolbar-title>
-      <div class="ml-auto flex min-w-0 items-center gap-3">
-        <v-text-field
-          class="w-[250px] max-w-[250px]"
-          clearable
-          v-model="search"
-          :prepend-inner-icon="mdiMagnify"
-          label="Search"
-          hide-details
-          density="compact"
-          variant="underlined"
-          rounded="xl"
-        />
+  <div class="orchestration-shell">
+    <!-- Left nav rail -->
+    <nav class="nav-rail">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        type="button"
+        class="rail-btn"
+        :class="{ active: activeTab === tab.id }"
+        :style="activeTab === tab.id ? { '--accent': tab.accent, '--accent-light': tab.accentLight } : {}"
+        @click="setActiveTab(tab.id)"
+      >
+        <span
+          class="rail-pill"
+          :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
+        >
+          <v-icon
+            :icon="tab.icon"
+            size="22"
+            :color="activeTab === tab.id ? tab.accent : undefined"
+          />
+          <span v-if="tab.issues > 0" class="rail-badge">{{ tab.issues }}</span>
+        </span>
+        <span
+          class="rail-label"
+          :style="activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}"
+        >
+          {{ tab.short }}
+        </span>
+      </button>
+    </nav>
 
+    <!-- Contextual sidebar: Connections (Ingestion) or Sites (Aggregation / Quality) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="flex items-center">
+          <span class="sidebar-title">{{ sidebarTitle }}</span>
+          <v-tooltip v-if="activeTab === 'ingestion'" location="top" :disabled="canEditOrchestration">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="ml-auto inline-flex">
+                <button
+                  type="button"
+                  class="sidebar-add"
+                  :style="{ background: activeAccent, opacity: canEditOrchestration ? 1 : 0.5 }"
+                  :disabled="!canEditOrchestration"
+                  @click="openCreateDialog"
+                  :aria-label="addLabel"
+                >
+                  <v-icon :icon="mdiPlus" size="16" color="white" />
+                </button>
+              </span>
+            </template>
+            <span>{{ readOnlyTooltip }}</span>
+          </v-tooltip>
+        </div>
+        <div class="sidebar-search">
+          <v-icon :icon="mdiMagnify" size="16" class="sidebar-search-icon" />
+          <input
+            v-model="sidebarSearch"
+            :placeholder="`Search ${sidebarTitle.toLowerCase()}…`"
+            class="sidebar-search-input"
+          />
+        </div>
+      </div>
+
+      <div class="sidebar-list">
+        <template v-if="activeTab === 'ingestion'">
+          <div
+            v-for="dc in filteredConnections"
+            :key="dc.id"
+            class="sidebar-item"
+            :class="{ selected: selectedConnectionId === dc.id }"
+            :style="
+              selectedConnectionId === dc.id
+                ? { background: activeAccent, color: 'white' }
+                : {}
+            "
+            @click="selectConnection(dc.id)"
+          >
+            <span
+              class="sidebar-dot"
+              :style="{
+                background:
+                  selectedConnectionId === dc.id
+                    ? 'rgba(255,255,255,0.7)'
+                    : dotColorForConnection(dc.id),
+              }"
+            />
+            <div class="sidebar-item-body">
+              <div class="sidebar-item-title">{{ dc.name }}</div>
+              <div class="sidebar-item-meta">
+                {{ taskCountForConnection(dc.id) }} task{{
+                  taskCountForConnection(dc.id) === 1 ? '' : 's'
+                }}
+                <span v-if="dc.payload?.type">· {{ dc.payload.type }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredConnections.length === 0" class="sidebar-empty">
+            No data connections yet.
+          </div>
+        </template>
+
+        <template v-else>
+          <div
+            v-for="thing in filteredSites"
+            :key="thing.id"
+            class="sidebar-item"
+            :class="{ selected: selectedThingId === thing.id }"
+            :style="
+              selectedThingId === thing.id
+                ? { background: activeAccent, color: 'white' }
+                : {}
+            "
+            @click="selectSite(thing.id)"
+          >
+            <span
+              class="sidebar-dot"
+              :style="{
+                background:
+                  selectedThingId === thing.id
+                    ? 'rgba(255,255,255,0.7)'
+                    : dotColorForSite(thing.id),
+              }"
+            />
+            <div class="sidebar-item-body">
+              <div class="sidebar-item-title">{{ thing.name }}</div>
+              <div class="sidebar-item-meta">
+                {{ taskCountForSite(thing.id) }} task{{
+                  taskCountForSite(thing.id) === 1 ? '' : 's'
+                }}
+              </div>
+            </div>
+            <span
+              v-if="
+                selectedThingId !== thing.id &&
+                issueCountForSite(thing.id) > 0
+              "
+              class="sidebar-item-badge"
+            >
+              {{ issueCountForSite(thing.id) }}
+            </span>
+          </div>
+          <div v-if="filteredSites.length === 0" class="sidebar-empty">
+            No sites yet.
+          </div>
+        </template>
+      </div>
+
+      <div v-if="activeTab === 'ingestion'" class="sidebar-footer">
+        <v-tooltip location="top" :disabled="canEditOrchestration">
+          <template #activator="{ props: tooltipProps }">
+            <span v-bind="tooltipProps" class="inline-flex w-full">
+              <button
+                type="button"
+                class="sidebar-footer-btn"
+                :style="{ color: activeAccent, borderColor: activeAccent + '66' }"
+                :disabled="!canEditOrchestration"
+                @click="openCreateDialog"
+              >
+                <v-icon :icon="mdiPlus" size="16" class="mr-1" />
+                {{ addLabel }}
+              </button>
+            </span>
+          </template>
+          <span>{{ readOnlyTooltip }}</span>
+        </v-tooltip>
+      </div>
+    </aside>
+
+    <!-- Detail pane -->
+    <section class="detail">
+      <header class="detail-header">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="detail-title">{{ detailTitle }}</h2>
+            <span
+              v-if="detailTypeBadge"
+              class="detail-badge"
+              :style="{ color: activeAccent, background: activeAccentLight }"
+            >
+              {{ detailTypeBadge }}
+            </span>
+          </div>
+          <div class="detail-subtitle">
+            <HealthPills :tasks="visibleTasks" />
+          </div>
+        </div>
+        <div class="detail-actions">
+          <template v-if="activeTab === 'ingestion' && selectedConnection">
+            <v-tooltip location="top" :disabled="canEditOrchestration">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :prepend-icon="mdiPencil"
+                    :disabled="!canEditOrchestration"
+                    class="text-none"
+                    color="blue-grey-darken-2"
+                    @click="openEditDialog(selectedConnection)"
+                  >
+                    Edit
+                  </v-btn>
+                </span>
+              </template>
+              <span>{{ readOnlyTooltip }}</span>
+            </v-tooltip>
+            <v-tooltip location="top" :disabled="canEditOrchestration">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :prepend-icon="mdiTrashCanOutline"
+                    color="red-darken-2"
+                    class="text-none"
+                    :disabled="!canEditOrchestration"
+                    @click="openDeleteDialog(selectedConnection)"
+                  >
+                    Delete
+                  </v-btn>
+                </span>
+              </template>
+              <span>{{ readOnlyTooltip }}</span>
+            </v-tooltip>
+            <v-tooltip location="top" :disabled="canEditOrchestration">
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <v-btn
+                    size="small"
+                    variant="flat"
+                    :prepend-icon="mdiPlus"
+                    :style="{ background: activeAccent, color: 'white' }"
+                    :disabled="!canEditOrchestration"
+                    class="text-none"
+                    @click="openCreateTaskDialog(selectedConnection)"
+                  >
+                    Add task
+                  </v-btn>
+                </span>
+              </template>
+              <span>{{ readOnlyTooltip }}</span>
+            </v-tooltip>
+          </template>
+        </div>
+      </header>
+
+      <div
+        v-if="hasSelection && visibleTasks.length > 0"
+        class="detail-filterbar"
+      >
+        <v-text-field
+          v-model="taskSearch"
+          :prepend-inner-icon="mdiMagnify"
+          placeholder="Search tasks"
+          hide-details
+          clearable
+          density="compact"
+          variant="outlined"
+          class="detail-search"
+        />
         <v-autocomplete
           v-model="statusFilter"
-          :items="statusOptions"
+          :items="STATUS_OPTIONS"
           item-title="title"
           item-value="value"
           label="Status filters"
@@ -32,7 +276,7 @@
           autocomplete="off"
           name="orchestration-status-filter"
           spellcheck="false"
-          class="w-[280px] max-w-[280px] mx-1"
+          class="detail-status-filter"
         >
           <template #selection="{ item, index }">
             <v-chip
@@ -47,512 +291,225 @@
             </v-chip>
           </template>
         </v-autocomplete>
-        <v-tooltip location="top" :disabled="canEditOrchestration">
-          <template #activator="{ props: tooltipProps }">
-            <span v-bind="tooltipProps" class="inline-flex">
-              <v-btn-add
-                class="mr-4"
-                color="white"
-                :disabled="!canEditOrchestration"
-                @click="openCreateDialog"
-              >
-                Add data connection
-              </v-btn-add>
-            </span>
-          </template>
-          <span>{{ readOnlyTooltip }}</span>
-        </v-tooltip>
       </div>
-    </v-toolbar>
 
-    <div class="orchestration-table">
-      <div
-        v-if="loading"
-        class="rounded-lg border border-slate-200 bg-white p-6"
-      >
-        <div class="mb-4 rounded-md bg-slate-50 px-4 py-3">
-          <div class="flex items-center gap-3 text-sm text-slate-600">
-            <v-progress-circular
-              indeterminate
-              size="20"
-              width="2"
-              color="blue-grey-darken-1"
-            />
-            <span class="font-medium">Loading...</span>
-          </div>
+      <div class="detail-body">
+        <div v-if="loading" class="detail-loading">
+          <v-progress-circular
+            indeterminate
+            size="22"
+            width="2"
+            color="blue-grey-darken-1"
+          />
+          <span>Loading…</span>
         </div>
-        <v-skeleton-loader type="table" class="rounded-md" />
-      </div>
 
-      <div
-        v-else-if="groupList.length === 0"
-        class="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500"
-      >
-        <h4
-          class="mt-2 text-base font-semibold text-slate-700"
-          v-if="statusFilter.length === 0 && !`${search || ''}`.trim()"
-        >
-          No data connections have been registered yet.
-        </h4>
-        <h4 class="mt-2 text-base font-semibold text-slate-700" v-else>
-          No tasks match your search/filter.
-        </h4>
-        <p
-          class="mt-2"
-          v-if="statusFilter.length === 0 && !`${search || ''}`.trim()"
-        >
-          Click 'Add data connection' to get started or
-          <a
-            href="https://hydroserver.org"
-            target="_blank"
-            class="text-blue-600 underline"
-            >read the documentation</a
-          >
-          to learn more.
-        </p>
-      </div>
+        <div v-else-if="!hasSelection" class="detail-empty">
+          <h4>{{ emptyHeading }}</h4>
+          <p>{{ emptyMessage }}</p>
+        </div>
 
-      <div
-        v-else
-        class="overflow-hidden rounded-b-lg border border-slate-200 bg-white shadow-sm"
-      >
-        <section
-          v-for="(group, index) in groupList"
-          :key="group.name"
-          class="overflow-hidden bg-white"
-          :class="index > 0 ? 'border-t border-slate-200' : ''"
-        >
-          <div
-            role="button"
-            tabindex="0"
-            class="flex w-full items-center gap-3 bg-[#eceff1] px-4 py-3 text-left cursor-pointer select-none"
-            :class="isGroupOpen(group.name) ? 'border-b border-slate-200' : ''"
-            @click="toggleGroup(group.name)"
-            @keydown.enter.prevent="toggleGroup(group.name)"
-            @keydown.space.prevent="toggleGroup(group.name)"
-          >
-            <v-btn
-              variant="outlined"
-              density="comfortable"
-              size="small"
-              :icon="isGroupOpen(group.name) ? mdiChevronDown : mdiChevronRight"
-              class="flex-shrink-0"
-            />
-            <div class="flex min-w-0 flex-1 items-center gap-4">
-              <span class="truncate text-sm font-semibold text-slate-800">
-                {{ group.name }}
-              </span>
-              <div class="hidden flex-wrap items-center gap-2 md:flex">
-                <v-chip size="small" variant="tonal" color="blue-grey-darken-2">
-                  Total tasks: {{ group.summary.total }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.ok > 0"
-                  size="small"
-                  variant="tonal"
-                  color="green-darken-2"
-                >
-                  OK: {{ group.summary.ok }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.needsAttention > 0"
-                  size="small"
-                  variant="tonal"
-                  color="error"
-                >
-                  Needs attention: {{ group.summary.needsAttention }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.loadingPaused > 0"
-                  size="small"
-                  variant="tonal"
-                  color="blue-grey"
-                >
-                  Loading paused: {{ group.summary.loadingPaused }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.behindSchedule > 0"
-                  size="small"
-                  variant="tonal"
-                  color="orange-darken-3"
-                >
-                  Behind schedule: {{ group.summary.behindSchedule }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.pending > 0"
-                  size="small"
-                  variant="tonal"
-                  color="blue"
-                >
-                  Pending: {{ group.summary.pending }}
-                </v-chip>
-                <v-chip
-                  v-if="group.summary.unknown > 0"
-                  size="small"
-                  variant="tonal"
-                  color="grey-darken-1"
-                >
-                  Unknown: {{ group.summary.unknown }}
-                </v-chip>
-              </div>
-            </div>
-            <div class="ml-auto flex items-center gap-3">
-              <v-tooltip
-                location="top"
-                :disabled="!groupActionDisabledReason(group)"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <span v-bind="tooltipProps" class="inline-flex">
-                    <v-btn-add
-                      color="white"
-                      class="text-none"
-                      :disabled="
-                        !canEditOrchestration || !group.dataConnection
-                      "
-                      @click.stop="openCreateTaskDialog(group.dataConnection!)"
-                    >
-                      Add task
-                    </v-btn-add>
-                  </span>
-                </template>
-                <span>{{ groupActionDisabledReason(group) }}</span>
-              </v-tooltip>
-              <v-tooltip
-                location="top"
-                :disabled="!groupActionDisabledReason(group)"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <span v-bind="tooltipProps" class="inline-flex">
-                    <v-btn
-                      variant="text"
-                      color="blue-grey-darken-2"
-                      :icon="mdiPencil"
-                      class="hidden md:inline-flex"
-                      :disabled="
-                        !canEditOrchestration || !group.dataConnection
-                      "
-                      @click.stop="openEditDialog(group.dataConnection!)"
-                    />
-                  </span>
-                </template>
-                <span>{{ groupActionDisabledReason(group) }}</span>
-              </v-tooltip>
-              <v-tooltip
-                location="top"
-                :disabled="!groupActionDisabledReason(group)"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <span v-bind="tooltipProps" class="inline-flex">
-                    <v-btn
-                      variant="text"
-                      color="red-darken-2"
-                      :icon="mdiTrashCanOutline"
-                      :disabled="
-                        !canEditOrchestration || !group.dataConnection
-                      "
-                      @click.stop="openDeleteDialog(group.dataConnection!)"
-                    />
-                  </span>
-                </template>
-                <span>{{ groupActionDisabledReason(group) }}</span>
-              </v-tooltip>
-            </div>
-          </div>
+        <div v-else-if="visibleTasks.length === 0" class="detail-empty">
+          <h4>No tasks</h4>
+          <p>{{ emptyTasksMessage }}</p>
+        </div>
 
-          <div v-if="isGroupOpen(group.name)">
-            <div
-              class="max-h-[62vh] overflow-auto"
-              :ref="(el) => setBodyScrollRef(group.name, el)"
-              @scroll.passive="onBodyScroll(group.name, $event)"
-            >
-              <table class="w-full table-fixed text-sm whitespace-nowrap">
-                <thead
-                  class="sticky top-0 z-10 bg-slate-50 text-sm font-semibold text-slate-700"
+        <div
+          v-else-if="sortedVisibleTasks.length === 0"
+          class="detail-empty"
+        >
+          <h4>No tasks match your filter</h4>
+          <p>Clear search or status filters to see all tasks.</p>
+        </div>
+
+        <table v-else class="tasks-table">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="th-sort" @click="toggleSort('name')">
+                  Task name
+                  <v-icon :icon="sortIcon('name')" size="14" />
+                </button>
+              </th>
+              <th>
+                <button type="button" class="th-sort" @click="toggleSort('status')">
+                  Status
+                  <v-icon :icon="sortIcon('status')" size="14" />
+                </button>
+              </th>
+              <th>
+                <button type="button" class="th-sort" @click="toggleSort('lastRunAt')">
+                  Last run
+                  <v-icon :icon="sortIcon('lastRunAt')" size="14" />
+                </button>
+              </th>
+              <th>
+                <button type="button" class="th-sort" @click="toggleSort('nextRunAt')">
+                  Next run
+                  <v-icon :icon="sortIcon('nextRunAt')" size="14" />
+                </button>
+              </th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in sortedVisibleTasks" :key="row.id">
+              <td class="task-name">{{ row.name || '—' }}</td>
+              <td>
+                <v-tooltip
+                  location="bottom"
+                  :open-delay="0"
+                  :close-delay="80"
+                  content-class="pa-0 ma-0 bg-transparent"
+                  max-width="520"
                 >
-                  <tr>
-                    <th class="px-3 py-3 text-left w-[23%]">
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('name')"
-                        title="Click to sort, click again to reverse, click again to clear"
-                      >
-                        <span>Task name</span>
-                        <v-icon :icon="sortIcon('name')" size="16" />
-                        <span
-                          v-if="sortBadge('name')"
-                          class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
-                        >
-                          {{ sortBadge('name') }}
-                        </span>
-                      </button>
-                    </th>
-                    <th class="px-3 py-3 text-left w-[10%]">
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('status')"
-                        title="Click to sort, click again to reverse, click again to clear"
-                      >
-                        <span>Status</span>
-                        <v-icon :icon="sortIcon('status')" size="16" />
-                        <span
-                          v-if="sortBadge('status')"
-                          class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
-                        >
-                          {{ sortBadge('status') }}
-                        </span>
-                      </button>
-                    </th>
-                    <th class="px-3 py-3 text-left w-[15%]">
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('lastRunAt')"
-                        title="Click to sort, click again to reverse, click again to clear"
-                      >
-                        <span>Last run</span>
-                        <v-icon :icon="sortIcon('lastRunAt')" size="16" />
-                        <span
-                          v-if="sortBadge('lastRunAt')"
-                          class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
-                        >
-                          {{ sortBadge('lastRunAt') }}
-                        </span>
-                      </button>
-                    </th>
-                    <th class="px-3 py-3 text-left w-[15%]">
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 cursor-pointer bg-transparent p-0 text-left hover:text-slate-900"
-                        @click="toggleSort('nextRunAt')"
-                        title="Click to sort, click again to reverse, click again to clear"
-                      >
-                        <span>Next run</span>
-                        <v-icon :icon="sortIcon('nextRunAt')" size="16" />
-                        <span
-                          v-if="sortBadge('nextRunAt')"
-                          class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-semibold text-slate-700"
-                        >
-                          {{ sortBadge('nextRunAt') }}
-                        </span>
-                      </button>
-                    </th>
-                    <th class="px-3 py-3 text-right w-[20%]">Actions</th>
-                  </tr>
-                </thead>
-                <tbody v-if="group.items.length === 0">
-                  <tr>
-                    <td
-                      colspan="5"
-                      class="px-3 py-6 text-center text-sm text-slate-500"
-                    >
-                      No tasks registered for this data connection.
-                    </td>
-                  </tr>
-                </tbody>
-                <tbody v-else>
-                  <tr
-                    class="border-0"
-                    :style="{ height: `${virtualPaddingTopFor(group.name)}px` }"
+                  <template #activator="{ props: tooltipProps }">
+                    <span v-bind="tooltipProps" class="inline-flex">
+                      <TaskStatus
+                        :status="row.statusName"
+                        :paused="row.schedule ? !row.schedule.enabled : false"
+                      />
+                    </span>
+                  </template>
+                  <v-card
+                    elevation="6"
+                    rounded="lg"
+                    class="ma-0 pa-0 border border-slate-200"
+                    style="max-width: 520px"
                   >
-                    <td colspan="5"></td>
-                  </tr>
-                  <tr
-                    v-for="row in virtualRowsFor(group)"
-                    :key="row.id"
-                    class="h-20 border-b border-slate-100"
-                    :class="row.isPlaceholder ? 'text-slate-400' : ''"
-                  >
-                    <td
-                      class="px-3 py-2 font-medium text-slate-800 whitespace-normal break-words"
-                    >
-                      {{ row.name || '—' }}
-                    </td>
-                    <td class="px-3 py-2">
-                      <v-tooltip
-                        v-if="!row.isPlaceholder"
-                        location="bottom"
-                        :open-delay="0"
-                        :close-delay="80"
-                        content-class="pa-0 ma-0 bg-transparent"
-                        max-width="520"
-                      >
-                        <template #activator="{ props: tooltipProps }">
-                          <span v-bind="tooltipProps" class="inline-flex">
-                            <TaskStatus
-                              :status="row.statusName"
-                              :paused="row.schedule ? !row.schedule.enabled : false"
-                            />
-                          </span>
-                        </template>
-                        <v-card
-                          elevation="6"
-                          rounded="lg"
-                          class="ma-0 pa-0 border border-slate-200"
-                          style="max-width: 520px"
-                        >
-                          <v-card-text class="px-4 py-3">
-                            <div
-                              class="mb-1 flex items-center justify-between gap-3"
-                            >
-                              <div
-                                class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
-                              >
-                                Last run summary
-                              </div>
-                              <div
-                                v-if="row.lastRun && row.lastRun !== '-'"
-                                class="text-xs font-medium text-slate-500"
-                              >
-                                {{ row.lastRun }}
-                              </div>
-                            </div>
-                            <div class="text-sm leading-snug text-slate-800">
-                              {{
-                                row.lastRunMessage ||
-                                'No run history available yet.'
-                              }}
-                            </div>
-                          </v-card-text>
-                        </v-card>
-                      </v-tooltip>
-                      <span v-else class="text-slate-400">—</span>
-                    </td>
-                    <td class="px-3 py-2 text-slate-700">{{ row.lastRun }}</td>
-                    <td class="px-3 py-2 text-slate-700">{{ row.nextRun }}</td>
-                    <td class="px-3 py-2 text-right">
-                      <div
-                        v-if="!row.isPlaceholder"
-                        class="flex flex-col gap-3"
-                      >
-                        <div
-                          class="flex flex-wrap items-center justify-end gap-3"
-                        >
-                          <v-tooltip
-                            location="top"
-                            :open-delay="0"
-                            :close-delay="0"
-                          >
-                            <template #activator="{ props: tooltipProps }">
-                              <span v-bind="tooltipProps" class="inline-flex">
-                                <v-btn
-                                  variant="text"
-                                  color="black"
-                                  :icon="
-                                    row.schedule?.enabled ? mdiPause : mdiPlay
-                                  "
-                                  :disabled="!canEditOrchestration"
-                                  @click.stop="togglePaused(row)"
-                                  aria-label="Pause or resume task"
-                                />
-                              </span>
-                            </template>
-                            <span>{{
-                              !canEditOrchestration
-                                ? readOnlyTooltip
-                                : row.schedule?.enabled
-                                  ? 'Pause task'
-                                  : 'Resume task'
-                            }}</span>
-                          </v-tooltip>
-                          <v-btn
-                            v-if="canEditOrchestration && !row.userClickedRunNow"
-                            variant="outlined"
-                            color="green-darken-3"
-                            :append-icon="mdiPlay"
-                            @click.stop="runTaskNow(row)"
-                          >
-                            Run now
-                          </v-btn>
-                          <span
-                            v-else-if="canEditOrchestration && row.userClickedRunNow"
-                            class="text-sm font-semibold text-slate-500"
-                          >
-                            Run requested
-                          </span>
+                    <v-card-text class="px-4 py-3">
+                      <div class="mb-1 flex items-center justify-between gap-3">
+                        <div class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600">
+                          Last run summary
                         </div>
-                        <div class="flex items-center justify-end gap-3">
-                          <v-btn
-                            variant="outlined"
-                            color="blue-grey-darken-3"
-                            @click.stop="goToTask(row)"
-                            aria-label="View details"
-                            title="View task details"
-                            class="text-none"
-                            :append-icon="mdiChevronRight"
-                          >
-                            View details
-                          </v-btn>
+                        <div
+                          v-if="row.lastRun && row.lastRun !== '-'"
+                          class="text-xs font-medium text-slate-500"
+                        >
+                          {{ row.lastRun }}
                         </div>
                       </div>
-                    </td>
-                  </tr>
-                  <tr
-                    class="border-0"
-                    :style="{ height: `${virtualPaddingBottomFor(group)}px` }"
-                  >
-                    <td colspan="5"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+                      <div class="text-sm leading-snug text-slate-800">
+                        {{
+                          row.lastRunMessage ||
+                          'No run history available yet.'
+                        }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-tooltip>
+              </td>
+              <td class="task-time">{{ row.lastRun }}</td>
+              <td class="task-time">{{ row.nextRun }}</td>
+              <td class="task-actions">
+                <v-tooltip location="top" :open-delay="0" :close-delay="0">
+                  <template #activator="{ props: tooltipProps }">
+                    <span v-bind="tooltipProps" class="inline-flex">
+                      <v-btn
+                        variant="text"
+                        size="small"
+                        color="black"
+                        :icon="row.schedule?.enabled ? mdiPause : mdiPlay"
+                        :disabled="!canEditOrchestration"
+                        @click.stop="togglePaused(row)"
+                        aria-label="Pause or resume task"
+                      />
+                    </span>
+                  </template>
+                  <span>{{
+                    !canEditOrchestration
+                      ? readOnlyTooltip
+                      : row.schedule?.enabled
+                        ? 'Pause task'
+                        : 'Resume task'
+                  }}</span>
+                </v-tooltip>
+                <v-btn
+                  v-if="canEditOrchestration && !row.userClickedRunNow"
+                  variant="outlined"
+                  size="small"
+                  color="green-darken-3"
+                  :append-icon="mdiPlay"
+                  class="text-none"
+                  @click.stop="runTaskNow(row)"
+                >
+                  Run now
+                </v-btn>
+                <span
+                  v-else-if="canEditOrchestration && row.userClickedRunNow"
+                  class="text-xs font-semibold text-slate-500"
+                >
+                  Run requested
+                </span>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  :style="{ color: activeAccent }"
+                  :append-icon="mdiChevronRight"
+                  class="text-none"
+                  @click.stop="goToTask(row)"
+                >
+                  Details
+                </v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-  </v-card>
+    </section>
 
-  <v-dialog v-model="openCreateDataConnection" width="60rem">
-    <DataConnectionForm
-      @close="openCreateDataConnection = false"
-      @created="onDataConnectionCreated"
-    />
-  </v-dialog>
+    <v-dialog v-model="openCreateDataConnection" width="60rem">
+      <DataConnectionForm
+        @close="openCreateDataConnection = false"
+        @created="onDataConnectionCreated"
+      />
+    </v-dialog>
 
-  <v-dialog v-if="selectedTaskDataConnection" v-model="openCreateTask" width="80rem">
-    <TaskForm
-      :initial-data-connection="selectedTaskDataConnection"
-      @close="closeCreateTaskDialog"
-      @created="onTaskCreated"
-    />
-  </v-dialog>
+    <v-dialog v-if="selectedTaskDataConnection" v-model="openCreateTask" width="80rem">
+      <TaskForm
+        :initial-data-connection="selectedTaskDataConnection"
+        @close="closeCreateTaskDialog"
+        @created="onTaskCreated"
+      />
+    </v-dialog>
 
-  <v-dialog
-    v-if="selectedDataConnection"
-    v-model="openEditDataConnection"
-    width="80rem"
-  >
-    <DataConnectionForm
-      :dataConnection="selectedDataConnection"
-      @close="openEditDataConnection = false"
-      @updated="onDataConnectionUpdated"
-    />
-  </v-dialog>
+    <v-dialog
+      v-if="selectedDataConnection"
+      v-model="openEditDataConnection"
+      width="80rem"
+    >
+      <DataConnectionForm
+        :dataConnection="selectedDataConnection"
+        @close="openEditDataConnection = false"
+        @updated="onDataConnectionUpdated"
+      />
+    </v-dialog>
 
-  <v-dialog
-    v-if="selectedDataConnection"
-    v-model="openDeleteDataConnection"
-    width="40rem"
-  >
-    <DeleteDataConnectionCard
-      :itemName="selectedDataConnection.name"
-      @close="openDeleteDataConnection = false"
-      @delete="onDataConnectionDeleted"
-    />
-  </v-dialog>
+    <v-dialog
+      v-if="selectedDataConnection"
+      v-model="openDeleteDataConnection"
+      width="40rem"
+    >
+      <DeleteDataConnectionCard
+        :itemName="selectedDataConnection.name"
+        @close="openDeleteDataConnection = false"
+        @delete="onDataConnectionDeleted"
+      />
+    </v-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import {
   computed,
   defineAsyncComponent,
+  onBeforeUnmount,
   reactive,
   ref,
   watch,
-  onBeforeUnmount,
 } from 'vue'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
+import HealthPills from '@/components/Orchestration/HealthPills.vue'
 import router from '@/router/router'
 import {
   getDisplayedTaskStatus,
@@ -562,27 +519,32 @@ import {
 import { formatTime } from '@/utils/time'
 import hs, {
   DataConnection,
+  DataProductTaskExpanded,
+  MonitoringTaskExpanded,
   PermissionAction,
   PermissionResource,
-  Task,
   TaskExpanded,
   TaskRun,
   TaskSchedule,
+  Thing,
 } from '@hydroserver/client'
 import {
+  mdiArrowDown,
+  mdiArrowUp,
+  mdiArrowUpDown,
+  mdiChevronRight,
+  mdiClose,
+  mdiDatabaseArrowDownOutline,
+  mdiFileTree,
   mdiFilterVariant,
   mdiMagnify,
   mdiPause,
   mdiPencil,
   mdiPlay,
+  mdiPlus,
+  mdiShieldCheckOutline,
   mdiTrashCanOutline,
-  mdiChevronRight,
-  mdiChevronDown,
-  mdiArrowUp,
-  mdiArrowDown,
-  mdiArrowUpDown,
 } from '@mdi/js'
-import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useOrchestrationStore } from '@/store/orchestration'
@@ -602,17 +564,35 @@ const props = defineProps<{
   workspaceId: string
 }>()
 
+const INGESTION_ACCENT = '#1565C0'
+const INGESTION_ACCENT_LIGHT = '#E3F2FD'
+const AGGREGATION_ACCENT = '#6A1B9A'
+const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
+const QUALITY_ACCENT = '#00695C'
+const QUALITY_ACCENT_LIGHT = '#E0F2F1'
+
+type TabId = 'ingestion' | 'aggregation' | 'quality'
+type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
+
+const TAB_TO_KIND: Record<TabId, TaskKind> = {
+  ingestion: 'etl',
+  aggregation: 'dataProduct',
+  quality: 'monitoring',
+}
+
 const { workspaceTasks, orchestrationSearch, orchestrationStatusFilter } =
   storeToRefs(useOrchestrationStore())
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
-const search = orchestrationSearch
 const loading = ref(false)
 const runNowTriggeredByTaskId = reactive<Record<string, boolean>>({})
-const statusFilter = orchestrationStatusFilter
 
 const dataConnections = ref<DataConnection[]>([])
+const things = ref<Thing[]>([])
+const datastreamThingByDatastreamId = ref<Record<string, string>>({})
+const dataProductTasks = ref<DataProductTaskExpanded[]>([])
+const monitoringTasks = ref<MonitoringTaskExpanded[]>([])
 const selectedDataConnection = ref<DataConnection | null>(null)
 const selectedTaskDataConnection = ref<DataConnection | null>(null)
 const openCreateDataConnection = ref(false)
@@ -620,21 +600,32 @@ const openCreateTask = ref(false)
 const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 
-const openGroupNames = ref<string[]>([])
-const hasAutoOpened = ref(false)
+const activeTab = ref<TabId>('ingestion')
+const sidebarSearch = ref('')
+const taskSearch = ref('')
+const statusFilter = ref<string[]>([])
+const selectedConnectionId = ref<string | null>(null)
+const selectedThingId = ref<string | null>(null)
 
-const bodyScrollTops = reactive<Record<string, number>>({})
-const bodyHeights = reactive<Record<string, number>>({})
-const bodyScrollEls = new Map<string, HTMLElement>()
-const resizeObservers = new Map<string, ResizeObserver>()
+const STATUS_OPTIONS = [
+  { title: 'OK', value: 'OK' },
+  { title: 'Needs attention', value: 'Needs attention' },
+  { title: 'Behind schedule', value: 'Behind schedule' },
+  { title: 'Loading paused', value: 'Loading paused' },
+  { title: 'Pending', value: 'Pending' },
+  { title: 'Unknown', value: 'Unknown' },
+] as const
 
-const ROW_HEIGHT = 80
-const OVERSCAN = 6
+const serviceForKind = (kind: TaskKind) => {
+  if (kind === 'etl') return hs.tasks
+  if (kind === 'dataProduct') return hs.dataProductTasks
+  return hs.monitoringTasks
+}
+
+let orchestrationFetchRequestId = 0
+const taskPollTimeouts = new Map<string, number>()
 const POLL_INTERVAL_MS = 4000
 const POLL_MAX_ATTEMPTS = 150
-
-const taskPollTimeouts = new Map<string, number>()
-let orchestrationFetchRequestId = 0
 
 const workspaceForPage = computed(() =>
   workspaces.value.find((workspace) => workspace.id === props.workspaceId)
@@ -656,117 +647,406 @@ const canEditOrchestration = computed(() => {
 const readOnlyTooltip =
   'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
-const groupActionDisabledReason = (group: {
-  dataConnection: DataConnection | null
-}) => {
-  if (!canEditOrchestration.value) return readOnlyTooltip
-  if (!group.dataConnection)
-    return 'No data connection is available for this action.'
-  return ''
+type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
+type SortDir = 'asc' | 'desc'
+const sortKey = ref<SortKey>('name')
+const sortDir = ref<SortDir>('asc')
+
+const toggleSort = (key: SortKey) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
 }
 
-type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
-type SortSpec = { key: SortKey; dir: 'asc' | 'desc' }
+const sortIcon = (key: SortKey) => {
+  if (sortKey.value !== key) return mdiArrowUpDown
+  return sortDir.value === 'asc' ? mdiArrowUp : mdiArrowDown
+}
 
-const sortSpecs = ref<SortSpec[]>([{ key: 'name', dir: 'asc' }])
+type TaskRow = {
+  id: string
+  kind: TaskKind
+  name: string
+  schedule: TaskSchedule | null
+  latestRun: TaskRun | null | undefined
+  statusName: ReturnType<typeof getTaskStatusText>
+  statusSort: ReturnType<typeof getDisplayedTaskStatus>
+  lastRun: string
+  nextRun: string
+  lastRunAt: string | null
+  nextRunAt: string | null
+  lastRunMessage: string
+  dataConnectionId: string | null
+  thingId: string | null
+  userClickedRunNow: boolean
+  raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
+}
 
-watch(
-  statusFilter,
-  (value) => {
-    if (!Array.isArray(value)) {
-      statusFilter.value = []
-      return
-    }
-    if (value.includes('all')) {
-      statusFilter.value = value.filter((entry) => entry !== 'all')
-    }
-  },
-  { immediate: true }
+const toRowBase = (
+  t: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded,
+  kind: TaskKind
+) => {
+  const schedule = t.schedule ?? null
+  const latestRun = (t as any).latestRun as TaskRun | null | undefined
+  return {
+    id: t.id,
+    kind,
+    name: t.name,
+    schedule,
+    latestRun,
+    statusName: getTaskStatusText(t as any),
+    statusSort: getDisplayedTaskStatus(t as any),
+    lastRun: latestRun?.startedAt ? formatTime(latestRun.startedAt) : '-',
+    nextRun: schedule?.nextRunAt ? formatTime(schedule.nextRunAt) : '-',
+    lastRunAt: latestRun?.startedAt ?? null,
+    nextRunAt: schedule?.nextRunAt ?? null,
+    lastRunMessage: getTaskRunMessage(latestRun as any),
+    userClickedRunNow: !!runNowTriggeredByTaskId[t.id],
+    raw: t,
+  }
+}
+
+const etlTaskRows = computed<TaskRow[]>(() =>
+  workspaceTasks.value.map((t) => ({
+    ...toRowBase(t, 'etl'),
+    dataConnectionId: (t as any).dataConnection?.id ?? null,
+    thingId: resolveEtlTaskThingId(t),
+  }))
 )
 
-type TaskHealthFilter =
-  | 'OK'
-  | 'Needs attention'
-  | 'Loading paused'
-  | 'Behind schedule'
-  | 'Pending'
-  | 'Unknown'
+const dataProductTaskRows = computed<TaskRow[]>(() =>
+  dataProductTasks.value.map((t) => ({
+    ...toRowBase(t, 'dataProduct'),
+    dataConnectionId: null,
+    thingId: t.thing?.id ?? null,
+  }))
+)
 
-const statusOptions = [
-  { title: 'OK', value: 'OK' },
-  { title: 'Needs attention', value: 'Needs attention' },
-  { title: 'Loading paused', value: 'Loading paused' },
-  { title: 'Behind schedule', value: 'Behind schedule' },
-  { title: 'Pending', value: 'Pending' },
-  { title: 'Unknown', value: 'Unknown' },
-] as const
+const monitoringTaskRows = computed<TaskRow[]>(() =>
+  monitoringTasks.value.map((t) => ({
+    ...toRowBase(t, 'monitoring'),
+    dataConnectionId: null,
+    thingId: t.thing?.id ?? null,
+  }))
+)
 
-const classifyTask = (task: any) => {
-  const displayedStatus =
-    task?.statusSort ?? task?.displayedStatus ?? getDisplayedTaskStatus(task)
-  if (
-    displayedStatus === 'OK' ||
-    displayedStatus === 'Needs attention' ||
-    displayedStatus === 'Loading paused' ||
-    displayedStatus === 'Behind schedule' ||
-    displayedStatus === 'Pending'
-  ) {
-    return displayedStatus
+const activeTaskRows = computed<TaskRow[]>(() => {
+  if (activeTab.value === 'ingestion') return etlTaskRows.value
+  if (activeTab.value === 'aggregation') return dataProductTaskRows.value
+  return monitoringTaskRows.value
+})
+
+// ETL tasks don't carry their site on the task itself; infer it from the first mapping's
+// target datastream, cross-referencing the workspace datastream list for thingId.
+function resolveEtlTaskThingId(task: TaskExpanded): string | null {
+  for (const mapping of task.mappings ?? []) {
+    const ds = mapping.targetDatastream as any
+    const dsThingId = ds?.thingId ?? ds?.thing_id
+    if (dsThingId) return dsThingId
+    const fromMap = datastreamThingByDatastreamId.value[ds?.id]
+    if (fromMap) return fromMap
   }
-  return 'Unknown'
+  return null
 }
 
-const groupHealthSummary = (rows: readonly any[]) => {
-  return rows.reduce(
-    (summary, row) => {
-      const task = row?.raw ?? row
-      if (!task || task.isPlaceholder) return summary
+const connectionsById = computed(() => {
+  const map = new Map<string, DataConnection>()
+  for (const dc of dataConnections.value) map.set(dc.id, dc)
+  return map
+})
 
-      const displayedStatus =
-        task.statusSort ?? task.displayedStatus ?? getDisplayedTaskStatus(task)
+const thingsById = computed(() => {
+  const map = new Map<string, Thing>()
+  for (const th of things.value) map.set(th.id, th)
+  return map
+})
 
-      if (displayedStatus === 'OK') summary.ok += 1
-      else if (displayedStatus === 'Needs attention')
-        summary.needsAttention += 1
-      else if (displayedStatus === 'Loading paused') summary.loadingPaused += 1
-      else if (displayedStatus === 'Behind schedule')
-        summary.behindSchedule += 1
-      else if (displayedStatus === 'Pending') summary.pending += 1
-      else summary.unknown += 1
+const countIssues = (rows: TaskRow[]) =>
+  rows.filter((r) => {
+    const s = r.statusSort
+    return s === 'Needs attention' || s === 'Behind schedule'
+  }).length
 
-      summary.total += 1
-      return summary
-    },
-    {
-      ok: 0,
-      needsAttention: 0,
-      loadingPaused: 0,
-      behindSchedule: 0,
-      pending: 0,
-      unknown: 0,
-      total: 0,
-    }
+const tabs = computed(() => [
+  {
+    id: 'ingestion' as TabId,
+    short: 'Ingestion',
+    icon: mdiDatabaseArrowDownOutline,
+    accent: INGESTION_ACCENT,
+    accentLight: INGESTION_ACCENT_LIGHT,
+    issues: countIssues(etlTaskRows.value),
+  },
+  {
+    id: 'aggregation' as TabId,
+    short: 'Aggregations',
+    icon: mdiFileTree,
+    accent: AGGREGATION_ACCENT,
+    accentLight: AGGREGATION_ACCENT_LIGHT,
+    issues: countIssues(dataProductTaskRows.value),
+  },
+  {
+    id: 'quality' as TabId,
+    short: 'Quality',
+    icon: mdiShieldCheckOutline,
+    accent: QUALITY_ACCENT,
+    accentLight: QUALITY_ACCENT_LIGHT,
+    issues: countIssues(monitoringTaskRows.value),
+  },
+])
+
+const activeTabDef = computed(
+  () => tabs.value.find((t) => t.id === activeTab.value) ?? tabs.value[0]
+)
+const activeAccent = computed(() => activeTabDef.value.accent)
+const activeAccentLight = computed(() => activeTabDef.value.accentLight)
+
+const sidebarTitle = computed(() =>
+  activeTab.value === 'ingestion' ? 'Connections' : 'Sites'
+)
+const addLabel = computed(() =>
+  activeTab.value === 'ingestion' ? 'Add data connection' : 'Add site'
+)
+
+const filteredConnections = computed(() => {
+  const term = sidebarSearch.value.trim().toLowerCase()
+  if (!term) return dataConnections.value
+  return dataConnections.value.filter((dc) =>
+    dc.name.toLowerCase().includes(term)
   )
+})
+
+const filteredSites = computed(() => {
+  const term = sidebarSearch.value.trim().toLowerCase()
+  if (!term) return things.value
+  return things.value.filter((th) => th.name.toLowerCase().includes(term))
+})
+
+const taskCountForConnection = (dcId: string) =>
+  etlTaskRows.value.filter((t) => t.dataConnectionId === dcId).length
+
+const taskCountForSite = (thingId: string) =>
+  activeTaskRows.value.filter((t) => t.thingId === thingId).length
+
+const issueCountForSite = (thingId: string) =>
+  activeTaskRows.value.filter(
+    (t) =>
+      t.thingId === thingId &&
+      (t.statusSort === 'Needs attention' ||
+        t.statusSort === 'Behind schedule')
+  ).length
+
+const dotColorForConnection = (dcId: string) => {
+  const rows = etlTaskRows.value.filter((t) => t.dataConnectionId === dcId)
+  return worstDotColor(rows)
+}
+
+const dotColorForSite = (thingId: string) => {
+  const rows = activeTaskRows.value.filter((t) => t.thingId === thingId)
+  return worstDotColor(rows)
+}
+
+function worstDotColor(rows: TaskRow[]) {
+  if (rows.length === 0) return '#CAC4D0'
+  const order = ['Needs attention', 'Behind schedule', 'Loading paused', 'Pending', 'OK']
+  const palette: Record<string, string> = {
+    'Needs attention': '#B71C1C',
+    'Behind schedule': '#BF360C',
+    'Loading paused': '#546E7A',
+    Pending: '#1565C0',
+    OK: '#2E7D32',
+  }
+  for (const s of order) {
+    if (rows.some((r) => r.statusSort === s)) return palette[s] ?? '#2E7D32'
+  }
+  return '#2E7D32'
+}
+
+const selectedConnection = computed<DataConnection | null>(() =>
+  selectedConnectionId.value
+    ? connectionsById.value.get(selectedConnectionId.value) ?? null
+    : null
+)
+
+const selectedSite = computed<Thing | null>(() =>
+  selectedThingId.value
+    ? thingsById.value.get(selectedThingId.value) ?? null
+    : null
+)
+
+const visibleTasks = computed<TaskRow[]>(() => {
+  if (activeTab.value === 'ingestion') {
+    if (!selectedConnectionId.value) return []
+    return etlTaskRows.value.filter(
+      (t) => t.dataConnectionId === selectedConnectionId.value
+    )
+  }
+  if (!selectedThingId.value) return []
+  return activeTaskRows.value.filter((t) => t.thingId === selectedThingId.value)
+})
+
+const searchedVisibleTasks = computed<TaskRow[]>(() => {
+  const term = taskSearch.value.trim().toLowerCase()
+  const filters = new Set(statusFilter.value)
+  return visibleTasks.value.filter((t) => {
+    if (filters.size > 0) {
+      const bucket = t.statusSort ?? 'Unknown'
+      if (!filters.has(bucket)) return false
+    }
+    if (!term) return true
+    const haystack = [t.name, t.statusName, t.lastRun, t.nextRun]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(term)
+  })
+})
+
+const compareText = (a: unknown, b: unknown) =>
+  `${a ?? ''}`.localeCompare(`${b ?? ''}`, undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  })
+
+const compareNullableDate = (a: unknown, b: unknown) => {
+  const aVal = a ? new Date(a as any).getTime() : null
+  const bVal = b ? new Date(b as any).getTime() : null
+  if (aVal == null && bVal == null) return 0
+  if (aVal == null) return 1
+  if (bVal == null) return -1
+  return aVal - bVal
+}
+
+const sortedVisibleTasks = computed<TaskRow[]>(() => {
+  const rows = [...searchedVisibleTasks.value]
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  rows.sort((a, b) => {
+    let cmp = 0
+    if (sortKey.value === 'name') cmp = compareText(a.name, b.name)
+    else if (sortKey.value === 'status')
+      cmp = compareText(a.statusSort, b.statusSort)
+    else if (sortKey.value === 'lastRunAt')
+      cmp = compareNullableDate(a.lastRunAt, b.lastRunAt)
+    else if (sortKey.value === 'nextRunAt')
+      cmp = compareNullableDate(a.nextRunAt, b.nextRunAt)
+    return cmp * dir
+  })
+  return rows
+})
+
+const hasSelection = computed(() =>
+  activeTab.value === 'ingestion'
+    ? !!selectedConnectionId.value
+    : !!selectedThingId.value
+)
+
+const detailTitle = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    return selectedConnection.value?.name ?? 'Select a data connection'
+  }
+  return selectedSite.value?.name ?? 'Select a site'
+})
+
+const detailTypeBadge = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    return selectedConnection.value?.payload?.type ?? ''
+  }
+  return selectedSite.value?.siteType ?? ''
+})
+
+const emptyHeading = computed(() =>
+  activeTab.value === 'ingestion'
+    ? dataConnections.value.length === 0
+      ? 'No data connections have been registered yet.'
+      : 'Select a data connection'
+    : things.value.length === 0
+      ? 'No sites registered in this workspace.'
+      : 'Select a site'
+)
+
+const emptyMessage = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    if (dataConnections.value.length === 0) {
+      return "Click 'Add data connection' to get started."
+    }
+    return 'Pick a connection from the list to view its tasks.'
+  }
+  if (things.value.length === 0) {
+    return 'Create a site in your workspace to assign tasks to it.'
+  }
+  return 'Pick a site to view the tasks writing data to it.'
+})
+
+const emptyTasksMessage = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    return 'No tasks registered for this data connection.'
+  }
+  return 'No tasks are writing data to this site yet.'
+})
+
+const setActiveTab = (tab: TabId) => {
+  activeTab.value = tab
+  sidebarSearch.value = ''
+  autoSelectSidebar()
+}
+
+const selectConnection = (id: string) => {
+  selectedConnectionId.value = id
+}
+
+const selectSite = (id: string) => {
+  selectedThingId.value = id
+}
+
+const autoSelectSidebar = () => {
+  if (activeTab.value === 'ingestion') {
+    const current = selectedConnectionId.value
+    if (current && connectionsById.value.has(current)) return
+    selectedConnectionId.value = dataConnections.value[0]?.id ?? null
+  } else {
+    const current = selectedThingId.value
+    if (current && thingsById.value.has(current)) return
+    selectedThingId.value = things.value[0]?.id ?? null
+  }
 }
 
 const fetchOrchestrationData = async (newId: string) => {
   const requestId = ++orchestrationFetchRequestId
   loading.value = true
   try {
-    const [dcItems, taskItems] = await Promise.all([
-      hs.dataConnections.listAllItems({
-        workspace_id: newId,
-        order_by: 'name',
-      } as any),
-      hs.tasks.listAllItems({
-        workspace_id: newId,
-      } as any),
-    ])
+    const [dcItems, etlItems, dpItems, monItems, thingItems, dsItems] =
+      await Promise.all([
+        hs.dataConnections.listAllItems({
+          workspace_id: newId,
+          order_by: 'name',
+        } as any),
+        hs.tasks.listAllItems({ workspace_id: newId } as any),
+        hs.dataProductTasks.listAllItems({ workspace_id: [newId] } as any),
+        hs.monitoringTasks.listAllItems({ workspace_id: [newId] } as any),
+        hs.things.listAllItems({
+          workspace_id: [newId],
+          order_by: ['name'],
+        } as any),
+        hs.datastreams.listAllItems({ workspace_id: [newId] } as any),
+      ])
 
     if (requestId !== orchestrationFetchRequestId) return
 
     dataConnections.value = dcItems
-    workspaceTasks.value = taskItems as any
+    workspaceTasks.value = etlItems as any
+    dataProductTasks.value = dpItems as any
+    monitoringTasks.value = monItems as any
+    things.value = thingItems as any
+
+    const map: Record<string, string> = {}
+    for (const ds of dsItems ?? []) {
+      if (ds?.id && ds?.thingId) map[ds.id] = ds.thingId
+    }
+    datastreamThingByDatastreamId.value = map
+
+    autoSelectSidebar()
   } catch (error) {
     if (requestId !== orchestrationFetchRequestId) return
     console.error('Error fetching orchestration data', error)
@@ -777,19 +1057,44 @@ const fetchOrchestrationData = async (newId: string) => {
   }
 }
 
-const refreshTable = async () => {
-  await fetchOrchestrationData(props.workspaceId)
-}
-
 watch(
   () => props.workspaceId,
   async (newId) => {
     if (newId == null) return
     stopAllTaskPolling()
+    selectedConnectionId.value = null
+    selectedThingId.value = null
     await fetchOrchestrationData(newId)
   },
   { immediate: true }
 )
+
+// Persist task search and status filter across navigations via the store.
+watch(
+  orchestrationSearch,
+  (value) => {
+    if (value) taskSearch.value = value
+  },
+  { immediate: true }
+)
+watch(taskSearch, (value) => {
+  orchestrationSearch.value = value ?? ''
+})
+
+watch(
+  orchestrationStatusFilter,
+  (value) => {
+    if (Array.isArray(value) && value.length) statusFilter.value = [...value]
+  },
+  { immediate: true }
+)
+watch(statusFilter, (value) => {
+  if (!Array.isArray(value)) {
+    statusFilter.value = []
+    return
+  }
+  orchestrationStatusFilter.value = [...value]
+})
 
 const openCreateDialog = () => {
   if (!canEditOrchestration.value) return
@@ -828,14 +1133,9 @@ const onDataConnectionCreated = async () => {
   dataConnections.value = items
 }
 
-const onTaskCreated = async (created: TaskExpanded) => {
-  const groupName =
-    created?.dataConnection?.name ?? selectedTaskDataConnection.value?.name
+const onTaskCreated = async () => {
   closeCreateTaskDialog()
-  await refreshTable()
-  if (groupName && !openGroupNames.value.includes(groupName)) {
-    openGroupNames.value = [...openGroupNames.value, groupName]
-  }
+  await fetchOrchestrationData(props.workspaceId)
 }
 
 const onDataConnectionUpdated = (updated: DataConnection) => {
@@ -850,283 +1150,44 @@ const onDataConnectionDeleted = async () => {
   try {
     await hs.dataConnections.delete(id)
     dataConnections.value = dataConnections.value.filter((dc) => dc.id !== id)
+    if (selectedConnectionId.value === id) {
+      selectedConnectionId.value = dataConnections.value[0]?.id ?? null
+    }
     openDeleteDataConnection.value = false
   } catch (error) {
     console.error('Error deleting data connection', error)
   }
 }
 
-const searchText = computed(() => `${search.value || ''}`.trim().toLowerCase())
-
-const resolveDataConnectionName = (task: any) =>
-  task?.dataConnection?.name ?? 'No data connection'
-
-const taskRows = computed(() =>
-  workspaceTasks.value.map((t) => ({
-    ...t,
-    schedule: t.schedule ?? null,
-    statusName: getTaskStatusText(t as any),
-    statusSort: getDisplayedTaskStatus(t as any),
-    lastRun: t.latestRun?.startedAt ? formatTime(t.latestRun.startedAt) : '-',
-    nextRun: t.schedule?.nextRunAt ? formatTime(t.schedule.nextRunAt) : '-',
-    lastRunAt: t.latestRun?.startedAt ?? null,
-    nextRunAt: t.schedule?.nextRunAt ?? null,
-    lastRunMessage: getTaskRunMessage(t.latestRun as any),
-    dataConnectionName: resolveDataConnectionName(t),
-    isPlaceholder: false,
-    userClickedRunNow: !!runNowTriggeredByTaskId[t.id],
-  }))
-)
-
-const matchesSearch = (task: any, term: string) => {
-  if (!term) return true
-  const haystack = [
-    task.name,
-    task.dataConnectionName,
-    task.type,
-    task.statusSort ?? task.statusName,
-    task.lastRun,
-    task.nextRun,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(term)
-}
-
-const filteredTaskRows = computed(() => {
-  const activeFilters = new Set(statusFilter.value as TaskHealthFilter[])
-  return taskRows.value.filter((task) => {
-    const statusMatch =
-      activeFilters.size === 0 || activeFilters.has(classifyTask(task))
-    const searchMatch = matchesSearch(task, searchText.value)
-    return statusMatch && searchMatch
-  })
-})
-
-const compareText = (a: unknown, b: unknown) =>
-  `${a ?? ''}`.localeCompare(`${b ?? ''}`, undefined, {
-    numeric: true,
-    sensitivity: 'base',
-  })
-
-const compareNullableDate = (a: unknown, b: unknown) => {
-  const aVal = a ? new Date(a as any).getTime() : null
-  const bVal = b ? new Date(b as any).getTime() : null
-  if (aVal == null && bVal == null) return 0
-  if (aVal == null) return 1
-  if (bVal == null) return -1
-  return aVal - bVal
-}
-
-const buildComparatorForKey = (key: SortKey) => {
-  if (key === 'name') return (a: any, b: any) => compareText(a?.name, b?.name)
-  if (key === 'status')
-    return (a: any, b: any) => compareText(a?.statusSort, b?.statusSort)
-  if (key === 'lastRunAt')
-    return (a: any, b: any) => compareNullableDate(a?.lastRunAt, b?.lastRunAt)
-  if (key === 'nextRunAt')
-    return (a: any, b: any) => compareNullableDate(a?.nextRunAt, b?.nextRunAt)
-  return () => 0
-}
-
-const normalizeSortSpecs = (specs: SortSpec[]): SortSpec[] => {
-  const seen = new Set<SortKey>()
-  const normalized: SortSpec[] = []
-  for (const spec of specs) {
-    if (!spec?.key || seen.has(spec.key)) continue
-    seen.add(spec.key)
-    normalized.push({ key: spec.key, dir: spec.dir })
-  }
-  return normalized
-}
-
-const sortRows = (rows: any[]) => {
-  const specs = normalizeSortSpecs(sortSpecs.value)
-  const comparators = specs.map((spec) => {
-    const base = buildComparatorForKey(spec.key)
-    const dir = spec.dir === 'asc' ? 1 : -1
-    return (a: any, b: any) => base(a, b) * dir
-  })
-
-  return [...rows].sort((a, b) => {
-    for (const cmpFn of comparators) {
-      const cmp = cmpFn(a, b)
-      if (cmp !== 0) return cmp
-    }
-    return 0
-  })
-}
-
-const includeEmptyGroups = computed(
-  () =>
-    searchText.value.length === 0 &&
-    Array.isArray(statusFilter.value) &&
-    statusFilter.value.length === 0
-)
-
-const groupList = computed(() => {
-  const map = new Map<
-    string,
-    {
-      name: string
-      dataConnection: DataConnection | null
-      items: any[]
-      summary: ReturnType<typeof groupHealthSummary>
-    }
-  >()
-
-  if (includeEmptyGroups.value) {
-    dataConnections.value.forEach((dc) => {
-      map.set(dc.name, {
-        name: dc.name,
-        dataConnection: dc,
-        items: [],
-        summary: groupHealthSummary([]),
-      })
-    })
-  }
-
-  filteredTaskRows.value.forEach((row) => {
-    const name = row.dataConnectionName
-    const existing = map.get(name)
-    if (existing) {
-      existing.items.push(row)
-      if (!existing.dataConnection && row.dataConnection) {
-        existing.dataConnection = row.dataConnection
-      }
-    } else {
-      map.set(name, {
-        name,
-        dataConnection: row.dataConnection ?? null,
-        items: [row],
-        summary: groupHealthSummary([row]),
-      })
-    }
-  })
-
-  const groups = Array.from(map.values()).map((group) => ({
-    ...group,
-    items: sortRows(group.items),
-    summary: groupHealthSummary(group.items),
-  }))
-
-  return groups.sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const effectiveBodyHeightFor = (groupName: string) =>
-  bodyHeights[groupName] > 0 ? bodyHeights[groupName] : ROW_HEIGHT * 8
-
-const virtualStartFor = (groupName: string) =>
-  Math.max(
-    0,
-    Math.floor((bodyScrollTops[groupName] ?? 0) / ROW_HEIGHT) - OVERSCAN
-  )
-
-const virtualEndFor = (groupName: string, totalRows: number) => {
-  const base = Math.ceil(
-    ((bodyScrollTops[groupName] ?? 0) + effectiveBodyHeightFor(groupName)) /
-      ROW_HEIGHT
-  )
-  return Math.min(totalRows, base + OVERSCAN)
-}
-
-const virtualRowsFor = (group: { name: string; items: any[] }) => {
-  const start = virtualStartFor(group.name)
-  const end = virtualEndFor(group.name, group.items.length)
-  return group.items.slice(start, end)
-}
-
-const virtualPaddingTopFor = (groupName: string) =>
-  virtualStartFor(groupName) * ROW_HEIGHT
-
-const virtualPaddingBottomFor = (group: { name: string; items: any[] }) => {
-  const rendered = virtualRowsFor(group).length * ROW_HEIGHT
-  return Math.max(
-    0,
-    group.items.length * ROW_HEIGHT -
-      virtualPaddingTopFor(group.name) -
-      rendered
-  )
-}
-
-const isGroupOpen = (groupName: string) =>
-  openGroupNames.value.includes(groupName)
-
-const clearSelection = () => {
-  if (typeof window === 'undefined') return
-  window.getSelection()?.removeAllRanges()
-}
-
-const toggleGroup = (groupName: string) => {
-  if (isGroupOpen(groupName)) {
-    openGroupNames.value = openGroupNames.value.filter(
-      (name) => name !== groupName
-    )
-    cleanupBodyScrollRef(groupName)
-  } else {
-    openGroupNames.value = [...openGroupNames.value, groupName]
-    resetVirtualScroll(groupName)
-  }
-  clearSelection()
-  if (typeof window !== 'undefined') {
-    window.requestAnimationFrame(clearSelection)
-  }
-}
-
-const onBodyScroll = (groupName: string, event: Event) => {
-  const target = event.target as HTMLElement
-  bodyScrollTops[groupName] = target.scrollTop
-  bodyHeights[groupName] = target.clientHeight
-}
-
-const cleanupBodyScrollRef = (groupName: string) => {
-  const observer = resizeObservers.get(groupName)
-  if (observer) {
-    observer.disconnect()
-    resizeObservers.delete(groupName)
-  }
-  bodyScrollEls.delete(groupName)
-  delete bodyHeights[groupName]
-  delete bodyScrollTops[groupName]
-}
-
-const setBodyScrollRef = (groupName: string, el: unknown) => {
-  if (!(el instanceof HTMLElement)) {
-    cleanupBodyScrollRef(groupName)
-    return
-  }
-
-  const current = bodyScrollEls.get(groupName)
-  if (current === el) return
-
-  cleanupBodyScrollRef(groupName)
-  bodyScrollEls.set(groupName, el)
-  bodyHeights[groupName] = el.clientHeight
-  bodyScrollTops[groupName] = el.scrollTop
-
-  const observer = new ResizeObserver(() => {
-    bodyHeights[groupName] = el.clientHeight
-  })
-  observer.observe(el)
-  resizeObservers.set(groupName, observer)
-}
-
-const resetVirtualScroll = (groupName: string) => {
-  bodyScrollTops[groupName] = 0
-  const el = bodyScrollEls.get(groupName)
-  if (el) {
-    el.scrollTop = 0
-  }
-}
-
-const upsertWorkspaceTask = (t: TaskExpanded | null) => {
+const upsertTask = (
+  kind: TaskKind,
+  t: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded | null
+) => {
   if (!t) return
-  const next = [...workspaceTasks.value]
+  const target =
+    kind === 'etl'
+      ? workspaceTasks
+      : kind === 'dataProduct'
+        ? dataProductTasks
+        : monitoringTasks
+  const next = [...target.value]
   const index = next.findIndex((p) => p.id === t.id)
   if (index !== -1) next[index] = t as any
   else next.push(t as any)
-  workspaceTasks.value = next as any
+  target.value = next as any
+}
+
+const findTaskByKind = (
+  kind: TaskKind,
+  taskId: string
+): TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded | null => {
+  const list =
+    kind === 'etl'
+      ? workspaceTasks.value
+      : kind === 'dataProduct'
+        ? dataProductTasks.value
+        : monitoringTasks.value
+  return (list as any[]).find((t) => t.id === taskId) ?? null
 }
 
 function stopAllTaskPolling() {
@@ -1137,23 +1198,20 @@ function stopAllTaskPolling() {
   }
 }
 
-const syncTaskLatestRun = (taskId: string, run: TaskRun) => {
-  const existingTask = workspaceTasks.value.find((item) => item.id === taskId)
+const syncTaskLatestRun = (kind: TaskKind, taskId: string, run: TaskRun) => {
+  const existingTask = findTaskByKind(kind, taskId)
   if (!existingTask) return
-  upsertWorkspaceTask({
-    ...existingTask,
+  upsertTask(kind, {
+    ...(existingTask as any),
     latestRun: run,
-  } as TaskExpanded)
+  })
 }
 
-const refreshTaskAfterRunCompletion = async (taskId: string) => {
+const refreshTaskAfterRunCompletion = async (kind: TaskKind, taskId: string) => {
   try {
-    const updated = (await hs.tasks.getItem(taskId, {
-      expand_related: true,
-    })) as unknown as TaskExpanded | null
-    if (updated) {
-      upsertWorkspaceTask(updated)
-    }
+    const svc = serviceForKind(kind)
+    const updated = (await svc.getItem(taskId, { expand_related: true })) as any
+    if (updated) upsertTask(kind, updated)
   } catch (error) {
     console.error('Error refreshing task after run completion', error)
   }
@@ -1161,13 +1219,12 @@ const refreshTaskAfterRunCompletion = async (taskId: string) => {
 
 const stopTaskPolling = (taskId: string) => {
   const timeoutId = taskPollTimeouts.get(taskId)
-  if (timeoutId) {
-    window.clearTimeout(timeoutId)
-  }
+  if (timeoutId) window.clearTimeout(timeoutId)
   taskPollTimeouts.delete(taskId)
 }
 
 const scheduleTaskPoll = (
+  kind: TaskKind,
   taskId: string,
   requestedRunId: string | null,
   previousRunId: string | null,
@@ -1180,6 +1237,8 @@ const scheduleTaskPoll = (
     return
   }
 
+  const svc = serviceForKind(kind)
+
   const timeoutId = window.setTimeout(async () => {
     if (workspaceId !== props.workspaceId) {
       runNowTriggeredByTaskId[taskId] = false
@@ -1189,7 +1248,7 @@ const scheduleTaskPoll = (
 
     try {
       if (requestedRunId) {
-        const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
+        const runResponse = await svc.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok
           ? ((runResponse.data as TaskRun) ?? null)
           : null
@@ -1201,19 +1260,18 @@ const scheduleTaskPoll = (
         }
 
         if (updatedRun?.id) {
-          syncTaskLatestRun(taskId, updatedRun)
-
+          syncTaskLatestRun(kind, taskId, updatedRun)
           if (updatedRun.status && updatedRun.status !== 'RUNNING') {
             runNowTriggeredByTaskId[taskId] = false
             stopTaskPolling(taskId)
-            await refreshTaskAfterRunCompletion(taskId)
+            await refreshTaskAfterRunCompletion(kind, taskId)
             return
           }
         }
       } else {
-        const updated = (await hs.tasks.getItem(taskId, {
+        const updated = (await svc.getItem(taskId, {
           expand_related: true,
-        })) as unknown as TaskExpanded | null
+        })) as any
 
         if (workspaceId !== props.workspaceId) {
           runNowTriggeredByTaskId[taskId] = false
@@ -1222,20 +1280,19 @@ const scheduleTaskPoll = (
         }
 
         if (updated) {
-          upsertWorkspaceTask(updated)
+          upsertTask(kind, updated)
           const latestRunId = updated.latestRun?.id ?? null
           const status = updated.latestRun?.status
           const sawRequestedRun = previousRunId
             ? !!latestRunId && latestRunId !== previousRunId
             : !!latestRunId
           if (sawRequestedRun && status) {
-            if (updated.latestRun) {
-              syncTaskLatestRun(taskId, updated.latestRun)
-            }
+            if (updated.latestRun)
+              syncTaskLatestRun(kind, taskId, updated.latestRun)
             if (status !== 'RUNNING') {
               runNowTriggeredByTaskId[taskId] = false
               stopTaskPolling(taskId)
-              await refreshTaskAfterRunCompletion(taskId)
+              await refreshTaskAfterRunCompletion(kind, taskId)
               return
             }
           }
@@ -1245,6 +1302,7 @@ const scheduleTaskPoll = (
       console.error('Error polling task status', error)
     }
     scheduleTaskPoll(
+      kind,
       taskId,
       requestedRunId,
       previousRunId,
@@ -1256,87 +1314,56 @@ const scheduleTaskPoll = (
   taskPollTimeouts.set(taskId, timeoutId)
 }
 
-async function runTaskNow(task: Partial<Task> & Pick<Task, 'id'>) {
+async function runTaskNow(row: TaskRow) {
   if (!canEditOrchestration.value) return
   const previousRunId =
-    workspaceTasks.value.find((item) => item.id === task.id)?.latestRun?.id ??
-    null
-  runNowTriggeredByTaskId[task.id] = true
+    (findTaskByKind(row.kind, row.id) as any)?.latestRun?.id ?? null
+  runNowTriggeredByTaskId[row.id] = true
   try {
-    const response = await hs.tasks.runTask(task.id)
+    const svc = serviceForKind(row.kind)
+    const response = await svc.runTask(row.id)
     if (!response.ok) {
       throw new Error(response.message || 'Unable to run task now.')
     }
     const requestedRun = response.ok
       ? ((response.data as TaskRun) ?? null)
       : null
-    if (requestedRun?.id) {
-      syncTaskLatestRun(task.id, requestedRun)
-    }
+    if (requestedRun?.id) syncTaskLatestRun(row.kind, row.id, requestedRun)
     scheduleTaskPoll(
-      task.id,
+      row.kind,
+      row.id,
       requestedRun?.id ?? null,
       previousRunId,
       0,
       props.workspaceId
     )
   } catch (error) {
-    runNowTriggeredByTaskId[task.id] = false
+    runNowTriggeredByTaskId[row.id] = false
     console.error('Error running task now', error)
   }
 }
 
-async function togglePaused(task: Partial<Task> & Pick<Task, 'id'>) {
+async function togglePaused(row: TaskRow) {
   if (!canEditOrchestration.value) return
-  if (!task.schedule) return
-  const previousEnabled = !!(task.schedule as TaskSchedule).enabled
-  ;(task.schedule as TaskSchedule).enabled = !previousEnabled
+  if (!row.schedule) return
+  const schedule = row.schedule
+  const previousEnabled = !!schedule.enabled
+  schedule.enabled = !previousEnabled
   try {
-    await hs.tasks.update({
-      id: task.id,
-      schedule: task.schedule,
+    const svc = serviceForKind(row.kind)
+    await svc.update({
+      id: row.id,
+      schedule,
     } as any)
-    const updated = await hs.tasks.getItem(task.id)
-    upsertWorkspaceTask(updated as any)
+    const updated = (await svc.getItem(row.id)) as any
+    if (updated) upsertTask(row.kind, updated)
   } catch (error) {
-    ;(task.schedule as TaskSchedule).enabled = previousEnabled
+    schedule.enabled = previousEnabled
     console.error('Error toggling task paused state', error)
   }
 }
 
-watch(
-  groupList,
-  (groups) => {
-    if (!groups.length) {
-      openGroupNames.value = []
-      return
-    }
-    if (!hasAutoOpened.value) {
-      openGroupNames.value = [groups[0].name]
-      hasAutoOpened.value = true
-      return
-    }
-    const availableGroupNames = new Set(groups.map((group) => group.name))
-    const nextOpenGroupNames = openGroupNames.value.filter((name) =>
-      availableGroupNames.has(name)
-    )
-    if (!nextOpenGroupNames.length) {
-      nextOpenGroupNames.push(groups[0].name)
-    }
-    openGroupNames.value = nextOpenGroupNames
-  },
-  { immediate: true }
-)
-
-onBeforeUnmount(() => {
-  resizeObservers.forEach((observer) => observer.disconnect())
-  resizeObservers.clear()
-  bodyScrollEls.clear()
-  stopAllTaskPolling()
-})
-
 const goToTask = async (item: any) => {
-  if (item.isPlaceholder) return
   const currentQuery = router.currentRoute.value.query ?? {}
   await router.push({
     name: 'Orchestration',
@@ -1349,51 +1376,351 @@ const goToTask = async (item: any) => {
   })
 }
 
-const toggleSort = (key: SortKey) => {
-  const next = normalizeSortSpecs(sortSpecs.value)
-  const idx = next.findIndex((s) => s.key === key)
-  if (idx === -1) {
-    next.push({ key, dir: 'asc' })
-    sortSpecs.value = normalizeSortSpecs(next)
-    return
-  }
-
-  if (next[idx].dir === 'asc') {
-    next[idx] = { key, dir: 'desc' }
-    sortSpecs.value = normalizeSortSpecs(next)
-    return
-  }
-
-  next.splice(idx, 1)
-  sortSpecs.value = normalizeSortSpecs(next)
-}
-
-const sortIcon = (key: SortKey) => {
-  const spec = normalizeSortSpecs(sortSpecs.value).find((s) => s.key === key)
-  if (!spec) return mdiArrowUpDown
-  return spec.dir === 'asc' ? mdiArrowUp : mdiArrowDown
-}
-
-const sortBadge = (key: SortKey) => {
-  const specs = normalizeSortSpecs(sortSpecs.value)
-  if (specs.length <= 1) return null
-  const idx = specs.findIndex((s) => s.key === key)
-  if (idx === -1) return null
-  return idx + 1
-}
-
-watch(
-  sortSpecs,
-  () => {
-    openGroupNames.value.forEach((groupName) => resetVirtualScroll(groupName))
-  },
-  { deep: true }
-)
+onBeforeUnmount(() => {
+  stopAllTaskPolling()
+})
 </script>
 
 <style scoped>
-.orchestration-table :deep(th),
-.orchestration-table :deep(td) {
-  border-color: #e2e8f0;
+.orchestration-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.nav-rail {
+  width: 88px;
+  border-right: 1px solid #e8e8e8;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rail-btn:hover .rail-pill {
+  background: rgba(0, 0, 0, 0.05);
+}
+.rail-pill {
+  width: 58px;
+  height: 32px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.15s;
+}
+.rail-badge {
+  position: absolute;
+  top: 1px;
+  right: 4px;
+  background: #b71c1c;
+  color: white;
+  border-radius: 8px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 3px;
+  line-height: 1;
+}
+.rail-label {
+  font-size: 10.5px;
+  color: #49454f;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.sidebar {
+  width: 260px;
+  border-right: 1px solid #e8e8e8;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.sidebar-header {
+  padding: 11px 14px 10px;
+  border-bottom: 1px solid #ebebeb;
+}
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #49454f;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.sidebar-add {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.sidebar-search {
+  position: relative;
+  margin-top: 8px;
+}
+.sidebar-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #cac4d0;
+  pointer-events: none;
+}
+.sidebar-search-input {
+  width: 100%;
+  border: 1px solid #cac4d0;
+  border-radius: 20px;
+  height: 30px;
+  padding-left: 30px;
+  padding-right: 10px;
+  font-size: 12px;
+  outline: none;
+  background: white;
+}
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.sidebar-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #ebebeb;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: background 0.1s;
+}
+.sidebar-item:not(.selected):hover {
+  background: rgba(0, 0, 0, 0.035);
+}
+.sidebar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.sidebar-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar-item-title {
+  font-size: 13px;
+  color: inherit;
+}
+.sidebar-item.selected .sidebar-item-title {
+  font-weight: 600;
+}
+.sidebar-item-meta {
+  font-size: 11px;
+  color: #49454f;
+  margin-top: 2px;
+}
+.sidebar-item.selected .sidebar-item-meta {
+  color: rgba(255, 255, 255, 0.7);
+}
+.sidebar-item-badge {
+  background: #ffebee;
+  color: #b3261e;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.sidebar-empty {
+  padding: 16px 14px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.sidebar-footer {
+  padding: 10px 14px;
+  border-top: 1px solid #ebebeb;
+}
+.sidebar-footer-btn {
+  background: none;
+  border: 1px dashed;
+  border-radius: 8px;
+  padding: 6px 0;
+  width: 100%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.sidebar-footer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: white;
+  min-width: 0;
+}
+.detail-header {
+  padding: 12px 22px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: white;
+  flex-shrink: 0;
+}
+.detail-title {
+  font-size: 17px;
+  font-weight: 400;
+  color: #1c1b1f;
+}
+.detail-badge {
+  font-size: 10px;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-weight: 700;
+}
+.detail-subtitle {
+  margin-top: 4px;
+}
+.detail-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.detail-filterbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 22px;
+  border-bottom: 1px solid #eef1f5;
+  background: white;
+}
+.detail-search {
+  max-width: 260px;
+}
+.detail-status-filter {
+  max-width: 320px;
+}
+
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px;
+}
+.detail-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+  color: #475569;
+  font-size: 13px;
+}
+.detail-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #475569;
+}
+.detail-empty h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tasks-table thead tr {
+  border-bottom: 2px solid #ebebeb;
+}
+.tasks-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 10.5px;
+  color: #49454f;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.tasks-table th.text-right {
+  text-align: right;
+}
+.tasks-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+.tasks-table tbody tr:hover {
+  background: #f5f7fa;
+}
+.th-sort {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.th-sort:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.task-name {
+  padding: 13px 12px;
+  font-weight: 500;
+  color: #1c1b1f;
+}
+.task-time {
+  padding: 13px 12px;
+  color: #49454f;
+  font-size: 12px;
+  font-family: 'Roboto Mono', monospace;
+  white-space: nowrap;
+}
+.tasks-table td {
+  padding: 13px 12px;
+}
+.task-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.task-actions > * + * {
+  margin-left: 6px;
 }
 </style>

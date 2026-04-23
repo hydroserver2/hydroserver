@@ -17,14 +17,8 @@
             : 'Source (CSV column name/index or JSON key)'
         }}
       </div>
-      <div class="head">
-        {{
-          isAggregationTask ? 'Aggregation statistic' : 'Data transformations'
-        }}
-      </div>
-      <div class="head">
-        {{ isAggregationTask ? 'Target datastream' : 'Target' }}
-      </div>
+      <div v-if="isAggregationTask" class="head">Aggregation statistic</div>
+      <div class="head">Target datastream</div>
 
       <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
         <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
@@ -92,14 +86,10 @@
           </div>
 
           <div
-            :class="[
-              'cell',
-              'transforms',
-              { 'aggregation-plain-cell': isAggregationTask },
-            ]"
+            v-if="isAggregationTask"
+            :class="['cell', 'aggregation-plain-cell']"
           >
             <v-select
-              v-if="isAggregationTask"
               class="aggregation-statistic-select"
               :model-value="getAggregationStatistic(p)"
               :items="aggregationStatisticOptions"
@@ -111,63 +101,10 @@
               @update:model-value="setAggregationStatistic(p, $event)"
             />
             <div
-              v-if="isAggregationTask && aggregationStatisticMissing"
+              v-if="aggregationStatisticMissing"
               class="text-error text-caption mt-1 aggregation-statistic-error"
             >
               Aggregation statistic is required
-            </div>
-
-            <div
-              v-if="!isAggregationTask"
-              class="transform-row d-flex flex-wrap w-100"
-            >
-              <v-chip
-                v-if="!p.dataTransformations?.length"
-                size="small"
-                variant="tonal"
-                color="grey"
-              >
-                no transform
-              </v-chip>
-              <v-chip
-                v-for="t in p.dataTransformations"
-                :key="tKey(t)"
-                size="small"
-                :color="t.type === 'expression' ? 'deep-purple' : 'teal'"
-                variant="tonal"
-                rounded="xl"
-                closable
-                @click.stop="openTransformEditor(p, t)"
-                @click:close.stop="removeTransformObj(p, t)"
-              >
-                <v-icon
-                  :icon="
-                    t.type == 'expression' ? mdiFunctionVariant : mdiTableSearch
-                  "
-                  size="14"
-                  class="mr-1"
-                />
-                {{
-                  t.type === 'expression'
-                    ? t.expression || 'expression()'
-                    : getRatingCurveReference(t)
-                    ? 'rating curve'
-                    : 'select rating curve'
-                }}
-              </v-chip>
-
-              <v-spacer />
-
-              <v-btn
-                variant="text"
-                size="small"
-                color="green-darken-2"
-                class="ms-auto"
-                @click="openNewTransform(p)"
-              >
-                <v-icon :icon="mdiPlusCircle" start />
-                Add transformation
-              </v-btn>
             </div>
           </div>
 
@@ -263,18 +200,6 @@
               >
                 Target is required
               </div>
-
-              <v-btn
-                v-if="!isAggregationTask"
-                icon
-                variant="text"
-                color="red-darken-3"
-                class="ms-auto"
-                title="Remove target path"
-                @click="removeMappingRow(mi, pi)"
-              >
-                <v-icon :icon="mdiTrashCanOutline" size="18" />
-              </v-btn>
             </template>
           </div>
         </template>
@@ -283,11 +208,11 @@
             size="small"
             variant="text"
             color="red-darken-3"
-            :title="`Remove mapping`"
+            :title="`Delete mapping`"
             @click.stop="removeMapping(mi)"
             :prepend-icon="mdiTrashCanOutline"
           >
-            Delete source
+            Delete mapping
           </v-btn>
 
           <v-btn
@@ -296,17 +221,8 @@
             variant="text"
             @click="onAddMapping"
           >
-            Add source
+            Add mapping
           </v-btn>
-
-          <v-btn-add
-            v-if="!isAggregationTask"
-            size="small"
-            variant="text"
-            @click="onAddPath(mi)"
-          >
-            Add target path
-          </v-btn-add>
         </div>
         <v-divider
           v-if="mi < task.mappings.length - 1"
@@ -315,30 +231,17 @@
       </template>
     </div>
 
-    <div
-      class="mapping-actions"
-      v-if="task.mappings.length === 0"
-    >
+    <div class="mapping-actions" v-if="task.mappings.length === 0">
       <v-btn
         size="small"
         :prepend-icon="mdiSourceBranch"
         variant="text"
         @click="onAddMapping"
       >
-        Add source
+        Add mapping
       </v-btn>
     </div>
   </v-form>
-
-  <v-dialog v-if="!isAggregationTask" v-model="transformOpen" width="40rem">
-    <DataTransformationForm
-      :transformation="editingTransform || undefined"
-      :workspace-id="resolvedWorkspaceId"
-      @created="onCreateTransform"
-      @updated="onUpdateTransform"
-      @close="transformOpen = false"
-    />
-  </v-dialog>
 
   <v-dialog
     v-if="!isAggregationTask"
@@ -376,31 +279,14 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  DataTransformation,
-  Mapping,
-  MappingPath,
-  Task,
-} from '@hydroserver/client'
-import DataTransformationForm from './DataTransformationForm.vue'
+import type { Mapping, MappingPath, Task } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 import { storeToRefs } from 'pinia'
 import { DatastreamExtended } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
-import {
-  getRatingCurveReference,
-  setRatingCurveReference,
-} from '@/utils/orchestration/ratingCurve'
-import {
-  mdiFunctionVariant,
-  mdiImport,
-  mdiPlusCircle,
-  mdiSourceBranch,
-  mdiTableSearch,
-  mdiTrashCanOutline,
-} from '@mdi/js'
+import { mdiImport, mdiSourceBranch, mdiTrashCanOutline } from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
 
 const task = defineModel<Task>('task', { required: true })
@@ -413,8 +299,7 @@ const {
   linkedDatastreams,
   draftDatastreams,
   workspaceDatastreams,
-} =
-  storeToRefs(orchestrationStore)
+} = storeToRefs(orchestrationStore)
 const { ensureWorkspaceDatastreams } = orchestrationStore
 const isAggregationTask = computed(
   () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
@@ -477,10 +362,19 @@ function setAggregationStatistic(path: MappingPath, value: string) {
   aggregationStatisticMissing.value = false
 }
 
-function enforceAggregationShape() {
-  if (!isAggregationTask.value) return
+function ensureSinglePath(mapping: Mapping) {
+  if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
+    mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
+  }
+  if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
+  if (!Array.isArray(mapping.paths[0].dataTransformations)) {
+    mapping.paths[0].dataTransformations = []
+  }
+  return mapping.paths[0]
+}
 
-  if (!task.value.mappings?.length) {
+function enforceMappingShape() {
+  if (!task.value.mappings?.length && isAggregationTask.value) {
     ;(task.value as any).mappings = [
       {
         sourceIdentifier: '',
@@ -490,11 +384,9 @@ function enforceAggregationShape() {
   }
 
   task.value.mappings.forEach((mapping: any) => {
-    if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-      mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
-    }
-    if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
-    ensureAggregationTransformation(mapping.paths[0])
+    const path = ensureSinglePath(mapping)
+    if (isAggregationTask.value) ensureAggregationTransformation(path)
+    else path.dataTransformations = []
   })
 }
 
@@ -507,7 +399,7 @@ async function validate() {
   if (noMappingsError.value) ok = false
 
   if (isAggregationTask.value) {
-    enforceAggregationShape()
+    enforceMappingShape()
     aggregationSourceMissing.value = false
     aggregationTargetMissing.value = false
     aggregationStatisticMissing.value = false
@@ -541,13 +433,11 @@ async function validate() {
   const nextMissingKeys = new Set<string>()
 
   task.value.mappings.forEach((m: any, mi) => {
-    const hasAnyTarget =
-      Array.isArray(m.paths) && m.paths.some((p: any) => !!p.targetIdentifier)
-    if (!hasAnyTarget) ok = false
-
-    m.paths?.forEach((p: any, pi: any) => {
-      if (!p.targetIdentifier) nextMissingKeys.add(`${mi}:${pi}`)
-    })
+    const path = ensureSinglePath(m)
+    if (!path.targetIdentifier) {
+      ok = false
+      nextMissingKeys.add(`${mi}:0`)
+    }
   })
 
   missingTargetKeys.value = nextMissingKeys
@@ -559,11 +449,8 @@ defineExpose({ validate })
 if (task.value.mappings.length === 0) {
   onAddMapping()
 }
-enforceAggregationShape()
+enforceMappingShape()
 
-const transformOpen = ref(false)
-const editingPath = ref<MappingPath | null>(null)
-const editingTransform = ref<DataTransformation | null>(null)
 const datastreamSelectorOpen = ref(false)
 const activeMi = ref<number | null>(null)
 const activePi = ref<number | null>(null)
@@ -630,25 +517,6 @@ function syncDraftDatastreams() {
   draftDatastreams.value = [...byId.values()]
 }
 
-function openNewTransform(p: MappingPath) {
-  if (!p.dataTransformations) p.dataTransformations = []
-  editingPath.value = p
-  editingTransform.value = null
-  transformOpen.value = true
-}
-
-function openTransformEditor(p: MappingPath, t: DataTransformation) {
-  editingPath.value = p
-  editingTransform.value = t
-  transformOpen.value = true
-}
-
-function onCreateTransform(created: DataTransformation) {
-  if (!editingPath.value) return
-  editingPath.value.dataTransformations.push(created)
-  transformOpen.value = false
-}
-
 function onTargetSelected(event: DatastreamExtended) {
   const mi = activeMi.value,
     pi = activePi.value
@@ -694,64 +562,11 @@ function onAggregationDatastreamSelected(event: DatastreamExtended) {
   aggregationSelectorPi.value = null
 }
 
-function onUpdateTransform(updated: DataTransformation) {
-  const t = editingTransform.value
-  if (!t) return
-  if (updated.type === 'expression') {
-    ;(t as any).type = 'expression'
-    ;(t as any).expression = updated.expression
-    delete (t as any).ratingCurveUrl
-  } else {
-    ;(t as any).type = 'rating_curve'
-    setRatingCurveReference(t, getRatingCurveReference(updated))
-    delete (t as any).expression
-  }
-  transformOpen.value = false
-}
-
-const _tKeys = new WeakMap<object, string>()
-function tKey(t: DataTransformation): string {
-  let k = _tKeys.get(t as object)
-  if (!k) {
-    k = crypto.randomUUID()
-    _tKeys.set(t as object, k)
-  }
-  return k
-}
-
-function removeTransformObj(p: MappingPath, t: DataTransformation) {
-  const arr = p.dataTransformations
-  if (!arr) return
-  const i = arr.indexOf(t) // remove by object identity
-  if (i !== -1) arr.splice(i, 1)
-}
-
 function removeMapping(mi: number) {
   const mappings = task.value.mappings
   if (!Array.isArray(mappings) || mi < 0 || mi >= mappings.length) return
   mappings.splice(mi, 1)
   syncDraftDatastreams()
-}
-
-function removeMappingRow(mi: number, pi: number) {
-  const mappings = task.value.mappings
-  const m = mappings[mi] as any
-  if (!m) return
-
-  m.paths.splice(pi, 1)
-  if (m.paths.length === 0) mappings.splice(mi, 1)
-  syncDraftDatastreams()
-}
-
-function onAddPath(mi: number) {
-  if (isAggregationTask.value) return
-  const m = task.value.mappings[mi] as any
-  if (!m) return
-  if (!Array.isArray(m.paths)) m.paths = []
-  m.paths.push({
-    targetIdentifier: '',
-    dataTransformations: [],
-  } as MappingPath)
 }
 
 function onAddMapping() {
@@ -776,9 +591,17 @@ function onAddMapping() {
 watch(
   isAggregationTask,
   () => {
-    enforceAggregationShape()
+    enforceMappingShape()
   },
   { immediate: true }
+)
+
+watch(
+  () => task.value.mappings,
+  () => {
+    enforceMappingShape()
+  },
+  { deep: true }
 )
 
 watch(
@@ -798,7 +621,7 @@ watch(
 <style scoped>
 .swimlanes {
   display: grid;
-  grid-template-columns: 1fr 2fr 2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 12px;
   row-gap: 8px;
   margin-bottom: 12px;
@@ -840,14 +663,6 @@ watch(
 }
 .source-empty {
   min-height: 0;
-}
-.transforms.trunk {
-  position: relative;
-}
-.transform-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 .mapping-actions {
   display: flex;
