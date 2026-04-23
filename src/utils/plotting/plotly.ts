@@ -46,6 +46,15 @@ export type AppPlotlyTrace = Partial<PlotData> & {
   id?: string
   showLegend?: boolean
   selected?: { marker: { color: string; opacity?: number } }
+  /**
+   * Index into the full `ObservationRecord` arrays where the windowed
+   * trace slice starts. Plotly's `pointIndex` / `selectedpoints` values
+   * are relative to the windowed x/y arrays passed to `newPlot`; adding
+   * this offset translates them back to full-record indices so edit
+   * operations (delete, change-values, etc.) target the correct points.
+   * 0 when no windowing is active (beginDate is the start of the data).
+   */
+  _windowStartIdx?: number
 }
 
 /**
@@ -351,13 +360,30 @@ export const createPlotlyOption = (
   // shift padding on the right.
   let visibleNonQcCount = 0
 
+  const windowStartMs = beginDate?.value?.getTime() ?? -Infinity
+  const windowEndMs = endDate?.value?.getTime() ?? Infinity
+
   seriesArray.forEach((s) => {
     // Colour is persisted on the GraphSeries at fetch time (see
     // `store/plotly.ts#assignFreeColor`), so dragging a row up or down
     // in PlottedDatastreams leaves its line colour intact. QC always
     // overrides with `COLORS[0]` (black) below.
     const color = s.color ?? COLORS[1]
-    const xData = s.data?.dataX
+    const rawX = s.data?.dataX
+    const rawY = s.data?.dataY
+
+    // Slice to [beginDate, endDate]. `findFirstGreaterOrEqual` returns
+    // the first index ≥ the target; using `windowEndMs + 1` as the
+    // exclusive upper bound yields all points with timestamp ≤ endMs.
+    let xData = rawX
+    let yData = rawY
+    if (rawX?.length && rawY?.length &&
+      Number.isFinite(windowStartMs) && Number.isFinite(windowEndMs)) {
+      const startIdx = findFirstGreaterOrEqual(rawX as unknown as number[], windowStartMs)
+      const endIdx = findFirstGreaterOrEqual(rawX as unknown as number[], windowEndMs + 1)
+      xData = rawX.subarray(startIdx, endIdx)
+      yData = rawY.subarray(startIdx, endIdx)
+    }
 
     if (xData?.length) {
       const xDataStart = xData[0] as number
@@ -379,7 +405,7 @@ export const createPlotlyOption = (
     // shows up as a flash on reorder / QC swap.
     let markerOpacity = 1
     if (densityRangeValid && xData?.length) {
-      const xs = xData as number[]
+      const xs = xData as unknown as number[]
       const count =
         findFirstGreaterOrEqual(xs, densityEnd) -
         findFirstGreaterOrEqual(xs, densityStart)
@@ -388,8 +414,8 @@ export const createPlotlyOption = (
 
     const trace: AppPlotlyTrace = {
       id: s.id,
-      x: s.data?.dataX,
-      y: s.data?.dataY,
+      x: xData,
+      y: yData,
       yaxis: axisRef,
       type: 'scattergl',
       mode: 'lines+markers',
@@ -412,6 +438,14 @@ export const createPlotlyOption = (
       // the highlighted points would inherit that zero and stay
       // invisible after a box-select.
       trace.selected = { marker: { color: 'red', opacity: 1 } }
+
+      // Record where the windowed slice starts in the full
+      // ObservationRecord so `handleSelected` can translate Plotly's
+      // trace-relative `pointIndex` / `selectedpoints` back to
+      // full-record indices before storing them in `selectedData`.
+      trace._windowStartIdx = (rawX?.length && Number.isFinite(windowStartMs))
+        ? findFirstGreaterOrEqual(rawX as unknown as number[], windowStartMs)
+        : 0
 
         ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
           title: {
@@ -476,11 +510,11 @@ export const createPlotlyOption = (
         visible: isAxisVisible,
         ...(isAxisVisible
           ? {
-              ...(visibleNonQcCount === 0
-                ? {}
-                : ({ shift: 16 } as object)),
-              ...({ autoshift: true } as object),
-            }
+            ...(visibleNonQcCount === 0
+              ? {}
+              : ({ shift: 16 } as object)),
+            ...({ autoshift: true } as object),
+          }
           : ({ autoshift: false } as object)),
       }
         ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = yAxis
@@ -755,7 +789,16 @@ export const handleSelected = async (
     (t) => (t as AppPlotlyTrace).id == qcDatastream.value?.id
   ) as (AppPlotlyTrace & { selectedpoints?: number[] }) | undefined
 
-  selectedData.value = trace?.selectedpoints || null
+  // Plotly's `selectedpoints` are indices into the *windowed* x/y
+  // arrays (the subarray slice we pass to newPlot). Edit operations
+  // (delete, change-values, …) work on the full `ObservationRecord`,
+  // so we must offset each index by the window's start position before
+  // storing. When no windowing is active `_windowStartIdx` is 0.
+  const windowOffset = (trace as AppPlotlyTrace)?._windowStartIdx ?? 0
+  const rawSelected = trace?.selectedpoints
+  selectedData.value = rawSelected?.length
+    ? rawSelected.map((i) => i + windowOffset)
+    : null
 
   // PlotRelayoutEvent extends Partial<Layout>; `dragmode` is in Layout.
   // PlotMouseEvent has no `dragmode` so the property access narrows to
@@ -769,9 +812,12 @@ export const handleSelected = async (
   }
 
   if (eventData) {
+    // Use the already-offset indices (same ones stored in selectedData)
+    // so the SELECTION history entry carries full-record indices that
+    // downstream edit ops (change-values, add-datetimes, etc.) can use.
     await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.SELECTION,
-      trace?.selectedpoints
+      selectedData.value ?? []
     )
 
     // Sync Vue's reactive editHistory with the raw history array
@@ -1610,13 +1656,13 @@ const collectRightAxes = (
     if (!Y_AXIS_KEY_RE.test(key) || key === 'yaxis') continue
     const ax = fullLayout[key] as
       | {
-          fixedrange?: boolean
-          visible?: boolean
-          _mainLinePosition?: number
-          _shift?: number
-          _mainSubplot?: string
-          _subplotsWith?: string[]
-        }
+        fixedrange?: boolean
+        visible?: boolean
+        _mainLinePosition?: number
+        _shift?: number
+        _mainSubplot?: string
+        _subplotsWith?: string[]
+      }
       | undefined
     if (!ax || ax.fixedrange) continue
     // Skip axes the user has hidden via the sidebar. Their chrome
@@ -1679,11 +1725,11 @@ const widenYAxisDragRects = (gd: HTMLElement): void => {
   // graph's left edge out to the axis line.
   const primaryY = fl.yaxis as
     | {
-        fixedrange?: boolean
-        _mainLinePosition?: number
-        _mainSubplot?: string
-        _subplotsWith?: string[]
-      }
+      fixedrange?: boolean
+      _mainLinePosition?: number
+      _mainSubplot?: string
+      _subplotsWith?: string[]
+    }
     | undefined
   if (
     primaryY &&
@@ -1774,10 +1820,10 @@ const suppressHiddenAxisDragRects = (gd: HTMLElement): void => {
     if (!Y_AXIS_KEY_RE.test(key) || key === 'yaxis') continue
     const ax = fl[key] as
       | {
-          visible?: boolean
-          _mainSubplot?: string
-          _subplotsWith?: string[]
-        }
+        visible?: boolean
+        _mainSubplot?: string
+        _subplotsWith?: string[]
+      }
       | undefined
     if (!ax || ax.visible !== false) continue
     const subplotId = ax._mainSubplot ?? ax._subplotsWith?.[0]
