@@ -1666,10 +1666,9 @@ onBeforeUnmount(() => {
 }
 
 .tasks-table {
-  width: calc(100% + 22px);
+  width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  margin-right: -22px;
 }
 .tasks-table thead tr {
   border-bottom: 2px solid #ebebeb;
