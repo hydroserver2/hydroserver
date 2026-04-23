@@ -324,6 +324,7 @@ import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
+import Plotly from 'plotly.js-dist'
 import {
   handleNewPlot,
   handleRelayout,
@@ -645,6 +646,9 @@ const modebarIcons = [
   },
 ]
 
+let plotResizeObserver: ResizeObserver | null = null
+let pendingResizeFrame: number | null = null
+
 onMounted(async () => {
   // Flip the store's preview flag before `handleNewPlot` so
   // `createPlotlyOption` emits the preview-friendly layout (no qualifier
@@ -663,12 +667,52 @@ onMounted(async () => {
     if (!props.preview && editorDateBtnId.value != null) {
       onEditorDatePreset(editorDateBtnId.value)
     }
+
+    // Attach the container-size observer after the Plotly instance
+    // is actually live. Observing earlier is wasted effort because
+    // `Plotly.Plots.resize` no-ops on a gd element without an
+    // attached layout.
+    const target = plot.value
+    if (target && typeof ResizeObserver !== 'undefined') {
+      let initialFired = false
+      plotResizeObserver = new ResizeObserver(() => {
+        // The first callback is the synchronous "observe started"
+        // notification with the current size — skip it so we don't
+        // resize on top of the freshly-built plot.
+        if (!initialFired) {
+          initialFired = true
+          return
+        }
+        if (pendingResizeFrame != null) return
+        pendingResizeFrame = requestAnimationFrame(() => {
+          pendingResizeFrame = null
+          const gd = plot.value
+          if (!gd) return
+          // `Plotly.Plots.resize` throws if the gd isn't yet a
+          // Plotly plot (no `_fullLayout`). Guard against the
+          // race where the observer fires before `handleNewPlot`
+          // has finished.
+          const anyGd = gd as unknown as { _fullLayout?: unknown }
+          if (!anyGd._fullLayout) return
+          void Plotly.Plots.resize(gd as unknown as Plotly.Root)
+        })
+      })
+      plotResizeObserver.observe(target)
+    }
   }, 200)
 })
 
 onBeforeUnmount(() => {
   // Reset so a subsequent Plot mount in Edit view doesn't inherit preview.
   if (previewMode.value) previewMode.value = false
+  if (pendingResizeFrame != null) {
+    cancelAnimationFrame(pendingResizeFrame)
+    pendingResizeFrame = null
+  }
+  if (plotResizeObserver) {
+    plotResizeObserver.disconnect()
+    plotResizeObserver = null
+  }
 })
 
 const onTabChange = () => {
