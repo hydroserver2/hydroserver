@@ -288,31 +288,11 @@
     </v-form>
 
     <template #actions>
-      <div class="task-form-actions">
-        <v-spacer />
-        <v-btn
-          variant="outlined"
-          rounded="lg"
-          min-width="124"
-          height="46"
-          type="button"
-          @click="$emit('close')"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          rounded="lg"
-          min-width="152"
-          height="46"
-          :loading="submitLoading"
-          type="button"
-          @click="onSubmit"
-        >
-          Save task
-        </v-btn>
-      </div>
+      <v-spacer />
+      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
+      <v-btn-primary :loading="submitLoading" type="button" @click="onSubmit">
+        Save task
+      </v-btn-primary>
     </template>
   </StickyForm>
 </template>
@@ -867,14 +847,6 @@ async function onSubmit() {
 .schedule-start-input {
   max-width: 220px;
 }
-.task-form-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 4px 10px;
-}
-
 :deep(.task-form-shell .v-field) {
   --v-input-control-height: 38px;
 }
@@ -949,9 +921,5 @@ async function onSubmit() {
     width: 100%;
   }
 
-  .task-form-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
 }
 </style>
