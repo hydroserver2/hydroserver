@@ -39,7 +39,8 @@
                 v-if="!ensureSinglePath(m).targetIdentifier"
                 variant="outlined"
                 rounded="lg"
-                height="44"
+                height="40"
+                type="button"
                 class="etl-target-btn text-none"
                 :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
                 @click="openTargetSelector(mi, 0)"
@@ -54,7 +55,8 @@
                 v-else
                 variant="outlined"
                 rounded="lg"
-                height="44"
+                height="40"
+                type="button"
                 class="etl-target-btn etl-target-btn-selected text-none"
                 @click="openTargetSelector(mi, 0)"
               >
@@ -63,7 +65,9 @@
                     String(ensureSinglePath(m).targetIdentifier)
                   }}</span>
                   <span class="target-name">
-                    {{ datastreamNameById(ensureSinglePath(m).targetIdentifier) }}
+                    {{
+                      datastreamNameById(ensureSinglePath(m).targetIdentifier)
+                    }}
                   </span>
                 </span>
               </v-btn>
@@ -81,6 +85,7 @@
                 icon
                 variant="text"
                 color="red-lighten-1"
+                type="button"
                 :title="`Delete mapping`"
                 @click.stop="removeMapping(mi)"
               >
@@ -94,6 +99,7 @@
           <v-btn
             variant="outlined"
             rounded="lg"
+            type="button"
             class="text-none etl-add-mapping-btn"
             :prepend-icon="mdiPlus"
             @click="onAddMapping"
@@ -120,7 +126,10 @@
                   v-if="!m.sourceIdentifier"
                   size="small"
                   variant="outlined"
-                  :color="aggregationSourceMissing ? 'error' : 'green-lighten-1'"
+                  type="button"
+                  :color="
+                    aggregationSourceMissing ? 'error' : 'green-lighten-1'
+                  "
                   class="mr-4 target-selector-btn text-none"
                   :class="{
                     'target-selector-btn-error': aggregationSourceMissing,
@@ -136,12 +145,15 @@
                   size="small"
                   variant="tonal"
                   color="green-darken-2"
+                  type="button"
                   class="mr-4 target-selector-btn target-selector-btn-selected text-none"
                   :prepend-icon="mdiImport"
                   @click="openAggregationDatastreamSelector('source', mi, pi)"
                 >
                   <span class="target-selector-content">
-                    <span class="target-id">{{ String(m.sourceIdentifier) }}</span>
+                    <span class="target-id">{{
+                      String(m.sourceIdentifier)
+                    }}</span>
                     <span class="target-name">
                       {{ datastreamNameById(m.sourceIdentifier) }}
                     </span>
@@ -183,7 +195,10 @@
                   v-if="!p.targetIdentifier"
                   size="small"
                   variant="outlined"
-                  :color="aggregationTargetMissing ? 'error' : 'green-lighten-1'"
+                  type="button"
+                  :color="
+                    aggregationTargetMissing ? 'error' : 'green-lighten-1'
+                  "
                   class="mr-4 target-selector-btn text-none"
                   :class="{
                     'target-selector-btn-error': aggregationTargetMissing,
@@ -199,6 +214,7 @@
                   size="small"
                   variant="tonal"
                   color="green-darken-2"
+                  type="button"
                   class="mr-4 target-selector-btn target-selector-btn-selected text-none"
                   :prepend-icon="mdiImport"
                   @click="openAggregationDatastreamSelector('target', mi, pi)"
@@ -228,6 +244,7 @@
               size="small"
               variant="text"
               color="red-darken-3"
+              type="button"
               :title="`Delete mapping`"
               @click.stop="removeMapping(mi)"
               :prepend-icon="mdiTrashCanOutline"
@@ -239,6 +256,7 @@
               size="small"
               :prepend-icon="mdiSourceBranch"
               variant="text"
+              type="button"
               @click="onAddMapping"
             >
               Add mapping
@@ -256,6 +274,7 @@
           size="small"
           :prepend-icon="mdiSourceBranch"
           variant="text"
+          type="button"
           @click="onAddMapping"
         >
           Add mapping
@@ -402,20 +421,28 @@ function ensureSinglePath(mapping: Mapping) {
 }
 
 function enforceMappingShape() {
-  if (!task.value.mappings?.length && isAggregationTask.value) {
-    ;(task.value as any).mappings = [
-      {
-        sourceIdentifier: '',
-        paths: [{ targetIdentifier: '', dataTransformations: [] }],
-      },
-    ]
+  if (!Array.isArray(task.value.mappings)) {
+    ;(task.value as any).mappings = []
+  }
+  if (!task.value.mappings.length && isAggregationTask.value) {
+    task.value.mappings.push(createEmptyMapping())
   }
 
   task.value.mappings.forEach((mapping: any) => {
     const path = ensureSinglePath(mapping)
     if (isAggregationTask.value) ensureAggregationTransformation(path)
-    else path.dataTransformations = []
   })
+}
+
+function ensureInitialTaskMappings() {
+  if (!Array.isArray(task.value.mappings)) {
+    ;(task.value as any).mappings = []
+  }
+
+  if (isAggregationTask.value) return
+  if (task.value.mappings.length === 0) {
+    task.value.mappings.push(createEmptyMapping())
+  }
 }
 
 async function validate() {
@@ -473,11 +500,6 @@ async function validate() {
 }
 
 defineExpose({ validate })
-
-if (task.value.mappings.length === 0) {
-  onAddMapping()
-}
-enforceMappingShape()
 
 const datastreamSelectorOpen = ref(false)
 const activeMi = ref<number | null>(null)
@@ -597,10 +619,8 @@ function removeMapping(mi: number) {
   syncDraftDatastreams()
 }
 
-function onAddMapping() {
-  if (!task.value.mappings) (task.value as any).mappings = []
-
-  const newMapping: Mapping = {
+function createEmptyMapping() {
+  const mapping = {
     sourceIdentifier: '',
     paths: [
       {
@@ -608,29 +628,36 @@ function onAddMapping() {
         dataTransformations: [],
       },
     ],
-  }
+  } as any
 
   if (isAggregationTask.value) {
-    ensureAggregationTransformation(newMapping.paths[0])
+    ensureAggregationTransformation(mapping.paths[0])
   }
-  ;(task.value.mappings as any[]).push(newMapping)
+
+  return mapping
+}
+
+function onAddMapping() {
+  if (!Array.isArray(task.value.mappings)) {
+    ;(task.value as any).mappings = []
+  }
+  task.value.mappings.push(createEmptyMapping())
+  noMappingsError.value = false
 }
 
 watch(
-  isAggregationTask,
+  () => task.value,
   () => {
-    enforceMappingShape()
+    ensureInitialTaskMappings()
+    if (isAggregationTask.value) enforceMappingShape()
   },
   { immediate: true }
 )
 
-watch(
-  () => task.value.mappings,
-  () => {
-    enforceMappingShape()
-  },
-  { deep: true }
-)
+watch(isAggregationTask, () => {
+  ensureInitialTaskMappings()
+  if (isAggregationTask.value) enforceMappingShape()
+})
 
 watch(
   resolvedWorkspaceId,
@@ -650,14 +677,14 @@ watch(
 .etl-mappings {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 .etl-mappings-head {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #4f4b59;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
 }
 .etl-mappings-head-target {
   margin-left: calc(50% + 34px);
@@ -665,7 +692,7 @@ watch(
 .etl-mapping-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 44px;
-  gap: 8px;
+  gap: 5px;
   align-items: start;
 }
 .etl-mapping-source,
@@ -677,13 +704,13 @@ watch(
   align-items: center;
   justify-content: center;
   color: #c0b8c9;
-  min-height: 44px;
+  min-height: 40px;
 }
 .etl-mapping-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 40px;
 }
 .etl-target-btn {
   width: 100%;
@@ -693,7 +720,8 @@ watch(
   border-color: #1565c0;
   color: #1565c0;
   background: #fdfdff;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
+  padding-inline: 12px;
 }
 .etl-target-btn-error {
   border-color: #d32f2f;
@@ -707,7 +735,7 @@ watch(
 .etl-target-btn-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 700;
 }
 .etl-target-btn :deep(.v-btn__content) {
@@ -716,25 +744,26 @@ watch(
   overflow: hidden;
 }
 .etl-mapping-actions {
-  margin-top: 0;
+  margin-top: 1px;
 }
 .etl-add-mapping-btn {
-  min-height: 40px;
+  min-height: 38px;
   border-width: 2px;
   border-color: #1565c0;
   color: #1565c0;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
+  border-style: dashed;
 }
 
 :deep(.etl-mapping-source .v-field) {
-  --v-input-control-height: 40px;
+  --v-input-control-height: 38px;
 }
 
 :deep(.etl-mapping-source .v-field__input) {
-  min-height: 40px;
+  min-height: 38px;
   padding-top: 0;
   padding-bottom: 0;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .swimlanes {

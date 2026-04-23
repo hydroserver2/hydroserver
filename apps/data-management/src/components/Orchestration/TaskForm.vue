@@ -17,10 +17,7 @@
       validate-on="blur"
     >
       <div v-if="task" class="task-form-shell">
-        <div
-          v-if="!isDataConnectionScopedCreate"
-          class="task-form-meta-grid"
-        >
+        <div v-if="!isDataConnectionScopedCreate" class="task-form-meta-grid">
           <div class="task-form-field">
             <label class="task-form-label" for="task-type">Task type</label>
             <v-select
@@ -37,10 +34,7 @@
             />
           </div>
 
-          <div
-            v-if="!isAggregationTask"
-            class="task-form-field"
-          >
+          <div v-if="!isAggregationTask" class="task-form-field">
             <label class="task-form-label" for="task-data-connection">
               Data connection <span class="task-form-required">*</span>
             </label>
@@ -149,7 +143,10 @@
                 </div>
               </div>
 
-              <div v-if="scheduleMode === 'interval'" class="schedule-card-body">
+              <div
+                v-if="scheduleMode === 'interval'"
+                class="schedule-card-body"
+              >
                 <span class="schedule-inline-label">Every</span>
                 <v-text-field
                   v-model.number="task.schedule!.interval"
@@ -214,7 +211,9 @@
           </div>
 
           <div class="schedule-start-row">
-            <label class="schedule-start-label" for="task-start-time">Start</label>
+            <label class="schedule-start-label" for="task-start-time"
+              >Start</label
+            >
             <v-text-field
               id="task-start-time"
               v-model="startInput"
@@ -228,13 +227,17 @@
           </div>
         </div>
 
-        <v-divider v-if="perTaskPlaceholders.length" class="task-form-divider" />
+        <v-divider
+          v-if="perTaskPlaceholders.length"
+          class="task-form-divider"
+        />
 
         <div v-if="perTaskPlaceholders.length" class="task-form-section">
           <div class="task-form-section-header task-form-section-header-stack">
             <h3 class="task-form-section-title">Template variables</h3>
             <p class="task-form-section-copy">
-              Fill in values for URL placeholders defined in this data connection.
+              Fill in values for URL placeholders defined in this data
+              connection.
             </p>
           </div>
 
@@ -244,7 +247,10 @@
               :key="variable.name"
               class="task-form-field"
             >
-              <label class="task-form-label" :for="`task-variable-${variable.name}`">
+              <label
+                class="task-form-label"
+                :for="`task-variable-${variable.name}`"
+              >
                 {{ variable.name }} <span class="task-form-required">*</span>
               </label>
               <v-text-field
@@ -289,6 +295,7 @@
           rounded="lg"
           min-width="124"
           height="46"
+          type="button"
           @click="$emit('close')"
         >
           Cancel
@@ -328,10 +335,7 @@ import StickyForm from '@/components/Forms/StickyForm.vue'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Snackbar } from '@/utils/notifications'
-import {
-  DST_AWARE_TIMEZONES,
-  FIXED_OFFSET_TIMEZONES,
-} from '@/models/timestamp'
+import { DST_AWARE_TIMEZONES, FIXED_OFFSET_TIMEZONES } from '@/models/timestamp'
 
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id)
@@ -469,7 +473,9 @@ function ensureAggregationTransformation(path: any) {
 }
 
 function hydrateAggregationTimezoneFromMappings() {
-  const first = (task.value.mappings as any)?.[0]?.paths?.[0]?.dataTransformations?.find(
+  const first = (
+    task.value.mappings as any
+  )?.[0]?.paths?.[0]?.dataTransformations?.find(
     (t: any) => t?.type === 'aggregation'
   ) as any
   if (!first) {
@@ -478,15 +484,13 @@ function hydrateAggregationTimezoneFromMappings() {
     return
   }
   aggregationTimezoneMode.value =
-    first.timezoneMode === 'daylightSavings'
-      ? 'daylightSavings'
-      : 'fixedOffset'
+    first.timezoneMode === 'daylightSavings' ? 'daylightSavings' : 'fixedOffset'
   aggregationTimezone.value =
     typeof first.timezone === 'string' && first.timezone
       ? first.timezone
       : aggregationTimezoneMode.value === 'daylightSavings'
-        ? 'America/Denver'
-        : '-0700'
+      ? 'America/Denver'
+      : '-0700'
 }
 
 function syncAggregationConfigToMappings() {
@@ -604,13 +608,17 @@ watch(
     if (mode === 'daylightSavings') {
       if (
         !aggregationTimezone.value ||
-        !DST_AWARE_TIMEZONES.some((tz) => tz.value === aggregationTimezone.value)
+        !DST_AWARE_TIMEZONES.some(
+          (tz) => tz.value === aggregationTimezone.value
+        )
       ) {
         aggregationTimezone.value = 'America/Denver'
       }
     } else if (
       !aggregationTimezone.value ||
-      !FIXED_OFFSET_TIMEZONES.some((tz) => tz.value === aggregationTimezone.value)
+      !FIXED_OFFSET_TIMEZONES.some(
+        (tz) => tz.value === aggregationTimezone.value
+      )
     ) {
       aggregationTimezone.value = '-0700'
     }
@@ -647,7 +655,9 @@ async function onSubmit() {
     ;(task.value as any).workspaceId = taskWorkspaceId.value || ''
     if (isDataConnectionScopedCreate.value) {
       ;(task.value as any).type = 'ETL'
-      task.value.dataConnectionId = String(props.initialDataConnection?.id ?? '')
+      task.value.dataConnectionId = String(
+        props.initialDataConnection?.id ?? ''
+      )
     }
     if (!task.value.schedule) task.value.schedule = defaultSchedule()
     if (isAggregationTask.value) {
@@ -687,10 +697,10 @@ async function onSubmit() {
 }
 
 .task-form-header {
-  padding: 12px 20px 10px;
+  padding: 10px 18px 8px;
 }
 .task-form-title {
-  font-size: 1.02rem;
+  font-size: 1rem;
   line-height: 1.2;
   font-weight: 500;
   color: #1c1b1f;
@@ -698,10 +708,10 @@ async function onSubmit() {
 .task-form-context {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 3px;
   color: #4f4b59;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 500;
 }
 .task-form-context-dot {
@@ -711,21 +721,21 @@ async function onSubmit() {
   background: #1565c0;
 }
 .task-form-shell {
-  padding: 14px 20px 18px;
+  padding: 10px 14px 12px;
 }
 .task-form-meta-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 .task-form-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 .task-form-divider {
-  margin: 12px 0;
+  margin: 8px 0;
 }
 .task-form-field {
   display: flex;
@@ -733,7 +743,7 @@ async function onSubmit() {
   gap: 4px;
 }
 .task-form-label {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #1f1d24;
 }
@@ -743,15 +753,15 @@ async function onSubmit() {
 .task-form-section-header {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
 }
 .task-form-section-header-stack {
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 1px;
 }
 .task-form-section-title {
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 800;
@@ -760,24 +770,24 @@ async function onSubmit() {
 .task-form-section-subtitle,
 .task-form-section-copy {
   color: #5f5a67;
-  font-size: 0.74rem;
-  line-height: 1.35;
+  font-size: 0.72rem;
+  line-height: 1.3;
 }
 .task-form-template-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 420px));
+  gap: 8px;
 }
 .schedule-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 10px;
+  gap: 6px;
 }
 .schedule-card {
   border: 2px solid #d0c9d8;
   border-radius: 14px;
   background: #fff;
-  padding: 12px 14px;
+  padding: 8px 10px;
   transition: border-color 0.16s ease, background-color 0.16s ease,
     box-shadow 0.16s ease;
   outline: none;
@@ -794,7 +804,7 @@ async function onSubmit() {
 .schedule-card-top {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 5px;
 }
 .schedule-card-radio {
   width: 16px;
@@ -810,7 +820,7 @@ async function onSubmit() {
   background: #fff;
 }
 .schedule-card-title {
-  font-size: 0.82rem;
+  font-size: 0.79rem;
   font-weight: 700;
   color: #1f1d24;
   line-height: 1.2;
@@ -818,28 +828,28 @@ async function onSubmit() {
 .schedule-card-copy {
   margin-top: 1px;
   color: #5f5a67;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   line-height: 1.25;
 }
 .schedule-card-body {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding-left: 24px;
+  gap: 5px;
+  margin-top: 4px;
+  padding-left: 28px;
   flex-wrap: wrap;
 }
 .schedule-inline-label,
 .schedule-start-label {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 500;
   color: #1f1d24;
 }
 .schedule-interval-input {
-  max-width: 68px;
+  max-width: 62px;
 }
 .schedule-unit-select {
-  max-width: 118px;
+  max-width: 110px;
 }
 .schedule-crontab-input {
   max-width: 280px;
@@ -851,45 +861,76 @@ async function onSubmit() {
 .schedule-start-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .schedule-start-input {
-  max-width: 240px;
+  max-width: 220px;
 }
 .task-form-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 6px 12px;
+  padding: 4px 10px;
 }
 
 :deep(.task-form-shell .v-field) {
-  --v-input-control-height: 40px;
+  --v-input-control-height: 38px;
+}
+
+.schedule-card-active :deep(.v-field) {
+  background: #ffffff;
+}
+
+.schedule-card-active :deep(.v-field__overlay) {
+  background: transparent;
+}
+
+.schedule-card-active :deep(.v-field__outline) {
+  --v-field-border-opacity: 1;
 }
 
 :deep(.task-form-shell .v-field__input) {
-  min-height: 40px;
+  min-height: 38px;
   padding-top: 0;
   padding-bottom: 0;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 :deep(.task-form-shell .v-label) {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 :deep(.task-form-shell .v-messages) {
-  min-height: 14px;
-  font-size: 0.68rem;
+  min-height: 12px;
+  font-size: 0.66rem;
+}
+
+:deep(.schedule-start-input .v-field__input) {
+  align-items: center;
+}
+
+:deep(.schedule-start-input input[type='datetime-local']) {
+  line-height: 1;
+  padding-right: 2px;
+}
+
+:deep(
+    .schedule-start-input
+      input[type='datetime-local']::-webkit-calendar-picker-indicator
+  ) {
+  margin: 0;
+  padding: 0;
+  opacity: 0.82;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 900px) {
   .task-form-header,
   .task-form-shell {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .schedule-card-body {
