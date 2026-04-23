@@ -515,7 +515,7 @@ const EDITOR_LABELS: Record<string, string> = {
   '1m': 'Last month of data',
   '6m': 'Last 6 months of data',
   '1y': 'Last year of data',
-  'All': 'All data',
+  All: 'All data',
 }
 
 const editorDateOptions = computed(() =>
@@ -679,6 +679,7 @@ onMounted(async () => {
 
   // This timeout halts the execution of handleNewPlot until the view switching animation is complete, and the container has expanded.
   setTimeout(() => {
+    updateOptions()
     handleNewPlot(plot.value)
     // In the editor, seed the toolbar's initial "All" preset by
     // running the same zoom handler a user click would trigger.
