@@ -427,6 +427,7 @@ const {
   beginDate,
   endDate,
   selectedDateBtnId,
+  dateOptions,
   selectedThings,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
@@ -626,16 +627,20 @@ const hydrateFromUrl = () => {
   if (Number.isFinite(btn)) selectedDateBtnId.value = btn
   else if (begin || end) selectedDateBtnId.value = -1
 
-  // Use the explicit action so side effects (time-range sync, plot
-  // rebuild, zoom-history reset) run in a predictable order — the
-  // watcher that used to glue these together was removed. The action's
-  // `syncTimeRangeToQc` will derive a begin/end from the QC datastream;
-  // we override with the URL-provided window afterwards so shared
-  // links land on the intended viewport.
-  void setPlottedDatastreams(resolved, qcId || null).then(() => {
+  // Apply the date window BEFORE loading datastreams so the first fetch
+  // uses the correct range.
+  if (begin || end) {
     if (begin) beginDate.value = begin
     if (end) endDate.value = end
-  })
+  } else if (Number.isFinite(btn)) {
+    const option = dateOptions.value.find((o) => o.id === btn)
+    if (option) {
+      endDate.value = new Date()
+      beginDate.value = option.calculateBeginDate()
+    }
+  }
+
+  void setPlottedDatastreams(resolved, qcId || null)
 }
 
 if (datastreams.value.length) {

@@ -73,7 +73,7 @@ export function useDataSelection() {
   const clearSelected = async ({
     dispatchFilter = true,
   }: { dispatchFilter?: boolean } = {}) => {
-    const { selectedData } = storeToRefs(useDataVisStore())
+    const { selectedData, hasSelectionShape } = storeToRefs(useDataVisStore())
 
     const traceIndex = qcTraceIndex()
     if (traceIndex >= 0) {
@@ -81,6 +81,7 @@ export function useDataSelection() {
     }
 
     selectedData.value = []
+    hasSelectionShape.value = false
 
     if (dispatchFilter) {
       // Pass an empty event so `handleSelected` dispatches an empty

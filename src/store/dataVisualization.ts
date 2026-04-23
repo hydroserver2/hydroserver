@@ -63,6 +63,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const selectedQualifier = ref('')
 
   const selectedData = ref<number[] | null>(null)
+  /** True when a box/lasso selection shape is drawn on the plot, even if it captured 0 points. */
+  const hasSelectionShape = ref(false)
 
   /** Track the loading status of each datastream to be plotted.
    * Set to true when we get a response from the API. Keyed by datastream id. */
@@ -102,7 +104,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     if (plottedDatastreams.value.some((d) => d.id === ds.id)) return
     plottedDatastreams.value.push(ds)
     if (!qcDatastreamId.value) qcDatastreamId.value = ds.id
-    syncTimeRangeToQc()
     await rebuildPlot()
   }
 
@@ -116,7 +117,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       qcDatastreamId.value =
         plottedDatastreams.value[Math.max(idx - 1, 0)]?.id ?? null
     }
-    syncTimeRangeToQc()
     await rebuildPlot()
   }
 
@@ -142,50 +142,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     } else if (!items.some((d) => d.id === qcDatastreamId.value)) {
       qcDatastreamId.value = items[0]?.id ?? null
     }
-    syncTimeRangeToQc()
     await rebuildPlot()
   }
 
-  /** Change which datastream is under QC. Updates the working time
-   *  range to the new QC's phenomenon range but preserves the current
-   *  zoom (consistent with the old `PlottedDatastreams#setQcDatastream`). */
+  /** Change which datastream is under QC. Preserves the current zoom. */
   async function setQcDatastream(id: string | null) {
     if (qcDatastreamId.value === id) return
     qcDatastreamId.value = id
-    syncTimeRangeToQc()
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) {
       await handleNewPlot(undefined, { preserveZoom: true })
-    }
-  }
-
-  /** Recompute beginDate / endDate to fit the QC datastream's range
-   *  (falling back to the most recent end time across the plotted set
-   *  when there's no QC). Preserves the current window size. */
-  function syncTimeRangeToQc() {
-    if (
-      !plottedDatastreams.value.length ||
-      !beginDate.value ||
-      !endDate.value
-    ) {
-      return
-    }
-    const oldEnd = endDate.value
-    const oldBegin = beginDate.value
-
-    endDate.value = qcDatastream.value
-      ? new Date(qcDatastream.value.phenomenonEndTime!)
-      : getMostRecentEndTime()
-
-    const selectedOption = dateOptions.value.find(
-      (option) => option.id === selectedDateBtnId.value
-    )
-    if (selectedOption) {
-      beginDate.value = selectedOption.calculateBeginDate()
-    } else {
-      const timeDifference = oldEnd.getTime() - oldBegin.getTime()
-      beginDate.value = new Date(endDate.value.getTime() - timeDifference)
     }
   }
 
@@ -245,6 +212,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    *  options, and re-render. Must run serialized — see the lock in
    *  `rebuildPlot` above. */
   async function doRebuildPlot() {
+    hasSelectionShape.value = false
     if (!plottedDatastreams.value.length) {
       clearChartState()
       return
@@ -302,13 +270,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   })
 
-  const getEarliestBeginTime = () =>
-    plottedDatastreams.value.reduce((earliest, ds) => {
-      if (!ds.phenomenonBeginTime) return earliest
-      const dsBegin = new Date(ds.phenomenonBeginTime)
-      return !earliest || dsBegin < earliest ? dsBegin : earliest
-    }, null as Date | null)
-
   // All relative presets (1w/1m/6m/1y) anchor to the working window's
   // end so the range always lands on data. The subtractors clamp
   // day-of-month correctly across month/year boundaries (see
@@ -360,21 +321,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       icon: 'mdi-infinity',
       label: 'All',
       title: 'Full history',
-      calculateBeginDate: () => {
-        const earliest = getEarliestBeginTime()
-        if (earliest) return earliest
-        // Fallback: 10 years back if no plotted series / missing metadata.
-        const now = endDate.value
-        return new Date(now.getFullYear() - 10, now.getMonth(), now.getDate())
-      },
+      calculateBeginDate: () => new Date(0),
     },
   ])
-
-  const getMostRecentEndTime = () =>
-    plottedDatastreams.value.reduce((latest, ds) => {
-      const dsEndDate = new Date(ds.phenomenonEndTime!)
-      return dsEndDate > latest ? dsEndDate : latest
-    }, new Date(0))
 
   interface SetDateRangeParams {
     begin?: Date
@@ -430,15 +379,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       (option) => option.id === selectedId
     )
     if (selectedOption) {
-      const newEndDate = getMostRecentEndTime()
+      // Presets always anchor end to today so the window is relative to now.
+      // Set endDate first so calculateBeginDate closures read the new value.
+      endDate.value = new Date()
       const newBeginDate = selectedOption.calculateBeginDate()
-
       selectedDateBtnId.value = selectedId
-      setDateRange({
-        begin: newBeginDate,
-        end: newEndDate,
-        custom: false,
-      })
+      setDateRange({ begin: newBeginDate, end: endDate.value, custom: false })
     }
   }
 
@@ -592,6 +538,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     qualifierSet,
     selectedQualifier,
     selectedData,
+    hasSelectionShape,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,
     matchesSelectedThing,

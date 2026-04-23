@@ -38,10 +38,8 @@
           class="ml-1"
         />
 
-        <!-- Active selection indicator. Doubles as a shortcut to clear
-             the selection. Hidden when nothing is selected. -->
         <v-chip
-          v-if="selectedData?.length"
+          v-if="selectedData?.length || hasSelectionShape"
           class="plot-toolbar__selection"
           size="small"
           color="red"
@@ -51,8 +49,8 @@
           close-icon="mdi-close"
           @click:close="clearSelected()"
         >
-          <b class="mr-1">{{ selectedData.length }}</b>
-          point{{ selectedData.length === 1 ? '' : 's' }} selected
+          <b class="mr-1">{{ selectedData?.length ?? 0 }}</b>
+          point{{ (selectedData?.length ?? 0) === 1 ? '' : 's' }} selected
         </v-chip>
 
         <v-spacer />
@@ -360,7 +358,7 @@ const {
   previewMode,
   plotlyRef,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, qcDatastream, dateOptions, endDate } =
+const { selectedData, hasSelectionShape, qcDatastream, dateOptions, endDate } =
   storeToRefs(useDataVisStore())
 
 // Editor-toolbar preset is intentionally NOT the Select view's

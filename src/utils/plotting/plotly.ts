@@ -566,21 +566,19 @@ export const createPlotlyOption = (
     }
   }
 
-  // Clip to the user's selected begin/end when available, so choosing a
-  // preset or typing a custom range on the sidebar pins the x-axis to
-  // that exact window regardless of whether the returned observations
-  // reach both ends. Falls back to the data extent if the store hasn't
-  // resolved a range yet (first render, no datastream plotted).
+  // Use the actual data extent as the initial display range so the trace
+  // isn't crammed into a corner when the fetch window is much wider than
+  // the data (e.g. 'All' fetches from epoch but data only starts in 2024).
+  // Fall back to the store's begin/end only when there is no data yet.
   const storeBegin = beginDate?.value?.getTime?.()
   const storeEnd = endDate?.value?.getTime?.()
-  const xRangeStart =
-    typeof storeBegin === 'number' && Number.isFinite(storeBegin)
-      ? storeBegin
-      : minDatetime
-  const xRangeEnd =
-    typeof storeEnd === 'number' && Number.isFinite(storeEnd)
-      ? storeEnd
-      : maxDatetime
+  const hasData = Number.isFinite(minDatetime) && Number.isFinite(maxDatetime)
+  const xRangeStart = hasData
+    ? minDatetime
+    : (typeof storeBegin === 'number' && Number.isFinite(storeBegin) ? storeBegin : 0)
+  const xRangeEnd = hasData
+    ? maxDatetime
+    : (typeof storeEnd === 'number' && Number.isFinite(storeEnd) ? storeEnd : Date.now())
 
   const xaxis: Partial<LayoutAxis> = {
     type: 'date',
@@ -960,11 +958,12 @@ export const handleNewPlot = async (
       if (initial) store.pushZoomState(initial)
     }
   }
-  // plotlyRef.value?.on(
-  //   'plotly_selected',
-  //   debounce(handleSelected, debounceDelay)
-  // )
-  // plotlyRef.value?.on('plotly_deselec', debounce(handleSelected, debounceDelay))
+  plotlyRef.value?.on('plotly_selected', () => {
+    storeToRefs(useDataVisStore()).hasSelectionShape.value = true
+  })
+  plotlyRef.value?.on('plotly_deselect', () => {
+    storeToRefs(useDataVisStore()).hasSelectionShape.value = false
+  })
 
   plotlyRef.value?.on('plotly_click', handleClick)
   // plotlyRef.value?.on('plotly_doubleclick', handleDoubleClick)
