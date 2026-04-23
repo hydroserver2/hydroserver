@@ -21,7 +21,7 @@ const EMPTY_DECISION: RunNowPollDecision = {
 }
 
 const isTerminalRunStatus = (status?: NullableRunStatus) =>
-  typeof status === 'string' && status !== 'RUNNING'
+  status === 'SUCCESS' || status === 'FAILURE'
 
 export const getRunNowPollDecision = ({
   requestedRunId = null,

@@ -322,27 +322,19 @@
             </div>
           </template>
 
-          <div v-if="runHistoryHasMore" class="flex justify-center py-2">
-            <v-btn
-              variant="outlined"
-              color="blue-grey-darken-2"
-              :loading="loadingMoreTaskRuns"
-              size="small"
-              @click="loadMoreRunHistory"
-            >
-              Load older runs
-            </v-btn>
-          </div>
-
-          <div class="run-entry-refresh">
+          <div
+            v-if="!hasLoadedFullRunHistory"
+            class="run-entry-refresh"
+          >
             <v-btn
               variant="text"
               :prepend-icon="mdiHistory"
               size="small"
               class="text-none"
-              @click="refreshRunHistory"
+              :loading="loadingFullRunHistory"
+              @click="fetchFullRunHistory"
             >
-              Refresh history
+              See full history
             </v-btn>
           </div>
         </template>
@@ -457,10 +449,8 @@ const openRunLogs = ref<Record<string, boolean>>({})
 const task = ref<TaskExpanded | null>(null)
 const taskRuns = ref<TaskRun[]>([])
 const loadingTaskRuns = ref(false)
-const loadingMoreTaskRuns = ref(false)
-const runHistoryFetchFinished = ref(false)
-const runHistoryHasMore = ref(false)
-const runHistoryPage = ref(1)
+const loadingFullRunHistory = ref(false)
+const hasLoadedFullRunHistory = ref(false)
 const runNowRequested = ref(false)
 const highlightedRunId = ref<string | null>(null)
 let highlightTimeoutId: number | null = null
@@ -601,7 +591,8 @@ const formatDurationMs = (ms: number) => {
 
 const runDurationText = (run?: TaskRun | null) => {
   if (!run) return 'Duration –'
-  if (run.status === 'RUNNING') return 'Running'
+  if (run.status === 'PENDING') return 'Queued'
+  if (run.status === 'STARTED') return 'Running'
   const start = run.startedAt ? new Date(run.startedAt as any).getTime() : NaN
   const end = run.finishedAt ? new Date(run.finishedAt as any).getTime() : NaN
   if (!Number.isFinite(start) || !Number.isFinite(end)) return 'Duration –'
@@ -647,14 +638,11 @@ const scrollToRunAnchor = async (runId: string) => {
 
 const showRunHistoryLoading = computed(() => {
   if (activePanel.value !== 'runs') return false
-  if (loadingTaskRuns.value) return true
-  if (effectiveRunId.value && !runHistoryFetchFinished.value) return true
-  if (!runHistoryFetchFinished.value && runHistoryRows.value.length === 0)
-    return true
-  return false
+  return (
+    runHistoryRows.value.length === 0 &&
+    (loadingTaskRuns.value || loadingFullRunHistory.value)
+  )
 })
-
-const getRuntimeUrl = (run?: TaskRun | null) => getTaskRunRuntimeUrl(run)
 
 const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
   const dc: any = task.value?.dataConnection
@@ -717,6 +705,29 @@ const toggleRunLogs = (runId: string) => {
   openRunLogs.value[runId] = !openRunLogs.value[runId]
 }
 
+const getRunStartedAtMs = (run?: TaskRun | null) => {
+  if (!run?.startedAt) return 0
+  const timestamp = new Date(run.startedAt as any).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+const mergeTaskRuns = (runs: Array<TaskRun | null | undefined>) => {
+  const merged: TaskRun[] = []
+  const seen = new Set<string>()
+
+  for (const run of runs) {
+    if (!run?.id || seen.has(run.id)) continue
+    seen.add(run.id)
+    merged.push(run)
+  }
+
+  return merged.sort((left, right) => {
+    const timeDelta = getRunStartedAtMs(right) - getRunStartedAtMs(left)
+    if (timeDelta !== 0) return timeDelta
+    return right.id.localeCompare(left.id)
+  })
+}
+
 const copyToClipboard = async (value?: string | null) => {
   if (!value) return
   try {
@@ -739,26 +750,17 @@ const copyToClipboard = async (value?: string | null) => {
 }
 
 const runHistoryRows = computed(() => {
-  const seen = new Set<string>()
-
-  return taskRuns.value
-    .filter((run) => {
-      if (!run?.id) return false
-      if (seen.has(run.id)) return false
-      seen.add(run.id)
-      return true
-    })
+  return mergeTaskRuns([task.value?.latestRun, ...taskRuns.value])
     .map((run) => ({
       id: run.id,
       startedAt: formatTimeWithZone(run.startedAt),
-      finishedAt: formatTimeWithZone(run.finishedAt),
       message: getTaskRunMessage(run),
-      runtimeUrl: getRuntimeUrl(run) ?? resolveRuntimeUrlFromTask(run),
+      runtimeUrl: getTaskRunRuntimeUrl(run) ?? resolveRuntimeUrlFromTask(run),
       raw: run,
     }))
 })
 
-const RUN_HISTORY_PAGE_SIZE = 15
+const RUN_HISTORY_PAGE_SIZE = 50
 const RUN_POLL_INTERVAL_MS = 4000
 const RUN_POLL_MAX_ATTEMPTS = 150
 let runNowPollTimeoutId: number | null = null
@@ -777,11 +779,7 @@ const stopRunNowPolling = () => {
 }
 
 const upsertTaskRun = (run: TaskRun) => {
-  const next = [...taskRuns.value]
-  const index = next.findIndex((item) => item.id === run.id)
-  if (index !== -1) next[index] = run
-  else next.unshift(run)
-  taskRuns.value = next
+  taskRuns.value = mergeTaskRuns([run, ...taskRuns.value])
 }
 
 const syncLatestRun = (run: TaskRun) => {
@@ -801,11 +799,8 @@ const refreshTaskAfterRunCompletion = async (taskId: string, runId: string) => {
       upsertWorkspaceTask(updated)
     }
 
-    if (activePanel.value === 'runs') {
-      await fetchTaskRuns({ page: 1, background: true })
-      if (effectiveRunId.value === runId) {
-        await openRunHistoryAndScroll(runId)
-      }
+    if (activePanel.value === 'runs' && effectiveRunId.value === runId) {
+      await openRunHistoryAndScroll(runId)
     }
   } catch (error) {
     console.error('Error refreshing task after run completion', error)
@@ -991,83 +986,84 @@ const onDelete = async () => {
   }
 }
 
-const fetchTaskRuns = async ({
-  page = 1,
-  append = false,
-  background = false,
-}: {
-  page?: number
-  append?: boolean
-  background?: boolean
-} = {}) => {
-  if (!task.value) return
-
-  if (append) {
-    loadingMoreTaskRuns.value = true
-  } else if (!background) {
-    loadingTaskRuns.value = true
-    runHistoryFetchFinished.value = false
+const fetchRunById = async (runId: string) => {
+  if (!task.value || !runId) return null
+  if (runHistoryRows.value.some((run) => run.id === runId)) {
+    return (
+      taskRuns.value.find((run) => run.id === runId) ??
+      task.value.latestRun ??
+      null
+    )
   }
+
+  loadingTaskRuns.value = true
   try {
-    const response = await hs.tasks.getTaskRuns(task.value.id, {
-      order_by: ['-startedAt'],
-      page,
-      page_size: RUN_HISTORY_PAGE_SIZE,
-    } as any)
-    const nextRuns = (response.data as TaskRun[]) || []
-    taskRuns.value = append ? [...taskRuns.value, ...nextRuns] : nextRuns
-    runHistoryPage.value = page
-    runHistoryHasMore.value = nextRuns.length === RUN_HISTORY_PAGE_SIZE
+    const response = await hs.tasks.getTaskRun(task.value.id, runId)
+    if (!response.ok) {
+      throw new Error(response.message || 'Unable to fetch task run.')
+    }
+    const nextRun = (response.data as TaskRun | null) ?? null
+    if (nextRun?.id) upsertTaskRun(nextRun)
+    return nextRun
+  } catch (error: any) {
+    Snackbar.error(error.message || 'Unable to fetch task run.')
+    console.error('Error fetching task run', error)
+    return null
+  } finally {
+    loadingTaskRuns.value = false
+  }
+}
+
+const fetchFullRunHistory = async () => {
+  if (
+    !task.value ||
+    loadingFullRunHistory.value ||
+    hasLoadedFullRunHistory.value
+  ) {
+    return
+  }
+
+  loadingFullRunHistory.value = true
+  try {
+    const fetchedRuns: TaskRun[] = []
+    let page = 1
+
+    while (true) {
+      const response = await hs.tasks.getTaskRuns(task.value.id, {
+        order_by: ['-startedAt'],
+        page,
+        page_size: RUN_HISTORY_PAGE_SIZE,
+      } as any)
+
+      if (!response.ok) {
+        throw new Error(response.message || 'Unable to fetch run history.')
+      }
+
+      const nextRuns = (response.data as TaskRun[]) || []
+      fetchedRuns.push(...nextRuns)
+
+      if (nextRuns.length < RUN_HISTORY_PAGE_SIZE) break
+      page += 1
+    }
+
+    taskRuns.value = mergeTaskRuns([...fetchedRuns, ...taskRuns.value])
+    hasLoadedFullRunHistory.value = true
+
+    if (effectiveRunId.value) {
+      await scrollToRunAnchor(effectiveRunId.value)
+    }
   } catch (error: any) {
     Snackbar.error(error.message || 'Unable to fetch run history.')
     console.error('Error fetching task runs', error)
   } finally {
-    if (append) {
-      loadingMoreTaskRuns.value = false
-    } else if (!background) {
-      loadingTaskRuns.value = false
-      runHistoryFetchFinished.value = true
-    } else {
-      runHistoryFetchFinished.value = true
-    }
+    loadingFullRunHistory.value = false
   }
-}
-
-const refreshRunHistory = async () => {
-  if (!task.value) return
-  await fetchTaskRuns({ page: 1 })
-  if (effectiveRunId.value) {
-    await openRunHistoryAndScroll(effectiveRunId.value)
-  }
-}
-
-const loadMoreRunHistory = async () => {
-  if (
-    !task.value ||
-    loadingTaskRuns.value ||
-    loadingMoreTaskRuns.value ||
-    !runHistoryHasMore.value
-  ) {
-    return
-  }
-  await fetchTaskRuns({ page: runHistoryPage.value + 1, append: true })
 }
 
 const openRunHistoryAndScroll = async (runId: string) => {
   if (!runId) return
-  if (
-    (!runHistoryFetchFinished.value || !taskRuns.value.length) &&
-    !loadingTaskRuns.value
-  ) {
-    await fetchTaskRuns({ page: 1 })
-  }
-
-  while (
-    !taskRuns.value.some((run) => run.id === runId) &&
-    runHistoryHasMore.value &&
-    !loadingMoreTaskRuns.value
-  ) {
-    await loadMoreRunHistory()
+  if (!runHistoryRows.value.some((run) => run.id === runId)) {
+    await fetchRunById(runId)
   }
 
   await scrollToRunAnchor(runId)
@@ -1123,13 +1119,6 @@ const fetchData = async () => {
   task.value = fetchedTask
 
   upsertWorkspaceTask(task.value)
-  if (activePanel.value === 'runs') {
-    if (effectiveRunId.value) {
-      await fetchTaskRuns({ page: 1 })
-    } else {
-      void fetchTaskRuns({ page: 1 })
-    }
-  }
   if (activePanel.value === 'mappings') {
     void ensureMappingDatastreams()
   }
@@ -1162,12 +1151,11 @@ watch(
     stopRunNowPolling()
     openRunLogs.value = {}
     taskRuns.value = []
-    runHistoryFetchFinished.value = false
-    runHistoryHasMore.value = false
-    runHistoryPage.value = 1
-    loadingMoreTaskRuns.value = false
+    loadingTaskRuns.value = false
+    loadingFullRunHistory.value = false
+    hasLoadedFullRunHistory.value = false
     runNowRequested.value = false
-    activePanel.value = effectiveRunId.value ? 'runs' : 'runs'
+    activePanel.value = 'runs'
 
     await fetchData()
   },
@@ -1206,16 +1194,7 @@ watch(
 watch(
   activePanel,
   async (panel) => {
-    if (panel === 'runs') {
-      if (
-        task.value &&
-        !loadingTaskRuns.value &&
-        (!runHistoryFetchFinished.value || taskRuns.value.length === 0)
-      ) {
-        await fetchTaskRuns({ page: 1 })
-      }
-      return
-    }
+    if (panel === 'runs') return
     if (panel === 'mappings') {
       await ensureMappingDatastreams()
     }
@@ -1373,7 +1352,7 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 22px;
-  background: #ffffff;
+  background: #f5f7fa;
   min-height: 0;
 }
 

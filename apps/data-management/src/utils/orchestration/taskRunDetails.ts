@@ -113,9 +113,11 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
     ) ??
     (run.status === 'SUCCESS'
       ? 'Run completed successfully.'
-      : run.status === 'RUNNING'
+      : run.status === 'PENDING'
+        ? 'Run queued.'
+        : run.status === 'STARTED' || run.status === 'RUNNING'
         ? 'Run in progress.'
-        : run.status === 'FAILURE' || run.status === 'INCOMPLETE'
+        : run.status === 'FAILURE'
           ? 'Run failed.'
           : '–')
   )
@@ -139,7 +141,7 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
 
 export const taskRunHasFailures = (run?: TaskRun | null) => {
   if (!run) return false
-  if (run.status === 'FAILURE' || run.status === 'INCOMPLETE') return true
+  if (run.status === 'FAILURE') return true
 
   const result = getTaskRunResult(run)
   const failureCount = firstNumber(
@@ -162,7 +164,7 @@ export const getTaskRunStatusText = (run?: TaskRun | null): StatusType => {
   if (!run) return 'Unknown'
   if (taskRunHasFailures(run)) return 'Needs attention'
   if (run.status === 'SUCCESS') return 'OK'
-  if (run.status === 'RUNNING') return 'Pending'
+  if (run.status === 'PENDING' || run.status === 'STARTED') return 'Pending'
   return 'Unknown'
 }
 
@@ -172,12 +174,17 @@ export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType => {
   const { latestRun, schedule } = task
   if (!schedule) {
     if (!latestRun) return 'Pending'
+    if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
+      return 'Pending'
+    }
     return taskRunHasFailures(latestRun) ? 'Needs attention' : 'OK'
   }
 
   if (!latestRun) return 'Pending'
   if (taskRunHasFailures(latestRun)) return 'Needs attention'
-  if (latestRun.status === 'RUNNING') return 'Pending'
+  if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
+    return 'Pending'
+  }
 
   const next = parseDate(schedule.nextRunAt) ?? inferIntervalNextRunAt(task)
   if (next) {

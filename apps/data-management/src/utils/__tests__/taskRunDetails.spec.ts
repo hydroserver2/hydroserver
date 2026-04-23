@@ -79,10 +79,18 @@ describe('task run detail helpers', () => {
     expect(
       getTaskRunMessage({
         id: 'run-2',
-        status: 'RUNNING',
+        status: 'STARTED',
         result: null,
       })
     ).toBe('Run in progress.')
+
+    expect(
+      getTaskRunMessage({
+        id: 'run-3',
+        status: 'PENDING',
+        result: null,
+      })
+    ).toBe('Run queued.')
   })
 
   it('reads the runtime source URI from nested runtime variables', () => {
@@ -103,21 +111,13 @@ describe('task run detail helpers', () => {
     expect(getTaskRunRuntimeUrl(run)).toBe('https://example.com/runtime.csv')
   })
 
-  it('treats failure and incomplete statuses as failed', () => {
+  it('treats failure status as failed', () => {
     expect(
       taskRunHasFailures({
         id: 'run-1',
         status: 'FAILURE',
         result: null,
       })
-    ).toBe(true)
-
-    expect(
-      taskRunHasFailures({
-        id: 'run-2',
-        status: 'INCOMPLETE',
-        result: null,
-      } as TaskRun)
     ).toBe(true)
   })
 
@@ -188,7 +188,15 @@ describe('task run detail helpers', () => {
     expect(
       getTaskRunStatusText({
         id: 'run-2',
-        status: 'RUNNING',
+        status: 'STARTED',
+        result: {},
+      })
+    ).toBe('Pending')
+
+    expect(
+      getTaskRunStatusText({
+        id: 'run-2b',
+        status: 'PENDING',
         result: {},
       })
     ).toBe('Pending')
@@ -226,6 +234,15 @@ describe('task run detail helpers', () => {
 
     expect(getTaskStatusText({})).toBe('Pending')
     expect(getTaskStatusText({ latestRun: okRun })).toBe('OK')
+    expect(
+      getTaskStatusText({
+        latestRun: {
+          id: 'run-pending',
+          status: 'PENDING',
+          result: null,
+        },
+      })
+    ).toBe('Pending')
     expect(
       getDisplayedTaskStatus({
         schedule: { paused: true, nextRunAt: '2026-03-13T13:00:00Z' },
@@ -285,7 +302,7 @@ describe('task run detail helpers', () => {
         },
         latestRun: {
           id: 'run-4',
-          status: 'RUNNING',
+          status: 'STARTED',
           result: null,
         },
       })

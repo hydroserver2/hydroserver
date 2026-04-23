@@ -19,7 +19,7 @@ describe('run-now polling decisions', () => {
       getRunNowPollDecision({
         requestedRunId: 'run-1',
         observedRunId: 'run-1',
-        observedStatus: 'RUNNING',
+        observedStatus: 'STARTED',
         hasPublishedQueuedRun: true,
       })
     ).toEqual({
@@ -63,7 +63,7 @@ describe('run-now polling decisions', () => {
       getRunNowPollDecision({
         previousRunId: 'run-0',
         observedRunId: 'run-1',
-        observedStatus: 'RUNNING',
+        observedStatus: 'PENDING',
       })
     ).toEqual({
       publishQueuedRun: true,
@@ -77,7 +77,7 @@ describe('run-now polling decisions', () => {
       getRunNowPollDecision({
         previousRunId: 'run-0',
         observedRunId: 'run-1',
-        observedStatus: 'RUNNING',
+        observedStatus: 'STARTED',
         hasPublishedQueuedRun: true,
       })
     ).toEqual({
