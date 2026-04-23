@@ -1,230 +1,163 @@
 <template>
-  <div
-    v-if="task"
-    :class="[
-      'task-details-shell bg-[#eef2f6]',
-      props.embedded ? 'mt-0 mb-0' : 'my-4',
-    ]"
-  >
-    <TaskDetailsNavRail v-model="activePanel" />
-
-    <div class="task-details-content">
-      <div
-        :class="[
-          'mb-4 rounded-lg border border-slate-200 bg-white px-4 py-2 shadow-sm',
-          props.embedded ? 'mt-4' : 'mt-2',
-        ]"
+  <div v-if="task" class="task-details">
+    <!-- Header -->
+    <header class="task-details-header">
+      <button
+        v-if="backLabel"
+        type="button"
+        class="task-details-back"
+        @click="onBack"
       >
-        <v-row class="ma-0" align="center">
-          <v-col cols="auto">
-            <v-tooltip text="Back to job orchestration" location="bottom">
-              <template #activator="{ props: tooltipProps }">
-                <v-btn
-                  v-bind="tooltipProps"
-                  variant="text"
-                  color="black"
-                  :icon="mdiArrowLeft"
-                  class="mr-2"
-                  aria-label="Back to job orchestration"
-                  @click="onBack"
-                />
-              </template>
-            </v-tooltip>
-          </v-col>
-          <v-col cols="auto">
-            <div class="leading-tight">
-              <div
-                class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500"
-              >
-                Task
-              </div>
-              <div
-                class="text-2xl font-extrabold tracking-tight text-slate-900"
-              >
-                {{ task.name }}
-              </div>
-            </div>
-          </v-col>
-          <v-spacer />
-          <v-col cols="auto" class="d-flex ga-2">
-            <v-tooltip location="top" :disabled="canEditTask">
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="outlined"
-                    :prepend-icon="mdiPencil"
-                    rounded="xl"
-                    color="secondary"
-                    class="mr-1"
-                    :disabled="!canEditTask"
-                    @click="openEdit = true"
-                  >
-                    Edit task
-                  </v-btn>
-                </span>
-              </template>
-              <span>{{ readOnlyTooltip }}</span>
-            </v-tooltip>
-            <v-tooltip location="top" :disabled="canEditTask">
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn-delete
-                    variant="outlined"
-                    rounded="xl"
-                    :prepend-icon="mdiTrashCanOutline"
-                    color="red-darken-3"
-                    class="mr-1"
-                    :disabled="!canEditTask"
-                    @click="openDelete = true"
-                  >
-                    Delete task
-                  </v-btn-delete>
-                </span>
-              </template>
-              <span>{{ readOnlyTooltip }}</span>
-            </v-tooltip>
-            <v-tooltip
-              v-if="canRunNow"
-              location="top"
-              :disabled="!runNowDisabledReason"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="outlined"
-                    rounded="xl"
-                    color="green-darken-3"
-                    class="mr-1"
-                    :append-icon="mdiPlay"
-                    :disabled="!canEditTask || runNowRequested"
-                    @click="runTaskNow"
-                  >
-                    {{ runNowRequested ? 'Run requested' : 'Run now' }}
-                  </v-btn>
-                </span>
-              </template>
-              <span>{{ runNowDisabledReason }}</span>
-            </v-tooltip>
-            <v-tooltip
-              location="top"
-              :disabled="!pauseToggleDisabledReason"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    variant="text"
-                    color="black"
-                    :prepend-icon="task.schedule?.enabled ? mdiPause : mdiPlay"
-                    :disabled="!!pauseToggleDisabledReason"
-                    @click.stop="togglePaused(task)"
-                  >
-                    Pause/Run
-                  </v-btn>
-                </span>
-              </template>
-              <span>{{ pauseToggleDisabledReason }}</span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
+        <v-icon :icon="mdiArrowLeft" size="16" />
+        <span>{{ backLabel }}</span>
+      </button>
+
+      <div class="task-details-header-row">
+        <div class="task-details-title-group">
+          <h2 class="task-details-title">{{ task.name }}</h2>
+          <TaskStatus
+            :status="statusName"
+            :paused="!task.schedule?.enabled"
+          />
+          <span v-if="schedulePill" class="schedule-pill">
+            {{ schedulePill }}
+          </span>
+        </div>
+
+        <div class="task-details-actions">
+          <v-tooltip
+            location="top"
+            :disabled="!pauseToggleDisabledReason"
+          >
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn"
+                  :disabled="!!pauseToggleDisabledReason"
+                  @click.stop="togglePaused(task)"
+                >
+                  <v-icon
+                    :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
+                    size="14"
+                  />
+                  <span>{{
+                    task.schedule?.enabled ? 'Pause' : 'Resume'
+                  }}</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ pauseToggleDisabledReason }}</span>
+          </v-tooltip>
+
+          <v-tooltip location="top" :disabled="canEditTask">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn"
+                  :disabled="!canEditTask"
+                  @click="openEdit = true"
+                >
+                  <v-icon :icon="mdiPencil" size="14" />
+                  <span>Edit</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ readOnlyTooltip }}</span>
+          </v-tooltip>
+
+          <v-tooltip location="top" :disabled="canEditTask">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn header-btn--danger"
+                  :disabled="!canEditTask"
+                  @click="openDelete = true"
+                >
+                  <v-icon :icon="mdiTrashCanOutline" size="14" />
+                  <span>Delete</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ readOnlyTooltip }}</span>
+          </v-tooltip>
+
+          <v-tooltip
+            v-if="canRunNow"
+            location="top"
+            :disabled="!runNowDisabledReason"
+          >
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn header-btn--run"
+                  :disabled="!canEditTask || runNowRequested"
+                  @click="runTaskNow"
+                >
+                  <v-icon
+                    :icon="runNowRequested ? mdiCheck : mdiPlay"
+                    size="14"
+                  />
+                  <span>{{
+                    runNowRequested ? 'Run requested' : 'Run now'
+                  }}</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ runNowDisabledReason }}</span>
+          </v-tooltip>
+        </div>
       </div>
 
-      <v-toolbar
-        v-show="activePanel === 'details'"
-        color="cyan-darken-3"
-        rounded="t-lg"
-        class="section-toolbar"
-      >
-        <h6 class="text-h6 ml-4">Task details</h6>
-        <v-spacer />
-        <v-btn
-          variant="text"
-          color="white"
-          :prepend-icon="mdiDownload"
-          class="mr-2"
-          :disabled="!task"
-          @click="downloadTaskJsonConfiguration"
+      <!-- Tabs -->
+      <div class="task-details-tabs">
+        <button
+          type="button"
+          class="task-details-tab"
+          :class="{ 'task-details-tab--active': activePanel === 'runs' }"
+          @click="activePanel = 'runs'"
         >
-          Download task configuration
-        </v-btn>
-      </v-toolbar>
-      <v-data-table
-        v-show="activePanel === 'details'"
-        :headers="taskHeaders"
-        :items="taskTableRows"
-        :items-per-page="-1"
-        hide-default-header
-        hide-default-footer
-        density="compact"
-        class="elevation-3 rounded-b-lg section-card"
+          Run history
+        </button>
+        <button
+          type="button"
+          class="task-details-tab"
+          :class="{ 'task-details-tab--active': activePanel === 'mappings' }"
+          @click="activePanel = 'mappings'"
+        >
+          Mappings
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="task-details-body">
+      <!-- Run history -->
+      <div
+        v-show="activePanel === 'runs'"
+        class="task-details-panel"
       >
-        <template #item="{ item, columns }">
-          <tr v-if="item.section">
-            <td
-              :colspan="columns.length"
-              class="section-subheading detail-subheading"
-            >
-              {{ item.label }}
-            </td>
-          </tr>
-          <tr v-else>
-            <td class="text-body-2">
-              <v-icon v-if="item?.icon" :icon="item.icon" class="mr-2" />
-              <strong>{{ item?.label }}</strong>
-            </td>
-            <td class="text-body-2">
-              <template v-if="item.label === 'Status'">
-                <TaskStatus :status="item.status" :paused="!!item.paused" />
-              </template>
-              <template v-else>
-                {{ item.value }}
-              </template>
-            </td>
-          </tr>
-        </template>
-      </v-data-table>
-
-      <!-- Run history cards float directly on the page background (no surrounding container). -->
-      <div v-show="activePanel === 'runs'" class="flex flex-col gap-1">
-        <v-toolbar color="cyan-darken-3" rounded="lg" class="section-toolbar">
-          <h6 class="ml-4 text-h6">Run history</h6>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            color="white"
-            :prepend-icon="mdiHistory"
-            class="mr-2"
-            @click="refreshRunHistory"
-          >
-            Refresh history
-          </v-btn>
-        </v-toolbar>
-
         <template v-if="showRunHistoryLoading">
-          <v-card variant="outlined" class="run-entry pa-4">
-            <div class="mb-4 rounded-md bg-slate-50 px-4 py-3">
-              <div class="flex items-center gap-3 text-sm text-slate-600">
-                <v-progress-circular
-                  indeterminate
-                  size="20"
-                  width="2"
-                  color="blue-grey-darken-1"
-                />
-                <span class="font-medium">Loading run history...</span>
-              </div>
-            </div>
-            <v-skeleton-loader type="paragraph, paragraph, paragraph" />
-          </v-card>
+          <div class="run-loading">
+            <v-progress-circular
+              indeterminate
+              size="20"
+              width="2"
+              color="blue-grey-darken-1"
+            />
+            <span>Loading run history…</span>
+          </div>
         </template>
 
         <template v-else-if="runHistoryRows.length">
           <template v-for="run in runHistoryRows" :key="run.id">
-            <v-card
+            <div
               :id="runDomId(run.id)"
               class="run-entry"
-              variant="outlined"
-              :class="{
-                'run-highlight': highlightedRunId === run.id,
-              }"
+              :class="{ 'run-highlight': highlightedRunId === run.id }"
             >
               <div class="run-entry-top">
                 <div class="run-entry-top-left">
@@ -237,7 +170,7 @@
                 <div class="run-entry-summary" :title="run.message">
                   {{ run.message }}
                 </div>
-                <div class="run-entry-runid-top run-entry-runid-right">
+                <div class="run-entry-runid-right">
                   Run {{ shortId(run.id) }}
                 </div>
               </div>
@@ -262,6 +195,7 @@
                   color="cyan-darken-3"
                   :prepend-icon="mdiCodeBraces"
                   class="text-none"
+                  size="small"
                   @click="toggleRunLogs(run.id)"
                 >
                   {{
@@ -272,11 +206,10 @@
                 </v-btn>
               </div>
 
-              <!-- Logs expand outside of the footer (keeps the "View logs" area clean). -->
               <v-expand-transition>
                 <div
                   v-if="openRunLogs[run.id]"
-                  class="border-t border-slate-100 px-4 pt-3 pb-4"
+                  class="run-entry-details"
                 >
                   <div class="mb-3 grid gap-2">
                     <div v-if="run.runtimeUrl" class="run-entry-detail-row">
@@ -315,9 +248,7 @@
                       </div>
                     </div>
 
-                    <div
-                      class="run-entry-detail-row run-entry-detail-row-inline"
-                    >
+                    <div class="run-entry-detail-row run-entry-detail-row-inline">
                       <div class="run-entry-detail-inline">
                         <div class="run-entry-detail-label">
                           Copy run as URL
@@ -347,12 +278,13 @@
                       :key="`${section.title}-${idx}`"
                       class="grid gap-2"
                     >
-                      <div
-                        class="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-slate-600"
-                      >
+                      <div class="run-section-label">
                         {{ section.title }}
                       </div>
-                      <div v-if="section.type === 'lines'" class="grid gap-1.5">
+                      <div
+                        v-if="section.type === 'lines'"
+                        class="grid gap-1.5"
+                      >
                         <div
                           v-for="(entry, entryIdx) in section.entries"
                           :key="entryIdx"
@@ -387,7 +319,7 @@
                   </div>
                 </div>
               </v-expand-transition>
-            </v-card>
+            </div>
           </template>
 
           <div v-if="runHistoryHasMore" class="flex justify-center py-2">
@@ -395,118 +327,42 @@
               variant="outlined"
               color="blue-grey-darken-2"
               :loading="loadingMoreTaskRuns"
+              size="small"
               @click="loadMoreRunHistory"
             >
               Load older runs
             </v-btn>
           </div>
+
+          <div class="run-entry-refresh">
+            <v-btn
+              variant="text"
+              :prepend-icon="mdiHistory"
+              size="small"
+              class="text-none"
+              @click="refreshRunHistory"
+            >
+              Refresh history
+            </v-btn>
+          </div>
         </template>
 
-        <v-card
-          v-else
-          variant="outlined"
-          class="run-entry pa-4 text-medium-emphasis"
-        >
-          No run history available yet.
-        </v-card>
+        <div v-else class="run-empty">No run history available yet.</div>
       </div>
 
-      <v-toolbar
-        v-show="activePanel === 'details'"
-        color="cyan-darken-3"
-        rounded="t-lg"
-        class="section-toolbar mt-6"
-        v-if="showDataConnectionSection"
-      >
-        <h6 class="text-h6 ml-4">Data connection</h6>
-      </v-toolbar>
-      <v-data-table
-        v-show="activePanel === 'details'"
-        v-if="showDataConnectionSection"
-        :headers="pipelineHeaders"
-        :items="pipelineRows"
-        :items-per-page="-1"
-        hide-default-header
-        hide-default-footer
-        density="compact"
-        class="elevation-3 rounded-b-lg section-card pipeline-card"
-      >
-        <template #item="{ item, columns }">
-          <tr
-            v-if="item.section"
-            :class="['pipeline-section', item.sectionClass]"
-          >
-            <td :colspan="columns.length" class="section-subheading">
-              {{ item.label }}
-            </td>
-          </tr>
-          <tr v-else>
-            <td class="text-body-2">
-              <v-icon
-                v-if="item.icon"
-                :icon="item.icon"
-                size="16"
-                class="mr-1"
-              />
-              <strong>{{ item.name || '–' }}</strong>
-            </td>
-            <td class="text-body-2">
-              <template v-if="item.chips?.length">
-                <div class="flex flex-wrap gap-1 py-1">
-                  <v-chip
-                    v-for="chip in item.chips"
-                    :key="chip"
-                    size="small"
-                    color="blue-grey"
-                    variant="tonal"
-                    rounded
-                  >
-                    {{ chip }}
-                  </v-chip>
-                </div>
-              </template>
-              <template v-else>
-                {{ item.value ?? '–' }}
-              </template>
-            </td>
-          </tr>
-        </template>
-      </v-data-table>
-
-      <v-toolbar
-        v-show="activePanel === 'mappings'"
-        color="cyan-darken-3"
-        rounded="t-lg"
-        class="section-toolbar mt-4"
-      >
-        <h6 class="text-h6 ml-4">Mappings</h6>
-      </v-toolbar>
+      <!-- Mappings -->
       <div
         v-show="activePanel === 'mappings'"
-        v-if="task?.mappings?.length"
-        class="elevation-3 rounded-b-lg section-card swimlanes-card"
+        class="task-details-panel"
       >
-        <Swimlanes
-          :task="task"
-          :show-actions="canEditTask"
-          @edit="openEdit = true"
-          @delete="openDelete = true"
-        />
+        <Swimlanes v-if="task?.mappings?.length" :task="task" />
+        <div v-else class="mappings-empty">
+          No mappings configured for this task.
+        </div>
       </div>
-      <v-sheet
-        v-show="activePanel === 'mappings'"
-        v-else
-        class="elevation-1 rounded-b-lg pa-6 text-medium-emphasis section-card"
-      >
-        No mappings configured for this task.
-      </v-sheet>
-
-      <div class="mb-8" />
-
-      <!-- <PayloadTable /> -->
     </div>
   </div>
-  <v-container v-else>Loading...</v-container>
+  <div v-else class="task-details-loading">Loading…</div>
 
   <v-dialog v-model="openEdit" width="80rem" v-if="task">
     <TaskForm
@@ -532,15 +388,11 @@ import {
   nextTick,
   onBeforeUnmount,
   ref,
-  toRaw,
   watch,
 } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@/utils/notifications'
-import TaskDetailsNavRail, {
-  type TaskDetailsPanel,
-} from '@/components/Orchestration/TaskDetailsNavRail.vue'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -555,6 +407,7 @@ import {
   getTaskRunMessage,
   getTaskRunStatusText as getRunStatusText,
   getTaskRunRuntimeUrl,
+  getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
 import { getRunNowPollDecision } from '@/utils/orchestration/runNowPolling'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
@@ -562,27 +415,15 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import {
-  mdiBroadcast,
   mdiArrowLeft,
-  mdiCalendarClock,
-  mdiCardAccountDetails,
-  mdiHistory,
+  mdiCheck,
   mdiCodeBraces,
-  mdiInformationOutline,
-  mdiDatabaseSettings,
-  mdiClockOutline,
-  mdiFormatListNumbered,
   mdiContentCopy,
+  mdiHistory,
   mdiPause,
-  mdiCogOutline,
-  mdiEmailOutline,
   mdiPencil,
   mdiPlay,
-  mdiTable,
-  mdiDotsHorizontal,
-  mdiRenameBoxOutline,
   mdiTrashCanOutline,
-  mdiDownload,
 } from '@mdi/js'
 
 const TaskForm = defineAsyncComponent(
@@ -631,8 +472,8 @@ const { workspaces } = storeToRefs(useWorkspaceStore())
 const { setSelectedWorkspaceById } = useWorkspaceStore()
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
-// When opened from the orchestration slide-over, default to showing run history.
-const activePanel = ref<TaskDetailsPanel>(props.embedded ? 'runs' : 'details')
+type TaskDetailsPanel = 'runs' | 'mappings'
+const activePanel = ref<TaskDetailsPanel>('runs')
 
 const canRunNow = computed(() => !!task.value)
 
@@ -706,6 +547,12 @@ const routeToAccessDenied = async () => {
   })
 }
 
+const backLabel = computed(() => {
+  const dc: any = task.value?.dataConnection
+  if (dc?.name) return dc.name
+  return 'Back to job orchestration'
+})
+
 const onBack = () => {
   if (props.embedded || props.taskId) {
     emit('close')
@@ -713,6 +560,19 @@ const onBack = () => {
   }
   router.push({ name: 'Orchestration' })
 }
+
+const statusName = computed(() =>
+  task.value ? getTaskStatusText(task.value as any) : 'Unknown'
+)
+
+const schedulePill = computed(() => {
+  const schedule = task.value?.schedule
+  if (!schedule) return ''
+  const { interval, intervalPeriod, crontab } = schedule
+  if (interval && intervalPeriod) return `Every ${interval} ${intervalPeriod}`
+  if (crontab) return `Cron: ${crontab}`
+  return ''
+})
 
 const runDomId = (runId: string) => `task-run-${runId}`
 
@@ -724,10 +584,7 @@ const shortId = (id: string) => {
 
 const formatDurationMs = (ms: number) => {
   if (!Number.isFinite(ms) || ms < 0) return '–'
-  // Show sub-second precision for short runs (e.g., 0.3s).
-  if (ms < 60_000) {
-    return `${(ms / 1000).toFixed(2)}s`
-  }
+  if (ms < 60_000) return `${(ms / 1000).toFixed(2)}s`
   const totalSeconds = Math.floor(ms / 1000)
   const seconds = totalSeconds % 60
   const totalMinutes = Math.floor(totalSeconds / 60)
@@ -751,46 +608,13 @@ const runDurationText = (run?: TaskRun | null) => {
   return `Duration ${formatDurationMs(end - start)}`
 }
 
-const sanitizeFilename = (value: string) =>
-  (value || 'task')
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-
-const downloadTextFile = (filename: string, text: string, mime: string) => {
-  if (typeof window === 'undefined') return
-  const blob = new Blob([text], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
-}
-
-const downloadTaskJsonConfiguration = () => {
-  if (!task.value) return
-  // Export exactly what the app receives for the task (no reshaping), but pretty-printed.
-  // `toRaw` avoids Vue proxy serialization edge cases.
-  const payload = toRaw(task.value) as any
-  const plain = JSON.parse(JSON.stringify(payload))
-
-  const base =
-    sanitizeFilename(task.value.name || 'task') ||
-    `task-${shortId(task.value.id)}`
-  const filename = `${base}-configuration.json`
-  downloadTextFile(filename, JSON.stringify(plain, null, 2), 'application/json')
-  Snackbar.success('Downloaded JSON configuration.')
-}
-
 const runLinkHref = (runId: string) =>
   router.resolve({
     name: 'Orchestration',
     query: {
-      workspaceId: (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id,
+      workspaceId:
+        (task.value as any)?.workspace?.id ??
+        task.value?.dataConnection?.workspace?.id,
       taskId: effectiveTaskId.value,
       runId,
     },
@@ -804,7 +628,6 @@ const runLinkUrl = (runId: string) => {
 
 const scrollToRunAnchor = async (runId: string) => {
   const id = runDomId(runId)
-  // Transitions can delay DOM insertion; retry a few frames.
   for (let attempt = 0; attempt < 12; attempt += 1) {
     await nextTick()
     const el = document.getElementById(id)
@@ -825,17 +648,13 @@ const scrollToRunAnchor = async (runId: string) => {
 const showRunHistoryLoading = computed(() => {
   if (activePanel.value !== 'runs') return false
   if (loadingTaskRuns.value) return true
-  // If the user deep-linked to a runId, avoid flashing the empty-state while the first fetch is pending.
   if (effectiveRunId.value && !runHistoryFetchFinished.value) return true
-  // If the user opened the run history but we haven't finished the first fetch, show loading until we know.
   if (!runHistoryFetchFinished.value && runHistoryRows.value.length === 0)
     return true
   return false
 })
 
-const getRuntimeUrl = (run?: TaskRun | null) => {
-  return getTaskRunRuntimeUrl(run)
-}
+const getRuntimeUrl = (run?: TaskRun | null) => getTaskRunRuntimeUrl(run)
 
 const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
   const dc: any = task.value?.dataConnection
@@ -919,294 +738,6 @@ const copyToClipboard = async (value?: string | null) => {
   }
 }
 
-const scheduleString = computed(() => {
-  const schedule = task.value?.schedule
-  if (!schedule) return '–'
-
-  const { interval, intervalPeriod, crontab, startTime } = schedule
-  let description: string | null = null
-
-  if (interval && intervalPeriod) {
-    description = `Every ${interval} ${intervalPeriod}`
-  } else if (crontab) {
-    description = `Crontab: ${crontab}`
-  }
-
-  if (!description) return '–'
-  if (startTime) description += ` starting ${formatTimeWithZone(startTime)}`
-
-  return description
-})
-
-const taskTypeLabel = computed(() => {
-  return (
-    (task.value as any)?.type ??
-    (task.value as any)?.taskType ??
-    (task.value as any)?.task_type ??
-    '–'
-  )
-})
-
-const isAggregationTask = computed(() => {
-  return `${taskTypeLabel.value}`.trim().toUpperCase() === 'AGGREGATION'
-})
-
-const taskHeaders = [
-  { key: 'label', title: 'Label' },
-  { key: 'value', title: 'Value' },
-]
-
-const pipelineHeaders = [
-  { key: 'name', title: 'Field' },
-  { key: 'value', title: 'Value' },
-]
-
-function summarize(obj: any): string {
-  if (!obj || typeof obj !== 'object') return '–'
-  const keys = Object.keys(obj ?? {}).filter(
-    (k) => obj[k] !== null && obj[k] !== undefined && obj[k] !== ''
-  )
-  return keys.length ? keys.join(', ') : '–'
-}
-
-const taskInformation = computed(() => {
-  if (!task.value) return []
-
-  return [
-    {
-      icon: mdiCardAccountDetails,
-      label: 'ID',
-      value: task.value.id,
-    },
-    {
-      icon: mdiInformationOutline,
-      label: 'Task type',
-      value: taskTypeLabel.value,
-    },
-    {
-      icon: mdiCalendarClock,
-      label: 'Schedule',
-      value: scheduleString,
-    },
-    // Removed duplicate Last run / Next run / Status from this summary card.
-  ].filter(Boolean)
-})
-
-const taskTemplateInformation = computed(() => {
-  const dataConnection: any = task.value?.dataConnection
-  if (!dataConnection) return []
-
-  const recipientEmails: string[] = Array.isArray(
-    dataConnection?.notification?.recipientEmails
-  )
-    ? dataConnection.notification.recipientEmails
-    : []
-
-  return [
-    {
-      icon: mdiCardAccountDetails,
-      label: 'Data connection ID',
-      name: 'Data connection ID',
-      value: dataConnection.id,
-    },
-    {
-      icon: mdiRenameBoxOutline,
-      label: 'Data connection',
-      name: 'Data connection name',
-      value: dataConnection.name,
-    },
-    {
-      icon: mdiEmailOutline,
-      label: 'Data connection recipients',
-      name: 'Notification recipients',
-      value: recipientEmails.length ? null : '–',
-      chips: recipientEmails,
-    },
-  ].filter(
-    (row) =>
-      (row.value !== undefined && row.value !== null) || 'chips' in row
-  )
-})
-
-const extractorInformation = computed(() => {
-  const dc: any = task.value?.dataConnection
-  if (!dc) return []
-
-  const placeholders: Array<{ name: string; type?: string }> =
-    dc.placeholderVariables ?? []
-  const perTaskList = placeholders
-    .filter((p) => p.type === 'per_task')
-    .map(
-      (p) =>
-        `${p.name}: ${(task.value?.taskVariables as any)?.[p.name] ?? '–'}`
-    )
-  const runtimeList = placeholders
-    .filter((p) => p.type === 'run_time' || p.type === 'latest_observation_timestamp')
-    .map((p) => `${p.name}: ${p.type ?? '–'}`)
-
-  return [
-    {
-      icon: mdiCodeBraces,
-      label: 'Extractor',
-      name: 'Source URL',
-      value: dc.sourceUrl ?? '–',
-    },
-    {
-      icon: mdiInformationOutline,
-      label: 'Extractor',
-      name: 'Per-task variables',
-      value: perTaskList.length ? null : '–',
-      list: perTaskList,
-    },
-    {
-      icon: mdiInformationOutline,
-      label: 'Extractor',
-      name: 'Runtime variables',
-      value: runtimeList.length ? null : '–',
-      list: runtimeList,
-    },
-  ].filter((row) => row.value !== undefined && row.value !== null)
-})
-
-const extractorVariables = computed(() => {
-  const dc: any = task.value?.dataConnection
-  if (!dc) return []
-  const placeholders: Array<{ name: string; type?: string }> =
-    dc.placeholderVariables ?? []
-
-  return placeholders.map((p) => ({
-    type: p.type ?? '–',
-    name: p.name,
-    value:
-      p.type === 'per_task'
-        ? (task.value?.taskVariables as any)?.[p.name] ?? '–'
-        : p.type ?? '–',
-  }))
-})
-
-const taskTableRows = computed(() => taskInformation.value as any[])
-
-const pipelineRows = computed(() => {
-  const rows: any[] = []
-  const pushSection = (label: string, sectionClass: string) =>
-    rows.push({ section: true, label, sectionClass })
-  const pushInfo = (items: any[], sectionClass: string) =>
-    items.forEach((i) =>
-      rows.push({
-        label: i.label,
-        name: i.name ?? '–',
-        value: i.value ?? '–',
-        icon: i.icon,
-        sectionClass,
-      })
-    )
-
-  if (taskTemplateInformation.value.length) {
-    // pushSection('General', 'template-subheading')
-    pushInfo(taskTemplateInformation.value, 'template-subheading')
-  }
-
-  if (extractorInformation.value.length) {
-    pushSection('Extractor', 'extractor-subheading')
-    pushInfo(extractorInformation.value, 'extractor-subheading')
-  }
-  if (extractorVariables.value.length) {
-    pushSection('Extractor variables', 'extractor-subheading')
-    extractorVariables.value.forEach((v) =>
-      rows.push({
-        label: v.type,
-        name: v.name,
-        value: v.value,
-        sectionClass: 'extractor-subheading',
-      })
-    )
-  }
-
-  if (transformerInformation.value.length) {
-    pushSection('Transformer', 'transformer-subheading')
-    pushInfo(transformerInformation.value, 'transformer-subheading')
-  }
-
-  if (loaderInformation.value.length) {
-    pushSection('Loader', 'loader-subheading')
-    pushInfo(loaderInformation.value, 'loader-subheading')
-  }
-
-  return rows
-})
-
-const showDataConnectionSection = computed(() => {
-  return !isAggregationTask.value && pipelineRows.value.length > 0
-})
-
-const transformerInformation = computed(() => {
-  const dc: any = task.value?.dataConnection
-  if (!dc) return []
-
-  const payload: any = dc.payload
-  const timestamp: any = dc.timestamp
-  const rows: any[] = [
-    {
-      icon: mdiCogOutline,
-      label: 'Transformer',
-      name: 'Payload type',
-      value: payload?.type ?? '–',
-    },
-    {
-      icon: mdiClockOutline,
-      label: 'Transformer',
-      name: 'Timestamp key',
-      value: timestamp?.key ?? '–',
-    },
-    {
-      icon: mdiCalendarClock,
-      label: 'Transformer',
-      name: 'Timestamp format',
-      value: timestamp?.format ?? '–',
-    },
-    {
-      icon: mdiClockOutline,
-      label: 'Transformer',
-      name: 'Timezone',
-      value: timestamp?.timezone ?? timestamp?.timezoneType ?? '–',
-    },
-  ]
-
-  if (payload?.type === 'JSON') {
-    rows.push({
-      icon: mdiCodeBraces,
-      label: 'Transformer',
-      name: 'JMESPath',
-      value: payload.jmespath ?? '–',
-    })
-  } else if (payload?.type === 'CSV') {
-    rows.push(
-      {
-        icon: mdiTable,
-        label: 'Transformer',
-        name: 'Header row',
-        value: payload.headerRow ?? '–',
-      },
-      {
-        icon: mdiTable,
-        label: 'Transformer',
-        name: 'Data start row',
-        value: payload.dataStartRow ?? '–',
-      },
-      {
-        icon: mdiDotsHorizontal,
-        label: 'Transformer',
-        name: 'Delimiter',
-        value: payload.delimiter ?? '–',
-      }
-    )
-  }
-
-  return rows.filter((row) => row.value !== undefined && row.value !== null)
-})
-
-const loaderInformation = computed(() => [])
-
 const runHistoryRows = computed(() => {
   const seen = new Set<string>()
 
@@ -1255,10 +786,7 @@ const upsertTaskRun = (run: TaskRun) => {
 
 const syncLatestRun = (run: TaskRun) => {
   if (!task.value) return
-  task.value = {
-    ...task.value,
-    latestRun: run,
-  }
+  task.value = { ...task.value, latestRun: run }
   upsertWorkspaceTask(task.value)
 }
 
@@ -1310,7 +838,9 @@ const scheduleRunNowPoll = (
     try {
       if (requestedRunId) {
         const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
-        const updatedRun = runResponse.ok ? ((runResponse.data as TaskRun) ?? null) : null
+        const updatedRun = runResponse.ok
+          ? ((runResponse.data as TaskRun) ?? null)
+          : null
         const decision = getRunNowPollDecision({
           requestedRunId,
           observedRunId: updatedRun?.id ?? null,
@@ -1412,12 +942,12 @@ const runTaskNow = async () => {
 }
 
 async function togglePaused(
-  task: Partial<TaskExpanded> & Pick<TaskExpanded, 'id'>
+  target: Partial<TaskExpanded> & Pick<TaskExpanded, 'id'>
 ) {
   if (!canEditTask.value) return
-  if (!task.schedule) return
-  task.schedule.enabled = !task.schedule.enabled
-  await hs.tasks.update(task as any)
+  if (!target.schedule) return
+  target.schedule.enabled = !target.schedule.enabled
+  await hs.tasks.update(target as any)
 }
 
 function upsertWorkspaceTask(t: TaskExpanded | null) {
@@ -1430,7 +960,9 @@ function upsertWorkspaceTask(t: TaskExpanded | null) {
 }
 
 async function ensureMappingDatastreams() {
-  const workspaceId = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
+  const workspaceId =
+    (task.value as any)?.workspace?.id ??
+    task.value?.dataConnection?.workspace?.id
   if (!workspaceId) return
   try {
     await ensureWorkspaceDatastreams(workspaceId)
@@ -1443,7 +975,12 @@ const onDelete = async () => {
   if (!canEditTask.value) return
   try {
     await hs.tasks.delete(task.value!.id)
-    await router.push({ name: 'Orchestration' })
+    openDelete.value = false
+    if (props.embedded || props.taskId) {
+      emit('close')
+    } else {
+      await router.push({ name: 'Orchestration' })
+    }
     Snackbar.success('Task deleted.')
   } catch (error: any) {
     Snackbar.error(error.message)
@@ -1566,11 +1103,15 @@ const fetchData = async () => {
 
   const fetchedTask = taskResponse.data
 
-  const fetchedTaskWorkspaceId = (fetchedTask as any).workspace?.id ?? fetchedTask.dataConnection?.workspace?.id
+  const fetchedTaskWorkspaceId =
+    (fetchedTask as any).workspace?.id ??
+    fetchedTask.dataConnection?.workspace?.id
   if (
     fetchedTaskWorkspaceId &&
     workspaces.value.length &&
-    !workspaces.value.some((workspace) => workspace.id === fetchedTaskWorkspaceId)
+    !workspaces.value.some(
+      (workspace) => workspace.id === fetchedTaskWorkspaceId
+    )
   ) {
     await routeToAccessDenied()
     return
@@ -1590,8 +1131,9 @@ const fetchData = async () => {
     void ensureMappingDatastreams()
   }
 
-  // If the user deep-linked to a task/run in a different workspace, select it so the list matches.
-  const taskWorkspaceId = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
+  const taskWorkspaceId =
+    (task.value as any)?.workspace?.id ??
+    task.value?.dataConnection?.workspace?.id
   if (taskWorkspaceId && workspaces.value.length) {
     setSelectedWorkspaceById(taskWorkspaceId)
   }
@@ -1602,7 +1144,6 @@ const fetchData = async () => {
 }
 
 const onTaskUpdated = async (updated: TaskExpanded) => {
-  // Keep UI responsive with the returned task, then refresh to ensure relations are expanded
   task.value = updated
   upsertWorkspaceTask(updated)
   await fetchData()
@@ -1615,7 +1156,6 @@ watch(
     if (!newId) return
     if (newId === oldId) return
 
-    // Reset task-specific UI state when switching tasks without unmounting.
     stopRunNowPolling()
     openRunLogs.value = {}
     taskRuns.value = []
@@ -1624,11 +1164,7 @@ watch(
     runHistoryPage.value = 1
     loadingMoreTaskRuns.value = false
     runNowRequested.value = false
-    if (props.embedded && !effectiveRunId.value) {
-      activePanel.value = 'runs'
-    } else if (!effectiveRunId.value) {
-      activePanel.value = 'details'
-    }
+    activePanel.value = effectiveRunId.value ? 'runs' : 'runs'
 
     await fetchData()
   },
@@ -1639,7 +1175,9 @@ watch(
   workspaces,
   (list) => {
     if (!list?.length) return
-    const wid = (task.value as any)?.workspace?.id ?? task.value?.dataConnection?.workspace?.id
+    const wid =
+      (task.value as any)?.workspace?.id ??
+      task.value?.dataConnection?.workspace?.id
     if (wid) {
       if (!list.some((workspace) => workspace.id === wid)) {
         void routeToAccessDenied()
@@ -1655,7 +1193,6 @@ watch(
   effectiveRunId,
   async (runId) => {
     if (!runId) return
-    // Ensure the page loads in run history mode when deep-linked.
     activePanel.value = 'runs'
     if (!task.value) return
     await openRunHistoryAndScroll(runId)
@@ -1691,145 +1228,232 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.task-details-shell {
+.task-details {
   display: flex;
-  width: 100%;
-  min-height: 100%;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   height: 100%;
+  background: #ffffff;
   overflow: hidden;
 }
 
-.task-details-content {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  padding: 0 16px;
-  box-sizing: border-box;
-  height: 100%;
-  overflow-y: auto;
-}
-.section-card {
+.task-details-header {
+  padding: 12px 22px 0;
+  border-bottom: 1px solid #e8e8e8;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
-.section-toolbar {
-  color: white;
+
+.task-details-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1565c0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  margin-bottom: 8px;
 }
-.variable-list {
-  display: grid;
-  row-gap: 4px;
+.task-details-back:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
-.section-subheading {
-  font-weight: 700;
+
+.task-details-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.task-details-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.task-details-title {
+  font-size: 18px;
+  font-weight: 400;
+  color: #1c1b1f;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.schedule-pill {
+  font-size: 11px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  padding: 2px 7px;
+  color: #49454f;
+}
+
+.task-details-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid #cac4d0;
+  border-radius: 8px;
   padding: 6px 12px;
-  background: #eceff1;
-  color: #263238;
-  border: 1px solid #cfd8dc;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1c1b1f;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.section-card :deep(.v-data-table__wrapper) {
-  padding: 10px 12px;
+.header-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
 }
-.section-card :deep(.v-table__wrapper) {
-  background: transparent;
+.header-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
-.section-card :deep(tr) {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+.header-btn--run {
+  border-color: #2e7d32;
+  color: #2e7d32;
+  font-weight: 500;
+  padding: 6px 14px;
 }
-.section-card :deep(td) {
-  padding: 10px 12px;
+.header-btn--run:hover:not(:disabled) {
+  background: rgba(46, 125, 50, 0.08);
 }
-.swimlanes-card {
-  padding: 16px 18px;
+.header-btn--danger {
+  color: #b3261e;
 }
-.swimlanes-card :deep(.swimlanes) {
-  margin-bottom: 0;
+.header-btn--danger:hover:not(:disabled) {
+  background: rgba(179, 38, 30, 0.08);
+  border-color: #b3261e;
+}
+
+.task-details-tabs {
+  display: flex;
+  gap: 4px;
+}
+.task-details-tab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #49454f;
+  padding: 8px 14px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.task-details-tab:hover {
+  color: #1c1b1f;
+}
+.task-details-tab--active {
+  color: #1565c0;
+  border-bottom-color: #1565c0;
+}
+
+.task-details-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px;
+  background: #ffffff;
+  min-height: 0;
+}
+
+.task-details-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.run-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #5f5a67;
+  font-size: 13px;
+}
+
+.mappings-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #5f5a67;
+  font-size: 13px;
 }
 
 .run-entry {
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
   background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 0 rgba(2, 6, 23, 0.04);
+  border: 1px solid #ebebeb;
 }
 
 .run-entry-top {
   display: flex;
-  /* Allow the summary message to grow vertically without awkward centering. */
   align-items: flex-start;
   justify-content: flex-start;
   gap: 16px;
-  padding: 14px 16px 10px;
+  padding: 12px 14px 8px;
 }
 
 .run-entry-top-left {
   display: flex;
   align-items: flex-start;
   flex: 0 0 auto;
-  /* No background/border wrapper around the status. */
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  border: none;
-}
-
-.run-entry-idrow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.run-entry-runid-top {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #0e7490; /* cyan-700 */
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .run-entry-runid-right {
   flex: 0 0 auto;
   margin-left: auto;
-  padding-top: 2px; /* visually aligns with summary first line */
+  padding-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0e7490;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .run-entry-status {
   flex: 0 0 auto;
-  font-size: 0.9rem;
-  font-weight: 900;
-  --v-chip-height: 32px;
   letter-spacing: 0.01em;
-}
-
-.run-entry-status.v-chip {
-  /* Apply visuals on the actual v-chip root to avoid radius mismatch with Vuetify internals. */
-  border: 1px solid rgba(2, 6, 23, 0.12);
-  box-shadow: 0 1px 0 rgba(2, 6, 23, 0.04), 0 4px 12px rgba(2, 6, 23, 0.1);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.run-entry-status :deep(.v-chip__underlay),
-.run-entry-status :deep(.v-chip__overlay) {
-  /* Ensure the colored underlay + interaction overlay match the chip radius exactly. */
-  border-radius: inherit;
 }
 
 .run-entry-summary {
   flex: 1 1 auto;
   min-width: 0;
-  font-weight: 600;
+  font-weight: 500;
   color: #475569;
-  font-size: 0.9rem;
-  line-height: 1.3;
+  font-size: 0.88rem;
+  line-height: 1.35;
   word-break: break-word;
   white-space: normal;
 }
 
 .run-entry-meta {
-  background: #ffffff;
-  padding: 10px 16px 12px;
+  padding: 8px 14px 10px;
   border-top: 1px solid #f1f5f9;
 }
 
@@ -1847,7 +1471,7 @@ onBeforeUnmount(() => {
   gap: 8px;
   min-width: 0;
   color: #475569;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .run-entry-meta-label {
@@ -1860,14 +1484,8 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.run-entry-runid {
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: 0.02em;
-}
-
 .run-entry-duration {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #334155;
   background: #ffffff;
@@ -1877,13 +1495,18 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.run-entry-sep {
-  color: #cbd5e1;
+.run-entry-footer {
+  padding: 8px 14px 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.run-entry-details {
+  border-top: 1px solid #f1f5f9;
+  padding: 10px 14px 14px;
 }
 
 .run-entry-detail-row {
   display: grid;
-  /* Give labels enough room so they don't collide with long URLs. */
   grid-template-columns: minmax(160px, 190px) 1fr;
   gap: 10px;
   align-items: start;
@@ -1925,30 +1548,25 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
-.run-entry-detail-linkwrap a {
-  min-width: 0;
-  text-align: left;
+.run-section-label {
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.run-entry-footer {
-  background: #ffffff;
-  padding: 10px 16px 12px;
-  border-top: 1px solid #f1f5f9;
-}
-
-@media (max-width: 768px) {
-  .run-entry-detail-row {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .run-entry-detail-label {
-    margin-bottom: 4px;
-  }
+.run-entry-refresh {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
 }
 
 .run-highlight {
-  border-radius: 14px;
   animation: runHighlightPulse 2.5s ease-out;
 }
 
@@ -1958,6 +1576,23 @@ onBeforeUnmount(() => {
   }
   100% {
     background: #ffffff;
+  }
+}
+
+.task-details-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #5f5a67;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .run-entry-detail-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .run-entry-detail-label {
+    margin-bottom: 4px;
   }
 }
 </style>

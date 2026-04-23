@@ -246,8 +246,18 @@
       </div>
       </aside>
 
+      <!-- Detail pane: task details inline when a task is selected -->
+      <section v-if="selectedTaskId" class="detail detail--task">
+        <TaskDetails
+          :task-id="selectedTaskId"
+          :run-id="selectedRunId"
+          embedded
+          @close="closeTaskDetails"
+        />
+      </section>
+
       <!-- Detail pane -->
-      <section class="detail">
+      <section v-else class="detail">
       <header class="detail-header">
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
@@ -608,6 +618,7 @@ import {
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/HealthPills.vue'
 import router from '@/router/router'
+import { useRoute } from 'vue-router'
 import {
   getDisplayedTaskStatus,
   getTaskRunMessage,
@@ -661,6 +672,28 @@ const TaskForm = defineAsyncComponent(
 const DeleteDataConnectionCard = defineAsyncComponent(
   () => import('@/components/Orchestration/DeleteDataConnectionCard.vue')
 )
+const TaskDetails = defineAsyncComponent(
+  () => import('@/pages/TaskDetails.vue')
+)
+
+const route = useRoute()
+
+const selectedTaskId = computed(() => {
+  const value = route.query.taskId
+  return typeof value === 'string' && value.trim() ? value : null
+})
+
+const selectedRunId = computed(() => {
+  const value = route.query.runId
+  return typeof value === 'string' && value.trim() ? value : null
+})
+
+const closeTaskDetails = async () => {
+  const nextQuery = { ...route.query }
+  delete nextQuery.taskId
+  delete nextQuery.runId
+  await router.replace({ name: 'Orchestration', query: nextQuery })
+}
 
 const props = defineProps<{
   workspaceId: string
@@ -1739,6 +1772,9 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: white;
   min-width: 0;
+}
+.detail--task {
+  padding: 0;
 }
 .detail-header {
   padding: 12px 22px;

@@ -1,80 +1,85 @@
 <template>
-  <div class="swimlanes">
-    <div class="task-header">
-      <span class="task-name">{{ task.name }}</span>
-      <div class="actions" v-if="showActions">
-        <v-btn
-          variant="text"
-          color="green"
-          :icon="mdiPencil"
-          @click.stop="$emit('edit', task)"
-        />
-        <v-btn
-          variant="text"
-          color="red-darken-3"
-          :icon="mdiDelete"
-          @click.stop="$emit('delete', task)"
-        />
-      </div>
-    </div>
-    <div class="head">
-      {{ isAggregationTask ? 'Source datastream' : 'Source' }}
-    </div>
-    <div class="head">
-      {{ isAggregationTask ? 'Aggregation statistic' : 'Data transformations' }}
-    </div>
-    <div class="head">
-      {{ isAggregationTask ? 'Target datastream' : 'Target' }}
-    </div>
+  <div class="swimlanes-view">
+    <template v-if="!isAggregationTask">
+      <div class="etl-mappings">
+        <div class="etl-mappings-head">Source field</div>
+        <div class="etl-mappings-head etl-mappings-head-target">
+          Target datastream
+        </div>
 
-    <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
-      <template v-for="(p, pi) in (m as any).paths" :key="pi">
-        <div class="cell source" :class="{ 'source-empty': pi !== 0 }">
-          <template v-if="pi === 0">
-            <v-chip size="small" color="primary" variant="flat" class="mr-2">
-              <template v-if="isAggregationTask">
-                {{ sourceDatastreamLabel(m.sourceIdentifier) }}
-              </template>
-              <template v-else>
-                {{ String(m.sourceIdentifier) }}
-              </template>
-            </v-chip>
+        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+          <template v-for="(p, pi) in (m as any).paths" :key="pi">
+            <div class="etl-mapping-row">
+              <div class="etl-mapping-source">
+                <div class="etl-source-display">
+                  {{ String(m.sourceIdentifier) || '—' }}
+                </div>
+              </div>
+
+              <div class="etl-mapping-arrow">
+                <v-icon :icon="mdiArrowRight" size="22" />
+              </div>
+
+              <div class="etl-mapping-target">
+                <div class="etl-target-display">
+                  <span class="target-id">{{
+                    String(p.targetIdentifier) || '—'
+                  }}</span>
+                  <span class="target-name">
+                    {{ datastreamNameById(p.targetIdentifier) }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </template>
-        </div>
+        </template>
+      </div>
+    </template>
 
-        <div class="cell transforms">
-          <div class="transform-row">
-            <v-chip
-              v-if="!p.dataTransformations?.length"
-              size="small"
-              variant="tonal"
-              color="grey"
-            >
-              no transform
-            </v-chip>
-            <TransformChip
-              v-for="(t, ti) in p.dataTransformations"
-              :key="ti"
-              :t="t"
-              class="mr-1 mb-1"
-            />
-          </div>
-        </div>
+    <template v-else>
+      <div class="swimlanes swimlanes-aggregation">
+        <div class="head">Source datastream</div>
+        <div class="head">Aggregation statistic</div>
+        <div class="head">Target datastream</div>
 
-        <div class="cell">
-          <div class="text-caption">
-            <span class="font-weight-medium">{{
-              String(p.targetIdentifier)
-            }}</span
-            >&nbsp;&ndash;&nbsp;
-            <span class="text-medium-emphasis">
-              {{
-                linkedDatastreams.find((d) => d.id == p.targetIdentifier)?.name
-              }}
-            </span>
-          </div>
-        </div>
-      </template>
+        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+          <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
+            <div class="cell aggregation-cell">
+              <div class="target-selector-display">
+                <v-icon :icon="mdiImport" size="16" class="mr-1" />
+                <span class="target-selector-content">
+                  <span class="target-id">
+                    {{ String(m.sourceIdentifier) || '—' }}
+                  </span>
+                  <span class="target-name">
+                    {{ datastreamNameById(m.sourceIdentifier) }}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div class="aggregation-plain-cell">
+              <div class="aggregation-stat-display">
+                {{ aggregationStatisticLabel(p) }}
+              </div>
+            </div>
+
+            <div class="cell aggregation-cell">
+              <div class="target-selector-display">
+                <v-icon :icon="mdiImport" size="16" class="mr-1" />
+                <span class="target-selector-content">
+                  <span class="target-id">
+                    {{ String(p.targetIdentifier) || '—' }}
+                  </span>
+                  <span class="target-name">
+                    {{ datastreamNameById(p.targetIdentifier) }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </template>
+        </template>
+      </div>
     </template>
   </div>
 </template>
@@ -82,73 +87,136 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
-import TransformChip from './TransformChip.vue'
-import type { Task, TaskExpanded } from '@hydroserver/client'
-import { mdiDelete, mdiPencil } from '@mdi/js'
+import type { TaskExpanded } from '@hydroserver/client'
+import { mdiArrowRight, mdiImport } from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
 
 const props = defineProps<{
   task: TaskExpanded
-  showActions?: boolean
 }>()
 
-const { linkedDatastreams, workspaceDatastreams } = storeToRefs(
-  useOrchestrationStore()
-)
+const { linkedDatastreams, workspaceDatastreams, draftDatastreams } =
+  storeToRefs(useOrchestrationStore())
+
 const isAggregationTask = computed(
   () => ((props.task as any)?.type ?? 'ETL') === 'Aggregation'
 )
-defineEmits<{
-  (e: 'edit', task: TaskExpanded): void
-  (e: 'delete', task: TaskExpanded): void
-}>()
 
-function sourceDatastreamLabel(sourceIdentifier: string | number) {
-  const id = String(sourceIdentifier)
-  const match =
-    linkedDatastreams.value.find((d) => d.id === id) ||
-    workspaceDatastreams.value.find((d) => d.id === id)
-  return match?.name ? `${id} - ${match.name}` : id
+const aggregationStatisticTitles: Record<string, string> = {
+  simple_mean: 'Simple mean',
+  time_weighted_daily_mean: 'Time-weighted daily mean',
+  last_value_of_day: 'Last value of day',
+}
+
+function aggregationStatisticLabel(path: any) {
+  const transform = (path?.dataTransformations ?? []).find(
+    (t: any) => t?.type === 'aggregation'
+  )
+  const statistic = transform?.aggregationStatistic
+  if (!statistic) return '—'
+  return aggregationStatisticTitles[statistic] ?? statistic
+}
+
+function datastreamNameById(id: string | number | undefined | null) {
+  if (id === undefined || id === null || `${id}` === '') return ''
+  const key = String(id)
+  return (
+    workspaceDatastreams.value.find((d) => d.id === key)?.name ||
+    linkedDatastreams.value.find((d) => d.id === key)?.name ||
+    draftDatastreams.value.find((d) => String(d.id) === key)?.name ||
+    ''
+  )
 }
 </script>
 
 <style scoped>
-.task-name {
-  grid-column: 1 / -1;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 4px 0 8px;
-  color: rgba(0, 0, 0, 0.8);
-}
-.task-header {
-  grid-column: 1 / -1;
+.swimlanes-view {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.etl-mappings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.etl-mappings-head {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4f4b59;
+  font-size: 0.68rem;
+}
+.etl-mappings-head-target {
+  margin-left: calc(50% + 34px);
+}
+.etl-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+  gap: 5px;
+  align-items: stretch;
+}
+.etl-mapping-source,
+.etl-mapping-target {
+  min-width: 0;
+}
+.etl-mapping-arrow {
+  display: flex;
   align-items: center;
-  padding: 6px 0 8px;
+  justify-content: center;
+  color: #c0b8c9;
+  min-height: 40px;
 }
-.target-wrap {
-  white-space: normal; /* enable wrapping */
-  overflow-wrap: anywhere; /* break long tokens if needed */
-  text-overflow: clip;
-  line-height: 1.25;
+.etl-source-display {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #d0c9d8;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #fdfdff;
+  font-size: 0.86rem;
+  color: #1c1b1f;
+  display: flex;
+  align-items: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
-:deep(.chip-wrap .v-chip__content) {
-  white-space: normal !important; /* override Vuetify’s nowrap */
-  overflow-wrap: anywhere; /* break very long tokens */
-  text-overflow: clip;
-  line-height: 1.25;
+.etl-target-display {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #d0c9d8;
+  border-radius: 10px;
+  padding: 6px 12px;
+  background: #f6f9ff;
+  font-size: 0.86rem;
+  color: #1c1b1f;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
 }
+
 .swimlanes {
   display: grid;
-  grid-template-columns: 1fr 2fr 4fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 12px;
   row-gap: 8px;
-  margin-bottom: 12px;
+}
+.swimlanes-aggregation {
+  --aggregation-statistic-width: 18rem;
+  grid-template-columns:
+    minmax(0, 1fr)
+    fit-content(var(--aggregation-statistic-width))
+    minmax(0, 1fr);
+  column-gap: 12px;
 }
 .head {
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.6);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4f4b59;
+  font-size: 0.68rem;
   padding-bottom: 6px;
 }
 .cell {
@@ -156,28 +224,73 @@ function sourceDatastreamLabel(sourceIdentifier: string | number) {
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 10px;
   padding: 6px 8px;
-  min-height: 34px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
 }
-.source {
+.aggregation-cell {
   background: transparent;
   border: none;
-  padding-left: 0;
+  padding: 0;
 }
-.source-empty {
-  min-height: 0;
-}
-.transforms.trunk {
-  position: relative;
-}
-.transform-row {
+.aggregation-plain-cell {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  max-width: var(--aggregation-statistic-width);
+  width: var(--aggregation-statistic-width);
 }
-.target {
-  justify-content: space-between;
+.aggregation-stat-display {
+  width: 100%;
+  border: 1px solid #d0c9d8;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #fdfdff;
+  font-size: 0.86rem;
+  color: #1c1b1f;
+}
+.target-selector-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid #d0c9d8;
+  border-radius: 10px;
+  padding: 6px 12px;
+  background: #f6f9ff;
+  color: #1c1b1f;
+  font-size: 0.86rem;
+  min-height: 40px;
+}
+.target-selector-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.target-id {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.target-name {
+  color: rgba(0, 0, 0, 0.66);
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 960px) {
+  .etl-mappings-head-target {
+    margin-left: 0;
+  }
+  .etl-mapping-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .etl-mapping-arrow {
+    justify-content: flex-start;
+    min-height: 0;
+  }
 }
 </style>
