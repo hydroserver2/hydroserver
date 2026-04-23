@@ -2,39 +2,56 @@
   <div class="orchestration-shell">
     <!-- Left nav rail -->
     <nav class="nav-rail">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        class="rail-btn"
-        :class="{ active: activeTab === tab.id }"
-        :style="
-          activeTab === tab.id
-            ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
-            : {}
-        "
-        @click="setActiveTab(tab.id)"
-      >
-        <span
-          class="rail-pill"
-          :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
-        >
-          <v-icon
-            :icon="tab.icon"
-            size="22"
-            :color="activeTab === tab.id ? tab.accent : undefined"
-          />
-          <span v-if="tab.issues > 0" class="rail-badge">{{ tab.issues }}</span>
-        </span>
-        <span
-          class="rail-label"
+      <div class="rail-main">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          type="button"
+          class="rail-btn"
+          :class="{ active: activeTab === tab.id }"
           :style="
-            activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
+            activeTab === tab.id
+              ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
+              : {}
           "
+          @click="setActiveTab(tab.id)"
         >
-          {{ tab.short }}
-        </span>
-      </button>
+          <span
+            class="rail-pill"
+            :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
+          >
+            <v-icon
+              :icon="tab.icon"
+              size="22"
+              :color="activeTab === tab.id ? tab.accent : undefined"
+            />
+            <span v-if="tab.issues > 0" class="rail-badge">{{
+              tab.issues
+            }}</span>
+          </span>
+          <span
+            class="rail-label"
+            :style="
+              activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
+            "
+          >
+            {{ tab.short }}
+          </span>
+        </button>
+      </div>
+
+      <div class="rail-bottom">
+        <button
+          type="button"
+          class="rail-btn rail-btn-secondary"
+          @click="openStreamingLoader"
+        >
+          <span class="rail-pill rail-pill-secondary">
+            <v-icon :icon="mdiDownloadBoxOutline" size="22" />
+          </span>
+          <span class="rail-label">Download data loader</span>
+        </button>
+      </div>
     </nav>
 
     <!-- Contextual sidebar: Connections (Ingestion) or Sites (Aggregation / Quality) -->
@@ -570,6 +587,7 @@ import {
   mdiChevronRight,
   mdiClose,
   mdiDatabaseArrowDownOutline,
+  mdiDownloadBoxOutline,
   mdiFilterVariant,
   mdiMagnify,
   mdiPause,
@@ -1416,6 +1434,10 @@ const goToTask = async (item: any) => {
   })
 }
 
+const openStreamingLoader = async () => {
+  await router.push({ name: 'HydroLoader' })
+}
+
 onBeforeUnmount(() => {
   stopAllTaskPolling()
 })
@@ -1438,8 +1460,19 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   padding: 16px 0;
-  gap: 2px;
   flex-shrink: 0;
+}
+.rail-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+.rail-bottom {
+  margin-top: auto;
+  width: 100%;
+  padding-top: 14px;
 }
 .rail-btn {
   display: flex;
@@ -1465,6 +1498,15 @@ onBeforeUnmount(() => {
   justify-content: center;
   position: relative;
   transition: background 0.15s;
+}
+.rail-btn-secondary {
+  color: #5f6368;
+}
+.rail-btn-secondary:hover .rail-pill-secondary {
+  background: rgba(21, 101, 192, 0.08);
+}
+.rail-pill-secondary {
+  background: transparent;
 }
 .rail-badge {
   position: absolute;

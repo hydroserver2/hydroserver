@@ -1,23 +1,7 @@
 <template>
   <div class="orchestration-page">
     <div class="orchestration-page-toolbar">
-      <WorkspaceToolbar layout="orchestration" title="Job orchestration">
-        <template #actions>
-          <div class="d-flex flex-wrap ga-2 justify-end align-center">
-            <v-btn
-              :append-icon="mdiChevronRight"
-              color="grey-darken-2"
-              :to="{ name: 'HydroLoader' }"
-              density="comfortable"
-              variant="outlined"
-              rounded="lg"
-              class="text-none font-weight-regular"
-            >
-              Download Streaming Data Loader
-            </v-btn>
-          </div>
-        </template>
-      </WorkspaceToolbar>
+      <WorkspaceToolbar layout="orchestration" title="Job orchestration" />
     </div>
 
     <div v-if="!!selectedWorkspace" class="orchestration-page-body">
@@ -65,7 +49,6 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import hs from '@hydroserver/client'
 import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
-import { mdiChevronRight } from '@mdi/js'
 import { useRoute } from 'vue-router'
 import router from '@/router/router'
 
