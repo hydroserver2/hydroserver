@@ -8,9 +8,9 @@
           :key="tab.id"
           type="button"
           class="rail-btn"
-          :class="{ active: activeTab === tab.id }"
+          :class="{ active: activeView === 'tasks' && activeTab === tab.id }"
           :style="
-            activeTab === tab.id
+            activeView === 'tasks' && activeTab === tab.id
               ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
               : {}
           "
@@ -18,12 +18,20 @@
         >
           <span
             class="rail-pill"
-            :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
+            :style="
+              activeView === 'tasks' && activeTab === tab.id
+                ? { background: tab.accentLight }
+                : {}
+            "
           >
             <v-icon
               :icon="tab.icon"
               size="22"
-              :color="activeTab === tab.id ? tab.accent : undefined"
+              :color="
+                activeView === 'tasks' && activeTab === tab.id
+                  ? tab.accent
+                  : undefined
+              "
             />
             <span v-if="tab.issues > 0" class="rail-badge">{{
               tab.issues
@@ -32,7 +40,9 @@
           <span
             class="rail-label"
             :style="
-              activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
+              activeView === 'tasks' && activeTab === tab.id
+                ? { color: tab.accent, fontWeight: 600 }
+                : {}
             "
           >
             {{ tab.short }}
@@ -43,19 +53,54 @@
       <div class="rail-bottom">
         <button
           type="button"
-          class="rail-btn rail-btn-secondary"
-          @click="openStreamingLoader"
+          class="rail-btn"
+          @click="openWorkspaceManager"
+        >
+          <span
+            class="rail-pill"
+            :style="
+              activeView === 'workspaces'
+                ? { background: WORKSPACE_ACCENT_LIGHT }
+                : {}
+            "
+          >
+            <v-icon
+              :icon="mdiBriefcaseOutline"
+              size="22"
+              :color="activeView === 'workspaces' ? WORKSPACE_ACCENT : undefined"
+            />
+          </span>
+          <span
+            class="rail-label"
+            :style="
+              activeView === 'workspaces'
+                ? { color: WORKSPACE_ACCENT, fontWeight: 600 }
+                : {}
+            "
+          >
+            Workspaces
+          </span>
+        </button>
+
+        <RouterLink
+          :to="{ name: 'HydroLoader' }"
+          class="rail-btn rail-btn-secondary rail-link"
         >
           <span class="rail-pill rail-pill-secondary">
             <v-icon :icon="mdiDownloadBoxOutline" size="22" />
           </span>
           <span class="rail-label">Download data loader</span>
-        </button>
+        </RouterLink>
       </div>
     </nav>
 
-    <!-- Contextual sidebar: Connections (Ingestion) or Sites (Aggregation / Quality) -->
-    <aside class="sidebar">
+    <section v-if="activeView === 'workspaces'" class="workspace-detail">
+      <OrchestrationWorkspaceManager table-height="calc(100vh - 230px)" />
+    </section>
+
+    <template v-else>
+      <!-- Contextual sidebar: Connections (Ingestion) or Sites (Aggregation / Quality) -->
+      <aside class="sidebar">
       <div class="sidebar-header">
         <div class="flex items-center">
           <span class="sidebar-title">{{ sidebarTitle }}</span>
@@ -199,10 +244,10 @@
           <span>{{ readOnlyTooltip }}</span>
         </v-tooltip>
       </div>
-    </aside>
+      </aside>
 
-    <!-- Detail pane -->
-    <section class="detail">
+      <!-- Detail pane -->
+      <section class="detail">
       <header class="detail-header">
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
@@ -503,7 +548,8 @@
           </tbody>
         </table>
       </div>
-    </section>
+      </section>
+    </template>
 
     <v-dialog v-model="openCreateDataConnection" width="60rem">
       <DataConnectionForm
@@ -583,6 +629,7 @@ import {
   mdiArrowDown,
   mdiArrowUp,
   mdiArrowUpDown,
+  mdiBriefcaseOutline,
   mdiCallMerge,
   mdiChevronRight,
   mdiClose,
@@ -605,6 +652,9 @@ import { useWorkspaceStore } from '@/store/workspaces'
 const DataConnectionForm = defineAsyncComponent(
   () => import('@/components/Orchestration/DataConnectionForm.vue')
 )
+const OrchestrationWorkspaceManager = defineAsyncComponent(
+  () => import('@/components/Workspace/OrchestrationWorkspaceManager.vue')
+)
 const TaskForm = defineAsyncComponent(
   () => import('@/components/Orchestration/TaskForm.vue')
 )
@@ -622,9 +672,12 @@ const AGGREGATION_ACCENT = '#6A1B9A'
 const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
 const QUALITY_ACCENT = '#00695C'
 const QUALITY_ACCENT_LIGHT = '#E0F2F1'
+const WORKSPACE_ACCENT = '#455A64'
+const WORKSPACE_ACCENT_LIGHT = '#ECEFF1'
 
 type TabId = 'ingestion' | 'aggregation' | 'quality'
 type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
+type ActiveView = 'tasks' | 'workspaces'
 
 const TAB_TO_KIND: Record<TabId, TaskKind> = {
   ingestion: 'etl',
@@ -653,6 +706,7 @@ const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 
 const activeTab = ref<TabId>('ingestion')
+const activeView = ref<ActiveView>('tasks')
 const sidebarSearch = ref('')
 const taskSearch = ref('')
 const statusFilter = ref<string[]>([])
@@ -1044,9 +1098,14 @@ const emptyTasksMessage = computed(() => {
 })
 
 const setActiveTab = (tab: TabId) => {
+  activeView.value = 'tasks'
   activeTab.value = tab
   sidebarSearch.value = ''
   autoSelectSidebar()
+}
+
+const openWorkspaceManager = () => {
+  activeView.value = 'workspaces'
 }
 
 const selectConnection = (id: string) => {
@@ -1434,10 +1493,6 @@ const goToTask = async (item: any) => {
   })
 }
 
-const openStreamingLoader = async () => {
-  await router.push({ name: 'HydroLoader' })
-}
-
 onBeforeUnmount(() => {
   stopAllTaskPolling()
 })
@@ -1473,6 +1528,9 @@ onBeforeUnmount(() => {
   margin-top: auto;
   width: 100%;
   padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .rail-btn {
   display: flex;
@@ -1485,6 +1543,10 @@ onBeforeUnmount(() => {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
+}
+.rail-link {
+  text-decoration: none;
+  color: inherit;
 }
 .rail-btn:hover .rail-pill {
   background: rgba(0, 0, 0, 0.05);
@@ -1660,6 +1722,14 @@ onBeforeUnmount(() => {
 .sidebar-footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.workspace-detail {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: white;
+  padding: 16px 22px;
 }
 
 .detail {

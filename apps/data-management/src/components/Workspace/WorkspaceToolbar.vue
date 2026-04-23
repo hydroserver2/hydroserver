@@ -12,7 +12,7 @@
             <v-col cols="auto">
               <WorkspaceSelector />
             </v-col>
-            <v-col cols="12" sm="auto">
+            <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
               <v-btn
                 @click="openWorkspaceTable = !openWorkspaceTable"
                 rounded="lg"
@@ -50,6 +50,7 @@
     >
       <WorkspaceSelector />
       <v-btn
+        v-if="!hideWorkspaceManagement"
         @click="openWorkspaceTable = !openWorkspaceTable"
         rounded="xl"
         color="secondary-darken-3"
@@ -73,7 +74,7 @@
       <v-col cols="auto">
         <WorkspaceSelector />
       </v-col>
-      <v-col cols="12" sm="auto">
+      <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
         <v-btn
           @click="openWorkspaceTable = !openWorkspaceTable"
           rounded="xl"
@@ -145,6 +146,7 @@
 
     <v-expand-transition>
       <div
+        v-if="!hideWorkspaceManagement"
         v-show="openWorkspaceTable"
         :class="layout === 'orchestration' ? 'w-full' : ''"
       >
@@ -341,6 +343,7 @@ const { compactControls, layout, title } = defineProps<{
   compactControls?: boolean
   layout?: 'default' | 'orchestration'
   title?: string
+  hideWorkspaceManagement?: boolean
 }>()
 import WorkspaceSelector from './WorkspaceSelector.vue'
 import {
@@ -490,4 +493,3 @@ const transferHeaders = [
   line-height: 1.2;
 }
 </style>
-

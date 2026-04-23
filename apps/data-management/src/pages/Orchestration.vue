@@ -1,7 +1,11 @@
 <template>
   <div class="orchestration-page">
     <div class="orchestration-page-toolbar">
-      <WorkspaceToolbar layout="orchestration" title="Job orchestration" />
+      <WorkspaceToolbar
+        layout="orchestration"
+        title="Job orchestration"
+        hide-workspace-management
+      />
     </div>
 
     <div v-if="!!selectedWorkspace" class="orchestration-page-body">
