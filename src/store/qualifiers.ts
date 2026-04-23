@@ -80,6 +80,25 @@ export const useQualifierStore = defineStore(
       { immediate: true }
     )
 
+    // `qualifiers` loads asynchronously from the server. If `applied`
+    // is populated before the dictionary arrives, `buildQualifierBand`
+    // drops every application whose `qualifierId` isn't yet in
+    // `qualifierById` — the band paints, then disappears on the next
+    // redraw. Trigger a zoom-preserving replot once the dictionary
+    // arrives so the band re-materialises against the freshly loaded
+    // codes.
+    watch(
+      () => qualifiers.value.length,
+      async () => {
+        const { usePlotlyStore } = await import('@/store/plotly')
+        const { handleNewPlot } = await import('@/utils/plotting/plotly')
+        const plotStore = usePlotlyStore()
+        if (!plotStore.plotlyRef) return
+        plotStore.updateOptions()
+        await handleNewPlot(undefined, { preserveZoom: true })
+      }
+    )
+
     /**
      * Create a ResultQualifier on the server for the active workspace.
      * Falls back to a purely local record (no `workspaceId`) if no

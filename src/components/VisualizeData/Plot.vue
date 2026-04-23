@@ -204,23 +204,26 @@
           </v-card>
         </v-menu>
 
-        <!-- The old `v-btn-toggle` row (1W / 1M / 6M / 1Y / YTD /
-             ALL) ate a lot of horizontal space in the toolbar.
+        <!-- The old `v-btn-toggle` row (1W / 1M / 6M / 1Y / ALL)
+             ate a lot of horizontal space in the toolbar.
              Collapsing to a compact `v-select` keeps the same
              presets reachable in one click while leaving room for
              other controls. The trigger shows the active preset's
              label so at-a-glance the current range is still
-             obvious. -->
+             obvious. YTD is excluded: it anchors to calendar year
+             rather than the data window, which is confusing here. -->
         <v-select
           v-model="editorDateBtnId"
-          :items="dateOptions"
-          item-title="label"
+          :items="editorDateOptions"
+          item-title="editorLabel"
           item-value="id"
           density="compact"
           variant="outlined"
           hide-details
+          prepend-inner-icon="mdi-axis-x-arrow"
+          title="Zoom to range (does not reload data)"
           class="plot-toolbar__range"
-          style="max-width: 7rem"
+          style="max-width: 12rem"
           @update:model-value="(id: any) => onEditorDatePreset(id as number)"
         />
       </div>
@@ -481,10 +484,9 @@ async function copyShareableLink() {
 }
 
 /**
- * Minimum x-value across every plotted trace. Used by the "All"
- * preset to zoom out to the actual rendered data extent rather than
- * trusting the store's `beginDate`, which is the *requested* window
- * start and can precede the earliest returned observation.
+ * Minimum/maximum x-value across every plotted trace. Used by the
+ * editor presets to anchor to actual rendered data rather than the
+ * requested fetch window.
  */
 const earliestDataX = computed<number | null>(() => {
   let min = Infinity
@@ -496,6 +498,31 @@ const earliestDataX = computed<number | null>(() => {
   }
   return Number.isFinite(min) ? min : null
 })
+
+const latestDataX = computed<number | null>(() => {
+  let max = -Infinity
+  for (const s of graphSeriesArray.value) {
+    const xs = s.data?.dataX
+    if (!xs?.length) continue
+    const last = xs[xs.length - 1] as number
+    if (last > max) max = last
+  }
+  return Number.isFinite(max) ? max : null
+})
+
+const EDITOR_LABELS: Record<string, string> = {
+  '1w': 'Last week of data',
+  '1m': 'Last month of data',
+  '6m': 'Last 6 months of data',
+  '1y': 'Last year of data',
+  'All': 'All data',
+}
+
+const editorDateOptions = computed(() =>
+  dateOptions.value
+    .filter((o) => o.label !== 'YTD')
+    .map((o) => ({ ...o, editorLabel: EDITOR_LABELS[o.label] ?? o.label }))
+)
 
 /**
  * Editor-mode date presets are a visual x-axis zoom, not a data
@@ -514,10 +541,12 @@ const earliestDataX = computed<number | null>(() => {
 function onEditorDatePreset(id: number) {
   const option = dateOptions.value.find((o) => o.id === id)
   if (!option) return
-  // v-model already wrote `id` into `editorDateBtnId`; no need to
-  // touch the Select view's `selectedDateBtnId`.
 
-  const dataEnd = endDate.value
+  // Anchor relative presets to the actual last data point so "1w" always
+  // lands on real data rather than today.
+  const dataEndMs = latestDataX.value
+  const dataEnd = dataEndMs != null ? new Date(dataEndMs) : null
+
   let begin: Date | null = null
   let end: Date | null = null
 
@@ -542,16 +571,10 @@ function onEditorDatePreset(id: number) {
       end = dataEnd
       begin = subtractYears(dataEnd, 1)
       break
-    case 'YTD': {
-      const now = new Date()
-      end = now
-      begin = new Date(now.getFullYear(), 0, 1)
-      break
-    }
     case 'All':
-      if (!dataEnd || earliestDataX.value == null) return
-      end = dataEnd
+      if (earliestDataX.value == null || dataEndMs == null) return
       begin = new Date(earliestDataX.value)
+      end = new Date(dataEndMs)
       break
     default:
       return

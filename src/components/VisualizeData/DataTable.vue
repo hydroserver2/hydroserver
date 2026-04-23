@@ -126,10 +126,7 @@
         </template>
 
         <template #item.qualifiers="{ index }">
-          <div
-            v-if="qualifierApplicationsAt(index).length"
-            class="d-flex gap-1 flex-wrap"
-          >
+          <div v-if="qualifierApplicationsAt(index).length" class="d-flex gap-1 flex-wrap">
             <v-chip
               v-for="a in qualifierApplicationsAt(index)"
               :key="a.qualifierId"

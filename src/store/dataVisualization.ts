@@ -82,9 +82,15 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
+    // Re-apply the persisted preset so the chosen time range survives
+    // workspace switches. selectedDateBtnId is intentionally NOT reset here —
+    // it's a user preference, not workspace-specific state, and resetting it
+    // would overwrite the persisted localStorage value.
     endDate.value = new Date()
-    beginDate.value = new Date(new Date().getTime() - oneWeek)
-    selectedDateBtnId.value = 0
+    const option = dateOptions.value.find((o) => o.id === selectedDateBtnId.value)
+    beginDate.value = option
+      ? option.calculateBeginDate()
+      : new Date(endDate.value.getTime() - oneWeek)
     // Old watcher used to call clearChartState when plottedDatastreams
     // emptied; with the watcher gone, do it here explicitly.
     clearChartState()

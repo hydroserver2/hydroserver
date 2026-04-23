@@ -187,7 +187,7 @@ import {
 } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { usePlotlyStore } from '@/store/plotly'
-import { saveOpParams } from '@/composables/useOperationParams'
+import { useOperationParamsStore } from '@/store/operationParams'
 import {
   clearGhostFills,
   enterPanMode,
@@ -205,6 +205,7 @@ const {
   gapAmount,
   selectedGapUnit,
 } = storeToRefs(useUIStore())
+const opParamsStore = useOperationParamsStore()
 
 const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
@@ -438,7 +439,7 @@ const onFillGaps = async () => {
       range
     )
 
-    saveOpParams(qcDatastream.value?.id ?? null, {
+    opParamsStore.save(qcDatastream.value?.id ?? null, {
       gapAmount: Number(gapAmount.value),
       gapUnit: selectedGapUnit.value,
       fillAmount: Number(fillAmount.value),

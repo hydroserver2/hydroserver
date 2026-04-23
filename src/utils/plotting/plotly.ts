@@ -729,7 +729,6 @@ export const createPlotlyOption = (
 
 export const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
-
   const point = eventData.points[0]
   if (point) {
     // `PlotDatum.data` is `Partial<PlotData>`; `selectedpoints` is not in
@@ -738,29 +737,22 @@ export const handleClick = async (eventData: PlotMouseEvent) => {
       selectedpoints?: number | number[]
     }
     let alreadySelected: number[] = []
-
     if (pointData.selectedpoints != null) {
       alreadySelected = Array.isArray(pointData.selectedpoints)
-        ? [...pointData.selectedpoints as number[]]
-        : [pointData.selectedpoints]
+        ? [...(pointData.selectedpoints as number[])]
+        : [pointData.selectedpoints as number]
     }
 
     const index = alreadySelected.indexOf(point.pointIndex)
-    // Toggle the point
     index >= 0
       ? alreadySelected.splice(index, 1)
       : alreadySelected.push(point.pointIndex)
-
     alreadySelected.sort()
 
-    // Removes selected areas
     await Plotly.update(plotlyRef.value as Plotly.Root, {}, { selections: [] }, [0])
-
-    // Colors selected points
     await Plotly.restyle(plotlyRef.value as Plotly.Root, {
       selectedpoints: [[...alreadySelected]],
     })
-
     handleSelected(eventData)
   }
 }

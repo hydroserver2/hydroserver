@@ -1,10 +1,9 @@
 import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
-import { computed, Ref, ref, watch } from 'vue'
+import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
 import type { LayoutAxis } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
-import Storage from '@/utils/storage'
 
 import {
   applyTraceUpdate,
@@ -38,15 +37,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // Persisted as a user preference — large plots are cheap on fast machines
   // and expensive on slow ones, so let the user pick. Bounded in the UI
   // but not hard-clamped here so power users can override via storage.
-  const tooltipsMaxDataPointsStorage = new Storage<number>(
-    'qc.plot.tooltipsMaxDataPoints'
-  )
-  const tooltipsMaxDataPoints = ref<number>(
-    Number(tooltipsMaxDataPointsStorage.get()) || 10 * 1000
-  )
-  watch(tooltipsMaxDataPoints, (v) => {
-    if (Number.isFinite(v) && v > 0) tooltipsMaxDataPointsStorage.set(v)
-  })
+  // Persistence is wired through pinia-plugin-persistedstate at the
+  // bottom of this store.
+  const tooltipsMaxDataPoints = ref<number>(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
   const areTooltipsEnabled = ref(true)
   const showCoordinates = ref(false)
@@ -372,4 +365,12 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     clearZoomHistory,
     pushZoomState,
   }
+}, {
+  // `plotlyRef` / `graphSeriesArray` / Plotly shape caches are all
+  // ephemeral (DOM handles, live chart data). Only persist the small
+  // user preference so reloads keep the chosen tooltip threshold.
+  persist: {
+    key: 'qc.plot.tooltipsMaxDataPoints',
+    pick: ['tooltipsMaxDataPoints'],
+  },
 })

@@ -2,7 +2,7 @@ import { LogicalOperation, Operator, TimeUnit } from '@uwrl/qc-utils'
 import { defineStore, storeToRefs } from 'pinia'
 import { ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { loadOpParams } from '@/composables/useOperationParams'
+import { useOperationParamsStore } from '@/store/operationParams'
 
 /**
  * Map the datastream's `intendedTimeSpacingUnit` (plural English words
@@ -108,7 +108,7 @@ export const useUIStore = defineStore('userInterface', () => {
     qcDatastream,
     (ds) => {
       if (!ds) return
-      const persisted = loadOpParams(ds.id)
+      const persisted = useOperationParamsStore().load(ds.id)
 
       const spacing = Number(
         (ds as { intendedTimeSpacing?: number }).intendedTimeSpacing

@@ -1,4 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
+import { useUiLayoutStore } from '@/store/uiLayout'
 
 export interface UseResizableOptions {
   /** Initial size in px (width for horizontal, height for vertical). */
@@ -8,9 +9,10 @@ export interface UseResizableOptions {
   /** Optional maximum. Omit for unbounded. */
   max?: number
   /**
-   * localStorage key. When set, the current size is persisted on
-   * change and rehydrated at construction — the sidebar/split layout
-   * survives page reloads without any further wiring.
+   * Identifier under which the current size is persisted. Storage is
+   * handled by the `uiLayout` pinia store (pinia-plugin-persistedstate)
+   * so the sidebar/split layout survives page reloads without any
+   * further wiring.
    */
   storageKey?: string
   /** Horizontal drag tracks clientX → width. Vertical tracks clientY
@@ -59,29 +61,19 @@ export function useResizable(
 ): UseResizableReturn {
   const direction = options.direction ?? 'horizontal'
   const storageKey = options.storageKey
+  const layoutStore = storageKey ? useUiLayoutStore() : null
   let initial = options.initial
-  if (storageKey) {
-    try {
-      const raw = localStorage.getItem(storageKey)
-      const parsed = raw ? Number(raw) : NaN
-      if (Number.isFinite(parsed) && parsed >= options.min) {
-        initial = parsed
-      }
-    } catch {
-      /* localStorage unavailable; fall back to the initial value */
+  if (storageKey && layoutStore) {
+    const stored = layoutStore.getSize(storageKey)
+    if (stored != null && stored >= options.min) {
+      initial = stored
     }
   }
   const size = ref(initial)
   const dragging = ref(false)
 
-  if (storageKey) {
-    watch(size, (v) => {
-      try {
-        localStorage.setItem(storageKey, String(v))
-      } catch {
-        /* quota exceeded / private mode — swallow */
-      }
-    })
+  if (storageKey && layoutStore) {
+    watch(size, (v) => layoutStore.setSize(storageKey, v))
   }
 
   const onStart = (e: MouseEvent) => {
@@ -131,21 +123,9 @@ export function usePersistedFlag(
   storageKey: string,
   initial: boolean
 ): Ref<boolean> {
-  let seeded = initial
-  try {
-    const raw = localStorage.getItem(storageKey)
-    if (raw === 'true') seeded = true
-    else if (raw === 'false') seeded = false
-  } catch {
-    /* private mode */
-  }
-  const flag = ref(seeded)
-  watch(flag, (v) => {
-    try {
-      localStorage.setItem(storageKey, String(v))
-    } catch {
-      /* swallow */
-    }
-  })
+  const layoutStore = useUiLayoutStore()
+  const stored = layoutStore.getFlag(storageKey)
+  const flag = ref(stored ?? initial)
+  watch(flag, (v) => layoutStore.setFlag(storageKey, v))
   return flag
 }

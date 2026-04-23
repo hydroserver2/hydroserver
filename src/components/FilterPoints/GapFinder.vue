@@ -104,7 +104,7 @@ import {
 } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
-import { saveOpParams } from '@/composables/useOperationParams'
+import { useOperationParamsStore } from '@/store/operationParams'
 import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 
 export interface GapPlan {
@@ -260,10 +260,11 @@ const applySnap = (chip: SnapChip) => {
 
 // Persist threshold per datastream so reopening either operation
 // restores the last-used value without the user retyping.
+const opParamsStore = useOperationParamsStore()
 watch(
   [gapAmount, selectedGapUnit, qcDatastream],
   () => {
-    saveOpParams(qcDatastream.value?.id ?? null, {
+    opParamsStore.save(qcDatastream.value?.id ?? null, {
       gapAmount: Number(gapAmount.value),
       gapUnit: selectedGapUnit.value,
     })
