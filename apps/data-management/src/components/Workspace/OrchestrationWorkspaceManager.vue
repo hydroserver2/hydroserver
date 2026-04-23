@@ -279,11 +279,11 @@ const headers = [
 
 <style scoped>
 .workspace-manager {
-  height: 100%;
+  width: 100%;
 }
 
 .workspace-manager-card {
-  height: 100%;
+  width: 100%;
   border: 1px solid #e8e8e8;
   background: white;
 }
