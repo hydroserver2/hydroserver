@@ -194,10 +194,9 @@
                 <span v-bind="tooltipProps" class="inline-flex">
                   <v-btn
                     variant="text"
-                    size="small"
                     :prepend-icon="mdiPencil"
                     :disabled="!canEditOrchestration"
-                    class="text-none"
+                    class="detail-action-btn text-none"
                     color="blue-grey-darken-2"
                     @click="openEditDialog(selectedConnection)"
                   >
@@ -212,10 +211,9 @@
                 <span v-bind="tooltipProps" class="inline-flex">
                   <v-btn
                     variant="text"
-                    size="small"
                     :prepend-icon="mdiTrashCanOutline"
                     color="red-darken-2"
-                    class="text-none"
+                    class="detail-action-btn text-none"
                     :disabled="!canEditOrchestration"
                     @click="openDeleteDialog(selectedConnection)"
                   >
@@ -229,12 +227,12 @@
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
                   <v-btn
-                    size="small"
                     variant="flat"
                     :prepend-icon="mdiPlus"
                     :style="{ background: activeAccent, color: 'white' }"
                     :disabled="!canEditOrchestration"
-                    class="text-none"
+                    class="detail-action-btn detail-action-btn--primary text-none"
+                    rounded="pill"
                     @click="openCreateTaskDialog(selectedConnection)"
                   >
                     Add task
@@ -402,55 +400,58 @@
               <td class="task-time">{{ row.lastRun }}</td>
               <td class="task-time">{{ row.nextRun }}</td>
               <td class="task-actions">
-                <v-tooltip location="top" :open-delay="0" :close-delay="0">
-                  <template #activator="{ props: tooltipProps }">
-                    <span v-bind="tooltipProps" class="inline-flex">
-                      <v-btn
-                        variant="text"
-                        size="small"
-                        color="black"
-                        :icon="row.schedule?.enabled ? mdiPause : mdiPlay"
-                        :disabled="!canEditOrchestration"
-                        @click.stop="togglePaused(row)"
-                        aria-label="Pause or resume task"
-                      />
-                    </span>
-                  </template>
-                  <span>{{
-                    !canEditOrchestration
-                      ? readOnlyTooltip
-                      : row.schedule?.enabled
-                        ? 'Pause task'
-                        : 'Resume task'
-                  }}</span>
-                </v-tooltip>
-                <v-btn
-                  v-if="canEditOrchestration && !row.userClickedRunNow"
-                  variant="outlined"
-                  size="small"
-                  color="green-darken-3"
-                  :append-icon="mdiPlay"
-                  class="text-none"
-                  @click.stop="runTaskNow(row)"
-                >
-                  Run now
-                </v-btn>
-                <span
-                  v-else-if="canEditOrchestration && row.userClickedRunNow"
-                  class="text-xs font-semibold text-slate-500"
-                >
-                  Run requested
-                </span>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  :style="{ color: activeAccent }"
-                  :append-icon="mdiChevronRight"
-                  class="text-none"
-                  @click.stop="goToTask(row)"
-                >
-                  Details
-                </v-btn>
+                <div class="task-actions-inner">
+                  <v-tooltip location="top" :open-delay="0" :close-delay="0">
+                    <template #activator="{ props: tooltipProps }">
+                      <span v-bind="tooltipProps" class="inline-flex">
+                        <v-btn
+                          variant="text"
+                          size="small"
+                          color="black"
+                          :icon="row.schedule?.enabled ? mdiPause : mdiPlay"
+                          :disabled="!canEditOrchestration"
+                          class="task-pause-btn"
+                          @click.stop="togglePaused(row)"
+                          aria-label="Pause or resume task"
+                        />
+                      </span>
+                    </template>
+                    <span>{{
+                      !canEditOrchestration
+                        ? readOnlyTooltip
+                        : row.schedule?.enabled
+                          ? 'Pause task'
+                          : 'Resume task'
+                    }}</span>
+                  </v-tooltip>
+                  <v-btn
+                    v-if="canEditOrchestration && !row.userClickedRunNow"
+                    variant="outlined"
+                    size="small"
+                    color="green-darken-3"
+                    :append-icon="mdiPlay"
+                    class="text-none"
+                    @click.stop="runTaskNow(row)"
+                  >
+                    Run now
+                  </v-btn>
+                  <span
+                    v-else-if="canEditOrchestration && row.userClickedRunNow"
+                    class="text-xs font-semibold text-slate-500"
+                  >
+                    Run requested
+                  </span>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :style="{ color: activeAccent }"
+                    :append-icon="mdiChevronRight"
+                    class="text-none"
+                    @click.stop="goToTask(row)"
+                  >
+                    Details
+                  </v-btn>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -1592,7 +1593,7 @@ onBeforeUnmount(() => {
   padding: 12px 22px;
   border-bottom: 1px solid #e8e8e8;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   background: white;
   flex-shrink: 0;
@@ -1614,9 +1615,15 @@ onBeforeUnmount(() => {
 .detail-actions {
   margin-left: auto;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   flex-shrink: 0;
+}
+.detail-action-btn {
+  min-height: 40px;
+}
+.detail-action-btn--primary {
+  padding-inline: 20px;
 }
 .detail-filterbar {
   display: flex;
@@ -1659,9 +1666,10 @@ onBeforeUnmount(() => {
 }
 
 .tasks-table {
-  width: 100%;
+  width: calc(100% + 22px);
   border-collapse: collapse;
   font-size: 13px;
+  margin-right: -22px;
 }
 .tasks-table thead tr {
   border-bottom: 2px solid #ebebeb;
@@ -1720,7 +1728,13 @@ onBeforeUnmount(() => {
   text-align: right;
   white-space: nowrap;
 }
-.task-actions > * + * {
-  margin-left: 6px;
+.task-actions-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.task-pause-btn {
+  align-self: center;
 }
 </style>

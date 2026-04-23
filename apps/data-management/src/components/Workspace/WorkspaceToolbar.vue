@@ -15,10 +15,11 @@
             <v-col cols="12" sm="auto">
               <v-btn
                 @click="openWorkspaceTable = !openWorkspaceTable"
-                rounded="xl"
-                color="secondary-darken-3"
+                rounded="lg"
+                color="primary"
                 variant="outlined"
                 density="comfortable"
+                class="text-none font-weight-regular"
                 :append-icon="openWorkspaceTable ? mdiMenuUp : mdiMenuDown"
               >
                 Manage workspaces
@@ -30,10 +31,11 @@
           <v-col cols="12" sm="auto" v-if="pendingWorkspaces.length">
             <v-btn
               @click="openTransferTable = !openTransferTable"
-              rounded="xl"
+              rounded="lg"
               color="blue-darken-4"
               density="comfortable"
               variant="tonal"
+              class="text-none font-weight-regular"
             >
               Pending workspace transfer
             </v-btn>

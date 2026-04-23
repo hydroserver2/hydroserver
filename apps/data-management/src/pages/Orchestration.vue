@@ -3,13 +3,15 @@
     <div class="orchestration-page-toolbar">
       <WorkspaceToolbar layout="orchestration" title="Job orchestration">
         <template #actions>
-          <div class="d-flex flex-wrap ga-2 justify-end">
+          <div class="d-flex flex-wrap ga-2 justify-end align-center">
             <v-btn
               :append-icon="mdiChevronRight"
-              color="blue-grey-darken-4"
+              color="grey-darken-2"
               :to="{ name: 'HydroLoader' }"
               density="comfortable"
-              variant="tonal"
+              variant="outlined"
+              rounded="lg"
+              class="text-none font-weight-regular"
             >
               Download Streaming Data Loader
             </v-btn>
