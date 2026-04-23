@@ -9,34 +9,118 @@
     >
       At least one source target mapping is required.
     </v-alert>
-    <div :class="['swimlanes', { 'swimlanes-aggregation': isAggregationTask }]">
-      <div class="head">
-        {{
-          isAggregationTask
-            ? 'Source datastream'
-            : 'Source (CSV column name/index or JSON key)'
-        }}
-      </div>
-      <div v-if="isAggregationTask" class="head">Aggregation statistic</div>
-      <div class="head">Target datastream</div>
+    <template v-if="!isAggregationTask">
+      <div class="etl-mappings">
+        <div class="etl-mappings-head">Source field</div>
+        <div class="etl-mappings-head etl-mappings-head-target">
+          Target datastream
+        </div>
 
-      <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
-        <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
-          <div
-            :class="[
-              'cell',
-              { source: !isAggregationTask, 'source-empty': pi !== 0 },
-            ]"
+        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+          <div class="etl-mapping-row">
+            <div class="etl-mapping-source">
+              <v-text-field
+                v-model="m.sourceIdentifier"
+                placeholder="CSV column or JSON key"
+                density="compact"
+                variant="outlined"
+                rounded="lg"
+                hide-details="auto"
+                :rules="rules.requiredAndMaxLength150"
+              />
+            </div>
+
+            <div class="etl-mapping-arrow">
+              <v-icon :icon="mdiArrowRight" size="22" />
+            </div>
+
+            <div class="etl-mapping-target">
+              <v-btn
+                v-if="!ensureSinglePath(m).targetIdentifier"
+                variant="outlined"
+                rounded="lg"
+                height="44"
+                class="etl-target-btn text-none"
+                :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
+                @click="openTargetSelector(mi, 0)"
+              >
+                <span class="etl-target-btn-label">
+                  <v-icon :icon="mdiPlusCircleOutline" size="18" />
+                  <span>Select target datastream</span>
+                </span>
+              </v-btn>
+
+              <v-btn
+                v-else
+                variant="outlined"
+                rounded="lg"
+                height="44"
+                class="etl-target-btn etl-target-btn-selected text-none"
+                @click="openTargetSelector(mi, 0)"
+              >
+                <span class="target-selector-content">
+                  <span class="target-id">{{
+                    String(ensureSinglePath(m).targetIdentifier)
+                  }}</span>
+                  <span class="target-name">
+                    {{ datastreamNameById(ensureSinglePath(m).targetIdentifier) }}
+                  </span>
+                </span>
+              </v-btn>
+
+              <div
+                v-if="hasTargetError(mi, 0)"
+                class="text-error text-caption mt-1"
+              >
+                Target is required
+              </div>
+            </div>
+
+            <div class="etl-mapping-delete">
+              <v-btn
+                icon
+                variant="text"
+                color="red-lighten-1"
+                :title="`Delete mapping`"
+                @click.stop="removeMapping(mi)"
+              >
+                <v-icon :icon="mdiTrashCanOutline" size="22" />
+              </v-btn>
+            </div>
+          </div>
+        </template>
+
+        <div class="etl-mapping-actions">
+          <v-btn
+            variant="outlined"
+            rounded="lg"
+            class="text-none etl-add-mapping-btn"
+            :prepend-icon="mdiPlus"
+            @click="onAddMapping"
           >
-            <template v-if="pi === 0" class="d-flex align-center w-100">
-              <template v-if="isAggregationTask">
+            Add mapping
+          </v-btn>
+        </div>
+      </div>
+    </template>
+
+    <template v-else>
+      <div
+        :class="['swimlanes', { 'swimlanes-aggregation': isAggregationTask }]"
+      >
+        <div class="head">Source datastream</div>
+        <div class="head">Aggregation statistic</div>
+        <div class="head">Target datastream</div>
+
+        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
+          <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
+            <div class="cell">
+              <template v-if="pi === 0" class="d-flex align-center w-100">
                 <v-btn
                   v-if="!m.sourceIdentifier"
                   size="small"
                   variant="outlined"
-                  :color="
-                    aggregationSourceMissing ? 'error' : 'green-lighten-1'
-                  "
+                  :color="aggregationSourceMissing ? 'error' : 'green-lighten-1'"
                   class="mr-4 target-selector-btn text-none"
                   :class="{
                     'target-selector-btn-error': aggregationSourceMissing,
@@ -57,9 +141,7 @@
                   @click="openAggregationDatastreamSelector('source', mi, pi)"
                 >
                   <span class="target-selector-content">
-                    <span class="target-id">{{
-                      String(m.sourceIdentifier)
-                    }}</span>
+                    <span class="target-id">{{ String(m.sourceIdentifier) }}</span>
                     <span class="target-name">
                       {{ datastreamNameById(m.sourceIdentifier) }}
                     </span>
@@ -73,174 +155,113 @@
                   Source datastream is required
                 </div>
               </template>
-              <v-text-field
-                v-else
-                v-model="m.sourceIdentifier"
-                placeholder="e.g., water_level_ft"
-                density="compact"
-                label="Source *"
-                color="blue"
-                :rules="rules.requiredAndMaxLength150"
-              />
-            </template>
-          </div>
-
-          <div
-            v-if="isAggregationTask"
-            :class="['cell', 'aggregation-plain-cell']"
-          >
-            <v-select
-              class="aggregation-statistic-select"
-              :model-value="getAggregationStatistic(p)"
-              :items="aggregationStatisticOptions"
-              item-title="title"
-              item-value="value"
-              label="Aggregation statistic *"
-              density="compact"
-              :rules="rules.required"
-              @update:model-value="setAggregationStatistic(p, $event)"
-            />
-            <div
-              v-if="aggregationStatisticMissing"
-              class="text-error text-caption mt-1 aggregation-statistic-error"
-            >
-              Aggregation statistic is required
             </div>
-          </div>
 
-          <div :class="['cell', 'd-flex', 'align-center', 'w-100']">
-            <template class="d-flex align-center w-100">
-              <template v-if="isAggregationTask">
-                <div class="aggregation-field-stack">
-                  <v-btn
-                    v-if="!p.targetIdentifier"
-                    size="small"
-                    variant="outlined"
-                    :color="
-                      aggregationTargetMissing ? 'error' : 'green-lighten-1'
-                    "
-                    class="mr-4 target-selector-btn text-none"
-                    :class="{
-                      'target-selector-btn-error': aggregationTargetMissing,
-                    }"
-                    @click="openAggregationDatastreamSelector('target', mi, pi)"
-                    :prepend-icon="mdiImport"
-                  >
-                    Select target datastream
-                  </v-btn>
-
-                  <v-btn
-                    v-else
-                    size="small"
-                    variant="tonal"
-                    color="green-darken-2"
-                    class="mr-4 target-selector-btn target-selector-btn-selected text-none"
-                    :prepend-icon="mdiImport"
-                    @click="openAggregationDatastreamSelector('target', mi, pi)"
-                  >
-                    <span class="target-selector-content">
-                      <span class="target-id">{{
-                        String(p.targetIdentifier)
-                      }}</span>
-                      <span class="target-name">
-                        {{ datastreamNameById(p.targetIdentifier) }}
-                      </span>
-                    </span>
-                  </v-btn>
-
-                  <div
-                    v-if="aggregationTargetMissing"
-                    class="text-error text-caption mt-1 aggregation-field-error"
-                  >
-                    Target datastream is required
-                  </div>
-                </div>
-              </template>
-
-              <v-btn
-                v-else-if="!p.targetIdentifier"
-                size="small"
-                variant="outlined"
-                :color="hasTargetError(mi, pi) ? 'error' : 'green-lighten-1'"
-                class="mr-4 target-selector-btn text-none"
-                :class="{ 'target-selector-btn-error': hasTargetError(mi, pi) }"
-                @click="openTargetSelector(mi, pi)"
-                :prepend-icon="mdiImport"
-              >
-                Select target datastream
-              </v-btn>
-
-              <v-btn
-                v-else
-                size="small"
-                variant="tonal"
-                color="green-darken-2"
-                class="mr-4 target-selector-btn target-selector-btn-selected text-none"
-                :prepend-icon="mdiImport"
-                @click="openTargetSelector(mi, pi)"
-              >
-                <span class="target-selector-content">
-                  <span class="target-id">{{
-                    String(p.targetIdentifier)
-                  }}</span>
-                  <span class="target-name">
-                    {{
-                      linkedDatastreams.find((d) => d.id == p.targetIdentifier)
-                        ?.name ||
-                      draftDatastreams.find((d) => d.id == p.targetIdentifier)
-                        ?.name
-                    }}
-                  </span>
-                </span>
-              </v-btn>
-
+            <div :class="['cell', 'aggregation-plain-cell']">
+              <v-select
+                class="aggregation-statistic-select"
+                :model-value="getAggregationStatistic(p)"
+                :items="aggregationStatisticOptions"
+                item-title="title"
+                item-value="value"
+                label="Aggregation statistic *"
+                density="compact"
+                :rules="rules.required"
+                @update:model-value="setAggregationStatistic(p, $event)"
+              />
               <div
-                v-if="!isAggregationTask && hasTargetError(mi, pi)"
-                class="text-error text-caption mt-1"
+                v-if="aggregationStatisticMissing"
+                class="text-error text-caption mt-1 aggregation-statistic-error"
               >
-                Target is required
+                Aggregation statistic is required
               </div>
-            </template>
+            </div>
+
+            <div :class="['cell', 'd-flex', 'align-center', 'w-100']">
+              <div class="aggregation-field-stack">
+                <v-btn
+                  v-if="!p.targetIdentifier"
+                  size="small"
+                  variant="outlined"
+                  :color="aggregationTargetMissing ? 'error' : 'green-lighten-1'"
+                  class="mr-4 target-selector-btn text-none"
+                  :class="{
+                    'target-selector-btn-error': aggregationTargetMissing,
+                  }"
+                  @click="openAggregationDatastreamSelector('target', mi, pi)"
+                  :prepend-icon="mdiImport"
+                >
+                  Select target datastream
+                </v-btn>
+
+                <v-btn
+                  v-else
+                  size="small"
+                  variant="tonal"
+                  color="green-darken-2"
+                  class="mr-4 target-selector-btn target-selector-btn-selected text-none"
+                  :prepend-icon="mdiImport"
+                  @click="openAggregationDatastreamSelector('target', mi, pi)"
+                >
+                  <span class="target-selector-content">
+                    <span class="target-id">{{
+                      String(p.targetIdentifier)
+                    }}</span>
+                    <span class="target-name">
+                      {{ datastreamNameById(p.targetIdentifier) }}
+                    </span>
+                  </span>
+                </v-btn>
+
+                <div
+                  v-if="aggregationTargetMissing"
+                  class="text-error text-caption mt-1 aggregation-field-error"
+                >
+                  Target datastream is required
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div class="mapping-actions">
+            <v-btn
+              size="small"
+              variant="text"
+              color="red-darken-3"
+              :title="`Delete mapping`"
+              @click.stop="removeMapping(mi)"
+              :prepend-icon="mdiTrashCanOutline"
+            >
+              Delete mapping
+            </v-btn>
+
+            <v-btn
+              size="small"
+              :prepend-icon="mdiSourceBranch"
+              variant="text"
+              @click="onAddMapping"
+            >
+              Add mapping
+            </v-btn>
           </div>
+          <v-divider
+            v-if="mi < task.mappings.length - 1"
+            class="mapping-actions"
+          />
         </template>
-        <div class="mapping-actions">
-          <v-btn
-            size="small"
-            variant="text"
-            color="red-darken-3"
-            :title="`Delete mapping`"
-            @click.stop="removeMapping(mi)"
-            :prepend-icon="mdiTrashCanOutline"
-          >
-            Delete mapping
-          </v-btn>
+      </div>
 
-          <v-btn
-            size="small"
-            :prepend-icon="mdiSourceBranch"
-            variant="text"
-            @click="onAddMapping"
-          >
-            Add mapping
-          </v-btn>
-        </div>
-        <v-divider
-          v-if="mi < task.mappings.length - 1"
-          class="mapping-actions"
-        />
-      </template>
-    </div>
-
-    <div class="mapping-actions" v-if="task.mappings.length === 0">
-      <v-btn
-        size="small"
-        :prepend-icon="mdiSourceBranch"
-        variant="text"
-        @click="onAddMapping"
-      >
-        Add mapping
-      </v-btn>
-    </div>
+      <div class="mapping-actions" v-if="task.mappings.length === 0">
+        <v-btn
+          size="small"
+          :prepend-icon="mdiSourceBranch"
+          variant="text"
+          @click="onAddMapping"
+        >
+          Add mapping
+        </v-btn>
+      </div>
+    </template>
   </v-form>
 
   <v-dialog
@@ -286,7 +307,14 @@ import { storeToRefs } from 'pinia'
 import { DatastreamExtended } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
-import { mdiImport, mdiSourceBranch, mdiTrashCanOutline } from '@mdi/js'
+import {
+  mdiArrowRight,
+  mdiImport,
+  mdiPlus,
+  mdiPlusCircleOutline,
+  mdiSourceBranch,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
 
 const task = defineModel<Task>('task', { required: true })
@@ -619,6 +647,96 @@ watch(
 </script>
 
 <style scoped>
+.etl-mappings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.etl-mappings-head {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4f4b59;
+  font-size: 0.7rem;
+}
+.etl-mappings-head-target {
+  margin-left: calc(50% + 34px);
+}
+.etl-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 44px;
+  gap: 8px;
+  align-items: start;
+}
+.etl-mapping-source,
+.etl-mapping-target {
+  min-width: 0;
+}
+.etl-mapping-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0b8c9;
+  min-height: 44px;
+}
+.etl-mapping-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+.etl-target-btn {
+  width: 100%;
+  justify-content: flex-start;
+  border-style: dashed;
+  border-width: 2px;
+  border-color: #1565c0;
+  color: #1565c0;
+  background: #fdfdff;
+  font-size: 0.86rem;
+}
+.etl-target-btn-error {
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+.etl-target-btn-selected {
+  border-style: solid;
+  background: #f6f9ff;
+  color: #1c1b1f;
+}
+.etl-target-btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.etl-target-btn :deep(.v-btn__content) {
+  justify-content: flex-start;
+  width: 100%;
+  overflow: hidden;
+}
+.etl-mapping-actions {
+  margin-top: 0;
+}
+.etl-add-mapping-btn {
+  min-height: 40px;
+  border-width: 2px;
+  border-color: #1565c0;
+  color: #1565c0;
+  font-size: 0.86rem;
+}
+
+:deep(.etl-mapping-source .v-field) {
+  --v-input-control-height: 40px;
+}
+
+:deep(.etl-mapping-source .v-field__input) {
+  min-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.9rem;
+}
+
 .swimlanes {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -743,5 +861,22 @@ watch(
 .aggregation-field-error {
   display: block;
   width: 100%;
+}
+
+@media (max-width: 960px) {
+  .etl-mappings-head-target {
+    margin-left: 0;
+  }
+
+  .etl-mapping-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .etl-mapping-arrow,
+  .etl-mapping-delete {
+    justify-content: flex-start;
+    min-height: 0;
+  }
 }
 </style>

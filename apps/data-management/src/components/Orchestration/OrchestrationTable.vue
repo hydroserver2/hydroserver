@@ -8,7 +8,11 @@
         type="button"
         class="rail-btn"
         :class="{ active: activeTab === tab.id }"
-        :style="activeTab === tab.id ? { '--accent': tab.accent, '--accent-light': tab.accentLight } : {}"
+        :style="
+          activeTab === tab.id
+            ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
+            : {}
+        "
         @click="setActiveTab(tab.id)"
       >
         <span
@@ -24,7 +28,9 @@
         </span>
         <span
           class="rail-label"
-          :style="activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}"
+          :style="
+            activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
+          "
         >
           {{ tab.short }}
         </span>
@@ -36,13 +42,20 @@
       <div class="sidebar-header">
         <div class="flex items-center">
           <span class="sidebar-title">{{ sidebarTitle }}</span>
-          <v-tooltip v-if="activeTab === 'ingestion'" location="top" :disabled="canEditOrchestration">
+          <v-tooltip
+            v-if="activeTab === 'ingestion'"
+            location="top"
+            :disabled="canEditOrchestration"
+          >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="ml-auto inline-flex">
                 <button
                   type="button"
                   class="sidebar-add"
-                  :style="{ background: activeAccent, opacity: canEditOrchestration ? 1 : 0.5 }"
+                  :style="{
+                    background: activeAccent,
+                    opacity: canEditOrchestration ? 1 : 0.5,
+                  }"
                   :disabled="!canEditOrchestration"
                   @click="openCreateDialog"
                   :aria-label="addLabel"
@@ -134,8 +147,7 @@
             </div>
             <span
               v-if="
-                selectedThingId !== thing.id &&
-                issueCountForSite(thing.id) > 0
+                selectedThingId !== thing.id && issueCountForSite(thing.id) > 0
               "
               class="sidebar-item-badge"
             >
@@ -155,7 +167,10 @@
               <button
                 type="button"
                 class="sidebar-footer-btn"
-                :style="{ color: activeAccent, borderColor: activeAccent + '66' }"
+                :style="{
+                  color: activeAccent,
+                  borderColor: activeAccent + '66',
+                }"
                 :disabled="!canEditOrchestration"
                 @click="openCreateDialog"
               >
@@ -312,10 +327,7 @@
           <p>{{ emptyTasksMessage }}</p>
         </div>
 
-        <div
-          v-else-if="sortedVisibleTasks.length === 0"
-          class="detail-empty"
-        >
+        <div v-else-if="sortedVisibleTasks.length === 0" class="detail-empty">
           <h4>No tasks match your filter</h4>
           <p>Clear search or status filters to see all tasks.</p>
         </div>
@@ -324,25 +336,41 @@
           <thead>
             <tr>
               <th>
-                <button type="button" class="th-sort" @click="toggleSort('name')">
+                <button
+                  type="button"
+                  class="th-sort"
+                  @click="toggleSort('name')"
+                >
                   Task name
                   <v-icon :icon="sortIcon('name')" size="14" />
                 </button>
               </th>
               <th>
-                <button type="button" class="th-sort" @click="toggleSort('status')">
+                <button
+                  type="button"
+                  class="th-sort"
+                  @click="toggleSort('status')"
+                >
                   Status
                   <v-icon :icon="sortIcon('status')" size="14" />
                 </button>
               </th>
               <th>
-                <button type="button" class="th-sort" @click="toggleSort('lastRunAt')">
+                <button
+                  type="button"
+                  class="th-sort"
+                  @click="toggleSort('lastRunAt')"
+                >
                   Last run
                   <v-icon :icon="sortIcon('lastRunAt')" size="14" />
                 </button>
               </th>
               <th>
-                <button type="button" class="th-sort" @click="toggleSort('nextRunAt')">
+                <button
+                  type="button"
+                  class="th-sort"
+                  @click="toggleSort('nextRunAt')"
+                >
                   Next run
                   <v-icon :icon="sortIcon('nextRunAt')" size="14" />
                 </button>
@@ -377,7 +405,9 @@
                   >
                     <v-card-text class="px-4 py-3">
                       <div class="mb-1 flex items-center justify-between gap-3">
-                        <div class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600">
+                        <div
+                          class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
+                        >
                           Last run summary
                         </div>
                         <div
@@ -389,8 +419,7 @@
                       </div>
                       <div class="text-sm leading-snug text-slate-800">
                         {{
-                          row.lastRunMessage ||
-                          'No run history available yet.'
+                          row.lastRunMessage || 'No run history available yet.'
                         }}
                       </div>
                     </v-card-text>
@@ -420,8 +449,8 @@
                       !canEditOrchestration
                         ? readOnlyTooltip
                         : row.schedule?.enabled
-                          ? 'Pause task'
-                          : 'Resume task'
+                        ? 'Pause task'
+                        : 'Resume task'
                     }}</span>
                   </v-tooltip>
                   <v-btn
@@ -466,7 +495,11 @@
       />
     </v-dialog>
 
-    <v-dialog v-if="selectedTaskDataConnection" v-model="openCreateTask" width="80rem">
+    <v-dialog
+      v-if="selectedTaskDataConnection"
+      v-model="openCreateTask"
+      width="80rem"
+    >
       <TaskForm
         :initial-data-connection="selectedTaskDataConnection"
         @close="closeCreateTaskDialog"
@@ -782,7 +815,7 @@ const tabs = computed(() => [
   },
   {
     id: 'aggregation' as TabId,
-    short: 'Aggregations',
+    short: 'Aggregations & products',
     icon: mdiFileTree,
     accent: AGGREGATION_ACCENT,
     accentLight: AGGREGATION_ACCENT_LIGHT,
@@ -835,8 +868,7 @@ const issueCountForSite = (thingId: string) =>
   activeTaskRows.value.filter(
     (t) =>
       t.thingId === thingId &&
-      (t.statusSort === 'Needs attention' ||
-        t.statusSort === 'Behind schedule')
+      (t.statusSort === 'Needs attention' || t.statusSort === 'Behind schedule')
   ).length
 
 const dotColorForConnection = (dcId: string) => {
@@ -851,7 +883,13 @@ const dotColorForSite = (thingId: string) => {
 
 function worstDotColor(rows: TaskRow[]) {
   if (rows.length === 0) return '#CAC4D0'
-  const order = ['Needs attention', 'Behind schedule', 'Loading paused', 'Pending', 'OK']
+  const order = [
+    'Needs attention',
+    'Behind schedule',
+    'Loading paused',
+    'Pending',
+    'OK',
+  ]
   const palette: Record<string, string> = {
     'Needs attention': '#B71C1C',
     'Behind schedule': '#BF360C',
@@ -963,8 +1001,8 @@ const emptyHeading = computed(() =>
       ? 'No data connections have been registered yet.'
       : 'Select a data connection'
     : things.value.length === 0
-      ? 'No sites registered in this workspace.'
-      : 'Select a site'
+    ? 'No sites registered in this workspace.'
+    : 'Select a site'
 )
 
 const emptyMessage = computed(() => {
@@ -1169,8 +1207,8 @@ const upsertTask = (
     kind === 'etl'
       ? workspaceTasks
       : kind === 'dataProduct'
-        ? dataProductTasks
-        : monitoringTasks
+      ? dataProductTasks
+      : monitoringTasks
   const next = [...target.value]
   const index = next.findIndex((p) => p.id === t.id)
   if (index !== -1) next[index] = t as any
@@ -1186,8 +1224,8 @@ const findTaskByKind = (
     kind === 'etl'
       ? workspaceTasks.value
       : kind === 'dataProduct'
-        ? dataProductTasks.value
-        : monitoringTasks.value
+      ? dataProductTasks.value
+      : monitoringTasks.value
   return (list as any[]).find((t) => t.id === taskId) ?? null
 }
 
@@ -1208,7 +1246,10 @@ const syncTaskLatestRun = (kind: TaskKind, taskId: string, run: TaskRun) => {
   })
 }
 
-const refreshTaskAfterRunCompletion = async (kind: TaskKind, taskId: string) => {
+const refreshTaskAfterRunCompletion = async (
+  kind: TaskKind,
+  taskId: string
+) => {
   try {
     const svc = serviceForKind(kind)
     const updated = (await svc.getItem(taskId, { expand_related: true })) as any
@@ -1251,7 +1292,7 @@ const scheduleTaskPoll = (
       if (requestedRunId) {
         const runResponse = await svc.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok
-          ? ((runResponse.data as TaskRun) ?? null)
+          ? (runResponse.data as TaskRun) ?? null
           : null
 
         if (workspaceId !== props.workspaceId) {
@@ -1326,9 +1367,7 @@ async function runTaskNow(row: TaskRow) {
     if (!response.ok) {
       throw new Error(response.message || 'Unable to run task now.')
     }
-    const requestedRun = response.ok
-      ? ((response.data as TaskRun) ?? null)
-      : null
+    const requestedRun = response.ok ? (response.data as TaskRun) ?? null : null
     if (requestedRun?.id) syncTaskLatestRun(row.kind, row.id, requestedRun)
     scheduleTaskPoll(
       row.kind,

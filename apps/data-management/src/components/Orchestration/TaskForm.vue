@@ -1,10 +1,13 @@
 <template>
   <StickyForm>
     <template #header>
-      <p class="ml-6 font-weight-bold">
-        {{ isEdit ? 'Edit' : 'Add' }} task configuration
-        <span v-if="isEdit" class="opacity-80">· {{ task?.name }}</span>
-      </p>
+      <div class="task-form-header">
+        <h2 class="task-form-title">{{ isEdit ? 'Edit task' : 'Add task' }}</h2>
+        <div v-if="headerContextLabel" class="task-form-context">
+          <span class="task-form-context-dot" />
+          <span>{{ headerContextLabel }}</span>
+        </div>
+      </div>
     </template>
 
     <v-form
@@ -13,41 +16,69 @@
       v-model="valid"
       validate-on="blur"
     >
-      <v-card-text v-if="task">
-        <p class="font-weight-bold mb-2 required-label">Name your task</p>
-        <v-text-field
-          v-model="task.name"
-          label="Task name"
-          :rules="rules.requiredAndMaxLength255"
-          density="comfortable"
-        />
+      <div v-if="task" class="task-form-shell">
+        <div
+          v-if="!isDataConnectionScopedCreate"
+          class="task-form-meta-grid"
+        >
+          <div class="task-form-field">
+            <label class="task-form-label" for="task-type">Task type</label>
+            <v-select
+              id="task-type"
+              v-model="(task as any).type"
+              :items="taskTypeOptions"
+              item-title="title"
+              item-value="value"
+              placeholder="Select task type"
+              variant="outlined"
+              rounded="lg"
+              density="compact"
+              hide-details="auto"
+            />
+          </div>
 
-        <template v-if="!isDataConnectionScopedCreate">
-          <p class="font-weight-bold mb-2 required-label">Task type</p>
-          <v-select
-            v-model="(task as any).type"
-            :items="taskTypeOptions"
-            item-title="title"
-            item-value="value"
-            label="Task type"
-            density="comfortable"
-          />
-        </template>
+          <div
+            v-if="!isAggregationTask"
+            class="task-form-field"
+          >
+            <label class="task-form-label" for="task-data-connection">
+              Data connection <span class="task-form-required">*</span>
+            </label>
+            <v-select
+              id="task-data-connection"
+              v-model="task.dataConnectionId"
+              :items="workspaceDataConnections"
+              item-title="name"
+              item-value="id"
+              placeholder="Select data connection"
+              :rules="rules.requiredAndMaxLength255"
+              variant="outlined"
+              rounded="lg"
+              density="compact"
+              hide-details="auto"
+            />
+          </div>
+        </div>
 
-        <template v-if="!isAggregationTask && !isDataConnectionScopedCreate">
-          <p class="font-weight-bold mb-2 required-label">
-            Select data connection
-          </p>
-          <v-select
-            v-model="task.dataConnectionId"
-            :items="workspaceDataConnections"
-            item-title="name"
-            item-value="id"
-            label="Data connection"
-            :rules="rules.requiredAndMaxLength255"
-            density="comfortable"
-          />
-        </template>
+        <div class="task-form-section">
+          <div class="task-form-field">
+            <label class="task-form-label" for="task-name">
+              Task name <span class="task-form-required">*</span>
+            </label>
+            <v-text-field
+              id="task-name"
+              v-model="task.name"
+              placeholder="e.g. North Fork telemetry import"
+              :rules="rules.requiredAndMaxLength255"
+              variant="outlined"
+              rounded="lg"
+              density="compact"
+              hide-details="auto"
+            />
+          </div>
+        </div>
+
+        <v-divider class="task-form-divider" />
 
         <!-- Aggregation timezone controls are intentionally hidden here.
              Keep this block for reuse in a dedicated aggregation form. -->
@@ -90,110 +121,191 @@
         </div>
         -->
 
-        <div class="mb-4">
-          <p class="font-weight-bold mb-2">Schedule ({{ timezoneLabel }})</p>
-
-          <div class="schedule-control">
-            <label class="schedule-option">
-              <input
-                v-model="scheduleMode"
-                class="schedule-radio"
-                type="radio"
-                value="interval"
-              />
-              <span class="schedule-option-label">Every</span>
-              <v-text-field
-                v-model.number="task.schedule!.interval"
-                class="schedule-interval-input"
-                type="number"
-                min="1"
-                hide-details
-                variant="outlined"
-                density="compact"
-                :rules="[(v) => !!v || 'Interval is required']"
-              />
-              <v-select
-                v-model="task.schedule!.intervalPeriod"
-                class="schedule-unit-select"
-                :items="intervalUnitOptions"
-                item-title="title"
-                item-value="value"
-                hide-details
-                variant="outlined"
-                density="compact"
-                :rules="[(v) => !!v || 'Units are required']"
-              />
-            </label>
-
-            <label class="schedule-option">
-              <input
-                v-model="scheduleMode"
-                class="schedule-radio"
-                type="radio"
-                value="crontab"
-              />
-              <span class="schedule-option-label">Crontab expression</span>
-            </label>
+        <div class="task-form-section">
+          <div class="task-form-section-header">
+            <h3 class="task-form-section-title">Schedule</h3>
+            <span class="task-form-section-subtitle">{{ timezoneLabel }}</span>
           </div>
 
-          <v-text-field
-            v-if="scheduleMode === 'crontab'"
-            v-model="task.schedule!.crontab"
-            class="schedule-crontab-input mt-3"
-            label="Crontab expression"
-            hint="Five-field crontab string"
-            persistent-hint
-            variant="outlined"
-            density="compact"
-          />
+          <div class="schedule-card-grid">
+            <div
+              class="schedule-card"
+              :class="{ 'schedule-card-active': scheduleMode === 'interval' }"
+              tabindex="0"
+              role="button"
+              @click="scheduleMode = 'interval'"
+              @keydown.enter.prevent="scheduleMode = 'interval'"
+              @keydown.space.prevent="scheduleMode = 'interval'"
+            >
+              <div class="schedule-card-top">
+                <span
+                  class="schedule-card-radio"
+                  :class="{
+                    'schedule-card-radio-active': scheduleMode === 'interval',
+                  }"
+                />
+                <div>
+                  <div class="schedule-card-title">Repeating interval</div>
+                </div>
+              </div>
 
-          <div class="schedule-start-row mt-3">
-            <span class="schedule-start-label">Start:</span>
+              <div v-if="scheduleMode === 'interval'" class="schedule-card-body">
+                <span class="schedule-inline-label">Every</span>
+                <v-text-field
+                  v-model.number="task.schedule!.interval"
+                  class="schedule-interval-input"
+                  type="number"
+                  min="1"
+                  hide-details
+                  variant="outlined"
+                  density="compact"
+                  rounded="lg"
+                  :rules="[(v) => !!v || 'Interval is required']"
+                />
+                <v-select
+                  v-model="task.schedule!.intervalPeriod"
+                  class="schedule-unit-select"
+                  :items="intervalUnitOptions"
+                  item-title="title"
+                  item-value="value"
+                  hide-details
+                  variant="outlined"
+                  density="compact"
+                  rounded="lg"
+                  :rules="[(v) => !!v || 'Units are required']"
+                />
+              </div>
+            </div>
+
+            <div
+              class="schedule-card"
+              :class="{ 'schedule-card-active': scheduleMode === 'crontab' }"
+              tabindex="0"
+              role="button"
+              @click="scheduleMode = 'crontab'"
+              @keydown.enter.prevent="scheduleMode = 'crontab'"
+              @keydown.space.prevent="scheduleMode = 'crontab'"
+            >
+              <div class="schedule-card-top">
+                <span
+                  class="schedule-card-radio"
+                  :class="{
+                    'schedule-card-radio-active': scheduleMode === 'crontab',
+                  }"
+                />
+                <div>
+                  <div class="schedule-card-title">Crontab expression</div>
+                  <div class="schedule-card-copy">Advanced cron syntax</div>
+                </div>
+              </div>
+
+              <div v-if="scheduleMode === 'crontab'" class="schedule-card-body">
+                <v-text-field
+                  v-model="task.schedule!.crontab"
+                  class="schedule-crontab-input schedule-crontab-input-inline"
+                  placeholder="0 9 * * *"
+                  hide-details
+                  variant="outlined"
+                  rounded="lg"
+                  density="compact"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="schedule-start-row">
+            <label class="schedule-start-label" for="task-start-time">Start</label>
             <v-text-field
+              id="task-start-time"
               v-model="startInput"
               class="schedule-start-input"
               type="datetime-local"
               hide-details
               variant="outlined"
+              rounded="lg"
               density="compact"
             />
           </div>
         </div>
 
-        <div v-if="perTaskPlaceholders.length" class="mb-4">
-          <p class="font-weight-bold mb-2">Template variables</p>
-          <v-row>
-            <v-col
-              cols="12"
-              md="6"
+        <v-divider v-if="perTaskPlaceholders.length" class="task-form-divider" />
+
+        <div v-if="perTaskPlaceholders.length" class="task-form-section">
+          <div class="task-form-section-header task-form-section-header-stack">
+            <h3 class="task-form-section-title">Template variables</h3>
+            <p class="task-form-section-copy">
+              Fill in values for URL placeholders defined in this data connection.
+            </p>
+          </div>
+
+          <div class="task-form-template-grid">
+            <div
               v-for="variable in perTaskPlaceholders"
               :key="variable.name"
+              class="task-form-field"
             >
+              <label class="task-form-label" :for="`task-variable-${variable.name}`">
+                {{ variable.name }} <span class="task-form-required">*</span>
+              </label>
               <v-text-field
+                :id="`task-variable-${variable.name}`"
                 v-model="task.taskVariables[variable.name]"
-                :label="`URL template variable: ${variable.name} *`"
+                :placeholder="templateVariablePlaceholder(variable.name)"
                 :rules="rules.requiredAndMaxLength255"
-                density="comfortable"
+                variant="outlined"
+                rounded="lg"
+                density="compact"
+                hide-details="auto"
               />
-            </v-col>
-          </v-row>
+            </div>
+          </div>
         </div>
 
-        <v-divider class="mb-6" />
-        <SwimlanesForm
-          v-model:task="task"
-          :workspace-id="taskWorkspaceId || null"
-          ref="swimlanesRef"
-        />
-      </v-card-text>
+        <v-divider class="task-form-divider" />
+
+        <div class="task-form-section">
+          <div class="task-form-section-header task-form-section-header-stack">
+            <h3 class="task-form-section-title">Data mapping</h3>
+            <p class="task-form-section-copy">
+              Map each source field (CSV column or JSON key) to a HydroServer
+              datastream.
+            </p>
+          </div>
+
+          <SwimlanesForm
+            v-model:task="task"
+            :workspace-id="taskWorkspaceId || null"
+            ref="swimlanesRef"
+          />
+        </div>
+      </div>
     </v-form>
 
     <template #actions>
-      <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary :loading="submitLoading" type="button" @click="onSubmit">
-        Save
-      </v-btn-primary>
+      <div class="task-form-actions">
+        <v-spacer />
+        <v-btn
+          variant="outlined"
+          rounded="lg"
+          min-width="124"
+          height="46"
+          @click="$emit('close')"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          rounded="lg"
+          min-width="152"
+          height="46"
+          :loading="submitLoading"
+          type="button"
+          @click="onSubmit"
+        >
+          Save task
+        </v-btn>
+      </div>
     </template>
   </StickyForm>
 </template>
@@ -297,6 +409,15 @@ const intervalUnitOptions = [
 const timezoneLabel = computed(
   () => Intl.DateTimeFormat().resolvedOptions().timeZone
 )
+const headerContextLabel = computed(() => {
+  if (isAggregationTask.value) return null
+  return (
+    selectedDataConnection.value?.name ||
+    props.initialDataConnection?.name ||
+    (props.oldTask?.dataConnection as any)?.name ||
+    null
+  )
+})
 
 function defaultSchedule(): TaskSchedule {
   const now = new Date().toISOString()
@@ -396,6 +517,10 @@ const startInput = computed({
     task.value.schedule.startTime = v ? inputToIso(v) : null
   },
 })
+
+function templateVariablePlaceholder(name: string) {
+  return `e.g. ${name.toUpperCase()}`
+}
 
 function hydrateTask(source?: TaskExpanded) {
   const base = source
@@ -561,48 +686,231 @@ async function onSubmit() {
   padding: 0 !important;
 }
 
-.schedule-control {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.task-form-header {
+  padding: 12px 20px 10px;
 }
-
-.schedule-option {
+.task-form-title {
+  font-size: 1.02rem;
+  line-height: 1.2;
+  font-weight: 500;
+  color: #1c1b1f;
+}
+.task-form-context {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
+  margin-top: 6px;
+  color: #4f4b59;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+.task-form-context-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #1565c0;
+}
+.task-form-shell {
+  padding: 14px 20px 18px;
+}
+.task-form-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.task-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.task-form-divider {
+  margin: 12px 0;
+}
+.task-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.task-form-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #1f1d24;
+}
+.task-form-required {
+  color: #d32f2f;
+}
+.task-form-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.task-form-section-header-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.task-form-section-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #4f4b59;
+}
+.task-form-section-subtitle,
+.task-form-section-copy {
+  color: #5f5a67;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+.task-form-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.schedule-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.schedule-card {
+  border: 2px solid #d0c9d8;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px 14px;
+  transition: border-color 0.16s ease, background-color 0.16s ease,
+    box-shadow 0.16s ease;
+  outline: none;
+}
+.schedule-card:hover,
+.schedule-card:focus-visible {
+  border-color: #1565c0;
+}
+.schedule-card-active {
+  border-color: #1565c0;
+  background: #edf3ff;
+  box-shadow: inset 0 0 0 1px rgba(21, 101, 192, 0.05);
+}
+.schedule-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.schedule-card-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid #7e7886;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.schedule-card-radio-active {
+  border-color: #1565c0;
+  box-shadow: inset 0 0 0 3px #1565c0;
+  background: #fff;
+}
+.schedule-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1f1d24;
+  line-height: 1.2;
+}
+.schedule-card-copy {
+  margin-top: 1px;
+  color: #5f5a67;
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+.schedule-card-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-left: 24px;
   flex-wrap: wrap;
 }
-
-.schedule-radio {
-  margin: 0;
-}
-
-.schedule-option-label,
+.schedule-inline-label,
 .schedule-start-label {
-  font-size: 0.95rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #1f1d24;
 }
-
 .schedule-interval-input {
-  max-width: 6rem;
+  max-width: 68px;
 }
-
 .schedule-unit-select {
-  max-width: 8.5rem;
+  max-width: 118px;
 }
-
 .schedule-crontab-input {
-  max-width: 22rem;
+  max-width: 280px;
 }
-
+.schedule-crontab-input-inline {
+  width: 100%;
+  max-width: 100%;
+}
 .schedule-start-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   flex-wrap: wrap;
 }
-
 .schedule-start-input {
-  max-width: 16rem;
+  max-width: 240px;
+}
+.task-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 12px;
+}
+
+:deep(.task-form-shell .v-field) {
+  --v-input-control-height: 40px;
+}
+
+:deep(.task-form-shell .v-field__input) {
+  min-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.9rem;
+}
+
+:deep(.task-form-shell .v-label) {
+  font-size: 0.8rem;
+}
+
+:deep(.task-form-shell .v-messages) {
+  min-height: 14px;
+  font-size: 0.68rem;
+}
+
+@media (max-width: 900px) {
+  .task-form-header,
+  .task-form-shell {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .schedule-card-body {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .task-form-shell {
+    padding-bottom: 14px;
+  }
+
+  .schedule-start-input,
+  .schedule-crontab-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .task-form-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 </style>
