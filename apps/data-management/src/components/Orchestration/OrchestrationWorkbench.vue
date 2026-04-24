@@ -74,6 +74,10 @@
         @edit-connection="openEditDialog(selectedConnection!)"
         @delete-connection="openDeleteDialog(selectedConnection!)"
         @add-task="openCreateTaskDialog(selectedConnection!)"
+        @add-aggregation="openAggregationForm = true"
+        @add-expression="openExpressionForm = true"
+        @add-derivation="openDerivationForm = true"
+        @add-rating-curve="openRatingCurveForm = true"
       />
     </template>
 
@@ -118,6 +122,22 @@
         @close="openDeleteDataConnection = false"
         @delete="onDataConnectionDeleted"
       />
+    </v-dialog>
+
+    <v-dialog v-model="openAggregationForm" width="60rem">
+      <AggregationForm @close="openAggregationForm = false" />
+    </v-dialog>
+
+    <v-dialog v-model="openExpressionForm" width="60rem">
+      <ExpressionForm @close="openExpressionForm = false" />
+    </v-dialog>
+
+    <v-dialog v-model="openDerivationForm" width="60rem">
+      <DerivationForm @close="openDerivationForm = false" />
+    </v-dialog>
+
+    <v-dialog v-model="openRatingCurveForm" width="60rem">
+      <RatingCurveForm @close="openRatingCurveForm = false" />
     </v-dialog>
   </div>
 </template>
@@ -168,6 +188,18 @@ const DeleteDataConnectionCard = defineAsyncComponent(
 const TaskDetails = defineAsyncComponent(
   () => import('@/pages/TaskDetails.vue')
 )
+const AggregationForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/AggregationForm.vue')
+)
+const ExpressionForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/ExpressionForm.vue')
+)
+const DerivationForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/DerivationForm.vue')
+)
+const RatingCurveForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/RatingCurveForm.vue')
+)
 
 const props = defineProps<{ workspaceId: string }>()
 
@@ -205,6 +237,10 @@ const openCreateDataConnection = ref(false)
 const openCreateTask = ref(false)
 const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
+const openAggregationForm = ref(false)
+const openExpressionForm = ref(false)
+const openDerivationForm = ref(false)
+const openRatingCurveForm = ref(false)
 
 const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
   useTaskRunNowPolling({

@@ -71,6 +71,72 @@
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
         </template>
+        <template v-else-if="activeTab === 'aggregation'">
+          <v-tooltip location="top" :disabled="canEdit">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn
+                  variant="outlined"
+                  class="detail-action-btn detail-action-btn--header text-none"
+                  :disabled="!canEdit"
+                  rounded="lg"
+                  @click="$emit('add-aggregation')"
+                >
+                  + Aggregation
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+          <v-tooltip location="top" :disabled="canEdit">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn
+                  variant="outlined"
+                  class="detail-action-btn detail-action-btn--header text-none"
+                  :disabled="!canEdit"
+                  rounded="lg"
+                  @click="$emit('add-expression')"
+                >
+                  + Expression
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+          <v-tooltip location="top" :disabled="canEdit">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn
+                  variant="outlined"
+                  class="detail-action-btn detail-action-btn--header text-none"
+                  :disabled="!canEdit"
+                  rounded="lg"
+                  @click="$emit('add-derivation')"
+                >
+                  + Derivation
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+          <v-tooltip location="top" :disabled="canEdit">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn
+                  variant="outlined"
+                  class="detail-action-btn detail-action-btn--header text-none"
+                  :disabled="!canEdit"
+                  rounded="lg"
+                  @click="$emit('add-rating-curve')"
+                >
+                  + Rating curve
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+        </template>
       </div>
     </header>
 
@@ -332,6 +398,10 @@ const emit = defineEmits<{
   (e: 'edit-connection'): void
   (e: 'delete-connection'): void
   (e: 'add-task'): void
+  (e: 'add-aggregation'): void
+  (e: 'add-expression'): void
+  (e: 'add-derivation'): void
+  (e: 'add-rating-curve'): void
 }>()
 
 const sortableColumns: { key: SortKey; label: string }[] = [
@@ -394,6 +464,17 @@ const removeStatusFilter = (index: number) => {
 }
 .detail-action-btn {
   min-height: 40px;
+}
+.detail-action-btn--header {
+  min-height: 34px;
+  padding-inline: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6d28d9;
+  border-color: #6d28d9;
+}
+.detail-action-btn--header :deep(.v-btn__content) {
+  color: #6d28d9;
 }
 .detail-action-btn--primary {
   padding-inline: 20px;
