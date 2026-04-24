@@ -190,70 +190,25 @@
               </div>
 
               <div class="run-entry-footer">
-                <v-btn
-                  variant="tonal"
-                  color="cyan-darken-3"
-                  :prepend-icon="mdiCodeBraces"
-                  class="text-none"
-                  size="small"
-                  @click="toggleRunLogs(run.id)"
-                >
-                  {{
-                    openRunLogs[run.id]
-                      ? 'Hide run details'
-                      : 'View run details'
-                  }}
-                </v-btn>
-              </div>
-
-              <v-expand-transition>
-                <div
-                  v-if="openRunLogs[run.id]"
-                  class="run-entry-details"
-                >
-                  <div class="mb-3 grid gap-2">
-                    <div v-if="run.runtimeUrl" class="run-entry-detail-row">
-                      <div class="run-entry-detail-label">
-                        Runtime source URI
-                      </div>
-                      <div class="run-entry-detail-value">
-                        <div class="run-entry-detail-linkwrap">
-                          <a
-                            class="text-slate-600 underline break-all hover:text-blue-700"
-                            :href="run.runtimeUrl"
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            {{ run.runtimeUrl }}
-                          </a>
-                          <v-tooltip
-                            text="Copy runtime source URI"
-                            location="bottom"
-                          >
-                            <template #activator="{ props: tooltipProps }">
-                              <v-btn
-                                v-bind="tooltipProps"
-                                icon
-                                variant="text"
-                                size="small"
-                                color="blue-grey-darken-2"
-                                @click="copyToClipboard(run.runtimeUrl)"
-                                aria-label="Copy runtime source URI"
-                              >
-                                <v-icon :icon="mdiContentCopy" />
-                              </v-btn>
-                            </template>
-                          </v-tooltip>
-                        </div>
-                      </div>
+                <div class="run-entry-footer-content">
+                  <div v-if="run.runtimeUrl" class="run-entry-detail-row">
+                    <div class="run-entry-detail-label">
+                      Runtime source URI
                     </div>
-
-                    <div class="run-entry-detail-row run-entry-detail-row-inline">
-                      <div class="run-entry-detail-inline">
-                        <div class="run-entry-detail-label">
-                          Copy run as URL
-                        </div>
-                        <v-tooltip text="Copy run as URL" location="bottom">
+                    <div class="run-entry-detail-value">
+                      <div class="run-entry-detail-linkwrap">
+                        <a
+                          class="text-slate-600 underline break-all hover:text-blue-700"
+                          :href="run.runtimeUrl"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          {{ run.runtimeUrl }}
+                        </a>
+                        <v-tooltip
+                          text="Copy runtime source URI"
+                          location="bottom"
+                        >
                           <template #activator="{ props: tooltipProps }">
                             <v-btn
                               v-bind="tooltipProps"
@@ -261,8 +216,8 @@
                               variant="text"
                               size="small"
                               color="blue-grey-darken-2"
-                              @click="copyToClipboard(runLinkUrl(run.id))"
-                              aria-label="Copy run as URL"
+                              @click="copyToClipboard(run.runtimeUrl)"
+                              aria-label="Copy runtime source URI"
                             >
                               <v-icon :icon="mdiContentCopy" />
                             </v-btn>
@@ -272,53 +227,30 @@
                     </div>
                   </div>
 
-                  <div class="grid gap-3">
-                    <div
-                      v-for="(section, idx) in buildLogSections(run.raw)"
-                      :key="`${section.title}-${idx}`"
-                      class="grid gap-2"
-                    >
-                      <div class="run-section-label">
-                        {{ section.title }}
+                  <div class="run-entry-detail-row run-entry-detail-row-inline">
+                    <div class="run-entry-detail-inline">
+                      <div class="run-entry-detail-label">
+                        Copy run as URL
                       </div>
-                      <div
-                        v-if="section.type === 'lines'"
-                        class="grid gap-1.5"
-                      >
-                        <div
-                          v-for="(entry, entryIdx) in section.entries"
-                          :key="entryIdx"
-                          class="grid grid-cols-[minmax(240px,260px)_minmax(70px,90px)_1fr] items-start gap-2.5 font-mono text-xs text-slate-700 max-md:grid-cols-1"
-                        >
-                          <span
-                            v-if="entry.timestamp"
-                            class="tabular-nums text-slate-600 whitespace-nowrap"
+                      <v-tooltip text="Copy run as URL" location="bottom">
+                        <template #activator="{ props: tooltipProps }">
+                          <v-btn
+                            v-bind="tooltipProps"
+                            icon
+                            variant="text"
+                            size="small"
+                            color="blue-grey-darken-2"
+                            @click="copyToClipboard(runLinkUrl(run.id))"
+                            aria-label="Copy run as URL"
                           >
-                            {{ entry.timestamp }}
-                          </span>
-                          <span
-                            v-if="entry.level"
-                            :class="[
-                              'self-start rounded-full border border-transparent px-2 py-0.5 text-center text-[0.7rem] font-semibold uppercase tracking-[0.04em] max-md:justify-self-start',
-                              logLevelClass(entry.level),
-                            ]"
-                          >
-                            {{ entry.level }}
-                          </span>
-                          <span class="whitespace-pre-wrap break-words">{{
-                            entry.message
-                          }}</span>
-                        </div>
-                      </div>
-                      <pre
-                        v-else
-                        class="m-0 rounded-md border border-[#cfd8dc] bg-slate-100 p-3 text-xs leading-snug text-slate-800 whitespace-pre-wrap break-words"
-                        >{{ section.text }}</pre
-                      >
+                            <v-icon :icon="mdiContentCopy" />
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
                     </div>
                   </div>
                 </div>
-              </v-expand-transition>
+              </div>
             </div>
           </template>
 
@@ -345,7 +277,7 @@
       <!-- Mappings -->
       <div
         v-show="activePanel === 'mappings'"
-        class="task-details-panel"
+        class="task-details-panel task-details-panel--mappings"
       >
         <Swimlanes v-if="task?.mappings?.length" :task="task" />
         <div v-else class="mappings-empty">
@@ -395,7 +327,6 @@ import router from '@/router/router'
 import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
 import { formatTimeWithZone } from '@/utils/time'
 import {
-  buildTaskRunDetailSections,
   getTaskRunMessage,
   getTaskRunStatusText as getRunStatusText,
   getTaskRunRuntimeUrl,
@@ -409,7 +340,6 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import {
   mdiArrowLeft,
   mdiCheck,
-  mdiCodeBraces,
   mdiContentCopy,
   mdiHistory,
   mdiPause,
@@ -445,7 +375,6 @@ const emit = defineEmits<{
 const route = useRoute()
 const openEdit = ref(false)
 const openDelete = ref(false)
-const openRunLogs = ref<Record<string, boolean>>({})
 const task = ref<TaskExpanded | null>(null)
 const taskRuns = ref<TaskRun[]>([])
 const loadingTaskRuns = ref(false)
@@ -675,34 +604,6 @@ const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
     /\{([^}]+)\}/g,
     (_, key) => values[key] ?? `{${key}}`
   )
-}
-
-const logLevelClass = (level?: string) => {
-  const value = (level || '').toLowerCase()
-  if (
-    value.includes('error') ||
-    value.includes('critical') ||
-    value.includes('fail')
-  ) {
-    return 'bg-rose-50 text-rose-700 border-rose-200'
-  }
-  if (value.includes('warn') || value.includes('skip')) {
-    return 'bg-amber-50 text-amber-700 border-amber-200'
-  }
-  if (value.includes('success') || value.includes('ok')) {
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  }
-  if (value.includes('debug')) {
-    return 'bg-slate-100 text-slate-600 border-slate-200'
-  }
-  return 'bg-sky-50 text-sky-700 border-sky-200'
-}
-
-const buildLogSections = (run?: TaskRun | null) =>
-  buildTaskRunDetailSections(run)
-
-const toggleRunLogs = (runId: string) => {
-  openRunLogs.value[runId] = !openRunLogs.value[runId]
 }
 
 const getRunStartedAtMs = (run?: TaskRun | null) => {
@@ -1149,7 +1050,6 @@ watch(
     if (newId === oldId) return
 
     stopRunNowPolling()
-    openRunLogs.value = {}
     taskRuns.value = []
     loadingTaskRuns.value = false
     loadingFullRunHistory.value = false
@@ -1362,6 +1262,11 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.task-details-panel--mappings :deep(.etl-source-display),
+.task-details-panel--mappings :deep(.etl-target-display) {
+  background: #ffffff;
+}
+
 .run-loading {
   display: flex;
   align-items: center;
@@ -1482,9 +1387,9 @@ onBeforeUnmount(() => {
   border-top: 1px solid #f1f5f9;
 }
 
-.run-entry-details {
-  border-top: 1px solid #f1f5f9;
-  padding: 10px 14px 14px;
+.run-entry-footer-content {
+  display: grid;
+  gap: 8px;
 }
 
 .run-entry-detail-row {
@@ -1528,18 +1433,6 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   align-items: flex-start;
   gap: 8px;
-}
-
-.run-section-label {
-  border: 1px solid #e2e8f0;
-  background: #f1f5f9;
-  color: #475569;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .run-entry-refresh {
