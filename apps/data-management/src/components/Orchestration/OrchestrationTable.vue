@@ -82,15 +82,16 @@
           </span>
         </button>
 
-        <RouterLink
-          :to="{ name: 'HydroLoader' }"
+        <button
+          type="button"
           class="rail-btn rail-btn-secondary rail-link"
+          @click="goToHydroLoader"
         >
           <span class="rail-pill rail-pill-secondary">
             <v-icon :icon="mdiDownloadBoxOutline" size="22" />
           </span>
           <span class="rail-label">Download data loader</span>
-        </RouterLink>
+        </button>
       </div>
     </nav>
 
@@ -688,7 +689,12 @@ const selectedRunId = computed(() => {
   return typeof value === 'string' && value.trim() ? value : null
 })
 
+const hasTaskDetailsQuery = computed(
+  () => selectedTaskId.value !== null || selectedRunId.value !== null
+)
+
 const closeTaskDetails = async () => {
+  if (!hasTaskDetailsQuery.value) return
   const nextQuery = { ...route.query }
   delete nextQuery.taskId
   delete nextQuery.runId
@@ -1130,23 +1136,31 @@ const emptyTasksMessage = computed(() => {
   return 'No tasks are writing data to this site yet.'
 })
 
-const setActiveTab = (tab: TabId) => {
+const setActiveTab = async (tab: TabId) => {
   activeView.value = 'tasks'
   activeTab.value = tab
   sidebarSearch.value = ''
   autoSelectSidebar()
+  await closeTaskDetails()
 }
 
-const openWorkspaceManager = () => {
+const openWorkspaceManager = async () => {
   activeView.value = 'workspaces'
+  await closeTaskDetails()
 }
 
-const selectConnection = (id: string) => {
+const goToHydroLoader = async () => {
+  await router.push({ name: 'HydroLoader' })
+}
+
+const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
+  await closeTaskDetails()
 }
 
-const selectSite = (id: string) => {
+const selectSite = async (id: string) => {
   selectedThingId.value = id
+  await closeTaskDetails()
 }
 
 const autoSelectSidebar = () => {
