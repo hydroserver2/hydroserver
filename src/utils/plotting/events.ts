@@ -10,7 +10,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { debounce } from 'lodash-es'
 import { handleSelected } from './selected'
-import { captureCurrentZoomState, recordZoomDebounced } from './zoom'
+import { captureCurrentZoomState, installZoomTracking } from './zoom'
 import { handleRelayout } from './relayout'
 import {
   handleMouseMove,
@@ -142,7 +142,7 @@ export const handleNewPlot = async (
   // Zoom-history recorder — runs on its own 350 ms debouncer so a single
   // drag/scroll gesture collapses to one entry. Kept independent of the
   // relayout handler above, which does tooltip/visible-point work.
-  plotlyRef.value?.on('plotly_relayout', () => recordZoomDebounced())
+  installZoomTracking(plotlyRef.value)
   // Seed the initial auto-fit state so the user can always undo back to
   // the plot's starting viewport. Runs after `handleRelayout(null)`
   // above so the layout ranges are populated.

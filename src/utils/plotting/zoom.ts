@@ -3,6 +3,7 @@ import Plotly from 'plotly.js-dist'
 import type {
   Layout,
   LayoutAxis,
+  PlotlyHTMLElement,
   PrivatePlotlyHTMLElement,
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
@@ -94,11 +95,22 @@ export const recordZoomIfSettled = (
 
 /** 350 ms debounce — slightly longer than the relayout handler so a single
  * drag gesture collapses to one entry even when the user pauses briefly
- * mid-gesture. */
-export const recordZoomDebounced = debounce(
+ * mid-gesture. Module-private: wire via `installZoomTracking` instead. */
+const recordZoomDebounced = debounce(
   () => recordZoomIfSettled('user'),
   350
 )
+
+/**
+ * Wire the module-private zoom-history recorder to `plotly_relayout` on
+ * the given plot. Kept independent of the main relayout handler so this
+ * module can own its own state (debouncer + stacks via the store).
+ */
+export const installZoomTracking = (
+  plotlyRef: PlotlyHTMLElement | null | undefined
+): void => {
+  plotlyRef?.on('plotly_relayout', () => recordZoomDebounced())
+}
 
 /**
  * Apply a ZoomState snapshot to the live plot. Gates with
