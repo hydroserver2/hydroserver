@@ -36,18 +36,19 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       port: 1203,
       strictPort: true,
-      // COOP/COEP headers enable SharedArrayBuffer-backed workers but
-      // also break cross-origin fetches without CORP (e.g. the
-      // `playground.hydroserver.org` API). The app's worker layer
-      // detects `crossOriginIsolated === false` and falls back to inline
-      // execution, so we leave the headers off by default and opt in
-      // only when `VITE_APP_ENABLE_COOP=1` is set for perf work.
-      headers: env.VITE_APP_ENABLE_COOP === '1'
-        ? {
+      // COOP/COEP headers enable SharedArrayBuffer-backed workers (fast
+      // shared-memory data ops) but also block cross-origin responses
+      // that don't carry CORP — including the `playground.hydroserver.org`
+      // API. On by default; set `VITE_APP_DISABLE_COOP=1` to drop them
+      // when you need to talk to a backend that doesn't serve CORP headers.
+      // The worker layer gracefully falls back to inline execution when
+      // SharedArrayBuffer isn't available.
+      headers: env.VITE_APP_DISABLE_COOP === '1'
+        ? undefined
+        : {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
-          }
-        : undefined,
+          },
     },
     resolve: {
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts', '.py'],
