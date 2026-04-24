@@ -9,14 +9,14 @@
     </div>
 
     <div v-if="!!selectedWorkspace" class="orchestration-page-body">
-      <OrchestrationTable :workspace-id="selectedWorkspace.id" />
+      <OrchestrationWorkbench :workspace-id="selectedWorkspace.id" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import OrchestrationTable from '@/components/Orchestration/OrchestrationTable.vue'
+import OrchestrationWorkbench from '@/components/Orchestration/OrchestrationWorkbench.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import hs from '@hydroserver/client'
