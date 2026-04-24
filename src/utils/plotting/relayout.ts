@@ -27,7 +27,7 @@ export const invalidateVisibleRangeCache = () => {
  * Convert a datastream's `intendedTimeSpacing` + `intendedTimeSpacingUnit`
  * into milliseconds. Returns `null` when either field is missing.
  */
-const intendedSpacingMs = (): number | null => {
+export const intendedSpacingMs = (): number | null => {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const ds = qcDatastream.value as
     | { intendedTimeSpacing?: number; intendedTimeSpacingUnit?: string | null }
@@ -54,7 +54,7 @@ const intendedSpacingMs = (): number | null => {
  * intended cadence, bounded to the visible x-range. Returns `null` when
  * we should hand back to Plotly's auto tick picker.
  */
-const computeIntendedTickvals = (
+export const computeIntendedTickvals = (
   xStart: number,
   xEnd: number
 ): number[] | null => {
@@ -102,7 +102,7 @@ const computeIntendedTickvals = (
 
 /** True when two numeric arrays match element-wise within a small
  *  tolerance. Used to skip no-op tickvals relayouts. */
-const tickvalsEqual = (
+export const tickvalsEqual = (
   a: number[] | null,
   b: number[] | null
 ): boolean => {
