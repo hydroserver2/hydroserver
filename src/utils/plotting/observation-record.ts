@@ -68,32 +68,58 @@ const CHANGE_VALUES_WORKER_THRESHOLD = 1024;
 
 const components = ["date", "value", "qualifier"]; // TODO: `qualifier` unused for now...
 
+// SharedArrayBuffer requires cross-origin isolation (COOP/COEP). When those
+// headers are absent — the common consumer setup for apps that need to call
+// cross-origin backends — `SharedArrayBuffer` is undefined and referencing it
+// throws. Fall back to a plain ArrayBuffer; worker code paths that actually
+// need SAB are already gated via `shouldUseWorker()` in calibration.
+const SAB_AVAILABLE = typeof SharedArrayBuffer !== "undefined";
+function makeBuffer(
+  byteLength: number,
+  maxByteLength?: number
+): SharedArrayBuffer | ArrayBuffer {
+  if (SAB_AVAILABLE) {
+    return maxByteLength !== undefined
+      ? new SharedArrayBuffer(byteLength, { maxByteLength })
+      : new SharedArrayBuffer(byteLength);
+  }
+  return maxByteLength !== undefined
+    ? new ArrayBuffer(byteLength, { maxByteLength })
+    : new ArrayBuffer(byteLength);
+}
+
+function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
+  // SharedArrayBuffer uses `.grow()`; resizable ArrayBuffer uses `.resize()`.
+  const anyBuf = buffer as { grow?: (n: number) => void; resize?: (n: number) => void };
+  if (typeof anyBuf.grow === "function") {
+    anyBuf.grow(newByteLength);
+  } else if (typeof anyBuf.resize === "function") {
+    anyBuf.resize(newByteLength);
+  }
+}
+
 export class ObservationRecord {
   /** The generated dataset to be used for plotting */
   dataset: {
     dimensions: string[];
     source: {
       // Store datetimes in a Float64Array because plotly can't parse BigInts correctly.
-      x: Float64Array<SharedArrayBuffer>;
-      y: Float32Array<SharedArrayBuffer>;
+      x: Float64Array<ArrayBufferLike>;
+      y: Float32Array<ArrayBufferLike>;
     };
   } = {
       dimensions: components,
       source: {
         x: new Float64Array(
-          new SharedArrayBuffer(
+          makeBuffer(
             INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
-            {
-              maxByteLength: INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT, // Max size the array can reach
-            },
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
           ),
         ),
         y: new Float32Array(
-          new SharedArrayBuffer(
+          makeBuffer(
             INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
-            {
-              maxByteLength: INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT, // Max size the array can reach
-            },
+            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
           ),
         ),
       },
@@ -204,18 +230,14 @@ export class ObservationRecord {
       this.dataX.buffer.maxByteLength
     ) {
       // More space is needed, beyond the maxByteLength initially set, to allocate the data. A new buffer needs to be allocated.
-      const outputBufferX = new SharedArrayBuffer(
+      const outputBufferX = makeBuffer(
         this.dataX.buffer.byteLength,
-        {
-          maxByteLength: maxByteLengthNeeded * Float64Array.BYTES_PER_ELEMENT,
-        },
+        maxByteLengthNeeded * Float64Array.BYTES_PER_ELEMENT,
       );
 
-      const outputBufferY = new SharedArrayBuffer(
+      const outputBufferY = makeBuffer(
         this.dataY.buffer.byteLength,
-        {
-          maxByteLength: maxByteLengthNeeded * Float32Array.BYTES_PER_ELEMENT,
-        },
+        maxByteLengthNeeded * Float32Array.BYTES_PER_ELEMENT,
       );
 
       const outputArrayX = new Float64Array(outputBufferX);
@@ -232,8 +254,8 @@ export class ObservationRecord {
       this.dataX.buffer.byteLength <
       newLength * Float64Array.BYTES_PER_ELEMENT
     ) {
-      this.dataX.buffer.grow(newLength * Float64Array.BYTES_PER_ELEMENT);
-      this.dataY.buffer.grow(newLength * Float32Array.BYTES_PER_ELEMENT);
+      growBuffer(this.dataX.buffer, newLength * Float64Array.BYTES_PER_ELEMENT);
+      growBuffer(this.dataY.buffer, newLength * Float32Array.BYTES_PER_ELEMENT);
     }
   }
 
@@ -780,12 +802,8 @@ export class ObservationRecord {
     this._pendingExecutionMode = "worker";
 
     // Output buffers hold the shifted (x, y) pairs for the selection, in the same order as `index`
-    const outputBufferX = new SharedArrayBuffer(
-      N * Float64Array.BYTES_PER_ELEMENT,
-    );
-    const outputBufferY = new SharedArrayBuffer(
-      N * Float32Array.BYTES_PER_ELEMENT,
-    );
+    const outputBufferX = makeBuffer(N * Float64Array.BYTES_PER_ELEMENT);
+    const outputBufferY = makeBuffer(N * Float32Array.BYTES_PER_ELEMENT);
 
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
     const chunkSize = Math.ceil(N / numWorkers);
@@ -896,12 +914,14 @@ export class ObservationRecord {
     // both the inline and worker paths.
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
     const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
-    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
-      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
-    });
-    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
-      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
-    });
+    const outputBufferX = makeBuffer(
+      newByteLengthX,
+      Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
+    );
+    const outputBufferY = makeBuffer(
+      newByteLengthY,
+      Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
+    );
 
     // Inline fast path: single copy-with-fills pass over the whole
     // array. Skips the segment partitioning + prefix-sum accounting
@@ -1028,12 +1048,14 @@ export class ObservationRecord {
       selectionSize: deleteIndices.length,
     });
     if (!decision.useWorker) {
-      const outputBufferX = new SharedArrayBuffer(this.dataX.buffer.byteLength, {
-        maxByteLength: this.dataX.buffer.maxByteLength,
-      });
-      const outputBufferY = new SharedArrayBuffer(this.dataY.buffer.byteLength, {
-        maxByteLength: this.dataY.buffer.maxByteLength,
-      });
+      const outputBufferX = makeBuffer(
+        this.dataX.buffer.byteLength,
+        this.dataX.buffer.maxByteLength,
+      );
+      const outputBufferY = makeBuffer(
+        this.dataY.buffer.byteLength,
+        this.dataY.buffer.maxByteLength,
+      );
       const outX = new Float64Array(outputBufferX);
       const outY = new Float32Array(outputBufferY);
       deleteDataPointsCore(
@@ -1080,13 +1102,15 @@ export class ObservationRecord {
     const promises = [];
 
     // // To avoid workers reading from a memory address where another working is writing to, we use separate output buffers.
-    const outputBufferX = new SharedArrayBuffer(this.dataX.buffer.byteLength, {
-      maxByteLength: this.dataX.buffer.maxByteLength,
-    });
+    const outputBufferX = makeBuffer(
+      this.dataX.buffer.byteLength,
+      this.dataX.buffer.maxByteLength,
+    );
 
-    const outputBufferY = new SharedArrayBuffer(this.dataY.buffer.byteLength, {
-      maxByteLength: this.dataY.buffer.maxByteLength,
-    });
+    const outputBufferY = makeBuffer(
+      this.dataY.buffer.byteLength,
+      this.dataY.buffer.maxByteLength,
+    );
 
     // Compute startTarget for each segment and start workers
     for (let i = 0; i < numWorkers; i++) {
@@ -1273,12 +1297,14 @@ export class ObservationRecord {
     // Output buffers sized for the new length
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
     const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
-    const outputBufferX = new SharedArrayBuffer(newByteLengthX, {
-      maxByteLength: Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
-    });
-    const outputBufferY = new SharedArrayBuffer(newByteLengthY, {
-      maxByteLength: Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
-    });
+    const outputBufferX = makeBuffer(
+      newByteLengthX,
+      Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
+    );
+    const outputBufferY = makeBuffer(
+      newByteLengthY,
+      Math.max(this.dataY.buffer.maxByteLength, newByteLengthY),
+    );
 
     // Inline fast path: single merge pass over the whole array with
     // no worker spawns, no per-segment insertIndex binary searches,
