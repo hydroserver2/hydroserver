@@ -129,7 +129,12 @@
     </v-dialog>
 
     <v-dialog v-model="openExpressionForm" width="60rem">
-      <ExpressionForm @close="openExpressionForm = false" />
+      <ExpressionForm
+        :workspace-id="workspaceId"
+        :initial-thing-id="selectedThingId"
+        @close="openExpressionForm = false"
+        @created="onDataProductTaskCreated"
+      />
     </v-dialog>
 
     <v-dialog v-model="openDerivationForm" width="60rem">
@@ -137,7 +142,12 @@
     </v-dialog>
 
     <v-dialog v-model="openRatingCurveForm" width="60rem">
-      <RatingCurveForm @close="openRatingCurveForm = false" />
+      <RatingCurveForm
+        :workspace-id="workspaceId"
+        :initial-thing-id="selectedThingId"
+        @close="openRatingCurveForm = false"
+        @created="onDataProductTaskCreated"
+      />
     </v-dialog>
   </div>
 </template>
@@ -578,6 +588,13 @@ const onDataConnectionCreated = async () => {
 
 const onTaskCreated = async () => {
   closeCreateTaskDialog()
+  await fetchAll(props.workspaceId)
+  autoSelectSidebar()
+}
+
+const onDataProductTaskCreated = async () => {
+  openExpressionForm.value = false
+  openRatingCurveForm.value = false
   await fetchAll(props.workspaceId)
   autoSelectSidebar()
 }
