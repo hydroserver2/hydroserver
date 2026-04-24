@@ -6,8 +6,6 @@ export default defineConfig(({ mode }) => {
   const isProd = mode === "prod";
   const isDev = mode === "dev";
 
-  // TODO: get build to emit types
-
   let build = {};
   if (isProd) {
     build = {
@@ -39,9 +37,6 @@ export default defineConfig(({ mode }) => {
     };
   }
 
-  // let optimizeDeps = {
-  //   include: [],
-  // };
   if (isDev) {
     /**
      * DESC:

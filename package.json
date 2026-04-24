@@ -1,6 +1,6 @@
 {
   "name": "@uwrl/qc-utils",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Quality Control Utilities",
   "homepage": "https://github.com/hydroserver2/qc-utils#readme",
   "bugs": {
