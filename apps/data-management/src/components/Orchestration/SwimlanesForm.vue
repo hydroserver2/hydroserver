@@ -39,7 +39,6 @@
                 v-if="!ensureSinglePath(m).targetIdentifier"
                 variant="outlined"
                 rounded="lg"
-                height="40"
                 type="button"
                 class="etl-target-btn text-none"
                 :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
@@ -55,20 +54,33 @@
                 v-else
                 variant="outlined"
                 rounded="lg"
-                height="40"
                 type="button"
                 class="etl-target-btn etl-target-btn-selected text-none"
                 @click="openTargetSelector(mi, 0)"
               >
                 <span class="target-selector-content">
-                  <span class="target-id">{{
-                    String(ensureSinglePath(m).targetIdentifier)
-                  }}</span>
                   <span class="target-name">
                     {{
                       datastreamNameById(ensureSinglePath(m).targetIdentifier)
                     }}
                   </span>
+                  <span
+                    v-if="
+                      datastreamThingNameById(
+                        ensureSinglePath(m).targetIdentifier
+                      )
+                    "
+                    class="target-thing"
+                  >
+                    {{
+                      datastreamThingNameById(
+                        ensureSinglePath(m).targetIdentifier
+                      )
+                    }}
+                  </span>
+                  <span class="target-id">{{
+                    String(ensureSinglePath(m).targetIdentifier)
+                  }}</span>
                 </span>
               </v-btn>
 
@@ -151,12 +163,18 @@
                   @click="openAggregationDatastreamSelector('source', mi, pi)"
                 >
                   <span class="target-selector-content">
-                    <span class="target-id">{{
-                      String(m.sourceIdentifier)
-                    }}</span>
                     <span class="target-name">
                       {{ datastreamNameById(m.sourceIdentifier) }}
                     </span>
+                    <span
+                      v-if="datastreamThingNameById(m.sourceIdentifier)"
+                      class="target-thing"
+                    >
+                      {{ datastreamThingNameById(m.sourceIdentifier) }}
+                    </span>
+                    <span class="target-id">{{
+                      String(m.sourceIdentifier)
+                    }}</span>
                   </span>
                 </v-btn>
 
@@ -220,12 +238,18 @@
                   @click="openAggregationDatastreamSelector('target', mi, pi)"
                 >
                   <span class="target-selector-content">
-                    <span class="target-id">{{
-                      String(p.targetIdentifier)
-                    }}</span>
                     <span class="target-name">
                       {{ datastreamNameById(p.targetIdentifier) }}
                     </span>
+                    <span
+                      v-if="datastreamThingNameById(p.targetIdentifier)"
+                      class="target-thing"
+                    >
+                      {{ datastreamThingNameById(p.targetIdentifier) }}
+                    </span>
+                    <span class="target-id">{{
+                      String(p.targetIdentifier)
+                    }}</span>
                   </span>
                 </v-btn>
 
@@ -346,8 +370,9 @@ const {
   linkedDatastreams,
   draftDatastreams,
   workspaceDatastreams,
+  workspaceThings,
 } = storeToRefs(orchestrationStore)
-const { ensureWorkspaceDatastreams } = orchestrationStore
+const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
 const isAggregationTask = computed(
   () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
 )
@@ -410,10 +435,19 @@ function setAggregationStatistic(path: MappingPath, value: string) {
 }
 
 function ensureSinglePath(mapping: Mapping) {
+  const targetDatastreamId = (mapping as any).targetDatastream?.id
   if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-    mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
+    mapping.paths = [
+      {
+        targetIdentifier: targetDatastreamId ? String(targetDatastreamId) : '',
+        dataTransformations: [],
+      },
+    ]
   }
   if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
+  if (!mapping.paths[0].targetIdentifier && targetDatastreamId) {
+    mapping.paths[0].targetIdentifier = String(targetDatastreamId)
+  }
   if (!Array.isArray(mapping.paths[0].dataTransformations)) {
     mapping.paths[0].dataTransformations = []
   }
@@ -510,13 +544,32 @@ const aggregationSelectorMi = ref<number | null>(null)
 const aggregationSelectorPi = ref<number | null>(null)
 
 function datastreamNameById(id: string | number | undefined | null) {
+  return datastreamById(id)?.name || ''
+}
+
+function datastreamById(id: string | number | undefined | null): any {
   if (id === undefined || id === null || `${id}` === '') return ''
   const key = String(id)
   return (
-    workspaceDatastreams.value.find((d) => d.id === key)?.name ||
-    linkedDatastreams.value.find((d) => d.id === key)?.name ||
-    draftDatastreams.value.find((d) => String(d.id) === key)?.name ||
-    ''
+    workspaceDatastreams.value.find((d) => String(d.id) === key) ||
+    linkedDatastreams.value.find((d) => String(d.id) === key) ||
+    draftDatastreams.value.find((d) => String(d.id) === key) ||
+    task.value.mappings
+      ?.map((mapping: any) => mapping?.targetDatastream)
+      .find((d: any) => d && String(d.id) === key) ||
+    null
+  )
+}
+
+function datastreamThingNameById(id: string | number | undefined | null) {
+  const ds = datastreamById(id)
+  if (!ds) return ''
+  if (ds.thing?.name) return ds.thing.name
+  const thingId = ds.thingId ?? ds.thing_id ?? ds.thing?.id
+  if (!thingId) return ''
+  return (
+    workspaceThings.value.find((thing) => String(thing.id) === String(thingId))
+      ?.name || ''
   )
 }
 
@@ -664,9 +717,12 @@ watch(
   async (workspaceId) => {
     if (!workspaceId) return
     try {
-      await ensureWorkspaceDatastreams(workspaceId)
+      await Promise.all([
+        ensureWorkspaceDatastreams(workspaceId),
+        ensureWorkspaceThings(workspaceId),
+      ])
     } catch (error) {
-      console.error('Error fetching workspace datastreams', error)
+      console.error('Error fetching workspace datastreams and things', error)
     }
   },
   { immediate: true }
@@ -687,17 +743,18 @@ watch(
   font-size: 0.68rem;
 }
 .etl-mappings-head-target {
-  margin-left: calc(50% + 34px);
+  margin-left: calc((100% - 101px) / 3 + 52px);
 }
 .etl-mapping-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 2fr) 44px;
   gap: 5px;
-  align-items: start;
+  align-items: center;
 }
 .etl-mapping-source,
 .etl-mapping-target {
   min-width: 0;
+  align-self: center;
 }
 .etl-mapping-arrow {
   display: flex;
@@ -714,7 +771,10 @@ watch(
 }
 .etl-target-btn {
   width: 100%;
+  min-height: 40px;
+  height: auto;
   justify-content: flex-start;
+  text-align: left;
   border-style: dashed;
   border-width: 2px;
   border-color: #1565c0;
@@ -722,6 +782,7 @@ watch(
   background: #fdfdff;
   font-size: 0.84rem;
   padding-inline: 12px;
+  padding-block: 6px;
 }
 .etl-target-btn-error {
   border-color: #d32f2f;
@@ -731,6 +792,7 @@ watch(
   border-style: solid;
   background: #f6f9ff;
   color: #1c1b1f;
+  min-height: 62px;
 }
 .etl-target-btn-label {
   display: inline-flex;
@@ -740,8 +802,10 @@ watch(
 }
 .etl-target-btn :deep(.v-btn__content) {
   justify-content: flex-start;
+  text-align: left;
   width: 100%;
-  overflow: hidden;
+  min-width: 0;
+  overflow: visible;
 }
 .etl-mapping-actions {
   margin-top: 1px;
@@ -764,11 +828,12 @@ watch(
   padding-top: 0;
   padding-bottom: 0;
   font-size: 0.86rem;
+  text-align: left;
 }
 
 .swimlanes {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   column-gap: 12px;
   row-gap: 8px;
   margin-bottom: 12px;
@@ -778,7 +843,7 @@ watch(
   grid-template-columns:
     minmax(0, 1fr)
     fit-content(var(--aggregation-statistic-width))
-    minmax(0, 1fr);
+    minmax(0, 2fr);
   column-gap: 12px;
 }
 .head {
@@ -860,18 +925,30 @@ watch(
 .target-selector-content {
   display: block;
   max-width: 100%;
+  line-height: 1.25;
+  padding-block: 2px;
 }
 
 .target-id {
+  display: block;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.target-name {
+  color: #1c1b1f;
   display: block;
   font-weight: 600;
   overflow-wrap: anywhere;
   white-space: normal;
 }
 
-.target-name {
+.target-thing {
   color: rgba(0, 0, 0, 0.66);
   display: block;
+  font-size: 0.78rem;
   overflow-wrap: anywhere;
   white-space: normal;
 }

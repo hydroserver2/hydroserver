@@ -94,7 +94,7 @@ function resolveThingName(m: EtlMapping) {
 
 .etl-mappings {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 2fr);
   gap: 5px 5px;
   align-items: center;
 }
@@ -139,6 +139,7 @@ function resolveThingName(m: EtlMapping) {
   color: #1c1b1f;
   display: flex;
   align-items: center;
+  text-align: left;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -154,6 +155,7 @@ function resolveThingName(m: EtlMapping) {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  text-align: left;
   overflow: hidden;
 }
 .target-id {
