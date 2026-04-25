@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ref, computed } from 'vue'
-import { setActivePinia, createPinia, defineStore } from 'pinia'
+import { setActivePinia, createPinia, getActivePinia, defineStore } from 'pinia'
 
 const { selectedWorkspaceId, hsRef, mockList, mockCreate } = vi.hoisted(() => {
   const { ref } = require('vue') as typeof import('vue')
@@ -54,11 +54,16 @@ vi.mock('@/utils/plotting/plotly', () => ({
 vi.mock('@uwrl/qc-utils', () => ({}))
 
 beforeEach(() => {
+  vi.resetModules()
   setActivePinia(createPinia())
   selectedWorkspaceId.value = null
   mockList.fn = () => Promise.resolve({ data: [] })
   mockCreate.fn = () => Promise.resolve({ data: null })
   vi.clearAllMocks()
+})
+
+afterEach(() => {
+  getActivePinia()?._s.forEach((store: any) => store.$dispose())
 })
 
 describe('useQualifierStore.applyQualifiers', () => {
@@ -189,6 +194,10 @@ describe('useQualifierStore.qualifierById', () => {
 })
 
 describe('useQualifierStore.loadQualifiers', () => {
+  let consoleErrSpy: ReturnType<typeof vi.spyOn>
+  beforeEach(() => { consoleErrSpy = vi.spyOn(console, 'error').mockImplementation(() => {}) })
+  afterEach(() => { consoleErrSpy.mockRestore() })
+
   it('clears qualifiers and returns early when no workspace selected', async () => {
     selectedWorkspaceId.value = null
     const { useQualifierStore } = await import('@/store/qualifiers')
@@ -217,18 +226,20 @@ describe('useQualifierStore.loadQualifiers', () => {
   })
 
   it('handles thrown errors gracefully and resets isLoading', async () => {
-    const consoleErr = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockList.fn = () => Promise.reject(new Error('network'))
     selectedWorkspaceId.value = 'ws-1'
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
     await store.loadQualifiers()
     expect(store.isLoading).toBe(false)
-    consoleErr.mockRestore()
   })
 })
 
 describe('useQualifierStore.createQualifier', () => {
+  let consoleErrSpy: ReturnType<typeof vi.spyOn>
+  beforeEach(() => { consoleErrSpy = vi.spyOn(console, 'error').mockImplementation(() => {}) })
+  afterEach(() => { consoleErrSpy.mockRestore() })
+
   it('returns existing qualifier by case-insensitive code match', async () => {
     const { useQualifierStore } = await import('@/store/qualifiers')
     const store = useQualifierStore()
@@ -267,7 +278,6 @@ describe('useQualifierStore.createQualifier', () => {
   })
 
   it('falls back to local record when server throws', async () => {
-    const consoleErr = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockCreate.fn = () => Promise.reject(new Error('boom'))
     selectedWorkspaceId.value = 'ws-1'
     const { useQualifierStore } = await import('@/store/qualifiers')
@@ -275,6 +285,5 @@ describe('useQualifierStore.createQualifier', () => {
     const result = await store.createQualifier('LOCALERR', 'desc')
     expect(result.id).toMatch(/^local-/)
     expect(result.code).toBe('LOCALERR')
-    consoleErr.mockRestore()
   })
 })
