@@ -44,7 +44,7 @@
           @click="selectOperation(item.id)"
         >
           <template v-slot:prepend>
-            <v-avatar size="32" :color="colorForGroup.filter" variant="flat">
+            <v-avatar size="32" :color="colorForOperation(item)" variant="flat">
               <v-icon size="18" color="white" :icon="item.icon" />
             </v-avatar>
           </template>
@@ -94,7 +94,7 @@
           <template v-slot:prepend>
             <v-avatar
               size="32"
-              :color="item.requiresSelection ? 'warning' : colorForGroup.edit"
+              :color="colorForOperation(item)"
               variant="flat"
             >
               <v-icon size="18" color="white" :icon="item.icon" />
@@ -143,7 +143,7 @@
           @click="selectOperation(item.id)"
         >
           <template v-slot:prepend>
-            <v-avatar size="32" :color="colorForGroup.add" variant="flat">
+            <v-avatar size="32" :color="colorForOperation(item)" variant="flat">
               <v-icon size="18" color="white" :icon="item.icon" />
             </v-avatar>
           </template>
@@ -163,7 +163,7 @@
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
-import { operationsByGroup, colorForGroup } from '@/components/EditData/operations'
+import { operationsByGroup, colorForOperation } from '@/components/EditData/operations'
 import { usePersistedFlag } from '@/composables/useResizable'
 
 const { selectedData } = storeToRefs(useDataVisStore())

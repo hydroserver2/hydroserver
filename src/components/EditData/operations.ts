@@ -229,15 +229,25 @@ export const colorForGroup: Record<OperationGroup, string> = {
 }
 
 /**
- * Resolve a Vuetify color for a history entry's `method`. Mirrors
- * the drawer's group palette; SELECTION + bulk-assign system methods
- * fall back to a neutral grey since they have no panel.
+ * Resolve a Vuetify color for an operation, matching the EditDrawer
+ * sidebar avatar logic exactly: edit ops that need a selection get
+ * `warning`, everything else uses its group color.
+ */
+export function colorForOperation(op: OperationMeta): string {
+  if (op.group === 'edit' && op.requiresSelection) return 'warning'
+  return colorForGroup[op.group]
+}
+
+/**
+ * Resolve a Vuetify color for a history entry's `method`. Same
+ * per-item logic as the sidebar; SELECTION + bulk-assign system
+ * methods fall back to grey since they have no panel.
  */
 export function colorForMethod(method: string): string {
   const opId = methodToOperationId[method]
   if (opId) {
     const op = operationsById[opId]
-    if (op) return colorForGroup[op.group]
+    if (op) return colorForOperation(op)
   }
   return 'grey'
 }
