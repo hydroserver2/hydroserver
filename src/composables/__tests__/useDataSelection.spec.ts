@@ -15,12 +15,14 @@ const selectedSeries = ref<any>(undefined)
 
 // Stub the Plotly pinia store so `plotlyRef.value.data.length` is deterministic
 // and no real Plotly runtime is required.
+const suppressNextRelayoutEcho = ref(false)
 vi.mock('@/store/plotly', () => {
   const graphSeriesArray = ref([] as any[])
   return {
     usePlotlyStore: () => ({
       plotlyRef,
       selectedSeries,
+      suppressNextRelayoutEcho,
       graphSeriesArray,
       updateOptions: vi.fn(),
       clearChartState: vi.fn(),
@@ -46,10 +48,13 @@ vi.mock('@uwrl/qc-utils', async (importOriginal) => {
   }
 })
 
-describe('useDataSelection.dispatchSelection', () => {
+describe('useDataSelection.setPlotSelection', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    // Shared ref persists across tests; reset so each test sees the
+    // documented "no echo suppression armed" baseline.
+    suppressNextRelayoutEcho.value = false
   })
 
   it('writes the selection array directly to selectedData', async () => {
@@ -57,8 +62,8 @@ describe('useDataSelection.dispatchSelection', () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const { setSelectedPoints } = await import('@/utils/plotting/plotly')
 
-    const { dispatchSelection } = useDataSelection()
-    await dispatchSelection([3, 5, 7])
+    const { setPlotSelection } = useDataSelection()
+    await setPlotSelection([3, 5, 7])
 
     expect(useDataVisStore().selectedData).toEqual([3, 5, 7])
     expect(setSelectedPoints).toHaveBeenCalledWith(
@@ -72,27 +77,25 @@ describe('useDataSelection.dispatchSelection', () => {
     const { useDataSelection } = await import('@/composables/useDataSelection')
     const { useDataVisStore } = await import('@/store/dataVisualization')
 
-    const { dispatchSelection, clearSelected } = useDataSelection()
+    const { setPlotSelection, clearSelected } = useDataSelection()
 
     // Populate via the tested public API to avoid tripping store watchers.
-    await dispatchSelection([1, 2, 3])
+    await setPlotSelection([1, 2, 3])
     expect(useDataVisStore().selectedData).toEqual([1, 2, 3])
 
     await clearSelected()
     expect(useDataVisStore().selectedData).toEqual([])
   })
 
-  it('clearSelected skips the redundant empty-filter dispatch when asked', async () => {
+  it('clearSelected arms the suppress-echo sentinel', async () => {
     const { useDataSelection } = await import('@/composables/useDataSelection')
-    const { handleSelected } = await import('@/utils/plotting/plotly')
+
+    expect(suppressNextRelayoutEcho.value).toBe(false)
 
     const { clearSelected } = useDataSelection()
+    await clearSelected()
 
-    await clearSelected({ dispatchFilter: false })
-    expect(handleSelected).not.toHaveBeenCalled()
-
-    await clearSelected({ dispatchFilter: true })
-    expect(handleSelected).toHaveBeenCalled()
+    expect(suppressNextRelayoutEcho.value).toBe(true)
   })
 
   it('qcTraceIndex falls back to the trailing trace when no id matches', async () => {
@@ -107,8 +110,8 @@ describe('useDataSelection.dispatchSelection', () => {
     const { useDataSelection } = await import('@/composables/useDataSelection')
     const { setSelectedPoints } = await import('@/utils/plotting/plotly')
 
-    const { dispatchSelection } = useDataSelection()
-    await dispatchSelection([9])
+    const { setPlotSelection } = useDataSelection()
+    await setPlotSelection([9])
 
     expect(setSelectedPoints).toHaveBeenCalledWith(
       expect.anything(),
@@ -117,7 +120,7 @@ describe('useDataSelection.dispatchSelection', () => {
     )
   })
 
-  it('dispatchSelection is a no-op when no traces exist', async () => {
+  it('setPlotSelection is a no-op when no traces exist', async () => {
     plotlyRef.value = { data: [] } as any
     selectedSeries.value = undefined
 
@@ -125,8 +128,8 @@ describe('useDataSelection.dispatchSelection', () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const { setSelectedPoints } = await import('@/utils/plotting/plotly')
 
-    const { dispatchSelection } = useDataSelection()
-    await dispatchSelection([1, 2])
+    const { setPlotSelection } = useDataSelection()
+    await setPlotSelection([1, 2])
 
     expect(setSelectedPoints).not.toHaveBeenCalled()
     // When we bail early the store state shouldn't be touched.

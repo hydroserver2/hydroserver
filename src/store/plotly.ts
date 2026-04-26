@@ -111,6 +111,24 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   /** The edit history for the currently selected series */
   const editHistory: Ref<HistoryItem[]> = ref([])
 
+  /**
+   * Sentinel armed by programmatic Plotly writes (`setPlotSelection`,
+   * `clearSelected`). The next `plotly_relayout`-induced
+   * `handleSelected` call consumes the sentinel and skips its
+   * SELECTION dispatch — that's the echo of our own write, not a
+   * user gesture worth recording in history. `handleClick` (the
+   * actual user-gesture path) ignores the sentinel.
+   *
+   * Replaces an earlier `performance.now()` window approach. Time-
+   * based suppression broke at scale: Plotly's relayout debounce
+   * stretches past any fixed window on large datasets (a 35k-point
+   * series with a 1k-element selection routinely fires the debounce
+   * at ~700–900 ms, blowing past the 600 ms guard). A sentinel that
+   * the *event itself* consumes is timing-independent and scales
+   * with whatever Plotly does internally.
+   */
+  const suppressNextRelayoutEcho: Ref<boolean> = ref(false)
+
   const selectedSeries = computed(() => {
     return graphSeriesArray.value[selectedSeriesIndex.value]
   })
@@ -337,6 +355,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     selectedSeriesIndex,
     selectedSeries,
     editHistory,
+    suppressNextRelayoutEcho,
     updateOptions,
     redraw,
     clearChartState,

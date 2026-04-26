@@ -15,11 +15,28 @@ import type { AppPlotlyTrace } from './options'
  * from `handleRelayout` (with a `PlotRelayoutEvent`-shaped object), and
  * occasionally with `null`/`undefined` to mean "re-sync the QC selection
  * without dispatching a filter".
+ *
+ * The SELECTION-dispatch branch is the source-of-truth for "user just
+ * selected something on the plot". To distinguish a real user gesture
+ * from the relayout echo of our own programmatic Plotly writes
+ * (`setPlotSelection`, `clearSelected`), the writers arm a sentinel
+ * (`suppressNextRelayoutEcho`) before their `Plotly.update`. The next
+ * `plotly_relayout`-induced `handleSelected` call (i.e. `fromRelayout:
+ * true`) consumes the sentinel and skips its dispatch. The
+ * click-induced path (`fromRelayout` falsy, default) ignores the
+ * sentinel — user clicks always dispatch.
+ *
+ * The sentinel approach replaces an earlier time-windowed guard that
+ * broke at scale: Plotly's relayout debounce stretches past any
+ * fixed window on large datasets. Tying the suppress to the actual
+ * event firing makes it timing-independent.
  */
 export const handleSelected = async (
-  eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null
+  eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null,
+  opts: { fromRelayout?: boolean } = {}
 ) => {
-  const { plotlyRef, selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, selectedSeries, isUpdating, suppressNextRelayoutEcho } =
+    storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
@@ -43,19 +60,26 @@ export const handleSelected = async (
     return
   }
 
-  // Only dispatch the SELECTION filter on user gestures. Suppressing it
-  // when `isUpdating` is true prevents undo/redo from clearing the redo
-  // stack via a programmatic selection echo.
+  // Only dispatch the SELECTION filter on user gestures. Two
+  // suppression signals layer here:
+  //
+  //  1. `isUpdating` — set by undo/redo and dispatch-helper composables
+  //     so a programmatic re-render doesn't echo back as a SELECTION
+  //     and clobber the redo stack.
+  //  2. `suppressNextRelayoutEcho` — sentinel armed by
+  //     `setPlotSelection` / `clearSelected`. Consumed (and cleared)
+  //     here on the relayout path so the programmatic write's own
+  //     relayout echo never reaches `dispatchFilter`. Click and
+  //     direct-call paths bypass — they're real user gestures.
+  if (opts.fromRelayout && suppressNextRelayoutEcho.value) {
+    suppressNextRelayoutEcho.value = false
+    return
+  }
   if (eventData && !isUpdating.value) {
     await selectedSeries.value?.data.dispatchFilter(
       EnumFilterOperations.SELECTION,
       selectedData.value ?? []
     )
-
-    // Sync Vue's reactive editHistory with the raw history array
-    // (dispatchFilter mutates the array outside Vue's proxy)
-    const { editHistory } = storeToRefs(usePlotlyStore())
-    editHistory.value = selectedSeries.value?.data.history ?? []
   }
 
   // TODO: prevent selection on other traces

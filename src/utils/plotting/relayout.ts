@@ -126,7 +126,7 @@ export const handleRelayout = async (
     tooltipsMaxDataPoints,
   } = storeToRefs(usePlotlyStore())
 
-  handleSelected(eventData)
+  handleSelected(eventData, { fromRelayout: true })
 
   const evt = eventData as
     | (PlotRelayoutEvent & {

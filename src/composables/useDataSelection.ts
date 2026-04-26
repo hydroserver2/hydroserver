@@ -1,27 +1,39 @@
 import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
 import {
+  EnumFilterOperations,
   formatDate,
   findFirstGreaterOrEqual,
   findLastLessOrEqual,
 } from '@uwrl/qc-utils'
 import {
   clearSelection,
-  handleSelected,
   setSelectedPoints,
 } from '@/utils/plotting/plotly'
-import type {
-  AppPlotlyTrace,
-  AppPlotRelayoutEvent,
-} from '@/utils/plotting/plotly'
+import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { storeToRefs } from 'pinia'
 
 import { computed } from 'vue'
 
 export function useDataSelection() {
-  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, suppressNextRelayoutEcho } = storeToRefs(
+    usePlotlyStore()
+  )
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
+
+  /**
+   * Mark the next `plotly_relayout`-induced `handleSelected` call as
+   * a programmatic echo that should not dispatch a SELECTION
+   * filter. The sentinel is consumed by the relayout-path
+   * `handleSelected` itself, so timing doesn't matter — multiple
+   * programmatic writes within a debounce window collapse to one
+   * relayout event and one consumption, and a slow Plotly relayout
+   * still gets caught no matter how late it fires.
+   */
+  const armEchoSuppression = () => {
+    suppressNextRelayoutEcho.value = true
+  }
 
   /**
    * Locate the plotly trace index for the QC series we're editing.
@@ -46,47 +58,66 @@ export function useDataSelection() {
     return data.length - 1
   }
 
-  /** Dispatch selection  */
-  const dispatchSelection = async (selection: number[]) => {
+  /**
+   * Push `selection` into Plotly as the QC trace's `selectedpoints`
+   * and mirror it into `selectedData`. Visual-only — does NOT push
+   * a SELECTION entry into the ObservationRecord history. The
+   * Plotly write triggers a `plotly_relayout` that would otherwise
+   * round-trip through `handleSelected` and dispatch a SELECTION
+   * filter carrying these same indices (a "selection echo"); arming
+   * `suppressSelectionEchoUntil` here makes `handleSelected` skip
+   * that dispatch for the next `SUPPRESS_ECHO_MS`.
+   */
+  const setPlotSelection = async (selection: number[]) => {
     const traceIndex = qcTraceIndex()
     if (traceIndex < 0) return
+    armEchoSuppression()
     await setSelectedPoints(plotlyRef.value, traceIndex, selection)
-
-    // Authoritative assignment: we already hold the indices returned by
-    // dispatchFilter, so write them straight into the store rather than
-    // round-tripping through Plotly trace introspection.
+    // Authoritative assignment: we already hold the indices the
+    // caller intends to highlight, so write them straight into the
+    // store rather than round-tripping through Plotly trace
+    // introspection.
     selectedData.value = [...selection]
   }
 
   /**
-   * Call this method after operations that change the order of elements or
-   * remove elements in the data.
+   * Wipe the QC trace's `selectedpoints` plus any active
+   * box-/lasso-selection rectangles, and clear `selectedData`. The
+   * Plotly write's relayout echo is suppressed so no phantom
+   * SELECTION lands from that round-trip.
    *
-   * `dispatchFilter` controls whether the Plotly-event-driven
-   * `handleSelected` flow runs, which issues an extra empty-SELECTION
-   * filter dispatch through `ObservationRecord.dispatchFilter`. That path
-   * can be surprisingly expensive (a reactive history push + Vue flush +
-   * devtools serialization of the whole series). Callers that have just
-   * logged their own SELECTION entry (e.g. table bulk save) should pass
-   * `false` to skip the redundant round-trip.
+   * `recordHistory` (default `true`) controls whether the clear is
+   * recorded in qc-utils history — when true, an empty SELECTION is
+   * dispatched, which `_selection` may use to drop the underlying
+   * filter entry (the user actively cleared a filter-driven
+   * selection). Programmatic callers that have already logged what
+   * they want, or that are running inside a replay/undo and must not
+   * mutate history (`applyReplayedSelection`, panel mount cleanup,
+   * `DataTable` bulk save) should pass `recordHistory: false`.
    */
   const clearSelected = async ({
-    dispatchFilter = true,
-  }: { dispatchFilter?: boolean } = {}) => {
+    recordHistory = true,
+  }: { recordHistory?: boolean } = {}) => {
     const { selectedData, hasSelectionShape } = storeToRefs(useDataVisStore())
 
     const traceIndex = qcTraceIndex()
     if (traceIndex >= 0) {
+      armEchoSuppression()
       await clearSelection(plotlyRef.value, traceIndex)
     }
 
     selectedData.value = []
     hasSelectionShape.value = false
 
-    if (dispatchFilter) {
-      // Pass an empty event so `handleSelected` dispatches an empty
-      // selection filter to ObservationRecord.
-      handleSelected({} as AppPlotRelayoutEvent)
+    if (recordHistory) {
+      // Explicitly log the cleared state so qc-utils' `_selection`
+      // empty-case logic (pop self, optionally pop the underlying
+      // filter that drove the now-cleared selection) runs even though
+      // the relayout echo is suppressed.
+      await selectedSeries.value?.data.dispatchFilter(
+        EnumFilterOperations.SELECTION,
+        []
+      )
     }
   }
 
@@ -136,11 +167,11 @@ export function useDataSelection() {
       selection.push(i)
     }
 
-    await dispatchSelection(selection)
+    await setPlotSelection(selection)
   }
 
   return {
-    dispatchSelection,
+    setPlotSelection,
     clearSelected,
     startDate,
     endDate,

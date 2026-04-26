@@ -12,6 +12,7 @@ vi.mock('@/store/plotly', () => ({
     selectedSeries: ref(null),
     isUpdating: ref(false),
     editHistory: ref([]),
+    suppressSelectionEchoUntil: ref(0),
   }),
 }))
 
