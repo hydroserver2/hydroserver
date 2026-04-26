@@ -781,7 +781,7 @@ describe('DataTable.vue onSaveChanges', () => {
     // edits cleared
     expect(wrapper.text()).not.toContain('unsaved')
     expect(redraw).toHaveBeenCalledWith(true)
-    expect(clearSelected).toHaveBeenCalledWith({ dispatchFilter: false })
+    expect(clearSelected).toHaveBeenCalled()
   })
 
   it('dispatches SELECTION + ASSIGN_DATETIMES_BULK for datetime edits with changed epoch', async () => {

@@ -346,7 +346,7 @@ const props = defineProps<{
   preview?: boolean
 }>()
 
-const { dispatchSelection, clearSelected } = useDataSelection()
+const { setPlotSelection, clearSelected } = useDataSelection()
 const { updateOptions } = usePlotlyStore()
 const plot = ref<HTMLDivElement>()
 const {
@@ -740,7 +740,7 @@ onBeforeUnmount(() => {
 const onTabChange = () => {
   if (tab.value === 'plot') {
     setTimeout(() => {
-      dispatchSelection(selectedData.value || [])
+      setPlotSelection(selectedData.value || [])
     })
   }
 }

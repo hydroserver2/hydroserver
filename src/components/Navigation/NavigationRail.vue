@@ -197,10 +197,12 @@ async function discardAndContinue() {
   exitAction.value = 'discard'
   isUpdating.value = true
   try {
-    if (selectedSeries.value) selectedSeries.value.data.history = []
+    // In-place clear so the `editHistory` ref keeps tracking the
+    // same array (reassigning `history = []` detaches it).
+    if (selectedSeries.value) selectedSeries.value.data.history.length = 0
     await refreshGraphSeriesArray()
     await selectedSeries.value?.data.reload()
-    await clearSelected()
+    await clearSelected({ recordHistory: false })
     await redraw()
     const next = pendingAction
     pendingAction = null

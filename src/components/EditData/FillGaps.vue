@@ -11,6 +11,7 @@
       <GapFinder
         ref="gapFinder"
         auto-select-endpoints
+        :record-history="false"
         computing-hint="Rebuilding fill preview…"
       />
 
@@ -210,7 +211,7 @@ const opParamsStore = useOperationParamsStore()
 const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
-const { clearSelected, dispatchSelection } = useDataSelection()
+const { clearSelected, setPlotSelection } = useDataSelection()
 
 // Template ref into the shared GapFinder. We expose its reactive
 // refs via `defineExpose` over there; here we unwrap them with
@@ -227,6 +228,17 @@ const thresholdMs = computed<number | null>(
 )
 const rangeIndices = computed<[number, number] | null>(
   () => gapFinder.value?.rangeIndices ?? null
+)
+// Wall-clock bounds of the staged window (epoch ms). Used as the
+// `range` arg for `FILL_GAPS` instead of the index-based
+// `rangeIndices` so the operation is portable across datasets / data
+// growth — qc-utils' `_fillGaps` snaps these timestamps back to
+// indices internally.
+const fromTs = computed<number | null>(
+  () => gapFinder.value?.fromTs ?? null
+)
+const toTs = computed<number | null>(
+  () => gapFinder.value?.toTs ?? null
 )
 const gapCount = computed(() => gapPlans.value.length)
 
@@ -404,15 +416,15 @@ const applyFillSnap = (chip: SnapChip) => {
 /**
  * Re-apply the current gap endpoint selection on the plot. Clears
  * whatever is selected first — including box-select / lasso
- * rectangles, which `dispatchSelection` alone can't wipe because
+ * rectangles, which `setPlotSelection` alone can't wipe because
  * its underlying `setSelectedPoints` puts `selections: []` into the
  * data update instead of the layout update. Mirrors the same
  * escape hatch Find Gaps exposes.
  */
 const reselectGaps = async () => {
-  await clearSelected({ dispatchFilter: false })
+  await clearSelected({ recordHistory: false })
   const indices = gapFinder.value?.endpointIndices ?? []
-  await dispatchSelection(indices)
+  await setPlotSelection(indices)
 }
 
 // --- Commit ---------------------------------------------------------
@@ -426,7 +438,15 @@ const onFillGaps = async () => {
       isUpdating.value = false
       return
     }
-    const range: [number, number] | undefined = rangeIndices.value ?? undefined
+    // Datetime-addressed range — qc-utils converts to indices via
+    // binary search internally. Only pass when the staged window is
+    // valid (rangeIndices being non-null is the canonical "user has
+    // a usable window" signal). Otherwise omit and `_fillGaps` runs
+    // over the full extent.
+    const dateRange: [number, number] | undefined =
+      rangeIndices.value != null && fromTs.value != null && toTs.value != null
+        ? [fromTs.value, toTs.value]
+        : undefined
 
     await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.FILL_GAPS,
@@ -436,7 +456,7 @@ const onFillGaps = async () => {
       [+fillAmount.value, TimeUnit[selectedFillUnit.value]],
       interpolateValues.value,
       +noDataValue.value,
-      range
+      dateRange
     )
 
     opParamsStore.save(qcDatastream.value?.id ?? null, {
@@ -447,7 +467,10 @@ const onFillGaps = async () => {
       noDataValue: Number(noDataValue.value),
     })
 
-    await clearSelected()
+    // FILL_GAPS edit was just dispatched; the post-commit clear is
+    // visual hygiene only — `recordHistory: false` keeps it from
+    // adding an empty SELECTION below the FILL_GAPS entry.
+    await clearSelected({ recordHistory: false })
     isUpdating.value = false
     await redraw()
     emit('close')
@@ -465,10 +488,33 @@ const onFillGaps = async () => {
 // endpoints again here to make the end state deterministic.
 onMounted(async () => {
   await enterPanMode()
-  await clearSelected({ dispatchFilter: false })
+  // Drop the previously visible selection from history — the panel's
+  // internal Find Gaps step will immediately display a new selection
+  // from the gaps it detects, so the prior selection-producing entry
+  // (a user-click SELECTION or a selection-driving filter) is no
+  // longer relevant context. `_selection`'s empty-case logic does
+  // the pop: the dispatched empty SELECTION pops itself and (when
+  // applicable) the preceding filter that was driving the cleared
+  // selection.
+  await clearSelected()
   const indices = gapFinder.value?.endpointIndices ?? []
   if (indices.length) {
-    await dispatchSelection(indices)
+    await setPlotSelection(indices)
+  }
+  // Explicitly seed the ghost-marker preview. The post-flush watcher
+  // on `fillFanout` would normally handle this, but its
+  // `immediate: true` fire happens during setup when `gapFinder.value`
+  // is still null — so the watched value is empty and the initial
+  // `setGhostFills([], [])` is a no-op. By the time we reach this
+  // point in the parent's `onMounted`, RangeStager (a grandchild)
+  // has run its own mount hook and seeded the date bounds, so
+  // `fillFanout.value` reflects real gap data; pushing it now means
+  // the preview is visible from the user's first frame instead of
+  // waiting for whatever next reactivity tick happens to fire the
+  // watcher.
+  const { xs, ys } = fillFanout.value
+  if (xs.length) {
+    await setGhostFills(xs, ys)
   }
 })
 

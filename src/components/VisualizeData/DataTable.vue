@@ -374,10 +374,10 @@ async function onSaveChanges() {
 
     valueEdits.clear()
     datetimeEdits.clear()
-    // Don't emit another SELECTION filter through ObservationRecord —
-    // we already logged SELECTION + ASSIGN above; an empty filter here
-    // just churns reactivity / devtools and can take seconds.
-    await clearSelected({ dispatchFilter: false })
+    // We just explicitly logged SELECTION + ASSIGN_*_BULK; pass
+    // `recordHistory: false` so this visual clear doesn't push an
+    // empty SELECTION on top.
+    await clearSelected({ recordHistory: false })
     await redraw(true)
   } finally {
     isSaving.value = false
