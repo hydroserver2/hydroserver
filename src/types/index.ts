@@ -91,6 +91,44 @@ export type HistoryItem = {
   executionMode?: "worker" | "inline";
 };
 
+// --- QC History Script (save / load format) ----------------------
+// See `docs/HISTORY_SCRIPT.md` for the full design rationale.
+
+/** The wall-clock window the script was authored against. The
+ *  loader is responsible for fetching this exact range of
+ *  observations into the target `ObservationRecord` before
+ *  replaying. ISO-8601 strings (not `Date`) so the type round-trips
+ *  cleanly through `JSON.stringify`/`JSON.parse`. */
+export type QcScriptWindow = {
+  startDate: string;
+  endDate: string;
+};
+
+/** A single replayable operation entry. Mirrors the
+ *  `[method, ...args]` tuple shape that
+ *  `ObservationRecord.dispatch` accepts. `status` round-trips
+ *  author-time failures so failed steps stay visibly failed across
+ *  save / load. */
+export type QcScriptOperation = {
+  method: EnumEditOperations | EnumFilterOperations;
+  args: any[];
+  status?: "success" | "failed";
+};
+
+/** A serialized QC history. Schema `version: "1"`. */
+export type QcScript = {
+  version: "1";
+  createdAt: string;
+  window: QcScriptWindow;
+  operations: QcScriptOperation[];
+};
+
+/** Returned by `applyScript` — per-op success/failure tally. */
+export type ApplyScriptReport = {
+  applied: number;
+  failed: Array<{ index: number; method: string; error: string }>;
+};
+
 export type DataPoint = {
   date: Date;
   value: number;

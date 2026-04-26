@@ -426,6 +426,11 @@ export class ObservationRecord {
     };
 
     let newSelection: number[] = [];
+    // Declared outside the try so the catch can write
+    // `status: "failed"` on the entry — even if the failure happened
+    // before the try block reached the push, we still need a stable
+    // reference to know whether the entry made it into history.
+    let historyItem: HistoryItem | null = null;
 
     try {
       // A fresh dispatch breaks the redo chain (Word-style). Replays
@@ -433,7 +438,7 @@ export class ObservationRecord {
       // survives the internal re-dispatch.
       if (!this._isReplaying) this.redoStack.length = 0;
 
-      const historyItem: HistoryItem = {
+      historyItem = {
         method: action,
         args,
         isLoading: true,
@@ -473,6 +478,7 @@ export class ObservationRecord {
       if (stored) {
         stored.duration = measurement.duration;
         stored.executionMode = this._pendingExecutionMode;
+        stored.status = "success";
         stored.isLoading = false;
       }
     } catch (e) {
@@ -481,6 +487,19 @@ export class ObservationRecord {
         args,
       );
       console.log(e);
+      // Mark the entry as failed so the UI can surface it and
+      // script save/load round-trips the failure state. Without
+      // this the spinner would also be stuck on `isLoading: true`.
+      // `historyItem` is null when the failure happened before the
+      // entry was pushed (e.g. unknown action method).
+      if (historyItem) {
+        const failedIdx = this.history.indexOf(historyItem);
+        const failed = failedIdx >= 0 ? this.history[failedIdx] : undefined;
+        if (failed) {
+          failed.status = "failed";
+          failed.isLoading = false;
+        }
+      }
     }
 
     return newSelection;
@@ -530,6 +549,10 @@ export class ObservationRecord {
     };
 
     let response = [];
+    // Declared outside the try so the catch block can mark the
+    // entry `status: "failed"` even when the failure happened
+    // before push.
+    let historyItem: HistoryItem | null = null;
 
     try {
       // A fresh filter dispatch breaks the redo chain (Word-style).
@@ -537,24 +560,24 @@ export class ObservationRecord {
       // stack survives the internal re-dispatch.
       //
       // Empty SELECTION dispatches are NOT treated as fresh edits —
-      // they're either:
-      //   - Programmatic clear-selection echoes (consumer's
-      //     `clearSelected({recordHistory:true})` for visual hygiene).
-      //   - Plotly relayout echoes that read empty `selectedpoints`
-      //     and slip past the suppress window after a redraw
-      //     (notably during undo, whose `redraw()` can extend the
-      //     relayout debounce past `suppressSelectionEchoUntil`).
-      // Either way, "no selection" is not a new operation worth
-      // forfeiting the redo stack for. Non-empty SELECTION (a real
-      // user click / lasso) still invalidates redo.
+      // they're either programmatic clear-selection echoes
+      // (`clearSelected({recordHistory:true})`) or relayout echoes
+      // that read empty `selectedpoints`. Either way, "no selection"
+      // is not a new operation worth forfeiting the redo stack for.
+      // Non-empty SELECTION (a real user click / lasso) still
+      // invalidates redo. The relayout-induced non-empty echo of
+      // our own programmatic writes is suppressed at the
+      // `handleSelected` level via the `suppressNextRelayoutEcho`
+      // sentinel, so it never reaches dispatchFilter.
+      const newIsSelection = action === EnumFilterOperations.SELECTION;
       const isEmptySelection =
-        action === EnumFilterOperations.SELECTION &&
+        newIsSelection &&
         (!args[0] || (Array.isArray(args[0]) && args[0].length === 0));
       if (!this._isReplaying && !isEmptySelection) {
         this.redoStack.length = 0;
       }
 
-      const historyItem: HistoryItem = {
+      historyItem = {
         method: action,
         args: args,
         isLoading: true,
@@ -578,7 +601,6 @@ export class ObservationRecord {
       //     This split keeps the SELECTION echo from `dispatchSelection`
       //     visual highlighting from clobbering the filter that just
       //     committed it.
-      const newIsSelection = action === EnumFilterOperations.SELECTION;
       const lastIsFilter =
         !!EnumFilterOperations[lastItem?.method as EnumFilterOperations];
       const replace =
@@ -620,6 +642,7 @@ export class ObservationRecord {
         stored.duration = measurement.duration;
         stored.executionMode = this._pendingExecutionMode;
         stored.selected = measurement.response;
+        stored.status = "success";
         stored.isLoading = false;
       }
     } catch (e) {
@@ -628,6 +651,16 @@ export class ObservationRecord {
         args,
       );
       console.log(e);
+      // Mark the entry as failed so the UI surfaces it and script
+      // round-trips the failure state.
+      if (historyItem) {
+        const failedIdx = this.history.indexOf(historyItem);
+        const failed = failedIdx >= 0 ? this.history[failedIdx] : undefined;
+        if (failed) {
+          failed.status = "failed";
+          failed.isLoading = false;
+        }
+      }
     }
     return response;
   }
