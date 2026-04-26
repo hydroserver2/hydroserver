@@ -51,9 +51,13 @@
  * like Find Gaps' live-commit behaviour.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { EnumFilterOperations } from '@uwrl/qc-utils'
+import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
 import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 
+const { selectedSeries } = storeToRefs(usePlotlyStore())
 const { setPlotSelection } = useDataSelection()
 
 const stager = useTemplateRef<InstanceType<typeof RangeStager>>('stager')
@@ -84,6 +88,26 @@ watch(
         await setPlotSelection([])
         return
       }
+      const from = stager.value?.fromTs
+      const to = stager.value?.toTs
+      const bounds = stager.value?.dataBounds
+      const isAll =
+        bounds != null &&
+        from != null &&
+        to != null &&
+        Math.abs(from - bounds.min) < 1000 &&
+        Math.abs(to - bounds.max) < 1000
+
+      if (isAll) {
+        await selectedSeries.value?.data.dispatchFilter(EnumFilterOperations.DATETIME_RANGE)
+      } else {
+        await selectedSeries.value?.data.dispatchFilter(
+          EnumFilterOperations.DATETIME_RANGE,
+          from,
+          to,
+        )
+      }
+
       const [startIdx, endIdx] = r
       const selection: number[] = []
       for (let i = startIdx; i <= endIdx; i++) selection.push(i)
@@ -92,6 +116,6 @@ watch(
       isComputing.value = false
     }
   },
-  { immediate: true, flush: 'post' }
+  { immediate: true, flush: 'post' },
 )
 </script>
