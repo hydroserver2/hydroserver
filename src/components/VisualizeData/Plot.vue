@@ -235,7 +235,8 @@
       <v-tabs-window v-model="tab" class="flex-grow-1">
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="plot-container fill-height">
-            <div ref="plot" class="fill-height"></div>
+            <div ref="plot" class="plot-main"></div>
+            <ContextPlot v-if="!preview" />
             <!-- Horizontal axis-title chips. Replaces Plotly's
                  rotated vertical titles. Stacked in plotted-
                  datastreams order via `--chip-idx`. -->
@@ -333,6 +334,7 @@ import {
 } from '@/utils/plotting/plotly'
 import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
+import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -824,6 +826,13 @@ const onTabChange = () => {
    chart beneath it. */
 .plot-container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.plot-main {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Axis-title chips. `--chip-line`, `--chip-idx`, `--chip-color` are
