@@ -200,12 +200,25 @@ export const cropXaxisRange = async () => {
  * @param _eventData unused; preserved for the modebar click signature.
  */
 export const fitXaxisToVisible = async (_eventData?: unknown) => {
-  const { plotlyRef, isUpdating, graphSeriesArray } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
+  const { qcDatastream } = storeToRefs(useDataVisStore())
 
   isUpdating.value = true
 
   try {
-    const liveLayout = plotlyRef.value?.layout as
+    const gd = plotlyRef.value
+    if (!gd) return
+    const qcId = qcDatastream.value?.id
+    if (!qcId) return
+
+    const traces = gd.data ?? []
+    const qcIndex = traces.findIndex(
+      (t) => (t as AppPlotlyTrace).id === qcId
+    )
+    if (qcIndex < 0) return
+    const qcTrace = traces[qcIndex] as AppPlotlyTrace
+
+    const liveLayout = gd.layout as
       | Record<string, Partial<LayoutAxis> | unknown>
       | undefined
     const liveXRange = (
@@ -214,44 +227,41 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
       | undefined
     )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
 
+    const xs = traceXAsNumbers(gd, qcIndex)
+    if (!xs.length) return
+    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
+    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+    if (endIdx - startIdx <= 0) return
+
+    // QC always lives on the primary `yaxis` (see `createPlotlyOption`).
+    // Clamp by the live QC y-range so points outside the user's current
+    // y-zoom (likely outliers) don't blow the fit open.
+    const liveYAxis = liveLayout?.yaxis as Partial<LayoutAxis> | undefined
+    const yRange = (liveYAxis?.range ?? []) as Array<number>
+    const yRangeMin = Number(yRange[0])
+    const yRangeMax = Number(yRange[1])
+    const hasYClamp = Number.isFinite(yRangeMin) && Number.isFinite(yRangeMax)
+    const yData = (qcTrace.y ?? []) as ArrayLike<number>
+
     let xMin = Infinity
     let xMax = -Infinity
-
-    for (let i = 0; i < graphSeriesArray.value.length; i++) {
-      const xs = traceXAsNumbers(plotlyRef.value, i)
-      if (!xs.length) continue
-      const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
-      const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
-      if (endIdx - startIdx <= 0) continue
-
-      const axisKey = i == 0 ? 'yaxis' : `yaxis${i + 1}`
-      const liveYAxis = liveLayout?.[axisKey] as
-        | Partial<LayoutAxis>
-        | undefined
-      const yRange = (liveYAxis?.range ?? []) as Array<number>
-      const yRangeMin = Number(yRange[0])
-      const yRangeMax = Number(yRange[1])
-      const hasYClamp = Number.isFinite(yRangeMin) && Number.isFinite(yRangeMax)
-
-      const traceData = plotlyRef.value?.data[i]
-      const yData = (traceData?.y ?? []) as ArrayLike<number>
-
-      for (let j = startIdx; j < endIdx; j++) {
-        if (hasYClamp) {
-          const v = Number(yData[j])
-          if (v < yRangeMin || v > yRangeMax) continue
-        }
-        const x = xs[j]
-        if (x < xMin) xMin = x
-        if (x > xMax) xMax = x
+    for (let j = startIdx; j < endIdx; j++) {
+      if (hasYClamp) {
+        const yv = Number(yData[j])
+        if (yv < yRangeMin || yv > yRangeMax) continue
       }
+      const x = xs[j]
+      if (x < xMin) xMin = x
+      if (x > xMax) xMax = x
     }
 
     if (!Number.isFinite(xMin) || !Number.isFinite(xMax) || xMin === xMax) return
 
-    const padding = (xMax - xMin) * 0.1
-    await Plotly.relayout(plotlyRef.value as Plotly.Root, {
-      'xaxis.range': [xMin - padding, xMax + padding],
+    // Fit X means fit; no padding. The Y variant pads because tight
+    // bounds clip marker glyphs; on a date axis there's nothing to clip
+    // and any padding reads as a margin Plotly conjured up.
+    await Plotly.relayout(gd as Plotly.Root, {
+      'xaxis.range': [xMin, xMax],
       'xaxis.autorange': false,
     } as unknown as Partial<Layout>)
   } finally {
@@ -283,6 +293,12 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
         (t) => (t as AppPlotlyTrace).id === qcId
       ) ?? -1
     if (qcTraceIndex < 0) return
+
+    const qcTrace = plotlyRef.value?.data[qcTraceIndex] as
+      | AppPlotlyTrace
+      | undefined
+    const visible = qcTrace?.visible as unknown
+    if (visible === false || visible === 'legendonly') return
 
     const yAxis = (plotlyOptions.value.layout as Record<string, Partial<LayoutAxis>>)
       .yaxis
@@ -317,8 +333,8 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
 
     if (yMax === yMin || !Number.isFinite(yMin) || !Number.isFinite(yMax)) return
 
-    const padding = (yMax - yMin) * 0.1
-
+    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible` — any
+    // padding reads as a margin Plotly conjured up.
     // Reuse the Plotly.update layout-object form (same shape the old
     // loop-over-all-axes seam used) — a previous attempt with
     // Plotly.relayout + dot-path keys silently no-op'd in some cases
@@ -326,7 +342,7 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
     const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {
       yaxis: {
         ...yAxis,
-        range: [yMin - padding, yMax + padding],
+        range: [yMin, yMax],
         autorange: false,
       },
     }
