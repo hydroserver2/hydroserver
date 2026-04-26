@@ -11,7 +11,7 @@
       :class="{ 'edit-history__header--collapsible': collapsible }"
       :role="collapsible ? 'button' : undefined"
       :tabindex="collapsible ? 0 : undefined"
-      @click="collapsible && toggleCollapsed()"
+      @click="onHeaderClick"
       @keydown.enter.prevent="collapsible && toggleCollapsed()"
       @keydown.space.prevent="collapsible && toggleCollapsed()"
     >
@@ -65,6 +65,48 @@
           />
         </template>
       </v-tooltip>
+
+      <v-tooltip location="bottom" text="Save QC script">
+        <template #activator="{ props: tp }">
+          <v-btn
+            v-bind="tp"
+            data-testid="history-save-btn"
+            aria-label="Save QC script"
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-tray-arrow-down"
+            :disabled="isUpdating || !editCount"
+            @click.stop="onSaveScript"
+          />
+        </template>
+      </v-tooltip>
+
+      <v-tooltip location="bottom" text="Load QC script">
+        <template #activator="{ props: tp }">
+          <v-btn
+            v-bind="tp"
+            data-testid="history-load-btn"
+            aria-label="Load QC script"
+            size="x-small"
+            variant="text"
+            density="comfortable"
+            icon="mdi-tray-arrow-up"
+            :disabled="isUpdating"
+            @click.stop="onLoadScriptClick"
+          />
+        </template>
+      </v-tooltip>
+      <!-- Hidden file input the load button forwards to. Reset
+           `value` after each pick so picking the same file twice
+           still triggers `change`. -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="application/json,.json"
+        style="display: none"
+        @change="onLoadScriptFile"
+      />
 
       <v-tooltip
         v-if="popOutEnabled"
@@ -186,10 +228,9 @@
             </button>
 
             <v-icon
-              v-if="entry.icon"
-              :icon="entry.icon"
+              :icon="iconForMethod(entry.method)"
               size="16"
-              color="primary"
+              :color="entry.status === 'failed' ? 'error' : 'primary'"
               class="mr-2"
             />
 
@@ -198,6 +239,26 @@
             >
               {{ formatMethod(entry.method) }}
             </span>
+
+            <!-- Failure badge — surfaces ops that threw at author
+                 time so the user knows the entry didn't actually
+                 apply. The same flag round-trips through
+                 save/load via `HistoryItem.status`. -->
+            <v-tooltip
+              v-if="entry.status === 'failed'"
+              location="start"
+              text="Operation failed — see console for details"
+            >
+              <template #activator="{ props: tp }">
+                <v-icon
+                  v-bind="tp"
+                  icon="mdi-alert-circle"
+                  size="14"
+                  color="error"
+                  class="mr-1 flex-shrink-0"
+                />
+              </template>
+            </v-tooltip>
 
             <!-- Dev-only execution mode badge. Surfaces whether the
                  calibration layer routed this dispatch to a worker or
@@ -302,6 +363,9 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { iconForMethod } from '@/components/EditData/operations'
+import { useQcScript } from '@/composables/useQcScript'
+import { Snackbar } from '@uwrl/qc-utils'
 
 const props = withDefaults(
   defineProps<{
@@ -338,10 +402,31 @@ const toggleCollapsed = () => {
   emit('update:collapsed', !props.collapsed)
 }
 
+/**
+ * Header-bar click handler. Toggle the collapse only when the click
+ * landed outside any interactive descendant (the undo / redo /
+ * pop-out buttons). The buttons themselves use `@click.stop`, but
+ * Firefox's hit-test occasionally lands on the header `<div>`
+ * instead of the v-btn (Vuetify wraps the button in a tooltip
+ * activator + ripple overlay), and the resulting bubbled click
+ * would collapse the panel out from under the user — and break
+ * the e2e flow that tries to click the button immediately after.
+ * Bailing on `target.closest('button')` here is the cheap, robust
+ * fix that doesn't require restructuring the header layout.
+ */
+const onHeaderClick = (e: MouseEvent) => {
+  if (!props.collapsible) return
+  const target = e.target as HTMLElement | null
+  if (target?.closest('button')) return
+  toggleCollapsed()
+}
+
 const { editHistory, selectedSeries, isUpdating } =
   storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { clearSelected, dispatchSelection } = useDataSelection()
+const { clearSelected, setPlotSelection } = useDataSelection()
+const { exportScript, importScript } = useQcScript()
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 /** Index of the expanded entry (for the inline arguments drawer). */
 const openIndex = ref<number | null>(null)
@@ -401,13 +486,19 @@ const onReload = async () => {
   setTimeout(async () => {
     const { refreshGraphSeriesArray } = useDataVisStore()
     if (selectedSeries.value) {
-      selectedSeries.value.data.history = []
+      // In-place clear; reassigning `history = []` would detach the
+      // `editHistory` ref (which stores the original array reference)
+      // and downstream dispatches would mutate the new array while
+      // the UI watched the old empty one.
+      selectedSeries.value.data.history.length = 0
       // A fresh server-side reload invalidates the redo chain.
       selectedSeries.value.data.redoStack.length = 0
     }
     await refreshGraphSeriesArray()
     await selectedSeries.value?.data.reload()
-    await clearSelected()
+    // `recordHistory: false` — `reload()` already wiped history;
+    // dispatching a SELECTION on top would just push and self-pop.
+    await clearSelected({ recordHistory: false })
     isUpdating.value = false
     await redraw()
   })
@@ -422,28 +513,86 @@ const onReloadHistory = async (index: number) => {
       isUpdating.value = false
       await redraw()
       if (newSelection) {
-        dispatchSelection(newSelection)
+        setPlotSelection(newSelection)
       }
     })
   }
 }
 
 /**
+ * Save the current QC history as a JSON file. The button is
+ * disabled when there's nothing to save (`editCount === 0`), so the
+ * try/catch is just defense in depth against an unexpected
+ * `selectedSeries` race.
+ */
+const onSaveScript = async () => {
+  try {
+    await exportScript()
+    Snackbar.success('QC script saved.')
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    Snackbar.error(`Couldn't save QC script: ${msg}`)
+  }
+}
+
+/**
+ * Forward to the hidden file input. Vuetify's icon-only `<v-btn>`
+ * doesn't accept a `type="file"` shortcut, so we use a sibling
+ * `<input>` and proxy the click.
+ */
+const onLoadScriptClick = () => {
+  fileInputRef.value?.click()
+}
+
+/**
+ * File-input change handler. Hands the picked file to the
+ * composable, surfaces the per-op apply report through Snackbars,
+ * and resets the input value so re-picking the same file fires
+ * `change` again.
+ */
+const onLoadScriptFile = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  // Reset early so a thrown apply doesn't leave the picker stuck.
+  input.value = ''
+  if (!file) return
+
+  isUpdating.value = true
+  try {
+    const report = await importScript(file)
+    if (report.failed.length === 0) {
+      Snackbar.success(`Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}.`)
+    } else {
+      Snackbar.warn(
+        `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}; ` +
+        `${report.failed.length} failed (see history badges).`
+      )
+    }
+    await redraw()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    Snackbar.error(`Couldn't load QC script: ${msg}`)
+  } finally {
+    isUpdating.value = false
+  }
+}
+
+/**
  * After an undo or redo, restore the selection to match whatever the
- * replay returned: a non-empty array becomes the new plot selection; an
- * empty array (or `undefined`) clears it. `isUpdating` stays `true`
- * across `redraw` + selection sync so Plotly's debounced relayout
- * handler bails out early and doesn't overwrite the selection mid-flight.
- * `clearSelected({ dispatchFilter: false })` wipes the plot highlight
- * without pushing an extra SELECTION entry into the history we just
- * replayed.
+ * replay returned: a non-empty array becomes the new plot selection;
+ * an empty array (or `undefined`) clears it. `isUpdating` stays
+ * `true` across `redraw` + selection sync so Plotly's debounced
+ * relayout handler bails out early. The clear path passes
+ * `recordHistory: false` because the replay is already authoritative
+ * — dispatching a SELECTION([]) here would risk popping a filter
+ * the replay just restored.
  */
 const applyReplayedSelection = async (newSelection: number[] | undefined) => {
   await redraw()
   if (newSelection && newSelection.length) {
-    await dispatchSelection(newSelection)
+    await setPlotSelection(newSelection)
   } else {
-    await clearSelected({ dispatchFilter: false })
+    await clearSelected({ recordHistory: false })
   }
 }
 

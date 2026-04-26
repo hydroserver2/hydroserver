@@ -19,13 +19,37 @@ vi.mock('@/store/dataVisualization', () => ({
 }))
 
 const clearSelected = vi.fn().mockResolvedValue(undefined)
-const dispatchSelection = vi.fn().mockResolvedValue(undefined)
+const setPlotSelection = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/composables/useDataSelection', () => ({
-  useDataSelection: () => ({ clearSelected, dispatchSelection }),
+  useDataSelection: () => ({ clearSelected, setPlotSelection }),
 }))
 
 vi.mock('@uwrl/qc-utils', () => ({
   formatDuration: (ms: number) => String(ms) + 'ms',
+  // operations.ts (transitively imported via EditHistory.vue's
+  // `iconForMethod` lookup) reads enum values to build its method →
+  // operation-id map. Stub the keys it actually consults; the test
+  // never inspects the icon output, only that the entry renders.
+  EnumEditOperations: {
+    ADD_POINTS: 'ADD_POINTS',
+    CHANGE_VALUES: 'CHANGE_VALUES',
+    ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
+    ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
+    DELETE_POINTS: 'DELETE_POINTS',
+    DRIFT_CORRECTION: 'DRIFT_CORRECTION',
+    INTERPOLATE: 'INTERPOLATE',
+    SHIFT_DATETIMES: 'SHIFT_DATETIMES',
+    FILL_GAPS: 'FILL_GAPS',
+  },
+  EnumFilterOperations: {
+    FIND_GAPS: 'FIND_GAPS',
+    PERSISTENCE: 'PERSISTENCE',
+    CHANGE: 'CHANGE',
+    RATE_OF_CHANGE: 'RATE_OF_CHANGE',
+    VALUE_THRESHOLD: 'VALUE_THRESHOLD',
+    DATETIME_RANGE: 'DATETIME_RANGE',
+    SELECTION: 'SELECTION',
+  },
 }))
 
 import EditHistory from '@/components/EditData/EditHistory.vue'
@@ -162,7 +186,7 @@ describe('EditHistory.vue actions', () => {
     await wrapper.find('[data-testid="history-undo-btn"]').trigger('click')
     await vi.runAllTimersAsync()
     expect(selectedSeries.value.data.undo).toHaveBeenCalled()
-    expect(dispatchSelection).toHaveBeenCalledWith([1, 2])
+    expect(setPlotSelection).toHaveBeenCalledWith([1, 2])
     vi.useRealTimers()
   })
 
@@ -175,7 +199,7 @@ describe('EditHistory.vue actions', () => {
     await wrapper.find('[data-testid="history-redo-btn"]').trigger('click')
     await vi.runAllTimersAsync()
     expect(selectedSeries.value.data.redo).toHaveBeenCalled()
-    expect(clearSelected).toHaveBeenCalledWith({ dispatchFilter: false })
+    expect(clearSelected).toHaveBeenCalled()
     vi.useRealTimers()
   })
 
@@ -187,7 +211,7 @@ describe('EditHistory.vue actions', () => {
     await flushPromises()
     await wrapper.find('[data-testid="history-redo-btn"]').trigger('click')
     await vi.runAllTimersAsync()
-    expect(dispatchSelection).toHaveBeenCalledWith([7, 8])
+    expect(setPlotSelection).toHaveBeenCalledWith([7, 8])
     vi.useRealTimers()
   })
 
@@ -216,7 +240,7 @@ describe('EditHistory.vue actions', () => {
     await reloadBtn!.trigger('click')
     await vi.runAllTimersAsync()
     expect(selectedSeries.value.data.reloadHistory).toHaveBeenCalledWith(0)
-    expect(dispatchSelection).toHaveBeenCalledWith([9])
+    expect(setPlotSelection).toHaveBeenCalledWith([9])
     vi.useRealTimers()
   })
 
