@@ -65,6 +65,13 @@ export type AxisChip = {
   graphWidth: number
   title: string
   color: string
+  /** Which side of the plot the axis sits on. Plot.vue uses this to
+   *  stack same-side chips vertically without left- and right-side
+   *  chips offsetting each other (they don't overlap horizontally). */
+  side: 'left' | 'right'
+  /** Visual stacking index within the chip's side, used as
+   *  `--chip-idx` in Plot.vue's CSS. */
+  chipIdx: number
 }
 
 // Slot 0 is reserved for the QC datastream (dark grey so it stands out
@@ -356,18 +363,17 @@ export const createPlotlyOption = (
         ? findFirstGreaterOrEqual(rawX as unknown as number[], windowStartMs)
         : 0
 
-        ; (yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
-          title: {
-            text: s.yAxisLabel,
-            font: { color: COLORS[0], weight: 'bold' },
-          },
-          tickfont: { color: COLORS[0] },
-          side: 'left',
-          showline: true,
-          linecolor: COLORS[0],
-          automargin: true,
-          tickformat: '~s',
-        } as Partial<LayoutAxis>
+      // Title omitted on purpose — the horizontal QC chip (rendered as
+      // an HTML overlay in Plot.vue) replaces Plotly's vertical title.
+      ;(yaxis as Record<string, Partial<LayoutAxis>>)[axisKey] = {
+        title: undefined,
+        tickfont: { color: COLORS[0] },
+        side: 'left',
+        showline: true,
+        linecolor: COLORS[0],
+        automargin: true,
+        tickformat: '~s',
+      } as Partial<LayoutAxis>
 
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history

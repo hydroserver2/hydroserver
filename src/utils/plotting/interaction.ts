@@ -388,6 +388,8 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
 
   const chips: AxisChip[] = []
   const graphWidth = (gd as HTMLElement).clientWidth
+  let leftIdx = 0
+  let rightIdx = 0
   // Iterate `graphSeriesArray` — it's the authoritative sidebar
   // order; `gd.data` gets reversed so traces paint top-over-bottom
   // (see `createPlotlyOption`), which would flip the stacked chips.
@@ -396,8 +398,12 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
       (t) => (t as AppPlotlyTrace).id === series.id
     ) as AppPlotlyTrace | undefined
     const axisRef = trace?.yaxis as string | undefined
-    if (!axisRef || axisRef === 'y') continue
-    const ax = fl[`yaxis${axisRef.slice(1)}`] as
+    if (!axisRef) continue
+    // Primary (QC) y-axis lives on `y` / `yaxis`; right-side overlays
+    // on `y2`/`y3`/...
+    const isPrimary = axisRef === 'y'
+    const axisKey = isPrimary ? 'yaxis' : `yaxis${axisRef.slice(1)}`
+    const ax = fl[axisKey] as
       | { visible?: boolean; _mainLinePosition?: number; _shift?: number }
       | undefined
     if (!ax || ax.visible === false) continue
@@ -405,17 +411,20 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
     const lineX = ax._mainLinePosition + (ax._shift ?? 0)
     if (!Number.isFinite(lineX)) continue
 
+    const side: 'left' | 'right' = isPrimary ? 'left' : 'right'
     chips.push({
       id: series.id,
       lineX,
       graphWidth,
       title: series.yAxisLabel,
       color: labelColorForDatastream(series.id),
+      side,
+      chipIdx: side === 'left' ? leftIdx++ : rightIdx++,
     })
   }
 
   const key = chips
-    .map((c) => `${c.id}:${c.lineX}:${c.graphWidth}:${c.title}`)
+    .map((c) => `${c.id}:${c.lineX}:${c.graphWidth}:${c.title}:${c.side}:${c.chipIdx}`)
     .join('|')
   if (key === lastAxisChipsKey) return
   lastAxisChipsKey = key

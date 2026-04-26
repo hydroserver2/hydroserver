@@ -250,7 +250,7 @@
               }"
               :style="{
                 '--chip-line': chip.lineX + 'px',
-                '--chip-idx': idx,
+                '--chip-idx': chip.chipIdx,
                 '--chip-color': chip.color,
               }"
               aria-hidden="true"
