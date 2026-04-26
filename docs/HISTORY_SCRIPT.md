@@ -46,31 +46,12 @@ The on-disk JSON IS the wire format.
   load time. If the data changed shape (different point count, gaps
   appearing/disappearing) the script may not produce the same edited
   result — that's the consumer's concern, not the format's.
-- **Persisting Plotly view state.** Zoom, pan, tooltips, legend
-  toggles are display state, not QC operations.
 - **Persisting qualifiers in this version.** Result-qualifier flags
   (the per-index "missing" / "estimated" / etc. codes the Qualifying
   Comments panel attaches) are tracked in a separate Pinia store
   outside `ObservationRecord.history`. They need their own
   serialization story; bundling them in here would conflate two
   conceptually distinct edit streams. **(Open question — see below.)**
-
----
-
-## Why a script and not a snapshot
-
-We could persist the edited `(dataX, dataY)` pair directly. We
-already do that for the server submit path (`useQcSubmission`). But
-that throws away the *reasoning*:
-
-- A reviewer can't see *why* a value changed.
-- A user can't tweak a threshold without redoing every downstream
-  edit by hand.
-- The server can't validate that the edits came from documented
-  operations rather than ad-hoc writes.
-
-A script-style record keeps the operation graph intact. The edited
-data is always recomputable from `rawData + script.operations`.
 
 ---
 
@@ -104,15 +85,6 @@ data is always recomputable from `rawData + script.operations`.
 | `window.endDate`   | ISO-8601 | yes | Inclusive upper bound of the data window.                          |
 | `operations` | object[] | yes      | The replayable operation list (see below).                            |
 
-**Why a `window` instead of "the full extent."** Real-world QC is
-incremental: a technician QCs January data this month, more data
-arrives, next month they QC February against the same datastream.
-Each session produces its own script bound to its own window. When
-the same script is loaded later (or layered on top of other
-scripts), the loader knows exactly which slice of data the
-operations were authored against — operations that reference
-positional indices remain valid as long as the windowed dataset has
-the same shape.
 
 ### Per-operation entry
 
@@ -346,18 +318,6 @@ export function useQcScript() {
 
 ---
 
-## Decisions
-
-The questions raised in earlier drafts of this doc have been
-resolved:
-
-| Question                     | Decision                                                                                                                                                       |
-|------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Datastream id matching       | **No enforcement, no field.** `datastreamId` is removed from the schema entirely — scripts are reusable across datastreams (template-able QC procedures). The consumer picks the target. |
-| Qualifier state              | **Out of scope for v1.** The qualifier Pinia store has its own serialization story; bundling them here would conflate two distinct edit streams. Future schema can add a `qualifiers` field additively without bumping the major version. |
-| Partial replay on failure    | **Continue.** `applyScript` catches per-op errors, marks the resulting `HistoryItem` with `status: "failed"`, and includes the failure in the returned `ApplyScriptReport`. The user sees both the failed step (badge in EditHistory UI) and the steps that did apply. |
-| UI placement                 | **EditHistory header.** Save / Load buttons go alongside undo / redo / pop-out — co-located with the history they act on, no crowding the plot toolbar. |
-
 ## Failed-operation handling
 
 Operations that throw during dispatch (whether at author time or
@@ -378,65 +338,6 @@ first:
 `ApplyScriptReport.failed` is the programmatic surface for the same
 information; the UI consumes it for the post-load Snackbar but the
 authoritative state lives on the entries themselves.
-
----
-
-## Implementation plan
-
-In dependency order. Each step is independently mergeable.
-
-1. **`qc-utils/src/utils/plotting/observation-record.ts`** — set
-   `stored.status = "failed"` in both dispatch `catch` blocks. Pure
-   prerequisite for steps 2+ to round-trip failure state. No
-   behavioral change to the success path.
-
-2. **`hydroserver-qc-app/src/components/EditData/EditHistory.vue`** —
-   render a small failure badge for entries with `status === "failed"`.
-   Cosmetic; ships independently of save/load.
-
-3. **`qc-utils/src/types/index.ts`** — add `QcScript`,
-   `QcScriptOperation`, `QcScriptWindow`, `ApplyScriptReport` types.
-   Pure type additions, no behavior.
-
-4. **`qc-utils/src/utils/plotting/script.ts`** — new file containing:
-   - `serializeHistory(record, window)`: walks `record.history`,
-     strips runtime-only fields (`isLoading`, `duration`,
-     `executionMode`, `selected`), returns a `QcScript`.
-   - `parseScript(json)`: validation + parsing.
-   - `applyScript(record, script)`: top-level load. Resets history /
-     redo, calls `record.reload()`, then
-     `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
-     Catches per-op failures, marks them with `status: "failed"`,
-     returns `ApplyScriptReport`.
-   - **No** per-method serialize/expand helpers — args round-trip
-     verbatim.
-
-5. **`qc-utils/src/utils/plotting/__tests__/script.spec.ts`** —
-   round-trip tests: build a history with selection-coupled and
-   independent ops (plus one deliberately-failing op), save, load,
-   assert the dataset matches AND the failed entry comes back with
-   `status: "failed"`. The selection-coupled ops are the
-   highest-risk regression surface (they require a preceding
-   SELECTION at replay) so each gets its own case.
-
-6. **`hydroserver-qc-app/src/composables/useQcScript.ts`** — Vue
-   wrapper: file picker via `<input type="file">`, blob download via
-   `URL.createObjectURL`. Reads the active window from the data-vis
-   store, calls `serializeHistory` / `applyScript` from qc-utils.
-   Owns the window-fetch step on load (calls
-   `observationStore.fetchObservationsInRange` before dispatch).
-
-7. **`hydroserver-qc-app/src/components/EditData/EditHistory.vue`** —
-   add Save / Load buttons to the header (icons:
-   `mdi-tray-arrow-down` / `mdi-tray-arrow-up`). Hook to
-   `useQcScript`. Show a Snackbar after load summarizing
-   applied/failed counts.
-
-8. **`hydroserver-qc-app/e2e/qc-script.spec.ts`** — full round-trip
-   e2e: apply some operations (including one that will fail on
-   replay), save, refresh page, load, assert history matches, plot
-   data matches the successfully-applied subset, failed entry shows
-   the badge.
 
 ---
 
