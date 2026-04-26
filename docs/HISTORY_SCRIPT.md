@@ -153,26 +153,7 @@ replay.
 Operations marked **Yes** have no selection-related args of their
 own. They each route through a thin `*FromSelection` dispatch
 wrapper inside qc-utils that reads the target indices off
-`history[length - 2].selected` and delegates to the underlying
-worker-fan-out implementation (`_deleteDataPoints`, `_shift`, etc.).
-The internal implementations keep their explicit-indices signatures
-so that ops which call each other directly (`_assignDatetimesBulk`
-chains `_deleteDataPoints` + `_addDataPoints`, `_shift` calls
-`_deleteDataPoints` + `_addDataPoints`) can pass locally-computed
-indices without going through history.
-
-`DRIFT_CORRECTION`'s wrapper additionally partitions the selection
-into consecutive groups via `_getConsecutiveGroups` and applies the
-same `value` drift to each group. The internal `_driftCorrection`
-retains its per-range `[start, end, value]` signature for any future
-caller that needs distinct per-range values.
-
-The `consumesPrecedingSelection` predicate in
-[`observation-record.ts`](../src/utils/plotting/observation-record.ts)
-is a separate, history-cleanup signal — it controls whether
-`dispatchAction` drops a preceding SELECTION when a non-consuming
-op (`ADD_POINTS`, `FILL_GAPS`) commits. That predicate is purely
-about UI history hygiene; it doesn't influence the script format.
+`history[length - 2].selected`.
 
 ---
 
@@ -189,10 +170,7 @@ await record.dispatch(operations.map(op => [op.method, ...op.args]))
 
 `dispatch` (already implemented) iterates the array, routing each
 entry through `dispatchFilter` or `dispatchAction` based on whether
-the method is in `EnumFilterOperations`. The `_isReplaying` flag is
-**not** set during script load — these aren't undo/redo internals,
-they're authoritative new dispatches. (The redo stack should be
-cleared by a fresh load anyway.)
+the method is in `EnumFilterOperations`.
 
 There is no per-method arg-expansion step at the loader. The
 selection-coupled ops (`DELETE_POINTS`, `INTERPOLATE`,
@@ -224,10 +202,6 @@ function serializeHistory(
   has no notion of a "viewed time range" — only the consumer (the
   Vue layer with the date pickers / time-range chips) knows what
   window the technician was working in.
-- Pure function — no Plotly, no Pinia. Trivially testable.
-- The consumer wraps the return value in a `Blob` and triggers a
-  download via `URL.createObjectURL` + a hidden `<a>` click. That
-  glue lives in the Vue side (proposed: `useQcScript` composable).
 
 ### Load
 
@@ -321,14 +295,10 @@ export function useQcScript() {
 ## Failed-operation handling
 
 Operations that throw during dispatch (whether at author time or
-during a script replay) currently log to the console and otherwise
-leave no trace — `HistoryItem.status` exists in the type but isn't
-written. Shipping the save/load feature requires that change to land
-first:
+during a script replay) will indicate failure through `HistoryItem.status`
 
 1. In `dispatchAction` and `dispatchFilter`'s `catch` blocks, set
-   `stored.status = "failed"` on the `HistoryItem` (keeping the
-   existing `console.log` for dev visibility).
+   `stored.status = "failed"` on the `HistoryItem`.
 2. Round-trip `status` through `serializeHistory` / `parseScript` so
    a script saved with failed steps loads back with those steps still
    marked failed (no silent re-success on reload).

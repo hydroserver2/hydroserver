@@ -482,11 +482,13 @@ export class ObservationRecord {
         stored.isLoading = false;
       }
     } catch (e) {
-      console.log(
-        `Failed to execute operation: ${action} with arguments: `,
-        args,
-      );
-      console.log(e);
+      if (import.meta.env.MODE === "development") {
+        console.log(
+          `Failed to execute operation: ${action} with arguments: `,
+          args,
+        );
+        console.log(e);
+      }
       // Mark the entry as failed so the UI can surface it and
       // script save/load round-trips the failure state. Without
       // this the spinner would also be stuck on `isLoading: true`.
@@ -886,22 +888,6 @@ export class ObservationRecord {
 
     workers.forEach((worker) => worker.terminate());
   }
-
-  /** Interpolate existing values in the data source */
-  // private _interpolateLinear(
-  //   datetime: number,
-  //   lowerDatetime: number,
-  //   lowerValue: number,
-  //   upperDatetime: number,
-  //   upperValue: number,
-  // ) {
-  //   const interpolatedValue =
-  //     lowerValue +
-  //     ((datetime - lowerDatetime) * (upperValue - lowerValue)) /
-  //     (upperDatetime - lowerDatetime);
-
-  //   return interpolatedValue;
-  // }
 
   /**
    * Dispatch wrapper around `_shift` — reads target indices from
