@@ -105,6 +105,7 @@
         type="file"
         accept="application/json,.json"
         style="display: none"
+        @click.stop
         @change="onLoadScriptFile"
       />
 
