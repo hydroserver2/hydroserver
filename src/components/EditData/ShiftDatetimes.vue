@@ -132,9 +132,10 @@ const onShiftDatetimes = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
+    // No indices arg — qc-utils' dispatch reads the target indices
+    // off the preceding SELECTION in history.
     await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.SHIFT_DATETIMES,
-      selectedData.value,
       +shiftAmount.value,
       // @ts-ignore
       TimeUnit[selectedShiftUnit.value]

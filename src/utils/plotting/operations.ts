@@ -86,8 +86,7 @@ export const toggleAxisVisibility = async (
 
 /**
  * Set the selected point indices on a single trace (clearing any active
- * selection rectangles). Replaces the `Plotly.update(...)` call in
- * `useDataSelection#dispatchSelection`.
+ * selection rectangles). Used by `useDataSelection#setPlotSelection`.
  *
  * Plotly expects one inner array per trace even when targeting a single
  * trace, so the caller-facing API takes a flat `number[]` and this wrapper

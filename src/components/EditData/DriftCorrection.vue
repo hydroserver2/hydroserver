@@ -136,12 +136,12 @@ const onDriftCorrection = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    const ranges: [number, number, number][] = (selectedGroups.value ?? []).map(
-      (g) => [g[0], g[g.length - 1], +driftGapWidth.value]
-    )
-
+    // No ranges arg — qc-utils' dispatch reads the target indices
+    // off the preceding SELECTION in history, partitions them into
+    // consecutive groups, and applies the same `value` drift to
+    // each group as one logged operation.
     await selectedSeries.value?.data.dispatch([
-      [EnumEditOperations.DRIFT_CORRECTION, ranges],
+      [EnumEditOperations.DRIFT_CORRECTION, +driftGapWidth.value],
     ])
     await clearSelected()
     isUpdating.value = false

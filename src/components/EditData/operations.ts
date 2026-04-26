@@ -1,4 +1,8 @@
 import { markRaw, type Component } from 'vue'
+import {
+  EnumEditOperations,
+  EnumFilterOperations,
+} from '@uwrl/qc-utils'
 
 import ValueThreshold from '@/components/FilterPoints/ValueThreshold.vue'
 import DatetimeRange from '@/components/FilterPoints/DatetimeRange.vue'
@@ -169,4 +173,48 @@ export const operationsByGroup = {
   filter: operations.filter((o) => o.group === 'filter'),
   edit: operations.filter((o) => o.group === 'edit'),
   add: operations.filter((o) => o.group === 'add'),
+}
+
+/**
+ * Map a `HistoryItem.method` (qc-utils enum value) to the matching
+ * operation panel id, or `null` for system methods that have no
+ * user-facing panel (SELECTION, ASSIGN_*_BULK).
+ */
+const methodToOperationId: Partial<Record<string, string>> = {
+  [EnumFilterOperations.VALUE_THRESHOLD]: 'valueThreshold',
+  [EnumFilterOperations.DATETIME_RANGE]: 'datetimeRange',
+  [EnumFilterOperations.CHANGE]: 'change',
+  [EnumFilterOperations.RATE_OF_CHANGE]: 'rateOfChange',
+  [EnumFilterOperations.FIND_GAPS]: 'gaps',
+  [EnumFilterOperations.PERSISTENCE]: 'persistence',
+  [EnumEditOperations.DRIFT_CORRECTION]: 'driftCorrection',
+  [EnumEditOperations.INTERPOLATE]: 'interpolate',
+  [EnumEditOperations.CHANGE_VALUES]: 'changeValues',
+  [EnumEditOperations.SHIFT_DATETIMES]: 'shiftDatetimes',
+  [EnumEditOperations.DELETE_POINTS]: 'deletePoints',
+  [EnumEditOperations.ADD_POINTS]: 'addPoints',
+  [EnumEditOperations.FILL_GAPS]: 'fillGaps',
+}
+
+/**
+ * Resolve a Material Design icon for a history entry's `method`.
+ * Reuses the operation-panel icons where possible so history reads
+ * with the same visual vocabulary as the edit drawer; falls back to
+ * dedicated icons for system methods (SELECTION from a click/lasso,
+ * bulk assign) which have no user-facing panel.
+ */
+export function iconForMethod(method: string): string {
+  const opId = methodToOperationId[method]
+  if (opId) {
+    const op = operationsById[opId]
+    if (op) return op.icon
+  }
+  if (method === EnumFilterOperations.SELECTION) {
+    return 'mdi-cursor-default-click'
+  }
+  if (method === EnumEditOperations.ASSIGN_VALUES_BULK) return 'mdi-pencil'
+  if (method === EnumEditOperations.ASSIGN_DATETIMES_BULK) {
+    return 'mdi-calendar'
+  }
+  return 'mdi-circle-small'
 }
