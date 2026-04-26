@@ -76,73 +76,40 @@
 import { Ref, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { EnumFilterOperations, FilterOperation } from '@uwrl/qc-utils'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 
-const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
-const { dispatchSelection, clearSelected } = useDataSelection()
-const emit = defineEmits(['filter', 'close'])
+const { isUpdating } = storeToRefs(usePlotlyStore())
+const { dispatchFilter } = useFilterDispatch()
+defineEmits(['filter', 'close'])
 
-// FILTERS
-const filterOperators = [
-  ...Object.keys(FilterOperation).map((key) => ({
-    value: key,
-    // @ts-ignore
-    title: FilterOperation[key],
-  })),
-]
+const filterOperators = Object.keys(FilterOperation).map((key) => ({
+  value: key,
+  // @ts-ignore
+  title: FilterOperation[key],
+}))
 const selectedFilter = ref(filterOperators[2])
 const filterValue = ref(0)
 const appliedFilters: Ref<{ [key: string]: number }> = ref({})
 
+/** Re-run the filter against the current `appliedFilters`. The
+ *  `useFilterDispatch` helper handles `isUpdating`, the qc-utils
+ *  call, and pushing the resulting selection to the plot. */
+const reapply = () =>
+  dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, appliedFilters.value)
+
 const clearFilters = async () => {
   appliedFilters.value = {}
-  isUpdating.value = true
-  setTimeout(async () => {
-    const selection = await selectedSeries.value?.data.dispatchFilter(
-      EnumFilterOperations.VALUE_THRESHOLD,
-      appliedFilters.value
-    )
-    if (selection) {
-      await dispatchSelection(selection)
-    }
-    isUpdating.value = false
-  })
+  await reapply()
 }
 
 const onAddFilter = async (key: string, value: number) => {
-  isUpdating.value = true
-  setTimeout(async () => {
-    await clearSelected()
-    await _addFilter(key, value)
-    isUpdating.value = false
-  })
-}
-
-const _addFilter = async (key: string, value: number) => {
   appliedFilters.value[key] = +value
-  const newSelection = await selectedSeries.value?.data.dispatchFilter(
-    EnumFilterOperations.VALUE_THRESHOLD,
-    appliedFilters.value
-  )
-
-  if (newSelection) {
-    await dispatchSelection(newSelection)
-  }
+  await reapply()
 }
 
 const removeFilter = async (key: string) => {
-  isUpdating.value = true
   delete appliedFilters.value[key]
-  setTimeout(async () => {
-    const newSelection = await selectedSeries.value?.data.dispatchFilter(
-      EnumFilterOperations.VALUE_THRESHOLD,
-      appliedFilters.value
-    )
-    if (newSelection) {
-      await dispatchSelection(newSelection)
-    }
-    isUpdating.value = false
-  })
+  await reapply()
 }
 </script>

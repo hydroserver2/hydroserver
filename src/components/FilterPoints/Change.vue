@@ -43,33 +43,20 @@
 </template>
 
 <script setup lang="ts">
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore } from '@/store/userInterface'
 import { EnumFilterOperations } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'
-const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
-const { dispatchSelection, clearSelected } = useDataSelection()
+
+const { isUpdating } = storeToRefs(usePlotlyStore())
+const { dispatchFilter } = useFilterDispatch()
 const emit = defineEmits(['filter', 'close'])
 const { selectedChangeComparator, changeValue } = storeToRefs(useUIStore())
-
 const { logicalComparators } = useUIStore()
 
 const onFilter = async (key: string, value: number) => {
-  isUpdating.value = true
-  setTimeout(async () => {
-    await clearSelected()
-    const newSelection = await selectedSeries.value?.data.dispatchFilter(
-      EnumFilterOperations.CHANGE,
-      key,
-      +value
-    )
-
-    if (newSelection) {
-      await dispatchSelection(newSelection)
-    }
-    isUpdating.value = false
-    emit('close')
-  })
+  await dispatchFilter(EnumFilterOperations.CHANGE, key, +value)
+  emit('close')
 }
 </script>

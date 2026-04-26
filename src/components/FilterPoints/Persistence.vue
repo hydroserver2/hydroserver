@@ -51,33 +51,31 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumFilterOperations } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
-const { dispatchSelection, startDateString, endDateString } = useDataSelection()
+const { startDateString, endDateString } = useDataSelection()
+const { dispatchFilter } = useFilterDispatch()
 
 const emit = defineEmits(['close'])
 const times = ref(2)
+
 const onPersistence = async () => {
-  isUpdating.value = true
-
-  setTimeout(async () => {
-    const selection = await selectedSeries.value.data.dispatchFilter(
-      EnumFilterOperations.PERSISTENCE,
-      times.value,
-      selectedData.value
-        ? [
-            selectedData.value[0],
-            selectedData.value[selectedData.value.length - 1],
-          ]
-        : undefined
-    )
-
-    await dispatchSelection(selection)
-
-    isUpdating.value = false
-    emit('close')
-  })
+  // Datetime-addressed range. qc-utils' `_persistence` snaps these
+  // timestamps back to indices via binary search internally —
+  // wall-clock bounds are portable across datasets / data growth and
+  // make the operation reproducible from a saved QC script.
+  const dataX = selectedSeries.value?.data.dataX
+  const range: [number, number] | undefined =
+    selectedData.value && selectedData.value.length && dataX
+      ? [
+          dataX[selectedData.value[0]],
+          dataX[selectedData.value[selectedData.value.length - 1]],
+        ]
+      : undefined
+  await dispatchFilter(EnumFilterOperations.PERSISTENCE, times.value, range)
+  emit('close')
 }
 </script>

@@ -54,7 +54,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 
-const { dispatchSelection } = useDataSelection()
+const { setPlotSelection } = useDataSelection()
 
 const stager = useTemplateRef<InstanceType<typeof RangeStager>>('stager')
 const rangeIndices = computed<[number, number] | null>(
@@ -81,13 +81,13 @@ watch(
     isComputing.value = true
     try {
       if (!r) {
-        await dispatchSelection([])
+        await setPlotSelection([])
         return
       }
       const [startIdx, endIdx] = r
       const selection: number[] = []
       for (let i = startIdx; i <= endIdx; i++) selection.push(i)
-      await dispatchSelection(selection)
+      await setPlotSelection(selection)
     } finally {
       isComputing.value = false
     }

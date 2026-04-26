@@ -99,6 +99,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useDataSelection } from '@/composables/useDataSelection'
 import {
+  EnumFilterOperations,
   TimeUnit,
   timeUnitMultipliers,
 } from '@uwrl/qc-utils'
@@ -116,22 +117,38 @@ export interface GapPlan {
   rightY: number
 }
 
-const props = defineProps<{
-  /** Dispatch a live point selection of the gap endpoints on every
-   *  detection. Find Gaps opts in; Fill Gaps leaves selection alone
-   *  because its commit drives its own selection state. */
-  autoSelectEndpoints?: boolean
-  /** Override the "Updating gap preview…" line shown in the alert
-   *  while the async Plotly writes settle. Handy when a parent
-   *  bundles its own async work (ghost markers) under the same
-   *  spinner window. */
-  computingHint?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** Visually highlight the gap endpoints on the plot every time
+     *  the local gap-detection re-runs. Find Gaps opts in (the
+     *  detected gaps ARE its result); Fill Gaps opts in so the user
+     *  can see what's about to be filled. */
+    autoSelectEndpoints?: boolean
+    /** When `autoSelectEndpoints` is true, also commit a `FIND_GAPS`
+     *  entry to the ObservationRecord history (with `[amount, unit,
+     *  range?]`) on every detection. Defaults to `true` so Find Gaps
+     *  records its operation reproducibly. Fill Gaps disables this
+     *  because the panel's commit dispatches `FILL_GAPS` directly —
+     *  recording an extra `FIND_GAPS` before it (and another one
+     *  after, when the post-fill data triggers a re-detection)
+     *  produces three entries for what the user sees as one fill
+     *  operation. */
+    recordHistory?: boolean
+    /** Override the "Updating gap preview…" line shown in the alert
+     *  while the async Plotly writes settle. Handy when a parent
+     *  bundles its own async work (ghost markers) under the same
+     *  spinner window. */
+    computingHint?: string
+  }>(),
+  {
+    recordHistory: true,
+  }
+)
 
 const { selectedSeries } = storeToRefs(usePlotlyStore())
 const { gapAmount, gapUnits, selectedGapUnit } = storeToRefs(useUIStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
-const { dispatchSelection } = useDataSelection()
+const { setPlotSelection } = useDataSelection()
 
 // Unwrap state exposed by RangeStager so downstream computeds can
 // track the date-range without the parent having to thread it
@@ -193,7 +210,7 @@ const gapCount = computed(() => gapPlans.value.length)
 
 /** Flat, sorted, de-duplicated list of every gap-endpoint index
  *  in the current scan. Matches the `_findGaps` return shape so
- *  `dispatchSelection` on it highlights the same points the
+ *  `setPlotSelection` on it highlights the same points the
  *  committed filter would. */
 const endpointIndices = computed<number[]>(() => {
   const out = new Set<number>()
@@ -213,8 +230,49 @@ watch(
   async () => {
     isComputing.value = true
     try {
-      if (props.autoSelectEndpoints) {
-        await dispatchSelection(endpointIndices.value)
+      if (!props.autoSelectEndpoints) return
+
+      const series = selectedSeries.value?.data
+      const amount = Number(gapAmount.value)
+      const unitCode = TimeUnit[selectedGapUnit.value as keyof typeof TimeUnit]
+      const canRecord =
+        props.recordHistory &&
+        !!series &&
+        Number.isFinite(amount) &&
+        amount > 0 &&
+        !!unitCode
+
+      if (canRecord) {
+        // Commit FIND_GAPS as a real filter operation so the history
+        // entry carries the threshold parameters (`amount`, `unit`,
+        // optional `range`) and is reproducible. qc-utils' same-
+        // method-replace collapses rapid threshold tweaks into a
+        // single entry; cross-filter replace handles switching from
+        // a different filter panel.
+        // Pass the date-range as `[fromTs, toTs]` (epoch ms) rather
+        // than `[startIdx, endIdx]`. The qc-utils `_findGaps` snaps
+        // those datetimes to indices internally — datetime-addressed
+        // ranges are portable across datasets and survive data
+        // growth, which the script-replay format relies on.
+        const dateRange: [number, number] | undefined =
+          rangeIndices.value != null
+            ? [fromTs.value, toTs.value]
+            : undefined
+        const indices = await series!.dispatchFilter(
+          EnumFilterOperations.FIND_GAPS,
+          amount,
+          unitCode,
+          dateRange
+        )
+        await setPlotSelection(indices ?? [])
+      } else {
+        // History recording disabled (e.g. inside the Fill Gaps
+        // panel, where the FILL_GAPS commit is the operation of
+        // record). Push the gap-endpoint highlight to the plot
+        // without round-tripping through the ObservationRecord —
+        // otherwise we'd produce a phantom FIND_GAPS before, and
+        // another after the post-fill data triggers a recompute.
+        await setPlotSelection(endpointIndices.value)
       }
     } finally {
       isComputing.value = false
