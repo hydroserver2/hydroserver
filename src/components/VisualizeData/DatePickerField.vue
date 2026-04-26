@@ -1,8 +1,8 @@
 <template>
   <div class="d-flex align-center gap-1" v-bind="$attrs">
     <v-text-field
-      v-model="dateInput"
-      v-maska="dateMaskOptions"
+      ref="dateField"
+      :model-value="dateInput"
       @blur="handleDateBlur"
       placeholder="MM/DD/YYYY"
       append-inner-icon="mdi-calendar-blank"
@@ -12,8 +12,8 @@
     />
 
     <v-text-field
-      v-model="timeInput"
-      v-maska="timeMaskOptions"
+      ref="timeField"
+      :model-value="timeInput"
       @blur="handleTimeBlur"
       placeholder="HH:MM"
       prepend-inner-icon="mdi-clock-outline"
@@ -50,8 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { vMaska } from 'maska/vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -61,24 +60,39 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
-const dateCompleted = ref(true)
-const timeCompleted = ref(true)
+// --- Mask shape -------------------------------------------------------------
+// Each input is a fixed-width string. Separator positions hold the literal
+// `/` or `:`; digit positions hold `0`-`9` or `_` for "not yet typed". Tight
+// in-house mask logic — replaces maska, whose eager-mode reformat passes
+// fought the segment-aware caret behaviour we want.
+type Segment = readonly [number, number]
 
-const dateMaskOptions = {
-  mask: '##/##/####',
-  eager: true,
-  onMaska: (detail: { completed: boolean }) => {
-    dateCompleted.value = detail.completed
-  },
-}
-const timeMaskOptions = {
-  mask: '##:##',
-  eager: true,
-  onMaska: (detail: { completed: boolean }) => {
-    timeCompleted.value = detail.completed
-  },
+interface MaskShape {
+  empty: string
+  segments: readonly Segment[]
+  seps: ReadonlySet<number>
 }
 
+const DATE: MaskShape = {
+  empty: '__/__/____',
+  segments: [
+    [0, 2], // MM
+    [3, 5], // DD
+    [6, 10], // YYYY
+  ],
+  seps: new Set([2, 5]),
+}
+
+const TIME: MaskShape = {
+  empty: '__:__',
+  segments: [
+    [0, 2], // HH
+    [3, 5], // MM
+  ],
+  seps: new Set([2]),
+}
+
+// --- Format helpers ---------------------------------------------------------
 const formatDateStr = (date: Date) => {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
@@ -97,6 +111,7 @@ const toMidnight = (date: Date) => {
   return d
 }
 
+// --- v-model bridge ---------------------------------------------------------
 const showDateDialog = ref(false)
 
 const dateInput = ref(formatDateStr(props.modelValue))
@@ -127,10 +142,6 @@ const onDatePicked = (date: Date) => {
 }
 
 const handleDateBlur = () => {
-  if (!dateCompleted.value) {
-    dateInput.value = formatDateStr(pickerDate.value)
-    return
-  }
   const match = dateInput.value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
   if (match) {
     const m = Math.max(1, Math.min(12, +match[1]!))
@@ -143,14 +154,11 @@ const handleDateBlur = () => {
       return
     }
   }
+  // Anything not a complete date snaps back to the picker's last good value.
   dateInput.value = formatDateStr(pickerDate.value)
 }
 
 const handleTimeBlur = () => {
-  if (!timeCompleted.value) {
-    timeInput.value = formatTimeStr(props.modelValue)
-    return
-  }
   const match = timeInput.value.match(/^(\d{2}):(\d{2})$/)
   if (match) {
     const h = Math.max(0, Math.min(23, +match[1]!))
@@ -162,6 +170,236 @@ const handleTimeBlur = () => {
   }
   timeInput.value = formatTimeStr(props.modelValue)
 }
+
+// --- Mask engine ------------------------------------------------------------
+// Pure helpers. Each takes a value + position, returns a new value + caret.
+const segmentAt = (segments: readonly Segment[], pos: number): number => {
+  for (let i = 0; i < segments.length; i++) {
+    if (pos >= segments[i]![0] && pos <= segments[i]![1]) return i
+  }
+  return segments.length - 1
+}
+
+const isSegmentFilled = (value: string, seg: Segment): boolean => {
+  const part = value.slice(seg[0], seg[1])
+  return /^\d+$/.test(part) && part.length === seg[1] - seg[0]
+}
+
+const skipForwardSep = (pos: number, seps: ReadonlySet<number>): number =>
+  seps.has(pos) ? pos + 1 : pos
+
+const skipBackwardSep = (pos: number, seps: ReadonlySet<number>): number =>
+  seps.has(pos - 1) ? pos - 1 : pos
+
+const writeDigitAt = (
+  value: string,
+  pos: number,
+  digit: string,
+  shape: MaskShape
+): { value: string; caret: number } => {
+  const p = Math.min(skipForwardSep(pos, shape.seps), shape.empty.length - 1)
+  if (shape.seps.has(p)) return { value, caret: p }
+  const next = value.slice(0, p) + digit + value.slice(p + 1)
+  return { value: next, caret: skipForwardSep(p + 1, shape.seps) }
+}
+
+const blankRange = (
+  value: string,
+  start: number,
+  end: number,
+  shape: MaskShape
+): string => {
+  // Replace digit slots in [start, end) with '_'; keep separators intact.
+  const chars = value.split('')
+  for (let i = start; i < end; i++) {
+    if (!shape.seps.has(i)) chars[i] = '_'
+  }
+  return chars.join('')
+}
+
+// --- Per-input controller ---------------------------------------------------
+type InputCtl = {
+  inputRef: { value: { $el: HTMLElement } | null }
+  modelRef: { value: string }
+  shape: MaskShape
+}
+
+const makeController = (ctl: InputCtl) => {
+  let pendingSelection: [number, number] | null = null
+
+  const getInput = (): HTMLInputElement | null =>
+    (ctl.inputRef.value?.$el?.querySelector(
+      'input'
+    ) as HTMLInputElement | null) ?? null
+
+  const setValueAndSelection = async (
+    value: string,
+    selection: [number, number]
+  ) => {
+    ctl.modelRef.value = value
+    pendingSelection = selection
+    await nextTick()
+    const input = getInput()
+    if (input && document.activeElement === input && pendingSelection) {
+      input.setSelectionRange(pendingSelection[0], pendingSelection[1])
+      pendingSelection = null
+    }
+  }
+
+  const onFocus = () => {
+    const input = getInput()
+    if (!input) return
+    requestAnimationFrame(() => {
+      if (document.activeElement !== input) return
+      const idx = segmentAt(ctl.shape.segments, input.selectionStart ?? 0)
+      const seg = ctl.shape.segments[idx]
+      input.setSelectionRange(seg[0], seg[1])
+    })
+  }
+
+  const onClick = () => {
+    const input = getInput()
+    if (!input) return
+    requestAnimationFrame(() => {
+      const idx = segmentAt(ctl.shape.segments, input.selectionStart ?? 0)
+      const seg = ctl.shape.segments[idx]
+      input.setSelectionRange(seg[0], seg[1])
+    })
+  }
+
+  const onBeforeInput = (ev: Event) => {
+    const e = ev as InputEvent
+    const input = getInput()
+    if (!input) return
+    const value = ctl.modelRef.value || ctl.shape.empty
+    const start = input.selectionStart ?? 0
+    const end = input.selectionEnd ?? start
+
+    if (e.inputType === 'insertText') {
+      const data = e.data ?? ''
+      // Only digits make it through — anything else is rejected.
+      if (!/^\d$/.test(data)) {
+        e.preventDefault()
+        return
+      }
+      e.preventDefault()
+      // If the user has a range selected (via our own segment selection
+      // or a manual highlight), wipe that range to '_' first so the
+      // digit lands on a clean slot rather than in the middle of an
+      // otherwise-overwriting selection.
+      const base =
+        end > start ? blankRange(value, start, end, ctl.shape) : value
+      const target = end > start ? start : start
+      const { value: nextVal, caret } = writeDigitAt(
+        base,
+        target,
+        data,
+        ctl.shape
+      )
+      // Auto-advance when the segment that just received the digit is
+      // now fully filled. Otherwise leave the caret where it landed.
+      const segIdx = segmentAt(ctl.shape.segments, target)
+      const seg = ctl.shape.segments[segIdx]
+      const segNowFull = isSegmentFilled(nextVal, seg)
+      const nextSeg =
+        segNowFull && segIdx + 1 < ctl.shape.segments.length
+          ? ctl.shape.segments[segIdx + 1]
+          : null
+      void setValueAndSelection(
+        nextVal,
+        nextSeg ? [nextSeg[0], nextSeg[1]] : [caret, caret]
+      )
+      return
+    }
+
+    if (
+      e.inputType === 'deleteContentBackward' ||
+      e.inputType === 'deleteContentForward' ||
+      e.inputType === 'deleteByCut'
+    ) {
+      e.preventDefault()
+      if (end > start) {
+        // Range delete — blank the digits in the range, leave caret at start.
+        const next = blankRange(value, start, end, ctl.shape)
+        void setValueAndSelection(next, [start, start])
+        return
+      }
+      if (e.inputType === 'deleteContentBackward') {
+        const target = skipBackwardSep(start, ctl.shape.seps)
+        if (target === 0) return
+        const slot = target - 1
+        const next = blankRange(value, slot, slot + 1, ctl.shape)
+        void setValueAndSelection(next, [slot, slot])
+        return
+      }
+      // deleteContentForward / cut: blank slot at caret.
+      const slot = skipForwardSep(start, ctl.shape.seps)
+      if (slot >= ctl.shape.empty.length) return
+      const next = blankRange(value, slot, slot + 1, ctl.shape)
+      void setValueAndSelection(next, [start, start])
+      return
+    }
+
+    // Anything else (paste, drag-drop, IME composition) — block.
+    // Pasting a full date could be wired up later; for now keep the
+    // rule "only digit keys mutate the value".
+    e.preventDefault()
+  }
+
+  const onKeydown = (ev: KeyboardEvent) => {
+    const input = getInput()
+    if (!input) return
+    if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
+      const pos = input.selectionStart ?? 0
+      const idx = segmentAt(ctl.shape.segments, pos)
+      const next = ev.key === 'ArrowRight' ? idx + 1 : idx - 1
+      if (next < 0 || next >= ctl.shape.segments.length) return
+      ev.preventDefault()
+      const seg = ctl.shape.segments[next]
+      input.setSelectionRange(seg[0], seg[1])
+    }
+  }
+
+  return { onFocus, onClick, onBeforeInput, onKeydown }
+}
+
+// --- Wiring -----------------------------------------------------------------
+const dateField = ref<{ $el: HTMLElement } | null>(null)
+const timeField = ref<{ $el: HTMLElement } | null>(null)
+
+let cleanupFns: Array<() => void> = []
+
+const attach = (
+  fieldRef: { value: { $el: HTMLElement } | null },
+  modelRef: { value: string },
+  shape: MaskShape
+) => {
+  const input = fieldRef.value?.$el?.querySelector(
+    'input'
+  ) as HTMLInputElement | null
+  if (!input) return
+  const ctl = makeController({ inputRef: fieldRef, modelRef, shape })
+  input.addEventListener('focus', ctl.onFocus)
+  input.addEventListener('click', ctl.onClick)
+  input.addEventListener('beforeinput', ctl.onBeforeInput)
+  input.addEventListener('keydown', ctl.onKeydown)
+  cleanupFns.push(() => {
+    input.removeEventListener('focus', ctl.onFocus)
+    input.removeEventListener('click', ctl.onClick)
+    input.removeEventListener('beforeinput', ctl.onBeforeInput)
+    input.removeEventListener('keydown', ctl.onKeydown)
+  })
+}
+
+onMounted(() => {
+  attach(dateField, dateInput, DATE)
+  attach(timeField, timeInput, TIME)
+})
+
+onBeforeUnmount(() => {
+  for (const fn of cleanupFns) fn()
+  cleanupFns = []
+})
 </script>
 
 <style scoped>
