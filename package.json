@@ -26,7 +26,8 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "npm run clean:dist && vite build --mode prod && vue-tsc --declaration --emitDeclarationOnly",
+    "build": "vite build --mode prod && vue-tsc --declaration --emitDeclarationOnly",
+    "build:clean": "npm run clean:dist && npm run build",
     "pub": "npm publish --access public",
     "clean:dist": "rimraf dist",
     "clean:coverage": "rimraf coverage",

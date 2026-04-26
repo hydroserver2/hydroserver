@@ -162,7 +162,12 @@ describe('ObservationRecord — worker paths', () => {
     // Overwrite middle values so we can check interp recovers the line.
     rec.dataY[10] = 999
     rec.dataY[11] = 999
-    await rec.dispatch(EnumEditOperations.INTERPOLATE, [10, 11])
+    // Selection-consuming ops read indices off the preceding
+    // SELECTION; chain them in one dispatch call.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [10, 11]],
+      [EnumEditOperations.INTERPOLATE],
+    ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
     expect(last.executionMode).toBe('worker')
@@ -170,12 +175,10 @@ describe('ObservationRecord — worker paths', () => {
 
   it('SHIFT_DATETIMES fans out to workers', async () => {
     const originalLen = rec.dataX.length
-    await rec.dispatch(
-      EnumEditOperations.SHIFT_DATETIMES,
-      [5, 6, 7],
-      1,
-      TimeUnit.HOUR
-    )
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [5, 6, 7]],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+    ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
     expect(last.executionMode).toBe('worker')
@@ -184,7 +187,10 @@ describe('ObservationRecord — worker paths', () => {
 
   it('DELETE_POINTS fans out to workers', async () => {
     const originalLen = rec.dataX.length
-    await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0, 5, 10])
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 5, 10]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
     expect(last.executionMode).toBe('worker')
@@ -206,7 +212,14 @@ describe('ObservationRecord — worker paths', () => {
 
   it('DRIFT_CORRECTION fans out to workers', async () => {
     const baseline = Array.from(rec.dataY)
-    await rec.dispatch(EnumEditOperations.DRIFT_CORRECTION, [[0, 20, 10]])
+    // Build a SELECTION covering [0, 20] (the consecutive-groups
+    // helper inside the dispatch wrapper rebuilds the same range).
+    const indices: number[] = []
+    for (let i = 0; i <= 20; i++) indices.push(i)
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, indices],
+      [EnumEditOperations.DRIFT_CORRECTION, 10],
+    ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
     expect(last.executionMode).toBe('worker')
@@ -388,23 +401,33 @@ describe('ObservationRecord — undo / redo', () => {
 
   it('undo then redo round-trips an edit', async () => {
     const originalLen = rec.dataX.length
-    await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0, 1])
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
     expect(rec.dataX.length).toBe(originalLen - 2)
 
     await rec.undo()
     expect(rec.dataX.length).toBe(originalLen)
-    expect(rec.history.length).toBe(0)
+    // After undoing the DELETE_POINTS, the SELECTION remains.
+    expect(rec.history.length).toBe(1)
 
     await rec.redo()
     expect(rec.dataX.length).toBe(originalLen - 2)
-    expect(rec.history.length).toBe(1)
+    expect(rec.history.length).toBe(2)
   })
 
   it('a fresh dispatch clears the redo stack (Word-style)', async () => {
-    await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0])
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
     await rec.undo()
     // Redo stack has one entry.
-    await rec.dispatch(EnumEditOperations.DELETE_POINTS, [1])
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [1]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
     // The new dispatch should have wiped the redo stack.
     expect(await rec.redo()).toEqual([])
   })

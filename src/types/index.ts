@@ -74,7 +74,6 @@ export enum LogicalOperation {
 
 export type HistoryItem = {
   method: EnumEditOperations | EnumFilterOperations;
-  icon: string;
   isLoading: boolean;
   args?: any[];
   duration?: number;

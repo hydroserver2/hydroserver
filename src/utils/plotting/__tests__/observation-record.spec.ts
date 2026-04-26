@@ -158,7 +158,12 @@ describe('ObservationRecord', () => {
       const indexes = distinctSortedInts(toDelete, 0, originalLength - 1);
       const keptX = Array.from(rec.dataX).filter((_, i) => !indexes.includes(i));
 
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, indexes);
+      // Seed the selection then delete (the dispatch wrapper reads
+      // indices off the preceding SELECTION).
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, indexes],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
 
       expect(rec.dataX.length).toBe(originalLength - toDelete);
       expect(rec.dataX[0]).toBe(keptX[0]);
@@ -237,7 +242,10 @@ describe('ObservationRecord', () => {
       local.dataY[6] = 999;
       local.dataY[7] = 999;
 
-      await local.dispatch(EnumEditOperations.INTERPOLATE, [5, 6, 7]);
+      await local.dispatch([
+        [EnumFilterOperations.SELECTION, [5, 6, 7]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
 
       // Anchors are indexes 4 (y=40) and 8 (y=80). Interpolation at uniformly-spaced x
       // gives y = 50, 60, 70.
@@ -246,7 +254,7 @@ describe('ObservationRecord', () => {
       expect(+local.dataY[7].toFixed(3)).toBe(70);
     });
 
-    it('INTERPOLATE is a no-op for an empty index list', async () => {
+    it('INTERPOLATE is a no-op when no preceding selection', async () => {
       const uniform = buildUniformData(10, 0, 10);
       const local = new ObservationRecord({
         datetimes: uniform.datetimes,
@@ -254,7 +262,8 @@ describe('ObservationRecord', () => {
       });
       await local.reload();
       const before = Array.from(local.dataY);
-      await local.dispatch(EnumEditOperations.INTERPOLATE, []);
+      // No SELECTION dispatched first → wrapper bails.
+      await local.dispatch(EnumEditOperations.INTERPOLATE);
       expect(Array.from(local.dataY)).toEqual(before);
     });
 
@@ -269,7 +278,15 @@ describe('ObservationRecord', () => {
       // Drift value = 18 over indexes [0, 9] (exclusive end) →
       // y += 18 * (x - x0) / (x9 - x0). Worker loops i < end, so y[9] is untouched.
       const baseY = Array.from(local.dataY);
-      await local.dispatch(EnumEditOperations.DRIFT_CORRECTION, [[0, 9, 18]]);
+      // Build a selection covering [0..9] consecutively so the
+      // wrapper's `_getConsecutiveGroups` collapses it back into one
+      // [start, end, value] range.
+      const sel: number[] = [];
+      for (let i = 0; i <= 9; i++) sel.push(i);
+      await local.dispatch([
+        [EnumFilterOperations.SELECTION, sel],
+        [EnumEditOperations.DRIFT_CORRECTION, 18],
+      ]);
 
       expect(+local.dataY[0].toFixed(3)).toBe(+baseY[0].toFixed(3));
       expect(+local.dataY[9].toFixed(3)).toBe(+baseY[9].toFixed(3));
@@ -286,11 +303,15 @@ describe('ObservationRecord', () => {
       await local.reload();
       const before = Array.from(local.dataY);
 
-      await local.dispatch(EnumEditOperations.DRIFT_CORRECTION, []);
+      // No preceding SELECTION → wrapper bails.
+      await local.dispatch(EnumEditOperations.DRIFT_CORRECTION, 10);
       expect(Array.from(local.dataY)).toEqual(before);
 
-      // end <= start → skipped
-      await local.dispatch(EnumEditOperations.DRIFT_CORRECTION, [[5, 5, 10]]);
+      // Single-point selection → group is [5], end <= start → internal handler skips.
+      await local.dispatch([
+        [EnumFilterOperations.SELECTION, [5]],
+        [EnumEditOperations.DRIFT_CORRECTION, 10],
+      ]);
       expect(Array.from(local.dataY)).toEqual(before);
     });
 
@@ -305,12 +326,10 @@ describe('ObservationRecord', () => {
       // Shift the last 3 points by +1 hour. Since grid is 15 min, this moves them
       // past later (nonexistent) positions but doesn't change count.
       const originalLen = local.dataX.length;
-      await local.dispatch(
-        EnumEditOperations.SHIFT_DATETIMES,
-        [7, 8, 9],
-        1,
-        TimeUnit.HOUR,
-      );
+      await local.dispatch([
+        [EnumFilterOperations.SELECTION, [7, 8, 9]],
+        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      ]);
       expect(local.dataX.length).toBe(originalLen);
       // Datetimes still sorted
       for (let i = 1; i < local.dataX.length; i++) {
@@ -318,7 +337,7 @@ describe('ObservationRecord', () => {
       }
     });
 
-    it('SHIFT_DATETIMES is a no-op for empty index list', async () => {
+    it('SHIFT_DATETIMES is a no-op when no preceding selection', async () => {
       const uniform = buildUniformData(5, 0, 10);
       const local = new ObservationRecord({
         datetimes: uniform.datetimes,
@@ -326,7 +345,8 @@ describe('ObservationRecord', () => {
       });
       await local.reload();
       const before = Array.from(local.dataX);
-      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, [], 1, TimeUnit.HOUR);
+      // No SELECTION dispatched first → wrapper bails.
+      await local.dispatch(EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR);
       expect(Array.from(local.dataX)).toEqual(before);
     });
 
@@ -535,7 +555,10 @@ describe('ObservationRecord', () => {
     it('reload() restores the raw dataset and clears history', async () => {
       const indexes = distinctSortedInts(10, 0, rec.dataX.length - 1);
       const originalLen = rec.dataX.length;
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, indexes);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, indexes],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
       expect(rec.dataX.length).toBe(originalLen - 10);
 
       await rec.reload();
@@ -544,24 +567,36 @@ describe('ObservationRecord', () => {
     });
 
     it('reloadHistory replays entries up to a given index', async () => {
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0, 1]);
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [0]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
       const lenAfterTwo = rec.dataX.length;
 
-      // Replay only the first delete
-      await rec.reloadHistory(0);
+      // Replay only up through the first SELECTION + DELETE pair (entries 0 + 1).
+      await rec.reloadHistory(1);
       expect(rec.dataX.length).toBe(mockRawData.datetimes.length - 2);
       expect(rec.dataX.length).toBeGreaterThan(lenAfterTwo);
     });
 
     it('removeHistoryItem replays history without the removed entry', async () => {
       const originalLen = rec.dataX.length;
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0, 1, 2]);
-      await rec.dispatch(EnumEditOperations.DELETE_POINTS, [0]);
+      // Two SELECTION + DELETE pairs (entries 0..3).
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1, 2]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [0]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
       expect(rec.dataX.length).toBe(originalLen - 4);
 
+      // Remove the first SELECTION entry (index 0). Replay drops
+      // the now-orphaned first DELETE_POINTS (no preceding SELECTION
+      // → wrapper bails) and runs the second SELECTION + DELETE
+      // pair, which removes one point.
       await rec.removeHistoryItem(0);
-      // Only the second delete remains → one point removed
       expect(rec.dataX.length).toBe(originalLen - 1);
     });
   });

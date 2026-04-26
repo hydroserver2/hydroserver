@@ -98,6 +98,62 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   }
 }
 
+/**
+ * Shallow per-index equality for two ascending index arrays. Used by
+ * `_selection` to detect SELECTION dispatches that are echoes of the
+ * preceding filter's `selected` (same length, same indices in the
+ * same order — Plotly's relayout listener round-trips the indices in
+ * order, so a strict per-index compare suffices and is faster than
+ * Set-based set-equality on hot paths with thousands of points).
+ */
+function arraysShallowEqual(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Whether an edit operation needs the immediately preceding
+ * SELECTION entry kept in history. Operations that REFERENCE the
+ * selection at replay time (read indices from
+ * `history[length - 2].selected`) need it kept; operations that
+ * don't reference it leave a stale SELECTION below themselves
+ * that would mislead a script reader, so we splice that SELECTION
+ * out on dispatch.
+ *
+ * Drop preceding SELECTION:
+ *   - ADD_POINTS — `[ts, value]` pairs are datetime-addressed and
+ *     never reference any selection.
+ *   - FILL_GAPS — voids any preceding selection. The panel runs
+ *     its own internal Find Gaps step on commit and shows a new
+ *     selection from the gaps it actually filled, so any selection
+ *     that was on the plot beforehand is irrelevant to the
+ *     FILL_GAPS entry.
+ *
+ * Keep preceding SELECTION:
+ *   - CHANGE_VALUES, ASSIGN_VALUES_BULK, ASSIGN_DATETIMES_BULK
+ *     read `history[length - 2].selected` directly at replay.
+ *   - DELETE_POINTS, INTERPOLATE, SHIFT_DATETIMES, DRIFT_CORRECTION
+ *     take selection-derived indices/ranges as args. A future
+ *     script-replay path will compute those at runtime from the
+ *     preceding SELECTION (per the project's reproducibility rule
+ *     that index-typed args don't get serialized into the script).
+ */
+function consumesPrecedingSelection(
+  action: EnumEditOperations,
+  _args: any[]
+): boolean {
+  switch (action) {
+    case EnumEditOperations.ADD_POINTS:
+    case EnumEditOperations.FILL_GAPS:
+      return false;
+    default:
+      return true;
+  }
+}
+
 export class ObservationRecord {
   /** The generated dataset to be used for plotting */
   dataset: {
@@ -343,31 +399,30 @@ export class ObservationRecord {
     return new Date(this.dataset.source.x[this.dataset.source.x.length - 1]);
   }
 
-  /** Dispatch an operation and log its signature in hisotry */
+  /**
+   * Dispatch an operation and log its signature in history.
+   *
+   * The selection-consuming entries below (DELETE_POINTS, INTERPOLATE,
+   * SHIFT_DATETIMES, DRIFT_CORRECTION) route to thin
+   * `*FromSelection` wrappers that read the target indices off
+   * `history[length - 2].selected` at dispatch time, mirroring the
+   * pattern CHANGE_VALUES already uses. The internal handlers
+   * (`_deleteDataPoints`, `_shift`, etc.) keep their explicit-
+   * indices signatures so other internal callers (e.g.
+   * `_assignDatetimesBulk` → `_deleteDataPoints` + `_addDataPoints`)
+   * can pass locally-computed indices without going through history.
+   */
   async dispatchAction(action: EnumEditOperations, ...args: any) {
     const actions: EnumDictionary<EnumEditOperations, Function> = {
       [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
       [EnumEditOperations.ASSIGN_VALUES_BULK]: this._assignValuesBulk,
-      [EnumEditOperations.DELETE_POINTS]: this._deleteDataPoints,
-      [EnumEditOperations.DRIFT_CORRECTION]: this._driftCorrection,
-      [EnumEditOperations.INTERPOLATE]: this._interpolate,
-      [EnumEditOperations.SHIFT_DATETIMES]: this._shift,
+      [EnumEditOperations.DELETE_POINTS]: this._deleteDataPointsFromSelection,
+      [EnumEditOperations.DRIFT_CORRECTION]: this._driftCorrectionFromSelection,
+      [EnumEditOperations.INTERPOLATE]: this._interpolateFromSelection,
+      [EnumEditOperations.SHIFT_DATETIMES]: this._shiftFromSelection,
       [EnumEditOperations.ASSIGN_DATETIMES_BULK]: this._assignDatetimesBulk,
       [EnumEditOperations.FILL_GAPS]: this._fillGaps,
-    };
-
-    // TODO: consolidate with icons in EditDrawer component
-    const editIcons: EnumDictionary<EnumEditOperations, string> = {
-      [EnumEditOperations.ADD_POINTS]: "mdi-plus",
-      [EnumEditOperations.CHANGE_VALUES]: "mdi-pencil",
-      [EnumEditOperations.ASSIGN_VALUES_BULK]: "mdi-pencil",
-      [EnumEditOperations.DELETE_POINTS]: "mdi-trash-can",
-      [EnumEditOperations.DRIFT_CORRECTION]: "mdi-chart-sankey",
-      [EnumEditOperations.INTERPOLATE]: "mdi-transit-connection-horizontal",
-      [EnumEditOperations.SHIFT_DATETIMES]: "mdi-calendar",
-      [EnumEditOperations.ASSIGN_DATETIMES_BULK]: "mdi-calendar",
-      [EnumEditOperations.FILL_GAPS]: "mdi-keyboard-space",
     };
 
     let newSelection: number[] = [];
@@ -381,11 +436,23 @@ export class ObservationRecord {
       const historyItem: HistoryItem = {
         method: action,
         args,
-        icon: editIcons[action],
         isLoading: true,
       };
       this.history.push(historyItem);
-      const itemIdx = this.history.length - 1;
+
+      // Pop the preceding SELECTION when this edit doesn't actually
+      // consume one. A SELECTION immediately before an unrelated edit
+      // (typically a stale user click or filter-driven echo) clutters
+      // history and would mislead a script replay into thinking the
+      // edit was selection-driven. See `consumesPrecedingSelection`
+      // for the per-method rules.
+      if (!consumesPrecedingSelection(action, args)) {
+        const prev = this.history[this.history.length - 2];
+        if (prev?.method === EnumFilterOperations.SELECTION) {
+          this.history.splice(this.history.length - 2, 1);
+        }
+      }
+
       // Reset to "inline"; any worker spawn in the handler or its
       // subroutines will sticky-upgrade this to "worker" before the
       // dispatch returns.
@@ -394,15 +461,15 @@ export class ObservationRecord {
         return await actions[action].apply(this, args);
       });
       newSelection = measurement.response;
-      // Mutate via `this.history[itemIdx]` so writes flow through Vue's
-      // reactive array proxy (the callsite invokes us through a proxied
-      // ObservationRecord). Writing to the captured `historyItem` ref
-      // directly mutates the raw object, bypasses the proxy, and leaves
-      // the history entry's spinner stuck on "loading" in the UI.
-      //
-      // Guard the writes in case the action handler popped the entry
-      // itself (see the matching guard in `dispatchFilter`).
-      const stored = this.history[itemIdx];
+      // Mutate via the array proxy so writes flow through Vue's
+      // reactivity. Re-resolve the entry's slot via `historyItem`
+      // reference rather than a captured index — the splice above
+      // (or any future handler-side mutation) can shift our entry.
+      // Vue 3's reactive `indexOf` normalizes raw-vs-reactive lookup;
+      // `-1` means the entry was popped entirely, in which case the
+      // writes are skipped.
+      const newIdx = this.history.indexOf(historyItem);
+      const stored = newIdx >= 0 ? this.history[newIdx] : undefined;
       if (stored) {
         stored.duration = measurement.duration;
         stored.executionMode = this._pendingExecutionMode;
@@ -462,37 +529,64 @@ export class ObservationRecord {
       [EnumFilterOperations.SELECTION]: this._selection,
     };
 
-    // TODO: consolidate with icons in EditDrawer component
-    const filterIcons: EnumDictionary<EnumFilterOperations, string> = {
-      [EnumFilterOperations.FIND_GAPS]: "mdi-plus",
-      [EnumFilterOperations.PERSISTENCE]: "mdi-plus",
-      [EnumFilterOperations.CHANGE]: "mdi-plus",
-      [EnumFilterOperations.RATE_OF_CHANGE]: "mdi-plus",
-      [EnumFilterOperations.VALUE_THRESHOLD]: "mdi-plus",
-      [EnumFilterOperations.DATETIME_RANGE]: "mdi-plus",
-      [EnumFilterOperations.SELECTION]: "mdi-plus",
-    };
-
     let response = [];
 
     try {
       // A fresh filter dispatch breaks the redo chain (Word-style).
-      // Replays from `undo()` / `redo()` set `_isReplaying` so the stack
-      // survives the internal re-dispatch.
-      if (!this._isReplaying) this.redoStack.length = 0;
+      // Replays from `undo()` / `redo()` set `_isReplaying` so the
+      // stack survives the internal re-dispatch.
+      //
+      // Empty SELECTION dispatches are NOT treated as fresh edits —
+      // they're either:
+      //   - Programmatic clear-selection echoes (consumer's
+      //     `clearSelected({recordHistory:true})` for visual hygiene).
+      //   - Plotly relayout echoes that read empty `selectedpoints`
+      //     and slip past the suppress window after a redraw
+      //     (notably during undo, whose `redraw()` can extend the
+      //     relayout debounce past `suppressSelectionEchoUntil`).
+      // Either way, "no selection" is not a new operation worth
+      // forfeiting the redo stack for. Non-empty SELECTION (a real
+      // user click / lasso) still invalidates redo.
+      const isEmptySelection =
+        action === EnumFilterOperations.SELECTION &&
+        (!args[0] || (Array.isArray(args[0]) && args[0].length === 0));
+      if (!this._isReplaying && !isEmptySelection) {
+        this.redoStack.length = 0;
+      }
 
       const historyItem: HistoryItem = {
         method: action,
         args: args,
-        icon: filterIcons[action],
         isLoading: true,
       };
 
       const lastItem = this.history[this.history.length - 1];
 
-      // If the last history item is a filter, replace it
+      // Filter replacement rules:
+      //   - Same method → replace (rapid threshold tweaks within a
+      //     single filter panel collapse into one entry).
+      //   - New non-SELECTION filter, last is any filter → replace
+      //     (opening a new filter panel replaces the previous active
+      //     filter — only the most recent filter feeds downstream
+      //     edits, which read `history[length - 2].selected`).
+      //   - New SELECTION, last is a non-SELECTION filter → push and
+      //     let `_selection` decide:
+      //       * echo of the filter's `selected` → pop self
+      //       * user-modified indices → splice out the underlying
+      //         filter (manual override takes ownership)
+      //       * empty → pop self AND pop the filter (selection cleared)
+      //     This split keeps the SELECTION echo from `dispatchSelection`
+      //     visual highlighting from clobbering the filter that just
+      //     committed it.
+      const newIsSelection = action === EnumFilterOperations.SELECTION;
+      const lastIsFilter =
+        !!EnumFilterOperations[lastItem?.method as EnumFilterOperations];
+      const replace =
+        lastItem?.method === action ||
+        (lastIsFilter && !newIsSelection);
+
       let itemIdx: number;
-      if (EnumFilterOperations[lastItem?.method as EnumFilterOperations]) {
+      if (replace) {
         itemIdx = this.history.length - 1;
         this.history[itemIdx] = historyItem;
       }
@@ -507,17 +601,21 @@ export class ObservationRecord {
         return await filters[action].apply(this, args);
       });
       response = measurement.response;
-      // Mutate via `this.history[itemIdx]` so writes flow through Vue's
-      // reactive array proxy (the callsite invokes us through a proxied
-      // ObservationRecord). Writing to the captured `historyItem` ref
-      // directly mutates the raw object, bypasses the proxy, and leaves
-      // the history entry's spinner stuck on "loading" in the UI.
+      // Mutate via the array proxy so writes flow through Vue's
+      // reactivity (the callsite invokes us through a proxied
+      // ObservationRecord). Writing to the captured `historyItem`
+      // ref directly mutates the raw object, bypasses the proxy, and
+      // leaves the spinner stuck on "loading" in the UI.
       //
-      // Some filter handlers (notably `_selection` on an empty/undefined
-      // selection) `history.pop()` themselves — in that case the slot at
-      // `itemIdx` is gone, so guard the writes or we TypeError on
-      // `undefined.duration`.
-      const stored = this.history[itemIdx];
+      // `_selection` can mutate history positions after our initial
+      // push/replace (see its docblock for the full rule table): pop
+      // self, pop self + prev, or splice prev. Re-resolve the entry's
+      // current slot via `historyItem` reference; Vue 3 normalizes
+      // `indexOf` for raw-vs-reactive lookup so the search works
+      // regardless of proxy wrapping. `-1` means the entry was
+      // popped entirely — skip the writes.
+      const newIdx = this.history.indexOf(historyItem);
+      const stored = newIdx >= 0 ? this.history[newIdx] : undefined;
       if (stored) {
         stored.duration = measurement.duration;
         stored.executionMode = this._pendingExecutionMode;
@@ -676,6 +774,19 @@ export class ObservationRecord {
   }
 
   /**
+   * Dispatch wrapper around `_interpolate` — reads target indices
+   * from `history[length - 2].selected` (the SELECTION the caller
+   * dispatched immediately before this op). External callers go
+   * through here; internal callers can keep using `_interpolate`
+   * directly with explicit indices.
+   */
+  private async _interpolateFromSelection() {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || selection.length === 0) return;
+    return this._interpolate(selection);
+  }
+
+  /**
    * Multi-threaded linear interpolation over the selected indexes.
    *  1. Main thread partitions the selected indexes into consecutive groups and computes each group's lower/upper anchors.
    *  2. Groups are sharded across workers (disjoint by construction, so in-place writes are safe).
@@ -758,6 +869,17 @@ export class ObservationRecord {
 
   //   return interpolatedValue;
   // }
+
+  /**
+   * Dispatch wrapper around `_shift` — reads target indices from
+   * `history[length - 2].selected`. The `amount` and `unit` args
+   * stay parametric on the public dispatch signature.
+   */
+  private async _shiftFromSelection(amount: number, unit: TimeUnit) {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || selection.length === 0) return;
+    return this._shift(selection, amount, unit);
+  }
 
   /**
    * Shifts the selected indexes by specified amount of units. Elements are reinserted according to their datetime.
@@ -867,6 +989,13 @@ export class ObservationRecord {
    *  3. Cumulative fill counts before each segment give each worker's output startTarget, ensuring no overlap.
    *  4. Each worker copies its segment to the output buffer and inserts its gap fills inline.
    */
+  /**
+   * @param range Optional `[startTs, endTs]` window in epoch
+   *   milliseconds. Both bounds inclusive; snapped to the nearest
+   *   enclosed point via binary search. Datetime-addressed (not
+   *   index-addressed) so the same call survives data growth and is
+   *   portable across datasets for QC script replay.
+   */
   private async _fillGaps(
     gap: [number, TimeUnit],
     fill: [number, TimeUnit],
@@ -880,11 +1009,18 @@ export class ObservationRecord {
     const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
     const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
 
-    const rangeStart = range?.[0] ?? 0;
-    const rangeEnd = range?.[1] ?? len - 1;
-
-    // Detect gaps as [leftIdx, rightIdx] pairs and count fills per gap
+    // `rangeStart` and `rangeEnd` are inclusive index bounds for the
+    // detection loop below. Convert datetime bounds via binary search
+    // when supplied; otherwise scan the full extent.
     const dataX = this.dataX;
+    const rangeStart =
+      range?.[0] != null && Number.isFinite(range[0])
+        ? findFirstGreaterOrEqual(dataX, range[0])
+        : 0;
+    const rangeEnd =
+      range?.[1] != null && Number.isFinite(range[1])
+        ? findLastLessOrEqual(dataX, range[1])
+        : len - 1;
     const allGaps: [number, number][] = [];
     const gapFillCounts: number[] = [];
     let totalFills = 0;
@@ -1025,12 +1161,25 @@ export class ObservationRecord {
   }
 
   /**
+   * Dispatch wrapper around `_deleteDataPoints` — reads target
+   * indices from `history[length - 2].selected`. Internal callers
+   * (`_shift`, `_assignDatetimesBulk`'s delete + add chain) keep
+   * using `_deleteDataPoints` directly with locally-computed
+   * indices; only the external dispatch path goes through here.
+   */
+  private async _deleteDataPointsFromSelection() {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || selection.length === 0) return;
+    return this._deleteDataPoints(selection);
+  }
+
+  /**
    Deletes data points from a large array using worker threads.
     1. The main thread divides the original array into equal parts to distribute work among workers.
     2. For each segment, binary search locates the indexes to delete (deleteSegment), ensuring efficient lookups.
     3. The cumulative deletions before each segment help compute the starting index (startTarget) for each worker's output, ensuring no overlap.
     4. Each worker processes its segment linearly, skipping deletions and copying kept elements to their computed positions.
-    * @param deleteIndices 
+    * @param deleteIndices
    */
   private async _deleteDataPoints(deleteIndices: number[]) {
     const oldLen = this.dataX.length;
@@ -1149,6 +1298,28 @@ export class ObservationRecord {
     this.dataset.source.x = new Float64Array(outputBufferX);
     this.dataset.source.y = new Float32Array(outputBufferY);
     this._resizeTo(newLength);
+  }
+
+  /**
+   * Dispatch wrapper around `_driftCorrection` — reads target
+   * indices from `history[length - 2].selected`, partitions them
+   * into consecutive groups, and applies the same `value` drift to
+   * each group as one logged operation. The internal
+   * `_driftCorrection` retains its per-range `[start, end, value]`
+   * signature so future callers that need distinct per-range values
+   * can still use it directly.
+   */
+  private async _driftCorrectionFromSelection(value: number) {
+    const selection = this.history[this.history.length - 2]?.selected;
+    if (!selection || selection.length === 0) return;
+    const groups = this._getConsecutiveGroups(selection);
+    const ranges: [number, number, number][] = [];
+    for (const g of groups) {
+      if (g.length === 0) continue;
+      ranges.push([g[0], g[g.length - 1], value]);
+    }
+    if (ranges.length === 0) return;
+    return this._driftCorrection(ranges);
   }
 
   /**
@@ -1584,13 +1755,62 @@ export class ObservationRecord {
   }
 
   /**
-   * @param index
-   * @returns
+   * SELECTION filter handler — also acts as the cleanup site for the
+   * SELECTION-vs-preceding-filter interaction. `dispatchFilter` always
+   * pushes (never replaces) a SELECTION when the previous entry is a
+   * non-SELECTION filter; this method then decides what to keep based
+   * on what the SELECTION's indices look like relative to the filter:
+   *
+   *  | incoming SELECTION         | preceding non-SEL filter   | result                                |
+   *  | -------------------------- | -------------------------- | ------------------------------------- |
+   *  | empty                      | had non-empty `selected`   | pop both — user cleared the filter    |
+   *  | empty                      | had empty `selected`       | pop SELECTION — no-op echo on a       |
+   *  |                            |                            |   zero-result filter, keep filter     |
+   *  | empty                      | none / non-filter prev     | pop SELECTION (clear)                 |
+   *  | non-empty matches prev     | (any filter)               | pop SELECTION — Plotly relayout echo  |
+   *  |                            |                            |   of the filter's `selected`          |
+   *  | non-empty differs from prev| (any filter)               | splice prev — user override takes     |
+   *  |                            |                            |   ownership; SELECTION stands alone   |
+   *  | non-empty (other cases)    | n/a                        | keep as-is (already pushed)           |
+   *
+   * The "Plotly echo" case exists because consumers commonly chain
+   * `dispatchFilter(SOMETHING)` with `dispatchSelection(result)` for
+   * visual highlighting; Plotly's debounced relayout listener then
+   * fires a SELECTION carrying the same indices. Without this dedup
+   * the script would grow a phantom SELECTION after every real filter.
    */
   private async _selection(index: number[]): Promise<number[]> {
-    // If clearing selection, remove the history item
+    // The just-pushed SELECTION entry sits at `length - 1`; the
+    // entry it would shadow is at `length - 2`.
+    const prev = this.history[this.history.length - 2];
+    const prevIsFilter =
+      !!prev &&
+      prev.method !== EnumFilterOperations.SELECTION &&
+      !!EnumFilterOperations[prev.method as EnumFilterOperations];
+    const prevSel: number[] | undefined = prevIsFilter
+      ? (Array.isArray(prev!.selected) ? prev!.selected : undefined)
+      : undefined;
+
     if (!index || !index.length) {
+      // Empty: always drop self. Drop the underlying filter too only
+      // if it was actually showing a selection that's now being
+      // cleared — a zero-result filter paired with an empty SELECTION
+      // echo is a no-op, not a clear.
       this.history.pop();
+      if (prevSel && prevSel.length > 0) this.history.pop();
+      return index;
+    }
+
+    if (prevSel && arraysShallowEqual(prevSel, index)) {
+      // Programmatic echo of the preceding filter's result; drop
+      // the redundant entry so the filter alone represents the action.
+      this.history.pop();
+    } else if (prevIsFilter) {
+      // User-driven SELECTION that differs from the filter's result —
+      // they've manually overridden it (clicked / lassoed / box-
+      // selected). Splice out the underlying filter so the SELECTION
+      // (now at the new `length - 1`) owns what's on the plot.
+      this.history.splice(this.history.length - 2, 1);
     }
 
     return index;
@@ -1671,7 +1891,12 @@ export class ObservationRecord {
    *  3. Main thread collects all pairs and dedups via Set — identical return shape to the original implementation.
    * @param value The time value
    * @param unit The time unit (TimeUnit)
-   * @param range If specified, the gaps will be found only within the range
+   * @param range If specified, gap detection is restricted to this
+   *   `[startTs, endTs]` window in epoch milliseconds. Both bounds
+   *   are inclusive and snapped to the nearest enclosed point via
+   *   binary search. Datetime-addressed (not index-addressed) so the
+   *   same call survives data growth and is portable across datasets
+   *   for QC script replay.
    */
   private async _findGaps(
     value: number,
@@ -1682,9 +1907,16 @@ export class ObservationRecord {
     let start = 0;
     let end = dataX.length;
 
-    if (range?.[0] && range?.[1]) {
-      start = range[0];
-      end = range[1];
+    if (range != null) {
+      const [startTs, endTs] = range;
+      if (startTs != null && Number.isFinite(startTs)) {
+        start = findFirstGreaterOrEqual(dataX, startTs);
+      }
+      if (endTs != null && Number.isFinite(endTs)) {
+        // `end` is exclusive in this function (length-style); convert
+        // the inclusive datetime bound by +1 on the snapped index.
+        end = findLastLessOrEqual(dataX, endTs) + 1;
+      }
     }
 
     if (end <= start) return [];
@@ -1752,18 +1984,31 @@ export class ObservationRecord {
    *
    * Matches the Python reference implementation in `edit_service.py::persistence` — every member of a qualifying run is selected (including the run's first index).
    * @param times The minimum run length to qualify
-   * @param range If specified, the points will be found only within the range
+   * @param range If specified, persistence detection is restricted
+   *   to this `[startTs, endTs]` window in epoch milliseconds. Both
+   *   bounds are inclusive and snapped to the nearest enclosed point
+   *   via binary search on `dataX`. Datetime-addressed (not index-
+   *   addressed) so the same call survives data growth and is
+   *   portable across datasets for QC script replay.
    */
   private async _persistence(
     times: number,
     range?: [number, number],
   ): Promise<number[]> {
+    const dataX = this.dataset.source.x;
     const dataY = this.dataset.source.y;
     let start = 0;
     let end = dataY.length;
-    if (range?.[0] && range?.[1]) {
-      start = range[0];
-      end = range[1];
+    if (range != null) {
+      const [startTs, endTs] = range;
+      if (startTs != null && Number.isFinite(startTs)) {
+        start = findFirstGreaterOrEqual(dataX, startTs);
+      }
+      if (endTs != null && Number.isFinite(endTs)) {
+        // `end` is exclusive in this function; +1 to convert the
+        // inclusive datetime bound to an exclusive index.
+        end = findLastLessOrEqual(dataX, endTs) + 1;
+      }
     }
 
     if (end <= start) return [];
