@@ -218,3 +218,26 @@ export function iconForMethod(method: string): string {
   }
   return 'mdi-circle-small'
 }
+
+/** Vuetify color tokens per operation group. Used by the edit drawer
+ *  avatars and the history row icons so a method reads the same color
+ *  in both places. */
+export const colorForGroup: Record<OperationGroup, string> = {
+  filter: 'primary',
+  edit: 'primary',
+  add: 'success',
+}
+
+/**
+ * Resolve a Vuetify color for a history entry's `method`. Mirrors
+ * the drawer's group palette; SELECTION + bulk-assign system methods
+ * fall back to a neutral grey since they have no panel.
+ */
+export function colorForMethod(method: string): string {
+  const opId = methodToOperationId[method]
+  if (opId) {
+    const op = operationsById[opId]
+    if (op) return colorForGroup[op.group]
+  }
+  return 'grey'
+}

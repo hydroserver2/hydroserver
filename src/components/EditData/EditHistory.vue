@@ -231,7 +231,7 @@
             <v-icon
               :icon="iconForMethod(entry.method)"
               size="16"
-              :color="entry.status === 'failed' ? 'error' : 'primary'"
+              :color="entry.status === 'failed' ? 'error' : colorForMethod(entry.method)"
               class="mr-2"
             />
 
@@ -364,7 +364,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { iconForMethod } from '@/components/EditData/operations'
+import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
 import { useQcScript } from '@/composables/useQcScript'
 import { Snackbar } from '@uwrl/qc-utils'
 
