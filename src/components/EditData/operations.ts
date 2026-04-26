@@ -249,5 +249,6 @@ export function colorForMethod(method: string): string {
     const op = operationsById[opId]
     if (op) return colorForOperation(op)
   }
+  if (method === EnumFilterOperations.SELECTION) return colorForGroup.filter
   return 'grey'
 }
