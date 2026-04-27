@@ -1,6 +1,10 @@
 export function getRatingCurveReference(transformation: any): string {
   if (!transformation || transformation.type !== 'rating_curve') return ''
 
+  const ratingCurveId = transformation.ratingCurveId
+  if (typeof ratingCurveId === 'string' && ratingCurveId.trim()) {
+    return ratingCurveId.trim()
+  }
   const ratingCurveUrl = transformation.ratingCurveUrl
   return typeof ratingCurveUrl === 'string' ? ratingCurveUrl.trim() : ''
 }
@@ -10,7 +14,8 @@ export function setRatingCurveReference(
   reference: string
 ): void {
   const normalized = (reference || '').trim()
-  transformation.ratingCurveUrl = normalized
+  transformation.ratingCurveId = normalized
+  delete transformation.ratingCurveUrl
 }
 
 type ParsedRatingCurveReference = {

@@ -334,7 +334,7 @@ const { items: workspaceDataConnections } = useTableLogic(
       workspace_id: [wsId],
       expand_related: true,
       order_by: ['name'],
-    }),
+    } as any),
   hs.dataConnections.delete,
   DataConnection,
   selectedWorkspaceId

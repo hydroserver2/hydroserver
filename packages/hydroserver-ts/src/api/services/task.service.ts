@@ -25,4 +25,22 @@ export class TaskService extends HydroServerBaseService<typeof C, M> {
   getTaskRun(taskId: string, runId: string) {
     return apiMethods.fetch(`${this._route}/${taskId}/runs/${runId}`)
   }
+
+  addMapping(task: M) {
+    task.mappings.push({
+      sourceIdentifier: '',
+      paths: [{ targetIdentifier: '', dataTransformations: [] }],
+    } as any)
+  }
+
+  removeTarget(task: M, targetIdentifier: string | number) {
+    for (const mapping of task.mappings as any[]) {
+      mapping.paths = (mapping.paths ?? []).filter(
+        (path: any) => String(path.targetIdentifier) !== String(targetIdentifier)
+      )
+    }
+    task.mappings = (task.mappings as any[]).filter(
+      (mapping) => (mapping.paths ?? []).length > 0
+    ) as any
+  }
 }

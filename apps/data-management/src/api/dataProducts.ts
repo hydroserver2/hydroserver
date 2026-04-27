@@ -76,24 +76,6 @@ export type DataProductTaskResponse = DataProductTaskPayload & {
   thing?: { id: string; name: string }
 }
 
-export type ProductRatingCurve = {
-  id: string
-  name: string
-  description?: string | null
-  fittingMethod?: 'linear' | 'power_law'
-  fitting_method?: 'linear' | 'power_law'
-  thing?: { id: string; name: string }
-  points?: [number, number][]
-}
-
-export type ProductRatingCurvePayload = {
-  name: string
-  description?: string | null
-  fittingMethod: 'linear' | 'power_law'
-  thingId: string
-  points: [number, number][]
-}
-
 export const createDataProductTask = (payload: DataProductTaskPayload) =>
   request<DataProductTaskResponse>('/api/data/products/tasks', {
     method: 'POST',
@@ -110,22 +92,6 @@ export const createExpressionTransformation = (
   }
 ) =>
   request(`/api/data/products/tasks/${taskId}/transformations/expression`, {
-    method: 'POST',
-    body: payload,
-  })
-
-export const listProductRatingCurves = (thingId: string) =>
-  request<ProductRatingCurve[]>('/api/data/products/rating-curves', {
-    query: {
-      thing_id: [thingId],
-      page_size: 1000,
-    },
-  })
-
-export const createProductRatingCurve = (
-  payload: ProductRatingCurvePayload
-) =>
-  request<ProductRatingCurve>('/api/data/products/rating-curves', {
     method: 'POST',
     body: payload,
   })

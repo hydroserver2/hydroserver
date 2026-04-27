@@ -176,7 +176,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
-import hs, { type Datastream } from '@hydroserver/client'
+import hs, { type Datastream, type RatingCurve } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import {
@@ -185,11 +185,8 @@ import {
 } from '@/utils/orchestration/ratingCurveFile'
 import {
   createDataProductTask,
-  createProductRatingCurve,
   createRatingCurveTransformation,
-  listProductRatingCurves,
   type DataProductTaskResponse,
-  type ProductRatingCurve,
 } from '@/api/dataProducts'
 
 const props = defineProps<{
@@ -207,7 +204,7 @@ const valid = ref<boolean | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const datastreams = ref<Datastream[]>([])
-const ratingCurves = ref<ProductRatingCurve[]>([])
+const ratingCurves = ref<RatingCurve[]>([])
 const ratingCurvesLoading = ref(false)
 
 const taskName = ref('')
@@ -276,13 +273,10 @@ async function loadOptions() {
 async function loadRatingCurves(thingId: string) {
   ratingCurvesLoading.value = true
   try {
-    const res = await listProductRatingCurves(thingId)
-    if (!res.ok || !Array.isArray(res.data)) {
-      Snackbar.error(res.message || 'Unable to load rating curves.')
-      ratingCurves.value = []
-      return
-    }
-    ratingCurves.value = [...res.data].sort((a, b) =>
+    const items = await hs.ratingCurves.listItemsForThing(thingId, {
+      order_by: ['name'],
+    })
+    ratingCurves.value = [...items].sort((a, b) =>
       a.name.localeCompare(b.name)
     )
   } catch (error: any) {
@@ -368,7 +362,8 @@ async function resolveRatingCurveId() {
     return null
   }
 
-  const res = await createProductRatingCurve({
+  const res = await hs.ratingCurves.create({
+    id: '',
     name: createCurveName.value.trim(),
     description: createCurveDescription.value.trim() || null,
     fittingMethod: createFittingMethod.value,

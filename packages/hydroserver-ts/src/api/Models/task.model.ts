@@ -64,7 +64,11 @@ export interface EtlMappingPostBody {
 // ---------------------------------------------------------------------------
 
 export interface ExpressionDataTransformation { type: 'expression'; expression: string }
-export interface RatingCurveDataTransformation { ratingCurveUrl: string; type: 'rating_curve' }
+export interface RatingCurveDataTransformation {
+  ratingCurveId: string
+  ratingCurveUrl?: string
+  type: 'rating_curve'
+}
 export interface AggregationDataTransformation {
   type: 'aggregation'
   aggregationStatistic: 'simple_mean' | 'time_weighted_daily_mean' | 'last_value_of_day'

@@ -64,7 +64,7 @@
             v-else
             :model-value="getRatingCurveReference(t)"
             @update:model-value="setRatingCurveReference(t, String($event ?? ''))"
-            placeholder="Rating curve URL"
+            placeholder="Rating curve ID"
             hide-details
           />
         </v-col>
@@ -151,7 +151,7 @@ function addExpression(p: any) {
 }
 
 function addLookup(p: any) {
-  const t: any = { type: 'rating_curve', ratingCurveUrl: '' }
+  const t: any = { type: 'rating_curve', ratingCurveId: '' }
   setRatingCurveReference(t, '')
   p.dataTransformations.push(t)
 }

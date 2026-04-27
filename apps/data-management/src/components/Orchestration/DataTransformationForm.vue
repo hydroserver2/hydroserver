@@ -73,8 +73,8 @@
             density="compact"
             class="mb-4"
           >
-            Select the site first, then choose one of that site's rating curve
-            files or add a new rating curve file to the selected site.
+            Select the site first, then choose one of that site's rating curves
+            or create a new rating curve from a CSV.
           </v-alert>
 
           <template v-if="canSelectThing">
@@ -242,6 +242,14 @@
                   rows="2"
                   class="mb-3"
                 />
+                <v-select
+                  v-model="createFittingMethod"
+                  :items="fittingMethodOptions"
+                  item-title="title"
+                  item-value="value"
+                  label="Fitting method *"
+                  class="mb-3"
+                />
 
                 <v-btn
                   color="teal-darken-1"
@@ -329,10 +337,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import hs, {
-  RATING_CURVE_ATTACHMENT_TYPE,
   type DataTransformation,
+  type RatingCurve,
+  type RatingCurveFittingMethod,
+  type RatingCurvePoint as RatingCurveTuple,
   type Thing,
-  type ThingFileAttachment,
   type RatingCurvePreviewRow,
 } from '@hydroserver/client'
 
@@ -340,8 +349,6 @@ import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import {
   getRatingCurveReference,
-  isSameRatingCurveReference,
-  parseRatingCurveReference,
   setRatingCurveReference,
 } from '@/utils/orchestration/ratingCurve'
 import {
@@ -367,7 +374,7 @@ type ExpressionTransformationDraft = {
 
 type RatingCurveTransformationDraft = {
   type: 'rating_curve'
-  ratingCurveUrl: string
+  ratingCurveId: string
 }
 
 type LocalTransformationDraft =
@@ -389,7 +396,7 @@ function makeInitial(): LocalTransformationDraft {
   if (props.transformation?.type === 'rating_curve') {
     return {
       type: 'rating_curve',
-      ratingCurveUrl: getRatingCurveReference(props.transformation),
+      ratingCurveId: getRatingCurveReference(props.transformation),
     }
   }
 
@@ -404,14 +411,16 @@ const things = ref<Thing[]>([])
 const thingsLoading = ref(false)
 const selectedThingId = ref<string | null>(null)
 
-const attachments = ref<ThingFileAttachment[]>([])
+const attachments = ref<RatingCurve[]>([])
 const attachmentsLoading = ref(false)
-const selectedAttachmentId = ref<string | number | null>(null)
+const selectedAttachmentId = ref<string | null>(null)
 const ratingCurveInputMode = ref<'existing' | 'create'>('existing')
 const createFileInput = ref<HTMLInputElement | null>(null)
 const createAttachmentFile = ref<File | null>(null)
 const createAttachmentName = ref('')
 const createAttachmentDescription = ref('')
+const createFittingMethod = ref<RatingCurveFittingMethod>('linear')
+const createCurvePoints = ref<RatingCurveTuple[]>([])
 const createSaving = ref(false)
 const createFileValidationError = ref('')
 const createFileValidationPending = ref(false)
@@ -437,13 +446,11 @@ const thingOptions = computed(() =>
 )
 
 const attachmentOptions = computed(() =>
-  attachments.value.map((attachment) => ({
-    title: attachment.description
-      ? `${attachment.name} - ${attachment.description}`
-      : attachment.name,
-    value: attachment.id,
-    name: attachment.name,
-    description: attachment.description || '',
+  attachments.value.map((curve) => ({
+    title: curve.description ? `${curve.name} - ${curve.description}` : curve.name,
+    value: curve.id,
+    name: curve.name,
+    description: curve.description || '',
   }))
 )
 
@@ -458,10 +465,16 @@ const canCreateAttachment = computed(
     !!selectedThingId.value &&
     !!selectedCreateFile.value &&
     !!createAttachmentName.value.trim() &&
+    createCurvePoints.value.length > 0 &&
     !createSaving.value &&
     !createFileValidationPending.value &&
     !createFileValidationError.value
 )
+
+const fittingMethodOptions = [
+  { title: 'Linear', value: 'linear' },
+  { title: 'Power law', value: 'power_law' },
+]
 
 type RatingCurvePoint = { x: number; y: number }
 type RatingCurveRange = {
@@ -519,10 +532,6 @@ const previewSparklinePath = computed(() =>
   )
 )
 
-function extractThingIdFromRatingCurveUrl(reference: string): string | null {
-  return parseRatingCurveReference(reference).thingId || null
-}
-
 function clearRatingCurveSelection() {
   ratingCurveInputMode.value = 'existing'
   selectedAttachmentId.value = null
@@ -538,21 +547,26 @@ function clearRatingCurveSelection() {
   }
 }
 
-function syncSelectedThingWithReference() {
+async function syncSelectedThingWithReference() {
   if (local.value.type !== 'rating_curve') {
     selectedThingId.value = null
     return
   }
 
-  const thingIdFromReference = extractThingIdFromRatingCurveUrl(
-    getRatingCurveReference(local.value)
-  )
+  const ratingCurveId = getRatingCurveReference(local.value)
+  if (!ratingCurveId || !props.workspaceId) return
 
-  if (
-    thingIdFromReference &&
-    things.value.some((thing) => String(thing.id) === thingIdFromReference)
-  ) {
-    selectedThingId.value = thingIdFromReference
+  const curves = await hs.ratingCurves.listItems({
+    workspace_id: [props.workspaceId],
+    fetch_all: true,
+  } as any)
+  const selectedCurve = curves.find(
+    (curve) => String(curve.id) === String(ratingCurveId)
+  )
+  const thingId = selectedCurve?.thing?.id || selectedCurve?.thingId
+
+  if (thingId && things.value.some((thing) => String(thing.id) === thingId)) {
+    selectedThingId.value = thingId
   }
 }
 
@@ -564,19 +578,14 @@ function syncSelectedAttachmentWithReference() {
 
   const currentReference = getRatingCurveReference(local.value)
   const selected = attachments.value.find(
-    (attachment) => isSameRatingCurveReference(attachment.link, currentReference)
+    (attachment) => String(attachment.id) === String(currentReference)
   )
 
   selectedAttachmentId.value = selected?.id ?? null
 }
 
-function normalizeRatingCurveAttachments(items: ThingFileAttachment[]) {
-  return items
-    .filter(
-      (attachment) =>
-        attachment.fileAttachmentType === RATING_CURVE_ATTACHMENT_TYPE
-    )
-    .sort((a, b) => a.name.localeCompare(b.name))
+function normalizeRatingCurveAttachments(items: RatingCurve[]) {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 function resetCreateFormState() {
@@ -584,6 +593,8 @@ function resetCreateFormState() {
   createAttachmentFile.value = null
   createAttachmentName.value = ''
   createAttachmentDescription.value = ''
+  createFittingMethod.value = 'linear'
+  createCurvePoints.value = []
   createFileValidationError.value = ''
   createFileValidationPending.value = false
   if (createFileInput.value) {
@@ -603,6 +614,7 @@ function onCreateFileSelected(event: Event) {
 
 function clearCreateFile() {
   createAttachmentFile.value = null
+  createCurvePoints.value = []
   if (createFileInput.value) {
     createFileInput.value.value = ''
   }
@@ -625,12 +637,17 @@ async function validateCreateFile(file: File | null): Promise<boolean> {
 
   createFileValidationPending.value = true
   try {
-    await parseRatingCurveCsvFile(file)
+    const parsed = await parseRatingCurveCsvFile(file)
     if (runId !== createValidationRunId) return false
+    createCurvePoints.value = parsed.rows.map(
+      (row) =>
+        [Number(row.inputValue), Number(row.outputValue)] as RatingCurveTuple
+    )
     createFileValidationError.value = ''
     return true
   } catch (error: unknown) {
     if (runId !== createValidationRunId) return false
+    createCurvePoints.value = []
     createFileValidationError.value = toRatingCurveFileValidationMessage(error)
     return false
   } finally {
@@ -661,10 +678,13 @@ async function createAttachmentForThing() {
 
   createSaving.value = true
   try {
-    const res = await hs.thingFileAttachments.upload(thingId, file, {
-      type: RATING_CURVE_ATTACHMENT_TYPE,
+    const res = await hs.ratingCurves.create({
+      id: '',
       name: trimmedName,
-      description: createAttachmentDescription.value.trim() || undefined,
+      description: createAttachmentDescription.value.trim() || null,
+      fittingMethod: createFittingMethod.value,
+      thingId,
+      points: createCurvePoints.value,
     })
 
     if (!res.ok || !res.data) {
@@ -676,6 +696,9 @@ async function createAttachmentForThing() {
       ...attachments.value,
       res.data,
     ])
+    previewRowsByAttachmentId.value[String(res.data.id)] = pointsToPreviewRows(
+      res.data.points ?? []
+    )
     onAttachmentSelected(res.data.id)
     resetCreateFormState()
   } catch (error: any) {
@@ -700,7 +723,7 @@ async function loadThings() {
       order_by: ['name'],
     })
 
-    syncSelectedThingWithReference()
+    await syncSelectedThingWithReference()
 
     if (selectedThingId.value) {
       await loadAttachmentsForThing(selectedThingId.value)
@@ -721,12 +744,14 @@ async function loadAttachmentsForThing(thingId: string) {
   previewErrorByAttachmentId.value = {}
 
   try {
-    const items = await hs.thingFileAttachments.listItems(thingId, {
-      type: RATING_CURVE_ATTACHMENT_TYPE,
+    const items = await hs.ratingCurves.listItemsForThing(thingId, {
+      order_by: ['name'],
     })
     attachments.value = normalizeRatingCurveAttachments(items)
-    for (const attachment of attachments.value) {
-      void loadAttachmentPreview(attachment)
+    for (const curve of attachments.value) {
+      previewRowsByAttachmentId.value[String(curve.id)] = pointsToPreviewRows(
+        curve.points ?? []
+      )
     }
     syncSelectedAttachmentWithReference()
   } catch (error: any) {
@@ -746,7 +771,7 @@ function onThingSelected(thingId: string | null) {
   void loadAttachmentsForThing(thingId)
 }
 
-function onAttachmentSelected(attachmentId: string | number | null) {
+function onAttachmentSelected(attachmentId: string | null) {
   selectedAttachmentId.value = attachmentId
 
   if (local.value.type !== 'rating_curve') return
@@ -761,7 +786,7 @@ function onAttachmentSelected(attachmentId: string | number | null) {
     return
   }
 
-  setRatingCurveReference(local.value, attachment.link)
+  setRatingCurveReference(local.value, attachment.id)
   void loadPreviewForAttachment(attachment)
 }
 
@@ -800,7 +825,7 @@ function formatPreviewNumber(value: number) {
   return value.toFixed(3).replace(/\.?0+$/, '')
 }
 
-async function loadPreviewForAttachment(attachment: ThingFileAttachment) {
+function loadPreviewForAttachment(attachment: RatingCurve) {
   previewError.value = ''
   const cacheKey = String(attachment.id)
   const cachedRows = previewRowsByAttachmentId.value[cacheKey]
@@ -808,29 +833,20 @@ async function loadPreviewForAttachment(attachment: ThingFileAttachment) {
     previewRows.value = cachedRows
     return
   }
-  try {
-    const res = await hs.thingFileAttachments.fetchRatingCurvePreview(
-      attachment.link,
-      12
-    )
-    if (!res.ok) {
-      previewRows.value = []
-      previewError.value = res.message || 'Unable to load rating curve preview.'
-      previewErrorByAttachmentId.value[cacheKey] = previewError.value
-      return
-    }
-    previewRows.value = res.data
-    previewRowsByAttachmentId.value[cacheKey] = res.data
-    previewErrorByAttachmentId.value[cacheKey] = ''
-  } catch (error: any) {
-    previewRows.value = []
-    previewError.value =
-      error?.message || 'Unable to load rating curve preview.'
-    previewErrorByAttachmentId.value[cacheKey] = previewError.value
-  }
+  const rows = pointsToPreviewRows(attachment.points ?? [])
+  previewRows.value = rows
+  previewRowsByAttachmentId.value[cacheKey] = rows
+  previewErrorByAttachmentId.value[cacheKey] = ''
 }
 
-async function loadAttachmentPreview(attachment: ThingFileAttachment) {
+function pointsToPreviewRows(points: RatingCurveTuple[]): RatingCurvePreviewRow[] {
+  return points.map(([inputValue, outputValue]) => ({
+    inputValue: String(inputValue),
+    outputValue: String(outputValue),
+  }))
+}
+
+async function loadAttachmentPreview(attachment: RatingCurve) {
   const key = String(attachment.id)
   if (previewLoadingByAttachmentId.value[key]) return
   if (previewRowsByAttachmentId.value[key]?.length) return
@@ -838,17 +854,9 @@ async function loadAttachmentPreview(attachment: ThingFileAttachment) {
   previewLoadingByAttachmentId.value[key] = true
   previewErrorByAttachmentId.value[key] = ''
   try {
-    const res = await hs.thingFileAttachments.fetchRatingCurvePreview(
-      attachment.link,
-      20
+    previewRowsByAttachmentId.value[key] = pointsToPreviewRows(
+      attachment.points ?? []
     )
-    if (!res.ok) {
-      previewRowsByAttachmentId.value[key] = []
-      previewErrorByAttachmentId.value[key] =
-        res.message || 'Unable to load preview.'
-      return
-    }
-    previewRowsByAttachmentId.value[key] = res.data
   } catch {
     previewRowsByAttachmentId.value[key] = []
     previewErrorByAttachmentId.value[key] = 'Unable to load preview.'
@@ -941,10 +949,10 @@ async function onSubmit() {
       return
     }
 
-    setRatingCurveReference(local.value, selectedAttachment.value.link)
+    setRatingCurveReference(local.value, selectedAttachment.value.id)
     delete (local.value as any).expression
   } else {
-    delete (local.value as any).ratingCurveUrl
+    delete (local.value as any).ratingCurveId
   }
 
   isEdit.value
@@ -979,15 +987,11 @@ watch(
 watch(selectedAttachment, (attachment) => {
   if (!attachment || local.value.type !== 'rating_curve') return
   if (
-    isSameRatingCurveReference(
-      getRatingCurveReference(local.value),
-      attachment.link
-    ) &&
+    String(getRatingCurveReference(local.value)) === String(attachment.id) &&
     previewRows.value.length
-  ) {
+  )
     return
-  }
-  void loadPreviewForAttachment(attachment)
+  loadPreviewForAttachment(attachment)
 })
 
 watch(ratingCurveInputMode, (mode) => {
@@ -1003,6 +1007,7 @@ watch(selectedCreateFile, (file) => {
     createValidationRunId += 1
     createFileValidationError.value = ''
     createFileValidationPending.value = false
+    createCurvePoints.value = []
     return
   }
 

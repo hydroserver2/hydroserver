@@ -87,7 +87,7 @@
                     :icon="mdiDownload"
                     variant="text"
                     :loading="isDownloading(attachment.id)"
-                    :disabled="!attachment.link || isDownloading(attachment.id)"
+                    :disabled="isDownloading(attachment.id)"
                     @click="downloadAttachment(attachment)"
                   />
                 </span>
@@ -233,7 +233,7 @@
                           :icon="mdiDownload"
                           variant="text"
                           :loading="isDownloading(attachment.id)"
-                          :disabled="!attachment.link || isDownloading(attachment.id)"
+                          :disabled="isDownloading(attachment.id)"
                           @click="downloadAttachment(attachment)"
                         />
                       </span>
@@ -313,6 +313,14 @@
           v-model="attachmentDescription"
           label="Description"
           rows="2"
+          class="mb-3"
+        />
+        <v-select
+          v-model="attachmentFittingMethod"
+          :items="fittingMethodOptions"
+          item-title="title"
+          item-value="value"
+          label="Fitting method *"
         />
       </v-card-text>
       <v-divider />
@@ -345,18 +353,19 @@
           v-model="editAttachmentName"
           label="Rating curve name *"
           class="mb-3"
-          :readonly="isEditingExistingAttachment"
-          :hint="
-            isEditingExistingAttachment
-              ? 'Existing rating curve names are fixed because task references use the attachment filename.'
-              : undefined
-          "
-          persistent-hint
         />
         <v-textarea
           v-model="editAttachmentDescription"
           label="Description"
           rows="2"
+          class="mb-3"
+        />
+        <v-select
+          v-model="editAttachmentFittingMethod"
+          :items="fittingMethodOptions"
+          item-title="title"
+          item-value="value"
+          label="Fitting method *"
           class="mb-3"
         />
 
@@ -512,20 +521,17 @@
 import { computed, ref, watch } from 'vue'
 import { mdiAlert, mdiDelete, mdiDownload, mdiPencil } from '@mdi/js'
 import hs, {
+  type RatingCurve,
+  type RatingCurveFittingMethod,
+  type RatingCurvePoint as RatingCurveTuple,
   type RatingCurvePreviewRow,
-  type ThingFileAttachment,
 } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import { getRatingCurveReference } from '@/utils/orchestration/ratingCurve'
-import {
-  EXISTING_RATING_CURVE_RENAME_MESSAGE,
-  replaceExistingRatingCurveAttachment,
-  useRatingCurveStore,
-} from '@/store/ratingCurves'
+import { useRatingCurveStore } from '@/store/ratingCurves'
 
 const props = withDefaults(
   defineProps<{
@@ -550,20 +556,21 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (e: 'attachments-changed', attachments: ThingFileAttachment[]): void
+  (e: 'rating-curves-changed', ratingCurves: RatingCurve[]): void
 }>()
 
 type DisplayRatingCurve = {
-  id: string | number
+  id: string
   name: string
   description: string
-  link?: string
+  fittingMethod: RatingCurveFittingMethod
+  points: RatingCurveTuple[]
   pending: boolean
 }
 
 const ratingCurveStore = useRatingCurveStore()
 
-const backendAttachments = ref<ThingFileAttachment[]>([])
+const backendRatingCurves = ref<RatingCurve[]>([])
 const backendLoading = ref(false)
 const saving = ref(false)
 
@@ -577,11 +584,13 @@ const attachmentFile = ref<File | File[] | null>(null)
 const createFileInput = ref<HTMLInputElement | null>(null)
 const attachmentName = ref('')
 const attachmentDescription = ref('')
+const attachmentFittingMethod = ref<RatingCurveFittingMethod>('linear')
 const editAttachment = ref<DisplayRatingCurve | null>(null)
 const editAttachmentFile = ref<File | File[] | null>(null)
 const editFileInput = ref<HTMLInputElement | null>(null)
 const editAttachmentName = ref('')
 const editAttachmentDescription = ref('')
+const editAttachmentFittingMethod = ref<RatingCurveFittingMethod>('linear')
 const activeAttachment = ref<DisplayRatingCurve | null>(null)
 const blockedAttachment = ref<DisplayRatingCurve | null>(null)
 const blockedTasks = ref<
@@ -607,6 +616,11 @@ const previewErrorByAttachmentId = ref<Record<string, string>>({})
 const downloadingByAttachmentId = ref<Record<string, boolean>>({})
 const deleteValidationByAttachmentId = ref<Record<string, boolean>>({})
 
+const fittingMethodOptions = [
+  { title: 'Linear', value: 'linear' },
+  { title: 'Power law', value: 'power_law' },
+]
+
 const canEditThing = computed(() => props.canEdit)
 const inlineReadOnly = computed(() => props.inlineReadOnly && !canEditThing.value)
 const showManageButton = computed(() => canEditThing.value && !inlineReadOnly.value)
@@ -620,11 +634,12 @@ const loading = computed(() =>
 
 const displayAttachments = computed<DisplayRatingCurve[]>(() => {
   if (!props.deferPersist) {
-    return backendAttachments.value.map((attachment) => ({
-      id: attachment.id,
-      name: attachment.name,
-      description: attachment.description || '',
-      link: attachment.link,
+    return backendRatingCurves.value.map((curve) => ({
+      id: curve.id,
+      name: curve.name,
+      description: curve.description || '',
+      fittingMethod: curve.fittingMethod,
+      points: curve.points ?? [],
       pending: false,
     }))
   }
@@ -634,7 +649,7 @@ const displayAttachments = computed<DisplayRatingCurve[]>(() => {
   )
   const metadataUpdatesById = new Map(
     ratingCurveStore.pendingMetadataUpdates.map((item) => [
-      String(item.attachmentId),
+      String(item.ratingCurveId),
       item,
     ])
   )
@@ -643,11 +658,15 @@ const displayAttachments = computed<DisplayRatingCurve[]>(() => {
     .filter((attachment) => !deletedIds.has(String(attachment.id)))
     .map((attachment) => {
       const pendingMetadata = metadataUpdatesById.get(String(attachment.id))
+      const pendingReplace = ratingCurveStore.pendingReplaces.find(
+        (replace) => String(replace.ratingCurveId) === String(attachment.id)
+      )
       return {
         id: attachment.id,
         name: pendingMetadata?.name ?? attachment.name,
         description: pendingMetadata?.description ?? (attachment.description || ''),
-        link: attachment.link,
+        fittingMethod: pendingMetadata?.fittingMethod ?? attachment.fittingMethod,
+        points: pendingReplace?.points ?? attachment.points ?? [],
         pending: false,
       }
     })
@@ -656,6 +675,8 @@ const displayAttachments = computed<DisplayRatingCurve[]>(() => {
     id: item.tempId,
     name: item.name,
     description: item.description,
+    fittingMethod: item.fittingMethod,
+    points: item.points,
     pending: true,
   }))
 
@@ -693,9 +714,6 @@ const canSaveEditAttachment = computed(
     !editFileValidationError.value &&
     hasEditChanges.value
 )
-const isEditingExistingAttachment = computed(
-  () => !!editAttachment.value && !editAttachment.value.pending
-)
 const hasEditMetadataChanges = computed(() => {
   const item = editAttachment.value
   if (!item) return false
@@ -732,6 +750,7 @@ function resetCreateState() {
   }
   attachmentName.value = ''
   attachmentDescription.value = ''
+  attachmentFittingMethod.value = 'linear'
 }
 
 function resetEditState() {
@@ -742,6 +761,7 @@ function resetEditState() {
   editAttachmentFile.value = null
   editAttachmentName.value = ''
   editAttachmentDescription.value = ''
+  editAttachmentFittingMethod.value = 'linear'
   editPreviewRows.value = []
   editPreviewLoading.value = false
   editPreviewError.value = ''
@@ -791,11 +811,11 @@ function formatFileSize(sizeBytes: number) {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function emitAttachmentsChanged() {
-  emit('attachments-changed', [...backendAttachments.value])
+function emitRatingCurvesChanged() {
+  emit('rating-curves-changed', [...backendRatingCurves.value])
 }
 
-async function refreshAttachments() {
+async function refreshRatingCurves() {
   if (props.deferPersist) {
     try {
       await ratingCurveStore.loadExistingRatingCurves(props.thingId)
@@ -803,9 +823,11 @@ async function refreshAttachments() {
       const deletedIds = new Set(
         ratingCurveStore.pendingDeleteIds.map((item) => String(item))
       )
-      for (const attachment of ratingCurveStore.existingRatingCurves) {
-        if (!deletedIds.has(String(attachment.id))) {
-          void loadPreviewForAttachment(attachment)
+      for (const curve of ratingCurveStore.existingRatingCurves) {
+        if (!deletedIds.has(String(curve.id))) {
+          previewRowsByAttachmentId.value[String(curve.id)] = pointsToPreviewRows(
+            curve.points ?? []
+          )
         }
       }
 
@@ -814,7 +836,7 @@ async function refreshAttachments() {
       }
 
       for (const pending of ratingCurveStore.pendingReplaces) {
-        previewRowsByAttachmentId.value[String(pending.attachmentId)] =
+        previewRowsByAttachmentId.value[String(pending.ratingCurveId)] =
           pending.previewRows
       }
     } catch (error: any) {
@@ -825,20 +847,22 @@ async function refreshAttachments() {
   }
 
   if (!props.thingId) {
-    backendAttachments.value = []
-    emitAttachmentsChanged()
+    backendRatingCurves.value = []
+    emitRatingCurvesChanged()
     return
   }
 
   backendLoading.value = true
   try {
-    const items = await hs.thingFileAttachments.listItems(props.thingId, {
-      type: 'rating_curve',
+    const items = await hs.ratingCurves.listItemsForThing(props.thingId, {
+      order_by: ['name'],
     })
-    backendAttachments.value = items.sort((a, b) => a.name.localeCompare(b.name))
-    emitAttachmentsChanged()
-    for (const attachment of backendAttachments.value) {
-      void loadPreviewForAttachment(attachment)
+    backendRatingCurves.value = items.sort((a, b) => a.name.localeCompare(b.name))
+    emitRatingCurvesChanged()
+    for (const curve of backendRatingCurves.value) {
+      previewRowsByAttachmentId.value[String(curve.id)] = pointsToPreviewRows(
+        curve.points ?? []
+      )
     }
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to load rating curves.')
@@ -864,6 +888,7 @@ function openEditDialog(item: DisplayRatingCurve) {
   editAttachment.value = item
   editAttachmentName.value = item.name
   editAttachmentDescription.value = item.description || ''
+  editAttachmentFittingMethod.value = item.fittingMethod
   openEdit.value = true
   void hydrateEditPreview(item)
 }
@@ -913,16 +938,17 @@ async function createAttachment() {
   }
 
   const parsed = await parseRatingCurveCsvFile(file)
-  const previewRows: RatingCurvePreviewRow[] = parsed.rows.map((row) => ({
-    inputValue: String(row.inputValue),
-    outputValue: String(row.outputValue),
-  }))
+  const points = parsed.rows.map(
+    (row) => [Number(row.inputValue), Number(row.outputValue)] as RatingCurveTuple
+  )
+  const previewRows = pointsToPreviewRows(points)
 
   if (props.deferPersist) {
     const tempId = ratingCurveStore.queueRatingCurveCreate(
-      file,
       trimmedName,
       attachmentDescription.value.trim(),
+      attachmentFittingMethod.value,
+      points,
       previewRows
     )
     previewRowsByAttachmentId.value[tempId] = previewRows
@@ -938,10 +964,13 @@ async function createAttachment() {
 
   saving.value = true
   try {
-    const res = await hs.thingFileAttachments.upload(props.thingId, file, {
-      type: 'rating_curve',
+    const res = await hs.ratingCurves.create({
+      id: '',
       name: trimmedName,
-      description: attachmentDescription.value.trim() || undefined,
+      description: attachmentDescription.value.trim() || null,
+      fittingMethod: attachmentFittingMethod.value,
+      thingId: props.thingId,
+      points,
     })
 
     if (!res.ok || !res.data) {
@@ -950,10 +979,10 @@ async function createAttachment() {
     }
 
     const created = res.data
-    backendAttachments.value = [...backendAttachments.value, created].sort((a, b) =>
+    backendRatingCurves.value = [...backendRatingCurves.value, created].sort((a, b) =>
       a.name.localeCompare(b.name)
     )
-    emitAttachmentsChanged()
+    emitRatingCurvesChanged()
     previewRowsByAttachmentId.value[String(created.id)] = previewRows
 
     openCreate.value = false
@@ -995,20 +1024,17 @@ async function deleteAttachment() {
 
   saving.value = true
   try {
-    const res = await hs.things.deleteAttachment(
-      props.thingId,
-      activeAttachment.value.name
-    )
+    const res = await hs.ratingCurves.delete(activeAttachment.value.id)
 
     if (!res.ok) {
       Snackbar.error(res.message || 'Unable to delete rating curve.')
       return
     }
 
-    backendAttachments.value = backendAttachments.value.filter(
+    backendRatingCurves.value = backendRatingCurves.value.filter(
       (item) => String(item.id) !== String(activeAttachment.value?.id)
     )
-    emitAttachmentsChanged()
+    emitRatingCurvesChanged()
 
     delete previewRowsByAttachmentId.value[String(activeAttachment.value.id)]
     delete previewErrorByAttachmentId.value[String(activeAttachment.value.id)]
@@ -1034,7 +1060,7 @@ function taskDetailsRoute(task: { id: string; workspaceId: string }) {
 }
 
 async function blockDeletionIfLinked(item: DisplayRatingCurve) {
-  if (item.pending || !item.link) return false
+  if (item.pending) return false
 
   const workspaceId = props.workspaceId?.trim()
   if (!workspaceId) {
@@ -1042,7 +1068,7 @@ async function blockDeletionIfLinked(item: DisplayRatingCurve) {
     return true
   }
 
-  const linkedTasks = await findTasksUsingRatingCurve(item.link, workspaceId)
+  const linkedTasks = await findTasksUsingRatingCurve(item.id, workspaceId)
   if (linkedTasks === null) return true
   if (!linkedTasks.length) return false
 
@@ -1065,17 +1091,18 @@ async function blockDeletionIfLinkedWithSpinner(item: DisplayRatingCurve) {
 }
 
 async function findTasksUsingRatingCurve(
-  ratingCurveLink: string,
+  ratingCurveId: string,
   workspaceId: string
 ) {
   try {
-    const tasks = (await hs.tasks.listAllItems({
+    const tasks = (await hs.dataProductTasks.listAllItems({
       workspace_id: [workspaceId],
+      rating_curve_id: [ratingCurveId],
       expand_related: true,
     } as any)) as any[]
 
     return tasks
-      .filter((task) => taskUsesRatingCurve(task, ratingCurveLink))
+      .filter((task) => taskUsesRatingCurve(task, ratingCurveId))
       .map((task) => ({
         id: String(task.id),
         name: `${task.name ?? ''}`.trim(),
@@ -1088,7 +1115,22 @@ async function findTasksUsingRatingCurve(
   }
 }
 
-function taskUsesRatingCurve(task: any, ratingCurveLink: string) {
+function taskUsesRatingCurve(task: any, ratingCurveId: string) {
+  const transformations = Array.isArray(task?.ratingCurveTransformations)
+    ? task.ratingCurveTransformations
+    : []
+  if (
+    transformations.some((transformation: any) => {
+      const curve = transformation?.ratingCurve
+      return (
+        String(curve?.id ?? transformation?.ratingCurveId ?? '') ===
+        String(ratingCurveId)
+      )
+    })
+  ) {
+    return true
+  }
+
   const mappings = Array.isArray(task?.mappings) ? task.mappings : []
   for (const mapping of mappings) {
     const paths = Array.isArray(mapping?.paths) ? mapping.paths : []
@@ -1097,69 +1139,19 @@ function taskUsesRatingCurve(task: any, ratingCurveLink: string) {
         ? path.dataTransformations
         : []
       for (const transformation of transformations) {
-        const reference = getRatingCurveReference(transformation)
-        if (isSameRatingCurveReference(reference, ratingCurveLink)) return true
+        if (
+          String(
+            transformation?.ratingCurveId ??
+              transformation?.ratingCurve?.id ??
+              ''
+          ) === String(ratingCurveId)
+        ) {
+          return true
+        }
       }
     }
   }
   return false
-}
-
-function isSameRatingCurveReference(left: string, right: string) {
-  const leftRef = parseRatingCurveReference(left)
-  const rightRef = parseRatingCurveReference(right)
-
-  if (leftRef.raw && rightRef.raw && leftRef.raw === rightRef.raw) return true
-  if (leftRef.pathname && rightRef.pathname && leftRef.pathname === rightRef.pathname) {
-    return true
-  }
-  if (
-    leftRef.attachmentId &&
-    rightRef.attachmentId &&
-    leftRef.attachmentId === rightRef.attachmentId
-  ) {
-    return true
-  }
-
-  return false
-}
-
-function parseRatingCurveReference(value: string) {
-  const raw = `${value ?? ''}`.trim().replace(/\/+$/, '')
-  if (!raw) {
-    return {
-      raw: '',
-      pathname: '',
-      attachmentId: '',
-    }
-  }
-
-  try {
-    const parsed = new URL(raw, globalThis.location?.origin ?? undefined)
-    const pathname = parsed.pathname.replace(/\/+$/, '')
-    return {
-      raw,
-      pathname,
-      attachmentId: extractAttachmentId(pathname),
-    }
-  } catch {
-    return {
-      raw,
-      pathname: raw.replace(/\/+$/, ''),
-      attachmentId: extractAttachmentId(raw),
-    }
-  }
-}
-
-function extractAttachmentId(path: string) {
-  const match =
-    /\/things\/[^/]+\/file-attachments\/([^/]+)\/download\/?$/i.exec(path)
-  if (!match?.[1]) return ''
-  try {
-    return decodeURIComponent(match[1])
-  } catch {
-    return match[1]
-  }
 }
 
 async function saveEditAttachment() {
@@ -1170,13 +1162,11 @@ async function saveEditAttachment() {
   const trimmedName = editAttachmentName.value.trim()
   const trimmedDescription = editAttachmentDescription.value.trim()
   if (!trimmedName) return
-  if (!item.pending && trimmedName !== item.name) {
-    Snackbar.error(EXISTING_RATING_CURVE_RENAME_MESSAGE)
-    return
-  }
 
   const metadataChanged =
-    trimmedName !== item.name || trimmedDescription !== (item.description || '')
+    trimmedName !== item.name ||
+    trimmedDescription !== (item.description || '') ||
+    editAttachmentFittingMethod.value !== item.fittingMethod
   const fileChanged = !!file
 
   if (!metadataChanged && !fileChanged) {
@@ -1191,6 +1181,7 @@ async function saveEditAttachment() {
   }
 
   let previewRows: RatingCurvePreviewRow[] | null = null
+  let points: RatingCurveTuple[] | null = null
   if (fileChanged && file) {
     const isValidFile = await validateEditFile(file)
     if (!isValidFile) {
@@ -1201,10 +1192,11 @@ async function saveEditAttachment() {
     }
 
     const parsed = await parseRatingCurveCsvFile(file)
-    previewRows = parsed.rows.map((row) => ({
-      inputValue: String(row.inputValue),
-      outputValue: String(row.outputValue),
-    }))
+    points = parsed.rows.map(
+      (row) =>
+        [Number(row.inputValue), Number(row.outputValue)] as RatingCurveTuple
+    )
+    previewRows = pointsToPreviewRows(points)
   }
 
   if (props.deferPersist) {
@@ -1212,10 +1204,11 @@ async function saveEditAttachment() {
       const updated = ratingCurveStore.updateQueuedRatingCurveCreate(
         String(item.id),
         {
-          ...(fileChanged && file ? { file } : {}),
+          ...(points ? { points } : {}),
           ...(previewRows ? { previewRows } : {}),
           name: trimmedName,
           description: trimmedDescription,
+          fittingMethod: editAttachmentFittingMethod.value,
         }
       )
       if (!updated) {
@@ -1227,11 +1220,16 @@ async function saveEditAttachment() {
         ratingCurveStore.queueExistingRatingCurveMetadataUpdate(
           item.id,
           trimmedName,
-          trimmedDescription
+          trimmedDescription,
+          editAttachmentFittingMethod.value
         )
       }
-      if (fileChanged && file && previewRows) {
-        ratingCurveStore.queueExistingRatingCurveReplace(item.id, file, previewRows)
+      if (fileChanged && points && previewRows) {
+        ratingCurveStore.queueExistingRatingCurveReplace(
+          item.id,
+          points,
+          previewRows
+        )
       }
     }
 
@@ -1252,32 +1250,31 @@ async function saveEditAttachment() {
 
   saving.value = true
   try {
-    const currentAttachment =
-      backendAttachments.value.find(
-        (attachment) => String(attachment.id) === String(item.id)
+    const currentCurve =
+      backendRatingCurves.value.find(
+        (curve) => String(curve.id) === String(item.id)
       ) || null
-    if (!currentAttachment) {
-      Snackbar.error('Unable to find rating curve attachment.')
+    if (!currentCurve) {
+      Snackbar.error('Unable to find rating curve.')
       return
     }
 
-    const res = await replaceExistingRatingCurveAttachment({
-      thingId: props.thingId,
-      attachment: currentAttachment,
+    const res = await hs.ratingCurves.update({
+      id: currentCurve.id,
+      name: trimmedName,
       description: trimmedDescription,
-      file: fileChanged ? file : undefined,
+      fittingMethod: editAttachmentFittingMethod.value,
+      points: points ?? currentCurve.points ?? [],
     })
     if (!res.ok || !res.data) {
       Snackbar.error(res.message || 'Unable to update rating curve.')
       return
     }
 
-    backendAttachments.value = backendAttachments.value.map((attachment) =>
-      String(attachment.id) === String(item.id)
-        ? res.data || attachment
-        : attachment
+    backendRatingCurves.value = backendRatingCurves.value.map((curve) =>
+      String(curve.id) === String(item.id) ? res.data || curve : curve
     )
-    emitAttachmentsChanged()
+    emitRatingCurvesChanged()
     if (previewRows) {
       previewRowsByAttachmentId.value[String(item.id)] = previewRows
       delete previewErrorByAttachmentId.value[String(item.id)]
@@ -1290,49 +1287,6 @@ async function saveEditAttachment() {
   } finally {
     saving.value = false
   }
-}
-
-async function loadPreviewForAttachment(attachment: ThingFileAttachment) {
-  const key = String(attachment.id)
-  if (previewLoadingByAttachmentId.value[key]) return
-  if (previewRowsByAttachmentId.value[key]?.length) return
-
-  previewLoadingByAttachmentId.value[key] = true
-  previewErrorByAttachmentId.value[key] = ''
-  try {
-    const res = await hs.thingFileAttachments.fetchRatingCurvePreview(
-      attachment.link,
-      20
-    )
-    if (!res.ok) {
-      previewRowsByAttachmentId.value[key] = []
-      previewErrorByAttachmentId.value[key] =
-        res.message || 'Unable to load preview.'
-      return
-    }
-    previewRowsByAttachmentId.value[key] = res.data
-  } catch {
-    previewRowsByAttachmentId.value[key] = []
-    previewErrorByAttachmentId.value[key] = 'Unable to load preview.'
-  } finally {
-    previewLoadingByAttachmentId.value[key] = false
-  }
-}
-
-function resolveThingAttachment(item: DisplayRatingCurve) {
-  if (props.deferPersist) {
-    return (
-      ratingCurveStore.existingRatingCurves.find(
-        (attachment) => String(attachment.id) === String(item.id)
-      ) ?? null
-    )
-  }
-
-  return (
-    backendAttachments.value.find(
-      (attachment) => String(attachment.id) === String(item.id)
-    ) ?? null
-  )
 }
 
 async function hydrateEditPreview(item: DisplayRatingCurve) {
@@ -1348,37 +1302,9 @@ async function hydrateEditPreview(item: DisplayRatingCurve) {
     return
   }
 
-  if (item.pending) {
-    if (runId !== editPreviewRunId) return
-    editPreviewRows.value = []
-    return
-  }
-
-  const attachment = resolveThingAttachment(item)
-  if (!attachment?.link) {
-    editPreviewRows.value = []
-    return
-  }
-
-  editPreviewLoading.value = true
-  try {
-    await loadPreviewForAttachment(attachment)
-    if (
-      runId !== editPreviewRunId ||
-      String(editAttachment.value?.id ?? '') !== key ||
-      !!selectedEditFile.value
-    ) {
-      return
-    }
-    editPreviewRows.value = [
-      ...(previewRowsByAttachmentId.value[key] ?? []),
-    ]
-    editPreviewError.value = previewErrorByAttachmentId.value[key] ?? ''
-  } finally {
-    if (runId === editPreviewRunId) {
-      editPreviewLoading.value = false
-    }
-  }
+  previewRowsByAttachmentId.value[key] = pointsToPreviewRows(item.points)
+  if (runId !== editPreviewRunId) return
+  editPreviewRows.value = [...previewRowsByAttachmentId.value[key]]
 }
 
 function getPreviewRows(attachmentId: string | number): RatingCurvePreviewRow[] {
@@ -1411,39 +1337,17 @@ async function downloadAttachment(item: DisplayRatingCurve) {
   const key = String(item.id)
   if (downloadingByAttachmentId.value[key]) return
 
-  if (!item.link) {
-    Snackbar.error('Rating curve download link unavailable.')
-    return
-  }
-
   downloadingByAttachmentId.value[key] = true
   try {
-    let response: Response
-    try {
-      response = await fetch(item.link, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          Accept: 'text/csv, text/plain, application/octet-stream',
-        },
-      })
-    } catch {
-      triggerDownloadLink(item.link, buildDownloadFilename(item.name))
-      return
-    }
-
-    if (!response.ok) {
-      Snackbar.error('Unable to download rating curve.')
-      return
-    }
-
-    const blob = await response.blob()
-    const dispositionFilename = filenameFromContentDisposition(
-      response.headers.get('content-disposition')
-    )
+    const csv = [
+      'inputValue,outputValue',
+      ...item.points.map(([inputValue, outputValue]) =>
+        [inputValue, outputValue].join(',')
+      ),
+    ].join('\n')
     triggerDownloadBlob(
-      blob,
-      dispositionFilename || buildDownloadFilename(item.name)
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      buildDownloadFilename(item.name)
     )
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to download rating curve.')
@@ -1463,17 +1367,6 @@ function triggerDownloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-function triggerDownloadLink(downloadUrl: string, filename: string) {
-  const link = document.createElement('a')
-  link.href = downloadUrl
-  link.download = filename
-  link.target = '_blank'
-  link.rel = 'noopener'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
 function buildDownloadFilename(name: string) {
   const sanitized = `${name ?? ''}`
     .trim()
@@ -1482,20 +1375,11 @@ function buildDownloadFilename(name: string) {
   return /\.csv$/i.test(baseName) ? baseName : `${baseName}.csv`
 }
 
-function filenameFromContentDisposition(value: string | null) {
-  if (!value) return ''
-
-  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(value)
-  if (utf8Match?.[1]) {
-    try {
-      return decodeURIComponent(utf8Match[1].replace(/["']/g, ''))
-    } catch {
-      return utf8Match[1].replace(/["']/g, '')
-    }
-  }
-
-  const basicMatch = /filename="?([^";]+)"?/i.exec(value)
-  return basicMatch?.[1] ?? ''
+function pointsToPreviewRows(points: RatingCurveTuple[]): RatingCurvePreviewRow[] {
+  return points.map(([inputValue, outputValue]) => ({
+    inputValue: String(inputValue),
+    outputValue: String(outputValue),
+  }))
 }
 
 function toCurvePoints(rows: RatingCurvePreviewRow[]): RatingCurvePoint[] {
@@ -1625,7 +1509,7 @@ async function validateEditFile(file: File | null): Promise<boolean> {
 watch(
   () => props.thingId,
   () => {
-    void refreshAttachments()
+    void refreshRatingCurves()
   },
   { immediate: true }
 )
@@ -1633,7 +1517,7 @@ watch(
 watch(
   () => props.refreshToken,
   () => {
-    void refreshAttachments()
+    void refreshRatingCurves()
   }
 )
 

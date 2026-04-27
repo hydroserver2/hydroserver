@@ -1,187 +1,49 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import hs, {
-  RATING_CURVE_ATTACHMENT_TYPE,
+  type RatingCurve,
+  type RatingCurveFittingMethod,
+  type RatingCurvePoint,
   type RatingCurvePreviewRow,
-  type ThingFileAttachment,
 } from '@hydroserver/client'
-
-export const EXISTING_RATING_CURVE_RENAME_MESSAGE =
-  'Renaming existing rating curves is not supported. Create a new rating curve instead.'
 
 export type PendingRatingCurveCreate = {
   tempId: string
-  file: File
   name: string
   description: string
+  fittingMethod: RatingCurveFittingMethod
+  points: RatingCurvePoint[]
   previewRows: RatingCurvePreviewRow[]
 }
 
 export type PendingRatingCurveReplace = {
-  attachmentId: string | number
-  file: File
+  ratingCurveId: string
+  points: RatingCurvePoint[]
   previewRows: RatingCurvePreviewRow[]
 }
 
 export type PendingRatingCurveMetadataUpdate = {
-  attachmentId: string | number
+  ratingCurveId: string
   name: string
   description: string
+  fittingMethod: RatingCurveFittingMethod
 }
 
 export type UpdateRatingCurvesResult = {
   ok: boolean
   message?: string
   failedCreates: Array<{ tempId: string; name: string; message: string }>
-  failedMetadataUpdates: Array<{ id: string | number; message: string }>
-  failedReplaces: Array<{ id: string | number; message: string }>
-  failedDeletes: Array<{ id: string | number; message: string }>
-}
-
-type ReplaceExistingRatingCurveOptions = {
-  thingId: string
-  attachment: ThingFileAttachment
-  description: string
-  file?: File | Blob | null
-}
-
-type ReplaceExistingRatingCurveResult = {
-  ok: boolean
-  message: string
-  data?: ThingFileAttachment
-}
-
-function getCsrfToken() {
-  if (typeof document === 'undefined') return ''
-
-  const decodedCookies = decodeURIComponent(document.cookie || '')
-  for (const part of decodedCookies.split(';')) {
-    const cookie = part.trim()
-    if (cookie.startsWith('csrftoken=')) {
-      return cookie.substring('csrftoken='.length)
-    }
-  }
-
-  return ''
-}
-
-function toNamedUploadFile(file: File | Blob, name: string) {
-  if (file instanceof File && file.name === name) {
-    return file
-  }
-
-  return new File([file], name, {
-    type: file.type || 'application/octet-stream',
-    lastModified: file instanceof File ? file.lastModified : Date.now(),
-  })
-}
-
-function extractResponseMessage(body: unknown, fallback: string) {
-  if (!body) return fallback
-  if (typeof body === 'string') return body.trim() || fallback
-  if (typeof body !== 'object') return fallback
-
-  const possibleKeys = ['message', 'detail', 'error']
-  for (const key of possibleKeys) {
-    const value = (body as Record<string, unknown>)[key]
-    if (typeof value === 'string' && value.trim()) {
-      return value
-    }
-  }
-
-  const errors = (body as Record<string, unknown>).errors
-  if (Array.isArray(errors) && errors.length > 0) {
-    return extractResponseMessage(errors[0], fallback)
-  }
-
-  return fallback
-}
-
-async function readResponseBody(response: Response) {
-  const contentType = response.headers.get('content-type') || ''
-  if (contentType.includes('application/json')) {
-    return response.json().catch(() => null)
-  }
-
-  return response.text().catch(() => '')
-}
-
-async function fetchExistingAttachmentBlob(attachment: ThingFileAttachment) {
-  const response = await fetch(attachment.link, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'text/csv, text/plain, application/octet-stream',
-    },
-  })
-
-  if (!response.ok) {
-    const body = await readResponseBody(response)
-    throw new Error(
-      extractResponseMessage(body, 'Unable to load rating curve file.')
-    )
-  }
-
-  return response.blob()
-}
-
-export async function replaceExistingRatingCurveAttachment({
-  thingId,
-  attachment,
-  description,
-  file,
-}: ReplaceExistingRatingCurveOptions): Promise<ReplaceExistingRatingCurveResult> {
-  const uploadFile = toNamedUploadFile(
-    file ?? (await fetchExistingAttachmentBlob(attachment)),
-    attachment.name
-  )
-  const formData = new FormData()
-  formData.append('file', uploadFile, uploadFile.name)
-  formData.append(
-    'file_attachment_type',
-    attachment.fileAttachmentType || RATING_CURVE_ATTACHMENT_TYPE
-  )
-  if (description) {
-    formData.append('description', description)
-  }
-
-  const response = await fetch(`${hs.baseRoute}/things/${thingId}/file-attachments`, {
-    method: 'PUT',
-    body: formData,
-    credentials: 'include',
-    headers: {
-      'X-CSRFToken': getCsrfToken(),
-    },
-  })
-  const body = await readResponseBody(response)
-  const message = extractResponseMessage(body, response.statusText || 'OK')
-
-  if (!response.ok) {
-    return {
-      ok: false,
-      message,
-    }
-  }
-
-  const attachmentItems = await hs.thingFileAttachments.listItems(thingId, {
-    type: RATING_CURVE_ATTACHMENT_TYPE,
-  })
-  const updatedAttachment =
-    attachmentItems.find((item) => item.name === attachment.name) ?? attachment
-
-  return {
-    ok: true,
-    message,
-    data: updatedAttachment,
-  }
+  failedMetadataUpdates: Array<{ id: string; message: string }>
+  failedReplaces: Array<{ id: string; message: string }>
+  failedDeletes: Array<{ id: string; message: string }>
 }
 
 export const useRatingCurveStore = defineStore('ratingCurves', () => {
-  const existingRatingCurves = ref<ThingFileAttachment[]>([])
+  const existingRatingCurves = ref<RatingCurve[]>([])
   const pendingCreates = ref<PendingRatingCurveCreate[]>([])
   const pendingMetadataUpdates = ref<PendingRatingCurveMetadataUpdate[]>([])
   const pendingReplaces = ref<PendingRatingCurveReplace[]>([])
-  const pendingDeleteIds = ref<Array<string | number>>([])
+  const pendingDeleteIds = ref<string[]>([])
   const loading = ref(false)
 
   let tempIdCounter = 0
@@ -202,10 +64,10 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
 
     loading.value = true
     try {
-      const items = await hs.thingFileAttachments.listItems(thingId, {
-        type: RATING_CURVE_ATTACHMENT_TYPE,
+      const items = await hs.ratingCurves.listItemsForThing(thingId, {
+        order_by: ['name'],
       })
-      existingRatingCurves.value = items.sort((a, b) =>
+      existingRatingCurves.value = [...items].sort((a, b) =>
         a.name.localeCompare(b.name)
       )
     } finally {
@@ -214,17 +76,19 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
   }
 
   const queueRatingCurveCreate = (
-    file: File,
     name: string,
     description: string,
+    fittingMethod: RatingCurveFittingMethod,
+    points: RatingCurvePoint[],
     previewRows: RatingCurvePreviewRow[]
   ) => {
     const tempId = `pending-rating-curve-${++tempIdCounter}`
     pendingCreates.value.push({
       tempId,
-      file,
       name,
       description,
+      fittingMethod,
+      points,
       previewRows,
     })
     return tempId
@@ -239,9 +103,10 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
   const updateQueuedRatingCurveCreate = (
     tempId: string,
     updates: {
-      file?: File
       name?: string
       description?: string
+      fittingMethod?: RatingCurveFittingMethod
+      points?: RatingCurvePoint[]
       previewRows?: RatingCurvePreviewRow[]
     }
   ) => {
@@ -249,29 +114,34 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     if (index === -1) return false
     pendingCreates.value[index] = {
       ...pendingCreates.value[index],
-      ...(updates.file ? { file: updates.file } : {}),
       ...(updates.name !== undefined ? { name: updates.name } : {}),
       ...(updates.description !== undefined
         ? { description: updates.description }
         : {}),
+      ...(updates.fittingMethod !== undefined
+        ? { fittingMethod: updates.fittingMethod }
+        : {}),
+      ...(updates.points ? { points: updates.points } : {}),
       ...(updates.previewRows ? { previewRows: updates.previewRows } : {}),
     }
     return true
   }
 
   const queueExistingRatingCurveMetadataUpdate = (
-    attachmentId: string | number,
+    ratingCurveId: string,
     name: string,
-    description: string
+    description: string,
+    fittingMethod: RatingCurveFittingMethod
   ) => {
-    const key = String(attachmentId)
+    const key = String(ratingCurveId)
     const index = pendingMetadataUpdates.value.findIndex(
-      (item) => String(item.attachmentId) === key
+      (item) => String(item.ratingCurveId) === key
     )
     const nextItem: PendingRatingCurveMetadataUpdate = {
-      attachmentId,
+      ratingCurveId,
       name,
       description,
+      fittingMethod,
     }
 
     if (index === -1) {
@@ -282,27 +152,25 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     pendingMetadataUpdates.value[index] = nextItem
   }
 
-  const removeQueuedRatingCurveMetadataUpdate = (
-    attachmentId: string | number
-  ) => {
-    const key = String(attachmentId)
+  const removeQueuedRatingCurveMetadataUpdate = (ratingCurveId: string) => {
+    const key = String(ratingCurveId)
     pendingMetadataUpdates.value = pendingMetadataUpdates.value.filter(
-      (item) => String(item.attachmentId) !== key
+      (item) => String(item.ratingCurveId) !== key
     )
   }
 
   const queueExistingRatingCurveReplace = (
-    attachmentId: string | number,
-    file: File,
+    ratingCurveId: string,
+    points: RatingCurvePoint[],
     previewRows: RatingCurvePreviewRow[]
   ) => {
-    const key = String(attachmentId)
+    const key = String(ratingCurveId)
     const index = pendingReplaces.value.findIndex(
-      (item) => String(item.attachmentId) === key
+      (item) => String(item.ratingCurveId) === key
     )
     const nextItem: PendingRatingCurveReplace = {
-      attachmentId,
-      file,
+      ratingCurveId,
+      points,
       previewRows,
     }
 
@@ -314,19 +182,19 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     pendingReplaces.value[index] = nextItem
   }
 
-  const removeQueuedRatingCurveReplace = (attachmentId: string | number) => {
-    const key = String(attachmentId)
+  const removeQueuedRatingCurveReplace = (ratingCurveId: string) => {
+    const key = String(ratingCurveId)
     pendingReplaces.value = pendingReplaces.value.filter(
-      (item) => String(item.attachmentId) !== key
+      (item) => String(item.ratingCurveId) !== key
     )
   }
 
-  const queueExistingRatingCurveDelete = (attachmentId: string | number) => {
-    const key = String(attachmentId)
+  const queueExistingRatingCurveDelete = (ratingCurveId: string) => {
+    const key = String(ratingCurveId)
     if (pendingDeleteIds.value.some((item) => String(item) === key)) return
-    pendingDeleteIds.value.push(attachmentId)
-    removeQueuedRatingCurveReplace(attachmentId)
-    removeQueuedRatingCurveMetadataUpdate(attachmentId)
+    pendingDeleteIds.value.push(ratingCurveId)
+    removeQueuedRatingCurveReplace(ratingCurveId)
+    removeQueuedRatingCurveMetadataUpdate(ratingCurveId)
   }
 
   const updateRatingCurves = async (
@@ -344,36 +212,32 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     const appliedReplaceIds = new Set<string>()
     const appliedDeleteIds = new Set<string>()
     const metadataUpdatesById = new Map(
-      pendingMetadataUpdates.value.map((item) => [String(item.attachmentId), item])
+      pendingMetadataUpdates.value.map((item) => [
+        String(item.ratingCurveId),
+        item,
+      ])
     )
     const replacesById = new Map(
-      pendingReplaces.value.map((item) => [String(item.attachmentId), item])
+      pendingReplaces.value.map((item) => [String(item.ratingCurveId), item])
     )
 
     try {
-      if (pendingDeleteIds.value.length) {
-        for (const id of pendingDeleteIds.value) {
-          try {
-            const attachment = existingRatingCurves.value.find(
-              (item) => String(item.id) === String(id)
-            )
-            const res = attachment
-              ? await hs.things.deleteAttachment(thingId, attachment.name)
-              : await hs.thingFileAttachments.delete(thingId, id)
-            if (!res.ok) {
-              failedDeletes.push({
-                id,
-                message: res.message || 'Unable to delete rating curve.',
-              })
-              continue
-            }
-            appliedDeleteIds.add(String(id))
-          } catch (error: any) {
+      for (const id of pendingDeleteIds.value) {
+        try {
+          const res = await hs.ratingCurves.delete(String(id))
+          if (!res.ok) {
             failedDeletes.push({
-              id,
-              message: error?.message || 'Unable to delete rating curve.',
+              id: String(id),
+              message: res.message || 'Unable to delete rating curve.',
             })
+            continue
           }
+          appliedDeleteIds.add(String(id))
+        } catch (error: any) {
+          failedDeletes.push({
+            id: String(id),
+            message: error?.message || 'Unable to delete rating curve.',
+          })
         }
       }
 
@@ -391,59 +255,47 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
 
         const metadataUpdate = metadataUpdatesById.get(key)
         const replace = replacesById.get(key)
-        const attachment = existingRatingCurves.value.find(
+        const curve = existingRatingCurves.value.find(
           (item) => String(item.id) === key
         )
 
-        if (!attachment) {
+        if (!curve) {
           if (metadataUpdate) {
             failedMetadataUpdates.push({
-              id: metadataUpdate.attachmentId,
-              message: 'Unable to find rating curve attachment.',
+              id: metadataUpdate.ratingCurveId,
+              message: 'Unable to find rating curve.',
             })
           }
           if (replace) {
             failedReplaces.push({
-              id: replace.attachmentId,
-              message: 'Unable to find rating curve attachment.',
-            })
-          }
-          continue
-        }
-
-        if (metadataUpdate && metadataUpdate.name !== attachment.name) {
-          failedMetadataUpdates.push({
-            id: metadataUpdate.attachmentId,
-            message: EXISTING_RATING_CURVE_RENAME_MESSAGE,
-          })
-          if (replace) {
-            failedReplaces.push({
-              id: replace.attachmentId,
-              message: EXISTING_RATING_CURVE_RENAME_MESSAGE,
+              id: replace.ratingCurveId,
+              message: 'Unable to find rating curve.',
             })
           }
           continue
         }
 
         try {
-          const res = await replaceExistingRatingCurveAttachment({
-            thingId,
-            attachment,
-            description: metadataUpdate?.description ?? (attachment.description || ''),
-            file: replace?.file,
+          const res = await hs.ratingCurves.update({
+            id: curve.id,
+            name: metadataUpdate?.name ?? curve.name,
+            description:
+              metadataUpdate?.description ?? (curve.description || null),
+            fittingMethod: metadataUpdate?.fittingMethod ?? curve.fittingMethod,
+            points: replace?.points ?? curve.points ?? [],
           })
 
           if (!res.ok || !res.data) {
             if (metadataUpdate) {
               failedMetadataUpdates.push({
-                id: metadataUpdate.attachmentId,
+                id: metadataUpdate.ratingCurveId,
                 message: res.message || 'Unable to update rating curve metadata.',
               })
             }
             if (replace) {
               failedReplaces.push({
-                id: replace.attachmentId,
-                message: res.message || 'Unable to replace rating curve file.',
+                id: replace.ratingCurveId,
+                message: res.message || 'Unable to replace rating curve points.',
               })
             }
             continue
@@ -454,44 +306,44 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
         } catch (error: any) {
           if (metadataUpdate) {
             failedMetadataUpdates.push({
-              id: metadataUpdate.attachmentId,
+              id: metadataUpdate.ratingCurveId,
               message: error?.message || 'Unable to update rating curve metadata.',
             })
           }
           if (replace) {
             failedReplaces.push({
-              id: replace.attachmentId,
-              message: error?.message || 'Unable to replace rating curve file.',
+              id: replace.ratingCurveId,
+              message: error?.message || 'Unable to replace rating curve points.',
             })
           }
         }
       }
 
-      // Process uploads after deletes so a renamed/replaced file can reuse a name.
-      if (pendingCreates.value.length) {
-        for (const item of pendingCreates.value) {
-          try {
-            const res = await hs.thingFileAttachments.upload(thingId, item.file, {
-              type: RATING_CURVE_ATTACHMENT_TYPE,
-              name: item.name,
-              description: item.description || undefined,
-            })
-            if (!res.ok || !res.data) {
-              failedCreates.push({
-                tempId: item.tempId,
-                name: item.name,
-                message: res.message || 'Unable to create rating curve.',
-              })
-              continue
-            }
-            appliedCreateTempIds.add(item.tempId)
-          } catch (error: any) {
+      for (const item of pendingCreates.value) {
+        try {
+          const res = await hs.ratingCurves.create({
+            id: '',
+            name: item.name,
+            description: item.description || null,
+            fittingMethod: item.fittingMethod,
+            thingId,
+            points: item.points,
+          })
+          if (!res.ok || !res.data) {
             failedCreates.push({
               tempId: item.tempId,
               name: item.name,
-              message: error?.message || 'Unable to create rating curve.',
+              message: res.message || 'Unable to create rating curve.',
             })
+            continue
           }
+          appliedCreateTempIds.add(item.tempId)
+        } catch (error: any) {
+          failedCreates.push({
+            tempId: item.tempId,
+            name: item.name,
+            message: error?.message || 'Unable to create rating curve.',
+          })
         }
       }
 
@@ -504,10 +356,10 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
         (item) => !appliedCreateTempIds.has(item.tempId)
       )
       pendingMetadataUpdates.value = pendingMetadataUpdates.value.filter(
-        (item) => !appliedMetadataUpdateIds.has(String(item.attachmentId))
+        (item) => !appliedMetadataUpdateIds.has(String(item.ratingCurveId))
       )
       pendingReplaces.value = pendingReplaces.value.filter(
-        (item) => !appliedReplaceIds.has(String(item.attachmentId))
+        (item) => !appliedReplaceIds.has(String(item.ratingCurveId))
       )
       pendingDeleteIds.value = pendingDeleteIds.value.filter(
         (id) => !appliedDeleteIds.has(String(id))

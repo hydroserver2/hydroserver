@@ -339,18 +339,20 @@ async function loadThingPhotos() {
   const res = await hs.things.getAttachments(thingId)
   if (!res.ok || !Array.isArray(res.data)) return
 
-  ratingCurveCount.value = res.data.filter(
-    (attachment: FileAttachment) =>
-      attachment.fileAttachmentType === 'rating_curve'
-  ).length
   photos.value = res.data.filter(
     (attachment: FileAttachment) => attachment.fileAttachmentType === 'Photo'
   )
 }
 
+async function loadRatingCurveCount() {
+  const items = await hs.ratingCurves.listItemsForThing(thingId)
+  ratingCurveCount.value = items.length
+}
+
 function onSiteFormClosed() {
   isRegisterModalOpen.value = false
   void loadThingPhotos()
+  void loadRatingCurveCount()
 }
 
 function openPhoto(photo: FileAttachment) {
@@ -396,6 +398,9 @@ onMounted(async () => {
   photos.value = []
   void loadThingPhotos().catch((error) =>
     console.error('Error fetching photos from DB', error)
+  )
+  void loadRatingCurveCount().catch((error) =>
+    console.error('Error fetching rating curves from DB', error)
   )
 
   const [thingResponse, tagResponse] = await Promise.all([

@@ -163,7 +163,7 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
         workspace_id: [wsId],
         expand_related: true,
         order_by: ['name'],
-      }),
+      } as any),
     hs.dataConnections.delete,
     DataConnection,
     toRef(props, 'workspaceId')
@@ -174,7 +174,7 @@ const refreshTable = async () => {
     workspace_id: [props.workspaceId],
     expand_related: true,
     order_by: ['name'],
-  })
+  } as any)
 }
 
 const openCreateDialog = () => {
