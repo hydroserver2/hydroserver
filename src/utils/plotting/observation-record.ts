@@ -58,15 +58,6 @@ import { shouldUseWorker } from "./calibration";
  */
 export const INCREASE_AMOUNT = 20 * 1000;
 
-/**
- * Below this selection size, CHANGE_VALUES runs inline on the main thread
- * instead of spawning inline workers. The worker-startup overhead (Windows
- * in particular can take ~100 ms each) dwarfs the write cost for small
- * edits, so the fast path cuts "3 edits" from seconds to microseconds.
- */
-const CHANGE_VALUES_WORKER_THRESHOLD = 1024;
-
-const components = ["date", "value", "qualifier"]; // TODO: `qualifier` unused for now...
 
 // SharedArrayBuffer requires cross-origin isolation (COOP/COEP). When those
 // headers are absent — the common consumer setup for apps that need to call
@@ -157,14 +148,12 @@ function consumesPrecedingSelection(
 export class ObservationRecord {
   /** The generated dataset to be used for plotting */
   dataset: {
-    dimensions: string[];
     source: {
       // Store datetimes in a Float64Array because plotly can't parse BigInts correctly.
       x: Float64Array<ArrayBufferLike>;
       y: Float32Array<ArrayBufferLike>;
     };
   } = {
-      dimensions: components,
       source: {
         x: new Float64Array(
           makeBuffer(
@@ -326,8 +315,9 @@ export class ObservationRecord {
   }
 
   /**
-   * @param index
-   * @returns
+   * Truncate history at `index` (inclusive), reload from raw, and
+   * replay the surviving entries. Used by the "Reload from this step"
+   * button in EditHistory.
    */
   async reloadHistory(index: number): Promise<number[]> {
     const newHistory = this.history.slice(0, index + 1);
@@ -337,10 +327,8 @@ export class ObservationRecord {
     return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
   }
 
-  /**
-   * Remove a history item
-   * @param index
-   */
+  /** Splice the history entry at `index`, reload from raw, and replay
+   *  the survivors. */
   async removeHistoryItem(index: number): Promise<number[]> {
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
@@ -668,12 +656,6 @@ export class ObservationRecord {
   }
 
   /**
-   * @param index An array containing the list of index of values to perform the operations on.
-   * @param operator The operator that will be applied
-   * @param value The value to use in the operation
-   * @returns an array of index values to keep selected in the plot
-   */
-  /**
    * Multi-threaded apply of an arithmetic operator to Y at the previously-filtered selection.
    *  1. Selection is read from the previous history entry (the last entry is this operation itself).
    *  2. Selection indexes are sharded into disjoint chunks; workers write in place to shared Y.
@@ -688,16 +670,15 @@ export class ObservationRecord {
 
     const N = selection.length;
 
-    // Fast path: for small selections, the worker-startup cost dominates the
-    // actual work. The calibration layer predicts the crossover per-device;
-    // the static `CHANGE_VALUES_WORKER_THRESHOLD` is kept as a belt-and-
-    // suspenders fallback so an un-calibrated profile still short-circuits
-    // tiny edits.
+    // Fast path: for small selections, the worker-startup cost dominates
+    // the actual work. The calibration layer predicts the crossover per-
+    // device; even the uncalibrated default profile short-circuits long
+    // before any realistic edit, so no extra static floor is needed.
     const decision = shouldUseWorker(EnumEditOperations.CHANGE_VALUES, {
       datasetSize: this.dataset.source.y.length,
       selectionSize: N,
     });
-    if (!decision.useWorker || N < CHANGE_VALUES_WORKER_THRESHOLD) {
+    if (!decision.useWorker) {
       changeValuesCore(this.dataY, selection, operator, value);
       return [];
     }
@@ -1011,13 +992,15 @@ export class ObservationRecord {
   }
 
   /**
-   * Multi-threaded version of {@link _fillGaps}.
+   * Detect gaps in the configured window and insert fill points using
+   * either linear interpolation or a sentinel `fillValue`. Inline path:
+   * single copy-with-fills sweep into freshly-allocated x/y buffers.
+   * Worker path:
    *  1. The main thread scans once for gaps and computes the number of fill points per gap.
    *  2. The original array is split into equal segments; each gap is assigned to the segment containing its left index.
    *  3. Cumulative fill counts before each segment give each worker's output startTarget, ensuring no overlap.
    *  4. Each worker copies its segment to the output buffer and inserts its gap fills inline.
-   */
-  /**
+   *
    * @param range Optional `[startTs, endTs]` window in epoch
    *   milliseconds. Both bounds inclusive; snapped to the nearest
    *   enclosed point via binary search. Datetime-addressed (not
@@ -1221,12 +1204,12 @@ export class ObservationRecord {
   }
 
   /**
-   Deletes data points from a large array using worker threads.
-    1. The main thread divides the original array into equal parts to distribute work among workers.
-    2. For each segment, binary search locates the indexes to delete (deleteSegment), ensuring efficient lookups.
-    3. The cumulative deletions before each segment help compute the starting index (startTarget) for each worker's output, ensuring no overlap.
-    4. Each worker processes its segment linearly, skipping deletions and copying kept elements to their computed positions.
-    * @param deleteIndices
+   * Delete points by ascending `deleteIndices` from x/y. Inline path
+   * runs a single skip-on-delete copy on the main thread; worker path:
+   *  1. Main thread splits the original array into equal segments.
+   *  2. Per-segment binary search locates the indexes to delete (deleteSegment) for efficient lookups.
+   *  3. Cumulative deletions before each segment give each worker's output startTarget so segments don't overlap.
+   *  4. Each worker walks its segment linearly, skipping deletions and copying kept elements into place.
    */
   private async _deleteDataPoints(deleteIndices: number[]) {
     const oldLen = this.dataX.length;
@@ -1369,12 +1352,6 @@ export class ObservationRecord {
     return this._driftCorrection(ranges);
   }
 
-  /**
-   *
-   * @param start The start index
-   * @param end The end index
-   * @param value The drift amount
-   */
   /**
    * Multi-threaded drift correction over one or more [start, end, value] ranges.
    *  1. Main thread reads each range's anchors (startDatetime, extent) once and chunks the range.
@@ -1641,11 +1618,6 @@ export class ObservationRecord {
   // =======================
 
   /**
-   * Filter by applying a set of logical operations
-   * @param appliedFilters
-   * @returns an array of index values to select in the plot
-   */
-  /**
    * Filter by applying a set of logical operations, using worker threads.
    *  1. Main thread encodes filters as numeric opcodes + thresholds (cheaper than string compares in the hot loop).
    *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches (short-circuit).
@@ -1740,12 +1712,6 @@ export class ObservationRecord {
     return selection;
   }
 
-  /**
-   *
-   * @param comparator
-   * @param value
-   * @returns
-   */
   /**
    * Find points where the relative rate `(curr - prev) / |prev|` satisfies the comparator, using worker threads.
    *  1. Main thread partitions scan range [1, dataY.length) into chunks; `Y[i-1]` is safely read from the shared buffer across chunk boundaries.
@@ -1915,12 +1881,6 @@ export class ObservationRecord {
     return index;
   }
 
-  /**
-   *
-   * @param comparator
-   * @param value
-   * @returns
-   */
   /**
    * Find points where the change from the previous value satisfies the comparator, using worker threads.
    *  1. Main thread partitions scan range [1, dataY.length) into chunks (each chunk's first index safely reads Y[i-1] from the shared buffer).

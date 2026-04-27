@@ -128,27 +128,26 @@ describe('ObservationRecord — worker paths', () => {
     forceWorker = false
   })
 
-  it('CHANGE_VALUES fans out when N >= threshold and useWorker=true', async () => {
-    // Need N >= CHANGE_VALUES_WORKER_THRESHOLD (1024). Build a tall dataset
-    // and select every index — the internal threshold gate is what we're
-    // exercising, not the arithmetic correctness.
-    const big = uniform(2000, 5, 0)
-    const tall = new ObservationRecord(big)
-    await tall.reload()
-    const selection = Array.from({ length: 2000 }, (_, i) => i)
-    await tall.dispatch([
-      [EnumFilterOperations.SELECTION, selection],
+  it('CHANGE_VALUES fans out to workers when calibration says useWorker=true', async () => {
+    // Calibration is the only gate now (the static N<1024 floor was
+    // redundant — the default profile already short-circuits well past
+    // any realistic edit). With `forceWorker=true` the dispatch routes
+    // straight through the worker path regardless of N.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1, 2]],
       [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
     ])
     await flushMicrotasks()
-    const last = tall.history[tall.history.length - 1]
+    const last = rec.history[rec.history.length - 1]
     expect(last.method).toBe(EnumEditOperations.CHANGE_VALUES)
     expect(last.executionMode).toBe('worker')
-    expect(tall.dataY[0]).toBe(6)
   })
 
-  it('CHANGE_VALUES falls back to inline when N is below the threshold', async () => {
-    // Even with forceWorker=true, the static N<1024 gate keeps this inline.
+  it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
+    // Flip the calibration mock to the "inline wins" branch — that's
+    // the path the uncalibrated default profile produces for any
+    // realistic selection size, and the floor we relied on for tiny N.
+    forceWorker = false
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [0, 1, 2]],
       [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 100],

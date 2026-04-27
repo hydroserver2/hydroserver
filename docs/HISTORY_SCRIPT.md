@@ -129,12 +129,22 @@ they replay against the same windowed dataset shape that the
 script's `window` field guarantees the loader fetches before
 replay.
 
+**Trailing optional `[startTs, endTs]?` on filter ops.** Every
+scan-style filter (`VALUE_THRESHOLD`, `CHANGE`, `RATE_OF_CHANGE`,
+`FIND_GAPS`, `PERSISTENCE`) accepts an optional `[startTs, endTs]`
+tuple as its last positional arg, sourced from the shared "Filter
+range" toggle in the plot toolbar. Omit when the user has the
+toggle off (the filter scans the full extent); include when the
+user pinned the scan to a window. `DATETIME_RANGE` is the
+exception — its from/to args ARE the window, so there is no
+trailing range tuple.
+
 | Method                  | `args` shape                                                                                        | Reads `history[-2].selected` at runtime? |
 |-------------------------|-----------------------------------------------------------------------------------------------------|------------------------------------------|
-| `VALUE_THRESHOLD`       | `[{ "Greater than": number, ... }]`                                                                 | No                                       |
+| `VALUE_THRESHOLD`       | `[{ "Greater than": number, ... }, [startTs, endTs]?]`                                              | No                                       |
 | `DATETIME_RANGE`        | `[fromTs?, toTs?]`                                                                                  | No                                       |
-| `CHANGE`                | `[comparator, value]`                                                                               | No                                       |
-| `RATE_OF_CHANGE`        | `[comparator, value]` — value is a fraction (0.5 = 50%)                                             | No                                       |
+| `CHANGE`                | `[comparator, value, [startTs, endTs]?]`                                                            | No                                       |
+| `RATE_OF_CHANGE`        | `[comparator, value, [startTs, endTs]?]` — value is a fraction (0.5 = 50%)                          | No                                       |
 | `FIND_GAPS`             | `[amount, unit, [startTs, endTs]?]`                                                                 | No                                       |
 | `PERSISTENCE`           | `[times, [startTs, endTs]?]`                                                                        | No                                       |
 | `SELECTION`             | `[indices[]]`                                                                                       | No                                       |
