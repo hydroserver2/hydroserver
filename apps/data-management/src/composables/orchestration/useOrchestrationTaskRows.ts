@@ -12,6 +12,7 @@ import {
 } from '@/utils/orchestration/taskRunDetails'
 import { formatTime } from '@/utils/time'
 import type {
+  DataProductTaskType,
   SortDir,
   SortKey,
   TabId,
@@ -50,9 +51,20 @@ const buildRowBase = (
     lastRunAt: latestRun?.startedAt ?? null,
     nextRunAt: schedule?.nextRunAt ?? null,
     lastRunMessage: getTaskRunMessage(latestRun as any),
+    taskType: null as DataProductTaskType,
     userClickedRunNow: !!runNowTriggeredByTaskId[task.id],
     raw: task,
   }
+}
+
+const resolveDataProductTaskType = (
+  t: DataProductTaskExpanded
+): DataProductTaskType => {
+  if (t.aggregationTransformations?.length) return 'Aggregation'
+  if (t.expressionTransformations?.length) return 'Expression'
+  if (t.compositeExpressionTransformations?.length) return 'Derivation'
+  if (t.ratingCurveTransformations?.length) return 'Rating curve'
+  return null
 }
 
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
@@ -109,6 +121,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       ...buildRowBase(t, 'dataProduct', runNowTriggeredByTaskId),
       dataConnectionId: null,
       thingId: t.thing?.id ?? null,
+      taskType: resolveDataProductTaskType(t),
     }))
   )
 

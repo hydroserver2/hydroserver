@@ -22,6 +22,13 @@ export type ActiveView = 'tasks' | 'workspaces'
 export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
 export type SortDir = 'asc' | 'desc'
 
+export type DataProductTaskType =
+  | 'Aggregation'
+  | 'Expression'
+  | 'Derivation'
+  | 'Rating curve'
+  | null
+
 export type TaskRow = {
   id: string
   kind: TaskKind
@@ -37,6 +44,7 @@ export type TaskRow = {
   lastRunMessage: string
   dataConnectionId: string | null
   thingId: string | null
+  taskType: DataProductTaskType
   userClickedRunNow: boolean
   raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 }

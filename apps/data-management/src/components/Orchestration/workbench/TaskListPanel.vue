@@ -227,6 +227,7 @@
                 <v-icon :icon="sortIcon(col.key)" size="14" />
               </button>
             </th>
+            <th v-if="activeTab === 'aggregation'">Type</th>
             <th class="text-right">Actions</th>
           </tr>
         </thead>
@@ -280,6 +281,19 @@
             </td>
             <td class="task-time">{{ row.lastRun }}</td>
             <td class="task-time">{{ row.nextRun }}</td>
+            <td v-if="activeTab === 'aggregation'" class="task-type">
+              <v-chip
+                v-if="row.taskType"
+                density="comfortable"
+                size="small"
+                rounded="lg"
+                :style="{ background: accentLight, color: accent }"
+                class="task-type-chip"
+              >
+                {{ row.taskType }}
+              </v-chip>
+              <span v-else class="text-slate-400">—</span>
+            </td>
             <td class="task-actions">
               <div class="task-actions-inner">
                 <v-tooltip location="top" :open-delay="0" :close-delay="0">
@@ -578,6 +592,14 @@ const removeStatusFilter = (index: number) => {
 }
 .tasks-table td {
   padding: 13px 12px;
+}
+.task-type {
+  padding: 13px 12px;
+  white-space: nowrap;
+}
+.task-type-chip {
+  font-size: 11px;
+  font-weight: 600;
 }
 .task-actions {
   text-align: right;

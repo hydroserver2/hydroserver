@@ -1,0 +1,192 @@
+import { flushPromises, shallowMount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const {
+  dataProductGetMock,
+  dataProductUpdateMock,
+  monitoringGetMock,
+  taskGetMock,
+} = vi.hoisted(() => ({
+  dataProductGetMock: vi.fn(),
+  dataProductUpdateMock: vi.fn(),
+  monitoringGetMock: vi.fn(),
+  taskGetMock: vi.fn(),
+}))
+
+vi.mock('@hydroserver/client', () => ({
+  default: {
+    dataProductTasks: {
+      get: dataProductGetMock,
+      getItem: vi.fn(),
+      getTaskRun: vi.fn(),
+      getTaskRuns: vi.fn(),
+      runTask: vi.fn(),
+      update: dataProductUpdateMock,
+      delete: vi.fn(),
+    },
+    monitoringTasks: {
+      get: monitoringGetMock,
+      getItem: vi.fn(),
+      getTaskRun: vi.fn(),
+      getTaskRuns: vi.fn(),
+      runTask: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    tasks: {
+      get: taskGetMock,
+      getItem: vi.fn(),
+      getTaskRun: vi.fn(),
+      getTaskRuns: vi.fn(),
+      runTask: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+  PermissionAction: { Edit: 'edit' },
+  PermissionResource: { Workspace: 'workspace' },
+  User: class User {
+    email = 'editor@example.com'
+  },
+}))
+
+vi.mock('@/router/router', () => ({
+  default: {
+    push: vi.fn(),
+    replace: vi.fn(),
+    resolve: vi.fn(() => ({ href: '/orchestration' })),
+  },
+}))
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({
+    fullPath: '/orchestration',
+    params: {},
+    query: {},
+  }),
+}))
+
+vi.mock('@/utils/notifications', () => ({
+  Snackbar: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}))
+
+vi.mock('@/composables/useWorkspacePermissions', () => ({
+  useWorkspacePermissions: () => ({
+    hasPermission: vi.fn(() => true),
+    isAdmin: vi.fn(() => false),
+    isOwner: vi.fn(() => false),
+  }),
+}))
+
+const makeDataProductTask = () => ({
+  id: 'product-task-1',
+  name: 'Rating curve task',
+  description: null,
+  thing: { id: 'thing-1', name: 'Site 1', workspaceId: 'workspace-1' },
+  aggregationTransformations: [],
+  compositeExpressionTransformations: [],
+  expressionTransformations: [],
+  ratingCurveTransformations: [],
+  latestRun: null,
+  schedule: {
+    enabled: true,
+    startTime: null,
+    nextRunAt: null,
+    crontab: null,
+    interval: 1,
+    intervalPeriod: 'days',
+  },
+})
+
+const globalStubs = {
+  'v-dialog': { template: '<div><slot /></div>' },
+  'v-icon': { template: '<span />' },
+  'v-tooltip': {
+    template: '<div><slot name="activator" :props="{}" /><slot /></div>',
+  },
+}
+
+const seedWorkspace = async () => {
+  const { useWorkspaceStore } = await import('@/store/workspaces')
+  useWorkspaceStore().workspaces = [
+    {
+      id: 'workspace-1',
+      name: 'Workspace 1',
+      collaboratorRole: { name: 'editor' },
+    } as any,
+  ]
+}
+
+describe('TaskDetails', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    dataProductGetMock.mockReset()
+    dataProductUpdateMock.mockReset()
+    monitoringGetMock.mockReset()
+    taskGetMock.mockReset()
+    dataProductGetMock.mockResolvedValue({
+      ok: true,
+      data: makeDataProductTask(),
+    })
+    dataProductUpdateMock.mockResolvedValue({
+      ok: true,
+      data: makeDataProductTask(),
+    })
+  })
+
+  it('fetches data-product task details from the data-product task endpoint', async () => {
+    const { default: TaskDetails } = await import('../TaskDetails.vue')
+    await seedWorkspace()
+
+    shallowMount(TaskDetails, {
+      props: {
+        embedded: true,
+        taskId: 'product-task-1',
+        taskKind: 'dataProduct',
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+
+    expect(dataProductGetMock).toHaveBeenCalledWith('product-task-1', {
+      expand_related: true,
+    })
+    expect(taskGetMock).not.toHaveBeenCalled()
+    expect(monitoringGetMock).not.toHaveBeenCalled()
+  })
+
+  it('uses the data-product task service when pausing a data-product task', async () => {
+    const { default: TaskDetails } = await import('../TaskDetails.vue')
+    await seedWorkspace()
+
+    const wrapper = shallowMount(TaskDetails, {
+      props: {
+        embedded: true,
+        taskId: 'product-task-1',
+        taskKind: 'dataProduct',
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+
+    const pauseButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Pause'))
+    await pauseButton?.trigger('click')
+
+    expect(dataProductUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'product-task-1',
+        schedule: expect.objectContaining({ enabled: false }),
+      })
+    )
+  })
+})

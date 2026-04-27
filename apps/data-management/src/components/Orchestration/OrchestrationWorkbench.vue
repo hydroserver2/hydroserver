@@ -39,9 +39,12 @@
       <section v-if="selectedTaskId" class="detail detail--task">
         <TaskDetails
           :task-id="selectedTaskId"
+          :task-kind="selectedTaskKind"
           :run-id="selectedRunId"
           embedded
           @close="closeTaskDetails"
+          @deleted="onTaskDetailsChanged"
+          @updated="onTaskDetailsChanged"
         />
       </section>
 
@@ -176,10 +179,12 @@ import OrchestrationContextSidebar from './workbench/OrchestrationContextSidebar
 import TaskListPanel from './workbench/TaskListPanel.vue'
 import {
   TAB_META,
+  TAB_TO_KIND,
   worstDotColor,
   type ActiveView,
   type TabDefinition,
   type TabId,
+  type TaskKind,
   type TaskRow,
 } from './workbench/orchestrationTabs'
 
@@ -298,7 +303,8 @@ const canEditOrchestration = computed(() => {
 
 const countIssues = (rows: TaskRow[]) =>
   rows.filter(
-    (r) => r.statusSort === 'Needs attention' || r.statusSort === 'Behind schedule'
+    (r) =>
+      r.statusSort === 'Needs attention' || r.statusSort === 'Behind schedule'
   ).length
 
 const tabs = computed<TabDefinition[]>(() => [
@@ -462,6 +468,23 @@ const selectedRunId = computed(() => {
   return typeof value === 'string' && value.trim() ? value : null
 })
 
+const selectedTaskKind = computed<TaskKind>(() => {
+  const value = route.query.taskKind
+  if (value === 'etl' || value === 'dataProduct' || value === 'monitoring') {
+    return value
+  }
+
+  const taskId = selectedTaskId.value
+  const row = taskId
+    ? [
+        ...etlTaskRows.value,
+        ...dataProductTaskRows.value,
+        ...monitoringTaskRows.value,
+      ].find((candidate) => candidate.id === taskId)
+    : null
+  return row?.kind ?? TAB_TO_KIND[activeTab.value]
+})
+
 const hasTaskDetailsQuery = computed(
   () => selectedTaskId.value !== null || selectedRunId.value !== null
 )
@@ -470,6 +493,7 @@ const closeTaskDetails = async () => {
   if (!hasTaskDetailsQuery.value) return
   const nextQuery = { ...route.query }
   delete nextQuery.taskId
+  delete nextQuery.taskKind
   delete nextQuery.runId
   await router.replace({ name: 'Orchestration', query: nextQuery })
 }
@@ -599,6 +623,11 @@ const onDataProductTaskCreated = async () => {
   autoSelectSidebar()
 }
 
+const onTaskDetailsChanged = async () => {
+  await fetchAll(props.workspaceId)
+  autoSelectSidebar()
+}
+
 const onDataConnectionUpdated = (updated: DataConnection) => {
   openEditDataConnection.value = false
   const idx = dataConnections.value.findIndex((dc) => dc.id === updated.id)
@@ -639,11 +668,11 @@ const goToTask = async (row: TaskRow) => {
       ...currentQuery,
       workspaceId: props.workspaceId,
       taskId: row.id,
+      taskKind: row.kind,
       runId: undefined,
     },
   })
 }
-
 </script>
 
 <style scoped>

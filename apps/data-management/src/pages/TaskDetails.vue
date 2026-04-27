@@ -15,20 +15,14 @@
       <div class="task-details-header-row">
         <div class="task-details-title-group">
           <h2 class="task-details-title">{{ task.name }}</h2>
-          <TaskStatus
-            :status="statusName"
-            :paused="!task.schedule?.enabled"
-          />
+          <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
           <span v-if="schedulePill" class="schedule-pill">
             {{ schedulePill }}
           </span>
         </div>
 
         <div class="task-details-actions">
-          <v-tooltip
-            location="top"
-            :disabled="!pauseToggleDisabledReason"
-          >
+          <v-tooltip location="top" :disabled="!pauseToggleDisabledReason">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <button
@@ -41,16 +35,14 @@
                     :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
                     size="14"
                   />
-                  <span>{{
-                    task.schedule?.enabled ? 'Pause' : 'Resume'
-                  }}</span>
+                  <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
                 </button>
               </span>
             </template>
             <span>{{ pauseToggleDisabledReason }}</span>
           </v-tooltip>
 
-          <v-tooltip location="top" :disabled="canEditTask">
+          <v-tooltip v-if="isEtlTask" location="top" :disabled="canEditTask">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <button
@@ -123,6 +115,7 @@
           Run history
         </button>
         <button
+          v-if="isEtlTask"
           type="button"
           class="task-details-tab"
           :class="{ 'task-details-tab--active': activePanel === 'mappings' }"
@@ -136,10 +129,7 @@
     <!-- Body -->
     <div class="task-details-body">
       <!-- Run history -->
-      <div
-        v-show="activePanel === 'runs'"
-        class="task-details-panel"
-      >
+      <div v-show="activePanel === 'runs'" class="task-details-panel">
         <template v-if="showRunHistoryLoading">
           <div class="run-loading">
             <v-progress-circular
@@ -192,9 +182,7 @@
               <div class="run-entry-footer">
                 <div class="run-entry-footer-content">
                   <div v-if="run.runtimeUrl" class="run-entry-detail-row">
-                    <div class="run-entry-detail-label">
-                      Runtime source URI
-                    </div>
+                    <div class="run-entry-detail-label">Runtime source URI</div>
                     <div class="run-entry-detail-value">
                       <div class="run-entry-detail-linkwrap">
                         <a
@@ -229,9 +217,7 @@
 
                   <div class="run-entry-detail-row run-entry-detail-row-inline">
                     <div class="run-entry-detail-inline">
-                      <div class="run-entry-detail-label">
-                        Copy run as URL
-                      </div>
+                      <div class="run-entry-detail-label">Copy run as URL</div>
                       <v-tooltip text="Copy run as URL" location="bottom">
                         <template #activator="{ props: tooltipProps }">
                           <v-btn
@@ -254,10 +240,7 @@
             </div>
           </template>
 
-          <div
-            v-if="!hasLoadedFullRunHistory"
-            class="run-entry-refresh"
-          >
+          <div v-if="!hasLoadedFullRunHistory" class="run-entry-refresh">
             <v-btn
               variant="text"
               :prepend-icon="mdiHistory"
@@ -276,10 +259,11 @@
 
       <!-- Mappings -->
       <div
+        v-if="isEtlTask"
         v-show="activePanel === 'mappings'"
         class="task-details-panel task-details-panel--mappings"
       >
-        <Swimlanes v-if="task?.mappings?.length" :task="task" />
+        <Swimlanes v-if="etlTask?.mappings?.length" :task="etlTask" />
         <div v-else class="mappings-empty">
           No mappings configured for this task.
         </div>
@@ -288,15 +272,15 @@
   </div>
   <div v-else class="task-details-loading">Loading…</div>
 
-  <v-dialog v-model="openEdit" width="80rem" v-if="task">
+  <v-dialog v-model="openEdit" width="80rem" v-if="etlTask">
     <TaskForm
-      :old-task="task"
+      :old-task="etlTask"
       @close="openEdit = false"
       @updated="onTaskUpdated"
     />
   </v-dialog>
 
-  <v-dialog v-model="openDelete" width="40rem">
+  <v-dialog v-if="task" v-model="openDelete" width="40rem">
     <DeleteTaskCard
       :task="task!"
       @close="openDelete = false"
@@ -318,6 +302,8 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@/utils/notifications'
 import hs, {
+  DataProductTaskExpanded,
+  MonitoringTaskExpanded,
   PermissionAction,
   PermissionResource,
   TaskExpanded,
@@ -337,6 +323,10 @@ import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import {
+  serviceForKind,
+  type TaskKind,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 import {
   mdiArrowLeft,
   mdiCheck,
@@ -358,11 +348,13 @@ const Swimlanes = defineAsyncComponent(
 const props = withDefaults(
   defineProps<{
     taskId?: string | null
+    taskKind?: TaskKind | null
     runId?: string | null
     embedded?: boolean
   }>(),
   {
     taskId: null,
+    taskKind: null,
     runId: null,
     embedded: false,
   }
@@ -370,12 +362,18 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'deleted'): void
+  (e: 'updated'): void
 }>()
 
 const route = useRoute()
 const openEdit = ref(false)
 const openDelete = ref(false)
-const task = ref<TaskExpanded | null>(null)
+type TaskDetailsTask =
+  | TaskExpanded
+  | DataProductTaskExpanded
+  | MonitoringTaskExpanded
+const task = ref<TaskDetailsTask | null>(null)
 const taskRuns = ref<TaskRun[]>([])
 const loadingTaskRuns = ref(false)
 const loadingFullRunHistory = ref(false)
@@ -393,11 +391,48 @@ const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
 type TaskDetailsPanel = 'runs' | 'mappings'
 const activePanel = ref<TaskDetailsPanel>('runs')
+const resolvedTaskKind = ref<TaskKind>('etl')
+
+const isTaskKind = (value: unknown): value is TaskKind =>
+  value === 'etl' || value === 'dataProduct' || value === 'monitoring'
+
+const effectiveTaskKind = computed<TaskKind>(() => {
+  if (props.taskKind && isTaskKind(props.taskKind)) return props.taskKind
+  const queryValue = route.query.taskKind
+  if (isTaskKind(queryValue)) return queryValue
+  return 'etl'
+})
+
+const taskService = computed(() => serviceForKind(resolvedTaskKind.value))
+const isEtlTask = computed(() => resolvedTaskKind.value === 'etl')
+const etlTask = computed(() =>
+  isEtlTask.value ? (task.value as TaskExpanded | null) : null
+)
 
 const canRunNow = computed(() => !!task.value)
 
+const taskWorkspaceId = computed(() => {
+  const value = task.value as any
+  return (
+    value?.workspace?.id ??
+    value?.dataConnection?.workspace?.id ??
+    value?.thing?.workspaceId ??
+    value?.workspaceId ??
+    null
+  )
+})
+
+const taskWorkspace = computed(() => {
+  const value = task.value as any
+  const embeddedWorkspace = value?.workspace ?? value?.dataConnection?.workspace
+  if (embeddedWorkspace?.id) return embeddedWorkspace
+  return workspaces.value.find(
+    (workspace) => workspace.id === taskWorkspaceId.value
+  )
+})
+
 const canEditTask = computed(() => {
-  const workspace = task.value?.dataConnection?.workspace
+  const workspace = taskWorkspace.value
   if (!workspace) return false
 
   const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
@@ -443,18 +478,35 @@ const effectiveRunId = computed(() => {
   return null
 })
 
-const isTaskExpandedPayload = (value: unknown): value is TaskExpanded => {
+const isExpectedTaskPayload = (
+  value: unknown,
+  kind: TaskKind
+): value is TaskDetailsTask => {
   if (!value || typeof value !== 'object') return false
-  const candidate = value as Partial<TaskExpanded>
+  const candidate = value as Partial<TaskDetailsTask>
   const hasId = typeof candidate.id === 'string' && candidate.id.length > 0
-  const hasDataConnection =
-    !!candidate.dataConnection &&
-    typeof candidate.dataConnection === 'object' &&
-    typeof (candidate.dataConnection as any).id === 'string' &&
-    (candidate.dataConnection as any).id.length > 0
-  const hasMappings = Array.isArray(candidate.mappings)
+  if (!hasId) return false
 
-  return hasId && hasDataConnection && hasMappings
+  if (kind === 'etl') {
+    const etlCandidate = candidate as Partial<TaskExpanded>
+    const hasDataConnection =
+      !!etlCandidate.dataConnection &&
+      typeof etlCandidate.dataConnection === 'object' &&
+      typeof (etlCandidate.dataConnection as any).id === 'string' &&
+      (etlCandidate.dataConnection as any).id.length > 0
+    const hasMappings = Array.isArray(etlCandidate.mappings)
+    return hasDataConnection && hasMappings
+  }
+
+  const productCandidate = candidate as Partial<
+    DataProductTaskExpanded | MonitoringTaskExpanded
+  >
+  return (
+    !!productCandidate.thing &&
+    typeof productCandidate.thing === 'object' &&
+    typeof (productCandidate.thing as any).id === 'string' &&
+    (productCandidate.thing as any).id.length > 0
+  )
 }
 
 const routeToAccessDenied = async () => {
@@ -467,8 +519,10 @@ const routeToAccessDenied = async () => {
 }
 
 const backLabel = computed(() => {
-  const dc: any = task.value?.dataConnection
+  const dc: any = (task.value as any)?.dataConnection
+  const thing: any = (task.value as any)?.thing
   if (dc?.name) return dc.name
+  if (thing?.name) return thing.name
   return 'Back to job orchestration'
 })
 
@@ -532,10 +586,9 @@ const runLinkHref = (runId: string) =>
   router.resolve({
     name: 'Orchestration',
     query: {
-      workspaceId:
-        (task.value as any)?.workspace?.id ??
-        task.value?.dataConnection?.workspace?.id,
+      workspaceId: taskWorkspaceId.value,
       taskId: effectiveTaskId.value,
+      taskKind: resolvedTaskKind.value,
       runId,
     },
   }).href
@@ -574,7 +627,7 @@ const showRunHistoryLoading = computed(() => {
 })
 
 const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
-  const dc: any = task.value?.dataConnection
+  const dc: any = (task.value as any)?.dataConnection
   const sourceUrl = dc?.sourceUrl
   if (!sourceUrl || typeof sourceUrl !== 'string') return null
 
@@ -587,7 +640,7 @@ const resolveRuntimeUrlFromTask = (run?: TaskRun | null) => {
     if (!name) continue
 
     if (placeholder?.type === 'per_task') {
-      const value = (task.value?.taskVariables as any)?.[name]
+      const value = ((task.value as any)?.taskVariables as any)?.[name]
       if (value !== undefined && value !== null && value !== '') {
         values[name] = String(value)
       }
@@ -651,14 +704,15 @@ const copyToClipboard = async (value?: string | null) => {
 }
 
 const runHistoryRows = computed(() => {
-  return mergeTaskRuns([task.value?.latestRun, ...taskRuns.value])
-    .map((run) => ({
+  return mergeTaskRuns([task.value?.latestRun, ...taskRuns.value]).map(
+    (run) => ({
       id: run.id,
       startedAt: formatTimeWithZone(run.startedAt),
       message: getTaskRunMessage(run),
       runtimeUrl: getTaskRunRuntimeUrl(run) ?? resolveRuntimeUrlFromTask(run),
       raw: run,
-    }))
+    })
+  )
 })
 
 const RUN_HISTORY_PAGE_SIZE = 50
@@ -686,18 +740,18 @@ const upsertTaskRun = (run: TaskRun) => {
 const syncLatestRun = (run: TaskRun) => {
   if (!task.value) return
   task.value = { ...task.value, latestRun: run }
-  upsertWorkspaceTask(task.value)
+  upsertKnownTask(task.value)
 }
 
 const refreshTaskAfterRunCompletion = async (taskId: string, runId: string) => {
   try {
-    const updated = (await hs.tasks.getItem(taskId, {
+    const updated = (await taskService.value.getItem(taskId, {
       expand_related: true,
-    })) as unknown as TaskExpanded
+    })) as unknown as TaskDetailsTask
 
     if (updated) {
       task.value = updated
-      upsertWorkspaceTask(updated)
+      upsertKnownTask(updated)
     }
 
     if (activePanel.value === 'runs' && effectiveRunId.value === runId) {
@@ -708,9 +762,12 @@ const refreshTaskAfterRunCompletion = async (taskId: string, runId: string) => {
   }
 }
 
-const publishQueuedRunUpdate = (updatedTask: TaskExpanded, observedRun: TaskRun) => {
+const publishQueuedRunUpdate = (
+  updatedTask: TaskDetailsTask,
+  observedRun: TaskRun
+) => {
   task.value = updatedTask
-  upsertWorkspaceTask(updatedTask)
+  upsertKnownTask(updatedTask)
   upsertTaskRun(observedRun)
 }
 
@@ -733,9 +790,12 @@ const scheduleRunNowPoll = (
 
     try {
       if (requestedRunId) {
-        const runResponse = await hs.tasks.getTaskRun(taskId, requestedRunId)
+        const runResponse = await taskService.value.getTaskRun(
+          taskId,
+          requestedRunId
+        )
         const updatedRun = runResponse.ok
-          ? ((runResponse.data as TaskRun) ?? null)
+          ? (runResponse.data as TaskRun) ?? null
           : null
         const decision = getRunNowPollDecision({
           requestedRunId,
@@ -755,9 +815,9 @@ const scheduleRunNowPoll = (
 
         hasPublishedQueuedRun = decision.hasPublishedQueuedRun
       } else {
-        const updated = (await hs.tasks.getItem(taskId, {
+        const updated = (await taskService.value.getItem(taskId, {
           expand_related: true,
-        })) as unknown as TaskExpanded
+        })) as unknown as TaskDetailsTask
 
         if (pollSessionId !== runNowPollSessionId) return
 
@@ -812,7 +872,7 @@ const runTaskNow = async () => {
     const previousRunId = task.value.latestRun?.id ?? null
     stopRunNowPolling()
     const pollSessionId = runNowPollSessionId
-    const response = await hs.tasks.runTask(taskId)
+    const response = await taskService.value.runTask(taskId)
     if (!response.ok) {
       throw new Error(response.message || 'Unable to run task now.')
     }
@@ -838,27 +898,28 @@ const runTaskNow = async () => {
 }
 
 async function togglePaused(
-  target: Partial<TaskExpanded> & Pick<TaskExpanded, 'id'>
+  target: Partial<TaskDetailsTask> & Pick<TaskDetailsTask, 'id'>
 ) {
   if (!canEditTask.value) return
   if (!target.schedule) return
   target.schedule.enabled = !target.schedule.enabled
-  await hs.tasks.update(target as any)
+  await taskService.value.update(target as any)
+  emit('updated')
 }
 
-function upsertWorkspaceTask(t: TaskExpanded | null) {
+function upsertKnownTask(t: TaskDetailsTask | null) {
   if (!t) return
+  if (resolvedTaskKind.value !== 'etl') return
   const next = [...workspaceTasks.value]
-  const index = next.findIndex((p) => p.id === t.id)
-  if (index !== -1) next[index] = t
-  else next.push(t)
+  const etlTask = t as TaskExpanded
+  const index = next.findIndex((p) => p.id === etlTask.id)
+  if (index !== -1) next[index] = etlTask
+  else next.push(etlTask)
   workspaceTasks.value = next
 }
 
 async function ensureMappingDatastreams() {
-  const workspaceId =
-    (task.value as any)?.workspace?.id ??
-    task.value?.dataConnection?.workspace?.id
+  const workspaceId = taskWorkspaceId.value
   if (!workspaceId) return
   try {
     await Promise.all([
@@ -873,8 +934,9 @@ async function ensureMappingDatastreams() {
 const onDelete = async () => {
   if (!canEditTask.value) return
   try {
-    await hs.tasks.delete(task.value!.id)
+    await taskService.value.delete(task.value!.id)
     openDelete.value = false
+    emit('deleted')
     if (props.embedded || props.taskId) {
       emit('close')
     } else {
@@ -899,7 +961,7 @@ const fetchRunById = async (runId: string) => {
 
   loadingTaskRuns.value = true
   try {
-    const response = await hs.tasks.getTaskRun(task.value.id, runId)
+    const response = await taskService.value.getTaskRun(task.value.id, runId)
     if (!response.ok) {
       throw new Error(response.message || 'Unable to fetch task run.')
     }
@@ -930,7 +992,7 @@ const fetchFullRunHistory = async () => {
     let page = 1
 
     while (true) {
-      const response = await hs.tasks.getTaskRuns(task.value.id, {
+      const response = await taskService.value.getTaskRuns(task.value.id, {
         order_by: ['-startedAt'],
         page,
         page_size: RUN_HISTORY_PAGE_SIZE,
@@ -973,9 +1035,10 @@ const openRunHistoryAndScroll = async (runId: string) => {
 const fetchData = async () => {
   if (!effectiveTaskId.value) return
 
-  let taskResponse: Awaited<ReturnType<typeof hs.tasks.get>>
+  resolvedTaskKind.value = effectiveTaskKind.value
+  let taskResponse: Awaited<ReturnType<typeof taskService.value.get>>
   try {
-    taskResponse = await hs.tasks.get(effectiveTaskId.value, {
+    taskResponse = await taskService.value.get(effectiveTaskId.value, {
       expand_related: true,
     })
   } catch (error: unknown) {
@@ -995,7 +1058,7 @@ const fetchData = async () => {
     return
   }
 
-  if (!isTaskExpandedPayload(taskResponse.data)) {
+  if (!isExpectedTaskPayload(taskResponse.data, resolvedTaskKind.value)) {
     Snackbar.error('Unable to fetch task details.')
     console.error('Unexpected task details payload', taskResponse)
     return
@@ -1005,7 +1068,9 @@ const fetchData = async () => {
 
   const fetchedTaskWorkspaceId =
     (fetchedTask as any).workspace?.id ??
-    fetchedTask.dataConnection?.workspace?.id
+    (fetchedTask as any).dataConnection?.workspace?.id ??
+    (fetchedTask as any).thing?.workspaceId ??
+    (fetchedTask as any).workspaceId
   if (
     fetchedTaskWorkspaceId &&
     workspaces.value.length &&
@@ -1019,16 +1084,13 @@ const fetchData = async () => {
 
   task.value = fetchedTask
 
-  upsertWorkspaceTask(task.value)
+  upsertKnownTask(task.value)
   if (activePanel.value === 'mappings') {
     void ensureMappingDatastreams()
   }
 
-  const taskWorkspaceId =
-    (task.value as any)?.workspace?.id ??
-    task.value?.dataConnection?.workspace?.id
-  if (taskWorkspaceId && workspaces.value.length) {
-    setSelectedWorkspaceById(taskWorkspaceId)
+  if (taskWorkspaceId.value && workspaces.value.length) {
+    setSelectedWorkspaceById(taskWorkspaceId.value)
   }
 
   if (effectiveRunId.value) {
@@ -1038,16 +1100,17 @@ const fetchData = async () => {
 
 const onTaskUpdated = async (updated: TaskExpanded) => {
   task.value = updated
-  upsertWorkspaceTask(updated)
+  upsertKnownTask(updated)
+  emit('updated')
   await fetchData()
   openEdit.value = false
 }
 
 watch(
-  effectiveTaskId,
-  async (newId, oldId) => {
+  [effectiveTaskId, effectiveTaskKind],
+  async ([newId, newKind], [oldId, oldKind]) => {
     if (!newId) return
-    if (newId === oldId) return
+    if (newId === oldId && newKind === oldKind) return
 
     stopRunNowPolling()
     taskRuns.value = []
@@ -1056,6 +1119,7 @@ watch(
     hasLoadedFullRunHistory.value = false
     runNowRequested.value = false
     activePanel.value = 'runs'
+    resolvedTaskKind.value = newKind
 
     await fetchData()
   },
@@ -1066,9 +1130,7 @@ watch(
   workspaces,
   (list) => {
     if (!list?.length) return
-    const wid =
-      (task.value as any)?.workspace?.id ??
-      task.value?.dataConnection?.workspace?.id
+    const wid = taskWorkspaceId.value
     if (wid) {
       if (!list.some((workspace) => workspace.id === wid)) {
         void routeToAccessDenied()
