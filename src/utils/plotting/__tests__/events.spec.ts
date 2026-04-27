@@ -15,11 +15,6 @@ describe('plotting/events exports', () => {
     setActivePinia(createPinia())
   })
 
-  it('exports handleClick as a function', async () => {
-    const { handleClick } = await import('@/utils/plotting/events')
-    expect(typeof handleClick).toBe('function')
-  })
-
   it('exports handleNewPlot as a function', async () => {
     const { handleNewPlot } = await import('@/utils/plotting/events')
     expect(typeof handleNewPlot).toBe('function')

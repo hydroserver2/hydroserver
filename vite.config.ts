@@ -68,7 +68,7 @@ export default defineConfig(({ mode }) => {
           inline: ['vuetify'],
         },
       },
-      setupFiles: ['@vitest/web-worker'],
+      setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts'],
       environment: 'jsdom',
       coverage: {
         exclude: [

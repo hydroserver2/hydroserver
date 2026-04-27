@@ -58,8 +58,9 @@ vi.mock('@/store/dataVisualization', () => {
   const { ref } = require('vue') as typeof import('vue')
   const selectedData = ref<number[] | null>(null)
   const hasSelectionShape = ref(false)
+  const qcDatastream = ref<any>(null)
   return {
-    useDataVisStore: () => ({ selectedData, hasSelectionShape }),
+    useDataVisStore: () => ({ selectedData, hasSelectionShape, qcDatastream }),
   }
 })
 

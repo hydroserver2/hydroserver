@@ -1,4 +1,4 @@
-export const formatTime = (time?: string | null): string => {
+const formatTime = (time?: string | null): string => {
   if (!time) return '–'
 
   const date = new Date(time)
@@ -22,7 +22,7 @@ export const formatTime = (time?: string | null): string => {
   return `${day} ${month} ${year}, ${hour}:${minute} ${period}`
 }
 
-export function getLocalTimeZone(): string {
+function getLocalTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || '–'
 }
 

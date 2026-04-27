@@ -14,8 +14,9 @@ vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({ editHistory, selectedSeries, isUpdating, redraw }),
 }))
 
+const qcDatastream = ref<any>(null)
 vi.mock('@/store/dataVisualization', () => ({
-  useDataVisStore: () => ({ refreshGraphSeriesArray }),
+  useDataVisStore: () => ({ refreshGraphSeriesArray, qcDatastream }),
 }))
 
 const clearSelected = vi.fn().mockResolvedValue(undefined)
@@ -49,6 +50,29 @@ vi.mock('@uwrl/qc-utils', () => ({
     VALUE_THRESHOLD: 'VALUE_THRESHOLD',
     DATETIME_RANGE: 'DATETIME_RANGE',
     SELECTION: 'SELECTION',
+  },
+  Operator: {
+    ADD: 'ADD',
+    SUB: 'SUB',
+    MULT: 'MULT',
+    DIV: 'DIV',
+    ASSIGN: 'ASSIGN',
+  },
+  TimeUnit: {
+    SECOND: 's',
+    MINUTE: 'm',
+    HOUR: 'h',
+    DAY: 'D',
+    WEEK: 'W',
+    MONTH: 'M',
+    YEAR: 'Y',
+  },
+  LogicalOperation: {
+    LT: 'Less than',
+    LTE: 'Less than or equal to',
+    GT: 'Greater than',
+    GTE: 'Greater than or equal to',
+    E: 'Equal',
   },
 }))
 

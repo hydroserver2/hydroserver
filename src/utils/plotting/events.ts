@@ -22,7 +22,7 @@ import {
 } from './interaction'
 import type { AppPlotlyTrace } from './options'
 
-export const handleClick = async (eventData: PlotMouseEvent) => {
+const handleClick = async (eventData: PlotMouseEvent) => {
   const { plotlyRef } = storeToRefs(usePlotlyStore())
   const point = eventData.points[0]
   if (point) {

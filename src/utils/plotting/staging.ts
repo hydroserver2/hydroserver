@@ -124,19 +124,6 @@ export async function clearStageShape() {
 }
 
 /**
- * The last x-range we pushed into the stage shape. Used by the drag
- * listener to distinguish our own shape updates from unrelated
- * relayouts.
- */
-export function readStageShape(): [number, number] | null {
-  if (!stageShape) return null
-  const x0 = Number(stageShape.x0)
-  const x1 = Number(stageShape.x1)
-  if (!Number.isFinite(x0) || !Number.isFinite(x1)) return null
-  return x0 <= x1 ? [x0, x1] : [x1, x0]
-}
-
-/**
  * Render a scatter trace of ghost markers at the supplied parallel
  * (x, y) coordinates to preview the points Fill Gaps would insert.
  * Callers typically compute y by linear interpolation between the

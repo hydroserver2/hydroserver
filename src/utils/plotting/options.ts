@@ -7,9 +7,6 @@ import type {
   LayoutAxis,
   PlotData,
   PlotlyHTMLElement,
-  PlotMouseEvent,
-  PlotRelayoutEvent,
-  PlotSelectionEvent,
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -51,10 +48,6 @@ export type AppPlotlyTrace = Partial<PlotData> & {
  * `plotlyRef` without importing `plotly.js-dist` directly.
  */
 export type AppPlotlyHTMLElement = PlotlyHTMLElement
-
-export type AppPlotMouseEvent = PlotMouseEvent
-export type AppPlotRelayoutEvent = PlotRelayoutEvent
-export type AppPlotSelectionEvent = PlotSelectionEvent
 
 /**
  * One right-side y-axis's data for the chip overlay in `Plot.vue`.
