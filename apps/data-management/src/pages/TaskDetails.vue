@@ -115,7 +115,7 @@
           Run history
         </button>
         <button
-          v-if="isEtlTask"
+          v-if="isEtlTask || isRatingCurveTask"
           type="button"
           class="task-details-tab"
           :class="{ 'task-details-tab--active': activePanel === 'mappings' }"
@@ -259,14 +259,25 @@
 
       <!-- Mappings -->
       <div
-        v-if="isEtlTask"
+        v-if="isEtlTask || isRatingCurveTask"
         v-show="activePanel === 'mappings'"
         class="task-details-panel task-details-panel--mappings"
       >
-        <Swimlanes v-if="etlTask?.mappings?.length" :task="etlTask" />
-        <div v-else class="mappings-empty">
-          No mappings configured for this task.
-        </div>
+        <template v-if="isEtlTask">
+          <Swimlanes v-if="etlTask?.mappings?.length" :task="etlTask" />
+          <div v-else class="mappings-empty">
+            No mappings configured for this task.
+          </div>
+        </template>
+        <template v-else-if="isRatingCurveTask">
+          <RatingCurveSwimlanes
+            v-if="ratingCurveTransformations.length"
+            :transformations="ratingCurveTransformations"
+          />
+          <div v-else class="mappings-empty">
+            No mappings configured for this task.
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -344,6 +355,9 @@ const TaskForm = defineAsyncComponent(
 const Swimlanes = defineAsyncComponent(
   () => import('@/components/Orchestration/Swimlanes.vue')
 )
+const RatingCurveSwimlanes = defineAsyncComponent(
+  () => import('@/components/Orchestration/RatingCurveSwimlanes.vue')
+)
 
 const props = withDefaults(
   defineProps<{
@@ -408,6 +422,11 @@ const isEtlTask = computed(() => resolvedTaskKind.value === 'etl')
 const etlTask = computed(() =>
   isEtlTask.value ? (task.value as TaskExpanded | null) : null
 )
+const ratingCurveTransformations = computed(() => {
+  if (resolvedTaskKind.value !== 'dataProduct') return []
+  return (task.value as DataProductTaskExpanded | null)?.ratingCurveTransformations ?? []
+})
+const isRatingCurveTask = computed(() => ratingCurveTransformations.value.length > 0)
 
 const canRunNow = computed(() => !!task.value)
 
