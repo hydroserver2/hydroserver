@@ -517,6 +517,68 @@ describe('ObservationRecord', () => {
       expect(selection).toEqual([]);
     });
 
+    it('VALUE_THRESHOLD respects an optional [from, to] range', async () => {
+      // Fixture from `buildUniformData(20, 0, 10)`: 20 points,
+      // 15-minute spacing starting at `Date.UTC(2023, 0, 1)`.
+      // y = 0, 10, ..., 190.
+      const startMs = Date.UTC(2023, 0, 1);
+      const spacingMs = 15 * 60 * 1000;
+      const fromTs = startMs + 5 * spacingMs; // index 5
+      const toTs = startMs + 10 * spacingMs; // index 10
+      // y >= 80 selects 8..19; intersect with the window → [8, 9, 10].
+      const selection = await rec.dispatch(
+        EnumFilterOperations.VALUE_THRESHOLD,
+        { [FilterOperation.GTE]: 80 },
+        [fromTs, toTs],
+      );
+      expect(selection.sort((a, b) => a - b)).toEqual([8, 9, 10]);
+    });
+
+    it('CHANGE respects an optional [from, to] range', async () => {
+      const startMs = Date.UTC(2023, 0, 1);
+      const spacingMs = 15 * 60 * 1000;
+      const fromTs = startMs + 5 * spacingMs;
+      const toTs = startMs + 10 * spacingMs;
+      // Δ between every adjacent pair is 10 (uniform step). The
+      // kernel reads `Y[i-1]`, so the scan starts at the first
+      // index >= start within the window — indices 5..10. Every
+      // sample matches `>= 10`.
+      const selection = await rec.dispatch(
+        EnumFilterOperations.CHANGE,
+        FilterOperation.GTE,
+        10,
+        [fromTs, toTs],
+      );
+      expect(selection.sort((a, b) => a - b)).toEqual([5, 6, 7, 8, 9, 10]);
+    });
+
+    it('RATE_OF_CHANGE respects an optional [from, to] range', async () => {
+      const startMs = Date.UTC(2023, 0, 1);
+      const spacingMs = 15 * 60 * 1000;
+      const fromTs = startMs + 5 * spacingMs;
+      const toTs = startMs + 10 * spacingMs;
+      // Same fixture (y = i*10) → relative rate at each i is
+      // (10) / |Y[i-1]|. All > 0; bounding the scan to indices
+      // 5..10 returns those indices.
+      const selection = await rec.dispatch(
+        EnumFilterOperations.RATE_OF_CHANGE,
+        FilterOperation.GT,
+        0,
+        [fromTs, toTs],
+      );
+      expect(selection.sort((a, b) => a - b)).toEqual([5, 6, 7, 8, 9, 10]);
+    });
+
+    it('range argument with bounds beyond data extent yields []', async () => {
+      const farFuture = Date.UTC(2099, 0, 1);
+      const selection = await rec.dispatch(
+        EnumFilterOperations.VALUE_THRESHOLD,
+        { [FilterOperation.GTE]: 0 },
+        [farFuture, farFuture + 1000],
+      );
+      expect(selection).toEqual([]);
+    });
+
     it('SELECTION echoes input and pops history when cleared', async () => {
       const selection = await rec.dispatch(
         EnumFilterOperations.SELECTION,

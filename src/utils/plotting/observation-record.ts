@@ -894,10 +894,13 @@ export class ObservationRecord {
    * `history[length - 2].selected`. The `amount` and `unit` args
    * stay parametric on the public dispatch signature.
    */
-  private async _shiftFromSelection(amount: number, unit: TimeUnit) {
+  private async _shiftFromSelection(
+    amount: number,
+    unit: TimeUnit,
+  ): Promise<number[]> {
     const selection = this.history[this.history.length - 2]?.selected;
-    if (!selection || selection.length === 0) return;
-    return this._shift(selection, amount, unit);
+    if (!selection || selection.length === 0) return [];
+    return (await this._shift(selection, amount, unit)) ?? [];
   }
 
   /**
@@ -907,8 +910,12 @@ export class ObservationRecord {
    * @param unit {@link TimeUnit}
    * @returns
    */
-  private async _shift(index: number[], amount: number, unit: TimeUnit) {
-    if (index.length === 0) return;
+  private async _shift(
+    index: number[],
+    amount: number,
+    unit: TimeUnit,
+  ): Promise<number[]> {
+    if (index.length === 0) return [];
 
     const isMonth = unit === TimeUnit.MONTH;
     const isYear = unit === TimeUnit.YEAR;
@@ -937,8 +944,10 @@ export class ObservationRecord {
         { amount, isMonth, isYear, deltaMs }
       );
       await this._deleteDataPoints(index);
-      await this._addDataPoints(collection);
-      return;
+      // The post-add inserted indices ARE the new positions of the
+      // shifted points — pass them straight back so the UI doesn't
+      // have to binary-search them again.
+      return (await this._addDataPoints(collection)) ?? [];
     }
     this._pendingExecutionMode = "worker";
 
@@ -998,7 +1007,7 @@ export class ObservationRecord {
 
     // TODO: add dedicated method to do delete+add in one go
     await this._deleteDataPoints(index);
-    await this._addDataPoints(collection);
+    return (await this._addDataPoints(collection)) ?? [];
   }
 
   /**
@@ -1021,9 +1030,9 @@ export class ObservationRecord {
     interpolateValues: boolean,
     fillValue: number,
     range?: [number, number],
-  ) {
+  ): Promise<number[]> {
     const len = this.dataX.length;
-    if (len === 0) return;
+    if (len === 0) return [];
 
     const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
     const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
@@ -1061,7 +1070,25 @@ export class ObservationRecord {
       }
     }
 
-    if (totalFills === 0) return;
+    if (totalFills === 0) return [];
+
+    // Compute the post-merge indices of every inserted fill point.
+    // For gap k with left endpoint at orig index L_k and `c_k` fills,
+    // the fills land at out indices `[L_k + Σ_{j<k} c_j + 1 ..
+    // L_k + Σ_{j<k} c_j + c_k]`. Caller (the AddPoints / FillGaps UI)
+    // uses these to dispatch a post-action SELECTION over the
+    // newly-inserted points.
+    const insertedIndices: number[] = new Array(totalFills);
+    let fillsBefore = 0;
+    let outPtr = 0;
+    for (let k = 0; k < allGaps.length; k++) {
+      const L = allGaps[k][0];
+      const c = gapFillCounts[k];
+      for (let j = 1; j <= c; j++) {
+        insertedIndices[outPtr++] = L + fillsBefore + j;
+      }
+      fillsBefore += c;
+    }
 
     const newLength = len + totalFills;
 
@@ -1105,7 +1132,7 @@ export class ObservationRecord {
       this.dataset.source.x = outX;
       this.dataset.source.y = outY;
       this._resizeTo(newLength);
-      return;
+      return insertedIndices;
     }
     this._pendingExecutionMode = "worker";
 
@@ -1177,6 +1204,7 @@ export class ObservationRecord {
     this.dataset.source.x = new Float64Array(outputBufferX);
     this.dataset.source.y = new Float32Array(outputBufferY);
     this._resizeTo(newLength);
+    return insertedIndices;
   }
 
   /**
@@ -1475,14 +1503,30 @@ export class ObservationRecord {
    *  3. `firstIns` per chunk doubles as the prefix sum of insertions placed before the chunk, giving each worker its outStart in the output buffer without overlap.
    *  4. Each worker linearly merges its original slice with its insertion slice (both already sorted by datetime) into the output buffer. Originals win on datetime ties, matching the original `findLastLessOrEqual` semantics.
    */
-  private async _addDataPoints(dataPoints: [number, number][]) {
-    if (dataPoints.length === 0) return;
+  private async _addDataPoints(
+    dataPoints: [number, number][],
+  ): Promise<number[]> {
+    if (dataPoints.length === 0) return [];
 
     const oldLen = this.dataX.length;
     const newLength = oldLen + dataPoints.length;
 
     // Sort insertions by datetime ascending
     dataPoints.sort((a, b) => a[0] - b[0]);
+
+    // Compute the post-merge index of each insertion against the
+    // ORIGINAL `dataX`. The merge in `addDataPointsCore` takes
+    // an original point first on ties, so each insertion lands at
+    // `(count of original points with X <= T) + k` for the k-th
+    // sorted insertion. Returned to callers (and stored on the
+    // history entry's `selected`) so the UI can re-select the
+    // newly-inserted points without re-scanning post-action.
+    const insertedIndices: number[] = new Array(dataPoints.length);
+    for (let k = 0; k < dataPoints.length; k++) {
+      const t = dataPoints[k][0];
+      const origCount = findLastLessOrEqual(this.dataX, t) + 1;
+      insertedIndices[k] = origCount + k;
+    }
 
     // Output buffers sized for the new length
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
@@ -1522,7 +1566,7 @@ export class ObservationRecord {
       this.dataset.source.x = outX;
       this.dataset.source.y = outY;
       this._resizeTo(newLength);
-      return;
+      return insertedIndices;
     }
     this._pendingExecutionMode = "worker";
 
@@ -1589,6 +1633,7 @@ export class ObservationRecord {
     this.dataset.source.x = new Float64Array(outputBufferX);
     this.dataset.source.y = new Float32Array(outputBufferY);
     this._resizeTo(newLength);
+    return insertedIndices;
   }
 
   // =======================
@@ -1608,9 +1653,10 @@ export class ObservationRecord {
    *
    * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E.
    */
-  private async _valueThreshold(appliedFilters: {
-    [key: string]: number;
-  }): Promise<number[]> {
+  private async _valueThreshold(
+    appliedFilters: { [key: string]: number },
+    range?: [number, number],
+  ): Promise<number[]> {
     const keys = Object.keys(appliedFilters);
     if (keys.length === 0) return [];
 
@@ -1625,14 +1671,32 @@ export class ObservationRecord {
     const values = keys.map((k) => appliedFilters[k]);
 
     const dataY = this.dataset.source.y;
-    const total = dataY.length;
-    if (total === 0) return [];
+    const dataX = this.dataset.source.x;
+    let start = 0;
+    let end = dataY.length;
+    if (end === 0) return [];
+
+    // Datetime-addressed range — same shape as `_findGaps` /
+    // `_persistence`. Bounds are inclusive and snapped via binary
+    // search on `dataX`.
+    if (range != null) {
+      const [startTs, endTs] = range;
+      if (startTs != null && Number.isFinite(startTs)) {
+        start = findFirstGreaterOrEqual(dataX, startTs);
+      }
+      if (endTs != null && Number.isFinite(endTs)) {
+        end = findLastLessOrEqual(dataX, endTs) + 1;
+      }
+    }
+
+    if (end <= start) return [];
+    const total = end - start;
 
     const decision = shouldUseWorker(EnumFilterOperations.VALUE_THRESHOLD, {
       datasetSize: total,
     });
     if (!decision.useWorker) {
-      return valueThresholdCore(dataY, 0, total, ops, values);
+      return valueThresholdCore(dataY, start, end, ops, values);
     }
     this._pendingExecutionMode = "worker";
 
@@ -1643,8 +1707,8 @@ export class ObservationRecord {
     const promises: Promise<number[]>[] = [];
 
     for (let i = 0; i < numWorkers; i++) {
-      const cStart = i * chunkSize;
-      const cEnd = Math.min((i + 1) * chunkSize, total);
+      const cStart = start + i * chunkSize;
+      const cEnd = Math.min(start + (i + 1) * chunkSize, end);
       if (cStart >= cEnd) break;
 
       promises.push(
@@ -1691,12 +1755,28 @@ export class ObservationRecord {
   private async _rateOfChange(
     comparator: string,
     value: number,
+    range?: [number, number],
   ): Promise<number[]> {
     const dataY = this.dataset.source.y;
+    const dataX = this.dataset.source.x;
     if (dataY.length < 2) return [];
 
-    const start = 1;
-    const end = dataY.length;
+    // Same `[startTs, endTs]` ms semantics as the other filters. The
+    // first index of the scan must be >= 1 because the kernel reads
+    // `Y[i-1]`; clamp the snapped start up to 1 so a range whose left
+    // edge falls before the first sample doesn't cause an underread.
+    let start = 1;
+    let end = dataY.length;
+    if (range != null) {
+      const [startTs, endTs] = range;
+      if (startTs != null && Number.isFinite(startTs)) {
+        start = Math.max(1, findFirstGreaterOrEqual(dataX, startTs));
+      }
+      if (endTs != null && Number.isFinite(endTs)) {
+        end = findLastLessOrEqual(dataX, endTs) + 1;
+      }
+    }
+    if (end <= start) return [];
     const total = end - start;
 
     const decision = shouldUseWorker(EnumFilterOperations.RATE_OF_CHANGE, {
@@ -1847,12 +1927,27 @@ export class ObservationRecord {
    *  2. Each worker runs a hoisted branch matching the comparator and returns matching indexes in ascending order.
    *  3. Main thread concatenates results in chunk order, preserving ascending order.
    */
-  private async _change(comparator: string, value: number): Promise<number[]> {
+  private async _change(
+    comparator: string,
+    value: number,
+    range?: [number, number],
+  ): Promise<number[]> {
     const dataY = this.dataset.source.y;
+    const dataX = this.dataset.source.x;
     if (dataY.length < 2) return [];
 
-    const start = 1;
-    const end = dataY.length;
+    let start = 1;
+    let end = dataY.length;
+    if (range != null) {
+      const [startTs, endTs] = range;
+      if (startTs != null && Number.isFinite(startTs)) {
+        start = Math.max(1, findFirstGreaterOrEqual(dataX, startTs));
+      }
+      if (endTs != null && Number.isFinite(endTs)) {
+        end = findLastLessOrEqual(dataX, endTs) + 1;
+      }
+    }
+    if (end <= start) return [];
     const total = end - start;
 
     const decision = shouldUseWorker(EnumFilterOperations.CHANGE, {
