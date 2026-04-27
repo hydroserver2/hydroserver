@@ -927,23 +927,14 @@ function goToEdit() {
   background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
-/* Plotted Datastreams body. Fixed height driven inline by the
-   persisted `plottedHeight`; the horizontal grip below adjusts it
-   live. `overflow-y: auto` keeps long plotted lists from pushing
-   the Edit history panel off-screen. */
 .edit-view__plotted-body {
   overflow-y: auto;
   min-height: 0;
+  padding-inline: 8px;
 }
 
 .edit-view__aux-body {
   min-height: 0;
-  /* Auto-scroll when stacked panels (history + filter-range +
-     operation) exceed the available height. Each panel sizes to its
-     natural height in that case; the aux body becomes the scroll
-     container. The percent-split with a drag grip still applies in
-     the no-filter-range path because the history pane stays
-     `flex: 0 0 X%` there. */
   overflow-y: auto;
 }
 

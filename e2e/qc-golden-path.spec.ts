@@ -101,7 +101,7 @@ test.describe('QC golden path (live)', () => {
     // Wait for the ValueThreshold filter to populate selectedData via the
     // app-side test hook installed from main.ts. The hook registers a Pinia
     // `watch` on useDataVisStore().selectedData and resolves as soon as
-    // length >= 1. This replaces the previous waitForTimeout + force-click
+    // length >= 1.
     await page.waitForFunction(
       () => typeof window.__vbwTestHooks?.waitForSelectedData === 'function',
       undefined,

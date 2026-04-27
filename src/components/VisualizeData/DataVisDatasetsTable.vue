@@ -1,7 +1,7 @@
 <template>
   <div class="datasets-table d-flex flex-column">
     <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
-      <div class="d-flex align-center gap-2" style="min-width: 0;">
+      <div class="d-flex align-center gap-2" style="min-width: 0">
         <v-icon icon="mdi-database" color="primary" size="18" />
         <span class="text-body-2 font-weight-bold">Datastreams</span>
         <v-chip
@@ -110,8 +110,7 @@
       <v-icon icon="mdi-information-outline" size="14" class="mr-2" />
       <span class="text-caption">
         First plotted datastream becomes the
-        <b>QC target</b>.
-        Click a row to see its details.
+        <b>QC target</b>. Click a row to see its details.
       </span>
     </div>
 
@@ -185,7 +184,11 @@
         <template #item.siteCodeName="{ item }">
           <div class="site-cell">
             <div class="site-cell__code">{{ item.siteCodeName || '—' }}</div>
-            <div v-if="item.siteName" class="site-cell__name" :title="item.siteName">
+            <div
+              v-if="item.siteName"
+              class="site-cell__name"
+              :title="item.siteName"
+            >
               {{ item.siteName }}
             </div>
           </div>
@@ -196,10 +199,9 @@
         </template>
 
         <template #item.phenomenonEndTime="{ item }">
-          <span
-            class="date-cell"
-            :title="item.phenomenonEndTime || ''"
-          >{{ formatTableDate(item.phenomenonEndTime) }}</span>
+          <span class="date-cell" :title="item.phenomenonEndTime || ''">{{
+            formatTableDate(item.phenomenonEndTime)
+          }}</span>
         </template>
 
         <template #no-data>
@@ -242,9 +244,8 @@ import { Datastream } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 const { hs } = storeToRefs(useHydroServer())
 
-const { filteredDatastreams, plottedDatastreams, qcDatastream } = storeToRefs(
-  useDataVisStore()
-)
+const { filteredDatastreams, plottedDatastreams, qcDatastream } =
+  storeToRefs(useDataVisStore())
 const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
 
 const showOnlySelected = ref(false)
@@ -528,10 +529,6 @@ const resetSort = () => {
   text-align: center;
 }
 
-/* Custom plot-column "checkbox" — rendered as a button + icon so we
-   have complete control over its visual states (Vuetify's
-   `.v-selection-control` internals changed between minor versions and
-   were fighting the previous override). */
 .plot-check {
   display: inline-flex;
   align-items: center;

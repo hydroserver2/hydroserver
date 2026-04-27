@@ -62,6 +62,8 @@
 
         <v-btn
           v-if="tab === 'plot'"
+          data-testid="tooltips-toggle-btn"
+          aria-label="Toggle tooltips"
           size="small"
           variant="text"
           density="compact"
@@ -73,20 +75,88 @@
         />
 
         <div
-          v-if="tab === 'plot' && !tooltipsActive && tooltipsAutoDisabled"
+          v-if="tab === 'plot' && !tooltipsActive"
+          data-testid="tooltips-notice"
           class="plot-toolbar__tooltips-notice d-inline-flex align-center"
+          :class="{
+            'plot-toolbar__tooltips-notice--over': tooltipsAutoDisabled,
+          }"
           aria-live="polite"
           :title="
             tooltipsAutoDisabled
-              ? 'Tooltips disabled while more points are visible than the performance threshold.'
-              : 'Tooltips are turned off. Toggle them back on with the button to the right.'
+              ? `Tooltips disabled while ${visiblePoints.toLocaleString()} points are visible (threshold: ${tooltipsMaxDataPoints.toLocaleString()}). Zoom in to re-enable, or raise the threshold.`
+              : `Tooltips are turned off. ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible — toggle them back on with the button to the right.`
           "
         >
           <div class="plot-toolbar__tooltips-notice-text">
-            <template v-if="tooltipsAutoDisabled">
-              <div>Tooltips hidden</div>
-              <div>zoom in to re-enable</div>
-            </template>
+            <div>Tooltips hidden</div>
+            <div class="d-inline-flex align-center">
+              <span
+                class="plot-toolbar__tooltips-notice-count"
+                :class="{
+                  'plot-toolbar__tooltips-notice-count--over':
+                    tooltipsAutoDisabled,
+                }"
+                >{{ visiblePoints.toLocaleString() }}</span
+              >
+              / {{ tooltipsMaxDataPoints.toLocaleString() }} pts
+              <v-menu
+                v-model="thresholdMenuOpen"
+                :close-on-content-click="false"
+                location="bottom end"
+                offset="6"
+              >
+                <template v-slot:activator="{ props: editProps }">
+                  <v-btn
+                    v-bind="editProps"
+                    data-testid="threshold-edit-btn"
+                    size="x-small"
+                    variant="text"
+                    density="compact"
+                    icon="mdi-pencil-outline"
+                    class="plot-toolbar__tooltips-notice-edit"
+                    title="Edit tooltip point limit"
+                    aria-label="Edit tooltip point limit"
+                  />
+                </template>
+                <v-card max-width="320" class="pa-3">
+                  <div class="text-body-2 font-weight-medium mb-1">
+                    Tooltip point limit
+                  </div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Tooltips auto-disable when more than this many points are
+                    visible. Raise on fast machines, lower on slow ones.
+                  </div>
+                  <div class="d-flex align-center gap-2">
+                    <v-text-field
+                      v-model.number="pendingThreshold"
+                      data-testid="threshold-input"
+                      type="number"
+                      min="100"
+                      step="1000"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      single-line
+                      suffix="points"
+                      autofocus
+                      class="flex-grow-1"
+                      @keyup.enter="applyThreshold"
+                    />
+                    <v-btn
+                      data-testid="threshold-apply-btn"
+                      color="primary"
+                      size="small"
+                      variant="flat"
+                      :disabled="!isPendingThresholdValid"
+                      @click="applyThreshold"
+                    >
+                      Apply
+                    </v-btn>
+                  </div>
+                </v-card>
+              </v-menu>
+            </div>
           </div>
         </div>
 
@@ -171,34 +241,6 @@
                 <v-list-item-subtitle class="text-caption">
                   {{ b.desc }}
                 </v-list-item-subtitle>
-              </v-list-item>
-
-              <v-divider class="my-1" />
-
-              <v-list-subheader
-                class="text-uppercase text-caption font-weight-bold"
-              >
-                Preferences
-              </v-list-subheader>
-              <v-list-item class="px-4">
-                <v-list-item-title class="text-body-2 font-weight-medium mb-1">
-                  Tooltip point limit
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption mb-2">
-                  Tooltips auto-disable when more than this many points are
-                  visible. Raise on fast machines, lower on slow ones.
-                </v-list-item-subtitle>
-                <v-text-field
-                  v-model.number="tooltipsMaxDataPoints"
-                  type="number"
-                  min="100"
-                  step="1000"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  single-line
-                  suffix="points"
-                />
               </v-list-item>
             </v-list>
           </v-card>
@@ -325,6 +367,7 @@ import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
 import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useBufferedNumber } from '@/composables/useBufferedNumber'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
@@ -570,6 +613,20 @@ function toggleTooltips() {
 }
 
 const showHelp = ref(false)
+const thresholdMenuOpen = ref(false)
+// Buffered threshold edit. The popover binds to `pendingThreshold` so
+// every keystroke doesn't bounce the live `tooltipsMaxDataPoints` —
+// the user commits via Enter or the Apply button. The buffer
+// re-syncs from the store each time the menu opens, so closing
+// without applying discards the in-progress edit.
+const {
+  pending: pendingThreshold,
+  isValid: isPendingThresholdValid,
+  apply: applyPendingThreshold,
+} = useBufferedNumber(tooltipsMaxDataPoints, thresholdMenuOpen, { min: 100 })
+const applyThreshold = () => {
+  if (applyPendingThreshold()) thresholdMenuOpen.value = false
+}
 
 const gestures = [
   {
@@ -917,16 +974,38 @@ const onTabChange = () => {
    two-line variant stacks its copy so the toolbar stays the same
    height as a single-line row. */
 .plot-toolbar__tooltips-notice {
-  color: rgba(var(--v-theme-on-surface), 0.65);
   white-space: nowrap;
   font-size: 0.7rem;
   line-height: 1.1;
+}
+
+.plot-toolbar__tooltips-notice--over {
+  color: rgba(var(--v-theme-on-surface), 0.65);
 }
 
 .plot-toolbar__tooltips-notice-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+
+.plot-toolbar__tooltips-notice-count {
+  font-weight: 600;
+}
+.plot-toolbar__tooltips-notice-count--over {
+  color: rgb(var(--v-theme-warning));
+}
+
+/* Inline pencil button that opens the threshold popover. Sized down
+   so it fits inside the two-line notice without bumping the toolbar
+   row height. */
+.plot-toolbar__tooltips-notice-edit.v-btn {
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+}
+.plot-toolbar__tooltips-notice-edit.v-btn :deep(.v-icon) {
+  font-size: 12px;
 }
 
 /* Tighten the icon-only tooltip toggle and help button so they sit

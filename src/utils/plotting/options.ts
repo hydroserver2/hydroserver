@@ -36,6 +36,7 @@ export type AppPlotlyTrace = Partial<PlotData> & {
   id?: string
   showLegend?: boolean
   selected?: { marker: { color: string; opacity?: number } }
+  unselected?: { marker: { opacity?: number } }
   /**
    * Index into the full `ObservationRecord` arrays where the windowed
    * trace slice starts.
@@ -371,6 +372,14 @@ export const createPlotlyOption = (
       const { editHistory } = storeToRefs(usePlotlyStore())
       editHistory.value = s.data.history
     } else {
+      // Plotly applies a global selection-fade once any trace has
+      // `selectedpoints` set: every other trace's "unselected" markers
+      // drop to ~0.2 opacity by default. Non-QC traces are read-only
+      // context and shouldn't fade alongside the QC trace's selection,
+      // so pin `unselected.marker.opacity` to the density-driven value
+      // we already chose.
+      trace.unselected = { marker: { opacity: markerOpacity } }
+
       const labelColor = labelColorFor(color)
       const isAxisVisible = !(s.id && hiddenAxes.has(s.id))
       const yAxis: Partial<LayoutAxis> = {

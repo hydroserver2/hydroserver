@@ -277,13 +277,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       await data.reload()
     }
 
-    // `Datastream` already carries its `observedProperty` and `unit`
-    // inline (see @hydroserver/client types), so use those directly.
-    // The previous implementation re-fetched them via `hs.*.get()` and
-    // indexed `.data.name` / `.data.symbol` on the `ApiResponse`
-    // wrapper, which produced "undefined (undefined)" when the fetch
-    // failed or the response shape shifted. Reading the embedded values
-    // avoids both pitfalls and skips two superfluous network round trips.
     const propName = datastream.observedProperty?.name
     const unitSymbol = datastream.unit?.symbol
     const yAxisLabel =

@@ -58,14 +58,28 @@ export const handleNewPlot = async (
 ) => {
   const { plotlyOptions, plotlyRef } = storeToRefs(usePlotlyStore())
 
-  // Rebuild cases like reordering the legend or changing the QC target
-  // re-run `Plotly.newPlot`, which otherwise reverts every axis to the
-  // defaults baked into `createPlotlyOption`. When asked to preserve
-  // zoom, copy the live ranges off the outgoing figure: x is shared so
-  // it goes straight across; per-series y ranges are keyed by series id
-  // so they follow the series to whatever yaxis slot it lands on after
-  // the reshuffle (e.g. `yaxis2` → `yaxis3` when a non-QC trace moves
-  // past the QC target).
+  if (!element && plotlyRef.value?.data) {
+    const visibleBySeriesId: Record<string, boolean | 'legendonly'> = {}
+    for (const trace of plotlyRef.value.data) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const visible = (t as { visible?: boolean | 'legendonly' }).visible
+      // Plotly normalises an unset `visible` to `true`; only carry
+      // explicit non-default values to keep the preserve narrow.
+      if (visible === false || visible === 'legendonly') {
+        visibleBySeriesId[t.id] = visible
+      }
+    }
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const carried = visibleBySeriesId[t.id]
+      if (carried !== undefined) {
+        ; (t as { visible?: boolean | 'legendonly' }).visible = carried
+      }
+    }
+  }
+
   if (
     opts?.preserveZoom &&
     !element &&

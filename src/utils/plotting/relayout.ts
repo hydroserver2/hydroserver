@@ -11,6 +11,7 @@ import { storeToRefs } from 'pinia'
 import { isEqual } from 'lodash-es'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { traceXAsNumbers, DENSITY_HIDE_MARKERS } from './internal'
+import type { AppPlotlyTrace } from './options'
 import { handleSelected } from './selected'
 
 // Perf cache for `handleRelayout`: when a relayout fires but the visible
@@ -211,10 +212,23 @@ export const handleRelayout = async (
         lastVisibleRange = [xStart, xEnd]
       }
 
-      // Density-responsive marker rendering.
-      const perTraceOpacity = perTraceVisible.map((n) =>
-        n > DENSITY_HIDE_MARKERS ? 0 : 1
-      )
+      // Density-responsive marker rendering. Non-QC traces drop their
+      // markers past the density threshold so the line stays readable
+      // when stacked with siblings. The QC trace always keeps markers
+      // when tooltips are about to be enabled — without them, hover hit
+      // testing has nothing to land on, and the user gets a tooltip-
+      // capable plot with no points to hover.
+      const tooltipsWillRun =
+        areTooltipsEnabled.value &&
+        visiblePoints.value <= tooltipsMaxDataPoints.value
+      const { qcDatastream } = storeToRefs(useDataVisStore())
+      const qcId = qcDatastream.value?.id
+      const traces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
+      const perTraceOpacity = perTraceVisible.map((n, i) => {
+        const isQc = qcId != null && traces[i]?.id === qcId
+        if (isQc && tooltipsWillRun) return 1
+        return n > DENSITY_HIDE_MARKERS ? 0 : 1
+      })
 
       const currentOpacities = (plotlyRef.value?.data ?? []).map((t: Partial<PlotData>) => {
         const m = (t as Partial<PlotData>).marker as
@@ -226,8 +240,19 @@ export const handleRelayout = async (
         (o, i) => o !== (currentOpacities[i] ?? 1)
       )
       if (opacitiesChanged && plotlyRef.value) {
+        // Keep `unselected.marker.opacity` in lockstep with the
+        // density-driven `marker.opacity` for non-QC traces so they
+        // stay opted out of Plotly's global selection-fade no matter
+        // what density bucket they land in. Pass `null` for the QC
+        // trace to leave its `selected.marker` config untouched —
+        // Plotly's restyle skips entries whose array slot is null.
+        const perTraceUnselectedOpacity = perTraceOpacity.map((o, i) => {
+          const isQc = qcId != null && traces[i]?.id === qcId
+          return isQc ? null : o
+        })
         await Plotly.restyle(plotlyRef.value, {
           'marker.opacity': perTraceOpacity,
+          'unselected.marker.opacity': perTraceUnselectedOpacity,
         } as unknown as Partial<PlotData>)
       }
 

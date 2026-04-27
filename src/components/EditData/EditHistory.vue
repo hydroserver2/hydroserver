@@ -109,11 +109,7 @@
         @change="onLoadScriptFile"
       />
 
-      <v-tooltip
-        v-if="popOutEnabled"
-        location="bottom"
-        text="Open in window"
-      >
+      <v-tooltip v-if="popOutEnabled" location="bottom" text="Open in window">
         <template #activator="{ props: tp }">
           <v-btn
             v-bind="tp"
@@ -130,12 +126,9 @@
 
     <v-divider />
 
-    <!-- Scrollable list body. Each entry is a single tight row (icon,
-         method, duration, actions). The timeline + nested expansion
-         panel layout used to cost ~100 px per entry; this is ~32. -->
     <div
       v-show="!isCollapsed"
-      class="flex-grow-1 overflow-y-auto"
+      class="edit-history__body flex-grow-1 overflow-y-auto"
       style="min-height: 0"
     >
       <!-- Baseline: "Data loaded" status row with its own reload action. -->
@@ -231,7 +224,11 @@
             <v-icon
               :icon="iconForMethod(entry.method)"
               size="16"
-              :color="entry.status === 'failed' ? 'error' : colorForMethod(entry.method)"
+              :color="
+                entry.status === 'failed'
+                  ? 'error'
+                  : colorForMethod(entry.method)
+              "
               class="mr-2"
             />
 
@@ -396,9 +393,7 @@ const emit = defineEmits<{
   (e: 'pop-out'): void
 }>()
 
-const isCollapsed = computed(
-  () => props.collapsible && !!props.collapsed
-)
+const isCollapsed = computed(() => props.collapsible && !!props.collapsed)
 const toggleCollapsed = () => {
   if (!props.collapsible) return
   emit('update:collapsed', !props.collapsed)
@@ -566,11 +561,13 @@ const onLoadScriptFile = async (e: Event) => {
   try {
     const report = await importScript(file)
     if (report.failed.length === 0) {
-      Snackbar.success(`Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}.`)
+      Snackbar.success(
+        `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}.`
+      )
     } else {
       Snackbar.warn(
         `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}; ` +
-        `${report.failed.length} failed (see history badges).`
+          `${report.failed.length} failed (see history badges).`
       )
     }
     await redraw()
@@ -685,6 +682,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .edit-history__header {
   background-color: rgba(var(--v-theme-primary), 0.04);
   min-height: 32px;
+}
+
+.edit-history__body {
+  padding-inline: 8px;
 }
 
 /* Matches the section-header treatment used by Plotted

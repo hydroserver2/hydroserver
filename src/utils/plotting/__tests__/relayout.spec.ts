@@ -257,7 +257,7 @@ const makeStub = (overrides?: {
   xRange?: Array<number | string>
   tickmode?: string
   tickvals?: number[] | null
-  traces?: Array<Partial<{ x: number[]; marker: { opacity: number }; hoverinfo: string }>>
+  traces?: Array<Partial<{ id: string; x: number[]; marker: { opacity: number }; hoverinfo: string }>>
 }) => ({
   layout: {
     xaxis: {
@@ -362,6 +362,42 @@ describe('handleRelayout', () => {
     await handleRelayout({ some: 'evt' } as any)
     await flush()
     // Should have called restyle to set marker.opacity to 0 for the dense trace.
+    const restyleCalls = plotlyMock.restyle.mock.calls
+    const markerOpacityCall = restyleCalls.find(
+      (c) => c[1] && (c[1] as any)['marker.opacity']
+    )
+    expect(markerOpacityCall).toBeDefined()
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([0])
+  })
+
+  it('keeps QC trace markers when tooltips will run, even past the density threshold', async () => {
+    qcDatastream.value = { id: 'qc-target' }
+    const dense = Array.from({ length: 3000 }, (_, i) => i)
+    tooltipsMaxDataPoints.value = 10_000
+    plotlyRef.value = makeStub({
+      xRange: [0, 3000],
+      traces: [{ id: 'qc-target', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' }],
+    })
+    await handleRelayout({ evt: 'q' } as any)
+    await flush()
+    const restyleCalls = plotlyMock.restyle.mock.calls
+    const markerOpacityCall = restyleCalls.find(
+      (c) => c[1] && (c[1] as any)['marker.opacity']
+    )
+    expect(markerOpacityCall).toBeDefined()
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1])
+  })
+
+  it('still hides QC trace markers when tooltips are disabled', async () => {
+    qcDatastream.value = { id: 'qc-target' }
+    areTooltipsEnabled.value = false
+    const dense = Array.from({ length: 3000 }, (_, i) => i)
+    plotlyRef.value = makeStub({
+      xRange: [0, 3000],
+      traces: [{ id: 'qc-target', x: dense, marker: { opacity: 1 }, hoverinfo: 'skip' }],
+    })
+    await handleRelayout({ evt: 'q' } as any)
+    await flush()
     const restyleCalls = plotlyMock.restyle.mock.calls
     const markerOpacityCall = restyleCalls.find(
       (c) => c[1] && (c[1] as any)['marker.opacity']

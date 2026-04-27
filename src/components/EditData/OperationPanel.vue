@@ -102,6 +102,7 @@ function close() {
 
 .operation-panel__body {
   min-height: 0;
+  padding-inline: 8px;
 }
 
 /* Normalize the embedded v-card so it doesn't look like a dialog:
