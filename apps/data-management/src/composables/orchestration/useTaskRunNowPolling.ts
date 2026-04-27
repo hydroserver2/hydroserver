@@ -9,6 +9,7 @@ import { serviceForKind, type TaskKind } from '@/components/Orchestration/workbe
 
 const POLL_INTERVAL_MS = 4000
 const POLL_MAX_ATTEMPTS = 150
+const TERMINAL_STATUSES = ['SUCCESS', 'FAILURE']
 
 type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 
@@ -116,7 +117,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
 
           if (updatedRun?.id) {
             syncLatestRun(kind, taskId, updatedRun)
-            if (updatedRun.status && updatedRun.status !== 'RUNNING') {
+            if (updatedRun.status && TERMINAL_STATUSES.includes(updatedRun.status)) {
               runNowTriggeredByTaskId[taskId] = false
               stopPollingFor(taskId)
               await refreshAfterCompletion(kind, taskId)
@@ -144,7 +145,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
             if (sawRequestedRun && status) {
               if (updated.latestRun)
                 syncLatestRun(kind, taskId, updated.latestRun)
-              if (status !== 'RUNNING') {
+              if (TERMINAL_STATUSES.includes(status)) {
                 runNowTriggeredByTaskId[taskId] = false
                 stopPollingFor(taskId)
                 await refreshAfterCompletion(kind, taskId)
@@ -214,6 +215,11 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     }
   }
 
+  const startMonitoringRun = (kind: TaskKind, taskId: string, runId: string) => {
+    if (taskPollTimeouts.has(taskId)) return
+    schedulePoll(kind, taskId, runId, null, 0)
+  }
+
   onBeforeUnmount(() => stopAll())
 
   return {
@@ -221,5 +227,6 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     stopAll,
     runTaskNow,
     toggleSchedulePaused,
+    startMonitoringRun,
   }
 }

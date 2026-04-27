@@ -88,7 +88,7 @@ DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRON
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_task_runs": {
-        "task": "processing.etl.tasks.cleanup_etl_task_runs",
+        "task": "processing.orchestration.tasks.cleanup_task_runs",
         "schedule": crontab(hour=3, minute=0),
         "args": (7,),
     },

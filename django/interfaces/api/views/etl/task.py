@@ -231,7 +231,7 @@ def trigger_etl_task(
         )
 
         run = TaskRun.objects.create(task=etl_task, status="PENDING")
-        run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id)})
+        run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id), "run_id": str(run.id)})
 
     return 202, run
 

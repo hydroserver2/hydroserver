@@ -257,15 +257,20 @@ const openExpressionForm = ref(false)
 const openDerivationForm = ref(false)
 const openRatingCurveForm = ref(false)
 
-const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
-  useTaskRunNowPolling({
-    lists: {
-      etl: workspaceTasks,
-      dataProduct: dataProductTasks,
-      monitoring: monitoringTasks,
-    },
-    currentWorkspaceId: () => props.workspaceId,
-  })
+const {
+  runNowTriggeredByTaskId,
+  stopAll,
+  runTaskNow,
+  toggleSchedulePaused,
+  startMonitoringRun,
+} = useTaskRunNowPolling({
+  lists: {
+    etl: workspaceTasks,
+    dataProduct: dataProductTasks,
+    monitoring: monitoringTasks,
+  },
+  currentWorkspaceId: () => props.workspaceId,
+})
 
 const {
   etlTaskRows,
@@ -546,6 +551,19 @@ watch(
     selectedThingId.value = null
     await fetchAll(newId)
     autoSelectSidebar()
+    const NON_TERMINAL = ['PENDING', 'STARTED']
+    for (const task of workspaceTasks.value) {
+      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+        startMonitoringRun('etl', task.id, task.latestRun.id)
+    }
+    for (const task of dataProductTasks.value) {
+      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+        startMonitoringRun('dataProduct', task.id, task.latestRun.id)
+    }
+    for (const task of monitoringTasks.value) {
+      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+        startMonitoringRun('monitoring', task.id, task.latestRun.id)
+    }
   },
   { immediate: true }
 )

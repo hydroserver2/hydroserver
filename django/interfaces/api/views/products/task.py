@@ -215,7 +215,7 @@ def trigger_data_product_task(
         )
 
         run = TaskRun.objects.create(task=task, status="PENDING")
-        run_data_product_task.apply_async(kwargs={"task_id": str(task.id)})
+        run_data_product_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
 
     return 202, run
 
