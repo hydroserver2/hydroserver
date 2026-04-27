@@ -15,11 +15,11 @@
       ref="timeField"
       :model-value="timeInput"
       @blur="handleTimeBlur"
-      placeholder="HH:MM"
+      :placeholder="seconds ? 'HH:MM:SS' : 'HH:MM'"
       prepend-inner-icon="mdi-clock-outline"
       hide-details
       density="compact"
-      style="max-width: 7rem"
+      :style="{ 'max-width': seconds ? '9rem' : '7rem' }"
     />
   </div>
 
@@ -57,6 +57,9 @@ defineOptions({ inheritAttrs: false })
 const props = defineProps({
   modelValue: { type: Date, required: true },
   placeholder: String,
+  /** When true, the time input shows HH:MM:SS instead of HH:MM and the
+   *  emitted Date carries the seconds component too. */
+  seconds: { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -92,6 +95,18 @@ const TIME: MaskShape = {
   seps: new Set([2]),
 }
 
+const TIME_WITH_SECONDS: MaskShape = {
+  empty: '__:__:__',
+  segments: [
+    [0, 2], // HH
+    [3, 5], // MM
+    [6, 8], // SS
+  ],
+  seps: new Set([2, 5]),
+}
+
+const timeShape = (): MaskShape => (props.seconds ? TIME_WITH_SECONDS : TIME)
+
 // --- Format helpers ---------------------------------------------------------
 const formatDateStr = (date: Date) => {
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -102,7 +117,9 @@ const formatDateStr = (date: Date) => {
 const formatTimeStr = (date: Date) => {
   const h = String(date.getHours()).padStart(2, '0')
   const m = String(date.getMinutes()).padStart(2, '0')
-  return `${h}:${m}`
+  if (!props.seconds) return `${h}:${m}`
+  const s = String(date.getSeconds()).padStart(2, '0')
+  return `${h}:${m}:${s}`
 }
 
 const toMidnight = (date: Date) => {
@@ -128,9 +145,12 @@ watch(
 )
 
 const emitCombined = (date: Date, time: string) => {
-  const [h, m] = time.split(':').map(Number)
+  const parts = time.split(':').map(Number)
+  const h = parts[0] || 0
+  const m = parts[1] || 0
+  const s = props.seconds ? (parts[2] || 0) : 0
   const result = new Date(date)
-  result.setHours(h || 0, m || 0, 0, 0)
+  result.setHours(h, m, s, 0)
   emit('update:modelValue', result)
 }
 
@@ -159,11 +179,18 @@ const handleDateBlur = () => {
 }
 
 const handleTimeBlur = () => {
-  const match = timeInput.value.match(/^(\d{2}):(\d{2})$/)
+  const re = props.seconds
+    ? /^(\d{2}):(\d{2}):(\d{2})$/
+    : /^(\d{2}):(\d{2})$/
+  const match = timeInput.value.match(re)
   if (match) {
     const h = Math.max(0, Math.min(23, +match[1]!))
     const m = Math.max(0, Math.min(59, +match[2]!))
-    const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    const s = props.seconds ? Math.max(0, Math.min(59, +match[3]!)) : 0
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const time = props.seconds
+      ? `${pad(h)}:${pad(m)}:${pad(s)}`
+      : `${pad(h)}:${pad(m)}`
     timeInput.value = time
     emitCombined(pickerDate.value, time)
     return
@@ -393,7 +420,7 @@ const attach = (
 
 onMounted(() => {
   attach(dateField, dateInput, DATE)
-  attach(timeField, timeInput, TIME)
+  attach(timeField, timeInput, timeShape())
 })
 
 onBeforeUnmount(() => {

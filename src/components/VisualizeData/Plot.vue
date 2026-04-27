@@ -220,7 +220,7 @@
           density="compact"
           variant="outlined"
           hide-details
-          prepend-inner-icon="mdi-axis-x-arrow"
+          prepend-inner-icon="mdi-magnify-scan"
           title="Zoom to range (does not reload data)"
           class="plot-toolbar__range"
           style="max-width: 12rem"
