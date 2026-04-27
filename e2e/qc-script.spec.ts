@@ -12,6 +12,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView } from './support/app'
 import { expectHistoryContains, selectAllPoints } from './support/ops'
@@ -43,11 +44,13 @@ test.describe('QC script: save / load round-trip', () => {
     const beforeCount = await beforeRows.count()
     expect(beforeCount).toBeGreaterThanOrEqual(2)
 
-    // Snapshot the rendered method labels so we can compare after
-    // the round-trip.
-    const beforeLabels = await beforeRows.evaluateAll((rows) =>
-      rows.map((r) => r.textContent?.replace(/\s+/g, ' ').trim() ?? '')
-    )
+    // Snapshot just the method-name spans (`.edit-history__method`).
+    // Pulling whole-row text would also capture the duration and
+    // execution-mode chips, which legitimately differ across the
+    // round-trip (the loaded run remeasures and re-tags them).
+    const beforeMethodLabels = await beforeRows
+      .locator('.edit-history__method')
+      .evaluateAll((spans) => spans.map((s) => s.textContent?.trim() ?? ''))
 
     // --- Save: trigger the Save button and capture the download --
     const saveBtn = page.getByTestId('history-save-btn')
@@ -57,7 +60,7 @@ test.describe('QC script: save / load round-trip', () => {
     const download = await downloadPromise
     const path = await download.path()
     expect(path).toBeTruthy()
-    const buf = await require('node:fs/promises').readFile(path!)
+    const buf = await readFile(path!)
     const scriptText = buf.toString('utf-8')
     const script = JSON.parse(scriptText)
 
@@ -97,22 +100,13 @@ test.describe('QC script: save / load round-trip', () => {
       page.locator('[data-testid^="history-item-"]')
     ).toHaveCount(beforeCount, { timeout: 10_000 })
 
-    // Compare label-by-label. We only check method labels (not the
-    // full row text) because the duration / execution-mode badges
-    // round-trip differently.
+    // Compare method-label arrays directly.
     const afterRows = page.locator('[data-testid^="history-item-"]')
     const afterMethodLabels = await afterRows
       .locator('.edit-history__method')
       .evaluateAll((spans) =>
         spans.map((s) => s.textContent?.trim() ?? '')
       )
-    const beforeMethodLabels = beforeLabels.map((l) => {
-      // Pull the leading method name out of the row text. The text
-      // shape is "Method Name [INLINE] 12 ms" — split on the first
-      // run of digits / "INLINE" / "WORKER".
-      const m = l.match(/^([A-Za-z][A-Za-z ]*?)(?: INLINE| WORKER|\s\d|$)/)
-      return m ? m[1].trim() : l
-    })
     expect(afterMethodLabels).toEqual(beforeMethodLabels)
   })
 })
