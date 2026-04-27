@@ -75,14 +75,14 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 
 const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedShiftUnit, shiftAmount } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
 const { shiftUnits } = useUIStore()
-const { clearSelected } = useDataSelection()
+const { recordPostActionSelection } = useFilterDispatch()
 
 /**
  * Snap chips based on the QC datastream's intended cadence, mirroring
@@ -135,18 +135,17 @@ const onShiftDatetimes = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    // No indices arg — qc-utils' dispatch reads the target indices
-    // off the preceding SELECTION in history.
-    await selectedSeries.value?.data.dispatchAction(
-      EnumEditOperations.SHIFT_DATETIMES,
-      +shiftAmount.value,
-      // @ts-ignore
-      TimeUnit[selectedShiftUnit.value]
-    )
+    const newIndices =
+      ((await selectedSeries.value?.data.dispatchAction(
+        EnumEditOperations.SHIFT_DATETIMES,
+        +shiftAmount.value,
+        // @ts-ignore
+        TimeUnit[selectedShiftUnit.value]
+      )) as number[] | undefined) ?? []
 
-    await clearSelected()
     isUpdating.value = false
     await redraw(true)
+    await recordPostActionSelection(newIndices)
     emit('close')
   })
 }

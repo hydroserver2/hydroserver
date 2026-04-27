@@ -101,9 +101,9 @@ import { EnumEditOperations } from '@uwrl/qc-utils'
 import { computed } from 'vue'
 import { formatDate } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { useUIStore, DriftCorrectionMethods } from '@/store/userInterface'
-const { clearSelected } = useDataSelection()
+const { recordPostActionSelection } = useFilterDispatch()
 const { selectedSeries, plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
 const { driftGapWidth, selectedDriftCorrectionMethod } =
   storeToRefs(useUIStore())
@@ -136,6 +136,8 @@ const selectedGroups = computed((): number[][] => {
 })
 
 const onDriftCorrection = async () => {
+  const indices = selectedGroups.value.flat()
+
   isUpdating.value = true
 
   setTimeout(async () => {
@@ -146,9 +148,9 @@ const onDriftCorrection = async () => {
     await selectedSeries.value?.data.dispatch([
       [EnumEditOperations.DRIFT_CORRECTION, +driftGapWidth.value],
     ])
-    await clearSelected()
     isUpdating.value = false
     await redraw()
+    await recordPostActionSelection(indices)
     emit('close')
   })
 }

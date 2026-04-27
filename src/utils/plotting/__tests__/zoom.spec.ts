@@ -94,6 +94,7 @@ import {
   applyZoomState,
   undoZoom,
   redoZoom,
+  installZoomTracking,
 } from '../zoom'
 
 const resetState = () => {
@@ -295,5 +296,52 @@ describe('applyZoomState', () => {
     })
     // suppressZoomHistory is cleared asynchronously via setTimeout(…, 450)
     expect(storeState.suppressZoomHistory).toBe(true)
+  })
+
+  it('falls back to xaxis.autorange:true when xRange is null', async () => {
+    plotlyRefRef.value = { layout: {} }
+    const Plotly = (await import('plotly.js-dist')).default as any
+    Plotly.relayout.mockClear()
+    await applyZoomState({ xRange: null, yRanges: {}, source: 'user' })
+    expect(Plotly.relayout).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ 'xaxis.autorange': true })
+    )
+  })
+
+  it('clears suppressZoomHistory after the post-relayout timeout', async () => {
+    vi.useFakeTimers()
+    try {
+      plotlyRefRef.value = { layout: {} }
+      await applyZoomState({
+        xRange: [0, 10],
+        yRanges: {},
+        source: 'user',
+      })
+      expect(storeState.suppressZoomHistory).toBe(true)
+      vi.advanceTimersByTime(500)
+      expect(storeState.suppressZoomHistory).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('installZoomTracking', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    resetState()
+  })
+
+  it('subscribes to plotly_relayout when given a Plotly element', () => {
+    const on = vi.fn()
+    const gd = { on } as unknown as Parameters<typeof installZoomTracking>[0]
+    installZoomTracking(gd)
+    expect(on).toHaveBeenCalledWith('plotly_relayout', expect.any(Function))
+  })
+
+  it('no-ops on a null/undefined plotly element', () => {
+    expect(() => installZoomTracking(null)).not.toThrow()
+    expect(() => installZoomTracking(undefined)).not.toThrow()
   })
 })

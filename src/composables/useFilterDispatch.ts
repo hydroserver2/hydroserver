@@ -85,9 +85,28 @@ export function useFilterDispatch() {
     }
   }
 
+  /**
+   * Log a SELECTION history entry at the end of an edit / add
+   * operation and visually highlight the same indices on the plot.
+   * Lets the user trace where points landed — useful for ADD_POINTS
+   * (newly-inserted indices), CHANGE_VALUES / INTERPOLATE /
+   * DRIFT_CORRECTION (same indices, fresh marker), SHIFT_DATETIMES
+   * (re-located indices), and FILL_GAPS (newly-inserted indices).
+   * No-ops on an empty array — qc-utils' empty-SELECTION rule would
+   * otherwise pop a preceding edit op whose `selected` was non-empty.
+   */
+  const recordPostActionSelection = async (indices: number[]) => {
+    const series = selectedSeries.value?.data
+    if (!series) return
+    if (!indices.length) return
+    await series.dispatchFilter(EnumFilterOperations.SELECTION, indices)
+    await setPlotSelection(indices)
+  }
+
   return {
     dispatchFilter,
     getActiveFilterRange,
+    recordPostActionSelection,
     /** Re-exported so panels don't need to wire `useDataSelection` separately. */
     clearSelected,
     /** Re-exported for panels that need to push a manual selection

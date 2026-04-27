@@ -85,11 +85,13 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 import { intendedSpacingMs } from '@/utils/plotting/plotly'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
 const { redraw } = usePlotlyStore()
 const { noDataValue } = storeToRefs(useUIStore())
+const { recordPostActionSelection } = useFilterDispatch()
 
 const form = ref<InstanceType<typeof VForm>>()
 
@@ -155,13 +157,15 @@ const onAddDataPoints = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    await selectedSeries.value?.data.dispatchAction(
-      EnumEditOperations.ADD_POINTS,
-      transformedDataPoints
-    )
+    const insertedIndices =
+      ((await selectedSeries.value?.data.dispatchAction(
+        EnumEditOperations.ADD_POINTS,
+        transformedDataPoints
+      )) as number[] | undefined) ?? []
 
     isUpdating.value = false
     await redraw(true)
+    await recordPostActionSelection(insertedIndices)
     emit('close')
   })
 }

@@ -17,11 +17,15 @@ test.describe('edit: add points', () => {
 
   test('adds a single point and logs history', async ({ page }) => {
     await openOp(page, 'addPoints')
-    // Fill the default row's datetime + value inputs inside the panel.
+    // The datetime is now driven by `DatePickerField` (separate
+    // MM/DD/YYYY + HH:MM:SS inputs) rather than a single combined
+    // textbox. The first row is autopopulated with `last datapoint
+    // + intendedTimeSpacing`, so we just need to fill in a value
+    // and click Apply.
     const panel = page.getByTestId('operation-panel-addPoints')
-    await panel.getByRole('textbox', { name: 'Datetime' }).fill(
-      '2024-01-03 12:00:00'
-    )
+    await expect(
+      panel.locator('input[placeholder="MM/DD/YYYY"]').first()
+    ).toBeVisible()
     await panel.getByRole('spinbutton', { name: 'Value' }).fill('5')
     // Click the Apply button (label is dynamic: "Add 1 point").
     await panel.getByRole('button', { name: /^Add \d+ point/ }).click()

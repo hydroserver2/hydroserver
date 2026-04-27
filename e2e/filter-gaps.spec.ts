@@ -46,8 +46,11 @@ test.describe('filter: find gaps', () => {
     // store as soon as the threshold resolves.
     await waitForSelection(page, 1)
 
-    // "N gap(s) in the selected range." alert confirms the detector
-    // found at least one gap.
-    await expect(page.getByText(/gaps? in the selected range/i)).toBeVisible()
+    // "N gap(s) in the datastream." (or "selected range" when the
+    // shared filter-range toggle is on) alert confirms the detector
+    // found at least one gap. Match either copy.
+    await expect(
+      page.getByText(/gaps? in the (datastream|selected range)/i)
+    ).toBeVisible()
   })
 })

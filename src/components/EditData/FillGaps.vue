@@ -47,7 +47,9 @@
           size="x-small"
           variant="tonal"
           color="primary"
-          :prepend-icon="matchesIntendedCadence ? 'mdi-check' : 'mdi-link-variant'"
+          :prepend-icon="
+            matchesIntendedCadence ? 'mdi-check' : 'mdi-link-variant'
+          "
           @click="applyIntendedCadence"
         >
           Match intended cadence
@@ -103,7 +105,11 @@
       <v-alert
         class="mt-4"
         :color="plannedInsertions > 0 ? 'info' : 'success'"
-        :icon="plannedInsertions > 0 ? 'mdi-magnify-scan' : 'mdi-check-circle-outline'"
+        :icon="
+          plannedInsertions > 0
+            ? 'mdi-magnify-scan'
+            : 'mdi-check-circle-outline'
+        "
         variant="tonal"
         density="compact"
       >
@@ -116,9 +122,7 @@
             color="primary"
           />
           <div class="text-caption">
-            <template v-if="isComputing">
-              Rebuilding fill preview…
-            </template>
+            <template v-if="isComputing"> Rebuilding fill preview… </template>
             <template v-else-if="!thresholdMs || !fillDeltaMs">
               Pick a gap threshold and fill cadence to preview the edit.
             </template>
@@ -156,10 +160,7 @@
         color="primary"
         variant="flat"
         :disabled="
-          isUpdating ||
-          isComputing ||
-          plannedInsertions === 0 ||
-          !!rangeWarning
+          isUpdating || isComputing || plannedInsertions === 0 || !!rangeWarning
         "
         @click="onFillGaps"
       >
@@ -187,6 +188,7 @@ import {
   timeUnitMultipliers,
 } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 import { useOperationParamsStore } from '@/store/operationParams'
 import {
@@ -212,6 +214,7 @@ const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
 const { clearSelected, setPlotSelection } = useDataSelection()
+const { recordPostActionSelection } = useFilterDispatch()
 
 // Template ref into the shared GapFinder. We expose its reactive
 // refs via `defineExpose` over there; here we unwrap them with
@@ -234,12 +237,8 @@ const rangeIndices = computed<[number, number] | null>(
 // `rangeIndices` so the operation is portable across datasets / data
 // growth — qc-utils' `_fillGaps` snaps these timestamps back to
 // indices internally.
-const fromTs = computed<number | null>(
-  () => gapFinder.value?.fromTs ?? null
-)
-const toTs = computed<number | null>(
-  () => gapFinder.value?.toTs ?? null
-)
+const fromTs = computed<number | null>(() => gapFinder.value?.fromTs ?? null)
+const toTs = computed<number | null>(() => gapFinder.value?.toTs ?? null)
 const gapCount = computed(() => gapPlans.value.length)
 
 // --- Fill cadence helpers -------------------------------------------
@@ -360,8 +359,7 @@ const cadenceWarning = computed<CadenceWarning | null>(() => {
   if (t && d && d > t) {
     return {
       icon: 'mdi-alert-outline',
-      text:
-        'Fill cadence is larger than the gap threshold — gaps just above the threshold will get no fill points. Choose a finer cadence if that matters.',
+      text: 'Fill cadence is larger than the gap threshold — gaps just above the threshold will get no fill points. Choose a finer cadence if that matters.',
     }
   }
   const i = intendedCadence.value
@@ -448,16 +446,17 @@ const onFillGaps = async () => {
         ? [fromTs.value, toTs.value]
         : undefined
 
-    await selectedSeries.value?.data.dispatchAction(
-      EnumEditOperations.FILL_GAPS,
-      // @ts-ignore
-      [+gapAmount.value, TimeUnit[selectedGapUnit.value]],
-      // @ts-ignore
-      [+fillAmount.value, TimeUnit[selectedFillUnit.value]],
-      interpolateValues.value,
-      +noDataValue.value,
-      dateRange
-    )
+    const insertedIndices =
+      ((await selectedSeries.value?.data.dispatchAction(
+        EnumEditOperations.FILL_GAPS,
+        // @ts-ignore
+        [+gapAmount.value, TimeUnit[selectedGapUnit.value]],
+        // @ts-ignore
+        [+fillAmount.value, TimeUnit[selectedFillUnit.value]],
+        interpolateValues.value,
+        +noDataValue.value,
+        dateRange
+      )) as number[] | undefined) ?? []
 
     opParamsStore.save(qcDatastream.value?.id ?? null, {
       gapAmount: Number(gapAmount.value),
@@ -467,12 +466,9 @@ const onFillGaps = async () => {
       noDataValue: Number(noDataValue.value),
     })
 
-    // FILL_GAPS edit was just dispatched; the post-commit clear is
-    // visual hygiene only — `recordHistory: false` keeps it from
-    // adding an empty SELECTION below the FILL_GAPS entry.
-    await clearSelected({ recordHistory: false })
     isUpdating.value = false
     await redraw()
+    await recordPostActionSelection(insertedIndices)
     emit('close')
   })
 }

@@ -50,9 +50,7 @@
         density="comfortable"
         variant="outlined"
         hide-details
-        @keyup.enter="
-          !isUpdating && selectedData?.length && onChangeValues()
-        "
+        @keyup.enter="!isUpdating && selectedData?.length && onChangeValues()"
       />
     </v-card-text>
 
@@ -74,14 +72,14 @@
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations, Operator } from '@uwrl/qc-utils'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore } from '@/store/userInterface'
 
 const { redraw } = usePlotlyStore()
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
-const { clearSelected } = useDataSelection()
+const { recordPostActionSelection } = useFilterDispatch()
 const { operators } = useUIStore()
 const { selectedOperator, operationValue } = storeToRefs(useUIStore())
 
@@ -93,6 +91,7 @@ const onChangeValues = async () => {
   }
 
   const operator = Operator[operators[selectedOperator.value] as Operator]
+  const indices = [...selectedData.value]
 
   isUpdating.value = true
   setTimeout(async () => {
@@ -102,9 +101,9 @@ const onChangeValues = async () => {
       +operationValue.value
     )
 
-    await clearSelected()
     isUpdating.value = false
     await redraw()
+    await recordPostActionSelection(indices)
     emit('close')
   })
 }

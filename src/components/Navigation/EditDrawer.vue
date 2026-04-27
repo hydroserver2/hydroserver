@@ -1,14 +1,5 @@
 <template>
   <div class="edit-drawer d-flex flex-column fill-height">
-    <div class="px-4 py-3 bg-surface">
-      <div class="text-subtitle-2 font-weight-bold">Data Tools</div>
-      <div class="text-caption text-medium-emphasis">
-        Detect issues and edit observations
-      </div>
-    </div>
-
-    <v-divider />
-
     <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
       <!-- Collapsible Filter Data section. Same chevron + primary-
            tinted icon + caption treatment as the select drawer so

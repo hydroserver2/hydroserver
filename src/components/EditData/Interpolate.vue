@@ -46,13 +46,13 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { InterpolationMethods, useUIStore } from '@/store/userInterface'
-import { useDataSelection } from '@/composables/useDataSelection'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 
 const { selectedData } = storeToRefs(useDataVisStore())
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { selectedInterpolationMethod } = storeToRefs(useUIStore())
-const { clearSelected } = useDataSelection()
+const { recordPostActionSelection } = useFilterDispatch()
 
 const emit = defineEmits(['close'])
 
@@ -60,6 +60,8 @@ const onInterpolate = async () => {
   if (!selectedData.value?.length) {
     return
   }
+
+  const indices = [...selectedData.value]
 
   isUpdating.value = true
 
@@ -70,9 +72,9 @@ const onInterpolate = async () => {
       EnumEditOperations.INTERPOLATE
     )
 
-    await clearSelected()
     isUpdating.value = false
     await redraw()
+    await recordPostActionSelection(indices)
     emit('close')
   })
 }
