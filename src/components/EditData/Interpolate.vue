@@ -66,8 +66,6 @@ const onInterpolate = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    // No indices arg — qc-utils' dispatch reads the target indices
-    // off the preceding SELECTION in history.
     await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.INTERPOLATE
     )

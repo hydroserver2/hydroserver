@@ -364,6 +364,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useUIStore } from '@/store/userInterface'
 import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
 import { useQcScript } from '@/composables/useQcScript'
 import { Snackbar } from '@uwrl/qc-utils'
@@ -424,6 +425,7 @@ const onHeaderClick = (e: MouseEvent) => {
 
 const { editHistory, selectedSeries, isUpdating } =
   storeToRefs(usePlotlyStore())
+const { selectedOperation } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, setPlotSelection } = useDataSelection()
 const { exportScript, importScript } = useQcScript()
@@ -483,6 +485,7 @@ function formatArg(arg: unknown): string {
 
 const onReload = async () => {
   isUpdating.value = true
+  closeStaleStagingPanel()
 
   setTimeout(async () => {
     const { refreshGraphSeriesArray } = useDataVisStore()
@@ -508,6 +511,7 @@ const onReload = async () => {
 const onReloadHistory = async (index: number) => {
   if (index < editHistory.value.length) {
     isUpdating.value = true
+    closeStaleStagingPanel()
     setTimeout(async () => {
       const newSelection = await selectedSeries.value?.data.reloadHistory(index)
 
@@ -597,9 +601,23 @@ const applyReplayedSelection = async (newSelection: number[] | undefined) => {
   }
 }
 
+// The Fill Gaps panel paints a ghost-marker preview over detected
+// gaps. When an undo/redo mutates the underlying data, those gaps
+// shift (a FILL_GAPS being undone re-opens its filled region) and
+// the panel's reactive watcher would re-stage ghost markers across
+// whatever the new gap landscape looks like — visually a "ghost
+// points everywhere" regression. Drop the staging panel first so
+// its `onBeforeUnmount` clears the ghost trace before the replay.
+const closeStaleStagingPanel = () => {
+  if (selectedOperation.value === 'fillGaps') {
+    selectedOperation.value = null
+  }
+}
+
 const onUndo = async () => {
   if (!canUndo.value || isUpdating.value) return
   isUpdating.value = true
+  closeStaleStagingPanel()
   setTimeout(async () => {
     try {
       const newSelection = await selectedSeries.value?.data.undo()
@@ -613,6 +631,7 @@ const onUndo = async () => {
 const onRedo = async () => {
   if (!canRedo.value || isUpdating.value) return
   isUpdating.value = true
+  closeStaleStagingPanel()
   setTimeout(async () => {
     try {
       const newSelection = await selectedSeries.value?.data.redo()

@@ -104,10 +104,9 @@ export const setSelectedPoints = async (
       // Plotly attaches `selectedpoints` at runtime; the published typings
       // accept it on `Partial<PlotData>` via the same widening used in
       // `handleClick`/`handleRelayout` above.
-      selections: [],
       selectedpoints: [indices],
     },
-    {},
+    { selections: [] } as Partial<Layout>,
     [traceIndex]
   )
 }

@@ -21,8 +21,8 @@
         This removes
         <b>{{ selectedData?.length }}</b>
         selected point{{ selectedData?.length === 1 ? '' : 's' }} from the
-        series. The step is recorded in the edit history and can be undone
-        from there.
+        series. The step is recorded in the edit history and can be undone from
+        there.
       </v-alert>
     </v-card-text>
 
@@ -63,8 +63,6 @@ const onDeleteDataPoints = async () => {
   isUpdating.value = true
 
   setTimeout(async () => {
-    // No indices arg — qc-utils' dispatch reads the target indices
-    // off the preceding SELECTION in history.
     await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.DELETE_POINTS
     )
