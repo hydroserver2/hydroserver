@@ -2,6 +2,7 @@ import { storeToRefs } from 'pinia'
 import { EnumFilterOperations } from '@uwrl/qc-utils'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { usePlotlyStore } from '@/store/plotly'
+import { useUIStore } from '@/store/userInterface'
 
 /**
  * Filter-panel dispatch helper.
@@ -31,6 +32,32 @@ import { usePlotlyStore } from '@/store/plotly'
 export function useFilterDispatch() {
   const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
   const { setPlotSelection, clearSelected } = useDataSelection()
+  const { filterRangeActive, filterRangeFromTs, filterRangeToTs } = storeToRefs(
+    useUIStore()
+  )
+
+  /**
+   * Read the shared "Filter range" window (driven by the plot-header
+   * toggle + sidebar panel). Returns `[fromTs, toTs]` in epoch ms when
+   * the panel is active and has valid bounds; `undefined` otherwise so
+   * callers can pass it straight through as the optional `range`
+   * argument every filter accepts.
+   */
+  const getActiveFilterRange = (): [number, number] | undefined => {
+    if (!filterRangeActive.value) return undefined
+    const from = filterRangeFromTs.value
+    const to = filterRangeToTs.value
+    if (
+      from == null ||
+      to == null ||
+      !Number.isFinite(from) ||
+      !Number.isFinite(to) ||
+      from >= to
+    ) {
+      return undefined
+    }
+    return [from, to]
+  }
 
   /**
    * Dispatch a filter and apply its resulting selection to the plot.
@@ -60,6 +87,7 @@ export function useFilterDispatch() {
 
   return {
     dispatchFilter,
+    getActiveFilterRange,
     /** Re-exported so panels don't need to wire `useDataSelection` separately. */
     clearSelected,
     /** Re-exported for panels that need to push a manual selection

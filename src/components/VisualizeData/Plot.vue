@@ -204,14 +204,6 @@
           </v-card>
         </v-menu>
 
-        <!-- The old `v-btn-toggle` row (1W / 1M / 6M / 1Y / ALL)
-             ate a lot of horizontal space in the toolbar.
-             Collapsing to a compact `v-select` keeps the same
-             presets reachable in one click while leaving room for
-             other controls. The trigger shows the active preset's
-             label so at-a-glance the current range is still
-             obvious. YTD is excluded: it anchors to calendar year
-             rather than the data window, which is confusing here. -->
         <v-select
           v-model="editorDateBtnId"
           :items="editorDateOptions"
@@ -237,11 +229,8 @@
           <div class="plot-container fill-height">
             <div ref="plot" class="plot-main"></div>
             <ContextPlot v-if="!preview" />
-            <!-- Horizontal axis-title chips. Replaces Plotly's
-                 rotated vertical titles. Stacked in plotted-
-                 datastreams order via `--chip-idx`. -->
             <div
-              v-for="(chip, idx) in axisChips"
+              v-for="chip in axisChips"
               :key="chip.id"
               :ref="(el) => registerChipRef(chip.id, el as Element | null)"
               class="plot-axis-chip"
@@ -366,17 +355,6 @@ const {
 const { selectedData, hasSelectionShape, qcDatastream, dateOptions, endDate } =
   storeToRefs(useDataVisStore())
 
-// Editor-toolbar preset is intentionally NOT the Select view's
-// `selectedDateBtnId`. The two controls share labels (1w / 1m / …)
-// but do very different things: Select's buttons pick the data
-// window to fetch (drives `beginDate` / `endDate` + reloads
-// observations); this selector only zooms the x-axis of the
-// already-loaded data. Sharing state made picking "1Y" in the
-// editor silently reset the Select view's filter, and vice versa.
-// Default to "All" so the editor opens showing the full loaded
-// window rather than whatever residual zoom Plotly inherited from
-// newPlot — the `onMounted` hook applies the preset after the plot
-// is up so the x-axis actually spans the data.
 const allPresetId = computed(
   () => dateOptions.value.find((o) => o.label === 'All')?.id ?? null
 )

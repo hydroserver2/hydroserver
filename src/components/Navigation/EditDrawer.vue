@@ -27,13 +27,35 @@
         />
         <v-icon icon="mdi-filter-variant" color="primary" size="16" />
         <span class="text-caption font-weight-medium">Filter Data</span>
+        <v-spacer />
+        <v-tooltip
+          location="end"
+          :text="
+            filterRangeActive
+              ? 'Filter range is ON — click to disable'
+              : 'Filter range — restrict filter operations to a datetime window'
+          "
+        >
+          <template #activator="{ props: tp }">
+            <v-btn
+              v-bind="tp"
+              size="x-small"
+              :variant="filterRangeActive ? 'flat' : 'outlined'"
+              :color="filterRangeActive ? 'primary' : undefined"
+              density="comfortable"
+              class="edit-drawer__filter-range-btn"
+              prepend-icon="mdi-arrow-expand-horizontal"
+              aria-label="Toggle filter range"
+              :aria-pressed="filterRangeActive"
+              @click.stop="filterRangeActive = !filterRangeActive"
+              @keydown.stop
+            >
+              {{ filterRangeActive ? 'On' : 'Off' }}
+            </v-btn>
+          </template>
+        </v-tooltip>
       </div>
-      <v-list
-        v-show="!filterCollapsed"
-        class="py-2"
-        density="compact"
-        nav
-      >
+      <v-list v-show="!filterCollapsed" class="py-2" density="compact" nav>
         <v-list-item
           v-for="item in filterPoints"
           :key="item.id"
@@ -75,12 +97,7 @@
         <v-icon icon="mdi-pencil" color="primary" size="16" />
         <span class="text-caption font-weight-medium">Edit Data</span>
       </div>
-      <v-list
-        v-show="!editCollapsed"
-        class="py-2"
-        density="compact"
-        nav
-      >
+      <v-list v-show="!editCollapsed" class="py-2" density="compact" nav>
         <v-list-item
           v-for="item in editData"
           :key="item.id"
@@ -92,11 +109,7 @@
           @click="selectOperation(item.id)"
         >
           <template v-slot:prepend>
-            <v-avatar
-              size="32"
-              :color="colorForOperation(item)"
-              variant="flat"
-            >
+            <v-avatar size="32" :color="colorForOperation(item)" variant="flat">
               <v-icon size="18" color="white" :icon="item.icon" />
             </v-avatar>
           </template>
@@ -127,12 +140,7 @@
         <v-icon icon="mdi-plus-circle-outline" color="primary" size="16" />
         <span class="text-caption font-weight-medium">Add Data</span>
       </div>
-      <v-list
-        v-show="!addCollapsed"
-        class="py-2"
-        density="compact"
-        nav
-      >
+      <v-list v-show="!addCollapsed" class="py-2" density="compact" nav>
         <v-list-item
           v-for="item in addData"
           :key="item.id"
@@ -163,11 +171,14 @@
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
-import { operationsByGroup, colorForOperation } from '@/components/EditData/operations'
+import {
+  operationsByGroup,
+  colorForOperation,
+} from '@/components/EditData/operations'
 import { usePersistedFlag } from '@/composables/useResizable'
 
 const { selectedData } = storeToRefs(useDataVisStore())
-const { selectedOperation } = storeToRefs(useUIStore())
+const { selectedOperation, filterRangeActive } = storeToRefs(useUIStore())
 
 const filterPoints = operationsByGroup.filter
 const editData = operationsByGroup.edit
@@ -184,10 +195,7 @@ const editCollapsed = usePersistedFlag(
   'qc:editorLayout:opsEditCollapsed',
   false
 )
-const addCollapsed = usePersistedFlag(
-  'qc:editorLayout:opsAddCollapsed',
-  false
-)
+const addCollapsed = usePersistedFlag('qc:editorLayout:opsAddCollapsed', false)
 
 function selectOperation(id: string) {
   // Toggle off if the same operation is clicked again, otherwise switch.
@@ -210,6 +218,24 @@ function selectOperation(id: string) {
 .edit-drawer__section-header:focus {
   outline: none;
   background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
+/* Filter-range toggle — sized down to slot inside the section
+   header without changing its line height. The text content (On /
+   Off) is short enough to keep the chip narrow while still reading
+   as a state indicator. */
+.edit-drawer__filter-range-btn.v-btn {
+  min-width: 0;
+  height: 22px !important;
+  padding-inline: 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.edit-drawer__filter-range-btn :deep(.v-btn__prepend) {
+  margin-inline-end: 4px;
 }
 
 /* The remaining rules all `:deep()` into Vuetify's v-list-item

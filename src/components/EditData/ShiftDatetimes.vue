@@ -24,6 +24,9 @@
           variant="outlined"
           hide-details
           style="flex: 1 1 0"
+          @keyup.enter="
+            !isUpdating && selectedData?.length && onShiftDatetimes()
+          "
         />
         <v-select
           label="Unit"

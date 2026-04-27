@@ -25,6 +25,11 @@
         density="comfortable"
         variant="outlined"
         hide-details
+        @keyup.enter="
+          changeValue != null &&
+          !isUpdating &&
+          onFilter(selectedChangeComparator?.title, changeValue)
+        "
       />
     </v-card-text>
 
@@ -50,13 +55,17 @@ import { EnumFilterOperations } from '@uwrl/qc-utils'
 import { storeToRefs } from 'pinia'
 
 const { isUpdating } = storeToRefs(usePlotlyStore())
-const { dispatchFilter } = useFilterDispatch()
-const emit = defineEmits(['filter', 'close'])
+const { dispatchFilter, getActiveFilterRange } = useFilterDispatch()
+defineEmits(['filter', 'close'])
 const { selectedChangeComparator, changeValue } = storeToRefs(useUIStore())
 const { logicalComparators } = useUIStore()
 
 const onFilter = async (key: string, value: number) => {
-  await dispatchFilter(EnumFilterOperations.CHANGE, key, +value)
-  emit('close')
+  await dispatchFilter(
+    EnumFilterOperations.CHANGE,
+    key,
+    +value,
+    getActiveFilterRange()
+  )
 }
 </script>

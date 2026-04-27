@@ -50,6 +50,9 @@
         density="comfortable"
         variant="outlined"
         hide-details
+        @keyup.enter="
+          !isUpdating && selectedData?.length && onChangeValues()
+        "
       />
     </v-card-text>
 

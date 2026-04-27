@@ -308,6 +308,13 @@
           />
 
           <div
+            v-if="filterRangePanelVisible"
+            class="edit-view__filter-range d-flex flex-column border-t"
+          >
+            <FilterRangePanel />
+          </div>
+
+          <div
             v-if="selectedOperation"
             class="edit-view__op-panel d-flex flex-column flex-grow-1 border-t"
           >
@@ -404,6 +411,7 @@ import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'
 import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
+import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
@@ -432,8 +440,13 @@ const {
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
-const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
-  storeToRefs(useUIStore())
+const {
+  currentView,
+  selectedDrawer,
+  isDrawerOpen,
+  selectedOperation,
+  filterRangeActive,
+} = storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const { editHistory, isUpdating, isSubmitting, selectedSeries } =
   storeToRefs(usePlotlyStore())
@@ -518,12 +531,18 @@ const historyCollapsed = usePersistedFlag(
 )
 const historyModalOpen = ref(false)
 
-// The history pane has four layout states depending on whether an
-// operation is staged AND whether history is collapsed. Collapsed
-// collapses to just the header; otherwise it either fills the aux
-// body or takes its percentage share when the split is active.
+const OPS_WITH_OWN_RANGE = new Set(['datetimeRange'])
+
+const filterRangePanelVisible = computed(
+  () =>
+    filterRangeActive.value &&
+    !!selectedOperation.value &&
+    !OPS_WITH_OWN_RANGE.has(selectedOperation.value)
+)
+
 const historyPaneStyle = computed(() => {
   if (historyCollapsed.value) return { flex: '0 0 auto' }
+  if (filterRangePanelVisible.value) return { flex: '0 0 auto' }
   if (selectedOperation.value) return { flex: `0 0 ${historyPercent.value}%` }
   return { flex: '1 1 auto' }
 })
@@ -919,7 +938,13 @@ function goToEdit() {
 
 .edit-view__aux-body {
   min-height: 0;
-  overflow: hidden;
+  /* Auto-scroll when stacked panels (history + filter-range +
+     operation) exceed the available height. Each panel sizes to its
+     natural height in that case; the aux body becomes the scroll
+     container. The percent-split with a drag grip still applies in
+     the no-filter-range path because the history pane stays
+     `flex: 0 0 X%` there. */
+  overflow-y: auto;
 }
 
 .edit-view__history {
@@ -928,6 +953,14 @@ function goToEdit() {
 }
 
 .edit-view__op-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Filter-range panel sizes to its content (date pickers + presets +
+   hint). History flexes around it. */
+.edit-view__filter-range {
+  flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
 }

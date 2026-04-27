@@ -162,6 +162,21 @@ export const useUIStore = defineStore('userInterface', () => {
   const selectedChangeComparator = ref(logicalComparators[2])
   const changeValue = ref(0)
 
+  // FILTER RANGE
+  // Toggle for the shared "filter window" UX. When `filterRangeActive`
+  // is true the editor shows a `FilterRangePanel` above the operation
+  // panel (with date pickers + plot overlay) and every filter
+  // operation reads `filterRangeFromTs` / `filterRangeToTs` to
+  // restrict its scan to that window. When false, filter operations
+  // run over the full datastream as before.
+  //
+  // The panel itself owns the picker state; these refs are the public
+  // contract every filter component reads from. `null` ts means
+  // "unset" (the panel hasn't seeded values yet, e.g. before mount).
+  const filterRangeActive = ref(false)
+  const filterRangeFromTs = ref<number | null>(null)
+  const filterRangeToTs = ref<number | null>(null)
+
   return {
     selectedDrawer,
     isDrawerOpen,
@@ -192,5 +207,17 @@ export const useUIStore = defineStore('userInterface', () => {
     rateOfChangeValue,
     selectedChangeComparator,
     changeValue,
+    filterRangeActive,
+    filterRangeFromTs,
+    filterRangeToTs,
   }
+}, {
+  // Persist only the user-toggleable preference. The from/to of the
+  // active filter window are panel state and reseed from data bounds
+  // on each mount — restoring stale ms across sessions would point at
+  // a window that no longer overlaps the current datastream's data.
+  persist: {
+    key: 'qc.userInterface.filterRangeActive',
+    pick: ['filterRangeActive'],
+  },
 })

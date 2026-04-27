@@ -61,6 +61,9 @@
         variant="outlined"
         hide-details
         class="mb-3"
+        @keyup.enter="
+          !isUpdating && selectedGroups.length && onDriftCorrection()
+        "
       />
 
       <div class="text-caption text-medium-emphasis mb-1">Method</div>

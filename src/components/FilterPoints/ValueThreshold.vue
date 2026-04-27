@@ -54,6 +54,11 @@
         hide-details
         density="comfortable"
         variant="outlined"
+        @keyup.enter="
+          (filterValue !== null && filterValue !== undefined) || filterValue === 0
+            ? onAddFilter(selectedFilter?.title, filterValue)
+            : null
+        "
       />
     </v-card-text>
 
@@ -80,7 +85,7 @@ import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 
 const { isUpdating } = storeToRefs(usePlotlyStore())
-const { dispatchFilter } = useFilterDispatch()
+const { dispatchFilter, getActiveFilterRange } = useFilterDispatch()
 defineEmits(['filter', 'close'])
 
 const filterOperators = Object.keys(FilterOperation).map((key) => ({
@@ -96,7 +101,11 @@ const appliedFilters: Ref<{ [key: string]: number }> = ref({})
  *  `useFilterDispatch` helper handles `isUpdating`, the qc-utils
  *  call, and pushing the resulting selection to the plot. */
 const reapply = () =>
-  dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, appliedFilters.value)
+  dispatchFilter(
+    EnumFilterOperations.VALUE_THRESHOLD,
+    appliedFilters.value,
+    getActiveFilterRange()
+  )
 
 const clearFilters = async () => {
   appliedFilters.value = {}

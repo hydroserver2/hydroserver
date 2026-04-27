@@ -1,10 +1,17 @@
 <template>
   <div class="gap-finder">
-    <!-- Shared range picker: date pickers, presets, plot overlay,
-         data-bounds clamping, range warning. -->
-    <RangeStager ref="stager" />
+    <div
+      v-if="filterRangeActive"
+      class="text-caption text-medium-emphasis mb-2"
+    >
+      Scan window: shared filter range (above).
+    </div>
+    <div v-else class="text-caption text-medium-emphasis mb-2">
+      Scanning the full datastream.
+      Toggle <b>Filter range</b> in the plot toolbar to restrict.
+    </div>
 
-    <div class="text-caption text-medium-emphasis mt-4 mb-2">
+    <div class="text-caption text-medium-emphasis mt-2 mb-2">
       Find gaps of at least
     </div>
     <div class="d-flex gap-2">
@@ -43,7 +50,6 @@
     </div>
 
     <v-alert
-      v-if="!rangeWarning"
       class="mt-4"
       :color="gapCount > 0 ? 'info' : 'success'"
       :icon="gapCount > 0 ? 'mdi-magnify-scan' : 'mdi-check-circle-outline'"
@@ -68,11 +74,12 @@
           <template v-else-if="gapCount > 0">
             <slot name="gap-count-message" :count="gapCount">
               <b>{{ gapCount }}</b> gap{{ gapCount === 1 ? '' : 's' }}
-              in the selected range.
+              in the {{ filterRangeActive ? 'selected range' : 'datastream' }}.
             </slot>
           </template>
           <template v-else>
-            No gaps match this threshold in the selected range.
+            No gaps match this threshold in the
+            {{ filterRangeActive ? 'selected range' : 'datastream' }}.
           </template>
         </div>
       </div>
@@ -83,10 +90,10 @@
 <script setup lang="ts">
 /**
  * Shared "find gaps" UI — used standalone by the Find Gaps
- * operation panel, and as the top half of the Fill Gaps panel.
- * Owns gap-detection-specific controls (threshold input, snap
- * chips, count alert, red gap bands) and delegates the date-range
- * picker / overlay / preset logic to `RangeStager`.
+ * operation panel, and as the top half of the Fill Gaps panel. The
+ * scan window is read from the shared "Filter range" toggle (plot
+ * toolbar + sidebar `FilterRangePanel`); when off, the scan covers
+ * the full datastream.
  *
  * When mounted with `autoSelectEndpoints`, each detection also
  * dispatches a point selection to the plot (Find Gaps' live-commit
@@ -94,7 +101,7 @@
  * plot's existing selection stays untouched (Fill Gaps' behaviour —
  * it owns the selection lifecycle through `dispatchAction`).
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -102,11 +109,13 @@ import {
   EnumFilterOperations,
   TimeUnit,
   timeUnitMultipliers,
+  findFirstGreaterOrEqual,
+  findLastLessOrEqual,
 } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { useOperationParamsStore } from '@/store/operationParams'
-import RangeStager from '@/components/FilterPoints/RangeStager.vue'
+import { useFilterDispatch } from '@/composables/useFilterDispatch'
 
 export interface GapPlan {
   leftTs: number
@@ -146,22 +155,12 @@ const props = withDefaults(
 )
 
 const { selectedSeries } = storeToRefs(usePlotlyStore())
-const { gapAmount, gapUnits, selectedGapUnit } = storeToRefs(useUIStore())
+const { gapAmount, gapUnits, selectedGapUnit, filterRangeActive } = storeToRefs(
+  useUIStore()
+)
 const { qcDatastream } = storeToRefs(useDataVisStore())
 const { setPlotSelection } = useDataSelection()
-
-// Unwrap state exposed by RangeStager so downstream computeds can
-// track the date-range without the parent having to thread it
-// through props on every tick.
-const stager = useTemplateRef<InstanceType<typeof RangeStager>>('stager')
-const fromTs = computed(() => stager.value?.fromTs ?? 0)
-const toTs = computed(() => stager.value?.toTs ?? 0)
-const rangeWarning = computed<string | null>(
-  () => stager.value?.rangeWarning ?? null
-)
-const rangeIndices = computed<[number, number] | null>(
-  () => stager.value?.rangeIndices ?? null
-)
+const { getActiveFilterRange } = useFilterDispatch()
 
 const thresholdMs = computed(() => {
   const amount = Number(gapAmount.value)
@@ -174,12 +173,22 @@ const thresholdMs = computed(() => {
   return amount * mult * 1000
 })
 
-// Client-side gap detection over the staged window. Mirrors
-// `findGapsCore` in qc-utils (not re-exported from the package)
-// but skips the worker path — we're detecting in-panel and the
-// scan is small enough to run inline. Returns full `GapPlan`
-// records so parents can build their own previews off a single
-// shared pass.
+/** Resolve the scan window's [startIdx, endIdx] inclusive index pair.
+ *  Returns `null` when there's no data. */
+const rangeIndices = computed<[number, number] | null>(() => {
+  const dataX = selectedSeries.value?.data.dataX
+  if (!dataX?.length) return null
+  const range = getActiveFilterRange()
+  if (!range) return [0, dataX.length - 1]
+  const [from, to] = range
+  const startIdx = findFirstGreaterOrEqual(dataX, from)
+  const endIdx = findLastLessOrEqual(dataX, to)
+  return endIdx >= startIdx ? [startIdx, endIdx] : null
+})
+
+// Client-side gap detection over the resolved window. Mirrors
+// `findGapsCore` in qc-utils (not re-exported) but skips the worker
+// path — the in-panel scan is small enough to run inline.
 const gapPlans = computed<GapPlan[]>(() => {
   const threshold = thresholdMs.value
   const series = selectedSeries.value?.data
@@ -208,10 +217,7 @@ const gapPlans = computed<GapPlan[]>(() => {
 
 const gapCount = computed(() => gapPlans.value.length)
 
-/** Flat, sorted, de-duplicated list of every gap-endpoint index
- *  in the current scan. Matches the `_findGaps` return shape so
- *  `setPlotSelection` on it highlights the same points the
- *  committed filter would. */
+/** Flat, sorted, de-duplicated list of every gap-endpoint index. */
 const endpointIndices = computed<number[]>(() => {
   const out = new Set<number>()
   for (const p of gapPlans.value) {
@@ -221,8 +227,6 @@ const endpointIndices = computed<number[]>(() => {
   return [...out].sort((a, b) => a - b)
 })
 
-// `isComputing` flips true for the duration of the async Plotly
-// writes so the alert can show a spinner while relayouts settle.
 const isComputing = ref(false)
 
 watch(
@@ -243,21 +247,10 @@ watch(
         !!unitCode
 
       if (canRecord) {
-        // Commit FIND_GAPS as a real filter operation so the history
-        // entry carries the threshold parameters (`amount`, `unit`,
-        // optional `range`) and is reproducible. qc-utils' same-
-        // method-replace collapses rapid threshold tweaks into a
-        // single entry; cross-filter replace handles switching from
-        // a different filter panel.
-        // Pass the date-range as `[fromTs, toTs]` (epoch ms) rather
-        // than `[startIdx, endIdx]`. The qc-utils `_findGaps` snaps
-        // those datetimes to indices internally — datetime-addressed
-        // ranges are portable across datasets and survive data
-        // growth, which the script-replay format relies on.
-        const dateRange: [number, number] | undefined =
-          rangeIndices.value != null
-            ? [fromTs.value, toTs.value]
-            : undefined
+        // Pull the active filter range straight from the helper so
+        // the history entry's `range` argument matches what the user
+        // sees on the plot. `undefined` when the toggle is off.
+        const dateRange = getActiveFilterRange()
         const indices = await series!.dispatchFilter(
           EnumFilterOperations.FIND_GAPS,
           amount,
@@ -266,12 +259,6 @@ watch(
         )
         await setPlotSelection(indices ?? [])
       } else {
-        // History recording disabled (e.g. inside the Fill Gaps
-        // panel, where the FILL_GAPS commit is the operation of
-        // record). Push the gap-endpoint highlight to the plot
-        // without round-tripping through the ObservationRecord —
-        // otherwise we'd produce a phantom FIND_GAPS before, and
-        // another after the post-fill data triggers a recompute.
         await setPlotSelection(endpointIndices.value)
       }
     } finally {
@@ -330,14 +317,39 @@ watch(
   { flush: 'post' }
 )
 
+// Re-exposed for parents (e.g. FillGaps) that need the wall-clock
+// bounds of the active scan window. When the shared filter range is
+// off these collapse to the full data extent so downstream consumers
+// can use the same plumbing in either mode. `rangeWarning` stays
+// null in both states because the shared panel maintains its own
+// valid bounds.
+const fromTs = computed<number | null>(() => {
+  const range = getActiveFilterRange()
+  if (range) return range[0]
+  const dataX = selectedSeries.value?.data.dataX
+  return dataX?.length ? (dataX[0] as number) : null
+})
+const toTs = computed<number | null>(() => {
+  const range = getActiveFilterRange()
+  if (range) return range[1]
+  const dataX = selectedSeries.value?.data.dataX
+  return dataX?.length ? (dataX[dataX.length - 1] as number) : null
+})
+const rangeWarning = computed<string | null>(() => {
+  if (!selectedSeries.value?.data.dataX?.length) {
+    return 'No data loaded for this datastream.'
+  }
+  return null
+})
+
 defineExpose({
   gapPlans,
   endpointIndices,
-  rangeWarning,
   isComputing,
-  fromTs,
-  toTs,
   thresholdMs,
   rangeIndices,
+  fromTs,
+  toTs,
+  rangeWarning,
 })
 </script>
