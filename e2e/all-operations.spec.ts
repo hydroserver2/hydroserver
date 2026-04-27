@@ -44,13 +44,13 @@ function observationsWithGap() {
   return { phenomenonTime, result }
 }
 
-/** Re-seed a wide value-threshold selection so the next selection-
- *  consuming edit has indices to operate on. Used between edits that
- *  consume / clear the prior selection. */
+/** Re-seed a contiguous selection spanning the full series. Uses
+ *  Datetime Range (live-commit, no Apply button) so the selection is
+ *  guaranteed to be one consecutive block — Drift Correction needs
+ *  groups of length > 1 and Value Threshold can yield non-contiguous
+ *  hits once intermediate edits have shifted Y values around. */
 async function seedWideSelection(page: Page) {
-  await openOp(page, 'valueThreshold')
-  await page.getByLabel('Value').fill('0')
-  await page.getByRole('button', { name: /add filter/i }).click()
+  await openOp(page, 'datetimeRange')
   await waitForSelection(page, 1)
 }
 

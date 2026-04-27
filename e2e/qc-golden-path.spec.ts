@@ -80,7 +80,7 @@ test.describe('QC golden path (live)', () => {
     // Step 5 — Switch to the Edit view. Edit rail item becomes enabled once
     // qcDatastream is set (happens when a datastream is plotted).
     await page.getByTestId('nav-rail-item-edit').click()
-    await expect(page.getByText('Data Tools')).toBeVisible()
+    await expect(page.getByText('Filter Data')).toBeVisible()
 
     // Step 6 — Open "Value thresholds" operation panel, add a filter.
     // Conservative value (0) chosen per plan 01-03 to ensure the threshold

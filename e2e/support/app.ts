@@ -114,7 +114,7 @@ export async function setupEditView(page: Page): Promise<void> {
   await gotoHome(page)
   await plotFirstDatastream(page)
   await page.getByTestId('nav-rail-item-edit').click()
-  await expect(page.getByText('Data Tools')).toBeVisible()
+  await expect(page.getByText('Filter Data')).toBeVisible()
 }
 
 /** Open an operation panel in the edit drawer by id (see operations.ts). */
@@ -141,7 +141,7 @@ export async function waitForSelection(
   )
   await page.evaluate(
     ([min, t]) =>
-      window.__vbwTestHooks!.waitForSelectedData(min as number, t as number).then(() => {}),
+      window.__vbwTestHooks!.waitForSelectedData(min as number, t as number).then(() => { }),
     [minLength, timeoutMs]
   )
 }
