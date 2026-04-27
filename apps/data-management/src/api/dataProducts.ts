@@ -108,3 +108,78 @@ export const createRatingCurveTransformation = (
     method: 'POST',
     body: payload,
   })
+
+export type AggregationMethod = 'mean' | 'sum' | 'min' | 'max' | 'first' | 'last'
+export type IntervalUnit = 'minutes' | 'hours' | 'days' | 'weeks' | 'months'
+export type TimezoneType = 'utc' | 'offset' | 'iana'
+
+export type AggregationTransformationPayload = {
+  outputDatastreamId: string
+  inputDatastreamId: string
+  aggregationMethod: AggregationMethod
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  timezoneType?: TimezoneType | null
+  timezone?: string | null
+  minValues?: number | null
+}
+
+export type AggregationTransformationResponse = {
+  id: string
+  outputDatastream?: { id: string; name: string; thingId?: string }
+  inputDatastream?: { id: string; name: string; thingId?: string }
+  aggregationMethod: AggregationMethod
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  timezoneType?: TimezoneType | null
+  timezone?: string | null
+  minValues?: number | null
+}
+
+export const createAggregationTransformation = (
+  taskId: string,
+  payload: AggregationTransformationPayload
+) =>
+  request<AggregationTransformationResponse>(
+    `/api/data/products/tasks/${taskId}/transformations/aggregation`,
+    { method: 'POST', body: payload }
+  )
+
+export const listAggregationTransformations = (taskId: string) =>
+  request<AggregationTransformationResponse[]>(
+    `/api/data/products/tasks/${taskId}/transformations/aggregation`
+  )
+
+export const updateAggregationTransformation = (
+  taskId: string,
+  transformationId: string,
+  payload: Partial<AggregationTransformationPayload>
+) =>
+  request<AggregationTransformationResponse>(
+    `/api/data/products/tasks/${taskId}/transformations/aggregation/${transformationId}`,
+    { method: 'PATCH', body: payload }
+  )
+
+export const deleteAggregationTransformation = (
+  taskId: string,
+  transformationId: string
+) =>
+  request(
+    `/api/data/products/tasks/${taskId}/transformations/aggregation/${transformationId}`,
+    { method: 'DELETE' }
+  )
+
+export const updateDataProductTask = (
+  taskId: string,
+  payload: Partial<DataProductTaskPayload>
+) =>
+  request<DataProductTaskResponse>(`/api/data/products/tasks/${taskId}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+
+export const deleteDataProductTask = (taskId: string) =>
+  request(`/api/data/products/tasks/${taskId}`, { method: 'DELETE' })
+
+export const getDataProductTask = (taskId: string) =>
+  request<DataProductTaskResponse>(`/api/data/products/tasks/${taskId}`)

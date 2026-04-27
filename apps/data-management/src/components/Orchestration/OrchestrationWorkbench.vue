@@ -128,7 +128,15 @@
     </v-dialog>
 
     <v-dialog v-model="openAggregationForm" width="60rem">
-      <AggregationForm @close="openAggregationForm = false" />
+      <AggregationForm
+        :workspace-id="workspaceId"
+        :initial-thing-id="selectedThingId"
+        :edit-task-id="editingAggregationTaskId"
+        @close="closeAggregationForm"
+        @created="onDataProductTaskCreated"
+        @updated="onTaskDetailsChanged"
+        @deleted="onTaskDetailsChanged"
+      />
     </v-dialog>
 
     <v-dialog v-model="openExpressionForm" width="60rem">
@@ -253,6 +261,7 @@ const openCreateTask = ref(false)
 const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 const openAggregationForm = ref(false)
+const editingAggregationTaskId = ref<string | null>(null)
 const openExpressionForm = ref(false)
 const openDerivationForm = ref(false)
 const openRatingCurveForm = ref(false)
@@ -634,7 +643,13 @@ const onTaskCreated = async () => {
   autoSelectSidebar()
 }
 
+const closeAggregationForm = () => {
+  openAggregationForm.value = false
+  editingAggregationTaskId.value = null
+}
+
 const onDataProductTaskCreated = async () => {
+  openAggregationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
   await fetchAll(props.workspaceId)
