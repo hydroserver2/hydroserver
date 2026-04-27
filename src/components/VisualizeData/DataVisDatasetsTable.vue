@@ -321,6 +321,8 @@ const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
 })
 const formatTableDate = (raw: unknown): string => {
   if (!raw) return '—'
