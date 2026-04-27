@@ -113,21 +113,18 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
   /**
    * Sentinel armed by programmatic Plotly writes (`setPlotSelection`,
-   * `clearSelected`). The next `plotly_relayout`-induced
-   * `handleSelected` call consumes the sentinel and skips its
-   * SELECTION dispatch — that's the echo of our own write, not a
-   * user gesture worth recording in history. `handleClick` (the
-   * actual user-gesture path) ignores the sentinel.
+   * `clearSelected`). When the next `plotly_relayout`-induced
+   * `handleSelected` call fires, we compare the current selection
+   * against this expected payload — if they match it's the echo of
+   * our own write (skip the SELECTION dispatch); if they differ a
+   * user gesture (box/lasso select) raced through the same debounce
+   * window, so we let the dispatch proceed. `handleClick` (the
+   * direct-call user-gesture path) ignores the sentinel entirely.
    *
-   * Replaces an earlier `performance.now()` window approach. Time-
-   * based suppression broke at scale: Plotly's relayout debounce
-   * stretches past any fixed window on large datasets (a 35k-point
-   * series with a 1k-element selection routinely fires the debounce
-   * at ~700–900 ms, blowing past the 600 ms guard). A sentinel that
-   * the *event itself* consumes is timing-independent and scales
-   * with whatever Plotly does internally.
+   * `null` = nothing armed. An array (possibly empty) = "expect this
+   * exact selection on the next relayout echo".
    */
-  const suppressNextRelayoutEcho: Ref<boolean> = ref(false)
+  const suppressedEchoSelection: Ref<number[] | null> = ref(null)
 
   const selectedSeries = computed(() => {
     return graphSeriesArray.value[selectedSeriesIndex.value]
@@ -232,8 +229,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     // x-axis when an operation can change the data extent.
     const liveLayout = preserveZoom
       ? (plotlyRef.value?.layout as
-          | Record<string, Partial<LayoutAxis> | unknown>
-          | undefined)
+        | Record<string, Partial<LayoutAxis> | unknown>
+        | undefined)
       : undefined
     if (liveLayout) {
       const layoutRecord = opts.layout as Record<string, unknown>
@@ -355,7 +352,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     selectedSeriesIndex,
     selectedSeries,
     editHistory,
-    suppressNextRelayoutEcho,
+    suppressedEchoSelection,
     updateOptions,
     redraw,
     clearChartState,

@@ -15,14 +15,14 @@ const selectedSeries = ref<any>(undefined)
 
 // Stub the Plotly pinia store so `plotlyRef.value.data.length` is deterministic
 // and no real Plotly runtime is required.
-const suppressNextRelayoutEcho = ref(false)
+const suppressedEchoSelection = ref<number[] | null>(null)
 vi.mock('@/store/plotly', () => {
   const graphSeriesArray = ref([] as any[])
   return {
     usePlotlyStore: () => ({
       plotlyRef,
       selectedSeries,
-      suppressNextRelayoutEcho,
+      suppressedEchoSelection,
       graphSeriesArray,
       updateOptions: vi.fn(),
       clearChartState: vi.fn(),
@@ -54,7 +54,7 @@ describe('useDataSelection.setPlotSelection', () => {
     vi.clearAllMocks()
     // Shared ref persists across tests; reset so each test sees the
     // documented "no echo suppression armed" baseline.
-    suppressNextRelayoutEcho.value = false
+    suppressedEchoSelection.value = null
   })
 
   it('writes the selection array directly to selectedData', async () => {
@@ -87,15 +87,18 @@ describe('useDataSelection.setPlotSelection', () => {
     expect(useDataVisStore().selectedData).toEqual([])
   })
 
-  it('clearSelected arms the suppress-echo sentinel', async () => {
+  it('clearSelected arms the suppress-echo sentinel with an empty payload', async () => {
     const { useDataSelection } = await import('@/composables/useDataSelection')
 
-    expect(suppressNextRelayoutEcho.value).toBe(false)
+    expect(suppressedEchoSelection.value).toBeNull()
 
     const { clearSelected } = useDataSelection()
     await clearSelected()
 
-    expect(suppressNextRelayoutEcho.value).toBe(true)
+    // Payload-keyed sentinel: empty array, not just `true`. handleSelected
+    // matches it against the trace's actual selectedpoints to suppress
+    // only the genuine echo, not a user gesture that races the debounce.
+    expect(suppressedEchoSelection.value).toEqual([])
   })
 
   it('qcTraceIndex falls back to the trailing trace when no id matches', async () => {

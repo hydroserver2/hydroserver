@@ -19,23 +19,21 @@ import type { AppPlotlyTrace } from './options'
  * The SELECTION-dispatch branch is the source-of-truth for "user just
  * selected something on the plot". To distinguish a real user gesture
  * from the relayout echo of our own programmatic Plotly writes
- * (`setPlotSelection`, `clearSelected`), the writers arm a sentinel
- * (`suppressNextRelayoutEcho`) before their `Plotly.update`. The next
- * `plotly_relayout`-induced `handleSelected` call (i.e. `fromRelayout:
- * true`) consumes the sentinel and skips its dispatch. The
- * click-induced path (`fromRelayout` falsy, default) ignores the
- * sentinel — user clicks always dispatch.
- *
- * The sentinel approach replaces an earlier time-windowed guard that
- * broke at scale: Plotly's relayout debounce stretches past any
- * fixed window on large datasets. Tying the suppress to the actual
- * event firing makes it timing-independent.
+ * (`setPlotSelection`, `clearSelected`), the writers arm
+ * `suppressedEchoSelection` with the indices their write will land
+ * on. When the next `plotly_relayout`-induced `handleSelected` call
+ * fires (`fromRelayout: true`) we compare the trace's actual
+ * `selectedpoints` against that expected payload — equal means the
+ * echo (skip dispatch); different means a user gesture (box / lasso
+ * select) raced through the same debounce window, so dispatch
+ * normally. The click-induced path (`fromRelayout` falsy, default)
+ * ignores the sentinel entirely — user clicks always dispatch.
  */
 export const handleSelected = async (
   eventData?: PlotMouseEvent | PlotRelayoutEvent | PlotSelectionEvent | null,
   opts: { fromRelayout?: boolean } = {}
 ) => {
-  const { plotlyRef, selectedSeries, isUpdating, suppressNextRelayoutEcho } =
+  const { plotlyRef, selectedSeries, isUpdating, suppressedEchoSelection } =
     storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -66,14 +64,18 @@ export const handleSelected = async (
   //  1. `isUpdating` — set by undo/redo and dispatch-helper composables
   //     so a programmatic re-render doesn't echo back as a SELECTION
   //     and clobber the redo stack.
-  //  2. `suppressNextRelayoutEcho` — sentinel armed by
-  //     `setPlotSelection` / `clearSelected`. Consumed (and cleared)
-  //     here on the relayout path so the programmatic write's own
-  //     relayout echo never reaches `dispatchFilter`. Click and
-  //     direct-call paths bypass — they're real user gestures.
-  if (opts.fromRelayout && suppressNextRelayoutEcho.value) {
-    suppressNextRelayoutEcho.value = false
-    return
+  //  2. `suppressedEchoSelection` — payload-keyed sentinel armed by
+  //     `setPlotSelection` / `clearSelected`. We always clear it (one-
+  //     shot), but only suppress when the current selection MATCHES
+  //     what the echo should carry. A mismatch means a real user
+  //     gesture overlapped the programmatic write's debounce window,
+  //     and dropping it would be the bug we're guarding against.
+  //     Click and direct-call paths bypass — they're real gestures.
+  if (opts.fromRelayout && suppressedEchoSelection.value != null) {
+    const expected = suppressedEchoSelection.value
+    suppressedEchoSelection.value = null
+    const current = selectedData.value ?? []
+    if (sameSelection(expected, current)) return
   }
   if (eventData && !isUpdating.value) {
     await selectedSeries.value?.data.dispatchFilter(
@@ -81,6 +83,15 @@ export const handleSelected = async (
       selectedData.value ?? []
     )
   }
+}
 
-  // TODO: prevent selection on other traces
+/** Order-preserving equality for selection payloads. Selection
+ *  arrays are produced sorted by both Plotly and our setters, so a
+ *  positional compare is enough — no need to allocate a Set. */
+const sameSelection = (a: number[], b: number[]): boolean => {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }

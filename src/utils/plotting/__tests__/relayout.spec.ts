@@ -49,7 +49,7 @@ vi.mock('@/store/plotly', () => ({
     tooltipsMaxDataPoints,
     selectedSeries: ref(null),
     editHistory: ref([]),
-    suppressNextRelayoutEcho: ref(false),
+    suppressedEchoSelection: ref<number[] | null>(null),
   }),
 }))
 

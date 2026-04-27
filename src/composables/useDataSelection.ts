@@ -16,23 +16,28 @@ import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 
 export function useDataSelection() {
-  const { plotlyRef, suppressNextRelayoutEcho } = storeToRefs(
+  const { plotlyRef, suppressedEchoSelection } = storeToRefs(
     usePlotlyStore()
   )
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { selectedData } = storeToRefs(useDataVisStore())
 
   /**
-   * Mark the next `plotly_relayout`-induced `handleSelected` call as
-   * a programmatic echo that should not dispatch a SELECTION
-   * filter. The sentinel is consumed by the relayout-path
-   * `handleSelected` itself, so timing doesn't matter — multiple
-   * programmatic writes within a debounce window collapse to one
-   * relayout event and one consumption, and a slow Plotly relayout
-   * still gets caught no matter how late it fires.
+   * Tell the next `plotly_relayout`-induced `handleSelected` call
+   * what selection to expect from this programmatic write. The
+   * relayout handler compares the expected payload against the
+   * trace's actual `selectedpoints` — a match is the echo (skip
+   * dispatch); a mismatch means a user gesture (box / lasso select)
+   * raced through the same debounce window, so dispatch normally.
+   *
+   * The boolean variant we used to ship swallowed those user
+   * gestures: a fast box-select right after `clearSelected` got
+   * collapsed into the same debounce as the clear, and the single
+   * post-debounce `handleSelected` consumed the sentinel without
+   * ever logging the user's selection.
    */
-  const armEchoSuppression = () => {
-    suppressNextRelayoutEcho.value = true
+  const armEchoSuppression = (expected: number[]) => {
+    suppressedEchoSelection.value = [...expected]
   }
 
   /**
@@ -71,7 +76,7 @@ export function useDataSelection() {
   const setPlotSelection = async (selection: number[]) => {
     const traceIndex = qcTraceIndex()
     if (traceIndex < 0) return
-    armEchoSuppression()
+    armEchoSuppression(selection)
     await setSelectedPoints(plotlyRef.value, traceIndex, selection)
     // Authoritative assignment: we already hold the indices the
     // caller intends to highlight, so write them straight into the
@@ -102,7 +107,7 @@ export function useDataSelection() {
 
     const traceIndex = qcTraceIndex()
     if (traceIndex >= 0) {
-      armEchoSuppression()
+      armEchoSuppression([])
       await clearSelection(plotlyRef.value, traceIndex)
     }
 
