@@ -1,56 +1,254 @@
 # @uwrl/qc-utils
 
-Quality-control utilities for hydrological time-series data. Used by [hydroserver-qc-app](https://github.com/hydroserver2/hydroserver-qc-app).
+Worker-parallelized quality-control primitives for hydrological time-series.
+Powers the QC pipeline in
+[hydroserver-qc-app](https://github.com/hydroserver2/hydroserver-qc-app),
+but the runtime has no Vue / app dependencies — anywhere you can run a
+modern browser bundle is fair game.
 
-## Local development with `npm link`
+The package wraps a paired `Float64Array` (timestamps, ms epoch) and
+`Float32Array` (values) in an `ObservationRecord` and exposes a single
+history-driven dispatch surface. Every edit and filter is logged as a
+`HistoryItem` you can replay, undo / redo, calibrate against the host
+machine, and serialize to disk as a JSON "QC script".
 
-This package is consumed by `hydroserver-qc-app` via `npm link`. For active local development:
-
-**1. From `qc-utils/`** (this repo):
-
-```sh
-npm install
-npm link            # registers @uwrl/qc-utils globally
-npm run dev         # starts vite build --watch — rebuilds dist/ on every source change
-```
-
-Leave that terminal running.
-
-**2. From `hydroserver-qc-app/`** (the consumer, in a second terminal):
+## Install
 
 ```sh
-npm install
-npm run link-qc-utils    # symlinks node_modules/@uwrl/qc-utils → this dist/
-npm run dev              # starts the Vite dev server
+npm install @uwrl/qc-utils
 ```
 
-Edit any file in `qc-utils/src/`. The watcher rebuilds `dist/` within ~1s. Refresh the app browser to pick up the change.
+## Quick start
 
-### Caveats
+```ts
+import {
+  ObservationRecord,
+  EnumFilterOperations,
+  EnumEditOperations,
+  Operator,
+} from '@uwrl/qc-utils'
 
-- `vite build --watch` rebuilds the JS bundle but **does not emit `.d.ts` files** (those come from the full `npm run build`). If the app surfaces stale type errors during dev, run `npm run build` once in `qc-utils` and they'll refresh.
-- Two terminals required (one per repo). If the friction proves real, a future phase can wire `concurrently` to run both watchers from a single command.
-- HMR is **not** propagated through the linked dependency — Vite library mode doesn't expose HMR boundaries to the consumer. Browser refresh is the loop.
+// Build a record from parallel datetime + value arrays.
+const record = new ObservationRecord({
+  datetimes: [1704067200000, 1704067260000, 1704067320000, 1704067380000],
+  dataValues: [10.0, 11.5, 999.9, 12.3],
+})
+await record.reload()
 
-## Scripts
+// Find the spike, replace it with the previous value.
+await record.dispatch([
+  [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 100 }],
+  [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 11.5],
+])
 
-| Script | Purpose |
-|--------|---------|
-| `npm run dev` | Start the watch-mode bundler for linked-dev workflow (alias of `watch`). |
-| `npm run watch` | Same as `dev` (kept for backward compatibility). |
-| `npm run build` | Production build — bundle + emit `.d.ts` declarations. |
-| `npm run test` | Run the Vitest suite once. |
-| `npm run coverage` | Run the suite with v8 coverage and the 80% threshold. |
-| `npm run lint` | Run ESLint over `src/`. |
-| `npm run lint:fix` | Auto-fix lintable errors. |
-| `npm run preview` | Preview the production build with Vite. |
-| `npm link` | Register this package for `npm link @uwrl/qc-utils` in consumers. |
-| `npm publish` (`pub`) | Publish to npm under `--access public`. |
+record.dataY[2] // 11.5
+record.history.length // 2
+await record.undo()  // replays without CHANGE_VALUES
+record.dataY[2] // 999.9
+```
 
-## CI
+The dispatch chain is the canonical pattern: a filter (or explicit
+`SELECTION`) seeds an index list, the next selection-consuming edit
+reads it off `history[length - 2].selected`. See
+[`docs/HISTORY_SCRIPT.md`](./docs/HISTORY_SCRIPT.md) for the full
+operation-by-operation contract and the JSON wire format.
 
-GitHub Actions runs `tsc --noEmit → coverage → lint → build` on every push and PR-to-main. See `.github/workflows/ci.yml`.
+## Concepts
+
+### `ObservationRecord`
+
+The single state container. Holds:
+
+- `dataX` / `dataY` — typed-array views into a (possibly shared) buffer.
+- `history` — every committed `HistoryItem` since the last `reload()`.
+- `redoStack` — items popped by `undo()`, ready for `redo()`.
+
+Mutations only happen through `dispatch` / `dispatchAction` /
+`dispatchFilter` / `undo` / `redo` / `reload` / `reloadHistory` /
+`removeHistoryItem`. The handlers themselves are private — operations
+are driven by enum + args so the same call shape works at runtime, on
+replay from a saved script, and in unit tests.
+
+### Edit operations (`EnumEditOperations`)
+
+| Op                      | Purpose                                                  |
+|-------------------------|----------------------------------------------------------|
+| `ADD_POINTS`            | Insert (datetime, value) tuples; reindex + sort by date. |
+| `CHANGE_VALUES`         | Apply `Operator` (ADD / SUB / MULT / DIV / ASSIGN) at the prior selection's indices. |
+| `ASSIGN_VALUES_BULK`    | Write parallel `values[i] → dataY[selection[i]]`. Table-driven edits. |
+| `ASSIGN_DATETIMES_BULK` | Write parallel datetimes; runs as one combined delete + add. |
+| `DELETE_POINTS`         | Drop the selection from x / y in a single skip-on-delete pass. |
+| `INTERPOLATE`           | Linear interpolation across each consecutive group in the selection. |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`. |
+| `DRIFT_CORRECTION`      | Apply linear drift `value` to every consecutive group in the selection. |
+| `FILL_GAPS`             | Detect gaps over `gapThreshold`; insert points at `fillCadence` (interpolated or constant `fillValue`). |
+
+### Filter operations (`EnumFilterOperations`)
+
+All scan-style filters accept an optional trailing `[startTs, endTs]`
+window in epoch ms; `DATETIME_RANGE`'s args ARE the window.
+
+| Op                | Args                                                       |
+|-------------------|------------------------------------------------------------|
+| `VALUE_THRESHOLD` | `[{ 'Greater than': n, 'Less than': n, ... }, range?]`     |
+| `DATETIME_RANGE`  | `[fromTs?, toTs?]`                                         |
+| `CHANGE`          | `[comparator, value, range?]` — Δ between adjacent points  |
+| `RATE_OF_CHANGE`  | `[comparator, value, range?]` — value is a fraction (0.5 = 50%) |
+| `FIND_GAPS`       | `[amount, unit, range?]`                                   |
+| `PERSISTENCE`     | `[times, range?]` — runs of identical repeated values      |
+| `SELECTION`       | `[indices[]]` — explicit user selection                    |
+
+### Worker dispatch + calibration
+
+Every long-running kernel ships in two flavours: an inline core
+(`changeValuesCore`, `fillGapsCore`, …) and a worker pool that scans
+shared `Float64Array` / `Float32Array` views in parallel.
+[`shouldUseWorker`](./src/utils/plotting/calibration.ts) picks per
+call:
+
+```ts
+import { ensureCalibration, shouldUseWorker, EnumEditOperations } from '@uwrl/qc-utils'
+
+await ensureCalibration() // benchmark once per device, cached in localStorage
+
+shouldUseWorker(EnumEditOperations.FILL_GAPS, {
+  datasetSize: record.dataX.length,
+  selectionSize: 0,
+})
+// → { useWorker: false, predictedInlineMs: 12.4, predictedWorkerMs: 53.0,
+//     reason: 'inline faster (12.4 vs 53.0 ms)' }
+```
+
+Workers require `SharedArrayBuffer`, which means the host page must
+serve `Cross-Origin-Opener-Policy: same-origin` +
+`Cross-Origin-Embedder-Policy: require-corp`. When SAB is unavailable
+the dispatch transparently falls back to inline kernels. See
+[`docs/CALIBRATION.md`](./docs/CALIBRATION.md) for the benchmark
+methodology and the per-op cost table.
+
+### QC scripts (save / load)
+
+Every `ObservationRecord` history is round-trippable as JSON. The
+on-disk shape IS the wire format used by the HydroServer API:
+
+```ts
+import { serializeHistory, parseScript, applyScript } from '@uwrl/qc-utils'
+
+const script = serializeHistory(record, {
+  startDate: '2024-01-01T00:00:00.000Z',
+  endDate:   '2024-06-30T23:59:59.999Z',
+})
+// → { version: '1', createdAt, window, operations: [{ method, args }, ...] }
+
+// On a fresh ObservationRecord with the same window's data loaded:
+const fresh = new ObservationRecord(rawObservations)
+await fresh.reload()
+const report = await applyScript(fresh, parseScript(script))
+report.applied // 12
+report.failed  // [{ index, method, error }]  — per-op failures don't abort replay
+```
+
+Scripts are reusable across datastreams: they don't pin a datastream id,
+they store the wall-clock window and the `[method, ...args]` tuples.
+See [`docs/HISTORY_SCRIPT.md`](./docs/HISTORY_SCRIPT.md) for versioning,
+loader workflow, and per-op arg shape.
+
+## Public API surface
+
+```ts
+// State container
+import { ObservationRecord, INCREASE_AMOUNT } from '@uwrl/qc-utils'
+
+// Operation enums
+import {
+  EnumEditOperations,
+  EnumFilterOperations,
+  Operator,
+  FilterOperation,
+  TimeUnit,
+  timeUnitMultipliers,
+} from '@uwrl/qc-utils'
+
+// QC scripts
+import {
+  serializeHistory,
+  parseScript,
+  applyScript,
+  QcScript,
+  QcScriptOperation,
+  QcScriptWindow,
+  QC_SCRIPT_VERSION,
+  ApplyScriptReport,
+} from '@uwrl/qc-utils'
+
+// Calibration
+import {
+  shouldUseWorker,
+  ensureCalibration,
+  runBenchmarks,
+  getCalibration,
+  onCalibrationChange,
+  clearCalibration,
+  DeviceProfile,
+  DispatchSignals,
+  DispatchDecision,
+} from '@uwrl/qc-utils'
+
+// Helpers
+import {
+  findFirstGreaterOrEqual,
+  findLastLessOrEqual,
+  formatDate,
+  formatDuration,
+  measureEllapsedTime,
+} from '@uwrl/qc-utils'
+```
+
+A HydroServer REST client (`api`, `apiMethods`, request / response
+interceptors) and a `Snackbar` notification helper are also exported,
+but they're carried for the qc-app's convenience — most consumers can
+ignore them.
+
+## Browser requirements
+
+- ES2022 / native `import`. Built as ESM with a CJS shim
+  (`dist/index.js` + `dist/index.cjs`).
+- `SharedArrayBuffer` for the worker fast path (graceful inline fallback
+  when unavailable; see Calibration above).
+- `Float64Array` / `Float32Array` typed-array `resize()` /
+  `SharedArrayBuffer.grow()` — Chrome 111+, Firefox 119+, Safari 16.4+.
+
+## Contributing
+
+Clone, `npm install`, `npm run dev` (alias of `watch`) rebuilds
+`dist/` on every source change so an `npm link`-ed consumer picks up
+edits in ~1 s. The watch build skips `.d.ts` emit; run `npm run build`
+once if the consumer surfaces stale type errors. CI runs
+`tsc --noEmit → coverage → lint → build` on every push and PR to main.
+
+| Script              | Purpose                                                |
+|---------------------|--------------------------------------------------------|
+| `npm run dev`       | Watch-mode bundler for linked-dev workflow.            |
+| `npm run build`     | Production build — bundle + emit `.d.ts` declarations. |
+| `npm run test`      | Vitest suite.                                          |
+| `npm run coverage`  | Vitest with v8 coverage and the 80 % threshold.        |
+| `npm run lint`      | ESLint over `src/`.                                    |
+
+Linking into a sibling `hydroserver-qc-app` checkout:
+
+```sh
+# qc-utils (terminal 1)
+npm link
+npm run dev
+
+# hydroserver-qc-app (terminal 2)
+npm run link-qc-utils
+npm run dev
+```
+
+HMR doesn't propagate through linked packages — refresh the consumer
+browser to pick up changes.
 
 ## License
 
-ISC
+[BSD 3-Clause](./LICENSE).
