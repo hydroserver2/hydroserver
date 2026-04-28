@@ -40,26 +40,20 @@
           class="mb-2"
         />
 
-        <v-autocomplete
+        <DatastreamCardSelector
           v-model="inputDatastreamId"
-          :items="datastreamOptions"
-          item-title="title"
-          item-value="value"
+          :datastreams="siteDatastreams"
           label="Input datastream *"
-          clearable
           :loading="loadingDatastreams"
-          :disabled="loadingExisting"
+          :disabled="!selectedThingId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
 
-        <v-autocomplete
+        <DatastreamCardSelector
           v-model="outputDatastreamId"
-          :items="outputDatastreamOptions"
-          item-title="title"
-          item-value="value"
+          :datastreams="siteDatastreams"
           label="Output datastream *"
-          clearable
           :disabled="!selectedThingId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
@@ -157,6 +151,8 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
+import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const props = defineProps<{
   workspaceId: string
@@ -211,17 +207,9 @@ const intervalUnitOptions = [
   { title: 'Months', value: 'months' },
 ]
 
-
-const datastreamOptions = computed(() =>
-  datastreams.value.map((ds) => ({ title: ds.name, value: ds.id }))
-)
-
-const outputDatastreamOptions = computed(() => {
+const siteDatastreams = computed(() => {
   const thingId = selectedThingId.value
-  if (!thingId) return datastreamOptions.value
-  return datastreams.value
-    .filter((ds) => ds.thingId === thingId)
-    .map((ds) => ({ title: ds.name, value: ds.id }))
+  return datastreamsForThing(datastreams.value, thingId)
 })
 
 type Rule = (v: any) => true | string
@@ -238,6 +226,7 @@ async function loadDatastreams() {
     const items = await hs.datastreams.listAllItems({
       workspace_id: [props.workspaceId],
       order_by: ['name'],
+      expand_related: true,
     } as any)
     datastreams.value = items as Datastream[]
   } catch (error: any) {
@@ -398,7 +387,10 @@ async function onDelete() {
 watch(
   () => props.initialThingId,
   () => {
-    if (!isEditMode.value) outputDatastreamId.value = null
+    if (!isEditMode.value) {
+      inputDatastreamId.value = null
+      outputDatastreamId.value = null
+    }
   }
 )
 

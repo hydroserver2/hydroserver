@@ -57,25 +57,20 @@
           class="mb-2"
         />
 
-        <v-autocomplete
+        <DatastreamCardSelector
           v-model="inputDatastreamId"
-          :items="datastreamOptions"
-          item-title="title"
-          item-value="value"
+          :datastreams="siteDatastreams"
           label="Input datastream *"
-          clearable
           :loading="loading"
+          :disabled="!selectedThingId"
           :rules="rules.required"
           class="mb-2"
         />
 
-        <v-autocomplete
+        <DatastreamCardSelector
           v-model="outputDatastreamId"
-          :items="outputDatastreamOptions"
-          item-title="title"
-          item-value="value"
+          :datastreams="siteDatastreams"
           label="Output datastream *"
-          clearable
           :disabled="!selectedThingId"
           :loading="loading"
           :rules="rules.required"
@@ -115,6 +110,8 @@ import { mdiInformationOutline } from '@mdi/js'
 import hs, { type Datastream, type DataProductTask } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
+import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const props = defineProps<{
   workspaceId: string
@@ -140,21 +137,10 @@ const formula = ref('')
 const selectedThingId = computed(() => props.initialThingId ?? null)
 const ALLOWED_OPS = ['+', '-', '*', '/', '**', '(', ')']
 
-const datastreamOptions = computed(() =>
-  datastreams.value.map((datastream) => ({
-    title: datastream.name,
-    value: datastream.id,
-  }))
-)
-
-const outputDatastreamOptions = computed(() =>
-  datastreams.value
-    .filter((datastream) => datastream.thingId === selectedThingId.value)
-    .map((datastream) => ({
-      title: datastream.name,
-      value: datastream.id,
-    }))
-)
+const siteDatastreams = computed(() => {
+  const thingId = selectedThingId.value
+  return datastreamsForThing(datastreams.value, thingId)
+})
 
 async function loadOptions() {
   loading.value = true
@@ -162,6 +148,7 @@ async function loadOptions() {
     const datastreamItems = await hs.datastreams.listAllItems({
       workspace_id: [props.workspaceId],
       order_by: ['name'],
+      expand_related: true,
     } as any)
     datastreams.value = datastreamItems as Datastream[]
   } catch (error: any) {
@@ -222,6 +209,7 @@ async function onSubmit() {
 }
 
 watch(selectedThingId, () => {
+  inputDatastreamId.value = null
   outputDatastreamId.value = null
 })
 
@@ -294,4 +282,3 @@ const exprBalancedParens: Rule = (v) => {
     : `Missing ${depth} closing ')'${depth > 1 ? 's' : ''}.`
 }
 </script>
-
