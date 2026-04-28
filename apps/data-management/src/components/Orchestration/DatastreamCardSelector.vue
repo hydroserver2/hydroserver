@@ -140,16 +140,37 @@ function formatSpacing(
 }
 
 .datastream-card-selector__item {
-  padding: 4px 8px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
 }
 
 .datastream-card-selector__item :deep(.v-list-item__content) {
   overflow: visible;
+}
+
+.datastream-card-selector__item :deep(.v-list-item__overlay),
+.datastream-card-selector__item :deep(.v-list-item__underlay) {
+  display: none;
 }
 </style>
 
 <style>
 .datastream-card-selector-menu .v-list {
   padding: 8px;
+}
+
+.datastream-card-selector-menu .v-list-item {
+  margin: 0 0 8px;
+  min-height: 0;
+}
+
+.datastream-card-selector-menu .v-list-item:last-child {
+  margin-bottom: 0;
+}
+
+.datastream-card-selector-menu .v-list-item:hover .datastream-result-card,
+.datastream-card-selector-menu .v-list-item--active .datastream-result-card {
+  border-color: rgba(var(--v-theme-primary), 0.65);
 }
 </style>
