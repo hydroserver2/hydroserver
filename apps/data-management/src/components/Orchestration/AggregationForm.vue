@@ -2,6 +2,12 @@
   <v-card>
     <v-toolbar color="teal-darken-1" flat>
       <v-card-title>{{ isEditMode ? 'Edit aggregation task' : 'Create aggregation task' }}</v-card-title>
+      <v-btn
+        :icon="mdiInformationOutline"
+        variant="text"
+        aria-label="Toggle task info"
+        @click="showInfo = !showInfo"
+      />
     </v-toolbar>
     <v-divider />
 
@@ -15,6 +21,7 @@
     >
       <v-card-text>
         <v-alert
+          v-if="showInfo"
           color="teal-darken-1"
           type="info"
           variant="tonal"
@@ -141,6 +148,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
+import { mdiInformationOutline } from '@mdi/js'
 import hs, { type Datastream } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
@@ -174,6 +182,7 @@ const isEditMode = computed(() => !!props.editTaskId)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
+const showInfo = ref(false)
 const loadingDatastreams = ref(false)
 const loadingExisting = ref(false)
 const saving = ref(false)

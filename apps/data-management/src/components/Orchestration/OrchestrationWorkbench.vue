@@ -149,7 +149,15 @@
     </v-dialog>
 
     <v-dialog v-model="openDerivationForm" width="60rem">
-      <DerivationForm @close="openDerivationForm = false" />
+      <DerivationForm
+        :workspace-id="workspaceId"
+        :initial-thing-id="selectedThingId"
+        :edit-task-id="editingDerivationTaskId"
+        @close="closeDerivationForm"
+        @created="onDataProductTaskCreated"
+        @updated="onTaskDetailsChanged"
+        @deleted="onTaskDetailsChanged"
+      />
     </v-dialog>
 
     <v-dialog v-model="openRatingCurveForm" width="60rem">
@@ -264,6 +272,7 @@ const openAggregationForm = ref(false)
 const editingAggregationTaskId = ref<string | null>(null)
 const openExpressionForm = ref(false)
 const openDerivationForm = ref(false)
+const editingDerivationTaskId = ref<string | null>(null)
 const openRatingCurveForm = ref(false)
 
 const {
@@ -648,8 +657,14 @@ const closeAggregationForm = () => {
   editingAggregationTaskId.value = null
 }
 
+const closeDerivationForm = () => {
+  openDerivationForm.value = false
+  editingDerivationTaskId.value = null
+}
+
 const onDataProductTaskCreated = async () => {
   openAggregationForm.value = false
+  openDerivationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
   await fetchAll(props.workspaceId)

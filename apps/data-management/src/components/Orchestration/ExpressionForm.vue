@@ -2,6 +2,12 @@
   <v-card>
     <v-toolbar color="deep-purple" flat>
       <v-card-title>Create expression task</v-card-title>
+      <v-btn
+        :icon="mdiInformationOutline"
+        variant="text"
+        aria-label="Toggle expression help"
+        @click="showHelp = !showHelp"
+      />
     </v-toolbar>
     <v-divider />
 
@@ -12,17 +18,6 @@
       @submit.prevent="onSubmit"
     >
       <v-card-text>
-        <div class="expression-help-toggle">
-          <v-btn
-            :icon="mdiInformationOutline"
-            variant="text"
-            color="deep-purple"
-            size="small"
-            aria-label="Toggle expression help"
-            @click="showHelp = !showHelp"
-          />
-        </div>
-
         <v-alert
           v-if="showHelp"
           color="deep-purple"
@@ -300,10 +295,3 @@ const exprBalancedParens: Rule = (v) => {
 }
 </script>
 
-<style scoped>
-.expression-help-toggle {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 4px;
-}
-</style>
