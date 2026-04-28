@@ -213,13 +213,14 @@ export const handleRelayout = async (
       }
 
       // Density-responsive marker rendering. When the data-points
-      // toggle is on (and we're under the threshold) every trace
-      // keeps its markers so hover hit-testing lands on any series,
-      // not just the QC one. Past the density threshold (or when the
-      // toggle is off) markers fade so the lines stay readable.
-      const tooltipsWillRun =
-        areTooltipsEnabled.value &&
-        visiblePoints.value <= tooltipsMaxDataPoints.value
+      // toggle is on every trace keeps its markers so hover
+      // hit-testing lands on any series. When the toggle is off
+      // markers fade past the density threshold so the lines stay
+      // readable. `areTooltipsEnabled` already encodes the mode
+      // policy (manual override vs. threshold-driven auto), so the
+      // threshold isn't checked again here — doing so would make a
+      // user's manual "on" silently flip off past the cap.
+      const tooltipsWillRun = areTooltipsEnabled.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
       const traces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
@@ -282,10 +283,7 @@ export const handleRelayout = async (
       let newHoverState = 'x+y'
       let newHoverTemplate: string = '<b>%{y}</b><br>%{x}<extra></extra>'
 
-      if (
-        visiblePoints.value > tooltipsMaxDataPoints.value ||
-        !areTooltipsEnabled.value
-      ) {
+      if (!areTooltipsEnabled.value) {
         newHoverState = 'skip'
         newHoverTemplate = ''
       }

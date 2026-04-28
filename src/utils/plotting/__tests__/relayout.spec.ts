@@ -424,7 +424,11 @@ describe('handleRelayout', () => {
     expect(markerOpacityCall).toBeUndefined()
   })
 
-  it('switches hover to skip when visible points exceed the tooltip cap', async () => {
+  it('switches hover to skip when areTooltipsEnabled resolves false (e.g. auto over threshold)', async () => {
+    // The store's `areTooltipsEnabled` is a computed that already
+    // factors in mode + threshold; relayout just trusts it. Simulate
+    // the auto-over-threshold case by setting the mock directly.
+    areTooltipsEnabled.value = false
     tooltipsMaxDataPoints.value = 2
     plotlyRef.value = makeStub({
       xRange: [0, 1000],

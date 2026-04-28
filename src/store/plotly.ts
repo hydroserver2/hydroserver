@@ -41,7 +41,24 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // bottom of this store.
   const tooltipsMaxDataPoints = ref<number>(10 * 1000)
   const visiblePoints: Ref<number> = ref(0)
-  const areTooltipsEnabled = ref(true)
+  // Two-mode toggle for individual data-point rendering / hover.
+  //   - 'manual' — user controls on/off via `tooltipsManualEnabled`.
+  //                Threshold ignored.
+  //   - 'auto'   — threshold-driven: on while visiblePoints <=
+  //                threshold, off otherwise. Default keeps backward
+  //                behavior for existing users.
+  const tooltipsMode = ref<'manual' | 'auto'>('auto')
+  // Persisted on/off state for `manual` mode. Ignored when mode is
+  // `auto`. Defaults to `true` so the first manual click feels like
+  // an explicit toggle off.
+  const tooltipsManualEnabled = ref(true)
+  // Derived "is hover currently rendering?" — read by the relayout
+  // pipeline and the toolbar UI. Auto mode reads the live threshold;
+  // manual mode reads the user's explicit on/off.
+  const areTooltipsEnabled = computed(() => {
+    if (tooltipsMode.value === 'manual') return tooltipsManualEnabled.value
+    return visiblePoints.value <= tooltipsMaxDataPoints.value
+  })
   const showCoordinates = ref(false)
   const hover = ref({ x: 0, y: 0 })
 
@@ -358,6 +375,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     isSubmitting,
     tooltipsMaxDataPoints,
     visiblePoints,
+    tooltipsMode,
+    tooltipsManualEnabled,
     areTooltipsEnabled,
     showCoordinates,
     hover,
@@ -380,6 +399,6 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   // user preference so reloads keep the chosen tooltip threshold.
   persist: {
     key: 'qc.plot.tooltipsMaxDataPoints',
-    pick: ['tooltipsMaxDataPoints'],
+    pick: ['tooltipsMaxDataPoints', 'tooltipsMode', 'tooltipsManualEnabled'],
   },
 })

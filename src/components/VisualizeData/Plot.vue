@@ -55,22 +55,89 @@
 
         <v-spacer />
 
-        <v-btn
-          v-if="tab === 'plot'"
-          data-testid="tooltips-toggle-btn"
-          aria-label="Toggle data points"
-          size="small"
-          variant="text"
-          density="compact"
-          class="plot-toolbar__icon-btn"
-          :disabled="visiblePoints > tooltipsMaxDataPoints"
-          :icon="areTooltipsEnabled ? 'mdi-tooltip' : 'mdi-tooltip-outline'"
-          :color="areTooltipsEnabled ? 'primary' : undefined"
-          @click="toggleTooltips"
-        />
-
         <div
           v-if="tab === 'plot'"
+          class="plot-toolbar__points-combo"
+          :class="{
+            'plot-toolbar__points-combo--on': areTooltipsEnabled,
+            'plot-toolbar__points-combo--off': !areTooltipsEnabled,
+            'plot-toolbar__points-combo--auto': tooltipsMode === 'auto',
+          }"
+        >
+          <button
+            type="button"
+            data-testid="tooltips-toggle-btn"
+            class="plot-toolbar__points-cell plot-toolbar__points-cell--toggle"
+            :aria-label="
+              tooltipsMode === 'auto'
+                ? 'Data points: automatic — switch to manual mode to toggle'
+                : `Data points: ${areTooltipsEnabled ? 'on' : 'off'} — click to toggle`
+            "
+            :aria-pressed="areTooltipsEnabled"
+            :disabled="tooltipsMode === 'auto'"
+            @click="toggleTooltips"
+          >
+            <v-icon icon="mdi-chart-timeline-variant" size="18" />
+          </button>
+          <span class="plot-toolbar__points-divider" aria-hidden="true" />
+          <v-menu
+            v-model="modeMenuOpen"
+            :close-on-content-click="false"
+            location="bottom end"
+            offset="6"
+          >
+            <template #activator="{ props: caretProps }">
+              <button
+                v-bind="caretProps"
+                type="button"
+                data-testid="tooltips-mode-btn"
+                class="plot-toolbar__points-cell plot-toolbar__points-cell--caret"
+                :aria-label="`Data points mode: ${tooltipsModeLabel}`"
+              >
+                <v-icon icon="mdi-menu-down" size="18" />
+              </button>
+            </template>
+            <v-list
+              density="compact"
+              min-width="220"
+              data-testid="tooltips-mode-menu"
+            >
+              <v-list-subheader
+                class="text-uppercase text-caption font-weight-bold"
+              >
+                Data points
+              </v-list-subheader>
+              <v-list-item
+                v-for="opt in tooltipsModeOptions"
+                :key="opt.value"
+                :data-testid="`tooltips-mode-${opt.value}`"
+                :active="tooltipsMode === opt.value"
+                @click="setTooltipsMode(opt.value)"
+              >
+                <template #prepend>
+                  <v-icon
+                    :icon="
+                      tooltipsMode === opt.value
+                        ? 'mdi-check-circle'
+                        : 'mdi-circle-outline'
+                    "
+                    :color="tooltipsMode === opt.value ? 'primary' : 'grey'"
+                    size="18"
+                  />
+                </template>
+                <v-list-item-title class="text-body-2">
+                  {{ opt.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ opt.subtitle }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+
+        <div
+          v-if="tab === 'plot' && tooltipsMode === 'auto'"
           data-testid="tooltips-notice"
           class="plot-toolbar__tooltips-notice d-inline-flex align-center"
           :class="{
@@ -386,6 +453,8 @@ const {
   areTooltipsEnabled,
   visiblePoints,
   tooltipsMaxDataPoints,
+  tooltipsMode,
+  tooltipsManualEnabled,
   hover,
   showCoordinates,
   crosshair,
@@ -402,18 +471,43 @@ const allPresetId = computed(
 const editorDateBtnId = ref<number | null>(allPresetId.value)
 
 /**
- * Mirrors the logic in `handleRelayout` that decides whether Plotly's
- * `hoverinfo` gets set to `'skip'`: tooltips are hidden when the user
- * toggled them off, or when the visible point count exceeds the perf
- * threshold. The overlay notice in the template uses these to decide
- * whether to show and which copy to show.
+ * UI flags derived from `tooltipsMode` + the live point count.
+ *
+ * `tooltipsActive` mirrors `areTooltipsEnabled` from the store —
+ * it's the actual rendered state. `tooltipsAutoDisabled` is only
+ * meaningful in `auto` mode: it's the case where the threshold
+ * suppressed an otherwise-on toggle. Manual modes ignore the
+ * threshold so it's never "auto-disabled" there.
  */
 const tooltipsAutoDisabled = computed(
-  () => visiblePoints.value > tooltipsMaxDataPoints.value
+  () =>
+    tooltipsMode.value === 'auto' &&
+    visiblePoints.value > tooltipsMaxDataPoints.value
 )
-const tooltipsActive = computed(
-  () => areTooltipsEnabled.value && !tooltipsAutoDisabled.value
+const tooltipsActive = computed(() => areTooltipsEnabled.value)
+const tooltipsModeOptions = [
+  {
+    value: 'manual',
+    title: 'Manual toggle',
+    subtitle: 'Click the icon to turn data points on or off',
+  },
+  {
+    value: 'auto',
+    title: 'Automatic',
+    subtitle: 'Show until the visible-points threshold is reached',
+  },
+] as const
+const tooltipsModeLabel = computed(
+  () =>
+    tooltipsModeOptions.find((o) => o.value === tooltipsMode.value)?.title ??
+    'Automatic'
 )
+const modeMenuOpen = ref(false)
+function setTooltipsMode(mode: 'manual' | 'auto') {
+  tooltipsMode.value = mode
+  modeMenuOpen.value = false
+  handleRelayout(null)
+}
 const tab = ref('plot')
 
 // The floating hover readout shows y in the QC trace's native coord
@@ -606,7 +700,12 @@ function onEditorDatePreset(id: number) {
 }
 
 function toggleTooltips() {
-  areTooltipsEnabled.value = !areTooltipsEnabled.value
+  // Left half of the split button: a manual override. Forces manual
+  // mode and flips the on/off state. Picking up "auto" again must go
+  // through the dropdown so an inadvertent click doesn't drop the
+  // user out of the threshold-driven behaviour they configured.
+  tooltipsManualEnabled.value = !areTooltipsEnabled.value
+  tooltipsMode.value = 'manual'
   handleRelayout(null)
 }
 
@@ -1013,6 +1112,78 @@ const onTabChange = () => {
 .plot-toolbar__icon-btn.v-btn {
   min-width: 28px;
   padding-inline: 4px;
+}
+
+/* Combobox-style data-points control. The wrapper owns the chrome
+   (background, border, rounding) so the two cells inside read as one
+   control rather than two stacked icon buttons. */
+.plot-toolbar__points-combo {
+  display: inline-flex;
+  align-items: stretch;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+.plot-toolbar__points-combo--on {
+  background-color: rgba(var(--v-theme-primary), 0.12);
+  border-color: rgba(var(--v-theme-primary), 0.22);
+  color: rgb(var(--v-theme-primary));
+}
+.plot-toolbar__points-combo--off {
+  background-color: transparent;
+  border-color: rgba(var(--v-theme-on-surface), 0.16);
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.plot-toolbar__points-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  transition: background-color 120ms ease;
+}
+.plot-toolbar__points-cell:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+}
+.plot-toolbar__points-cell--toggle {
+  width: 30px;
+  border-top-left-radius: 7px;
+  border-bottom-left-radius: 7px;
+}
+.plot-toolbar__points-cell--caret {
+  width: 22px;
+  border-top-right-radius: 7px;
+  border-bottom-right-radius: 7px;
+}
+.plot-toolbar__points-cell:not(:disabled):hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+}
+.plot-toolbar__points-combo--on
+  .plot-toolbar__points-cell:not(:disabled):hover {
+  background-color: rgba(var(--v-theme-primary), 0.18);
+}
+.plot-toolbar__points-cell:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Hairline divider between the two cells. Picks up the wrapper's
+   border colour so it reads as a continuation of the chrome. */
+.plot-toolbar__points-divider {
+  width: 1px;
+  align-self: stretch;
+  background-color: rgba(var(--v-theme-on-surface), 0.16);
+}
+.plot-toolbar__points-combo--on .plot-toolbar__points-divider {
+  background-color: rgba(var(--v-theme-primary), 0.22);
 }
 
 .plot-help :deep(.v-list-item) {

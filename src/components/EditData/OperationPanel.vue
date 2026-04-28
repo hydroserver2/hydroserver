@@ -74,11 +74,11 @@
         class="operation-panel__section"
       >
         <div class="operation-panel__section-head">
-          <h3 class="operation-panel__section-title">Date range</h3>
+          <h3 class="operation-panel__section-title">Date range mask</h3>
           <v-tooltip
             v-if="filterRangeActive"
             location="start"
-            text="Disable date range"
+            text="Disable date range mask"
           >
             <template #activator="{ props: tp }">
               <v-btn
@@ -87,7 +87,7 @@
                 variant="text"
                 density="comfortable"
                 icon="mdi-close"
-                aria-label="Disable date range"
+                aria-label="Disable date range mask"
                 @click="filterRangeActive = false"
               />
             </template>
@@ -96,8 +96,8 @@
         <FilterRangePanel v-if="filterRangeActive" />
         <div v-else class="operation-panel__section-empty px-3 pb-3">
           <p class="text-caption text-medium-emphasis mb-2">
-            Run this operation against the full datastream, or restrict it
-            to a datetime window.
+            Run this operation against the full datastream, or apply a
+            date range mask to restrict it to a datetime window.
           </p>
           <v-btn
             size="small"
@@ -106,7 +106,7 @@
             prepend-icon="mdi-arrow-expand-horizontal"
             @click="filterRangeActive = true"
           >
-            Enable date range
+            Enable date range mask
           </v-btn>
         </div>
       </section>
