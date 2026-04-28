@@ -1,15 +1,19 @@
 /**
- * Tooltip-toggle "hidden" notice + inline threshold editor.
+ * Data-points combobox: mode menu + threshold editor.
  *
- *   1. Manually toggling tooltips off surfaces the "Tooltips hidden /
- *      X / Y pts" notice next to the toggle.
- *   2. The pencil button next to the threshold opens a popover with
- *      the current limit pre-filled.
- *   3. The popover buffers the edit — typing alone doesn't change the
+ *   1. Default (auto) mode renders the inline "Data points / X / Y pts"
+ *      notice next to the combobox; the toggle button is disabled
+ *      because the threshold drives the on/off state.
+ *   2. Switching to "Manual toggle" via the caret menu hides the
+ *      notice and enables the icon button — clicking the icon flips
+ *      data-points hover on/off.
+ *   3. Back in auto mode the pencil button next to the threshold opens
+ *      a popover with the current limit pre-filled.
+ *   4. The popover buffers the edit — typing alone doesn't change the
  *      displayed threshold; only Apply (or Enter) commits.
- *   4. Closing the popover without applying discards the in-progress
+ *   5. Closing the popover without applying discards the in-progress
  *      edit; the displayed threshold stays put.
- *   5. Apply is disabled while the buffered value is below the 100-pt
+ *   6. Apply is disabled while the buffered value is below the 100-pt
  *      floor.
  */
 
@@ -19,7 +23,7 @@ import { setupEditView } from './support/app'
 
 /**
  * Pull the threshold number out of the notice text. The notice
- * renders as "Tooltips hidden{count} / {threshold} pts" with locale-
+ * renders as "Data points{count} / {threshold} pts" with locale-
  * formatted numbers — strip the comma group separators before
  * parsing.
  */
@@ -32,34 +36,72 @@ async function readDisplayedThreshold(page: Page): Promise<number> {
   return Number(match[1].replace(/,/g, ''))
 }
 
-test.describe('tooltip-threshold notice + popover', () => {
+/** Open the mode menu, pick an option, wait for the menu to close. */
+async function pickMode(page: Page, mode: 'manual' | 'auto') {
+  await page.getByTestId('tooltips-mode-btn').click()
+  await page.getByTestId(`tooltips-mode-${mode}`).click()
+  await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
+}
+
+test.describe('data-points combobox', () => {
   test.beforeEach(async ({ page }) => {
     await installMocks(page)
     await setupEditView(page)
-    // Make sure tooltips are currently on so the toggle goes off → on
-    // → off transitions deterministically. The toggle is enabled
-    // because the mocked fixture stays well under the 10k threshold.
-    await expect(page.getByTestId('tooltips-toggle-btn')).toBeEnabled()
+    // Reset the persisted preference so each test starts in auto mode
+    // — the store persists `tooltipsMode` so a leaked manual setting
+    // from a sibling test would otherwise hide the notice.
+    await page.evaluate(() =>
+      localStorage.removeItem('qc.plot.tooltipsMaxDataPoints')
+    )
+    await page.reload()
+    // Wait for the combobox to mount before each test acts on it.
+    await expect(page.getByTestId('tooltips-toggle-btn')).toBeVisible()
   })
 
-  test('manually disabling tooltips reveals the notice with the current threshold', async ({
+  test('auto mode (default) shows the notice and disables the toggle', async ({
     page,
   }) => {
-    await expect(page.getByTestId('tooltips-notice')).toHaveCount(0)
-
-    await page.getByTestId('tooltips-toggle-btn').click()
-
+    const toggle = page.getByTestId('tooltips-toggle-btn')
     const notice = page.getByTestId('tooltips-notice')
+
+    await expect(toggle).toBeDisabled()
     await expect(notice).toBeVisible()
-    await expect(notice).toContainText('Tooltips hidden')
+    await expect(notice).toContainText('Data points')
     // Default threshold is 10,000 pts; locale-formatted in the UI.
     await expect(notice).toContainText('10,000 pts')
+  })
+
+  test('manual mode hides the notice and enables the toggle; the icon flips on/off', async ({
+    page,
+  }) => {
+    await pickMode(page, 'manual')
+
+    const toggle = page.getByTestId('tooltips-toggle-btn')
+    await expect(toggle).toBeEnabled()
+    await expect(page.getByTestId('tooltips-notice')).toHaveCount(0)
+
+    // Manual mode starts at "on" by default — flip it off and back on.
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('switching back to auto restores the notice and disables the toggle', async ({
+    page,
+  }) => {
+    await pickMode(page, 'manual')
+    await expect(page.getByTestId('tooltips-notice')).toHaveCount(0)
+
+    await pickMode(page, 'auto')
+    await expect(page.getByTestId('tooltips-notice')).toBeVisible()
+    await expect(page.getByTestId('tooltips-toggle-btn')).toBeDisabled()
   })
 
   test('Apply commits the new threshold, Enter does the same, and the popover discards on cancel', async ({
     page,
   }) => {
-    await page.getByTestId('tooltips-toggle-btn').click()
     expect(await readDisplayedThreshold(page)).toBe(10_000)
 
     // --- Apply path -------------------------------------------------
@@ -96,7 +138,6 @@ test.describe('tooltip-threshold notice + popover', () => {
   test('Apply is disabled while the buffered value is below the 100-pt floor', async ({
     page,
   }) => {
-    await page.getByTestId('tooltips-toggle-btn').click()
     await page.getByTestId('threshold-edit-btn').click()
 
     const input = page.getByTestId('threshold-input').locator('input')

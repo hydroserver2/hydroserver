@@ -308,3 +308,66 @@ describe('usePlotlyStore.updateOptions + selectedSeries', () => {
     expect(store.selectedSeriesIndex).toBe(-1)
   })
 })
+
+describe('usePlotlyStore — data-points (tooltips) mode', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    qcId.value = null
+  })
+
+  it('defaults: mode=auto, manualEnabled=true, threshold=10000', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    expect(store.tooltipsMode).toBe('auto')
+    expect(store.tooltipsManualEnabled).toBe(true)
+    expect(store.tooltipsMaxDataPoints).toBe(10_000)
+  })
+
+  it('areTooltipsEnabled is true in auto mode while visiblePoints <= threshold', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.tooltipsMode = 'auto'
+    store.tooltipsMaxDataPoints = 1000
+    store.visiblePoints = 500
+    expect(store.areTooltipsEnabled).toBe(true)
+  })
+
+  it('areTooltipsEnabled flips to false in auto mode once visiblePoints exceeds threshold', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.tooltipsMode = 'auto'
+    store.tooltipsMaxDataPoints = 1000
+    store.visiblePoints = 1500
+    expect(store.areTooltipsEnabled).toBe(false)
+  })
+
+  it('manual mode: areTooltipsEnabled tracks tooltipsManualEnabled, ignoring threshold', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.tooltipsMode = 'manual'
+    // Way over the cap — auto would have switched off here.
+    store.tooltipsMaxDataPoints = 100
+    store.visiblePoints = 100_000
+
+    store.tooltipsManualEnabled = true
+    expect(store.areTooltipsEnabled).toBe(true)
+
+    store.tooltipsManualEnabled = false
+    expect(store.areTooltipsEnabled).toBe(false)
+  })
+
+  it('manual mode bug regression: manual-on past the threshold stays on', async () => {
+    // The relayout pipeline reads `areTooltipsEnabled` as the single
+    // source of truth. Earlier versions also re-applied the threshold
+    // check on top, which silently flipped manual-on back off when
+    // the user zoomed out — the regression this guards against.
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.tooltipsMode = 'manual'
+    store.tooltipsManualEnabled = true
+    store.tooltipsMaxDataPoints = 10
+    store.visiblePoints = 1_000_000
+    expect(store.areTooltipsEnabled).toBe(true)
+  })
+})

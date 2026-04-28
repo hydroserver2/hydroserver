@@ -471,6 +471,52 @@ describe('handleRelayout', () => {
     expect(hoverCall).toBeDefined()
   })
 
+  it('manual-on past the threshold keeps hover x+y (regression: store policy is single source of truth)', async () => {
+    // The store's `areTooltipsEnabled` computed already factors in
+    // mode/threshold. Here it resolves to `true` (mocked directly)
+    // to simulate manual mode + manualEnabled = true. Even with
+    // visible >> tooltipsMaxDataPoints, relayout must not silently
+    // re-apply the threshold and force hover to skip.
+    areTooltipsEnabled.value = true
+    tooltipsMaxDataPoints.value = 2
+    plotlyRef.value = makeStub({
+      xRange: [0, 1000],
+      traces: [
+        { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], marker: { opacity: 0 }, hoverinfo: 'skip' },
+      ],
+    })
+    await handleRelayout({ evt: 'z' } as any)
+    await flush()
+    const skipCall = plotlyMock.restyle.mock.calls.find(
+      (c) => c[1] && (c[1] as any).hoverinfo === 'skip'
+    )
+    const xyCall = plotlyMock.restyle.mock.calls.find(
+      (c) => c[1] && (c[1] as any).hoverinfo === 'x+y'
+    )
+    expect(skipCall).toBeUndefined()
+    expect(xyCall).toBeDefined()
+  })
+
+  it('manual-on past the threshold keeps every trace\'s markers visible', async () => {
+    areTooltipsEnabled.value = true
+    tooltipsMaxDataPoints.value = 2
+    const dense = Array.from({ length: 3000 }, (_, i) => i)
+    plotlyRef.value = makeStub({
+      xRange: [0, 3000],
+      traces: [
+        { id: 'qc-target', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' },
+        { id: 'other', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' },
+      ],
+    })
+    await handleRelayout({ evt: 'z' } as any)
+    await flush()
+    const markerOpacityCall = plotlyMock.restyle.mock.calls.find(
+      (c) => c[1] && (c[1] as any)['marker.opacity']
+    )
+    expect(markerOpacityCall).toBeDefined()
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1, 1])
+  })
+
   it('parses string xRange values via Date.parse', async () => {
     plotlyRef.value = makeStub({
       xRange: ['1970-01-01T00:00:00Z', '1970-01-01T00:00:01Z'],
