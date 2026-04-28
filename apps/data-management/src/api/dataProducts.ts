@@ -183,3 +183,65 @@ export const deleteDataProductTask = (taskId: string) =>
 
 export const getDataProductTask = (taskId: string) =>
   request<DataProductTaskResponse>(`/api/data/products/tasks/${taskId}`)
+
+export type CompositeExpressionInput = {
+  datastreamId: string
+  variableName: string
+}
+
+export type CompositeExpressionTransformationPayload = {
+  outputDatastreamId: string
+  inputDatastreams: CompositeExpressionInput[]
+  formula: string
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  maxGapInterval?: number | null
+  maxGapIntervalUnits?: IntervalUnit | null
+}
+
+export type CompositeExpressionTransformationResponse = {
+  id: string
+  outputDatastream?: { id: string; name: string }
+  inputDatastreams?: Array<{
+    datastream?: { id: string; name: string }
+    variableName?: string | null
+  }>
+  formula: string
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  maxGapInterval?: number | null
+  maxGapIntervalUnits?: IntervalUnit | null
+}
+
+export const createCompositeExpressionTransformation = (
+  taskId: string,
+  payload: CompositeExpressionTransformationPayload
+) =>
+  request<CompositeExpressionTransformationResponse>(
+    `/api/data/products/tasks/${taskId}/transformations/composite-expression`,
+    { method: 'POST', body: payload }
+  )
+
+export const listCompositeExpressionTransformations = (taskId: string) =>
+  request<CompositeExpressionTransformationResponse[]>(
+    `/api/data/products/tasks/${taskId}/transformations/composite-expression`
+  )
+
+export const updateCompositeExpressionTransformation = (
+  taskId: string,
+  transformationId: string,
+  payload: Omit<CompositeExpressionTransformationPayload, 'outputDatastreamId'>
+) =>
+  request<CompositeExpressionTransformationResponse>(
+    `/api/data/products/tasks/${taskId}/transformations/composite-expression/${transformationId}`,
+    { method: 'PATCH', body: payload }
+  )
+
+export const deleteCompositeExpressionTransformation = (
+  taskId: string,
+  transformationId: string
+) =>
+  request(
+    `/api/data/products/tasks/${taskId}/transformations/composite-expression/${transformationId}`,
+    { method: 'DELETE' }
+  )
