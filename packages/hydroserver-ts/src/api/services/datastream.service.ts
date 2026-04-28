@@ -6,9 +6,46 @@ import {
 } from '../../generated/contracts'
 import type * as Data from '../../generated/data.types'
 import type { ApiResponse } from '../responseInterceptor'
-import { Datastream as M } from '../../types'
+import {
+  Datastream as M,
+  Thing,
+  ObservedProperty,
+  ProcessingLevel,
+} from '../../types'
 import JSZip from 'jszip'
 import { normalizeAttachmentCollection } from './attachment-link'
+
+interface VisualizationBootstrapPayload {
+  things: Array<{
+    id: string
+    workspaceId: string
+    name: string
+    samplingFeatureCode: string
+  }>
+  datastreams: Array<{
+    id: string
+    name: string
+    thingId: string
+    observedPropertyId: string
+    processingLevelId: string
+    unitId: string
+    noDataValue: number
+    valueCount?: number | null
+    phenomenonBeginTime?: string | null
+    phenomenonEndTime?: string | null
+    intendedTimeSpacing?: number
+    intendedTimeSpacingUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | null
+  }>
+  observedProperties: Array<{ id: string; name: string; code: string }>
+  processingLevels: Array<{ id: string; definition?: string | null }>
+}
+
+export interface VisualizationBootstrap {
+  things: Thing[]
+  datastreams: M[]
+  observedProperties: ObservedProperty[]
+  processingLevels: ProcessingLevel[]
+}
 
 type WithId = { id: string }
 
@@ -201,6 +238,36 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   getSampledMediums = () =>
     apiMethods.paginatedFetch(`${this._route}/sampled-mediums`)
+
+  async getVisualizationBootstrap(): Promise<ApiResponse<VisualizationBootstrap>> {
+    const res = await apiMethods.fetch(
+      `${this._route}/visualization-bootstrap`
+    )
+    if (!res.ok) return res as unknown as ApiResponse<VisualizationBootstrap>
+
+    const payload = res.data as VisualizationBootstrapPayload
+
+    const things = payload.things.map((p) => Object.assign(new Thing(), p))
+    const thingById = new Map(things.map((t) => [t.id, t]))
+
+    const datastreams = payload.datastreams.map((p) =>
+      Object.assign(new M(), {
+        ...p,
+        workspaceId: thingById.get(p.thingId)?.workspaceId ?? '',
+      })
+    )
+    const observedProperties = payload.observedProperties.map((p) =>
+      Object.assign(new ObservedProperty(), p)
+    )
+    const processingLevels = payload.processingLevels.map((p) =>
+      Object.assign(new ProcessingLevel(), p)
+    )
+
+    return {
+      ...res,
+      data: { things, datastreams, observedProperties, processingLevels },
+    }
+  }
 }
 
 /* ---------------------------- local helpers ---------------------------- */

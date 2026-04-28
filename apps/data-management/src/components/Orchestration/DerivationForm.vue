@@ -310,20 +310,13 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiClose, mdiPlus, mdiInformationOutline } from '@mdi/js'
-import hs, { type Datastream } from '@hydroserver/client'
+import hs, {
+  type Datastream,
+  type DataProductTask,
+  type IntervalUnit,
+} from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import {
-  createDataProductTask,
-  getDataProductTask,
-  updateDataProductTask,
-  deleteDataProductTask,
-  createCompositeExpressionTransformation,
-  listCompositeExpressionTransformations,
-  updateCompositeExpressionTransformation,
-  type DataProductTaskResponse,
-  type IntervalUnit,
-} from '@/api/dataProducts'
 
 const ALLOWED_FUNCTIONS = [
   'abs',
@@ -355,8 +348,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'created', task: DataProductTaskResponse): void
-  (e: 'updated', task: DataProductTaskResponse): void
+  (e: 'created', task: DataProductTask): void
+  (e: 'updated', task: DataProductTask): void
   (e: 'deleted'): void
   (e: 'close'): void
 }>()
@@ -527,8 +520,8 @@ async function loadExistingTask() {
   loadingExisting.value = true
   try {
     const [taskRes, transformRes] = await Promise.all([
-      getDataProductTask(props.editTaskId),
-      listCompositeExpressionTransformations(props.editTaskId),
+      hs.dataProductTasks.get(props.editTaskId),
+      hs.dataProductTasks.listCompositeExpressionTransformations(props.editTaskId),
     ])
 
     if (taskRes.ok && taskRes.data?.name) {
@@ -550,9 +543,9 @@ async function loadExistingTask() {
       }
 
       if (t.inputDatastreams?.length) {
-        inputs.value = t.inputDatastreams.map((inp) => ({
+        inputs.value = t.inputDatastreams.map((inp: any) => ({
           key: ++_keyCounter,
-          datastreamId: (inp.datastream as any)?.id ?? null,
+          datastreamId: inp.datastream?.id ?? null,
           variableName: inp.variableName ?? '',
         }))
       }
@@ -617,9 +610,11 @@ async function onCreate(
     return
   }
 
-  const taskRes = await createDataProductTask({
+  const taskRes = await hs.dataProductTasks.create({
+    id: '',
     name: taskName.value.trim(),
     thingId,
+    description: null,
     schedule: null,
   })
 
@@ -628,7 +623,7 @@ async function onCreate(
     return
   }
 
-  const transformRes = await createCompositeExpressionTransformation(
+  const transformRes = await hs.dataProductTasks.createCompositeExpressionTransformation(
     taskRes.data.id,
     {
       outputDatastreamId: outputDatastreamId.value!,
@@ -660,7 +655,8 @@ async function onUpdate(
 ) {
   const taskId = props.editTaskId!
 
-  const taskRes = await updateDataProductTask(taskId, {
+  const taskRes = await hs.dataProductTasks.update({
+    id: taskId,
     name: taskName.value.trim(),
   })
 
@@ -670,7 +666,7 @@ async function onUpdate(
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await updateCompositeExpressionTransformation(
+    const transformRes = await hs.dataProductTasks.updateCompositeExpressionTransformation(
       taskId,
       existingTransformationId.value,
       {
@@ -699,7 +695,7 @@ async function onDelete() {
   if (!props.editTaskId) return
   deleting.value = true
   try {
-    const res = await deleteDataProductTask(props.editTaskId)
+    const res = await hs.dataProductTasks.delete(props.editTaskId)
     if (!res.ok) {
       Snackbar.error(res.message || 'Unable to delete derivation task.')
       return

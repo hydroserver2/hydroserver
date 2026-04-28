@@ -2,7 +2,13 @@ import { apiMethods } from '../apiMethods'
 import { HydroServerBaseService } from './base'
 import { ThingContract as C } from '../../generated/contracts'
 import type * as Data from '../../generated/data.types'
-import { Thing, PostHydroShareArchive, HydroShareArchive } from '../../types'
+import {
+  Thing,
+  PostHydroShareArchive,
+  HydroShareArchive,
+  ThingMarker,
+  ThingSiteSummary,
+} from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
 
@@ -13,6 +19,16 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   static route = C.route
   static writableKeys = C.writableKeys
   static Model = Thing
+
+  listMarkers(): Promise<ApiResponse<ThingMarker[]>> {
+    return apiMethods.fetch(`${this._route}/markers`)
+  }
+
+  listSiteSummaries(workspaceId: string): Promise<ApiResponse<ThingSiteSummary[]>> {
+    return apiMethods.fetch(
+      this.withQuery(`${this._route}/site-summaries`, { workspace_id: workspaceId })
+    )
+  }
 
   updatePrivacy = (
     id: string,

@@ -184,18 +184,17 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline } from '@mdi/js'
-import hs, { type Datastream, type RatingCurve } from '@hydroserver/client'
+import hs, {
+  type Datastream,
+  type RatingCurve,
+  type DataProductTask,
+} from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import {
-  createDataProductTask,
-  createRatingCurveTransformation,
-  type DataProductTaskResponse,
-} from '@/api/dataProducts'
 
 const props = defineProps<{
   workspaceId: string
@@ -203,7 +202,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'created', task: DataProductTaskResponse): void
+  (e: 'created', task: DataProductTask): void
   (e: 'close'): void
 }>()
 
@@ -404,9 +403,11 @@ async function onSubmit() {
     const ratingCurveId = await resolveRatingCurveId()
     if (!ratingCurveId) return
 
-    const taskRes = await createDataProductTask({
+    const taskRes = await hs.dataProductTasks.create({
+      id: '',
       name: taskName.value.trim(),
       thingId: selectedThingId.value,
+      description: null,
       schedule: null,
     })
 
@@ -415,11 +416,14 @@ async function onSubmit() {
       return
     }
 
-    const transformRes = await createRatingCurveTransformation(taskRes.data.id, {
-      inputDatastreamId: inputDatastreamId.value,
-      outputDatastreamId: outputDatastreamId.value,
-      ratingCurveId,
-    })
+    const transformRes = await hs.dataProductTasks.createRatingCurveTransformation(
+      taskRes.data.id,
+      {
+        inputDatastreamId: inputDatastreamId.value,
+        outputDatastreamId: outputDatastreamId.value,
+        ratingCurveId,
+      }
+    )
 
     if (!transformRes.ok) {
       Snackbar.error(

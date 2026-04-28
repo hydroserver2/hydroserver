@@ -2,6 +2,13 @@ import { HydroServerBaseService } from './base'
 import { DataProductTaskContract as C, RunContract } from '../../generated/contracts'
 import { DataProductTask as M } from '../Models/data-product-task.model'
 import { apiMethods } from '../apiMethods'
+import type {
+  AggregationTransformationPayload,
+  AggregationTransformationResponse,
+  CompositeExpressionTransformationPayload,
+  CompositeExpressionTransformationResponse,
+  IntervalUnit,
+} from '../../types'
 
 export class DataProductTaskService extends HydroServerBaseService<typeof C, M> {
   static route = C.route
@@ -24,5 +31,108 @@ export class DataProductTaskService extends HydroServerBaseService<typeof C, M> 
 
   getTaskRun(taskId: string, runId: string) {
     return apiMethods.fetch(`${this._route}/${taskId}/runs/${runId}`)
+  }
+
+  /* -------------------- Expression Transformations ------------------- */
+
+  createExpressionTransformation(
+    taskId: string,
+    payload: {
+      outputDatastreamId: string
+      inputDatastreamId: string
+      variableName: string
+      formula: string
+    }
+  ) {
+    return apiMethods.post(
+      `${this._route}/${taskId}/transformations/expression`,
+      payload
+    )
+  }
+
+  /* ------------------ Rating Curve Transformations ------------------- */
+
+  createRatingCurveTransformation(
+    taskId: string,
+    payload: {
+      outputDatastreamId: string
+      inputDatastreamId: string
+      ratingCurveId: string
+    }
+  ) {
+    return apiMethods.post(
+      `${this._route}/${taskId}/transformations/rating-curve`,
+      payload
+    )
+  }
+
+  /* ------------------- Aggregation Transformations ------------------- */
+
+  createAggregationTransformation(
+    taskId: string,
+    payload: AggregationTransformationPayload
+  ) {
+    return apiMethods.post(
+      `${this._route}/${taskId}/transformations/aggregation`,
+      payload
+    )
+  }
+
+  listAggregationTransformations(taskId: string) {
+    return apiMethods.fetch(
+      `${this._route}/${taskId}/transformations/aggregation`
+    )
+  }
+
+  updateAggregationTransformation(
+    taskId: string,
+    transformationId: string,
+    payload: Partial<AggregationTransformationPayload>
+  ) {
+    return apiMethods.patch(
+      `${this._route}/${taskId}/transformations/aggregation/${transformationId}`,
+      payload
+    )
+  }
+
+  deleteAggregationTransformation(taskId: string, transformationId: string) {
+    return apiMethods.delete(
+      `${this._route}/${taskId}/transformations/aggregation/${transformationId}`
+    )
+  }
+
+  /* ------------- Composite Expression Transformations ---------------- */
+
+  createCompositeExpressionTransformation(
+    taskId: string,
+    payload: CompositeExpressionTransformationPayload
+  ) {
+    return apiMethods.post(
+      `${this._route}/${taskId}/transformations/composite-expression`,
+      payload
+    )
+  }
+
+  listCompositeExpressionTransformations(taskId: string) {
+    return apiMethods.fetch(
+      `${this._route}/${taskId}/transformations/composite-expression`
+    )
+  }
+
+  updateCompositeExpressionTransformation(
+    taskId: string,
+    transformationId: string,
+    payload: Omit<CompositeExpressionTransformationPayload, 'outputDatastreamId'>
+  ) {
+    return apiMethods.patch(
+      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`,
+      payload
+    )
+  }
+
+  deleteCompositeExpressionTransformation(taskId: string, transformationId: string) {
+    return apiMethods.delete(
+      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`
+    )
   }
 }

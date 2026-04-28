@@ -112,14 +112,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline } from '@mdi/js'
-import hs, { type Datastream } from '@hydroserver/client'
+import hs, { type Datastream, type DataProductTask } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import {
-  createDataProductTask,
-  createExpressionTransformation,
-  type DataProductTaskResponse,
-} from '@/api/dataProducts'
 
 const props = defineProps<{
   workspaceId: string
@@ -127,7 +122,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'created', task: DataProductTaskResponse): void
+  (e: 'created', task: DataProductTask): void
   (e: 'close'): void
 }>()
 
@@ -187,9 +182,11 @@ async function onSubmit() {
 
   saving.value = true
   try {
-    const taskRes = await createDataProductTask({
+    const taskRes = await hs.dataProductTasks.create({
+      id: '',
       name: taskName.value.trim(),
       thingId: selectedThingId.value,
+      description: null,
       schedule: null,
     })
 
@@ -198,12 +195,15 @@ async function onSubmit() {
       return
     }
 
-    const transformRes = await createExpressionTransformation(taskRes.data.id, {
-      inputDatastreamId: inputDatastreamId.value,
-      outputDatastreamId: outputDatastreamId.value,
-      variableName: 'x',
-      formula: formula.value.trim(),
-    })
+    const transformRes = await hs.dataProductTasks.createExpressionTransformation(
+      taskRes.data.id,
+      {
+        inputDatastreamId: inputDatastreamId.value,
+        outputDatastreamId: outputDatastreamId.value,
+        variableName: 'x',
+        formula: formula.value.trim(),
+      }
+    )
 
     if (!transformRes.ok) {
       Snackbar.error(

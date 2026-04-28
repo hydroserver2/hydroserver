@@ -441,6 +441,76 @@ export interface UserInfo {
   organizationName: string
 }
 
+export type AggregationMethod = 'mean' | 'sum' | 'min' | 'max' | 'first' | 'last'
+export type IntervalUnit = 'minutes' | 'hours' | 'days' | 'weeks' | 'months'
+
+export type AggregationTransformationPayload = {
+  outputDatastreamId: string
+  inputDatastreamId: string
+  aggregationMethod: AggregationMethod
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  timezoneType?: 'utc' | 'offset' | 'iana' | null
+  timezone?: string | null
+  minValues?: number | null
+}
+
+export type AggregationTransformationResponse = {
+  id: string
+  outputDatastream?: { id: string; name: string; thingId?: string }
+  inputDatastream?: { id: string; name: string; thingId?: string }
+  aggregationMethod: AggregationMethod
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  timezoneType?: 'utc' | 'offset' | 'iana' | null
+  timezone?: string | null
+  minValues?: number | null
+}
+
+export type CompositeExpressionInput = {
+  datastreamId: string
+  variableName: string
+}
+
+export type CompositeExpressionTransformationPayload = {
+  outputDatastreamId: string
+  inputDatastreams: CompositeExpressionInput[]
+  formula: string
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  maxGapInterval?: number | null
+  maxGapIntervalUnits?: IntervalUnit | null
+}
+
+export type CompositeExpressionTransformationResponse = {
+  id: string
+  outputDatastream?: { id: string; name: string }
+  inputDatastreams?: Array<{
+    datastream?: { id: string; name: string }
+    variableName?: string | null
+  }>
+  formula: string
+  outputIntervalUnits: IntervalUnit
+  outputInterval: number
+  maxGapInterval?: number | null
+  maxGapIntervalUnits?: IntervalUnit | null
+}
+
+export interface ThingMarker {
+  id: string
+  workspaceId: string
+  name: string
+  siteType: string
+  isPrivate: boolean
+  latitude: number
+  longitude: number
+}
+
+export interface ThingSiteSummary extends ThingMarker {
+  samplingFeatureCode: string
+  tags: Tag[]
+}
+
 export class Collaborator {
   user: UserInfo
   role: CollaboratorRole

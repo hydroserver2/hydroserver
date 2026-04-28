@@ -149,21 +149,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline } from '@mdi/js'
-import hs, { type Datastream } from '@hydroserver/client'
-import { rules } from '@/utils/rules'
-import { Snackbar } from '@/utils/notifications'
-import {
-  createDataProductTask,
-  getDataProductTask,
-  updateDataProductTask,
-  deleteDataProductTask,
-  createAggregationTransformation,
-  listAggregationTransformations,
-  updateAggregationTransformation,
-  type DataProductTaskResponse,
+import hs, {
+  type Datastream,
+  type DataProductTask,
   type AggregationMethod,
   type IntervalUnit,
-} from '@/api/dataProducts'
+} from '@hydroserver/client'
+import { rules } from '@/utils/rules'
+import { Snackbar } from '@/utils/notifications'
 
 const props = defineProps<{
   workspaceId: string
@@ -172,8 +165,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'created', task: DataProductTaskResponse): void
-  (e: 'updated', task: DataProductTaskResponse): void
+  (e: 'created', task: DataProductTask): void
+  (e: 'updated', task: DataProductTask): void
   (e: 'deleted'): void
   (e: 'close'): void
 }>()
@@ -259,8 +252,8 @@ async function loadExistingTask() {
   loadingExisting.value = true
   try {
     const [taskRes, transformRes] = await Promise.all([
-      getDataProductTask(props.editTaskId),
-      listAggregationTransformations(props.editTaskId),
+      hs.dataProductTasks.get(props.editTaskId),
+      hs.dataProductTasks.listAggregationTransformations(props.editTaskId),
     ])
 
     if (taskRes.ok && taskRes.data?.name) {
@@ -311,9 +304,11 @@ async function onCreate() {
     return
   }
 
-  const taskRes = await createDataProductTask({
+  const taskRes = await hs.dataProductTasks.create({
+    id: '',
     name: taskName.value.trim(),
     thingId,
+    description: null,
     schedule: null,
   })
 
@@ -322,14 +317,17 @@ async function onCreate() {
     return
   }
 
-  const transformRes = await createAggregationTransformation(taskRes.data.id, {
-    inputDatastreamId: inputDatastreamId.value!,
-    outputDatastreamId: outputDatastreamId.value!,
-    aggregationMethod: aggregationMethod.value,
-    outputInterval: outputInterval.value!,
-    outputIntervalUnits: outputIntervalUnits.value,
-    minValues: minValues.value ?? null,
-  })
+  const transformRes = await hs.dataProductTasks.createAggregationTransformation(
+    taskRes.data.id,
+    {
+      inputDatastreamId: inputDatastreamId.value!,
+      outputDatastreamId: outputDatastreamId.value!,
+      aggregationMethod: aggregationMethod.value,
+      outputInterval: outputInterval.value!,
+      outputIntervalUnits: outputIntervalUnits.value,
+      minValues: minValues.value ?? null,
+    }
+  )
 
   if (!transformRes.ok) {
     Snackbar.error(transformRes.message || 'Unable to create aggregation transformation.')
@@ -343,7 +341,8 @@ async function onCreate() {
 async function onUpdate() {
   const taskId = props.editTaskId!
 
-  const taskRes = await updateDataProductTask(taskId, {
+  const taskRes = await hs.dataProductTasks.update({
+    id: taskId,
     name: taskName.value.trim(),
   })
 
@@ -353,7 +352,7 @@ async function onUpdate() {
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await updateAggregationTransformation(
+    const transformRes = await hs.dataProductTasks.updateAggregationTransformation(
       taskId,
       existingTransformationId.value,
       {
@@ -381,7 +380,7 @@ async function onDelete() {
   if (!props.editTaskId) return
   deleting.value = true
   try {
-    const res = await deleteDataProductTask(props.editTaskId)
+    const res = await hs.dataProductTasks.delete(props.editTaskId)
     if (!res.ok) {
       Snackbar.error(res.message || 'Unable to delete aggregation task.')
       return
