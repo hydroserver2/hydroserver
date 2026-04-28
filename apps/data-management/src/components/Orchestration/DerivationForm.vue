@@ -1,7 +1,7 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar color="indigo-darken-1" flat>
+      <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
         <v-card-title>{{
           isEditMode ? 'Edit derivation task' : 'Create derivation task'
         }}</v-card-title>
@@ -16,7 +16,7 @@
       <v-progress-linear
         v-if="loadingExisting"
         indeterminate
-        color="indigo-darken-1"
+        :color="DATA_PRODUCT_ACCENT"
       />
     </div>
 
@@ -30,7 +30,7 @@
       <v-card-text class="overflow-y-auto grow">
         <v-alert
           v-if="showInfo"
-          color="indigo-darken-1"
+          :color="DATA_PRODUCT_ACCENT"
           type="info"
           variant="tonal"
           density="compact"
@@ -119,7 +119,7 @@
 
         <v-btn
           variant="outlined"
-          color="indigo-darken-1"
+          :color="DATA_PRODUCT_ACCENT"
           size="small"
           :prepend-icon="mdiPlus"
           :disabled="loadingExisting"
@@ -147,7 +147,7 @@
               v-for="inp in namedInputs"
               :key="inp.variableName"
               size="x-small"
-              color="indigo-darken-1"
+              :color="DATA_PRODUCT_ACCENT"
               variant="tonal"
               class="font-weight-mono"
             >
@@ -241,7 +241,7 @@
           <v-spacer />
           <v-switch
             v-model="configureMaxGap"
-            color="indigo-darken-1"
+            :color="DATA_PRODUCT_ACCENT"
             density="compact"
             hide-details
             :disabled="loadingExisting"
@@ -292,9 +292,17 @@
         >
           Delete task
         </v-btn>
-        <v-btn-primary type="submit" :loading="saving" :disabled="deleting">
+        <v-btn
+          type="submit"
+          variant="flat"
+          rounded="lg"
+          class="text-none"
+          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :loading="saving"
+          :disabled="deleting"
+        >
           {{ isEditMode ? 'Save changes' : 'Create derivation task' }}
-        </v-btn-primary>
+        </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -312,6 +320,11 @@ import hs, {
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import {
+  DATA_PRODUCT_ACCENT,
+  DATA_PRODUCT_SUBMIT_STYLE,
+  DATA_PRODUCT_TOOLBAR_STYLE,
+} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const ALLOWED_FUNCTIONS = [

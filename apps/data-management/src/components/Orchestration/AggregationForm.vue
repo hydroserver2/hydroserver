@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="teal-darken-1" flat>
+    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
       <v-card-title>{{ isEditMode ? 'Edit aggregation task' : 'Create aggregation task' }}</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
@@ -11,7 +11,11 @@
     </v-toolbar>
     <v-divider />
 
-    <v-progress-linear v-if="loadingExisting" indeterminate color="teal-darken-1" />
+    <v-progress-linear
+      v-if="loadingExisting"
+      indeterminate
+      :color="DATA_PRODUCT_ACCENT"
+    />
 
     <v-form
       ref="formRef"
@@ -22,7 +26,7 @@
       <v-card-text>
         <v-alert
           v-if="showInfo"
-          color="teal-darken-1"
+          :color="DATA_PRODUCT_ACCENT"
           type="info"
           variant="tonal"
           density="compact"
@@ -131,9 +135,17 @@
         >
           Delete task
         </v-btn>
-        <v-btn-primary type="submit" :loading="saving" :disabled="deleting">
+        <v-btn
+          type="submit"
+          variant="flat"
+          rounded="lg"
+          class="text-none"
+          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :loading="saving"
+          :disabled="deleting"
+        >
           {{ isEditMode ? 'Save changes' : 'Create aggregation task' }}
-        </v-btn-primary>
+        </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -152,6 +164,11 @@ import hs, {
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import {
+  DATA_PRODUCT_ACCENT,
+  DATA_PRODUCT_SUBMIT_STYLE,
+  DATA_PRODUCT_TOOLBAR_STYLE,
+} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const props = defineProps<{

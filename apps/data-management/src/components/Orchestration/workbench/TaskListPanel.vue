@@ -78,6 +78,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
+                  :style="{ color: accent, borderColor: accent }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-aggregation')"
@@ -94,6 +95,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
+                  :style="{ color: accent, borderColor: accent }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-expression')"
@@ -110,6 +112,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
+                  :style="{ color: accent, borderColor: accent }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-derivation')"
@@ -126,11 +129,32 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
+                  :style="{ color: accent, borderColor: accent }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-rating-curve')"
                 >
                   + Rating curve
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ READ_ONLY_TOOLTIP }}</span>
+          </v-tooltip>
+        </template>
+        <template v-else-if="activeTab === 'quality'">
+          <v-tooltip location="top" :disabled="canEdit">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <v-btn
+                  variant="flat"
+                  :prepend-icon="mdiPlus"
+                  :style="{ background: accent, color: 'white' }"
+                  :disabled="!canEdit"
+                  class="detail-action-btn detail-action-btn--primary text-none"
+                  rounded="lg"
+                  @click="$emit('add-quality')"
+                >
+                  Add quality task
                 </v-btn>
               </span>
             </template>
@@ -228,6 +252,7 @@
               </button>
             </th>
             <th v-if="activeTab === 'aggregation'">Type</th>
+            <th v-if="activeTab === 'quality'">Rules</th>
             <th class="text-right">Actions</th>
           </tr>
         </thead>
@@ -294,6 +319,9 @@
               </v-chip>
               <span v-else class="text-slate-400">—</span>
             </td>
+            <td v-if="activeTab === 'quality'" class="task-rules">
+              {{ row.qualityRuleSummary || 'No rules' }}
+            </td>
             <td class="task-actions">
               <div class="task-actions-inner">
                 <v-tooltip location="top" :open-delay="0" :close-delay="0">
@@ -336,6 +364,18 @@
                 >
                   Run requested
                 </span>
+                <v-btn
+                  v-if="activeTab === 'quality'"
+                  variant="text"
+                  size="small"
+                  :style="{ color: accent }"
+                  :prepend-icon="mdiPencil"
+                  class="text-none"
+                  :disabled="!canEdit"
+                  @click.stop="$emit('edit-quality', row)"
+                >
+                  Edit
+                </v-btn>
                 <v-btn
                   variant="text"
                   size="small"
@@ -416,6 +456,8 @@ const emit = defineEmits<{
   (e: 'add-expression'): void
   (e: 'add-derivation'): void
   (e: 'add-rating-curve'): void
+  (e: 'add-quality'): void
+  (e: 'edit-quality', row: TaskRow): void
 }>()
 
 const sortableColumns: { key: SortKey; label: string }[] = [
@@ -484,11 +526,6 @@ const removeStatusFilter = (index: number) => {
   padding-inline: 14px;
   font-size: 13px;
   font-weight: 600;
-  color: #6d28d9;
-  border-color: #6d28d9;
-}
-.detail-action-btn--header :deep(.v-btn__content) {
-  color: #6d28d9;
 }
 .detail-action-btn--primary {
   padding-inline: 20px;
@@ -596,6 +633,11 @@ const removeStatusFilter = (index: number) => {
 .task-type {
   padding: 13px 12px;
   white-space: nowrap;
+}
+.task-rules {
+  color: #475569;
+  font-size: 13px;
+  max-width: 320px;
 }
 .task-type-chip {
   font-size: 11px;

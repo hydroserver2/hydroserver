@@ -67,6 +67,31 @@ const resolveDataProductTaskType = (
   return null
 }
 
+const humanizeRuleType = (value: string) =>
+  value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+
+const resolveMonitoringRuleSummary = (task: MonitoringTaskExpanded) => {
+  const ruleCounts = new Map<string, number>()
+  for (const monitored of task.monitoredDatastreams ?? []) {
+    for (const rule of monitored.rules ?? []) {
+      const type = `${(rule as any).ruleType ?? ''}`
+      if (!type) continue
+      ruleCounts.set(type, (ruleCounts.get(type) ?? 0) + 1)
+    }
+  }
+
+  const total = [...ruleCounts.values()].reduce((sum, count) => sum + count, 0)
+  if (total === 0) return 'No rules'
+
+  const parts = [...ruleCounts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([type, count]) => `${count} ${humanizeRuleType(type)}`)
+
+  return parts.join(', ')
+}
+
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
 // target datastream, cross-referencing the workspace datastream list for thingId.
 const resolveEtlTaskThingId = (
@@ -130,6 +155,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
       dataConnectionId: null,
       thingId: t.thing?.id ?? null,
+      qualityRuleSummary: resolveMonitoringRuleSummary(t),
     }))
   )
 

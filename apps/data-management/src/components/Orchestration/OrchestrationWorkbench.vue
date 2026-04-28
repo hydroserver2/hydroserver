@@ -81,6 +81,8 @@
         @add-expression="openExpressionForm = true"
         @add-derivation="openDerivationForm = true"
         @add-rating-curve="openRatingCurveForm = true"
+        @add-quality="openQualityForm = true"
+        @edit-quality="openEditQualityForm"
       />
     </template>
 
@@ -168,6 +170,18 @@
         @created="onDataProductTaskCreated"
       />
     </v-dialog>
+
+    <v-dialog v-model="openQualityForm" width="64rem">
+      <QualityManagementForm
+        :workspace-id="workspaceId"
+        :initial-thing-id="selectedThingId"
+        :edit-task-id="editingQualityTaskId"
+        @close="closeQualityForm"
+        @created="onQualityTaskChanged"
+        @updated="onQualityTaskChanged"
+        @deleted="onQualityTaskChanged"
+      />
+    </v-dialog>
   </div>
 </template>
 
@@ -231,6 +245,9 @@ const DerivationForm = defineAsyncComponent(
 const RatingCurveForm = defineAsyncComponent(
   () => import('@/components/Orchestration/RatingCurveForm.vue')
 )
+const QualityManagementForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/QualityManagementForm.vue')
+)
 
 const props = defineProps<{ workspaceId: string }>()
 
@@ -274,6 +291,8 @@ const openExpressionForm = ref(false)
 const openDerivationForm = ref(false)
 const editingDerivationTaskId = ref<string | null>(null)
 const openRatingCurveForm = ref(false)
+const openQualityForm = ref(false)
+const editingQualityTaskId = ref<string | null>(null)
 
 const {
   runNowTriggeredByTaskId,
@@ -662,11 +681,22 @@ const closeDerivationForm = () => {
   editingDerivationTaskId.value = null
 }
 
+const closeQualityForm = () => {
+  openQualityForm.value = false
+  editingQualityTaskId.value = null
+}
+
 const onDataProductTaskCreated = async () => {
   openAggregationForm.value = false
   openDerivationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
+  await fetchAll(props.workspaceId)
+  autoSelectSidebar()
+}
+
+const onQualityTaskChanged = async () => {
+  closeQualityForm()
   await fetchAll(props.workspaceId)
   autoSelectSidebar()
 }
@@ -706,6 +736,12 @@ const onTogglePaused = async (row: TaskRow) => {
   if (!canEditOrchestration.value) return
   if (!row.schedule) return
   await toggleSchedulePaused(row.kind, row.id, row.schedule)
+}
+
+const openEditQualityForm = (row: TaskRow) => {
+  if (!canEditOrchestration.value) return
+  editingQualityTaskId.value = row.id
+  openQualityForm.value = true
 }
 
 const goToTask = async (row: TaskRow) => {

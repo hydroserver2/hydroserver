@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="deep-purple" flat>
+    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
       <v-card-title>Create rating curve task</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
@@ -20,7 +20,7 @@
       <v-card-text>
         <v-alert
           v-if="showInfo"
-          color="deep-purple"
+          :color="DATA_PRODUCT_ACCENT"
           type="info"
           variant="tonal"
           density="compact"
@@ -100,7 +100,7 @@
           />
           <v-btn
             variant="outlined"
-            color="deep-purple"
+            :color="DATA_PRODUCT_ACCENT"
             block
             class="mb-2 text-none"
             @click="openCreateFilePicker"
@@ -167,9 +167,16 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit" :loading="saving">
+        <v-btn
+          type="submit"
+          variant="flat"
+          rounded="lg"
+          class="text-none"
+          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :loading="saving"
+        >
           Create rating curve task
-        </v-btn-primary>
+        </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -191,6 +198,11 @@ import {
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import {
+  DATA_PRODUCT_ACCENT,
+  DATA_PRODUCT_SUBMIT_STYLE,
+  DATA_PRODUCT_TOOLBAR_STYLE,
+} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const props = defineProps<{

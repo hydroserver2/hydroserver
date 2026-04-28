@@ -82,4 +82,41 @@ describe('TaskService', () => {
       { targetIdentifier: 'target-2', dataTransformations: [] },
     ])
   })
+
+  it('omits empty ids from create payloads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: 'monitoring-task-1',
+        name: 'Range checks',
+        description: null,
+        recipients: [],
+        thing: { id: 'thing-1', name: 'Site 1' },
+        monitoredDatastreams: [],
+        schedule: null,
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    await client.monitoringTasks.create({
+      id: '',
+      name: 'Range checks',
+      thingId: 'thing-1',
+      description: null,
+      recipients: [],
+      schedule: null,
+    })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://hydro.example.com/api/data/monitoring/tasks'
+    )
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      name: 'Range checks',
+      thingId: 'thing-1',
+      description: null,
+      recipients: [],
+      schedule: null,
+    })
+  })
 })

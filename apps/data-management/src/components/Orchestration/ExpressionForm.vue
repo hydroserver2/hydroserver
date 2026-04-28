@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="deep-purple" flat>
+    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
       <v-card-title>Create expression task</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
@@ -20,7 +20,7 @@
       <v-card-text>
         <v-alert
           v-if="showHelp"
-          color="deep-purple"
+          :color="DATA_PRODUCT_ACCENT"
           type="info"
           variant="tonal"
           density="compact"
@@ -95,9 +95,16 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit" :loading="saving">
+        <v-btn
+          type="submit"
+          variant="flat"
+          rounded="lg"
+          class="text-none"
+          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :loading="saving"
+        >
           Create expression task
-        </v-btn-primary>
+        </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -111,6 +118,11 @@ import hs, { type Datastream, type DataProductTask } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import {
+  DATA_PRODUCT_ACCENT,
+  DATA_PRODUCT_SUBMIT_STYLE,
+  DATA_PRODUCT_TOOLBAR_STYLE,
+} from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from './DatastreamCardSelector.vue'
 
 const props = defineProps<{
