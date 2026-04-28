@@ -212,21 +212,19 @@ export const handleRelayout = async (
         lastVisibleRange = [xStart, xEnd]
       }
 
-      // Density-responsive marker rendering. Non-QC traces drop their
-      // markers past the density threshold so the line stays readable
-      // when stacked with siblings. The QC trace always keeps markers
-      // when tooltips are about to be enabled — without them, hover hit
-      // testing has nothing to land on, and the user gets a tooltip-
-      // capable plot with no points to hover.
+      // Density-responsive marker rendering. When the data-points
+      // toggle is on (and we're under the threshold) every trace
+      // keeps its markers so hover hit-testing lands on any series,
+      // not just the QC one. Past the density threshold (or when the
+      // toggle is off) markers fade so the lines stay readable.
       const tooltipsWillRun =
         areTooltipsEnabled.value &&
         visiblePoints.value <= tooltipsMaxDataPoints.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
       const traces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
-      const perTraceOpacity = perTraceVisible.map((n, i) => {
-        const isQc = qcId != null && traces[i]?.id === qcId
-        if (isQc && tooltipsWillRun) return 1
+      const perTraceOpacity = perTraceVisible.map((n) => {
+        if (tooltipsWillRun) return 1
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
       })
 

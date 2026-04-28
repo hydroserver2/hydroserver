@@ -55,15 +55,10 @@
 
         <v-spacer />
 
-        <!-- Right group reads right-to-left: date range (rightmost),
-             help menu, tooltip toggle, and finally the conditional
-             tooltips-hidden notice to the left of the toggle so it
-             explains the toggle's disabled/off state inline. -->
-
         <v-btn
           v-if="tab === 'plot'"
           data-testid="tooltips-toggle-btn"
-          aria-label="Toggle tooltips"
+          aria-label="Toggle data points"
           size="small"
           variant="text"
           density="compact"
@@ -75,7 +70,7 @@
         />
 
         <div
-          v-if="tab === 'plot' && !tooltipsActive"
+          v-if="tab === 'plot'"
           data-testid="tooltips-notice"
           class="plot-toolbar__tooltips-notice d-inline-flex align-center"
           :class="{
@@ -84,12 +79,14 @@
           aria-live="polite"
           :title="
             tooltipsAutoDisabled
-              ? `Tooltips disabled while ${visiblePoints.toLocaleString()} points are visible (threshold: ${tooltipsMaxDataPoints.toLocaleString()}). Zoom in to re-enable, or raise the threshold.`
-              : `Tooltips are turned off. ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible — toggle them back on with the button to the right.`
+              ? `Data points hover disabled while ${visiblePoints.toLocaleString()} points are visible (threshold: ${tooltipsMaxDataPoints.toLocaleString()}). Zoom in to re-enable, or raise the threshold.`
+              : tooltipsActive
+                ? `Data points hover active — ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible.`
+                : `Data points hover is turned off. ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible — toggle it back on with the button to the right.`
           "
         >
           <div class="plot-toolbar__tooltips-notice-text">
-            <div>Tooltips hidden</div>
+            <div>Data points</div>
             <div class="d-inline-flex align-center">
               <span
                 class="plot-toolbar__tooltips-notice-count"
@@ -115,17 +112,18 @@
                     density="compact"
                     icon="mdi-pencil-outline"
                     class="plot-toolbar__tooltips-notice-edit"
-                    title="Edit tooltip point limit"
-                    aria-label="Edit tooltip point limit"
+                    title="Edit data points limit"
+                    aria-label="Edit data points limit"
                   />
                 </template>
                 <v-card max-width="320" class="pa-3">
                   <div class="text-body-2 font-weight-medium mb-1">
-                    Tooltip point limit
+                    Data points limit
                   </div>
                   <div class="text-caption text-medium-emphasis mb-2">
-                    Tooltips auto-disable when more than this many points are
-                    visible. Raise on fast machines, lower on slow ones.
+                    Individual data points stop being drawn when more than this
+                    many are visible — only the connecting line remains. Raise
+                    on fast machines, lower on slow ones.
                   </div>
                   <div class="d-flex align-center gap-2">
                     <v-text-field

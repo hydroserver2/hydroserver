@@ -62,9 +62,57 @@
 
     <!-- Dynamic body. Each operation renders its own v-card; scoped
          overrides below flatten the nested card so it looks native to
-         the panel instead of a dialog-in-a-sidebar. -->
-    <div v-else class="operation-panel__body flex-grow-1 overflow-y-auto">
-      <component :is="op.component" @close="close" />
+         the panel instead of a dialog-in-a-sidebar. Sections are
+         visually separated with their own padding + bottom border. -->
+    <div
+      v-else
+      class="operation-panel__body flex-grow-1 overflow-y-auto"
+      :class="{ 'operation-panel__body--multi': filterRangeToggleVisible }"
+    >
+      <section
+        v-if="filterRangeToggleVisible"
+        class="operation-panel__section"
+      >
+        <div class="operation-panel__section-head">
+          <h3 class="operation-panel__section-title">Date range</h3>
+          <v-tooltip
+            v-if="filterRangeActive"
+            location="start"
+            text="Disable date range"
+          >
+            <template #activator="{ props: tp }">
+              <v-btn
+                v-bind="tp"
+                size="x-small"
+                variant="text"
+                density="comfortable"
+                icon="mdi-close"
+                aria-label="Disable date range"
+                @click="filterRangeActive = false"
+              />
+            </template>
+          </v-tooltip>
+        </div>
+        <FilterRangePanel v-if="filterRangeActive" />
+        <div v-else class="operation-panel__section-empty px-3 pb-3">
+          <p class="text-caption text-medium-emphasis mb-2">
+            Run this operation against the full datastream, or restrict it
+            to a datetime window.
+          </p>
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="primary"
+            prepend-icon="mdi-arrow-expand-horizontal"
+            @click="filterRangeActive = true"
+          >
+            Enable date range
+          </v-btn>
+        </div>
+      </section>
+      <section class="operation-panel__section operation-panel__section--op">
+        <component :is="op.component" @close="close" />
+      </section>
     </div>
   </div>
 </template>
@@ -75,12 +123,21 @@ import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/store/userInterface'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { operationsById } from './operations'
+import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
 
-const { selectedOperation } = storeToRefs(useUIStore())
+const { selectedOperation, filterRangeActive } = storeToRefs(useUIStore())
 const { selectedData } = storeToRefs(useDataVisStore())
 
 const op = computed(() =>
   selectedOperation.value ? operationsById[selectedOperation.value] : null
+)
+
+// `datetimeRange` brings its own picker — would duplicate the shared range UI.
+const OPS_WITH_OWN_RANGE = new Set(['datetimeRange'])
+
+const filterRangeToggleVisible = computed(
+  () =>
+    op.value?.group === 'filter' && !OPS_WITH_OWN_RANGE.has(op.value.id)
 )
 
 function close() {
@@ -102,15 +159,51 @@ function close() {
 
 .operation-panel__body {
   min-height: 0;
-  padding-inline: 8px;
+  padding: 8px;
+}
+
+.operation-panel__section + .operation-panel__section {
+  margin-top: 12px;
+}
+
+.operation-panel__section {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 6px;
+  background-color: rgb(var(--v-theme-surface));
+  overflow: hidden;
+}
+
+.operation-panel__section-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 0 0;
+}
+
+.operation-panel__section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  padding: 8px 12px 4px;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.operation-panel__section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 /* Normalize the embedded v-card so it doesn't look like a dialog:
    no elevation, no rounded corners, no min-width. The individual
    operation components all wrap their contents in a v-card, and we
-   want that card to be visually flush with the surrounding panel. */
-.operation-panel__body :deep(> .v-card),
-.operation-panel__body :deep(> .v-form > .v-card) {
+   want that card to be visually flush with the surrounding section. */
+.operation-panel__section :deep(> .v-card),
+.operation-panel__section :deep(> .v-form > .v-card) {
   box-shadow: none !important;
   border-radius: 0 !important;
   min-width: 0 !important;
@@ -143,16 +236,17 @@ function close() {
 /* The operation components redundantly repeat their titles in
    v-card-title. The panel header already names the operation, so
    hide the internal one. */
-.operation-panel__body :deep(> .v-card > .v-card-title:first-child),
-.operation-panel__body :deep(> .v-form > .v-card > .v-card-title:first-child) {
+.operation-panel__section--op :deep(> .v-card > .v-card-title:first-child),
+.operation-panel__section--op
+  :deep(> .v-form > .v-card > .v-card-title:first-child) {
   display: none !important;
 }
 
 /* Hide the leading divider that separated the now-hidden title from
    the body, if present. */
-.operation-panel__body
+.operation-panel__section--op
   :deep(> .v-card > .v-card-title:first-child + .v-divider),
-.operation-panel__body
+.operation-panel__section--op
   :deep(> .v-form > .v-card > .v-card-title:first-child + .v-divider) {
   display: none !important;
 }

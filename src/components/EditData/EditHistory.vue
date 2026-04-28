@@ -131,6 +131,7 @@
       class="edit-history__body flex-grow-1 overflow-y-auto"
       style="min-height: 0"
     >
+     <div class="edit-history__card">
       <!-- Baseline: "Data loaded" status row with its own reload action. -->
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
@@ -350,6 +351,7 @@
           <v-divider />
         </div>
       </div>
+     </div>
     </div>
   </div>
 </template>
@@ -685,7 +687,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .edit-history__body {
-  padding-inline: 8px;
+  padding: 8px;
+}
+
+/* Bordered card wrapper around the history rows. Matches the
+   `.operation-panel__section` and Plotted-Datastreams treatments
+   so all right-sidebar section bodies read as a contained group
+   instead of resting flush against the chrome. */
+.edit-history__card {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 6px;
+  background-color: rgb(var(--v-theme-surface));
+  overflow: hidden;
 }
 
 /* Matches the section-header treatment used by Plotted

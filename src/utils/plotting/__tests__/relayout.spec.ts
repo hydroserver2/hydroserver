@@ -353,7 +353,8 @@ describe('handleRelayout', () => {
     expect(isUpdating.value).toBe(false)
   })
 
-  it('hides markers when trace point count exceeds DENSITY_HIDE_MARKERS', async () => {
+  it('hides markers when trace point count exceeds DENSITY_HIDE_MARKERS and data-points hover is off', async () => {
+    areTooltipsEnabled.value = false
     const dense = Array.from({ length: 3000 }, (_, i) => i)
     plotlyRef.value = makeStub({
       xRange: [0, 3000],
@@ -370,13 +371,16 @@ describe('handleRelayout', () => {
     expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([0])
   })
 
-  it('keeps QC trace markers when tooltips will run, even past the density threshold', async () => {
+  it('keeps every trace\'s markers when data-points hover will run, even past the density threshold', async () => {
     qcDatastream.value = { id: 'qc-target' }
     const dense = Array.from({ length: 3000 }, (_, i) => i)
     tooltipsMaxDataPoints.value = 10_000
     plotlyRef.value = makeStub({
       xRange: [0, 3000],
-      traces: [{ id: 'qc-target', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' }],
+      traces: [
+        { id: 'qc-target', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' },
+        { id: 'other', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' },
+      ],
     })
     await handleRelayout({ evt: 'q' } as any)
     await flush()
@@ -385,10 +389,10 @@ describe('handleRelayout', () => {
       (c) => c[1] && (c[1] as any)['marker.opacity']
     )
     expect(markerOpacityCall).toBeDefined()
-    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1])
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1, 1])
   })
 
-  it('still hides QC trace markers when tooltips are disabled', async () => {
+  it('still hides QC trace markers when data-points hover is disabled', async () => {
     qcDatastream.value = { id: 'qc-target' }
     areTooltipsEnabled.value = false
     const dense = Array.from({ length: 3000 }, (_, i) => i)
@@ -436,7 +440,7 @@ describe('handleRelayout', () => {
     expect(hoverCall).toBeDefined()
   })
 
-  it('switches hover to skip when tooltips are disabled', async () => {
+  it('switches hover to skip when data-points hover is disabled', async () => {
     areTooltipsEnabled.value = false
     plotlyRef.value = makeStub({
       xRange: [0, 1000],

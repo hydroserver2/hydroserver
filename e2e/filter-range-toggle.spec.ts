@@ -1,14 +1,20 @@
 /**
- * Filter-range toggle: a button on the "Filter Data" header in the
- * left drawer flips a shared range UI on/off. When on AND a filter
- * operation is staged (other than `datetimeRange`), a sidebar panel
- * appears above the operation details and every filter dispatch
- * picks up `[fromTs, toTs]` as the optional `range` argument.
+ * Filter-range toggle: a "Date range" section inside the operation
+ * details body lets the user opt into restricting a filter operation
+ * to a datetime window. Off by default → empty state with an "Enable
+ * date range" button. On → `FilterRangePanel` mounts and an X icon
+ * in the section head disables it again. The whole section is
+ * suppressed for filter operations that bring their own picker
+ * (`datetimeRange`).
  */
 
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView } from './support/app'
+
+const dateRangeSection = '.operation-panel__section'
+const enableBtn = '.operation-panel__section-empty .v-btn'
+const disableBtn = '.operation-panel__section-head .v-btn'
 
 test.describe('filter range toggle', () => {
   test.beforeEach(async ({ page }) => {
@@ -16,56 +22,56 @@ test.describe('filter range toggle', () => {
     await setupEditView(page)
   })
 
-  test('panel only appears when toggle is on AND an op is staged', async ({
-    page,
-  }) => {
-    const toggle = page.locator('.edit-drawer__filter-range-btn')
-
-    // Drawer toggle is "Off" out of the box.
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
-
-    // Toggle on — but no operation is staged → panel stays hidden.
-    await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  test('section only appears once a filter op is staged', async ({ page }) => {
+    // No operation staged → no section anywhere.
+    await expect(page.locator(dateRangeSection)).toHaveCount(0)
     await expect(page.locator('.filter-range-panel')).toHaveCount(0)
 
-    // Open Persistence — panel mounts.
+    // Open Persistence — section appears in the empty state by default.
     await openOp(page, 'persistence')
+    await expect(page.locator(enableBtn)).toBeVisible()
+    await expect(page.locator('.filter-range-panel')).toHaveCount(0)
+
+    // Enable — panel mounts and X icon replaces the empty state.
+    await page.locator(enableBtn).click()
     await expect(page.locator('.filter-range-panel')).toBeVisible()
+    await expect(page.locator(disableBtn)).toBeVisible()
   })
 
-  test('panel is suppressed for the datetime-range operation', async ({
+  test('date-range section is suppressed for the datetime-range operation', async ({
     page,
   }) => {
-    await page.locator('.edit-drawer__filter-range-btn').click()
     await openOp(page, 'persistence')
+    await page.locator(enableBtn).click()
     await expect(page.locator('.filter-range-panel')).toBeVisible()
 
-    // Switch to datetime-range — same toggle, but the op brings its
-    // own picker so the shared panel hides to avoid the duplicate.
+    // Switch to datetime-range — that op brings its own picker, so the
+    // shared section and panel both go away.
     await openOp(page, 'datetimeRange')
+    // Only the operation section remains, not the date-range section.
+    await expect(page.locator('.operation-panel__section--op')).toHaveCount(1)
+    await expect(page.locator(enableBtn)).toHaveCount(0)
+    await expect(page.locator(disableBtn)).toHaveCount(0)
     await expect(page.locator('.filter-range-panel')).toHaveCount(0)
   })
 
-  test('closing the panel via its X turns the drawer toggle Off', async ({
+  test('the X icon collapses the panel back to the empty state', async ({
     page,
   }) => {
-    const toggle = page.locator('.edit-drawer__filter-range-btn')
-    await toggle.click()
     await openOp(page, 'persistence')
+    await page.locator(enableBtn).click()
+    await expect(page.locator('.filter-range-panel')).toBeVisible()
 
-    const panel = page.locator('.filter-range-panel')
-    await expect(panel).toBeVisible()
-    // The header's leading close button collapses the shared state.
-    await panel.locator('.filter-range-panel__header button').first().click()
-    await expect(panel).toHaveCount(0)
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await page.locator(disableBtn).click()
+    await expect(page.locator('.filter-range-panel')).toHaveCount(0)
+    await expect(page.locator(enableBtn)).toBeVisible()
   })
 
   test('toggle state persists across reloads via the userInterface store', async ({
     page,
   }) => {
-    await page.locator('.edit-drawer__filter-range-btn').click()
+    await openOp(page, 'persistence')
+    await page.locator(enableBtn).click()
     // pinia-plugin-persistedstate writes synchronously; verify the
     // payload landed before a reload so flakes don't masquerade as
     // missing-persistence regressions.
@@ -78,9 +84,9 @@ test.describe('filter range toggle', () => {
       .toContain('"filterRangeActive":true')
 
     await page.reload()
-    // Re-prime the edit view; the persisted toggle should still
-    // come back On.
-    const toggle = page.locator('.edit-drawer__filter-range-btn')
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    // Re-prime: section only renders once the op is re-staged.
+    await openOp(page, 'persistence')
+    await expect(page.locator('.filter-range-panel')).toBeVisible()
+    await expect(page.locator(disableBtn)).toBeVisible()
   })
 })

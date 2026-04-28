@@ -261,7 +261,9 @@
             class="edit-view__plotted-body"
             :style="{ height: plottedHeight + 'px' }"
           >
-            <PlottedDatastreams lock-qc />
+            <div class="edit-view__section-card">
+              <PlottedDatastreams lock-qc />
+            </div>
           </div>
         </section>
 
@@ -306,13 +308,6 @@
             title="Drag to resize"
             @mousedown="startAuxSplitDrag"
           />
-
-          <div
-            v-if="filterRangePanelVisible"
-            class="edit-view__filter-range d-flex flex-column border-t"
-          >
-            <FilterRangePanel />
-          </div>
 
           <div
             v-if="selectedOperation"
@@ -411,7 +406,6 @@ import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'
 import OperationPanel from '@/components/EditData/OperationPanel.vue'
 import EditDrawer from '@/components/Navigation/EditDrawer.vue'
-import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
 
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
@@ -429,7 +423,6 @@ const { resetState } = useDataVisStore()
 const {
   plottedDatastreams,
   qcDatastream,
-  qcDatastreamId,
   datastreams,
   things,
   beginDate,
@@ -440,13 +433,8 @@ const {
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
-const {
-  currentView,
-  selectedDrawer,
-  isDrawerOpen,
-  selectedOperation,
-  filterRangeActive,
-} = storeToRefs(useUIStore())
+const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
+  storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 const { editHistory, isUpdating, isSubmitting, selectedSeries } =
   storeToRefs(usePlotlyStore())
@@ -531,18 +519,8 @@ const historyCollapsed = usePersistedFlag(
 )
 const historyModalOpen = ref(false)
 
-const OPS_WITH_OWN_RANGE = new Set(['datetimeRange'])
-
-const filterRangePanelVisible = computed(
-  () =>
-    filterRangeActive.value &&
-    !!selectedOperation.value &&
-    !OPS_WITH_OWN_RANGE.has(selectedOperation.value)
-)
-
 const historyPaneStyle = computed(() => {
   if (historyCollapsed.value) return { flex: '0 0 auto' }
-  if (filterRangePanelVisible.value) return { flex: '0 0 auto' }
   if (selectedOperation.value) return { flex: `0 0 ${historyPercent.value}%` }
   return { flex: '1 1 auto' }
 })
@@ -930,7 +908,18 @@ function goToEdit() {
 .edit-view__plotted-body {
   overflow-y: auto;
   min-height: 0;
-  padding-inline: 8px;
+  padding: 8px;
+}
+
+/* Bordered card wrapper for section bodies. Matches the
+   `.operation-panel__section` treatment so plotted-datastreams,
+   edit-history, and operation-panel content all read as the same
+   family of contained groups. */
+.edit-view__section-card {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 6px;
+  background-color: rgb(var(--v-theme-surface));
+  overflow: hidden;
 }
 
 .edit-view__aux-body {
@@ -944,14 +933,6 @@ function goToEdit() {
 }
 
 .edit-view__op-panel {
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Filter-range panel sizes to its content (date pickers + presets +
-   hint). History flexes around it. */
-.edit-view__filter-range {
-  flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
 }

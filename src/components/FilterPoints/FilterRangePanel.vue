@@ -1,41 +1,6 @@
 <template>
-  <div class="filter-range-panel d-flex flex-column bg-surface">
-    <!-- Header mirrors OperationPanel's so the two panels read as
-         siblings stacked in the sidebar. The close button flips the
-         shared `filterRangeActive` flag — the same flag the plot-
-         header toggle drives, so closing here also restores the
-         toggle to its inactive state. -->
-    <div
-      class="filter-range-panel__header px-3 py-2 d-flex align-center gap-2"
-    >
-      <v-avatar color="primary" variant="flat" size="24">
-        <v-icon icon="mdi-arrow-expand-horizontal" color="white" size="14" />
-      </v-avatar>
-      <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
-        <span class="text-body-2 font-weight-bold text-truncate">
-          Filter range
-        </span>
-        <span class="text-caption text-medium-emphasis text-truncate">
-          Restrict filter operations to this datetime window.
-        </span>
-      </div>
-      <v-tooltip location="start" text="Disable filter range">
-        <template #activator="{ props: tp }">
-          <v-btn
-            v-bind="tp"
-            size="x-small"
-            variant="text"
-            density="comfortable"
-            icon="mdi-close"
-            @click="filterRangeActive = false"
-          />
-        </template>
-      </v-tooltip>
-    </div>
-
-    <v-divider />
-
-    <div class="filter-range-panel__body px-3 py-3">
+  <div class="filter-range-panel d-flex flex-column">
+    <div class="filter-range-panel__body px-3 py-2">
       <RangeStager ref="stager" />
     </div>
   </div>
@@ -56,9 +21,7 @@ import RangeStager from '@/components/FilterPoints/RangeStager.vue'
 import { useUIStore } from '@/store/userInterface'
 
 const stager = useTemplateRef<InstanceType<typeof RangeStager>>('stager')
-const { filterRangeActive, filterRangeFromTs, filterRangeToTs } = storeToRefs(
-  useUIStore()
-)
+const { filterRangeFromTs, filterRangeToTs } = storeToRefs(useUIStore())
 
 // Keep the store mirrors of fromTs/toTs in sync so other components
 // (each filter panel) can react without holding a ref to this
@@ -97,12 +60,6 @@ onBeforeUnmount(() => {
 <style scoped>
 .filter-range-panel {
   min-height: 0;
-  overflow: hidden;
-}
-
-.filter-range-panel__header {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  min-height: 40px;
 }
 
 .filter-range-panel__body {
