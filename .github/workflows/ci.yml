@@ -311,7 +311,12 @@ jobs:
   trigger-release:
     name: Trigger Release Workflow
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: >-
+      always() &&
+      github.event_name == 'release' && (
+        github.event.release.prerelease ||
+        (!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled'))
+      )
     needs: [docs, hydroserver-ts, data-management, hydroserverpy, api, e2e]
     permissions:
       actions: write
