@@ -154,10 +154,16 @@ function buildContextTraces(series: GraphSeries[]): {
 // --- Main-plot live xaxis range read ---------------------------------------
 function readMainXRange(): [number, number] | null {
   const gd = plotlyRef.value as
-    | (PlotlyHTMLElement & { layout?: Partial<Layout> })
+    | (PlotlyHTMLElement & {
+        _fullLayout?: { xaxis?: Partial<LayoutAxis> }
+        layout?: Partial<Layout>
+      })
     | null
-  const xa = gd?.layout?.xaxis as Partial<LayoutAxis> | undefined
-  const r = xa?.range as Array<string | number> | undefined
+  const r =
+    (gd?._fullLayout?.xaxis?.range as Array<string | number> | undefined) ??
+    ((gd?.layout?.xaxis as Partial<LayoutAxis> | undefined)?.range as
+      | Array<string | number>
+      | undefined)
   if (!r) return null
   const a = typeof r[0] === 'string' ? Date.parse(r[0]) : Number(r[0])
   const b = typeof r[1] === 'string' ? Date.parse(r[1]) : Number(r[1])
@@ -172,7 +178,11 @@ function getCtxPlotMetrics(): {
   range: [number, number]
 } | null {
   const gd = ctxGd as
-    | (PlotlyHTMLElement & { _fullLayout?: { xaxis?: Partial<LayoutAxis> & { _offset?: number; _length?: number } } })
+    | (PlotlyHTMLElement & {
+        _fullLayout?: {
+          xaxis?: Partial<LayoutAxis> & { _offset?: number; _length?: number }
+        }
+      })
     | null
   const xa = gd?._fullLayout?.xaxis
   if (!xa || xa._offset == null || xa._length == null) return null
@@ -187,7 +197,9 @@ function getCtxPlotMetrics(): {
 function dataToPixel(dataValue: number): number | null {
   const m = getCtxPlotMetrics()
   if (!m) return null
-  return m.offset + ((dataValue - m.range[0]) / (m.range[1] - m.range[0])) * m.length
+  return (
+    m.offset + ((dataValue - m.range[0]) / (m.range[1] - m.range[0])) * m.length
+  )
 }
 
 function pixelToData(px: number): number | null {
@@ -230,10 +242,13 @@ function scheduleMainUpdate(target: [number, number]) {
     if (!range) return
     const gd = plotlyRef.value as PlotlyHTMLElement | null
     if (!gd) return
-    void Plotly.relayout(gd as unknown as HTMLElement, {
-      'xaxis.range': [range[0], range[1]],
-      'xaxis.autorange': false,
-    } as unknown as Partial<Layout>)
+    void Plotly.relayout(
+      gd as unknown as HTMLElement,
+      {
+        'xaxis.range': [range[0], range[1]],
+        'xaxis.autorange': false,
+      } as unknown as Partial<Layout>
+    )
   })
 }
 
@@ -324,7 +339,10 @@ function onPointerMove(e: PointerEvent) {
     brushPixL.value = nl
     brushPixW.value = right - nl
   } else if (drag.kind === 'r') {
-    let nr = Math.max(drag.origLeft + MIN_BRUSH_PX, drag.origLeft + drag.origWidth + dx)
+    let nr = Math.max(
+      drag.origLeft + MIN_BRUSH_PX,
+      drag.origLeft + drag.origWidth + dx
+    )
     if (nr > maxPx) nr = maxPx
     brushPixL.value = drag.origLeft
     brushPixW.value = nr - drag.origLeft
@@ -427,10 +445,7 @@ function syncHiddenFromMain() {
     if (tt.id && (v === false || v === 'legendonly')) next.add(tt.id)
   }
   const cur = hiddenIds.value
-  if (
-    next.size !== cur.size ||
-    [...next].some((id) => !cur.has(id))
-  ) {
+  if (next.size !== cur.size || [...next].some((id) => !cur.has(id))) {
     hiddenIds.value = next
   }
 }
