@@ -27,3 +27,41 @@ You can write your own scripts or full on orchestration systems that use HydroSe
 ## Via the API
 
 If you are using a programming language other than Python (or even if you are using Python), you can always call the API directly. [Go to the API section for more information](/references/api/data-management-api).
+
+## Quick Guidance on Which Data Loading Method to Use
+
+If you don't want to write code to load data, the following guidance may be helpful.
+
+Choose **Streaming Data Loader (SDL)** if you want:
+
+- A simple, stand-alone desktop app
+- Minimal infrastructure and ops overhead
+- Local file or small API sources
+- A quick way to get started for a single team or workstation
+
+Choose **HydroServer's Job Orchestration System** if you want:
+
+- A server-side, always-on scheduler
+- Centralized logs and monitoring
+- Multiple users and many data connections
+- A production deployment that should run without a desktop app
+
+## Compare at a glance
+
+| Decision factor      | Streaming Data Loader (SDL)            | Job Orchestration System               |
+| -------------------- | -------------------------------------- | -------------------------------------- |
+| Runs on              | A desktop or workstation               | Your HydroServer server                |
+| Best for             | Small deployments, pilots, single team | Production, multi-team, high volume    |
+| Ops overhead         | Low                                    | Medium                                 |
+| Availability         | Depends on computer it runs on         | 24/7 with server uptime                |
+| Scaling              | Limited to one machine                 | Scales with server resources           |
+| Typical data sources | Local files, lightweight APIs          | Network-accessible APIs, hosted stores |
+| Admin experience     | Desktop UI                             | Managed from HydroServer               |
+
+## When SDL is the right fit
+
+SDL is ideal if you want a lightweight scheduler without additional infrastructure. It shines when data is pulled from local files, you have a small number of data connections, or you want to keep the orchestration layer off the server. It's also a good fit for pilots, training, or field deployments where a desktop app is acceptable.
+
+## When the Job Orchestration System is the right fit
+
+The Job Orchestration System is the right choice when you need an always-on orchestration system that lives with HydroServer. If your deployment supports multiple users, has many data connections, or requires centralized scheduling and monitoring, Celery is the better long-term option. It also fits well when data sources are network-accessible and your HydroServer instance is already running in a server environment.
