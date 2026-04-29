@@ -1,18 +1,18 @@
-# Access Control
+# Workspaces and Access Control
 
-HydroServer is built to handle not only multiple users with varying permission levels for one organization, but multiple organizations sharing the same instance of HydroServer. This is accomplished primarily through workspaces.
+HydroServer is built to handle not only multiple users with varying permission levels for one organization, but multiple organizations that may be sharing the same instance of HydroServer. This is accomplished primarily through workspaces.
 
 ## Workspaces
 
 Think of a workspace as Google Drive or Microsoft OneDrive folder. The person who creates the folder is automatically the owner. They can then share the folder with anyone they want and give them either edit or view only permissions. Any one person can have different permissions for various folders shared with them.
 
-Ownership within the HydroServer system is user-centric, meaning individual user accounts, rather than organizations, own the sites, datastreams, and metadata. Each user's account is the central point of control and responsibility for their associated hydrologic data. Organization information, when present, acts as an extension of the user's information. A user may be associated with an organization, but it is the user's account that maintains ownership and control over the data.
+Ownership within the HydroServer system is user-centric, meaning individual user accounts, rather than organizations, own the sites, datastreams, and metadata contained within a Workspace. Each user's account is the central point of control and responsibility for their associated hydrologic data. Organization information, when present, acts as an extension of the user's information. A user may be associated with an organization, but it is the user's account that maintains ownership and control over the data.
 
-All resources in HydroServer (sites, datastreams, etc.) are handled within the context of a workspace. When you create a new site, you'll first decide which workspace it belongs to. It then inherits all the permissions of that workspace.
+All resources in HydroServer (monitoring sites, datastreams, etc.) are handled within the context of a workspace. When you create a new site, you'll first decide which workspace it belongs to. It then inherits all the permissions of that workspace.
 
-## Roles
+## User Roles
 
-Each collaborator in a workspace is assigned a roll. A roll is a set of permissions configurable at the resource level. For example, you can give a roll read only access to the sites in a workspace, but give it full edit access to the datastreams of a workspace. By default, HydroServer ships with owner, editor, and viewer rolls, but you can configure your own.
+Each collaborator in a workspace is assigned a role. A role is a set of permissions configurable at the resource level. For example, you can give a role read only access to the monitoring sites in a workspace, but give it full edit access to the datastreams of a workspace. By default, HydroServer ships with owner, editor, and viewer roles, but you can configure your own as an admininstrative option.
 
 The following table is a comparison of permissions for the owners, editors, and viewers of a workspace.
 
@@ -22,13 +22,14 @@ The following table is a comparison of permissions for the owners, editors, and 
 | Invite new workspace collaborators                      | Yes   | Yes    | No     |
 | Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     |
 | Set up SDL to stream observations to datastreams        | Yes   | Yes    | No     |
+| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     |
 | View public and private data within workspace           | Yes   | Yes    | Yes    |
 
-## API keys
+## API Keys
 
-Remote systems may need to authenticate with HydroServer in your setup. Just giving your username and password to these systems is risky since they'll have _all_ the permissions you do - including deleting your account and data. It's better to create an API key that has the minimum permissions required for the system to do its job. API keys are assigned rolls the same as collaborators. HydroServer ships with a default 'Data Loader' roll which gives a system permissions register itself as an orchestration system and push observations to a datastream.
+Remote systems code or applications may need to authenticate with HydroServer in whatever data loading, retrieval, or analysis workflows you build. Giving your username and password to these systems is risky since they'll have _all_ the permissions you do - including deleting your account and data. It's better to create an API key that has the minimum permissions required for the external system to do its job. API keys are assigned roles the same as collaborators. API keys can be designated with "Data Loader", "Editor", and "Viewer" permissions.
 
-## Data visibility
+## Data Visibility
 
 It's assumed in a HydroServer setup that you want your data to be publicly viewable. By default, when you load data to a datastream, any guest of your site will be able to view that data and all related metadata. These visibility setting can be changed at the workspace, site, and datastream levels.
 
@@ -38,7 +39,7 @@ It's assumed in a HydroServer setup that you want your data to be publicly viewa
 
 3. **Datastream Privacy**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
 
-4. **Datastream Visibility**: This is a convenience setting for controlling visibility of data in the data management application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
+4. **Datastream Data Visibility**: This is a convenience setting for controlling visibility of data in the Data Management Web Application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
 
 These privacy settings work in a hierarchical, conditional manner:
 

@@ -1,23 +1,26 @@
-# How to Customize the Data Management App
+# Customize the Data Management Web App
 
-We don't want you to have to fork a bunch of repositories when you create and maintain a HydroServer instance, just hydroserver-ops. Therefore, our approach to making the Data Management App customizable is to provide you with a config/ directory in hydroserver-ops where you can update variables and components. When the frontend app is built, it will replace the contents in its config/ directory with the content in your hydroserver-ops directory and populate the website with your custom variables.
+The Data Management Web App can be customized by users in a number of different ways. The followoing sections describe specific customizations that can be made and how to set them up.
 
-For example, if you want an empty map to zoom in to your local area instead of the whole United States, go to config/openLayersMapConfig.ts and change:
+## HydroServer Landing Page
 
-```typescript
-const defaultLatitude = 39;
-const defaultLongitude = -100;
-const defaultZoom = 4;
-```
+You can add a custom HydroServer landing page to your HydroServer instance. By default, HydroServer is deployed without this page and the default page in the Data Management App is the "Browse Sites" page. When you add a custom landing page, HydroServer will direct users to that page when they visit the base URL of your HydroServer instance.
 
-to something else.
+To set up a custom landing page, do the following:
 
-## Steps to do this
+## HydroServer Base Maps
 
-1. Go to the config/ directory in the hydroserver-data-management-app repo in GitHub:
+HydroServer deployments use dynamic mapping capabilities provided by the OpenLayers mapping controls. By default, the base maps are set to OpenStreeMaps because use of the OpenStreetMaps base map layers is free. However, you can customize the specific base map layers you want to use, including the Google Base Map. 
 
-https://github.com/hydroserver2/hydroserver-data-management-app/tree/main/src/config
+To cusomize the base map used by your HydroServer instance, do the following:
 
-2. Copy the entire config/ directory and paste it in the root of your hydroserver-ops.
+## Add Controlled Vocabularies
 
-3. Modify the contents of the files you want to customize. Each file has instructions inside for what it can modify.
+HydroServer can provide a list of suggested controlled vocabulary terms to your users for many of the required metadata elements in HydroServer's data model. 
+
+To customize the terms you want your users to choose from, do the following:
+
+## HydroServer About Page
+
+You can customize the "About" page in the main navigation of your HydroServer instance. To customize that page, do the following:
+
