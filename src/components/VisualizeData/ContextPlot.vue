@@ -547,7 +547,6 @@ void dataExtent
   position: relative;
   height: 64px;
   flex: 0 0 auto;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   background-color: rgba(var(--v-theme-on-surface), 0.02);
   user-select: none;
   touch-action: none;

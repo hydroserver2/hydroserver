@@ -298,7 +298,19 @@
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="plot-container fill-height">
             <div ref="plot" class="plot-main"></div>
-            <ContextPlot v-if="!preview" />
+            <template v-if="!preview">
+              <div
+                class="plot-context-strip"
+                :title="contextPlotCollapsed ? 'Expand overview' : 'Collapse overview'"
+                @click="contextPlotCollapsed = !contextPlotCollapsed"
+              >
+                <v-icon
+                  size="12"
+                  :icon="contextPlotCollapsed ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                />
+              </div>
+              <ContextPlot v-show="!contextPlotCollapsed" />
+            </template>
             <div
               v-for="chip in axisChips"
               :key="chip.id"
@@ -396,6 +408,7 @@ import DataTable from '@/components/VisualizeData/DataTable.vue'
 import ContextPlot from '@/components/VisualizeData/ContextPlot.vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useBufferedNumber } from '@/composables/useBufferedNumber'
+import { usePersistedFlag } from '@/composables/useResizable'
 import { formatDate, Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 
@@ -673,6 +686,7 @@ function toggleTooltips() {
 }
 
 const showHelp = ref(false)
+const contextPlotCollapsed = usePersistedFlag('qc:contextPlotCollapsed', false)
 const {
   pending: pendingThreshold,
   isValid: isPendingThresholdValid,
@@ -1173,6 +1187,26 @@ const onTabChange = () => {
 
 .plot-help :deep(.v-list-item) {
   min-height: 44px;
+}
+
+.plot-context-strip {
+  flex: 0 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  color: rgba(var(--v-theme-on-surface), 0.35);
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.plot-context-strip:hover {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+  color: rgb(var(--v-theme-primary));
 }
 
 /*
