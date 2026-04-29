@@ -124,7 +124,7 @@ export const handleRelayout = async (
     isUpdating,
     areTooltipsEnabled,
     visiblePoints,
-    tooltipsMaxDataPoints,
+    tooltipsMode,
   } = storeToRefs(usePlotlyStore())
 
   handleSelected(eventData, { fromRelayout: true })
@@ -226,6 +226,7 @@ export const handleRelayout = async (
       const traces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
       const perTraceOpacity = perTraceVisible.map((n) => {
         if (tooltipsWillRun) return 1
+        if (tooltipsMode.value === 'manual') return 0
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
       })
 
