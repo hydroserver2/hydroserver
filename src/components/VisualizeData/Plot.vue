@@ -64,22 +64,38 @@
             'plot-toolbar__points-combo--auto': tooltipsMode === 'auto',
           }"
         >
+          <!-- Auto mode: show live counter in place of the toggle button -->
+          <div
+            v-if="tooltipsMode === 'auto'"
+            class="plot-toolbar__points-cell plot-toolbar__points-cell--counter"
+            aria-live="polite"
+            :title="
+              tooltipsAutoDisabled
+                ? `Data points disabled — ${visiblePoints.toLocaleString()} visible, threshold ${tooltipsMaxDataPoints.toLocaleString()}`
+                : `${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points visible`
+            "
+          >
+            <span
+              class="plot-toolbar__points-count"
+              :class="{ 'plot-toolbar__points-count--over': tooltipsAutoDisabled }"
+            >{{ visiblePoints.toLocaleString() }}</span>
+            <span class="plot-toolbar__points-count-sep">/{{ tooltipsMaxDataPoints.toLocaleString() }}</span>
+          </div>
+          <!-- Manual mode: toggle button -->
           <button
+            v-else
             type="button"
             data-testid="tooltips-toggle-btn"
             class="plot-toolbar__points-cell plot-toolbar__points-cell--toggle"
-            :aria-label="
-              tooltipsMode === 'auto'
-                ? 'Data points: automatic — switch to manual mode to toggle'
-                : `Data points: ${areTooltipsEnabled ? 'on' : 'off'} — click to toggle`
-            "
+            :aria-label="`Data points: ${areTooltipsEnabled ? 'on' : 'off'} — click to toggle`"
             :aria-pressed="areTooltipsEnabled"
-            :disabled="tooltipsMode === 'auto'"
             @click="toggleTooltips"
           >
             <v-icon icon="mdi-chart-timeline-variant" size="18" />
           </button>
+
           <span class="plot-toolbar__points-divider" aria-hidden="true" />
+
           <v-menu
             v-model="modeMenuOpen"
             :close-on-content-click="false"
@@ -99,7 +115,7 @@
             </template>
             <v-list
               density="compact"
-              min-width="220"
+              min-width="240"
               data-testid="tooltips-mode-menu"
             >
               <v-list-subheader
@@ -132,65 +148,13 @@
                   {{ opt.subtitle }}
                 </v-list-item-subtitle>
               </v-list-item>
-            </v-list>
-          </v-menu>
-        </div>
 
-        <div
-          v-if="tab === 'plot' && tooltipsMode === 'auto'"
-          data-testid="tooltips-notice"
-          class="plot-toolbar__tooltips-notice d-inline-flex align-center"
-          :class="{
-            'plot-toolbar__tooltips-notice--over': tooltipsAutoDisabled,
-          }"
-          aria-live="polite"
-          :title="
-            tooltipsAutoDisabled
-              ? `Data points hover disabled while ${visiblePoints.toLocaleString()} points are visible (threshold: ${tooltipsMaxDataPoints.toLocaleString()}). Zoom in to re-enable, or raise the threshold.`
-              : tooltipsActive
-                ? `Data points hover active — ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible.`
-                : `Data points hover is turned off. ${visiblePoints.toLocaleString()} of ${tooltipsMaxDataPoints.toLocaleString()} threshold points currently visible — toggle it back on with the button to the right.`
-          "
-        >
-          <div class="plot-toolbar__tooltips-notice-text">
-            <div>Data points</div>
-            <div class="d-inline-flex align-center">
-              <span
-                class="plot-toolbar__tooltips-notice-count"
-                :class="{
-                  'plot-toolbar__tooltips-notice-count--over':
-                    tooltipsAutoDisabled,
-                }"
-                >{{ visiblePoints.toLocaleString() }}</span
-              >
-              / {{ tooltipsMaxDataPoints.toLocaleString() }} pts
-              <v-menu
-                v-model="thresholdMenuOpen"
-                :close-on-content-click="false"
-                location="bottom end"
-                offset="6"
-              >
-                <template v-slot:activator="{ props: editProps }">
-                  <v-btn
-                    v-bind="editProps"
-                    data-testid="threshold-edit-btn"
-                    size="x-small"
-                    variant="text"
-                    density="compact"
-                    icon="mdi-pencil-outline"
-                    class="plot-toolbar__tooltips-notice-edit"
-                    title="Edit data points limit"
-                    aria-label="Edit data points limit"
-                  />
-                </template>
-                <v-card max-width="320" class="pa-3">
-                  <div class="text-body-2 font-weight-medium mb-1">
-                    Data points limit
-                  </div>
+              <!-- Threshold form — only shown when automatic is active -->
+              <template v-if="tooltipsMode === 'auto'">
+                <v-divider class="my-1" />
+                <div class="px-3 pt-1 pb-3">
                   <div class="text-caption text-medium-emphasis mb-2">
-                    Individual data points stop being drawn when more than this
-                    many are visible — only the connecting line remains. Raise
-                    on fast machines, lower on slow ones.
+                    Points stop rendering above this count — only the line remains.<br>Raise on fast machines, lower on slow ones.
                   </div>
                   <div class="d-flex align-center gap-2">
                     <v-text-field
@@ -203,8 +167,7 @@
                       variant="outlined"
                       hide-details
                       single-line
-                      suffix="points"
-                      autofocus
+                      suffix="pts"
                       class="flex-grow-1"
                       @keyup.enter="applyThreshold"
                     />
@@ -219,10 +182,10 @@
                       Apply
                     </v-btn>
                   </div>
-                </v-card>
-              </v-menu>
-            </div>
-          </div>
+                </div>
+              </template>
+            </v-list>
+          </v-menu>
         </div>
 
         <v-btn
@@ -505,7 +468,7 @@ const tooltipsModeLabel = computed(
 const modeMenuOpen = ref(false)
 function setTooltipsMode(mode: 'manual' | 'auto') {
   tooltipsMode.value = mode
-  modeMenuOpen.value = false
+  if (mode === 'manual') modeMenuOpen.value = false
   handleRelayout(null)
 }
 const tab = ref('plot')
@@ -710,19 +673,16 @@ function toggleTooltips() {
 }
 
 const showHelp = ref(false)
-const thresholdMenuOpen = ref(false)
-// Buffered threshold edit. The popover binds to `pendingThreshold` so
-// every keystroke doesn't bounce the live `tooltipsMaxDataPoints` —
-// the user commits via Enter or the Apply button. The buffer
-// re-syncs from the store each time the menu opens, so closing
-// without applying discards the in-progress edit.
 const {
   pending: pendingThreshold,
   isValid: isPendingThresholdValid,
   apply: applyPendingThreshold,
-} = useBufferedNumber(tooltipsMaxDataPoints, thresholdMenuOpen, { min: 100 })
+} = useBufferedNumber(tooltipsMaxDataPoints, modeMenuOpen, { min: 100 })
 const applyThreshold = () => {
-  if (applyPendingThreshold()) thresholdMenuOpen.value = false
+  if (applyPendingThreshold()) {
+    modeMenuOpen.value = false
+    handleRelayout(null)
+  }
 }
 
 const gestures = [
@@ -1157,6 +1117,31 @@ const onTabChange = () => {
   width: 30px;
   border-top-left-radius: 7px;
   border-bottom-left-radius: 7px;
+}
+
+.plot-toolbar__points-cell--counter {
+  padding: 0 8px;
+  border-top-left-radius: 7px;
+  border-bottom-left-radius: 7px;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.plot-toolbar__points-count {
+  font-weight: 600;
+}
+
+.plot-toolbar__points-count--over {
+  color: rgb(var(--v-theme-warning));
+}
+
+.plot-toolbar__points-count-sep {
+  opacity: 0.6;
 }
 .plot-toolbar__points-cell--caret {
   width: 22px;
