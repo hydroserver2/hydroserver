@@ -118,6 +118,7 @@ import { computed, ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import FilterPanel from '@/components/VisualizeData/FilterPanel.vue'
+import { usePersistedFlag } from '@/composables/useResizable'
 
 const {
   matchesSelectedObservedProperty,
@@ -233,8 +234,24 @@ const clearFilters = () => {
   searchProcessingLevel.value = ''
 }
 
-// Start with Sites expanded so the user sees at least one list immediately.
-const panels = ref<number[]>([0])
+const sitesOpen = usePersistedFlag('qc:dsFilters:sites', true)
+const observedPropsOpen = usePersistedFlag('qc:dsFilters:observedProps', false)
+const processingLevelsOpen = usePersistedFlag('qc:dsFilters:processingLevels', false)
+
+const panels = computed<number[]>({
+  get() {
+    const open: number[] = []
+    if (sitesOpen.value) open.push(0)
+    if (observedPropsOpen.value) open.push(1)
+    if (processingLevelsOpen.value) open.push(2)
+    return open
+  },
+  set(val: number[]) {
+    sitesOpen.value = val.includes(0)
+    observedPropsOpen.value = val.includes(1)
+    processingLevelsOpen.value = val.includes(2)
+  },
+})
 </script>
 
 <style scoped>

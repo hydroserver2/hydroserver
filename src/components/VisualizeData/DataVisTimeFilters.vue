@@ -1,32 +1,62 @@
 <template>
   <div class="time-filters d-flex flex-column gap-2">
-    <!-- Range presets as a 3×2 grid so they fit the drawer width without
-         a horizontal scrollbar. -->
-    <div class="time-filters__presets">
-      <v-btn
-        v-for="option in dateOptions"
-        :key="option.id"
-        :variant="selectedDateBtnId === option.id ? 'flat' : 'outlined'"
-        :color="selectedDateBtnId === option.id ? 'primary' : undefined"
-        size="x-small"
-        :title="(option as any).title ?? option.label"
-        class="time-filters__preset-btn"
-        @click="onDateBtnClick(option.id)"
-      >
-        {{ option.label }}
-      </v-btn>
+    <!-- Section header -->
+    <div>
+      <div class="text-caption text-medium-emphasis font-weight-medium text-uppercase mb-1">
+        Loaded time window
+      </div>
+      <div class="text-caption text-medium-emphasis" style="line-height: 1.4">
+        Changing the range re-fetches observations from the server.
+      </div>
     </div>
 
-    <DatePickerField
-      :model-value="beginDate"
-      placeholder="Start"
-      @update:model-value="setDateRange({ begin: $event })"
-    />
-    <DatePickerField
-      :model-value="endDate"
-      placeholder="End"
-      @update:model-value="setDateRange({ end: $event })"
-    />
+    <!-- Date inputs — the source of truth -->
+    <div class="d-flex flex-column gap-1">
+      <div>
+        <div class="text-caption text-medium-emphasis mb-1">From</div>
+        <DatePickerField
+          :model-value="beginDate"
+          placeholder="Start date"
+          @update:model-value="setDateRange({ begin: $event })"
+        />
+      </div>
+      <div>
+        <div class="text-caption text-medium-emphasis mb-1">To</div>
+        <DatePickerField
+          :model-value="endDate"
+          placeholder="End date"
+          @update:model-value="setDateRange({ end: $event })"
+        />
+      </div>
+    </div>
+
+    <!-- Preset quick-selects -->
+    <div>
+      <div class="time-filters__presets">
+        <v-chip
+          v-for="option in dateOptions"
+          :key="option.id"
+          :color="selectedDateBtnId === option.id ? 'primary' : undefined"
+          :variant="selectedDateBtnId === option.id ? 'tonal' : 'outlined'"
+          size="small"
+          :title="(option as any).title ?? option.label"
+          class="time-filters__preset-chip"
+          @click="onDateBtnClick(option.id)"
+        >
+          {{ option.label }}
+        </v-chip>
+        <v-chip
+          v-if="selectedDateBtnId === -1"
+          color="secondary"
+          variant="tonal"
+          size="small"
+          class="time-filters__preset-chip"
+          title="Date range set manually"
+        >
+          Custom
+        </v-chip>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -51,12 +81,10 @@ const { dateOptions, beginDate, endDate, selectedDateBtnId } =
   gap: 4px;
 }
 
-.time-filters__preset-btn {
+.time-filters__preset-chip {
   min-width: 0;
-  letter-spacing: 0;
-  text-transform: none;
-  font-weight: 500;
-  height: 28px !important;
-  font-size: 0.75rem;
+  justify-content: center;
+  font-size: 0.75rem !important;
+  height: 26px !important;
 }
 </style>
