@@ -1,6 +1,8 @@
 # How to Archive Data to HydroShare
 
-Data archival to HydroShare is available at the site level from the details page of each site. By default, all buttons related to HydroShare are disabled. To enable HydroShare archival, a site admin must enable HydroShare OAuth logins on the HydroServer instance. Next, navigate to the profile page and connect your HydroServer account to HydroShare via OAuth by clicking the `Connect to HydroShare` button. The button will only appear if HydroShare is registered as an OAuth provider on the server.
+**NOTE: Archival to HydroShare is currently disabled. It will be added back into HydroServer's functionality via the Job Orchestration System, but is not currently functional.**
+
+Data archival to HydroShare is available at the site level via HydroServer's Job Orchestration System. By default, all buttons related to HydroShare are disabled. To enable HydroShare archival, a site admin must enable HydroShare OAuth logins on the HydroServer instance. Next, navigate to the profile page and connect your HydroServer account to HydroShare via OAuth by clicking the `Connect to HydroShare` button. The button will only appear if HydroShare is registered as an OAuth provider on the server.
 
 Once your accounts have been linked, you'll see a new `Configure HydroShare Archival` button on the site details page of each site you own just below the site map. Clicking that will open up a form which will allow you to either create a new HydroShare resource or link your site to an existing resource.
 
