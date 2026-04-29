@@ -117,9 +117,9 @@ class TestApplyAggregationSparseHandling:
         with pytest.raises(ValueError):
             apply_aggregation(_jan1_df(), interval="1d", method="mean", min_values=0)
 
-    def test_on_sparse_without_min_values_raises(self):
-        with pytest.raises(ValueError):
-            apply_aggregation(_jan1_df(), interval="1d", method="mean", on_sparse="raise")
+    def test_on_sparse_without_min_values_is_ignored(self):
+        result = apply_aggregation(_jan1_df(), interval="1d", method="mean", on_sparse="raise")
+        assert len(result) == 1
 
     def test_on_sparse_drop_removes_windows_below_threshold(self):
         # Jan 1 has 4 obs (passes), Jan 2 has 1 obs (fails min_values=3)

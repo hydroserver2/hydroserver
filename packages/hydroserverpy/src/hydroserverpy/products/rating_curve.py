@@ -18,7 +18,7 @@ def apply_rating_curve(
     *,
     breakpoints: list[tuple[float, float]],
     method: Literal["linear", "power_law"] = "linear",
-    out_of_range: Literal["drop", "raise", "stop"] = "drop",
+    out_of_range: Literal["drop", "raise", "stop", "ndv"] = "drop",
     no_data_value: float | None = None,
 ) -> pd.DataFrame:
     """
@@ -30,7 +30,8 @@ def apply_rating_curve(
 
     The out_of_range input controls behavior when a stage value falls outside the breakpoint
     range (or is non-positive for power_law): 'drop' omits those rows, 'raise' raises
-    a ValueError, and 'stop' returns rows up to the first out-of-range value.
+    a ValueError, 'stop' returns rows up to the first out-of-range value, and 'ndv'
+    fills the result with no_data_value (requires no_data_value to be set).
     """
 
     df = validate_timeseries(df)
@@ -46,6 +47,9 @@ def apply_rating_curve(
         dropped = input_rows - len(df)
         if dropped:
             logger.debug("Dropped %d no-data row(s) (noDataValue=%r).", dropped, no_data_value)
+
+    if out_of_range == "ndv" and no_data_value is None:
+        raise ValueError("out_of_range='ndv' requires no_data_value to be set.")
 
     if len(breakpoints) < 2:
         raise ValueError("At least 2 breakpoints are required.")
@@ -97,6 +101,9 @@ def apply_rating_curve(
 
     if out_of_range == "drop":
         output_df = output_df[output_df[RESULT_COL].notna()].reset_index(drop=True)
+
+    elif out_of_range == "ndv":
+        output_df[RESULT_COL] = output_df[RESULT_COL].fillna(no_data_value)
 
     logger.info(
         "Rating curve produced %d row(s) from %d input row(s).",

@@ -22,7 +22,7 @@ def apply_aggregation(
     anchor: datetime | None = None,
     local_timezone: str | None = None,
     min_values: int | None = None,
-    on_sparse: Literal["drop", "raise", "stop"] = "drop",
+    on_sparse: Literal["drop", "raise", "stop", "ndv"] = "drop",
     no_data_value: float | None = None,
 ) -> pd.DataFrame:
     """
@@ -30,8 +30,9 @@ def apply_aggregation(
 
     Each output row represents one window, timestamped at the window start.
     When a window has fewer than min_values observations, on_sparse controls how the
-    window is handled: 'drop' omits the window, 'raise' raises a ValueError, and
-    'stop' returns windows up to the first window that doesn't meet the threshold.
+    window is handled: 'drop' omits the window, 'raise' raises a ValueError, 'stop'
+    returns windows up to the first window that doesn't meet the threshold, and 'ndv'
+    fills the window result with no_data_value (requires no_data_value to be set).
     """
 
     df = validate_timeseries(df)
@@ -51,8 +52,8 @@ def apply_aggregation(
     if min_values is not None and min_values < 1:
         raise ValueError("min_values must be at least 1.")
 
-    if on_sparse != "drop" and min_values is None:
-        raise ValueError("on_sparse requires min_values to be set.")
+    if on_sparse == "ndv" and no_data_value is None:
+        raise ValueError("on_sparse='ndv' requires no_data_value to be set.")
 
     interval_us = duration_to_us(interval)
     freq = pd.Timedelta(microseconds=interval_us)
@@ -101,6 +102,9 @@ def apply_aggregation(
             if sparse_mask.any():
                 first_sparse = int(sparse_mask.values.argmax())
                 aggregated = aggregated.iloc[:first_sparse]
+
+        elif on_sparse == "ndv":
+            aggregated.loc[sparse_mask, RESULT_COL] = no_data_value
 
         else:  # "drop"
             aggregated = aggregated[~sparse_mask]

@@ -618,7 +618,7 @@ class DataProductTransformationService(ServiceUtils):
             input_df,
             breakpoints=breakpoints,
             method=rating_curve.fitting_method,  # noqa
-            out_of_range="drop",
+            out_of_range="ndv",
             no_data_value=input_ds.no_data_value,
         )
 
@@ -780,7 +780,7 @@ class DataProductTransformationService(ServiceUtils):
             method=transformation.aggregation_method,  # noqa
             local_timezone=local_timezone,
             min_values=transformation.min_values,
-            on_sparse="drop",
+            on_sparse="ndv",
             no_data_value=input_ds.no_data_value,
         )
 
