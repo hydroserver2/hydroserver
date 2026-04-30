@@ -433,7 +433,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataconnection',
             name='source_url',
-            field=models.URLField(default='http://www.example.com'),
+            field=models.URLField(max_length=2048, default='http://www.example.com'),
             preserve_default=False,
         ),
         migrations.AddField(
