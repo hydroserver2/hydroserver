@@ -105,21 +105,21 @@ export default defineConfig({
         text: "How-to",
         collapsed: true,
         items: [
-          {
-            text: "Data Management App",
-            collapsed: true,
-            link: "/how-to/data-management-app/customize.md",
-            items: [
-              {
-                text: "Customize the Data Management App",
-                link: "/how-to/data-management-app/customize.md",
-              },
-              // {
-              //   text: "Archive Data to HydroShare",
-              //   link: "/how-to/data-management-app/hydroshare-archive.md",
-              // },
-            ],
-          },
+          // {
+          //   text: "Data Management App",
+          //   collapsed: true,
+          //   link: "/how-to/data-management-app/customize.md",
+          //   items: [
+          //     {
+          //       text: "Customize the Data Management App",
+          //       link: "/how-to/data-management-app/customize.md",
+          //     },
+          //     // {
+          //     //   text: "Archive Data to HydroShare",
+          //     //   link: "/how-to/data-management-app/hydroshare-archive.md",
+          //     // },
+          //   ],
+          // },
           {
             text: "Deployment",
             collapsed: true,
@@ -136,7 +136,7 @@ export default defineConfig({
             ],
           },
           {
-            text: "Hydroserverpy",
+            text: "Python Client",
             collapsed: true,
             link: "/how-to/hydroserverpy/hydroserverpy-examples",
             items: [
@@ -198,6 +198,17 @@ export default defineConfig({
               {
                 text: "SensorThings API",
                 link: "/references/api/sensor-things-api",
+              },
+            ],
+          },
+          {
+            text: "Data Model",
+            collapsed: true,
+            link: "/references/data-model/data-model",
+            items: [
+              {
+                text: "Data Dictionary",
+                link: "/references/data-model/data-model",
               },
             ],
           },

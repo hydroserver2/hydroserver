@@ -149,7 +149,7 @@ class HydroServerInternalLoader(Loader):
                 f"Missing datastream IDs: {', '.join(sorted(missing_datastreams))}."
             )
 
-        if any(datastream.phenomenon_end_time is None for datastream in datastreams.values()):
+        if not datastreams or any(datastream.phenomenon_end_time is None for datastream in datastreams.values()):
             earliest_phenomenon_end_time = None
         else:
             earliest_phenomenon_end_time = min(

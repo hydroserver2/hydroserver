@@ -8,7 +8,7 @@ deployment platform.
 
 ## HydroServer Required Infrastructure 
 
-Each HydroServer release includes a [**container image**](https://github.com/hydroserver2/hydroserver-api-services/pkgs/container/hydroserver-api-services) 
+Each HydroServer release includes a [**container image**](https://github.com/hydroserver2/hydroserver/pkgs/container/hydroserver) 
 that packages the core HydroServer website, APIs, and supporting services. This image follows the OCI (Open Container 
 Initiative) standard and can be deployed on any platform that supports [**Docker**](https://www.docker.com/) or other 
 OCI-compatible runtimes, including commercial cloud providers or local environments. The image comes pre-configured with 
