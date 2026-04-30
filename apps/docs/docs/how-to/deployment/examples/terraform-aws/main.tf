@@ -53,7 +53,7 @@ resource "null_resource" "ghcr_to_ecr" {
 
       REGION="${var.region}"
       REPO="${aws_ecr_repository.hydroserver.repository_url}"
-      GHCR_IMAGE="ghcr.io/hydroserver2/hydroserver-api-services:latest"
+      GHCR_IMAGE="ghcr.io/hydroserver2/hydroserver:latest"
 
       # ECR Authentication
       aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $(echo $REPO | cut -d/ -f1)

@@ -401,7 +401,7 @@ const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
 
 const { workspaces } = storeToRefs(useWorkspaceStore())
 const { setSelectedWorkspaceById } = useWorkspaceStore()
-const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
+const { checkPermissionsByWorkspaceId } = useWorkspacePermissions()
 
 type TaskDetailsPanel = 'runs' | 'mappings'
 const activePanel = ref<TaskDetailsPanel>('runs')
@@ -454,13 +454,10 @@ const canEditTask = computed(() => {
   const workspace = taskWorkspace.value
   if (!workspace) return false
 
-  const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
-  if (isAdmin() || isOwner(workspace) || roleName === 'editor') return true
-
-  return hasPermission(
+  return checkPermissionsByWorkspaceId(
+    taskWorkspaceId.value,
     PermissionResource.Workspace,
-    PermissionAction.Edit,
-    workspace
+    PermissionAction.Edit
   )
 })
 const readOnlyTooltip =
