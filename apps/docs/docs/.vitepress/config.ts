@@ -184,22 +184,7 @@ export default defineConfig({
         items: [
           {
             text: "API",
-            collapsed: true,
-            link: "/references/api/sensor-things-api",
-            items: [
-              {
-                text: "Data Management API",
-                link: "/references/api/data-management-api",
-              },
-              {
-                text: "Identity and Access Management API",
-                link: "/references/api/identity-and-access-management-api",
-              },
-              {
-                text: "SensorThings API",
-                link: "/references/api/sensor-things-api",
-              },
-            ],
+            link: "/references/api/api-ref.md",
           },
           {
             text: "Data Model",
