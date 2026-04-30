@@ -72,6 +72,14 @@ REVERSE_TIMEZONE_MODE_MAP = {
     "utc": "UTC",
 }
 
+PLACEHOLDER_VARIABLE_TYPE_MAP = {
+    "runTime": "run_time",
+    "perTask": "per_task",
+    "latestObservationTimestamp": "latest_observation_timestamp",
+}
+
+REVERSE_PLACEHOLDER_VARIABLE_TYPE_MAP = {v: k for k, v in PLACEHOLDER_VARIABLE_TYPE_MAP.items()}
+
 
 def migrate_tasks_forward(apps, schema_editor):
     OldTask = apps.get_model("etl", "Task")
@@ -137,10 +145,17 @@ def migrate_tasks_forward(apps, schema_editor):
         dc.save(update_fields=["source_url", "timestamp_key", "timestamp_format", "timezone", "timezone_type"])
 
         for pv in extractor_settings.get("placeholderVariables", []):
+            raw_type = pv.get("type", "")
+            variable_type = PLACEHOLDER_VARIABLE_TYPE_MAP.get(raw_type)
+            if variable_type is None:
+                raise Exception(
+                    f"Migration aborted: unsupported placeholder variable type '{raw_type}' "
+                    f"on DataConnection {dc.id}. Supported types: {list(PLACEHOLDER_VARIABLE_TYPE_MAP)}."
+                )
             PlaceholderVariable.objects.create(
                 data_connection=dc,
                 name=pv.get("name", ""),
-                variable_type=pv.get("type", ""),
+                variable_type=variable_type,
             )
 
         transformer_type = (dc.transformer_type or "").upper()
@@ -150,7 +165,7 @@ def migrate_tasks_forward(apps, schema_editor):
                 payload_type="CSV",
                 header_row=transformer_settings.get("headerRow"),
                 data_start_row=transformer_settings.get("dataStartRow"),
-                delimiter=transformer_settings.get("delimiter"),
+                delimiter="\t" if transformer_settings.get("delimiter") == "\\t" else transformer_settings.get("delimiter"),
             )
         elif transformer_type == "JSON":
             Payload.objects.create(
@@ -305,7 +320,7 @@ def migrate_tasks_reverse(apps, schema_editor):
             timestamp["timezone"] = dc.timezone
 
         placeholder_variables = [
-            {"name": pv.name, "type": pv.variable_type, "runTimeValue": ""}
+            {"name": pv.name, "type": REVERSE_PLACEHOLDER_VARIABLE_TYPE_MAP.get(pv.variable_type, pv.variable_type), "runTimeValue": ""}
             for pv in dc.placeholder_variables.all()
         ]
         extractor_settings = {"sourceUri": dc.source_url or ""}
