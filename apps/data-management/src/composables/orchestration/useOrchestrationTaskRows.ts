@@ -7,6 +7,7 @@ import type {
 } from '@hydroserver/client'
 import {
   getDisplayedTaskStatus,
+  getMonitoringRulesViolated,
   getTaskRunMessage,
   getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
@@ -156,6 +157,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       dataConnectionId: null,
       thingId: t.thing?.id ?? null,
       qualityRuleSummary: resolveMonitoringRuleSummary(t),
+      monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
     }))
   )
 

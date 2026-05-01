@@ -105,15 +105,20 @@
               {{ taskCountForSite(thing.id) }} task{{
                 taskCountForSite(thing.id) === 1 ? '' : 's'
               }}
+              <span v-if="isQuality && violationCountForSite(thing.id) > 0">
+                · {{ violationCountForSite(thing.id) }} violated rule{{
+                  violationCountForSite(thing.id) === 1 ? '' : 's'
+                }}
+              </span>
             </div>
           </div>
           <span
             v-if="
-              selectedThingId !== thing.id && issueCountForSite(thing.id) > 0
+              selectedThingId !== thing.id && sidebarBadgeCount(thing.id) > 0
             "
             class="sidebar-item-badge"
           >
-            {{ issueCountForSite(thing.id) }}
+            {{ sidebarBadgeCount(thing.id) }}
           </span>
         </div>
         <div v-if="sites.length === 0" class="sidebar-empty">
@@ -150,7 +155,7 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 import type { DataConnection, Thing } from '@hydroserver/client'
 import { READ_ONLY_TOOLTIP, type TabId } from './orchestrationTabs'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   activeTab: TabId
   connections: DataConnection[]
   sites: Thing[]
@@ -164,9 +169,12 @@ const props = defineProps<{
   taskCountForConnection: (id: string) => number
   taskCountForSite: (id: string) => number
   issueCountForSite: (id: string) => number
+  violationCountForSite?: (id: string) => number
   dotColorForConnection: (id: string) => string
   dotColorForSite: (id: string) => string
-}>()
+}>(), {
+  violationCountForSite: () => () => 0,
+})
 
 defineEmits<{
   (e: 'update:search', value: string): void
@@ -176,6 +184,12 @@ defineEmits<{
 }>()
 
 const isIngestion = computed(() => props.activeTab === 'ingestion')
+const isQuality = computed(() => props.activeTab === 'quality')
+
+const sidebarBadgeCount = (thingId: string) =>
+  isQuality.value
+    ? props.violationCountForSite(thingId)
+    : props.issueCountForSite(thingId)
 </script>
 
 <style scoped>

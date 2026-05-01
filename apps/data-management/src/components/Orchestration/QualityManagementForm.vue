@@ -273,26 +273,29 @@
               density="compact"
               :rules="rules.requiredNumber"
               :disabled="loadingExisting"
+              class="rule-fields__full"
             />
-            <v-text-field
-              v-model.number="row.windowInterval"
-              label="Window *"
-              type="number"
-              min="1"
-              density="compact"
-              :rules="[...rules.required, positiveInteger]"
-              :disabled="loadingExisting"
-            />
-            <v-select
-              v-model="row.windowIntervalUnits"
-              :items="windowUnitOptions"
-              item-title="title"
-              item-value="value"
-              label="Unit *"
-              density="compact"
-              :rules="rules.required"
-              :disabled="loadingExisting"
-            />
+            <div class="window-interval-fields">
+              <v-text-field
+                v-model.number="row.windowInterval"
+                label="Window interval *"
+                type="number"
+                min="1"
+                density="compact"
+                :rules="[...rules.required, positiveInteger]"
+                :disabled="loadingExisting"
+              />
+              <v-select
+                v-model="row.windowIntervalUnits"
+                :items="windowUnitOptions"
+                item-title="title"
+                item-value="value"
+                label="Window interval unit *"
+                density="compact"
+                :rules="rules.required"
+                :disabled="loadingExisting"
+              />
+            </div>
           </div>
         </div>
       </v-card-text>
@@ -935,9 +938,24 @@ onMounted(async () => {
   grid-column: 1 / -1;
 }
 
+.rule-fields__full,
+.window-interval-fields {
+  grid-column: 1 / -1;
+}
+
+.window-interval-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(160px, 0.6fr);
+  gap: 10px;
+}
+
 @media (max-width: 760px) {
   .schedule-grid,
   .rule-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .window-interval-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 

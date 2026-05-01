@@ -42,7 +42,11 @@
             <span>{{ pauseToggleDisabledReason }}</span>
           </v-tooltip>
 
-          <v-tooltip v-if="isEtlTask" location="top" :disabled="canEditTask">
+          <v-tooltip
+            v-if="isEtlTask || isMonitoringTask"
+            location="top"
+            :disabled="canEditTask"
+          >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <button
@@ -215,6 +219,40 @@
                     </div>
                   </div>
 
+                  <div
+                    v-if="run.violations.length"
+                    class="run-entry-detail-row run-entry-violations-row"
+                  >
+                    <div class="run-entry-detail-label">Rule violations</div>
+                    <div class="run-entry-detail-value">
+                      <div class="run-entry-violations">
+                        <div
+                          v-for="violation in run.violations"
+                          :key="violation.key"
+                          class="run-entry-violation"
+                        >
+                          <div class="run-entry-violation-title">
+                            {{ violation.datastreamName }}
+                            <span class="run-entry-violation-type">
+                              {{ violation.ruleTypeLabel }}
+                            </span>
+                          </div>
+                          <div class="run-entry-violation-meta">
+                            {{ violation.violationCount }} violation{{
+                              violation.violationCount === 1 ? '' : 's'
+                            }}
+                            <span v-if="violation.firstViolationAt">
+                              · First {{ violation.firstViolationAt }}
+                            </span>
+                            <span v-if="violation.lastViolationAt">
+                              · Last {{ violation.lastViolationAt }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="run-entry-detail-row run-entry-detail-row-inline">
                     <div class="run-entry-detail-inline">
                       <div class="run-entry-detail-label">Copy run as URL</div>
@@ -291,6 +329,21 @@
     />
   </v-dialog>
 
+  <v-dialog
+    v-if="monitoringTask && taskWorkspaceId"
+    v-model="openEdit"
+    width="64rem"
+  >
+    <QualityManagementForm
+      :workspace-id="taskWorkspaceId"
+      :initial-thing-id="monitoringTask.thing.id"
+      :edit-task-id="monitoringTask.id"
+      @close="openEdit = false"
+      @updated="onMonitoringTaskUpdated"
+      @deleted="onMonitoringTaskDeleted"
+    />
+  </v-dialog>
+
   <v-dialog v-if="task" v-model="openDelete" width="40rem">
     <DeleteTaskCard
       :task="task!"
@@ -325,6 +378,7 @@ import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
 import { formatTimeWithZone } from '@/utils/time'
 import {
   getTaskRunMessage,
+  getMonitoringRunViolations,
   getTaskRunStatusText as getRunStatusText,
   getTaskRunRuntimeUrl,
   getTaskStatusText,
@@ -351,6 +405,9 @@ import {
 
 const TaskForm = defineAsyncComponent(
   () => import('@/components/Orchestration/TaskForm.vue')
+)
+const QualityManagementForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/QualityManagementForm.vue')
 )
 const Swimlanes = defineAsyncComponent(
   () => import('@/components/Orchestration/Swimlanes.vue')
@@ -419,8 +476,12 @@ const effectiveTaskKind = computed<TaskKind>(() => {
 
 const taskService = computed(() => serviceForKind(resolvedTaskKind.value))
 const isEtlTask = computed(() => resolvedTaskKind.value === 'etl')
+const isMonitoringTask = computed(() => resolvedTaskKind.value === 'monitoring')
 const etlTask = computed(() =>
   isEtlTask.value ? (task.value as TaskExpanded | null) : null
+)
+const monitoringTask = computed(() =>
+  isMonitoringTask.value ? (task.value as MonitoringTaskExpanded | null) : null
 )
 const ratingCurveTransformations = computed(() => {
   if (resolvedTaskKind.value !== 'dataProduct') return []
@@ -719,6 +780,44 @@ const copyToClipboard = async (value?: string | null) => {
   }
 }
 
+const humanizeRuleType = (value?: string | null) => {
+  if (!value) return 'Unknown rule'
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+const monitoringDatastreamName = (datastreamId?: string | null) => {
+  if (!datastreamId || resolvedTaskKind.value !== 'monitoring') {
+    return 'Unknown datastream'
+  }
+
+  const monitored = (task.value as MonitoringTaskExpanded | null)
+    ?.monitoredDatastreams
+  for (const entry of monitored ?? []) {
+    const datastream = (entry as any)?.datastream
+    if (datastream?.id === datastreamId) {
+      return datastream.name ?? datastreamId
+    }
+  }
+
+  return datastreamId
+}
+
+const monitoringRunViolationRows = (run: TaskRun) =>
+  getMonitoringRunViolations(run).map((violation, index) => ({
+    key: `${violation.ruleId ?? violation.datastreamId ?? 'violation'}-${index}`,
+    datastreamName: monitoringDatastreamName(violation.datastreamId),
+    ruleTypeLabel: humanizeRuleType(violation.ruleType),
+    violationCount: violation.violationCount,
+    firstViolationAt: violation.firstViolationAt
+      ? formatTimeWithZone(violation.firstViolationAt)
+      : null,
+    lastViolationAt: violation.lastViolationAt
+      ? formatTimeWithZone(violation.lastViolationAt)
+      : null,
+  }))
+
 const runHistoryRows = computed(() => {
   return mergeTaskRuns([task.value?.latestRun, ...taskRuns.value]).map(
     (run) => ({
@@ -726,6 +825,7 @@ const runHistoryRows = computed(() => {
       startedAt: formatTimeWithZone(run.startedAt),
       message: getTaskRunMessage(run),
       runtimeUrl: getTaskRunRuntimeUrl(run) ?? resolveRuntimeUrlFromTask(run),
+      violations: monitoringRunViolationRows(run),
       raw: run,
     })
   )
@@ -1122,6 +1222,18 @@ const onTaskUpdated = async (updated: TaskExpanded) => {
   openEdit.value = false
 }
 
+const onMonitoringTaskUpdated = async () => {
+  emit('updated')
+  await fetchData()
+  openEdit.value = false
+}
+
+const onMonitoringTaskDeleted = async () => {
+  openEdit.value = false
+  emit('deleted')
+  emit('close')
+}
+
 watch(
   [effectiveTaskId, effectiveTaskKind],
   async ([newId, newKind], [oldId, oldKind]) => {
@@ -1511,6 +1623,43 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   align-items: flex-start;
   gap: 8px;
+}
+
+.run-entry-violations {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.run-entry-violation {
+  border: 1px solid #fee2e2;
+  border-radius: 6px;
+  background: #fff7f7;
+  padding: 8px 10px;
+}
+
+.run-entry-violation-title {
+  color: #7f1d1d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.run-entry-violation-type {
+  color: #991b1b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: 6px;
+  text-transform: uppercase;
+}
+
+.run-entry-violation-meta {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 3px;
 }
 
 .run-entry-refresh {

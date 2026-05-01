@@ -253,6 +253,7 @@
             </th>
             <th v-if="activeTab === 'aggregation'">Type</th>
             <th v-if="activeTab === 'quality'">Rules</th>
+            <th v-if="activeTab === 'quality'">Violations</th>
             <th class="text-right">Actions</th>
           </tr>
         </thead>
@@ -322,6 +323,21 @@
             <td v-if="activeTab === 'quality'" class="task-rules">
               {{ row.qualityRuleSummary || 'No rules' }}
             </td>
+            <td v-if="activeTab === 'quality'" class="task-violations">
+              <v-chip
+                v-if="(row.monitoringRulesViolated ?? 0) > 0"
+                color="red-darken-3"
+                variant="tonal"
+                size="small"
+                rounded="lg"
+                class="task-violation-chip"
+              >
+                {{ row.monitoringRulesViolated }} rule{{
+                  row.monitoringRulesViolated === 1 ? '' : 's'
+                }}
+              </v-chip>
+              <span v-else class="text-slate-400">None</span>
+            </td>
             <td class="task-actions">
               <div class="task-actions-inner">
                 <v-tooltip location="top" :open-delay="0" :close-delay="0">
@@ -364,18 +380,6 @@
                 >
                   Run requested
                 </span>
-                <v-btn
-                  v-if="activeTab === 'quality'"
-                  variant="text"
-                  size="small"
-                  :style="{ color: accent }"
-                  :prepend-icon="mdiPencil"
-                  class="text-none"
-                  :disabled="!canEdit"
-                  @click.stop="$emit('edit-quality', row)"
-                >
-                  Edit
-                </v-btn>
                 <v-btn
                   variant="text"
                   size="small"
@@ -457,7 +461,6 @@ const emit = defineEmits<{
   (e: 'add-derivation'): void
   (e: 'add-rating-curve'): void
   (e: 'add-quality'): void
-  (e: 'edit-quality', row: TaskRow): void
 }>()
 
 const sortableColumns: { key: SortKey; label: string }[] = [
@@ -638,6 +641,12 @@ const removeStatusFilter = (index: number) => {
   color: #475569;
   font-size: 13px;
   max-width: 320px;
+}
+.task-violations {
+  white-space: nowrap;
+}
+.task-violation-chip {
+  font-weight: 700;
 }
 .task-type-chip {
   font-size: 11px;

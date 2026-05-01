@@ -28,6 +28,7 @@
         :task-count-for-connection="taskCountForConnection"
         :task-count-for-site="taskCountForSite"
         :issue-count-for-site="issueCountForSite"
+        :violation-count-for-site="violationCountForSite"
         :dot-color-for-connection="dotColorForConnection"
         :dot-color-for-site="dotColorForSite"
         @update:search="sidebarSearch = $event"
@@ -82,7 +83,6 @@
         @add-derivation="openDerivationForm = true"
         @add-rating-curve="openRatingCurveForm = true"
         @add-quality="openQualityForm = true"
-        @edit-quality="openEditQualityForm"
       />
     </template>
 
@@ -400,6 +400,11 @@ const issueCountForSite = (thingId: string) =>
       t.thingId === thingId &&
       (t.statusSort === 'Needs attention' || t.statusSort === 'Behind schedule')
   ).length
+
+const violationCountForSite = (thingId: string) =>
+  monitoringTaskRows.value
+    .filter((t) => t.thingId === thingId)
+    .reduce((sum, task) => sum + (task.monitoringRulesViolated ?? 0), 0)
 
 const dotColorForConnection = (dcId: string) =>
   worstDotColor(etlTaskRows.value.filter((t) => t.dataConnectionId === dcId))
@@ -738,14 +743,9 @@ const onTogglePaused = async (row: TaskRow) => {
   await toggleSchedulePaused(row.kind, row.id, row.schedule)
 }
 
-const openEditQualityForm = (row: TaskRow) => {
-  if (!canEditOrchestration.value) return
-  editingQualityTaskId.value = row.id
-  openQualityForm.value = true
-}
-
 const goToTask = async (row: TaskRow) => {
-  const currentQuery = router.currentRoute.value.query ?? {}
+  const currentQuery = { ...(router.currentRoute.value.query ?? {}) }
+  delete currentQuery.runId
   await router.push({
     name: 'Orchestration',
     query: {
@@ -753,7 +753,6 @@ const goToTask = async (row: TaskRow) => {
       workspaceId: props.workspaceId,
       taskId: row.id,
       taskKind: row.kind,
-      runId: undefined,
     },
   })
 }

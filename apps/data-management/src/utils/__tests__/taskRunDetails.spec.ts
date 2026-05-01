@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TaskRun } from '@hydroserver/client'
 import {
   getDisplayedTaskStatus,
+  getMonitoringRunViolations,
+  getMonitoringRulesViolated,
   getTaskRunMessage,
   getTaskRunResult,
   getTaskRunRuntimeUrl,
@@ -19,6 +21,8 @@ describe('task run detail helpers', () => {
     expect(getTaskRunResult()).toEqual({})
     expect(getTaskRunMessage()).toBe('–')
     expect(getTaskRunRuntimeUrl()).toBeNull()
+    expect(getMonitoringRunViolations()).toEqual([])
+    expect(getMonitoringRulesViolated()).toBe(0)
     expect(taskRunHasFailures()).toBe(false)
     expect(getTaskRunStatusText()).toBe('Unknown')
     expect(getTaskStatusText()).toBe('Unknown')
@@ -159,6 +163,56 @@ describe('task run detail helpers', () => {
     expect(taskRunHasFailures(countedFailure)).toBe(true)
     expect(taskRunHasFailures(targetFailure)).toBe(true)
     expect(taskRunHasFailures(success)).toBe(false)
+  })
+
+  it('uses monitoring rule violations to detect attention states', () => {
+    const run: TaskRun = {
+      id: 'run-monitoring',
+      status: 'SUCCESS',
+      result: {
+        rules_violated: 2,
+        violations: [
+          {
+            rule_id: 'rule-1',
+            datastream_id: 'datastream-1',
+            rule_type: 'range',
+            violation_count: 3,
+            first_violation_at: '2026-03-12T12:00:00Z',
+            last_violation_at: '2026-03-12T14:00:00Z',
+          },
+          {
+            ruleId: 'rule-2',
+            datastreamId: 'datastream-2',
+            ruleType: 'missing_data',
+            violationCount: 1,
+            firstViolationAt: '2026-03-13T12:00:00Z',
+            lastViolationAt: null,
+          },
+        ],
+      },
+    }
+
+    expect(getMonitoringRulesViolated(run)).toBe(2)
+    expect(getMonitoringRunViolations(run)).toEqual([
+      {
+        ruleId: 'rule-1',
+        datastreamId: 'datastream-1',
+        ruleType: 'range',
+        violationCount: 3,
+        firstViolationAt: '2026-03-12T12:00:00Z',
+        lastViolationAt: '2026-03-12T14:00:00Z',
+      },
+      {
+        ruleId: 'rule-2',
+        datastreamId: 'datastream-2',
+        ruleType: 'missing_data',
+        violationCount: 1,
+        firstViolationAt: '2026-03-13T12:00:00Z',
+        lastViolationAt: null,
+      },
+    ])
+    expect(taskRunHasFailures(run)).toBe(true)
+    expect(getTaskRunStatusText(run)).toBe('Needs attention')
   })
 
   it('maps task run statuses for UI display', () => {

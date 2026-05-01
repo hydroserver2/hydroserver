@@ -13,6 +13,15 @@ type TaskStatusLike = {
 
 type TaskRunResultLike = Record<string, unknown>
 
+export type MonitoringRunViolation = {
+  ruleId: string | null
+  datastreamId: string | null
+  ruleType: string | null
+  violationCount: number
+  firstViolationAt: string | null
+  lastViolationAt: string | null
+}
+
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -112,11 +121,50 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
   )
 }
 
+export const getMonitoringRulesViolated = (run?: TaskRun | null) => {
+  const result = getTaskRunResult(run)
+  const count = firstNumber(result.rulesViolated, result.rules_violated)
+  if (count !== undefined) return count
+
+  const violations = result.violations
+  return Array.isArray(violations) ? violations.length : 0
+}
+
+export const getMonitoringRunViolations = (
+  run?: TaskRun | null
+): MonitoringRunViolation[] => {
+  const result = getTaskRunResult(run)
+  const violations = Array.isArray(result.violations)
+    ? result.violations
+    : []
+
+  return violations
+    .map((entry) => asObject(entry))
+    .filter((entry): entry is Record<string, unknown> => !!entry)
+    .map((entry) => ({
+      ruleId: firstString(entry.ruleId, entry.rule_id),
+      datastreamId: firstString(entry.datastreamId, entry.datastream_id),
+      ruleType: firstString(entry.ruleType, entry.rule_type),
+      violationCount:
+        firstNumber(entry.violationCount, entry.violation_count) ?? 0,
+      firstViolationAt: firstString(
+        entry.firstViolationAt,
+        entry.first_violation_at
+      ),
+      lastViolationAt: firstString(
+        entry.lastViolationAt,
+        entry.last_violation_at
+      ),
+    }))
+}
+
 export const taskRunHasFailures = (run?: TaskRun | null) => {
   if (!run) return false
   if (run.status === 'FAILURE') return true
 
   const result = getTaskRunResult(run)
+  if (getMonitoringRulesViolated(run) > 0) return true
+
   const failureCount = firstNumber(
     (run as any).failureCount,
     result.failureCount,
