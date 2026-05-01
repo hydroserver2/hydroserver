@@ -105,7 +105,14 @@ export default defineConfig({
         items: [
           {
             text: "Load Data",
+            collapsed: true,
             link: "/how-to/load-data/loading-data",
+            items: [
+              {
+                text: "Data Ingestion with hydroserverpy",
+                link: "/how-to/load-data/etl",
+              },
+            ],
           },
           {
             text: "Archive Data to HydroShare",
