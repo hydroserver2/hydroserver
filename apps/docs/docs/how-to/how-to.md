@@ -14,7 +14,7 @@ In this section, we provide documentation for how to use HydroServer's functiona
 
 * **[Retrieve Data Using the SensorThings API](/how-to/sensor-things/retrieve-sensor-things.md)**: Learn how to retrieve data from HydroServer using the SensorThings API - for Python or other programming languages.
 
-* **[Archive Data to HydroServer](/how-to/hydroshare-archive/hydroshare-archive.md)**: CURRENTLY DISABLED - Learn more about archiving data from HydroServer into HydroShare.
+* **[Archive Data to HydroShare](/how-to/hydroshare-archive/hydroshare-archive.md)**: CURRENTLY DISABLED - Learn more about archiving data from HydroServer into HydroShare.
 
 ## HydroServer Developers
 
