@@ -103,6 +103,10 @@ export default defineConfig({
         collapsed: true,
         link: "/how-to/how-to",
         items: [
+          {
+            text: "Loading Data",
+            link: "/how-to/load-data/loading-data",
+          },
           // {
           //   text: "Data Management App",
           //   collapsed: true,
