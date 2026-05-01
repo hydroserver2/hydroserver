@@ -2,9 +2,9 @@
 
 Use the menu to your left to navigate through HyroServer's documentation. The following is a brief overview of the documentation we provide:
 
-* **[Background](/background.md)**: Learn about why we developed HydroServer and why we chose SensorThings
-* **[Getting Started](/getting-started.md)**: Link to the Playground instance where you can try out HydroServer functionality or link to developer documentation for deploying HydroServer or contributing code
-* **[Key Concepts](/key-concepts/key-concepts.md)**: Learn about key organizational concepts in HydroServer's data model, including sites, datastreams, etc.
+* **[Background](/introduction/background.md)**: Learn about why we developed HydroServer and why we chose SensorThings
+* **[Getting Started](/introduction/getting-started.md)**: Link to the Playground instance where you can try out HydroServer functionality or link to developer documentation for deploying HydroServer or contributing code
+* **[Key Concepts](/introduction/key-concepts/key-concepts.md)**: Learn about key organizational concepts in HydroServer's data model, including sites, datastreams, etc.
 * **[Tutorials](/tutorials/tutorials.md)**: Access our HydroServer 101 tutorial (for users) along with information on getting started with the HydroServer TypeScript client (for web developers)
 * **[How-to](/how-to/how-to.md)**: Access deployment documentation, documentation for our Python and TypeScript clients, and HydroServer API documentation - including code examples
 * **[References](/references/references.md)**: Access low-level API documentation, detailed information about HydroServer's API
@@ -46,4 +46,4 @@ HydroServer is maintaned as an open-source software project in GitHub. Navigate 
 
 If you'd like a hands-on tutorial for setting up a monitoring site and streaming data to a playground instance of Hydroserver, head over to [HydroServer 101.](/tutorials/hydroserver-101.md)
 
-If you'd like to read more about our system, we recommend starting with [Key Concepts](/introduction/key-concepts/sites).
+If you'd like to read more about our system, we recommend starting with [Key Concepts](/introduction/key-concepts/key-concepts).

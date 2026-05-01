@@ -10,10 +10,6 @@ Primary and foreign keys are specified in the first column of each entity. Manda
 </a>
 
 <script setup>  
-import STDataModelDark from "./ogc_sensorthings_data_model_dark.png"
-import STDataModelLight from "./ogc_sensorthings_data_model_light.png"
-import ODMModelDark from "./odm_time_series_information_model_dark.png"
-import ODMModelLight from "./odm_time_series_information_model_light.png"
-import hydroserverDataModelLight from './hydroserver_data_model_light.png' 
-import hydroserverDataModelDark from './hydroserver_data_model_dark.png'
+import hydroserverDataModelLight from '../../introduction/hydroserver_data_model_light.png'
+import hydroserverDataModelDark from '../../introduction/hydroserver_data_model_dark.png'
 </script>

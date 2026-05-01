@@ -26,7 +26,7 @@ You can write your own scripts or full on job orchestration systems that use Hyd
 
 ## Via the API
 
-If you are using a programming language other than Python (or even if you are using Python), you can always call the API directly to load data. [Go to the API section for more information](/references/api/data-management-api).
+If you are using a programming language other than Python (or even if you are using Python), you can always call the API directly to load data. [Go to the API section for more information](/references/api/api-ref.md).
 
 ## Quick Guidance on Which Data Loading Method to Use
 

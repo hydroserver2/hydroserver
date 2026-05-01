@@ -34,7 +34,7 @@ export default defineConfig({
           {
             text: "Key Concepts",
             collapsed: true,
-            link: "/introduction/key-concepts/sites",
+            link: "/introduction/key-concepts/key-concepts",
             items: [
               { text: "Site", link: "/introduction/key-concepts/sites" },
               {
@@ -42,12 +42,16 @@ export default defineConfig({
                 link: "/introduction/key-concepts/datastreams",
               },
               {
-                text: "Loading Data",
-                link: "/introduction/key-concepts/loading-data",
+                text: "Observations",
+                link: "/introduction/key-concepts/observations",
               },
               {
-                text: "Access Control",
-                link: "/introduction/key-concepts/access-control",
+                text: "Workspaces and Access Control",
+                link: "/introduction/key-concepts/workspaces-access-control",
+              },
+              {
+                text: "Identifiers",
+                link: "/introduction/key-concepts/identifiers",
               },
             ],
           },
@@ -127,11 +131,11 @@ export default defineConfig({
             items: [
               {
                 text: "Local Development Guide",
-                link: "how-to/development/development-setup",
+                link: "/how-to/development/development-setup",
               },
               {
                 text: "Production Deployment Guide",
-                link: "how-to/deployment/production-deployment-overview",
+                link: "/how-to/deployment/production-deployment-overview",
               },
             ],
           },
@@ -193,7 +197,7 @@ export default defineConfig({
             items: [
               {
                 text: "Data Dictionary",
-                link: "/references/data-model/data-model",
+                link: "/references/data-model/data-dictionary",
               },
             ],
           },
@@ -204,16 +208,6 @@ export default defineConfig({
           {
             text: "Streaming Data Loader",
             link: "/references/orchestration/sdl-download",
-          },
-        ],
-      },
-      {
-        text: "Discussion Topics",
-        collapsed: true,
-        items: [
-          {
-            text: "Which Orchestration System Should You Use",
-            link: "/topics/which-orchestration-system",
           },
         ],
       },
