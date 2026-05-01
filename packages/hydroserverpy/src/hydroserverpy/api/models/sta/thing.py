@@ -29,8 +29,8 @@ class Thing(HydroServerBaseModel):
     elevation_datum: Optional[str] = Field(
         None, max_length=255, validation_alias=AliasChoices("elevationDatum", AliasPath("location", "elevationDatum"))
     )
-    state: Optional[str] = Field(None, max_length=200, validation_alias=AliasPath("location", "state"))
-    county: Optional[str] = Field(None, max_length=200, validation_alias=AliasPath("location", "county"))
+    admin_area_1: Optional[str] = Field(None, max_length=200, validation_alias=AliasPath("location", "adminArea1"))
+    admin_area_2: Optional[str] = Field(None, max_length=200, validation_alias=AliasPath("location", "adminArea2"))
     country: Optional[str] = Field(None, max_length=2, validation_alias=AliasPath("location", "country"))
     tags: Dict[str, str]
     file_attachments: Dict[str, Dict[str, str]]
@@ -38,7 +38,8 @@ class Thing(HydroServerBaseModel):
 
     _editable_fields: ClassVar[set[str]] = {
         "name", "description", "sampling_feature_type", "sampling_feature_code", "site_type", "data_disclaimer",
-        "is_private", "latitude", "longitude", "elevation_m", "elevation_datum", "state", "county", "country"
+        "is_private", "latitude", "longitude", "elevation_m", "elevation_datum", "admin_area_1", "admin_area_2",
+        "country"
     }
 
     def __init__(self, client: "HydroServer", **data):

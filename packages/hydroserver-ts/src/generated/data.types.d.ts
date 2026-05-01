@@ -3653,17 +3653,17 @@ export interface components {
         /** ThingQueryParameters */
         ThingQueryParameters: {
             /**
-             * Adminarea1
+             * Admin Area 1
              * @description Filter things by admin area 1.
              * @default []
              */
-            adminArea1: string[];
+            admin_area_1: string[];
             /**
-             * Adminarea2
+             * Admin Area 2
              * @description Filter things by admin area 2.
              * @default []
              */
-            adminArea2: string[];
+            admin_area_2: string[];
             /**
              * Bbox
              * @description Filter things by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
@@ -7718,9 +7718,9 @@ export interface operations {
                 /** @description Filter things by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
                 bbox?: string[];
                 /** @description Filter things by admin area 1. */
-                adminArea1?: string[];
+                admin_area_1?: string[];
                 /** @description Filter things by admin area 2. */
-                adminArea2?: string[];
+                admin_area_2?: string[];
                 /** @description Filter things by country. */
                 country?: string[];
                 /** @description Filter things by site type. */
