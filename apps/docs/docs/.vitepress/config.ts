@@ -25,10 +25,6 @@ export default defineConfig({
         collapsed: true,
         link: "/introduction/introduction",
         items: [
-          {
-            text: "Introduction",
-            link: "/introduction/introduction",
-          },
           { text: "Background", link: "/introduction/background" },
           { text: "Getting Started", link: "/introduction/getting-started" },
           {
@@ -60,16 +56,13 @@ export default defineConfig({
       {
         text: "Tutorials",
         collapsed: true,
+        link: "/tutorials/tutorials",
         items: [
           {
             text: "HydroServer 101",
             collapsed: true,
             link: "/tutorials/hydroserver-101",
             items: [
-              {
-                text: "Intro",
-                link: "/tutorials/hydroserver-101",
-              },
               {
                 text: "Creating Your First Site",
                 link: "/tutorials/creating-your-first-site",
@@ -108,6 +101,7 @@ export default defineConfig({
       {
         text: "How-to",
         collapsed: true,
+        link: "/how-to/how-to",
         items: [
           // {
           //   text: "Data Management App",
@@ -127,53 +121,27 @@ export default defineConfig({
           {
             text: "Deployment",
             collapsed: true,
-            link: "/how-to/deployment/gcp/manage-gcp-deployment",
+            link: "/how-to/deployment/production-deployment-overview",
             items: [
               {
                 text: "Local Development Guide",
                 link: "/how-to/development/development-setup",
               },
-              {
-                text: "Production Deployment Guide",
-                link: "/how-to/deployment/production-deployment-overview",
-              },
             ],
           },
           {
             text: "Python Client",
-            collapsed: true,
             link: "/how-to/hydroserverpy/hydroserverpy-examples",
-            items: [
-              {
-                text: "Manage Data With Hydroserverpy",
-                link: "/how-to/hydroserverpy/hydroserverpy-examples",
-              },
-              // {
-              //   text: "Extract, transform and load with Hydroserverpy",
-              //   link: "/how-to/hydroserverpy/etl",
-              // },
-            ],
           },
           {
             text: "TypeScript Client",
-            collapsed: true,
             link: "/how-to/typescript-client/typescript-client-examples",
-            items: [
-              {
-                text: "Manage Data With the TypeScript Client",
-                link: "/how-to/typescript-client/typescript-client-examples",
-              },
-            ],
           },
           {
             text: "SensorThings API",
             collapsed: true,
             link: "/how-to/sensor-things/retrieve-sensor-things",
             items: [
-              {
-                text: "Retrieve Data With the SensorThings API",
-                link: "/how-to/sensor-things/retrieve-sensor-things",
-              },
               {
                 text: "Post Data With the SensorThings API",
                 link: "/how-to/sensor-things/post-sensor-things",
@@ -185,10 +153,11 @@ export default defineConfig({
       {
         text: "References",
         collapsed: true,
+        link: "/references/references",
         items: [
           {
             text: "API",
-            link: "/references/api/api-ref.md",
+            link: "/references/api/api-ref",
           },
           {
             text: "Data Model",
@@ -203,7 +172,7 @@ export default defineConfig({
           },
           {
             text: "Hydroserverpy",
-            link: "/references/hydroserverpy/hydroserverpy-ref.md",
+            link: "/references/hydroserverpy/hydroserverpy-ref",
           },
           {
             text: "Streaming Data Loader",
