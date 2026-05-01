@@ -104,8 +104,12 @@ export default defineConfig({
         link: "/how-to/how-to",
         items: [
           {
-            text: "Loading Data",
+            text: "Load Data",
             link: "/how-to/load-data/loading-data",
+          },
+          {
+            text: "Archive Data to HydroShare",
+            link: "/how-to/hydroshare-archive/hydroshare-archive",
           },
           // {
           //   text: "Data Management App",
