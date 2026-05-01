@@ -162,10 +162,6 @@ export default defineConfig({
                 text: "Local Development Guide",
                 link: "/how-to/development/development-setup",
               },
-              {
-                text: "Production Deployment Guide",
-                link: "/how-to/deployment/production-deployment-overview",
-              },
             ],
           },
           {
