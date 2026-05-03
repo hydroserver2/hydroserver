@@ -4,6 +4,8 @@ In this section, we provide documentation for how to use HydroServer's functiona
 
 ## HydroServer Users
 
+* **[Using the Data Management App](/how-to/data-management-app/data-management-app.md)**: Learn how to use the HydroServer Data Management App website to create user accounts, manage workspaces, register monitoring sites, create metadata, visualize data, set access control for sites and data, and export data.
+
 * **[Loading Data into HydroServer](/how-to/load-data/loading-data.md)**: Learn more about options for loading data into a HydroServer instance.
 
 * **[Using HydroServer's Python Client](/how-to/hydroserverpy/hydroserverpy-examples.md)**: Learn how to use the HydroServer Python client package - hydroserverpy - to load and retrieve metadata and data.
