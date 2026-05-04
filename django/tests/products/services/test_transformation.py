@@ -794,6 +794,80 @@ def test_run_composite_expression(run_context):
     np.testing.assert_allclose(results, [3.0, 6.0])
 
 
+def test_run_aggregation_local_timezone_watermark(run_context):
+    """
+    Regression test for bug_014: watermark must advance to local-midnight boundaries,
+    not UTC-midnight boundaries, so the second run doesn't re-emit the last bucket.
+
+    Setup: daily aggregation in America/Denver (UTC-7), no DST (January dates).
+      Local day 2025-01-01 Denver = 2025-01-01T07:00Z → 2025-01-02T07:00Z UTC.
+      Local day 2025-01-02 Denver = 2025-01-02T07:00Z → 2025-01-03T07:00Z UTC.
+
+    Run 1: input covers local day 1 only.
+      → 1 bucket emitted, labeled 2025-01-01T07:00Z, mean = 3.0.
+      → output phenomenon_end_time = 2025-01-01T07:00Z.
+
+    Run 2: input extended to cover local day 2.
+      → watermark (fixed): start = 2025-01-02T07:00Z (next local midnight).
+      → watermark (buggy): start = 2025-01-02T00:00Z (UTC midnight, inside local day 1).
+      → buggy watermark re-fetches local day 1 tail, re-emits 2025-01-01T07:00Z → 400.
+      → fixed watermark emits exactly 1 new bucket for local day 2, mean = 7.0.
+    """
+    from core.sta.models.observation import Observation
+
+    ctx = run_context
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_in  = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+
+    # Local day 1 observations (all within 2025-01-01T07:00Z – 2025-01-02T07:00Z)
+    day1_obs = [
+        (datetime(2025, 1, 1, 10, 0, tzinfo=dt_timezone.utc), 2.0),  # 03:00 Denver
+        (datetime(2025, 1, 1, 18, 0, tzinfo=dt_timezone.utc), 4.0),  # 11:00 Denver
+    ]
+    for dt, val in day1_obs:
+        _add_obs(ds_in, dt, val)
+    # Set end to local day 2 midnight so the day 1 bucket is not discarded as incomplete
+    _set_end_time(ds_in, datetime(2025, 1, 2, 7, 0, tzinfo=dt_timezone.utc))
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="aggregation",
+        output_datastream=ds_out.pk,
+        aggregation_method="mean",
+        output_interval_units="days",
+        output_interval=1,
+        timezone_type="iana",
+        timezone="America/Denver",
+        input_datastreams=[TransformationInput(datastream=ds_in.pk)],
+    )
+
+    count1 = transformation_service.run(t)
+    assert count1 == 1
+    out_obs = list(Observation.objects.filter(datastream=ds_out).order_by("phenomenon_time"))
+    assert len(out_obs) == 1
+    assert out_obs[0].phenomenon_time == datetime(2025, 1, 1, 7, 0, tzinfo=dt_timezone.utc)
+    np.testing.assert_allclose(out_obs[0].result, 3.0)
+
+    # Extend input with local day 2 observations (2025-01-02T07:00Z – 2025-01-03T07:00Z)
+    day2_obs = [
+        (datetime(2025, 1, 2, 10, 0, tzinfo=dt_timezone.utc), 6.0),  # 03:00 Denver Jan 2
+        (datetime(2025, 1, 2, 18, 0, tzinfo=dt_timezone.utc), 8.0),  # 11:00 Denver Jan 2
+    ]
+    for dt, val in day2_obs:
+        _add_obs(ds_in, dt, val)
+    _set_end_time(ds_in, datetime(2025, 1, 3, 7, 0, tzinfo=dt_timezone.utc))
+
+    t.refresh_from_db()
+    count2 = transformation_service.run(t)
+    assert count2 == 1
+    out_obs = list(Observation.objects.filter(datastream=ds_out).order_by("phenomenon_time"))
+    assert len(out_obs) == 2
+    assert out_obs[1].phenomenon_time == datetime(2025, 1, 2, 7, 0, tzinfo=dt_timezone.utc)
+    np.testing.assert_allclose(out_obs[1].result, 7.0)
+
+
 def test_run_aggregation(run_context):
     """
     simple_mean, 1-hour UTC buckets.

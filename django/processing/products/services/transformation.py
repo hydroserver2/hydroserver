@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, timezone as dt_timezone
+from zoneinfo import ZoneInfo
 from typing import Union, Literal
 
 from pydantic import BaseModel, Field, ConfigDict, validate_call
@@ -12,6 +13,7 @@ from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 
 from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, normalize_tz
+from hydroserverpy.core.duration import duration_to_us
 from hydroserverpy.products.expression import validate_expression, apply_expression
 from hydroserverpy.products.aggregation import apply_aggregation
 from hydroserverpy.products.rating_curve import apply_rating_curve
@@ -753,12 +755,17 @@ class DataProductTransformationService(ServiceUtils):
         # re-aggregate a period already present in the output datastream.
         raw_start = output_ds.phenomenon_end_time
         if raw_start is not None:
-            from hydroserverpy.core.duration import duration_to_us
             epoch = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
             interval_us = duration_to_us(interval)
             raw_start_utc = raw_start if raw_start.tzinfo else raw_start.replace(tzinfo=dt_timezone.utc)
             raw_start_us = int((raw_start_utc - epoch).total_seconds() * 1_000_000)
-            start_us = ((raw_start_us // interval_us) + 1) * interval_us
+            if local_timezone:
+                tz = ZoneInfo(normalize_tz(local_timezone))
+                utc_offset_us = int(raw_start_utc.astimezone(tz).utcoffset().total_seconds() * 1_000_000)
+            else:
+                utc_offset_us = 0
+            local_midnight_us = -utc_offset_us
+            start_us = local_midnight_us + ((raw_start_us - local_midnight_us) // interval_us + 1) * interval_us
             start = epoch + timedelta(microseconds=start_us)
         else:
             start = None
@@ -787,7 +794,6 @@ class DataProductTransformationService(ServiceUtils):
         # Discard the last bucket if its end extends beyond the available input data,
         # as it may be incomplete (i.e., the current period is still in progress).
         if len(result_df) > 0:
-            from hydroserverpy.core.duration import duration_to_us
             interval_us = duration_to_us(interval)
             end_utc = end if end.tzinfo else end.replace(tzinfo=dt_timezone.utc)
             result_df = result_df[
