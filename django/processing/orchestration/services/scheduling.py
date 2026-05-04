@@ -90,7 +90,7 @@ class SchedulingService:
                 raise ValueError("interval_period is required when setting an interval schedule.")
 
             if current_interval:
-                if interval_period is not Unset and current_interval_period != interval_period:
+                if interval != current_interval or current_interval_period != interval_period:
                     pt_interval: IntervalSchedule = periodic_task.interval
                     pt_interval.every = interval
                     if interval_period is not Unset:

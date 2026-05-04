@@ -100,6 +100,26 @@ def test_apply_schedule_switches_crontab_to_interval():
     assert not CrontabSchedule.objects.filter(pk=old_crontab_pk).exists()
 
 
+def test_apply_schedule_updates_existing_interval_count():
+    pt = service.apply_schedule(
+        periodic_task=None, interval=5, interval_period="hours", celery_task_name=CELERY_TASK
+    )
+    updated = service.apply_schedule(periodic_task=pt, interval=10, interval_period="hours")
+
+    assert updated.interval.every == 10
+    assert updated.interval.period == "hours"
+
+
+def test_apply_schedule_updates_existing_interval_period():
+    pt = service.apply_schedule(
+        periodic_task=None, interval=5, interval_period="hours", celery_task_name=CELERY_TASK
+    )
+    updated = service.apply_schedule(periodic_task=pt, interval=5, interval_period="days")
+
+    assert updated.interval.every == 5
+    assert updated.interval.period == "days"
+
+
 def test_apply_schedule_switches_interval_to_crontab():
     pt = service.apply_schedule(
         periodic_task=None, interval=3, interval_period="hours", celery_task_name=CELERY_TASK
