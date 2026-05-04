@@ -118,21 +118,41 @@ export default defineConfig({
             text: "Archive Data to HydroShare",
             link: "/how-to/hydroshare-archive/hydroshare-archive",
           },
-          // {
-          //   text: "Data Management App",
-          //   collapsed: true,
-          //   link: "/how-to/data-management-app/customize.md",
-          //   items: [
-          //     {
-          //       text: "Customize the Data Management App",
-          //       link: "/how-to/data-management-app/customize.md",
-          //     },
-          //     // {
-          //     //   text: "Archive Data to HydroShare",
-          //     //   link: "/how-to/data-management-app/hydroshare-archive.md",
-          //     // },
-          //   ],
-          // },
+          {
+            text: "Data Management App",
+            collapsed: true,
+            link: "/how-to/data-management-app/data-management-app",
+            items: [
+              {
+                text: "Creating User Accounts",
+                link: "/how-to/data-management-app/user-accounts",
+              },
+              {
+                text: "Creating and Managing Workspaces",
+                link: "/how-to/data-management-app/workspaces",
+              },
+              {
+                text: "Managing Access Control",
+                link: "/how-to/data-management-app/access-control",
+              },
+              {
+                text: "Managing Site Metadata",
+                link: "/how-to/data-management-app/site-metadata-management",
+              },
+              {
+                text: "Managing Datastream Metadata",
+                link: "/how-to/data-management-app/datastream-metadata-management",
+              },
+              {
+                text: "Visualizing Data",
+                link: "/how-to/data-management-app/visualize-data",
+              },
+              {
+                text: "Exporting and Downloading Data",
+                link: "/how-to/data-management-app/export-data",
+              },
+            ],
+          },
           {
             text: "Deployment",
             collapsed: true,
