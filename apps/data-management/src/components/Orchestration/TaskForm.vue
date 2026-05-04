@@ -645,9 +645,15 @@ async function onSubmit() {
       syncAggregationConfigToMappings()
     }
 
+    const flatMappings = (task.value.mappings as any[]).map((m: any) => ({
+      sourceIdentifier: m.sourceIdentifier,
+      targetDatastreamId: String(m.paths?.[0]?.targetIdentifier ?? ''),
+    }))
+    const payload = { ...task.value, mappings: flatMappings } as any
+
     const res = isEdit.value
-      ? await hs.tasks.update(task.value)
-      : await hs.tasks.create(task.value)
+      ? await hs.tasks.update(payload)
+      : await hs.tasks.create(payload)
 
     if (!res.ok) {
       Snackbar.error(res.message)
