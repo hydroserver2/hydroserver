@@ -27,7 +27,7 @@ class RatingCurveQuerySet(models.QuerySet):
                         thing__workspace__collaborators__user=principal,
                         thing__workspace__collaborators__role__permissions__resource_type__in=[
                             "*",
-                            "DataProducts",
+                            "DataProduct",
                         ],
                         thing__workspace__collaborators__role__permissions__permission_type__in=[
                             "*",
@@ -41,7 +41,7 @@ class RatingCurveQuerySet(models.QuerySet):
                     thing__workspace__apikeys=principal,
                     thing__workspace__apikeys__role__permissions__resource_type__in=[
                         "*",
-                        "DataProducts",
+                        "DataProduct",
                     ],
                     thing__workspace__apikeys__role__permissions__permission_type__in=[
                         "*",
@@ -82,14 +82,14 @@ class RatingCurve(models.Model, PermissionChecker):
         cls, principal: Union[User, APIKey, None], workspace: Workspace
     ):
         return cls.check_create_permissions(
-            principal=principal, workspace=workspace, resource_type="DataProducts"
+            principal=principal, workspace=workspace, resource_type="DataProduct"
         )
 
     def get_principal_permissions(
         self, principal: Union[User, APIKey, None]
     ) -> list[Literal["edit", "delete", "view"]]:
         return self.check_object_permissions(
-            principal=principal, workspace=self.thing.workspace, resource_type="DataProducts"
+            principal=principal, workspace=self.thing.workspace, resource_type="DataProduct"
         )
 
 
