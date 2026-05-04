@@ -25,16 +25,12 @@ export default defineConfig({
         collapsed: true,
         link: "/introduction/introduction",
         items: [
-          {
-            text: "Introduction",
-            link: "/introduction/introduction",
-          },
           { text: "Background", link: "/introduction/background" },
           { text: "Getting Started", link: "/introduction/getting-started" },
           {
             text: "Key Concepts",
             collapsed: true,
-            link: "/introduction/key-concepts/sites",
+            link: "/introduction/key-concepts/key-concepts",
             items: [
               { text: "Site", link: "/introduction/key-concepts/sites" },
               {
@@ -42,12 +38,16 @@ export default defineConfig({
                 link: "/introduction/key-concepts/datastreams",
               },
               {
-                text: "Loading Data",
-                link: "/introduction/key-concepts/loading-data",
+                text: "Observations",
+                link: "/introduction/key-concepts/observations",
               },
               {
-                text: "Access Control",
-                link: "/introduction/key-concepts/access-control",
+                text: "Workspaces and Access Control",
+                link: "/introduction/key-concepts/workspaces-access-control",
+              },
+              {
+                text: "Identifiers",
+                link: "/introduction/key-concepts/identifiers",
               },
             ],
           },
@@ -56,16 +56,13 @@ export default defineConfig({
       {
         text: "Tutorials",
         collapsed: true,
+        link: "/tutorials/tutorials",
         items: [
           {
             text: "HydroServer 101",
             collapsed: true,
             link: "/tutorials/hydroserver-101",
             items: [
-              {
-                text: "Intro",
-                link: "/tutorials/hydroserver-101",
-              },
               {
                 text: "Creating Your First Site",
                 link: "/tutorials/creating-your-first-site",
@@ -104,72 +101,82 @@ export default defineConfig({
       {
         text: "How-to",
         collapsed: true,
+        link: "/how-to/how-to",
         items: [
-          // {
-          //   text: "Data Management App",
-          //   collapsed: true,
-          //   link: "/how-to/data-management-app/customize.md",
-          //   items: [
-          //     {
-          //       text: "Customize the Data Management App",
-          //       link: "/how-to/data-management-app/customize.md",
-          //     },
-          //     // {
-          //     //   text: "Archive Data to HydroShare",
-          //     //   link: "/how-to/data-management-app/hydroshare-archive.md",
-          //     // },
-          //   ],
-          // },
+          {
+            text: "Load Data",
+            collapsed: true,
+            link: "/how-to/load-data/loading-data",
+            items: [
+              {
+                text: "Data Ingestion with hydroserverpy",
+                link: "/how-to/load-data/etl",
+              },
+            ],
+          },
+          {
+            text: "Archive Data to HydroShare",
+            link: "/how-to/hydroshare-archive/hydroshare-archive",
+          },
+          {
+            text: "Data Management App",
+            collapsed: true,
+            link: "/how-to/data-management-app/data-management-app",
+            items: [
+              {
+                text: "Creating User Accounts",
+                link: "/how-to/data-management-app/user-accounts",
+              },
+              {
+                text: "Creating and Managing Workspaces",
+                link: "/how-to/data-management-app/workspaces",
+              },
+              {
+                text: "Managing Access Control",
+                link: "/how-to/data-management-app/access-control",
+              },
+              {
+                text: "Managing Site Metadata",
+                link: "/how-to/data-management-app/site-metadata-management",
+              },
+              {
+                text: "Managing Datastream Metadata",
+                link: "/how-to/data-management-app/datastream-metadata-management",
+              },
+              {
+                text: "Visualizing Data",
+                link: "/how-to/data-management-app/visualize-data",
+              },
+              {
+                text: "Exporting and Downloading Data",
+                link: "/how-to/data-management-app/export-data",
+              },
+            ],
+          },
           {
             text: "Deployment",
             collapsed: true,
-            link: "/how-to/deployment/gcp/manage-gcp-deployment",
+            link: "/how-to/deployment/production-deployment-overview",
             items: [
               {
                 text: "Local Development Guide",
-                link: "how-to/development/development-setup",
-              },
-              {
-                text: "Production Deployment Guide",
-                link: "how-to/deployment/production-deployment-overview",
+                link: "/how-to/development/development-setup",
               },
             ],
           },
           {
             text: "Python Client",
-            collapsed: true,
             link: "/how-to/hydroserverpy/hydroserverpy-examples",
-            items: [
-              {
-                text: "Manage Data With Hydroserverpy",
-                link: "/how-to/hydroserverpy/hydroserverpy-examples",
-              },
-              // {
-              //   text: "Extract, transform and load with Hydroserverpy",
-              //   link: "/how-to/hydroserverpy/etl",
-              // },
-            ],
           },
           {
             text: "TypeScript Client",
-            collapsed: true,
             link: "/how-to/typescript-client/typescript-client-examples",
-            items: [
-              {
-                text: "Manage Data With the TypeScript Client",
-                link: "/how-to/typescript-client/typescript-client-examples",
-              },
-            ],
           },
           {
             text: "SensorThings API",
             collapsed: true,
             link: "/how-to/sensor-things/retrieve-sensor-things",
             items: [
-              {
-                text: "Retrieve Data With the SensorThings API",
-                link: "/how-to/sensor-things/retrieve-sensor-things",
-              },
               {
                 text: "Post Data With the SensorThings API",
                 link: "/how-to/sensor-things/post-sensor-things",
@@ -181,25 +188,11 @@ export default defineConfig({
       {
         text: "References",
         collapsed: true,
+        link: "/references/references",
         items: [
           {
             text: "API",
-            collapsed: true,
-            link: "/references/api/sensor-things-api",
-            items: [
-              {
-                text: "Data Management API",
-                link: "/references/api/data-management-api",
-              },
-              {
-                text: "Identity and Access Management API",
-                link: "/references/api/identity-and-access-management-api",
-              },
-              {
-                text: "SensorThings API",
-                link: "/references/api/sensor-things-api",
-              },
-            ],
+            link: "/references/api/api-ref",
           },
           {
             text: "Data Model",
@@ -208,27 +201,17 @@ export default defineConfig({
             items: [
               {
                 text: "Data Dictionary",
-                link: "/references/data-model/data-model",
+                link: "/references/data-model/data-dictionary",
               },
             ],
           },
           {
             text: "Hydroserverpy",
-            link: "/references/hydroserverpy/hydroserverpy-ref.md",
+            link: "/references/hydroserverpy/hydroserverpy-ref",
           },
           {
             text: "Streaming Data Loader",
             link: "/references/orchestration/sdl-download",
-          },
-        ],
-      },
-      {
-        text: "Discussion Topics",
-        collapsed: true,
-        items: [
-          {
-            text: "Which Orchestration System Should You Use",
-            link: "/topics/which-orchestration-system",
           },
         ],
       },

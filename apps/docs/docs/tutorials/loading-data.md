@@ -16,7 +16,7 @@ timestamp,max_temp_c,min_temp_c
 ...
 ```
 
-For now, we only care about the 'timestamp' column and the 'max_temp_c' column. We need to tell HydroServer to grab only the data for those two columns and push them to our datastream. This is exactly what a data connection does.
+For now, we only care about the 'timestamp' column and the 'max_temp_c' column. We need to tell the Streaming Data Loader to grab only the data for those two columns and push them to our datastream. This is exactly what a data connection does.
 
 ## Create a data connection
 
@@ -28,19 +28,19 @@ This will open the 'create data connection' modal with an empty form that contai
 
 - Name: Push daily temperature data
 
-**set a schedule**
+### Set a schedule
 
 Since this is just a tutorial, I don't want my Streaming Data Loader instance running constantly checking for new data. I want to run this once, then pause the schedule so I'll set the end time for about an hour from now. We'll leave start time empty since we just want this to run as soon as the Streaming Data Loader receives the data connection instructions.
 
-Normally, this script would run indefinitely. So, interval is for setting how often you'd like the Streaming Data Loader to check if there's new data in the CSV file and push if there is. Since it's daily data, we'll say every 1 day.
+Normally, this script would run indefinitely. So, interval is for setting how often you'd like the Streaming Data Loader to check if there's new data in the CSV file and push it to HydroServer if there is. Since it's daily data, we'll say every 1 day.
 
 <img src="/hydroserver-101/datasource-form.png" alt="add data connection" class="img-white-bg">
 
-**Configure ETL**
+### Configure ETL
 
-1. Extract.
+#### Extract
 
-Next, we need to specify where our data is coming from. In this case, we're pulling it from a local machine, so we'll keep the extractor type set to 'local'. Fill our your absolute local file path. For me on Mac it's:
+Next, we need to specify where our data is coming from. In this case, we're pulling it from a local machine (the same machine that the SDL is running on), so we'll keep the extractor type set to 'local'. Fill our your absolute local file path. For me on Mac it's:
 
 /Users/daniel/Desktop/daily_temp.csv
 
@@ -48,25 +48,25 @@ For windows users, this will be something like:
 
 C:/users/daniel/Desktop/daily_temp.csv
 
-2. Transform
+#### Transform
 
 Click the green 'Transformer' to switch over to the next part of the form. This tells the Streaming Data Loader what to expect the CSV file to look like so it can pull out the 'temperature' and 'max_temp_c' columns we're interested in. The defaults are almost all what we want. The name of the column that contains timestamps is named 'timestamp'so that's what we'll put in the 'Timestamp column name' form field. Everything else should be good.
 
 <img src="/hydroserver-101/transformer.png" alt="Data connection transformer" class="img-white-bg">
 
-3. Load
+#### Load
 
 The default is HydroServer which is what we want and there are no configurations we need to set here. Click 'save' to create your data connection. This will create a new data connection that's paused by default. Keep it paused for now since there's one more thing we need to do before we can load the data.
 
 <img src="/hydroserver-101/complete-datasource.png" alt="Data connection" class="img-white-bg">
 
-**Configure a payload**
+### Configure a payload
 
-We've specified where we're extracting from, how to interpret the payload that's extracted, and that we want to load into HydroServer. But we haven't specified exactly which column of the CSV file will be pushed to which datastream. We'll do that next.
+We've specified where we're extracting from (a CSV file), how to interpret the payload that's extracted, and that we want to load into HydroServer. But we haven't specified exactly which column of the CSV file will be pushed to which datastream. We'll do that next.
 
 Click the table row that contains your new data connection. This will send you to the 'Data Connection Details' page of the data connection you just created. Near the bottom of the page, you'll see a table labeled 'Payloads for this data connection'. A payload in HydroServer is one CSV file or JSON file. Click the 'Add new payload' button.
 
-The modal that pops up will let us point max_temp_c to our datastream. The name of the payload is 'daily_temp.csv' (it can be whatever you want). Click 'Add row'. On the left, fill in 'max_temp_c' as the column we're pulling from. On the right, open the datastream selector, select the name of the site you created from the 'select a site' drop down, and find and select your datastream in the table.
+The modal that pops up will let us point the max_temp_c column in the CSV file to our datastream in HydroServer. The name of the payload is 'daily_temp.csv' (it can be whatever you want). Click 'Add row'. On the left, fill in 'max_temp_c' as the column we're pulling from. On the right, open the datastream selector, select the name of the site you created from the 'select a site' drop down, and find and select your datastream in the table.
 
 <img src="/hydroserver-101/payload-mapping.png" alt="Data connection" class="img-white-bg">
 
@@ -78,7 +78,7 @@ The Streaming Data Loader will check for new data connections every 5 minutes, s
 
 ## Visualizing Your Data
 
-Congrats! You've completed this tutorial! To visualize your newly pushed data, click 'Visualize data' on the main navigation bar. This will take you to a page where you'll see all the public data on the playground instance and your data regardless of if it's public or private (don't worry, private data still can't be seen by others). Use the 'Sites' filter on the left to find your site if you want to filter out everyone else's data. Select your datastream in the Datastreams table, filter by time range, and you should see something like this:
+Congrats! You've completed this tutorial! To visualize your newly pushed data, click 'Visualize data' on the main navigation bar in the Data Management App. This will take you to a page where you'll see all the public data on the playground instance and your data regardless of if it's public or private (don't worry, private data still can't be seen by others). Use the 'Sites' filter on the left to find your site if you want to filter out everyone else's data. Select your datastream in the Datastreams table, filter by time range, and you should see something like this:
 
 <img src="/hydroserver-101/data-visualization.png" alt="Data connection" class="img-white-bg">
 

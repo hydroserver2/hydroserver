@@ -1,18 +1,27 @@
 # Background
 
-HydroServer was developed at the Utah Water Research Laboratory to meet two key needs:
+HydroServer was developed at the [Utah Water Research Laboratory](https://uwrl.usu.edu) at [Utah State University](https://www.usu.edu) to meet several key needs:
 
 1. Ingest and retrieve large volumes of time-series data efficiently.
-2. Provide a formally structured data model suitable for environmental research.
+2. Provide a formally structured data model suitable for environmental time series data.
+3. Meet the day-to-day needs of researchers, scientists, and practitioners who need data management software for environmental sensor data.
 
-To meet these goals, we built:
+To meet these goals, we built the HydroServer software stack. It consists of:
 
 - A PostgreSQL-based database using the Django REST Framework for API access.
-- An implementation of the OGC SensorThings API standard as the foundation of the data model.
+- An implementation of the OGC SensorThings API standard as the foundation of the data model and HydroServer's APIs
+- A web applications for interacting with the data model and performing data management.
+- Client applications to enable people to work with the data and build on the platform.
 
-## Why SensorThings Was Chosen — and Extended
+## HydroServer's History
 
-The [SensorThings API (v1.1)](https://docs.ogc.org/is/18-088/18-088.html) offers a standardized way to expose and organize sensor data. It provides an extensible, web-friendly format ideal for Internet of Things (IoT) devices, and is widely used in domains like environmental monitoring, building automation, and smart cities.
+HydroServer was originally part of the Consortium of Universities for the Advancement of Hydrologic Science, Inc. (CUAHSI) Hydrologic Information System (HIS). Developed around 2007 - 20015 (ish), the CUAHSI HIS was a first of it's kind HIS that enabled distributed data servers (HydroServers) to host databases and web services that were then cataloged by CUAHSI to provide data discovery and download services. The CUAHSI HIS was operated by CUAHSI for several years as a service to the hydrology science community in the United States. 
+
+In 2022, USU received funding through the Cooperative Institute for Research to Operations in Hydrology (CIROH) to modernize HydroServer as a data management system for environmental sensor data. HydroServer is now being used in several different operational contexts for environmental sensor data management.
+
+## Why OGC SensorThings Was Chosen — and Extended
+
+The Open Geospatial Consortium (OGC) [SensorThings API (v1.1)](https://docs.ogc.org/is/18-088/18-088.html) offers a standardized way to expose and organize sensor data. It provides an extensible, web-friendly data model and API ideal for Internet of Things (IoT) devices, and is widely used in domains like environmental monitoring, building automation, and smart cities. It is a modern, REST-based API with data transfer encodings that use JSON.
 
 HydroServer adopts SensorThings' core data model (shown below), using it as the backbone of our own system:
 
@@ -23,16 +32,16 @@ HydroServer adopts SensorThings' core data model (shown below), using it as the 
 
 However, SensorThings was designed to be _generic_ — which made it flexible but too abstract for the specific needs of hydrologic and environmental time-series data. In particular, it lacked fields for:
 
-- Authentication and access control
+- Information about users along with authentication and access control
 - Extract, transform, load-style data orchestration
 - Controlled vocabulary references
-- Detailed metadata such as processing levels, units, qualifying comments on observations, photos, and tags
+- Detailed, environmental sensor-specific metadata such as processing levels, units, qualifying comments on observations, photos, tags, etc.
 
-Fortunately, the SensorThings model supports extensibility using the properties and parameters attributes of each entity. We leveraged this mechanism to add the metadata needed for unambiguous environmental data interpretation.
+Fortunately, the SensorThings data model and API support extensibility using the `properties` and `parameters` attributes of each entity. We leveraged this mechanism to add the metadata needed for unambiguous environmental data interpretation.
 
 ## Influence of ODM2 on HydroServer
 
-To enhance SensorThings for environmental use, we extended its entities using metadata fields inspired by [Observations Data Model 2 (ODM2)](https://doi.org/10.1016/j.envsoft.2016.01.010), a community information model for Earth observations.
+To enhance SensorThings for use with environmental sensor data, we extended its entities using metadata fields inspired by [Observations Data Model 2 (ODM2)](https://doi.org/10.1016/j.envsoft.2016.01.010), a community information model for Earth observations.
 
 While ODM2 supports many types of observation data, HydroServer focuses on a specific subset: time series observations from fixed-location monitoring sites.
 
@@ -43,24 +52,8 @@ The UML diagram below shows the portion of the ODM2 model that influenced HydroS
   <img :src="ODMModelLight" alt="ODM Time Series Information Model" class="light-only" />
 </a>
 
-By combining the flexible API structure of SensorThings with the domain-specific richness of ODM2, we created a hybrid model tailored for environmental data workflows.
+By combining the flexible API structure of SensorThings with the domain-specific metadata richness of ODM2, we created a hybrid data model that is still standards-compliant, but tailored for environmental sensor data workflows.
 
 # HydroServer Data Model
 
-HydroServer operates on top of a relational database that stores time series data using [PostgreSQL](https://www.postgresql.org/). Here we document the relational data model used by the HydroServer software for storing time series data.
-
-The following is an entity relationship diagram illustrating the HydroServer data model design. Primary and foreign keys are specified in the first column of each entity. Mandatory attributes are specified with "(M)" preceding the attribute name. Optional attributes are specified with "(O)" preceding the attribute name. Data types are specified following the attribute name. Given that some attributes were derived from the Observations Data Model (ODM2), the third column shows the the mapping of attributes in HydroServer's data model to ODM attributes. Entities shown with blue title bars are part of the SensorThings API data model. Entities with white title bars were added to the SensorThings data model to accommodate functionality required for the HydroServer software.
-
-<a :href="hydroserverDataModelLight" target="_blank" rel="noopener noreferrer" >
-  <img :src="hydroserverDataModelDark" alt="HydroServer Data Model" class="dark-only"/>
-  <img :src="hydroserverDataModelLight" alt="HydroServer Data Model" class="light-only" />
-</a>
-
-<script setup>  
-import STDataModelDark from "./ogc_sensorthings_data_model_dark.png"
-import STDataModelLight from "./ogc_sensorthings_data_model_light.png"
-import ODMModelDark from "./odm_time_series_information_model_dark.png"
-import ODMModelLight from "./odm_time_series_information_model_light.png"
-import hydroserverDataModelLight from './hydroserver_data_model_light.png' 
-import hydroserverDataModelDark from './hydroserver_data_model_dark.png'
-</script>
+HydroServer operates on top of a relational database that stores time series data using [PostgreSQL](https://www.postgresql.org/). For detailed information about HydroServer's data model, go to the [data model documentation](/references/data-model/data-model.md).
