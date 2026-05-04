@@ -14,9 +14,9 @@ The LRO instance provides actively updating data for dozens of continuous monito
 
 Use the following links to explore specific functionality of the HydroServer Data Management Web App:
 
-**[Creating User Accounts](./user-accounts.md)**: Creating content within the HydroServer Data Managment Web App requires you to create a user account and log in. You must also have a user account if you want to be an owner or collaborator on a HydroServer workspace.
+**[Creating User Accounts](./user-accounts.md)**: Creating content within the HydroServer Data Management Web App requires you to create a user account and log in. You must also have a user account if you want to be an owner or collaborator on a HydroServer workspace.
 
-**[Creating and Managing Workspaces](./workspaces.md)**: A HydroServer workspace is a container for creating monitoring sites and loading data. Workspaces can represent projects or user groups. Access control for data and metadata is controlled at the Wokrspace level
+**[Creating and Managing Workspaces](./workspaces.md)**: A HydroServer workspace is a container for creating monitoring sites and loading data. Workspaces can represent projects or user groups. Access control for data and metadata is controlled at the Workspace level
 
 **[Managing Access Control for HydroServer Content](./access-control.md)**: HydroServer's access control is role-based and controlled at the workspace level. However, additional granular visibility settings enable more fine grained control over what public users and workspace collaborators can access.
 

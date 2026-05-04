@@ -1,6 +1,6 @@
 # Managing Access Control
 
-HydroServer's access control is role-based and set at the Workspace level. The person who creates the workspace is automatically the owner. That user can then share the workspace with any other HydroServer user as a collaborator. Unless it workspace creation has been disabled by a HydroServer administrator, users can create multiple workspaces and can be a collaborator on any number of worksapces.
+HydroServer's access control is role-based and set at the Workspace level. The person who creates the workspace is automatically the owner. That user can then share the workspace with any other HydroServer user as a collaborator. Unless workspace creation has been disabled by a HydroServer administrator, users can create multiple workspaces and can be a collaborator on any number of workspaces.
 
 ## Workspace and Content Ownership
 
@@ -10,7 +10,7 @@ All resources in HydroServer (monitoring sites, metadata, datastreams, observati
 
 ## User Roles
 
-Each collaborator on a workspace is assigned a role. A role is a set of permissions configurable at the resource level. By default, HydroServer deployes with owner, editor, and viewer roles, but an administrator can configure additional roles if needed. The following table gives an overview of permissions associated with HydroServer's primary roles:
+Each collaborator on a workspace is assigned a role. A role is a set of permissions configurable at the resource level. By default, HydroServer deploys with owner, editor, and viewer roles, but an administrator can configure additional roles if needed. The following table gives an overview of permissions associated with HydroServer's primary roles:
 
 | Permission                                              | Owner | Editor | Viewer |
 | ------------------------------------------------------- | ----- | ------ | ------ |
@@ -27,7 +27,7 @@ To add a collaborator to a workspace, you should first navigate to the 'Your Sit
 
 <img src="/data-management-app/workspace-access-control.png" alt="Workspace access control dialog" class="img-white-bg">
 
-If your workspace is new and you are the owner, you will be the only collaborator in your workspace. To add a new collaborator, click on the 'Add collaborator' link at the top right of the window. Enter the collaborator's email address and chose the role that collaborator will have for the workspace (either 'Editor' or 'Viewer'). Clicking the 'Add collaborator' button will add them as a collaborator to the workspace.
+If your workspace is new and you are the owner, you will be the only collaborator in your workspace. To add a new collaborator, click on the 'Add collaborator' link at the top right of the window. Enter the collaborator's email address and choose the role that collaborator will have for the workspace (either 'Editor' or 'Viewer'). Clicking the 'Add collaborator' button will add them as a collaborator to the workspace.
 
 **NOTE**: A person must have a HydroServer user account affiliated with their email address before you can add them as a collaborator on a workspace.
 
@@ -35,7 +35,7 @@ To edit a user's role or remove a collaborator from a workspace, you can click t
 
 ## API Keys
 
-Sometimes you want to provide access to a workspace without using a username and password. This is expecially true when using code for working with a workspace. It is a security risk to embed your username and password in code. For this reason, HydroServer enables you to create API keys for working with HydroServer's APIs.
+Sometimes you want to provide access to a workspace without using a username and password. This is especially true when using code for working with a workspace. It is a security risk to embed your username and password in code. For this reason, HydroServer enables you to create API keys for working with HydroServer's APIs.
 
 API keys are unique codes that let remote systems connect to and interact with HydroServer. You can create API keys and assign them the minimum permissions they need to do the job (e.g., read only, or just for loading data, etc.). 
 
@@ -53,7 +53,7 @@ In addition to HydroServer's workspace level, role-based access control, workspa
 
 By default, workspaces, sites, and datastreams are public. However, each has a visibility setting that can make them private.
 
-1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accesible to the workspace owner and collaborators. You can set the privacy of your workspace when it is created or using the 'Workspace access control' window accessed by clicking on the blue lock icon next to the workspace in the manage workspaces table.
+1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accessible to the workspace owner and collaborators. You can set the privacy of your workspace when it is created or using the 'Workspace access control' window accessed by clicking on the blue lock icon next to the workspace in the manage workspaces table.
 
 2. **Site Privacy**: This setting determines whether your monitoring site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace. Site privacy can be set when creating a site or by clicking the 'Access control' button on the site's landing page.
 

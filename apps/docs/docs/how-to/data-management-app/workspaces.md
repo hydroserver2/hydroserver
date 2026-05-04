@@ -1,6 +1,6 @@
 # Creating and Managing Workspaces
 
-A workspace is a primary organizer of content in HydroServer. Think of it as a shared space or folder within which you can create monitoring sites, metadata, and observational data. Workspaces can represent a user, a group of users, a goegraphic area like a watershed, an observatory site, project, etc. 
+A workspace is a primary organizer of content in HydroServer. Think of it as a shared space or folder within which you can create monitoring sites, metadata, and observational data. Workspaces can represent a user, a group of users, a geographic area like a watershed, an observatory site, project, etc. 
 
 Workspaces are used to organize content and to control access to data and metadata. To create a workspace in HydroServer, you must first be logged in.
 
@@ -16,6 +16,6 @@ Click the 'Add workspace' button at the top right of the workspaces table. Give 
 
 <img src="/data-management-app/create-workspace.png" alt="Create workspace dialog" class="img-white-bg">
 
-**NOTE**: Making your workspace private means that only you and specific HydroShare users that you add to the workspace as collaborators will be able to see any of the content within that workspace. 
+**NOTE**: Making your workspace private means that only you and specific HydroServer users that you add to the workspace as collaborators will be able to see any of the content within that workspace. 
 
 You will notice that your new workspace has been added to the list of workspaces in the table. You can click the Pencil button in the right column of the table if you want to edit the workspace name or change the workspace privacy.
