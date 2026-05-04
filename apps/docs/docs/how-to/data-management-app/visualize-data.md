@@ -26,7 +26,7 @@ On the left you will see datastream filters that you can use to narrow the list 
 
 To select time series for visualization, click the check box next to them in the list of datastreams at the bottom of the page. You can select up to 5 datastreams at once for visualization. The selected time series will be plotted, each with a separate y-axis
 
-<img src="/data-management-app/visualize-data.png" alt="Visualiza data page" class="img-white-bg">
+<img src="/data-management-app/visualize-data.png" alt="Visualize data page" class="img-white-bg">
 
 ### Visualization Controls
 

@@ -45,4 +45,4 @@ You can also attach photos to your monitoring site. You can either drag and drop
 
 You can delete a site by navigating to its landing page and clicking on the 'Delete site' button at the top right of the page. This will open a dialog warning you that this action will delete the site and all associated datastreams and observations for all users of HydroServer. 
 
-**WARNING**: Deleting a site is permanant. If you delete a site, all of the data associated with that site will also be deleted.
+**WARNING**: Deleting a site is permanent. If you delete a site, all of the data associated with that site will also be deleted.

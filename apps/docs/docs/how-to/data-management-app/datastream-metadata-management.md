@@ -23,7 +23,7 @@ In this form, you can create the basic metadata for a datastream. The following 
 
 Some attributes of a datastream are simple selections on the form and others are linked metadata objects describing the sensor, observed property, unit, and processing level. Linked metadata can be selected from a drop down list if they exist already, or they can be created by clicking on the green '+' next to the metadata element.
 
-For the `Datastream name` and `Datastream description` attributes, you an use the 'Auto-Fill from Form' button to automatically generate a name and description, or you can enter your own text.
+For the `Datastream name` and `Datastream description` attributes, you can use the 'Auto-Fill from Form' button to automatically generate a name and description, or you can enter your own text.
 
 With the minimum datastream metadata set, you can click the 'Create datastream' button to save the datastream.
 
@@ -49,7 +49,7 @@ It's helpful to consult the HydroServer data model and data dictionary documenta
 
 Because creating the metadata for a datastream can be a little tedious, we created a button to load a template for a datastream. If you have multiple monitoring sites with similar datastreams (e.g., multiple sites with the same installed sensors), you can choose a datastream from another site to serve as a template. 
 
-To use this functionality, click the 'Add new datastream' button on the site landing  page, then selecte the 'Load template' button at the top right of the 'Create datastream' form. You will select a site and then you will see a list of existing datastreams you can choose from.
+To use this functionality, click the 'Add new datastream' button on the site landing  page, then select the 'Load template' button at the top right of the 'Create datastream' form. You will select a site and then you will see a list of existing datastreams you can choose from.
 
 <img src="/data-management-app/choose-datastream-template.png" alt="Choose a datastream template" class="img-white-bg">
 
@@ -57,7 +57,7 @@ Choosing a template will copy all of the metadata elements for that datastream i
 
 ## Editing Datastream Metadata
 
-Once a datastream is created, it can be edited by finding it in the list of datastreams on the site landing page, clicking on the Actions button (the three vertical dots) and selecting 'Edit datastream metadata'. This will launch the datastream's mtadata into the same form you used to create the datastream and you can edit it there.
+Once a datastream is created, it can be edited by finding it in the list of datastreams on the site landing page, clicking on the Actions button (the three vertical dots) and selecting 'Edit datastream metadata'. This will launch the datastream's metadata into the same form you used to create the datastream and you can edit it there.
 
 ## Deleting a Datastream
 
@@ -65,4 +65,4 @@ You can delete the observation values from a datastream by locating the datastre
 
 You can delete an entire datastream by clicking on the Action button (the three vertical dots) and selecting 'Delete datastream'. This will open a dialog warning you that this action will delete the datastream and all associated observations for all users of HydroServer. 
 
-**WARNING**: Deleting the observation values from a datastream and deleting an entire datastream are permanant. If you delete a datastream, all of the data associated with that datastream will also be deleted.
+**WARNING**: Deleting the observation values from a datastream and deleting an entire datastream are permanent. If you delete a datastream, all of the data associated with that datastream will also be deleted.

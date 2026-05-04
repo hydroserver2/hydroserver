@@ -12,7 +12,7 @@ Selecting this option will generate and download a CSV file with the observation
 
 ## Download from the Visualize Data Page
 
-On the 'Visualize data' page, you can click select a datastream in the table at the bottom of the page and then click the 'Download selected' buttom at the top of the table. Or, you can click on a row in the table to display its metadata and then click on the 'Download' button at the top right of that form.
+On the 'Visualize data' page, you can click select a datastream in the table at the bottom of the page and then click the 'Download selected' button at the top of the table. Or, you can click on a row in the table to display its metadata and then click on the 'Download' button at the top right of that form.
 
 ## Download File Format
 
