@@ -10,7 +10,7 @@ In this section, we provide documentation for how to use HydroServer's functiona
 
 * **[Using HydroServer's Python Client](/how-to/hydroserverpy/hydroserverpy-examples.md)**: Learn how to use the HydroServer Python client package - hydroserverpy - to load and retrieve metadata and data.
 
-* **[Using ETL Functions in hydroserverpy](/how-to/hydroserverpy/etl.md)**: Learn more about the extract, transform, and load (ETL) functionality within hydroserverpy.
+* **[Using ETL Functions in hydroserverpy](/how-to/load-data/etl.md)**: Learn more about the extract, transform, and load (ETL) functionality within hydroserverpy.
 
 * **[Load Data Using the SensorThings API](/how-to/sensor-things/post-sensor-things.md)**: Learn how to load data into HydroServer through HydroServer's SensorThings API - for Python or other programming languages.
 
