@@ -1,5 +1,11 @@
 import uuid
+import numpy as np
+import pandas as pd
 import pytest
+from types import SimpleNamespace
+from django.utils import timezone
+
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL
 from processing.monitoring.services.rule import MonitoringRuleService
 from processing.monitoring.models import MonitoringRule
 
@@ -435,3 +441,53 @@ def test_delete_monitoring_rule_nonexistent(get_principal):
             principal=get_principal("owner"),
         )
     assert "does not exist" in str(exc_info.value)
+
+
+# --- check_rule: empty dataframe ---
+
+def _empty_df():
+    return pd.DataFrame({
+        TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
+        RESULT_COL: pd.Series([], dtype=np.float64),
+    })
+
+
+def test_check_rule_range_empty_df():
+    rule = SimpleNamespace(rule_type="range", min_value=0.0, max_value=100.0)
+    datastream = SimpleNamespace(no_data_value=None)
+    result = MonitoringRuleService.check_rule(rule, _empty_df(), datastream)
+    assert result["violated"] is False
+    assert result["violation_count"] == 0
+
+
+def test_check_rule_rate_of_change_empty_df():
+    rule = SimpleNamespace(rule_type="rate_of_change", max_value=5.0, window_interval=1, window_interval_units="hours")
+    datastream = SimpleNamespace(no_data_value=None)
+    result = MonitoringRuleService.check_rule(rule, _empty_df(), datastream)
+    assert result["violated"] is False
+    assert result["violation_count"] == 0
+
+
+def test_check_rule_persistence_empty_df():
+    rule = SimpleNamespace(rule_type="persistence", min_value=None, max_value=None, window_interval=1, window_interval_units="hours")
+    datastream = SimpleNamespace(no_data_value=None)
+    result = MonitoringRuleService.check_rule(rule, _empty_df(), datastream)
+    assert result["violated"] is False
+    assert result["violation_count"] == 0
+
+
+def test_check_rule_missing_data_no_observations():
+    """missing_data rule on a datastream with no observations should fire."""
+    rule = SimpleNamespace(rule_type="missing_data", window_interval=1, window_interval_units="hours")
+    datastream = SimpleNamespace(no_data_value=None, phenomenon_end_time=None)
+    result = MonitoringRuleService.check_rule(rule, _empty_df(), datastream)
+    assert result["violated"] is True
+    assert result["violation_count"] == 1
+
+
+def test_check_rule_missing_data_recent_observation():
+    rule = SimpleNamespace(rule_type="missing_data", window_interval=1, window_interval_units="hours")
+    datastream = SimpleNamespace(no_data_value=None, phenomenon_end_time=timezone.now())
+    result = MonitoringRuleService.check_rule(rule, _empty_df(), datastream)
+    assert result["violated"] is False
+    assert result["violation_count"] == 0

@@ -328,10 +328,6 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         for datastream_id, datastream_rules in rules_by_datastream.items():
             datastream = datastream_rules[0].datastream
 
-            if not datastream.phenomenon_begin_time:
-                logger.debug("Skipping datastream %s: no data.", datastream_id)
-                continue
-
             fetch_starts = [
                 self._rule_fetch_start(rule, datastream)
                 for rule in datastream_rules
