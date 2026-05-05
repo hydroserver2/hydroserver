@@ -3,11 +3,7 @@
     <div class="sidebar-header">
       <div class="flex items-center">
         <span class="sidebar-title">{{ title }}</span>
-        <v-tooltip
-          v-if="isIngestion"
-          location="top"
-          :disabled="canEdit"
-        >
+        <v-tooltip v-if="isIngestion" location="top" :disabled="canEdit">
           <template #activator="{ props: tooltipProps }">
             <span v-bind="tooltipProps" class="ml-auto inline-flex">
               <button
@@ -34,7 +30,9 @@
           :value="search"
           :placeholder="`Search ${title.toLowerCase()}…`"
           class="sidebar-search-input"
-          @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
+          @input="
+            $emit('update:search', ($event.target as HTMLInputElement).value)
+          "
         />
       </div>
     </div>
@@ -65,10 +63,54 @@
           <div class="sidebar-item-body">
             <div class="sidebar-item-title">{{ dc.name }}</div>
             <div class="sidebar-item-meta">
-              {{ taskCountForConnection(dc.id) }} task{{
-                taskCountForConnection(dc.id) === 1 ? '' : 's'
-              }}
-              <span v-if="dc.payload?.type">· {{ dc.payload.type }}</span>
+              <span class="sidebar-item-meta-text">
+                {{ taskCountForConnection(dc.id) }} task{{
+                  taskCountForConnection(dc.id) === 1 ? '' : 's'
+                }}
+                <span v-if="dc.payload?.type">· {{ dc.payload.type }}</span>
+              </span>
+              <span class="sidebar-item-actions">
+                <v-tooltip location="top" :disabled="canEdit">
+                  <template #activator="{ props: tooltipProps }">
+                    <span v-bind="tooltipProps" class="inline-flex">
+                      <button
+                        type="button"
+                        class="sidebar-item-action"
+                        :class="{
+                          'sidebar-item-action--selected':
+                            selectedConnectionId === dc.id,
+                        }"
+                        :disabled="!canEdit"
+                        :aria-label="`Edit ${dc.name}`"
+                        @click.stop="$emit('edit-connection', dc)"
+                      >
+                        <v-icon :icon="mdiPencil" size="15" />
+                      </button>
+                    </span>
+                  </template>
+                  <span>{{ READ_ONLY_TOOLTIP }}</span>
+                </v-tooltip>
+                <v-tooltip location="top" :disabled="canEdit">
+                  <template #activator="{ props: tooltipProps }">
+                    <span v-bind="tooltipProps" class="inline-flex">
+                      <button
+                        type="button"
+                        class="sidebar-item-action sidebar-item-action--danger"
+                        :class="{
+                          'sidebar-item-action--selected':
+                            selectedConnectionId === dc.id,
+                        }"
+                        :disabled="!canEdit"
+                        :aria-label="`Delete ${dc.name}`"
+                        @click.stop="$emit('delete-connection', dc)"
+                      >
+                        <v-icon :icon="mdiTrashCanOutline" size="15" />
+                      </button>
+                    </span>
+                  </template>
+                  <span>{{ READ_ONLY_TOOLTIP }}</span>
+                </v-tooltip>
+              </span>
             </div>
           </div>
         </div>
@@ -121,9 +163,7 @@
             {{ sidebarBadgeCount(thing.id) }}
           </span>
         </div>
-        <div v-if="sites.length === 0" class="sidebar-empty">
-          No sites yet.
-        </div>
+        <div v-if="sites.length === 0" class="sidebar-empty">No sites yet.</div>
       </template>
     </div>
 
@@ -151,35 +191,40 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { mdiMagnify, mdiPlus } from '@mdi/js'
+import { mdiMagnify, mdiPencil, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
 import type { DataConnection, Thing } from '@hydroserver/client'
 import { READ_ONLY_TOOLTIP, type TabId } from './orchestrationTabs'
 
-const props = withDefaults(defineProps<{
-  activeTab: TabId
-  connections: DataConnection[]
-  sites: Thing[]
-  selectedConnectionId: string | null
-  selectedThingId: string | null
-  search: string
-  title: string
-  addLabel: string
-  accent: string
-  canEdit: boolean
-  taskCountForConnection: (id: string) => number
-  taskCountForSite: (id: string) => number
-  issueCountForSite: (id: string) => number
-  violationCountForSite?: (id: string) => number
-  dotColorForConnection: (id: string) => string
-  dotColorForSite: (id: string) => string
-}>(), {
-  violationCountForSite: () => () => 0,
-})
+const props = withDefaults(
+  defineProps<{
+    activeTab: TabId
+    connections: DataConnection[]
+    sites: Thing[]
+    selectedConnectionId: string | null
+    selectedThingId: string | null
+    search: string
+    title: string
+    addLabel: string
+    accent: string
+    canEdit: boolean
+    taskCountForConnection: (id: string) => number
+    taskCountForSite: (id: string) => number
+    issueCountForSite: (id: string) => number
+    violationCountForSite?: (id: string) => number
+    dotColorForConnection: (id: string) => string
+    dotColorForSite: (id: string) => string
+  }>(),
+  {
+    violationCountForSite: () => () => 0,
+  }
+)
 
 defineEmits<{
   (e: 'update:search', value: string): void
   (e: 'select-connection', id: string): void
   (e: 'select-site', id: string): void
+  (e: 'edit-connection', connection: DataConnection): void
+  (e: 'delete-connection', connection: DataConnection): void
   (e: 'create'): void
 }>()
 
@@ -284,9 +329,17 @@ const sidebarBadgeCount = (thingId: string) =>
   font-size: 11px;
   color: #49454f;
   margin-top: 2px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 .sidebar-item.selected .sidebar-item-meta {
   color: rgba(255, 255, 255, 0.7);
+}
+.sidebar-item-meta-text {
+  min-width: 0;
 }
 .sidebar-item-badge {
   background: #ffebee;
@@ -295,6 +348,49 @@ const sidebarBadgeCount = (thingId: string) =>
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 700;
+}
+.sidebar-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.sidebar-item:hover .sidebar-item-actions,
+.sidebar-item:focus-within .sidebar-item-actions,
+.sidebar-item.selected .sidebar-item-actions {
+  opacity: 1;
+}
+.sidebar-item-action {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  color: #546e7a;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.sidebar-item-action:hover:not(:disabled) {
+  background: rgba(84, 110, 122, 0.12);
+}
+.sidebar-item-action--danger {
+  color: #b3261e;
+}
+.sidebar-item-action--danger:hover:not(:disabled) {
+  background: rgba(179, 38, 30, 0.1);
+}
+.sidebar-item-action--selected {
+  color: white;
+}
+.sidebar-item-action--selected:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+.sidebar-item-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 .sidebar-empty {
   padding: 16px 14px;

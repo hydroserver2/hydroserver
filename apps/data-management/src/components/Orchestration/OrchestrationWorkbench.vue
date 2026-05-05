@@ -34,6 +34,8 @@
         @update:search="sidebarSearch = $event"
         @select-connection="selectConnection"
         @select-site="selectSite"
+        @edit-connection="openEditDialog"
+        @delete-connection="openDeleteDialog"
         @create="openCreateDialog"
       />
 
@@ -75,8 +77,6 @@
         @toggle-paused="onTogglePaused"
         @run-now="onRunNow"
         @open-task="goToTask"
-        @edit-connection="openEditDialog(selectedConnection!)"
-        @delete-connection="openDeleteDialog(selectedConnection!)"
         @add-task="openCreateTaskDialog(selectedConnection!)"
         @add-aggregation="openAggregationForm = true"
         @add-expression="openExpressionForm = true"
@@ -595,15 +595,24 @@ watch(
     autoSelectSidebar()
     const NON_TERMINAL = ['PENDING', 'STARTED']
     for (const task of workspaceTasks.value) {
-      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+      if (
+        task.latestRun?.id &&
+        NON_TERMINAL.includes(task.latestRun.status ?? '')
+      )
         startMonitoringRun('etl', task.id, task.latestRun.id)
     }
     for (const task of dataProductTasks.value) {
-      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+      if (
+        task.latestRun?.id &&
+        NON_TERMINAL.includes(task.latestRun.status ?? '')
+      )
         startMonitoringRun('dataProduct', task.id, task.latestRun.id)
     }
     for (const task of monitoringTasks.value) {
-      if (task.latestRun?.id && NON_TERMINAL.includes(task.latestRun.status ?? ''))
+      if (
+        task.latestRun?.id &&
+        NON_TERMINAL.includes(task.latestRun.status ?? '')
+      )
         startMonitoringRun('monitoring', task.id, task.latestRun.id)
     }
   },

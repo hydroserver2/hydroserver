@@ -22,40 +22,6 @@
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
-                  variant="text"
-                  :prepend-icon="mdiPencil"
-                  :disabled="!canEdit"
-                  class="detail-action-btn text-none"
-                  color="blue-grey-darken-2"
-                  @click="$emit('edit-connection')"
-                >
-                  Edit
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="text"
-                  :prepend-icon="mdiTrashCanOutline"
-                  color="red-darken-2"
-                  class="detail-action-btn text-none"
-                  :disabled="!canEdit"
-                  @click="$emit('delete-connection')"
-                >
-                  Delete
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
                   variant="flat"
                   :prepend-icon="mdiPlus"
                   :style="{ background: accent, color: 'white' }"
@@ -408,10 +374,8 @@ import {
   mdiFilterVariant,
   mdiMagnify,
   mdiPause,
-  mdiPencil,
   mdiPlay,
   mdiPlus,
-  mdiTrashCanOutline,
 } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
@@ -461,8 +425,6 @@ const emit = defineEmits<{
   (e: 'toggle-paused', row: TaskRow): void
   (e: 'run-now', row: TaskRow): void
   (e: 'open-task', row: TaskRow): void
-  (e: 'edit-connection'): void
-  (e: 'delete-connection'): void
   (e: 'add-task'): void
   (e: 'add-aggregation'): void
   (e: 'add-expression'): void
