@@ -4,6 +4,7 @@ type TaskStatusLike = {
   latestRun?: TaskRun | null
   schedule?: {
     paused?: boolean | null
+    enabled?: boolean | null
     nextRunAt?: string | null
     startTime?: string | null
     interval?: number | null
@@ -96,12 +97,12 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
     (run.status === 'SUCCESS'
       ? 'Run completed successfully.'
       : run.status === 'PENDING'
-        ? 'Run queued.'
-        : run.status === 'STARTED' || run.status === 'RUNNING'
-          ? 'Run in progress.'
-          : run.status === 'FAILURE'
-            ? 'Run failed.'
-            : '–')
+      ? 'Run queued.'
+      : run.status === 'STARTED' || run.status === 'RUNNING'
+      ? 'Run in progress.'
+      : run.status === 'FAILURE'
+      ? 'Run failed.'
+      : '–')
   )
 }
 
@@ -134,9 +135,7 @@ export const getMonitoringRunViolations = (
   run?: TaskRun | null
 ): MonitoringRunViolation[] => {
   const result = getTaskRunResult(run)
-  const violations = Array.isArray(result.violations)
-    ? result.violations
-    : []
+  const violations = Array.isArray(result.violations) ? result.violations : []
 
   return violations
     .map((entry) => asObject(entry))
@@ -219,7 +218,9 @@ export const getDisplayedTaskStatus = (
   task?: TaskStatusLike | null
 ): StatusType => {
   const status = getTaskStatusText(task)
-  if (task?.schedule?.paused && status !== 'Needs attention') {
+  const isPaused =
+    task?.schedule?.paused === true || task?.schedule?.enabled === false
+  if (isPaused && status !== 'Needs attention') {
     return 'Loading paused'
   }
   return status

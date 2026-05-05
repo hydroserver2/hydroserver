@@ -236,10 +236,7 @@
               >
                 <template #activator="{ props: tooltipProps }">
                   <span v-bind="tooltipProps" class="inline-flex">
-                    <TaskStatus
-                      :status="row.statusName"
-                      :paused="row.schedule ? !row.schedule.enabled : false"
-                    />
+                    <TaskStatus :status="row.statusSort" :paused="false" />
                   </span>
                 </template>
                 <v-card

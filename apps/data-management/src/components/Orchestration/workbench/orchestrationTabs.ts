@@ -142,6 +142,13 @@ const DOT_PRIORITY: readonly string[] = [
 
 const DOT_EMPTY = '#CAC4D0'
 const DOT_DEFAULT_OK = '#2E7D32'
+const ISSUE_STATUSES = new Set(['Needs attention', 'Behind schedule'])
+
+export const taskHasIssue = (row: TaskRow): boolean =>
+  ISSUE_STATUSES.has(row.statusSort)
+
+export const countTaskIssues = (rows: TaskRow[]): number =>
+  rows.filter(taskHasIssue).length
 
 export const worstDotColor = (rows: TaskRow[]): string => {
   if (rows.length === 0) return DOT_EMPTY

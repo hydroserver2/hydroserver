@@ -290,6 +290,12 @@ describe('task run detail helpers', () => {
         latestRun: okRun,
       })
     ).toBe('Loading paused')
+    expect(
+      getDisplayedTaskStatus({
+        schedule: { enabled: false, nextRunAt: '2026-03-13T13:00:00Z' },
+        latestRun: okRun,
+      })
+    ).toBe('Loading paused')
     expect(getTaskStatusText({ schedule: { paused: false } })).toBe('Pending')
     expect(
       getTaskStatusText({

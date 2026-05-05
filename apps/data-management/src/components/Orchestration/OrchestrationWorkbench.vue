@@ -26,6 +26,7 @@
         :accent="activeAccent"
         :can-edit="canEditOrchestration"
         :task-count-for-connection="taskCountForConnection"
+        :issue-count-for-connection="issueCountForConnection"
         :task-count-for-site="taskCountForSite"
         :issue-count-for-site="issueCountForSite"
         :violation-count-for-site="violationCountForSite"
@@ -210,6 +211,8 @@ import TaskListPanel from './workbench/TaskListPanel.vue'
 import {
   TAB_META,
   TAB_TO_KIND,
+  countTaskIssues,
+  taskHasIssue,
   worstDotColor,
   type ActiveView,
   type TabDefinition,
@@ -343,16 +346,13 @@ const canEditOrchestration = computed(() => {
   )
 })
 
-const countIssues = (rows: TaskRow[]) =>
-  rows.filter(
-    (r) =>
-      r.statusSort === 'Needs attention' || r.statusSort === 'Behind schedule'
-  ).length
-
 const tabs = computed<TabDefinition[]>(() => [
-  { ...TAB_META.ingestion, issues: countIssues(etlTaskRows.value) },
-  { ...TAB_META.aggregation, issues: countIssues(dataProductTaskRows.value) },
-  { ...TAB_META.quality, issues: countIssues(monitoringTaskRows.value) },
+  { ...TAB_META.ingestion, issues: countTaskIssues(etlTaskRows.value) },
+  {
+    ...TAB_META.aggregation,
+    issues: countTaskIssues(dataProductTaskRows.value),
+  },
+  { ...TAB_META.quality, issues: countTaskIssues(monitoringTaskRows.value) },
 ])
 
 const activeTabDef = computed(
@@ -391,15 +391,17 @@ const thingsById = computed(
 const taskCountForConnection = (dcId: string) =>
   etlTaskRows.value.filter((t) => t.dataConnectionId === dcId).length
 
+const issueCountForConnection = (dcId: string) =>
+  etlTaskRows.value.filter(
+    (t) => t.dataConnectionId === dcId && taskHasIssue(t)
+  ).length
+
 const taskCountForSite = (thingId: string) =>
   activeTaskRows.value.filter((t) => t.thingId === thingId).length
 
 const issueCountForSite = (thingId: string) =>
-  activeTaskRows.value.filter(
-    (t) =>
-      t.thingId === thingId &&
-      (t.statusSort === 'Needs attention' || t.statusSort === 'Behind schedule')
-  ).length
+  activeTaskRows.value.filter((t) => t.thingId === thingId && taskHasIssue(t))
+    .length
 
 const violationCountForSite = (thingId: string) =>
   monitoringTaskRows.value
@@ -444,7 +446,7 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
       if (!filters.has(bucket)) return false
     }
     if (!term) return true
-    const haystack = [t.name, t.statusName, t.lastRun, t.nextRun]
+    const haystack = [t.name, t.statusName, t.statusSort, t.lastRun, t.nextRun]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()

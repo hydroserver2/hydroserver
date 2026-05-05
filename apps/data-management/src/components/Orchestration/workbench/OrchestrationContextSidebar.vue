@@ -113,6 +113,15 @@
               </span>
             </div>
           </div>
+          <span
+            v-if="
+              selectedConnectionId !== dc.id &&
+              issueCountForConnection(dc.id) > 0
+            "
+            class="sidebar-item-badge"
+          >
+            {{ issueCountForConnection(dc.id) }}
+          </span>
         </div>
         <div v-if="connections.length === 0" class="sidebar-empty">
           No data connections yet.
@@ -208,6 +217,7 @@ const props = withDefaults(
     accent: string
     canEdit: boolean
     taskCountForConnection: (id: string) => number
+    issueCountForConnection: (id: string) => number
     taskCountForSite: (id: string) => number
     issueCountForSite: (id: string) => number
     violationCountForSite?: (id: string) => number
@@ -231,10 +241,7 @@ defineEmits<{
 const isIngestion = computed(() => props.activeTab === 'ingestion')
 const isQuality = computed(() => props.activeTab === 'quality')
 
-const sidebarBadgeCount = (thingId: string) =>
-  isQuality.value
-    ? props.violationCountForSite(thingId)
-    : props.issueCountForSite(thingId)
+const sidebarBadgeCount = (thingId: string) => props.issueCountForSite(thingId)
 </script>
 
 <style scoped>
