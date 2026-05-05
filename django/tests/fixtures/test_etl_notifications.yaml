@@ -13,10 +13,10 @@
 - model: django_celery_beat.periodictask
   pk: 1000001
   fields:
-    name: Test ETL Notification — 019adbc5-0001-7000-0000-000000000001
-    task: processing.orchestration.tasks.send_notification_email
+    name: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+    task: processing.etl.tasks.send_etl_notification_email
     args: []
-    kwargs: '{"notification_id": "019adbc5-0001-7000-0000-000000000001"}'
+    kwargs: {"data_connection_id": "019adb5c-da8b-7970-877d-c3b4ca37cc60"}
     enabled: True
     total_run_count: 0
     date_changed: 2025-01-01 01:00:00.000 -0700
@@ -27,25 +27,15 @@
     headers: {}
     expire_seconds: 3600
 
-# Orchestration Notification
-- model: orchestration.notification
-  pk: 019adbc5-0001-7000-0000-000000000001
+# ETL Data Connection Notification
+- model: etl.dataconnectionnotification
+  pk: 019adb5c-da8b-7970-877d-c3b4ca37cc60
   fields:
-    name: Test ETL Notification
-    description: null
     periodic_task: 1000001
-    tasks:
-      - 019adbc3-35e8-7f25-bc68-171fb66d446e
-
-# ETL Notification (MTI child)
-- model: etl.etlnotification
-  pk: 019adbc5-0001-7000-0000-000000000001
-  fields:
-    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
 
 # ETL Notification Recipient
-- model: orchestration.notificationrecipient
+- model: etl.dataconnectionnotificationrecipient
   pk: 019adbc5-0001-7000-0000-000000000002
   fields:
-    notification: 019adbc5-0001-7000-0000-000000000001
+    notification: 019adb5c-da8b-7970-877d-c3b4ca37cc60
     email: recipient@example.com

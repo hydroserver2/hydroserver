@@ -58,6 +58,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environmentMatchGlobs: [['src/components/**', 'jsdom']],
+      setupFiles: ['src/test/setup.ts'],
       server: {
         deps: {
           inline: ['vuetify'],
@@ -73,6 +74,7 @@ export default defineConfig(({ mode }) => {
           '**/src/composables/useMetadata.ts',
           '**/src/composables/useVocabulary.ts',
           '**/src/composables/useSystemTableLogic.ts',
+          '**/src/composables/orchestration/useTaskRunNowPolling.ts',
           '**/src/services/getCSRFToken.ts',
           '**/src/models/**',
           '**/src/plugins/**',

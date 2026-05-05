@@ -7,6 +7,16 @@
     source_url: https://example.com/data.csv
     timestamp_key: timestamp
 
+- model: etl.payload
+  pk: 019adb5c-da8b-7970-877d-c3b4ca37cc61
+  fields:
+    data_connection: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+    payload_type: CSV
+    header_row: 1
+    data_start_row: 2
+    delimiter: ","
+    jmespath: null
+
 # ETL Data Connection (Public Workspace)
 - model: etl.dataconnection
   pk: 019bbd9d-ee62-7669-8db0-3ef50802f1d8
@@ -15,3 +25,13 @@
     name: Test Public ETL Data Connection
     source_url: https://example.com/public.csv
     timestamp_key: timestamp
+
+- model: etl.payload
+  pk: 019bbd9d-ee62-7669-8db0-3ef50802f1d9
+  fields:
+    data_connection: 019bbd9d-ee62-7669-8db0-3ef50802f1d8
+    payload_type: CSV
+    header_row: 1
+    data_start_row: 2
+    delimiter: ","
+    jmespath: null

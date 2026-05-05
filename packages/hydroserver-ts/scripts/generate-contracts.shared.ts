@@ -11,11 +11,19 @@ export type OAS = {
   }
 }
 
+export type ContractResource =
+  | string
+  | {
+      resource: string
+      pathSuffix?: string
+      route?: string
+    }
+
 export type GenerateContractsOptions = {
   schemaFile: string
   outDir: string
   typesImportPath: string
-  explicitResources?: string[]
+  explicitResources?: ContractResource[]
 }
 
 /* ----------------------------- utils ----------------------------- */
@@ -52,6 +60,10 @@ function schemaExists(spec: OAS, schemaName: string): boolean {
 
 function toDataRef(schemaName: string): string {
   return `Data.components['schemas']['${schemaName}']`
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function derefResponse(spec: OAS, ref: string) {
@@ -194,14 +206,18 @@ function extractWritableKeys(spec: OAS, schema: any): string[] {
 
 /* ----------------------- resource analysis --------------------- */
 
-function analyzeResource(spec: OAS, resource: string) {
+function analyzeResource(
+  spec: OAS,
+  resource: string,
+  pathSuffix = `/${resource}`
+) {
   const collectionPath = Object.keys(spec.paths).find((p) =>
-    p.endsWith(`/${resource}`)
+    p.endsWith(pathSuffix)
   )
   if (!collectionPath) return null
 
   const itemPath = Object.keys(spec.paths).find((p) =>
-    p.startsWith(collectionPath + '/{')
+    new RegExp(`^${escapeRegExp(collectionPath)}/\\{[^/]+\\}$`).test(p)
   )
   const colPathObj = spec.paths[collectionPath] || {}
   const itemPathObj = itemPath ? spec.paths[itemPath] : {}
@@ -223,14 +239,25 @@ function analyzeResource(spec: OAS, resource: string) {
   const colGetSchema = getResponseSchema(spec, colPathObj.get)
   const itemGetSchema = getResponseSchema(spec, itemPathObj.get)
 
-  let summaryRef: string | null = summaryByExact
-  let detailRef: string | null = detailByExact
+  const colGet = derefSchema(spec, colGetSchema)
+  const summaryByResponse =
+    colGet?.type === 'array' && colGet.items?.$ref
+      ? refName(colGet.items.$ref)
+      : colGetSchema?.$ref
+      ? refName(colGetSchema.$ref)
+      : null
+
+  const detailByResponse = itemGetSchema?.$ref
+    ? refName(itemGetSchema.$ref)
+    : null
+
+  let summaryRef: string | null = summaryByResponse ?? summaryByExact
+  let detailRef: string | null = detailByResponse ?? detailByExact
 
   if (!summaryRef) {
     // array -> items direct
-    const s = derefSchema(spec, colGetSchema)
-    if (s?.type === 'array' && s.items?.$ref) {
-      summaryRef = refName(s.items.$ref)
+    if (colGet?.type === 'array' && colGet.items?.$ref) {
+      summaryRef = refName(colGet.items.$ref)
     }
     if (!summaryRef) {
       const refs: string[] = []
@@ -306,7 +333,7 @@ export function generateContracts(opts: GenerateContractsOptions) {
   }
 
   const spec: OAS = JSON.parse(fs.readFileSync(SCHEMA_FILE, 'utf8'))
-  const resources =
+  const resources: ContractResource[] =
     opts.explicitResources && opts.explicitResources.length > 0
       ? opts.explicitResources
       : inferResourcesFromPaths(spec)
@@ -318,8 +345,17 @@ import type * as Data from '${opts.typesImportPath}'
 
   const written: string[] = []
 
-  for (const resource of resources) {
-    const analyzed = analyzeResource(spec, resource)
+  for (const resourceSpec of resources) {
+    const resource =
+      typeof resourceSpec === 'string' ? resourceSpec : resourceSpec.resource
+    const pathSuffix =
+      typeof resourceSpec === 'string' ? undefined : resourceSpec.pathSuffix
+    const route =
+      typeof resourceSpec === 'string'
+        ? resource
+        : resourceSpec.route ?? resource
+
+    const analyzed = analyzeResource(spec, resource, pathSuffix)
     if (!analyzed) {
       console.warn(`Skipping ${resource}: could not analyze from OpenAPI`)
       continue
@@ -346,7 +382,7 @@ import type * as Data from '${opts.typesImportPath}'
 
     const lines: string[] = []
     lines.push(`export namespace ${ns} {`)
-    lines.push(`  export const route = '${resource}' as const`)
+    lines.push(`  export const route = '${route}' as const`)
     lines.push(`  export type QueryParameters = ${queryType}`)
     lines.push(`  export type SummaryResponse = ${SummaryResponse}`)
     lines.push(`  export type DetailResponse  = ${DetailResponse}`)

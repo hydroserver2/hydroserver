@@ -21,6 +21,21 @@ const resources = [
   'data-connections',
   'tasks',
   'runs',
+
+  // Monitoring
+  {
+    resource: 'monitoring-tasks',
+    pathSuffix: '/monitoring/tasks',
+    route: 'tasks',
+  },
+
+  // Products
+  {
+    resource: 'data-product-tasks',
+    pathSuffix: '/products/tasks',
+    route: 'tasks',
+  },
+  'rating-curves',
 ]
 
 generateContracts({

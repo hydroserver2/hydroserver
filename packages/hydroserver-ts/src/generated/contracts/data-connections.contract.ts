@@ -6,7 +6,7 @@ export namespace DataConnectionContract {
   export const route = 'data-connections' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_etl_data_connection_get_data_connections']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_data_connection_get_data_connections']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['DataConnectionResponse']
-  export type DetailResponse  = never
+  export type DetailResponse  = Data.components['schemas']['DataConnectionResponse']
   export type PostBody        = Data.components['schemas']['DataConnectionPostBody']
   export type PatchBody       = Data.components['schemas']['DataConnectionPatchBody']
   export type DeleteBody      = never

@@ -66,7 +66,6 @@ DEFAULT_FIXTURES = [
     "core/sta/fixtures/default_site_types.yaml",
     "core/sta/fixtures/default_units.yaml",
     "core/sta/fixtures/default_variable_types.yaml",
-    "core/etl/fixtures/default_orchestration_systems.yaml",
 ]
 
 

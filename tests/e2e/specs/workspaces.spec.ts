@@ -13,7 +13,7 @@ test.describe('workspace management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await page.getByRole('button', { name: 'Add workspace' }).click()
 
     await page.getByLabel('Name *').fill(workspaceName)
@@ -65,7 +65,7 @@ test.describe('workspace management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await page.getByRole('button', { name: 'Add workspace' }).click()
 
     await page.getByLabel('Name *').fill(workspaceName)

@@ -76,6 +76,7 @@ vi.mock('@/utils/notifications', () => ({
 
 vi.mock('@/composables/useWorkspacePermissions', () => ({
   useWorkspacePermissions: () => ({
+    checkPermissionsByWorkspaceId: vi.fn(() => true),
     hasPermission: vi.fn(() => true),
     isAdmin: vi.fn(() => false),
     isOwner: vi.fn(() => false),
@@ -181,6 +182,7 @@ describe('TaskDetails', () => {
       .findAll('button')
       .find((button) => button.text().includes('Pause'))
     await pauseButton?.trigger('click')
+    await flushPromises()
 
     expect(dataProductUpdateMock).toHaveBeenCalledWith(
       expect.objectContaining({

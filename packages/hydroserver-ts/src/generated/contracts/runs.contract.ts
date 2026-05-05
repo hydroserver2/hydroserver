@@ -6,7 +6,7 @@ export namespace RunContract {
   export const route = 'runs' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_task_get_etl_task_runs']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['TaskRunResponse']
-  export type DetailResponse  = never
+  export type DetailResponse  = Data.components['schemas']['TaskRunResponse']
   export type PostBody        = never
   export type PatchBody       = never
   export type DeleteBody      = never
