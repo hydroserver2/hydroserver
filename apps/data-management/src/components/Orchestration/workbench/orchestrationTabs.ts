@@ -29,6 +29,16 @@ export type DataProductTaskType =
   | 'Rating curve'
   | null
 
+export const DATA_PRODUCT_TYPE_COLORS: Record<
+  NonNullable<DataProductTaskType>,
+  { text: string; bg: string }
+> = {
+  Aggregation: { text: '#6A1B9A', bg: '#F3E5F5' },
+  Expression: { text: '#006064', bg: '#E0F7FA' },
+  Derivation: { text: '#FF8F00', bg: '#FFF8E1' },
+  'Rating curve': { text: '#283593', bg: '#E8EAF6' },
+}
+
 export type TaskRow = {
   id: string
   kind: TaskKind

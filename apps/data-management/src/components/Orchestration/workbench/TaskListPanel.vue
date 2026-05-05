@@ -78,7 +78,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
-                  :style="{ color: accent, borderColor: accent }"
+                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-aggregation')"
@@ -95,7 +95,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
-                  :style="{ color: accent, borderColor: accent }"
+                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-expression')"
@@ -112,7 +112,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
-                  :style="{ color: accent, borderColor: accent }"
+                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-derivation')"
@@ -129,7 +129,7 @@
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
-                  :style="{ color: accent, borderColor: accent }"
+                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
                   @click="$emit('add-rating-curve')"
@@ -313,7 +313,7 @@
                 density="comfortable"
                 size="small"
                 rounded="lg"
-                :style="{ background: accentLight, color: accent }"
+                :style="typeChipStyle(row.taskType)"
                 class="task-type-chip"
               >
                 {{ row.taskType }}
@@ -417,13 +417,21 @@ import type { DataConnection } from '@hydroserver/client'
 import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/HealthPills.vue'
 import {
+  DATA_PRODUCT_TYPE_COLORS,
   READ_ONLY_TOOLTIP,
   STATUS_OPTIONS,
+  type DataProductTaskType,
   type SortDir,
   type SortKey,
   type TabId,
   type TaskRow,
 } from './orchestrationTabs'
+
+const typeChipStyle = (taskType: DataProductTaskType) => {
+  if (!taskType) return {}
+  const c = DATA_PRODUCT_TYPE_COLORS[taskType]
+  return { background: c.bg, color: c.text }
+}
 
 const props = defineProps<{
   activeTab: TabId
