@@ -545,6 +545,10 @@ const closeTaskDetails = async () => {
   await router.replace({ name: 'Orchestration', query: nextQuery })
 }
 
+const sameStringArray = (left: string[], right: string[]) =>
+  left.length === right.length &&
+  left.every((value, index) => value === right[index])
+
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
     const current = selectedConnectionId.value
@@ -634,16 +638,21 @@ watch(taskSearch, (value) => {
 watch(
   orchestrationStatusFilter,
   (value) => {
-    if (Array.isArray(value) && value.length) statusFilter.value = [...value]
+    const next = Array.isArray(value) ? value : []
+    if (!sameStringArray(statusFilter.value, next)) {
+      statusFilter.value = [...next]
+    }
   },
   { immediate: true }
 )
 watch(statusFilter, (value) => {
+  const next = Array.isArray(value) ? value : []
   if (!Array.isArray(value)) {
-    statusFilter.value = []
-    return
+    statusFilter.value = [...next]
   }
-  orchestrationStatusFilter.value = [...value]
+  if (!sameStringArray(orchestrationStatusFilter.value, next)) {
+    orchestrationStatusFilter.value = [...next]
+  }
 })
 
 const openCreateDialog = () => {
