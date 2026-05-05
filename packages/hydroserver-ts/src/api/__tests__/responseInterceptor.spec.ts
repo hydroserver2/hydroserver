@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { responseInterceptor } from '../responseInterceptor'
 
 describe('responseInterceptor', () => {
-  function readBlobText(blob: Blob) {
+  async function readBlobText(blob: Blob) {
+    if (typeof blob.text === 'function') return blob.text()
+
+    if (typeof blob.arrayBuffer === 'function') {
+      return new TextDecoder().decode(await blob.arrayBuffer())
+    }
+
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(String(reader.result))
