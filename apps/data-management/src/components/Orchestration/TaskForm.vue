@@ -19,22 +19,6 @@
       <div v-if="task" class="task-form-shell">
         <div v-if="!isDataConnectionScopedCreate" class="task-form-meta-grid">
           <div class="task-form-field">
-            <label class="task-form-label" for="task-type">Task type</label>
-            <v-select
-              id="task-type"
-              v-model="(task as any).type"
-              :items="taskTypeOptions"
-              item-title="title"
-              item-value="value"
-              placeholder="Select task type"
-              variant="outlined"
-              rounded="lg"
-              density="compact"
-              hide-details="auto"
-            />
-          </div>
-
-          <div v-if="!isAggregationTask" class="task-form-field">
             <label class="task-form-label" for="task-data-connection">
               Data connection <span class="task-form-required">*</span>
             </label>
@@ -73,47 +57,6 @@
         </div>
 
         <v-divider class="task-form-divider" />
-
-        <!-- Aggregation timezone controls are intentionally hidden here.
-             Keep this block for reuse in a dedicated aggregation form. -->
-        <!--
-        <div v-else class="mb-4">
-          <p class="font-weight-bold mb-2 required-label">Aggregation timezone</p>
-          <v-btn-toggle
-            class="mb-3"
-            v-model="aggregationTimezoneMode"
-            mandatory
-            variant="outlined"
-            density="compact"
-            color="blue"
-          >
-            <v-btn value="fixedOffset">Fixed offset</v-btn>
-            <v-btn value="daylightSavings">Daylight savings aware</v-btn>
-          </v-btn-toggle>
-
-          <v-autocomplete
-            v-if="aggregationTimezoneMode === 'fixedOffset'"
-            v-model="aggregationTimezone"
-            :items="FIXED_OFFSET_TIMEZONES"
-            item-title="title"
-            item-value="value"
-            label="Fixed timezone offset"
-            :rules="rules.required"
-            density="comfortable"
-          />
-
-          <v-autocomplete
-            v-else
-            v-model="aggregationTimezone"
-            :items="DST_AWARE_TIMEZONES"
-            item-title="title"
-            item-value="value"
-            label="Daylight savings aware timezone"
-            :rules="rules.required"
-            density="comfortable"
-          />
-        </div>
-        -->
 
         <div class="task-form-section">
           <div class="task-form-section-header">
@@ -315,7 +258,6 @@ import StickyForm from '@/components/Forms/StickyForm.vue'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Snackbar } from '@/utils/notifications'
-import { DST_AWARE_TIMEZONES, FIXED_OFFSET_TIMEZONES } from '@/models/timestamp'
 
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id)
@@ -352,17 +294,10 @@ const swimlanesRef = ref<any>(null)
 const submitLoading = ref(false)
 const task = ref<Task>(new Task())
 const scheduleMode = ref<'interval' | 'crontab'>('interval')
-const aggregationTimezoneMode = ref<'fixedOffset' | 'daylightSavings'>(
-  'fixedOffset'
-)
-const aggregationTimezone = ref<string>('-0700')
 const selectedDataConnection = computed<DataConnection | undefined>(() =>
   workspaceDataConnections.value.find(
     (j) => j.id === task.value.dataConnectionId
   )
-)
-const isAggregationTask = computed(
-  () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
 )
 const taskWorkspaceId = computed(() => {
   return (
@@ -374,15 +309,10 @@ const taskWorkspaceId = computed(() => {
   )
 })
 const perTaskPlaceholders = computed<any[]>(() => {
-  if (isAggregationTask.value) return []
   const placeholders =
     (selectedDataConnection.value as any)?.placeholderVariables || []
   return placeholders.filter((v: any) => v?.type === 'per_task')
 })
-const taskTypeOptions = [
-  { title: 'ETL', value: 'ETL' },
-  { title: 'Aggregation', value: 'Aggregation' },
-]
 
 const intervalUnitOptions = [
   { value: 'minutes', title: 'Minutes' },
@@ -394,7 +324,6 @@ const timezoneLabel = computed(
   () => Intl.DateTimeFormat().resolvedOptions().timeZone
 )
 const headerContextLabel = computed(() => {
-  if (isAggregationTask.value) return null
   return (
     selectedDataConnection.value?.name ||
     props.initialDataConnection?.name ||
@@ -435,65 +364,6 @@ function inputToIso(str = ''): string {
   return parsed.toISOString()
 }
 
-function ensureAggregationTransformation(path: any) {
-  if (!Array.isArray(path.dataTransformations)) path.dataTransformations = []
-  const existing = path.dataTransformations.find(
-    (t: any) => t?.type === 'aggregation'
-  )
-  const transform = existing || {
-    type: 'aggregation',
-    aggregationStatistic: 'simple_mean',
-    timezoneMode: aggregationTimezoneMode.value,
-    timezone: aggregationTimezone.value,
-  }
-  transform.aggregationStatistic ||= 'simple_mean'
-  transform.timezoneMode = aggregationTimezoneMode.value
-  transform.timezone = aggregationTimezone.value
-  path.dataTransformations = [transform]
-}
-
-function hydrateAggregationTimezoneFromMappings() {
-  const first = (
-    task.value.mappings as any
-  )?.[0]?.paths?.[0]?.dataTransformations?.find(
-    (t: any) => t?.type === 'aggregation'
-  ) as any
-  if (!first) {
-    aggregationTimezoneMode.value = 'fixedOffset'
-    aggregationTimezone.value = '-0700'
-    return
-  }
-  aggregationTimezoneMode.value =
-    first.timezoneMode === 'daylightSavings' ? 'daylightSavings' : 'fixedOffset'
-  aggregationTimezone.value =
-    typeof first.timezone === 'string' && first.timezone
-      ? first.timezone
-      : aggregationTimezoneMode.value === 'daylightSavings'
-      ? 'America/Denver'
-      : '-0700'
-}
-
-function syncAggregationConfigToMappings() {
-  if (!isAggregationTask.value) return
-
-  if (!task.value.mappings?.length) {
-    task.value.mappings = [
-      {
-        sourceIdentifier: '',
-        paths: [{ targetIdentifier: '', dataTransformations: [] }],
-      } as any,
-    ]
-  }
-
-  task.value.mappings.forEach((mapping: any) => {
-    if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-      mapping.paths = [{ targetIdentifier: '', dataTransformations: [] }]
-    }
-    if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
-    ensureAggregationTransformation(mapping.paths[0])
-  })
-}
-
 const startInput = computed({
   get: () => isoToInput(task.value.schedule?.startTime ?? ''),
   set: (v: string) => {
@@ -532,15 +402,12 @@ function hydrateTask(source?: TaskExpanded) {
     (base as any).workspaceId = String((base as any).workspace.id)
   if (!base.dataConnectionId && (base as any).dataConnection?.id)
     base.dataConnectionId = String((base as any).dataConnection.id)
-  if ((base as any).type === 'Aggregation') base.dataConnectionId = null as any
   ;(['startTime', 'nextRunAt'] as const).forEach((k) => {
     if (base.schedule && base.schedule[k])
       base.schedule[k] = ensureIsoUtc(base.schedule[k])
   })
 
   task.value = base
-  hydrateAggregationTimezoneFromMappings()
-  syncAggregationConfigToMappings()
   scheduleMode.value = base.schedule?.crontab ? 'crontab' : 'interval'
 }
 
@@ -569,54 +436,6 @@ watch(
   { immediate: true }
 )
 
-watch(
-  () => (task.value as any)?.type,
-  (nextType) => {
-    if (nextType === 'Aggregation') {
-      task.value.dataConnectionId = null as any
-      syncAggregationConfigToMappings()
-    } else if (!task.value.dataConnectionId) {
-      task.value.dataConnectionId = ''
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  aggregationTimezoneMode,
-  (mode) => {
-    if (mode === 'daylightSavings') {
-      if (
-        !aggregationTimezone.value ||
-        !DST_AWARE_TIMEZONES.some(
-          (tz) => tz.value === aggregationTimezone.value
-        )
-      ) {
-        aggregationTimezone.value = 'America/Denver'
-      }
-    } else if (
-      !aggregationTimezone.value ||
-      !FIXED_OFFSET_TIMEZONES.some(
-        (tz) => tz.value === aggregationTimezone.value
-      )
-    ) {
-      aggregationTimezone.value = '-0700'
-    }
-    syncAggregationConfigToMappings()
-  },
-  { immediate: true }
-)
-
-watch(aggregationTimezone, () => syncAggregationConfigToMappings())
-
-watch(
-  () =>
-    (task.value.mappings || [])
-      .map((m: any) => `${m.sourceIdentifier}:${m.paths?.length || 0}`)
-      .join('|'),
-  () => syncAggregationConfigToMappings()
-)
-
 function upsertTaskList(listRef: { value: Task[] }, saved: Task) {
   const index = listRef.value.findIndex((p) => p.id === saved.id)
   if (index !== -1) listRef.value[index] = saved
@@ -640,10 +459,6 @@ async function onSubmit() {
       )
     }
     if (!task.value.schedule) task.value.schedule = defaultSchedule()
-    if (isAggregationTask.value) {
-      task.value.dataConnectionId = null as any
-      syncAggregationConfigToMappings()
-    }
 
     const flatMappings = (task.value.mappings as any[]).map((m: any) => ({
       sourceIdentifier: m.sourceIdentifier,
@@ -774,7 +589,9 @@ async function onSubmit() {
   border-radius: 14px;
   background: #fff;
   padding: 8px 10px;
-  transition: border-color 0.16s ease, background-color 0.16s ease,
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
     box-shadow 0.16s ease;
   outline: none;
 }
@@ -895,9 +712,9 @@ async function onSubmit() {
 }
 
 :deep(
-    .schedule-start-input
-      input[type='datetime-local']::-webkit-calendar-picker-indicator
-  ) {
+  .schedule-start-input
+    input[type='datetime-local']::-webkit-calendar-picker-indicator
+) {
   margin: 0;
   padding: 0;
   opacity: 0.82;
@@ -926,6 +743,5 @@ async function onSubmit() {
     max-width: 100%;
     width: 100%;
   }
-
 }
 </style>
