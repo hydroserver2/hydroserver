@@ -110,7 +110,7 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { rules } from '@/utils/rules'
 import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import TimestampFormat from '../Timestamp/TimestampFormat.vue'
+import TimestampFormat from '../timestamps/TimestampFormat.vue'
 import { mdiCodeBraces, mdiHelpCircleOutline } from '@mdi/js'
 
 const { dataConnection } = storeToRefs(useDataConnectionStore())

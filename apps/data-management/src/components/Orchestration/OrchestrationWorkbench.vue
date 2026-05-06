@@ -222,34 +222,34 @@ import {
 } from './workbench/orchestrationTabs'
 
 const DataConnectionForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/DataConnectionForm.vue')
+  () => import('@/components/Orchestration/connections/DataConnectionForm.vue')
 )
 const OrchestrationWorkspaceManager = defineAsyncComponent(
   () => import('@/components/Workspace/OrchestrationWorkspaceManager.vue')
 )
 const TaskForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/TaskForm.vue')
+  () => import('@/components/Orchestration/ingestion/TaskForm.vue')
 )
 const DeleteDataConnectionCard = defineAsyncComponent(
-  () => import('@/components/Orchestration/DeleteDataConnectionCard.vue')
+  () => import('@/components/Orchestration/connections/DeleteDataConnectionCard.vue')
 )
 const TaskDetails = defineAsyncComponent(
   () => import('@/pages/TaskDetails.vue')
 )
 const AggregationForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/AggregationForm.vue')
+  () => import('@/components/Orchestration/data-products/AggregationForm.vue')
 )
 const ExpressionForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/ExpressionForm.vue')
+  () => import('@/components/Orchestration/data-products/ExpressionForm.vue')
 )
 const DerivationForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/DerivationForm.vue')
+  () => import('@/components/Orchestration/data-products/DerivationForm.vue')
 )
 const RatingCurveForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/RatingCurveForm.vue')
+  () => import('@/components/Orchestration/data-products/RatingCurveForm.vue')
 )
 const QualityManagementForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/QualityManagementForm.vue')
+  () => import('@/components/Orchestration/monitoring/QualityManagementForm.vue')
 )
 
 const props = defineProps<{ workspaceId: string }>()

@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue'
-import DataConnectionForm from '@/components/Orchestration/DataConnectionForm.vue'
+import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
 import hs, {
   DataConnection,
   PermissionAction,

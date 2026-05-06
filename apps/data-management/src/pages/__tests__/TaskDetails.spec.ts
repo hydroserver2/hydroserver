@@ -74,11 +74,11 @@ vi.mock('@/utils/notifications', () => ({
   },
 }))
 
-vi.mock('@/components/Orchestration/Swimlanes.vue', () => ({
+vi.mock('@/components/Orchestration/ingestion/Swimlanes.vue', () => ({
   default: { template: '<div />' },
 }))
 
-vi.mock('@/components/Orchestration/TaskForm.vue', () => ({
+vi.mock('@/components/Orchestration/ingestion/TaskForm.vue', () => ({
   default: {
     props: ['oldTask'],
     template: '<div class="task-form-stub" />',
@@ -207,7 +207,7 @@ describe('TaskDetails', () => {
 
   it('uses the data-product task service when pausing a data-product task', async () => {
     const { default: SimpleProductTaskDetails } =
-      await import('@/components/Orchestration/SimpleProductTaskDetails.vue')
+      await import('@/components/Orchestration/data-products/SimpleProductTaskDetails.vue')
     await seedWorkspace()
 
     const wrapper = shallowMount(SimpleProductTaskDetails as any, {
@@ -235,7 +235,7 @@ describe('TaskDetails', () => {
 
   it('loads ingestion details in the ingestion component', async () => {
     const { default: IngestionTaskDetails } =
-      await import('@/components/Orchestration/IngestionTaskDetails.vue')
+      await import('@/components/Orchestration/ingestion/IngestionTaskDetails.vue')
     await seedWorkspace()
 
     const wrapper = shallowMount(IngestionTaskDetails as any, {

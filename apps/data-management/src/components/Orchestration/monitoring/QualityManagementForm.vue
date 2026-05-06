@@ -354,8 +354,8 @@ import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   QUALITY_ACCENT,
   QUALITY_ACCENT_LIGHT,
-} from './workbench/orchestrationTabs'
-import DatastreamCardSelector from './DatastreamCardSelector.vue'
+} from '../workbench/orchestrationTabs'
+import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 
 const props = defineProps<{
   workspaceId: string

@@ -5,6 +5,7 @@
       <div class="title">
         <h2>{{ task.name }}</h2>
         <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
+        <span class="pill">{{ taskLabel }}</span>
         <span v-if="scheduleText" class="pill">{{ scheduleText }}</span>
       </div>
       <div class="actions">
@@ -15,13 +16,41 @@
         >
           {{ task.schedule?.enabled ? 'Pause' : 'Resume' }}
         </v-btn>
-        <v-dialog width="64rem">
+        <v-dialog width="60rem">
           <template #activator="{ props }">
             <v-btn v-bind="props" variant="outlined" :disabled="!canEdit"
               >Edit</v-btn
             >
           </template>
-          <QualityManagementForm
+          <AggregationForm
+            v-if="taskLabel === 'aggregation'"
+            :workspace-id="workspaceId"
+            :initial-thing-id="task.thing.id"
+            :edit-task-id="task.id"
+            @close="onUpdated"
+            @updated="onUpdated"
+            @deleted="deleteTask"
+          />
+          <ExpressionForm
+            v-else-if="taskLabel === 'expression'"
+            :workspace-id="workspaceId"
+            :initial-thing-id="task.thing.id"
+            :edit-task-id="task.id"
+            @close="onUpdated"
+            @updated="onUpdated"
+            @deleted="deleteTask"
+          />
+          <DerivationForm
+            v-else-if="taskLabel === 'derivation'"
+            :workspace-id="workspaceId"
+            :initial-thing-id="task.thing.id"
+            :edit-task-id="task.id"
+            @close="onUpdated"
+            @updated="onUpdated"
+            @deleted="deleteTask"
+          />
+          <RatingCurveForm
+            v-else
             :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
@@ -52,8 +81,14 @@
         </v-btn>
       </div>
     </header>
+
+    <v-tabs v-if="taskLabel === 'rating curve'" v-model="tab" density="compact">
+      <v-tab value="runs">Run history</v-tab>
+      <v-tab value="mappings">Mappings</v-tab>
+    </v-tabs>
     <section class="body">
       <TaskRunHistory
+        v-if="tab === 'runs'"
         :rows="runRows"
         :show-loading="loadingRuns"
         :has-loaded-full-run-history="true"
@@ -63,24 +98,35 @@
         @copy="copy"
         @copy-run-link="() => null"
       />
+      <RatingCurveSwimlanes
+        v-else
+        :transformations="task.ratingCurveTransformations ?? []"
+      />
     </section>
   </div>
   <div v-else class="loading">Loading...</div>
 </template>
 
 <script setup lang="ts">
-import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
-import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
-import QualityManagementForm from '@/components/Orchestration/QualityManagementForm.vue'
-import TaskRunHistory from '@/components/Orchestration/TaskRunHistory.vue'
+import { ref } from 'vue'
+import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
+import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
+import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
+import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
+import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
+import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
+import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
+import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
 
 const props = defineProps<{
+  taskLabel: 'aggregation' | 'expression' | 'derivation' | 'rating curve'
   taskId: string
   runId?: string | null
   embedded?: boolean
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
+const tab = ref('runs')
 const {
   task,
   loadingRuns,
@@ -100,7 +146,7 @@ const {
   onUpdated,
   runNow,
   togglePaused,
-} = useSimpleTaskDetails('monitoring', props, emit)
+} = useSimpleTaskDetails('dataProduct', props, emit)
 </script>
 
 <style scoped>
@@ -141,6 +187,7 @@ h2 {
   background: #f5f7fa;
   border-radius: 4px;
   padding: 2px 7px;
+  text-transform: capitalize;
 }
 .actions {
   display: flex;

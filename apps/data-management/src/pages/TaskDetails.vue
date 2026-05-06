@@ -16,12 +16,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import hs from '@hydroserver/client'
-import IngestionTaskDetails from '@/components/Orchestration/IngestionTaskDetails.vue'
-import AggregationTaskDetails from '@/components/Orchestration/AggregationTaskDetails.vue'
-import ExpressionTaskDetails from '@/components/Orchestration/ExpressionTaskDetails.vue'
-import DerivationTaskDetails from '@/components/Orchestration/DerivationTaskDetails.vue'
-import RatingCurveTaskDetails from '@/components/Orchestration/RatingCurveTaskDetails.vue'
-import QualityTaskDetails from '@/components/Orchestration/QualityTaskDetails.vue'
+import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
+import AggregationTaskDetails from '@/components/Orchestration/data-products/AggregationTaskDetails.vue'
+import ExpressionTaskDetails from '@/components/Orchestration/data-products/ExpressionTaskDetails.vue'
+import DerivationTaskDetails from '@/components/Orchestration/data-products/DerivationTaskDetails.vue'
+import RatingCurveTaskDetails from '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
+import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
 import type { TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
 
 const props = withDefaults(

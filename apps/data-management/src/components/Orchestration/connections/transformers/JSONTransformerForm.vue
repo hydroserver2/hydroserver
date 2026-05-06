@@ -25,7 +25,7 @@
 import { computed } from 'vue'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { storeToRefs } from 'pinia'
-import TimestampFields from '@/components/Orchestration/Timestamp/TimestampFields.vue'
+import TimestampFields from '@/components/Orchestration/connections/timestamps/TimestampFields.vue'
 import type { JSONPayload } from '@hydroserver/client'
 import { mdiFileTree } from '@mdi/js'
 

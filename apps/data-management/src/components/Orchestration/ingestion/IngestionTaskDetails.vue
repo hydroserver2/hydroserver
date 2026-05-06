@@ -120,11 +120,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
-import TaskForm from '@/components/Orchestration/TaskForm.vue'
-import DeleteTaskCard from '@/components/Orchestration/DeleteTaskCard.vue'
-import Swimlanes from '@/components/Orchestration/Swimlanes.vue'
-import TaskRunHistory from '@/components/Orchestration/TaskRunHistory.vue'
+import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
+import TaskForm from '@/components/Orchestration/ingestion/TaskForm.vue'
+import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
+import Swimlanes from '@/components/Orchestration/ingestion/Swimlanes.vue'
+import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
 import {
   mdiArrowLeft,

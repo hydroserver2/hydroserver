@@ -73,7 +73,7 @@ import {
   type CSVPayload,
 } from '@hydroserver/client'
 import { VTextField } from 'vuetify/lib/components/index.mjs'
-import TimestampFields from '@/components/Orchestration/Timestamp/TimestampFields.vue'
+import TimestampFields from '@/components/Orchestration/connections/timestamps/TimestampFields.vue'
 
 const { dataConnection } = storeToRefs(useDataConnectionStore())
 

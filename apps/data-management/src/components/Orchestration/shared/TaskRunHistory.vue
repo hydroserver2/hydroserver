@@ -158,7 +158,7 @@
 <script setup lang="ts">
 import type { TaskRun } from '@hydroserver/client'
 import { mdiContentCopy, mdiHistory } from '@mdi/js'
-import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
+import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import { getTaskRunStatusText as getRunStatusText } from '@/utils/orchestration/taskRunDetails'
 
 type RunHistoryRow = {

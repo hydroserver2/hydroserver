@@ -325,7 +325,7 @@ import {
   DATA_PRODUCT_SUBMIT_STYLE,
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
-import DatastreamCardSelector from './DatastreamCardSelector.vue'
+import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
 
 const ALLOWED_FUNCTIONS = [
   'abs',

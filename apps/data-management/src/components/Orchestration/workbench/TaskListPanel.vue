@@ -375,8 +375,8 @@ import {
   mdiPlus,
 } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
-import TaskStatus from '@/components/Orchestration/TaskStatus.vue'
-import HealthPills from '@/components/Orchestration/HealthPills.vue'
+import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
+import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import {
   DATA_PRODUCT_TYPE_COLORS,
   READ_ONLY_TOOLTIP,
