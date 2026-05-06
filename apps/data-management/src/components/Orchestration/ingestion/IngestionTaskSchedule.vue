@@ -31,12 +31,11 @@
           <span class="schedule-inline-label">Every</span>
           <v-text-field
             v-model.number="task.schedule!.interval"
-            class="schedule-interval-input"
+            class="max-w-20"
             type="number"
             min="1"
             hide-details
             variant="outlined"
-            density="compact"
             rounded="lg"
             :rules="[(v) => !!v || 'Interval is required']"
           />
@@ -109,16 +108,15 @@
 
 <script setup lang="ts">
 import type { Task, TaskSchedule } from '@hydroserver/client'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const task = defineModel<Task>('task', { required: true })
-const scheduleMode = defineModel<'interval' | 'crontab'>('scheduleMode', {
-  required: true,
-})
 
-defineProps<{
-  timezoneLabel: string
-}>()
+const scheduleMode = ref<'interval' | 'crontab'>(
+  task.value.schedule?.crontab ? 'crontab' : 'interval'
+)
+
+const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
 
 const intervalUnitOptions = [
   { value: 'minutes', title: 'Minutes' },
@@ -255,9 +253,6 @@ const startInput = computed({
   font-size: 0.74rem;
   font-weight: 500;
   color: #1f1d24;
-}
-.schedule-interval-input {
-  max-width: 62px;
 }
 :deep(.schedule-interval-input input[type='number']) {
   appearance: textfield;

@@ -21,11 +21,7 @@
 
         <v-divider class="task-form-divider" />
 
-        <IngestionTaskSchedule
-          v-model:task="task"
-          v-model:schedule-mode="scheduleMode"
-          :timezone-label="timezoneLabel"
-        />
+        <IngestionTaskSchedule v-model:task="task" />
 
         <v-divider
           v-if="perTaskPlaceholders.length"
@@ -93,10 +89,8 @@ const mappingsRef = ref<InstanceType<typeof IngestionTaskMappings>>()
 const submitLoading = ref(false)
 const workspaceId = props.workspaceId
 const perTaskPlaceholders = props.dataConnection.placeholderVariables.filter(
-  (variable): variable is PlaceholderVariable =>
-    variable.type === 'per_task'
+  (variable): variable is PlaceholderVariable => variable.type === 'per_task'
 )
-const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
 const headerContextLabel = props.dataConnection.name || null
 
 function defaultSchedule(): TaskSchedule {
@@ -151,18 +145,13 @@ function initializeTaskVariables(base: Task) {
   base.taskVariables = Object.fromEntries(
     perTaskPlaceholders.map((placeholder) => [
       placeholder.name,
-      current[placeholder.name] === undefined
-        ? ''
-        : current[placeholder.name],
+      current[placeholder.name] === undefined ? '' : current[placeholder.name],
     ])
   )
 }
 
 const task = ref<Task>(hydrateTask(props.oldTask))
 initializeTaskVariables(task.value)
-const scheduleMode = ref<'interval' | 'crontab'>(
-  task.value.schedule?.crontab ? 'crontab' : 'interval'
-)
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
