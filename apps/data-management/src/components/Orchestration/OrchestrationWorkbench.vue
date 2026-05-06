@@ -45,6 +45,7 @@
           :task-id="selectedTaskId"
           :task-kind="selectedTaskKind"
           :run-id="selectedRunId"
+          :initial-task="selectedTask"
           embedded
           @close="closeTaskDetails"
           @deleted="onTaskDetailsChanged"
@@ -307,7 +308,6 @@ const {
   stopAll,
   runTaskNow,
   toggleSchedulePaused,
-  startMonitoringRun,
 } = useTaskRunNowPolling({
   lists: {
     etl: workspaceTasks,
@@ -517,6 +517,15 @@ const selectedTaskId = computed(() => {
   return typeof value === 'string' && value.trim() ? value : null
 })
 
+const selectedTask = computed(() => {
+  const taskId = selectedTaskId.value
+  if (!taskId) return null
+  const kind = selectedTaskKind.value
+  if (kind === 'etl') return workspaceTasks.value.find((t) => t.id === taskId) ?? null
+  if (kind === 'dataProduct') return dataProductTasks.value.find((t) => t.id === taskId) ?? null
+  return monitoringTasks.value.find((t) => t.id === taskId) ?? null
+})
+
 const selectedRunId = computed(() => {
   const value = route.query.runId
   return typeof value === 'string' && value.trim() ? value : null
@@ -604,28 +613,6 @@ watch(
     selectedThingId.value = null
     await fetchAll(newId)
     autoSelectSidebar()
-    const NON_TERMINAL = ['PENDING', 'STARTED']
-    for (const task of workspaceTasks.value) {
-      if (
-        task.latestRun?.id &&
-        NON_TERMINAL.includes(task.latestRun.status ?? '')
-      )
-        startMonitoringRun('etl', task.id, task.latestRun.id)
-    }
-    for (const task of dataProductTasks.value) {
-      if (
-        task.latestRun?.id &&
-        NON_TERMINAL.includes(task.latestRun.status ?? '')
-      )
-        startMonitoringRun('dataProduct', task.id, task.latestRun.id)
-    }
-    for (const task of monitoringTasks.value) {
-      if (
-        task.latestRun?.id &&
-        NON_TERMINAL.includes(task.latestRun.status ?? '')
-      )
-        startMonitoringRun('monitoring', task.id, task.latestRun.id)
-    }
   },
   { immediate: true }
 )

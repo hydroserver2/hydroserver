@@ -5,6 +5,7 @@
     :task-id="resolvedTaskId"
     :run-id="resolvedRunId"
     :embedded="embedded"
+    :initial-task="initialTaskForComponent"
     @close="$emit('close')"
     @deleted="$emit('deleted')"
     @updated="$emit('updated')"
@@ -30,12 +31,14 @@ const props = withDefaults(
     taskKind?: TaskKind | null
     runId?: string | null
     embedded?: boolean
+    initialTask?: any
   }>(),
   {
     taskId: null,
     taskKind: null,
     runId: null,
     embedded: false,
+    initialTask: null,
   }
 )
 
@@ -43,6 +46,7 @@ defineEmits(['close', 'deleted', 'updated'])
 
 const route = useRoute()
 const productType = ref<string | null>(null)
+const resolvedTask = ref<any>(null)
 
 const resolvedTaskId = computed(() => {
   if (props.taskId) return props.taskId
@@ -75,11 +79,13 @@ const detailsComponent = computed(() => {
 
 async function resolveProductType() {
   productType.value = null
+  resolvedTask.value = null
   if (resolvedKind.value !== 'dataProduct' || !resolvedTaskId.value) return
   const response = await hs.dataProductTasks.get(resolvedTaskId.value, {
     expand_related: true,
   })
   const task = response.data as any
+  resolvedTask.value = task
   if (task?.aggregationTransformations?.length)
     productType.value = 'aggregation'
   else if (task?.expressionTransformations?.length)
@@ -89,6 +95,13 @@ async function resolveProductType() {
   else if (task?.ratingCurveTransformations?.length)
     productType.value = 'ratingCurve'
 }
+
+// For dataProduct tasks, reuse the already-fetched (expand_related) task to avoid a
+// duplicate fetch inside the detail component. For etl/monitoring, pass through the
+// list-level task the parent already has.
+const initialTaskForComponent = computed(() =>
+  resolvedKind.value === 'dataProduct' ? resolvedTask.value : props.initialTask
+)
 
 onMounted(resolveProductType)
 watch([resolvedTaskId, resolvedKind], resolveProductType)

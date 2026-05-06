@@ -31,12 +31,12 @@ type Emit = {
 
 export function useSimpleTaskDetails(
   kind: TaskKind,
-  props: { taskId?: string | null; runId?: string | null; embedded?: boolean },
+  props: { taskId?: string | null; runId?: string | null; embedded?: boolean; initialTask?: any },
   emit: Emit
 ) {
   const route = useRoute()
   const service = serviceForKind(kind)
-  const task = ref<any>(null)
+  const task = ref<any>(props.initialTask ?? null)
   const runs = ref<TaskRun[]>([])
   const loading = ref(false)
   const loadingRuns = ref(false)
@@ -239,7 +239,9 @@ export function useSimpleTaskDetails(
   }
 
   onMounted(async () => {
-    await load()
+    // ETL tasks always need the full load for mappings data not present in list items.
+    // Other kinds skip load when initialTask is already provided (fully expanded data).
+    if (!task.value || kind === 'etl') await load()
     await fetchRuns()
   })
 

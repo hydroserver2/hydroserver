@@ -79,6 +79,7 @@ const props = defineProps<{
   taskId: string
   runId?: string | null
   embedded?: boolean
+  initialTask?: any
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const {

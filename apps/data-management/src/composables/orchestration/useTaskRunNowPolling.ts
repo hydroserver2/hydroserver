@@ -8,8 +8,9 @@ import type {
 import { serviceForKind, type TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
 
 const POLL_INTERVAL_MS = 4000
-const POLL_MAX_ATTEMPTS = 150
+const POLL_DURATION_MS = 30_000
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILURE']
+const ACTIVE_RUN_STATUSES = new Set(['PENDING', 'STARTED'])
 
 type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 
@@ -27,6 +28,7 @@ type Options = {
 export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
   const runNowTriggeredByTaskId = reactive<Record<string, boolean>>({})
   const taskPollTimeouts = new Map<string, number>()
+  const runNowStartedAt = new Map<string, number>()
 
   const listFor = (kind: TaskKind) => {
     if (kind === 'etl') return lists.etl
@@ -57,11 +59,13 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     const timeoutId = taskPollTimeouts.get(taskId)
     if (timeoutId) window.clearTimeout(timeoutId)
     taskPollTimeouts.delete(taskId)
+    runNowStartedAt.delete(taskId)
   }
 
   const stopAll = () => {
     taskPollTimeouts.forEach((id) => window.clearTimeout(id))
     taskPollTimeouts.clear()
+    runNowStartedAt.clear()
     for (const id of Object.keys(runNowTriggeredByTaskId)) {
       delete runNowTriggeredByTaskId[id]
     }
@@ -82,13 +86,13 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
   const schedulePoll = (
     kind: TaskKind,
     taskId: string,
-    requestedRunId: string | null,
-    previousRunId: string | null,
-    attempt = 0,
+    requestedRunId: string,
+    startedAt: number,
     workspaceId = currentWorkspaceId()
   ) => {
     stopPollingFor(taskId)
-    if (attempt > POLL_MAX_ATTEMPTS) {
+
+    if (Date.now() - startedAt >= POLL_DURATION_MS) {
       runNowTriggeredByTaskId[taskId] = false
       return
     }
@@ -102,97 +106,65 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         return
       }
 
+      if (Date.now() - startedAt >= POLL_DURATION_MS) {
+        runNowTriggeredByTaskId[taskId] = false
+        stopPollingFor(taskId)
+        return
+      }
+
       try {
-        if (requestedRunId) {
-          const runResponse = await svc.getTaskRun(taskId, requestedRunId)
-          const updatedRun = runResponse.ok
-            ? (runResponse.data as TaskRun) ?? null
-            : null
+        const runResponse = await svc.getTaskRun(taskId, requestedRunId)
+        const updatedRun = runResponse.ok ? (runResponse.data as TaskRun) ?? null : null
 
-          if (workspaceId !== currentWorkspaceId()) {
+        if (workspaceId !== currentWorkspaceId()) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopPollingFor(taskId)
+          return
+        }
+
+        if (updatedRun?.id) {
+          syncLatestRun(kind, taskId, updatedRun)
+          const status = updatedRun.status ?? null
+          if (!status || !ACTIVE_RUN_STATUSES.has(status)) {
             runNowTriggeredByTaskId[taskId] = false
             stopPollingFor(taskId)
-            return
-          }
-
-          if (updatedRun?.id) {
-            syncLatestRun(kind, taskId, updatedRun)
-            if (updatedRun.status && TERMINAL_STATUSES.includes(updatedRun.status)) {
-              runNowTriggeredByTaskId[taskId] = false
-              stopPollingFor(taskId)
+            if (status && TERMINAL_STATUSES.includes(status)) {
               await refreshAfterCompletion(kind, taskId)
-              return
             }
-          }
-        } else {
-          const updated = (await svc.getItem(taskId, {
-            expand_related: true,
-          })) as any
-
-          if (workspaceId !== currentWorkspaceId()) {
-            runNowTriggeredByTaskId[taskId] = false
-            stopPollingFor(taskId)
             return
-          }
-
-          if (updated) {
-            upsertTask(kind, updated)
-            const latestRunId = updated.latestRun?.id ?? null
-            const status = updated.latestRun?.status
-            const sawRequestedRun = previousRunId
-              ? !!latestRunId && latestRunId !== previousRunId
-              : !!latestRunId
-            if (sawRequestedRun && status) {
-              if (updated.latestRun)
-                syncLatestRun(kind, taskId, updated.latestRun)
-              if (TERMINAL_STATUSES.includes(status)) {
-                runNowTriggeredByTaskId[taskId] = false
-                stopPollingFor(taskId)
-                await refreshAfterCompletion(kind, taskId)
-                return
-              }
-            }
           }
         }
       } catch (error) {
         console.error('Error polling task status', error)
       }
-      schedulePoll(
-        kind,
-        taskId,
-        requestedRunId,
-        previousRunId,
-        attempt + 1,
-        workspaceId
-      )
+
+      schedulePoll(kind, taskId, requestedRunId, startedAt, workspaceId)
     }, POLL_INTERVAL_MS)
 
     taskPollTimeouts.set(taskId, timeoutId)
   }
 
   const runTaskNow = async (kind: TaskKind, taskId: string) => {
-    const previousRunId = (findTask(kind, taskId) as any)?.latestRun?.id ?? null
     runNowTriggeredByTaskId[taskId] = true
+    const startedAt = Date.now()
+    runNowStartedAt.set(taskId, startedAt)
     try {
       const svc = serviceForKind(kind)
       const response = await svc.runTask(taskId)
       if (!response.ok) {
         throw new Error(response.message || 'Unable to run task now.')
       }
-      const requestedRun = response.ok
-        ? (response.data as TaskRun) ?? null
-        : null
-      if (requestedRun?.id) syncLatestRun(kind, taskId, requestedRun)
-      schedulePoll(
-        kind,
-        taskId,
-        requestedRun?.id ?? null,
-        previousRunId,
-        0,
-        currentWorkspaceId()
-      )
+      const requestedRun = response.ok ? (response.data as TaskRun) ?? null : null
+      if (requestedRun?.id) {
+        syncLatestRun(kind, taskId, requestedRun)
+        schedulePoll(kind, taskId, requestedRun.id, startedAt, currentWorkspaceId())
+      } else {
+        runNowTriggeredByTaskId[taskId] = false
+        runNowStartedAt.delete(taskId)
+      }
     } catch (error) {
       runNowTriggeredByTaskId[taskId] = false
+      runNowStartedAt.delete(taskId)
       console.error('Error running task now', error)
     }
   }
@@ -215,11 +187,6 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     }
   }
 
-  const startMonitoringRun = (kind: TaskKind, taskId: string, runId: string) => {
-    if (taskPollTimeouts.has(taskId)) return
-    schedulePoll(kind, taskId, runId, null, 0)
-  }
-
   onBeforeUnmount(() => stopAll())
 
   return {
@@ -227,6 +194,5 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     stopAll,
     runTaskNow,
     toggleSchedulePaused,
-    startMonitoringRun,
   }
 }
