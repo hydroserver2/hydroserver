@@ -1,8 +1,10 @@
 <template>
-  <div class="task-form-section">
-    <div class="task-form-section-header task-form-section-header-stack">
-      <h3 class="task-form-section-title">Data mapping</h3>
-      <p class="task-form-section-copy">
+  <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-px">
+      <h3 class="text-[0.67rem] tracking-[0.08em] uppercase font-extrabold text-[#4f4b59]">
+        Data mapping
+      </h3>
+      <p class="text-[#5f5a67] text-[0.72rem] leading-[1.3]">
         Map each source field (CSV column or JSON key) to a HydroServer
         datastream.
       </p>
@@ -18,15 +20,21 @@
       At least one source target mapping is required.
     </v-alert>
 
-    <div class="etl-mappings">
-      <div class="etl-mappings-head">Source field</div>
-      <div class="etl-mappings-head etl-mappings-head-target">
-        Target datastream
+    <div class="flex flex-col gap-1">
+      <div class="flex">
+        <div class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem]">
+          Source field
+        </div>
+        <div class="etl-mappings-head-target font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem]">
+          Target datastream
+        </div>
       </div>
 
       <template v-for="(m, mi) in task.mappings as any[]" :key="mi">
-        <div class="etl-mapping-row">
-          <div class="etl-mapping-source">
+        <div
+          class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)_44px] gap-[5px] items-center max-[640px]:grid-cols-1 max-[640px]:gap-[10px]"
+        >
+          <div class="etl-mapping-source min-w-0 self-center">
             <v-text-field
               v-model="m.sourceIdentifier"
               placeholder="CSV column or JSON key"
@@ -38,11 +46,13 @@
             />
           </div>
 
-          <div class="etl-mapping-arrow">
+          <div
+            class="flex items-center justify-center text-[#c0b8c9] min-h-[40px] max-[640px]:justify-start max-[640px]:min-h-0"
+          >
             <v-icon :icon="mdiArrowRight" size="22" />
           </div>
 
-          <div class="etl-mapping-target">
+          <div class="min-w-0 self-center">
             <v-btn
               v-if="!ensureSinglePath(m).targetIdentifier"
               variant="outlined"
@@ -52,7 +62,7 @@
               :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
               @click="openTargetSelector(mi, 0)"
             >
-              <span class="etl-target-btn-label">
+              <span class="inline-flex items-center gap-1.5 font-bold">
                 <v-icon :icon="mdiPlusCircleOutline" size="18" />
                 <span>Select target datastream</span>
               </span>
@@ -66,8 +76,8 @@
               class="etl-target-btn etl-target-btn-selected text-none"
               @click="openTargetSelector(mi, 0)"
             >
-              <span class="target-selector-content">
-                <span class="target-name">
+              <span class="block max-w-full leading-[1.25] py-[2px]">
+                <span class="font-semibold text-[#1c1b1f] block [overflow-wrap:anywhere] whitespace-normal">
                   {{ datastreamNameById(ensureSinglePath(m).targetIdentifier) }}
                 </span>
                 <span
@@ -76,7 +86,7 @@
                       ensureSinglePath(m).targetIdentifier
                     )
                   "
-                  class="target-thing"
+                  class="text-[rgba(0,0,0,0.66)] block text-[0.78rem] [overflow-wrap:anywhere] whitespace-normal"
                 >
                   {{
                     datastreamThingNameById(
@@ -84,9 +94,9 @@
                     )
                   }}
                 </span>
-                <span class="target-id">{{
-                  String(ensureSinglePath(m).targetIdentifier)
-                }}</span>
+                <span class="text-[rgba(0,0,0,0.55)] block text-[0.72rem] [overflow-wrap:anywhere] whitespace-normal">
+                  {{ String(ensureSinglePath(m).targetIdentifier) }}
+                </span>
               </span>
             </v-btn>
 
@@ -98,7 +108,9 @@
             </div>
           </div>
 
-          <div class="etl-mapping-delete">
+          <div
+            class="flex items-center justify-center min-h-[40px] max-[640px]:justify-start max-[640px]:min-h-0"
+          >
             <v-btn
               icon
               variant="text"
@@ -113,7 +125,7 @@
         </div>
       </template>
 
-      <div class="etl-mapping-actions">
+      <div class="mt-px">
         <v-btn
           variant="outlined"
           rounded="lg"
@@ -380,71 +392,13 @@ watch(
 </script>
 
 <style scoped>
-.task-form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.task-form-section-header {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.task-form-section-header-stack {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-}
-.task-form-section-title {
-  font-size: 0.67rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: #4f4b59;
-}
-.task-form-section-copy {
-  color: #5f5a67;
-  font-size: 0.72rem;
-  line-height: 1.3;
-}
-.etl-mappings {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.etl-mappings-head {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #4f4b59;
-  font-size: 0.68rem;
-}
 .etl-mappings-head-target {
   margin-left: calc((100% - 101px) / 3 + 52px);
 }
-.etl-mapping-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 2fr) 44px;
-  gap: 5px;
-  align-items: center;
-}
-.etl-mapping-source,
-.etl-mapping-target {
-  min-width: 0;
-  align-self: center;
-}
-.etl-mapping-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #c0b8c9;
-  min-height: 40px;
-}
-.etl-mapping-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
+@media (max-width: 640px) {
+  .etl-mappings-head-target {
+    margin-left: 0;
+  }
 }
 .etl-target-btn {
   width: 100%;
@@ -471,21 +425,12 @@ watch(
   color: #1c1b1f;
   min-height: 62px;
 }
-.etl-target-btn-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
 .etl-target-btn :deep(.v-btn__content) {
   justify-content: flex-start;
   text-align: left;
   width: 100%;
   min-width: 0;
   overflow: visible;
-}
-.etl-mapping-actions {
-  margin-top: 1px;
 }
 .etl-add-mapping-btn {
   min-height: 38px;
@@ -494,33 +439,6 @@ watch(
   color: #1565c0;
   font-size: 0.84rem;
   border-style: dashed;
-}
-.target-selector-content {
-  display: block;
-  max-width: 100%;
-  line-height: 1.25;
-  padding-block: 2px;
-}
-.target-id {
-  display: block;
-  color: rgba(0, 0, 0, 0.55);
-  font-size: 0.72rem;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-.target-name {
-  color: #1c1b1f;
-  display: block;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-.target-thing {
-  color: rgba(0, 0, 0, 0.66);
-  display: block;
-  font-size: 0.78rem;
-  overflow-wrap: anywhere;
-  white-space: normal;
 }
 :deep(.etl-mapping-source .v-field) {
   --v-input-control-height: 38px;
@@ -531,21 +449,5 @@ watch(
   padding-bottom: 0;
   font-size: 0.86rem;
   text-align: left;
-}
-@media (max-width: 640px) {
-  .etl-mappings-head-target {
-    margin-left: 0;
-  }
-
-  .etl-mapping-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .etl-mapping-arrow,
-  .etl-mapping-delete {
-    justify-content: flex-start;
-    min-height: 0;
-  }
 }
 </style>

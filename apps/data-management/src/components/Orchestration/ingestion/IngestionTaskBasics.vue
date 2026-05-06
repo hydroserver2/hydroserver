@@ -1,8 +1,8 @@
 <template>
-  <div class="task-form-section">
-    <div class="task-form-field">
-      <label class="task-form-label" for="task-name">
-        Task name <span class="task-form-required">*</span>
+  <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-1">
+      <label class="text-[0.74rem] font-bold text-[#1f1d24]" for="task-name">
+        Task name <span class="text-[#d32f2f]">*</span>
       </label>
       <v-text-field
         id="task-name"
@@ -24,24 +24,3 @@ import { rules } from '@/utils/rules'
 
 const task = defineModel<Task>('task', { required: true })
 </script>
-
-<style scoped>
-.task-form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.task-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.task-form-label {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #1f1d24;
-}
-.task-form-required {
-  color: #d32f2f;
-}
-</style>

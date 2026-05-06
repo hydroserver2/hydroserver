@@ -1,34 +1,44 @@
 <template>
-  <div class="task-form-section">
-    <div class="task-form-section-header">
-      <h3 class="task-form-section-title">Schedule</h3>
-      <span class="task-form-section-subtitle">{{ timezoneLabel }}</span>
+  <div class="flex flex-col gap-1.5">
+    <div class="flex items-baseline gap-1.5">
+      <h3 class="text-[0.67rem] tracking-[0.08em] uppercase font-extrabold text-[#4f4b59]">
+        Schedule
+      </h3>
+      <span class="text-[#5f5a67] text-[0.72rem] leading-[1.3]">{{ timezoneLabel }}</span>
     </div>
 
-    <div class="schedule-card-grid">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-1.5">
       <div
-        class="schedule-card"
-        :class="{ 'schedule-card-active': scheduleMode === 'interval' }"
+        class="border-2 border-[#d0c9d8] rounded-[14px] bg-white px-2.5 py-2 outline-none cursor-pointer transition-[border-color,background-color,box-shadow] duration-[160ms] ease-in-out hover:border-[#1565c0] focus-visible:border-[#1565c0]"
+        :class="{
+          'schedule-card-active border-[#1565c0] bg-[#edf3ff] shadow-[inset_0_0_0_1px_rgba(21,101,192,0.05)]':
+            scheduleMode === 'interval',
+        }"
         tabindex="0"
         role="button"
         @click="scheduleMode = 'interval'"
         @keydown.enter.prevent="scheduleMode = 'interval'"
         @keydown.space.prevent="scheduleMode = 'interval'"
       >
-        <div class="schedule-card-top">
+        <div class="flex items-start gap-[5px]">
           <span
-            class="schedule-card-radio"
-            :class="{
-              'schedule-card-radio-active': scheduleMode === 'interval',
-            }"
+            class="size-4 rounded-full border-2 shrink-0 mt-px"
+            :class="
+              scheduleMode === 'interval'
+                ? 'border-[#1565c0] shadow-[inset_0_0_0_3px_#1565c0] bg-white'
+                : 'border-[#7e7886]'
+            "
           />
-          <div>
-            <div class="schedule-card-title">Repeating interval</div>
+          <div class="text-[0.79rem] font-bold text-[#1f1d24] leading-[1.2]">
+            Repeating interval
           </div>
         </div>
 
-        <div v-if="scheduleMode === 'interval'" class="schedule-card-body">
-          <span class="schedule-inline-label">Every</span>
+        <div
+          v-if="scheduleMode === 'interval'"
+          class="flex items-center gap-[5px] mt-1 pl-7 flex-wrap max-[900px]:pl-0"
+        >
+          <span class="text-[0.74rem] font-medium text-[#1f1d24]">Every</span>
           <v-text-field
             v-model.number="task.schedule!.interval"
             class="max-w-20"
@@ -41,7 +51,7 @@
           />
           <v-select
             v-model="task.schedule!.intervalPeriod"
-            class="schedule-unit-select"
+            class="max-w-[110px]"
             :items="intervalUnitOptions"
             item-title="title"
             item-value="value"
@@ -55,31 +65,43 @@
       </div>
 
       <div
-        class="schedule-card"
-        :class="{ 'schedule-card-active': scheduleMode === 'crontab' }"
+        class="border-2 border-[#d0c9d8] rounded-[14px] bg-white px-2.5 py-2 outline-none cursor-pointer transition-[border-color,background-color,box-shadow] duration-[160ms] ease-in-out hover:border-[#1565c0] focus-visible:border-[#1565c0]"
+        :class="{
+          'schedule-card-active border-[#1565c0] bg-[#edf3ff] shadow-[inset_0_0_0_1px_rgba(21,101,192,0.05)]':
+            scheduleMode === 'crontab',
+        }"
         tabindex="0"
         role="button"
         @click="scheduleMode = 'crontab'"
         @keydown.enter.prevent="scheduleMode = 'crontab'"
         @keydown.space.prevent="scheduleMode = 'crontab'"
       >
-        <div class="schedule-card-top">
+        <div class="flex items-start gap-[5px]">
           <span
-            class="schedule-card-radio"
-            :class="{
-              'schedule-card-radio-active': scheduleMode === 'crontab',
-            }"
+            class="size-4 rounded-full border-2 shrink-0 mt-px"
+            :class="
+              scheduleMode === 'crontab'
+                ? 'border-[#1565c0] shadow-[inset_0_0_0_3px_#1565c0] bg-white'
+                : 'border-[#7e7886]'
+            "
           />
           <div>
-            <div class="schedule-card-title">Crontab expression</div>
-            <div class="schedule-card-copy">Advanced cron syntax</div>
+            <div class="text-[0.79rem] font-bold text-[#1f1d24] leading-[1.2]">
+              Crontab expression
+            </div>
+            <div class="mt-px text-[#5f5a67] text-[0.68rem] leading-[1.25]">
+              Advanced cron syntax
+            </div>
           </div>
         </div>
 
-        <div v-if="scheduleMode === 'crontab'" class="schedule-card-body">
+        <div
+          v-if="scheduleMode === 'crontab'"
+          class="flex items-center gap-[5px] mt-1 pl-7 flex-wrap max-[900px]:pl-0"
+        >
           <v-text-field
             v-model="task.schedule!.crontab"
-            class="schedule-crontab-input schedule-crontab-input-inline"
+            class="w-full max-[640px]:max-w-full"
             placeholder="0 9 * * *"
             hide-details
             variant="outlined"
@@ -90,12 +112,14 @@
       </div>
     </div>
 
-    <div class="schedule-start-row">
-      <label class="schedule-start-label" for="task-start-time">Start</label>
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <label class="text-[0.74rem] font-medium text-[#1f1d24]" for="task-start-time">
+        Start
+      </label>
       <v-text-field
         id="task-start-time"
         v-model="startInput"
-        class="schedule-start-input"
+        class="schedule-start-input max-w-[220px] max-[640px]:max-w-full max-[640px]:w-full"
         type="datetime-local"
         hide-details
         variant="outlined"
@@ -165,134 +189,6 @@ const startInput = computed({
 </script>
 
 <style scoped>
-.task-form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.task-form-section-header {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.task-form-section-title {
-  font-size: 0.67rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: #4f4b59;
-}
-.task-form-section-subtitle {
-  color: #5f5a67;
-  font-size: 0.72rem;
-  line-height: 1.3;
-}
-.schedule-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 6px;
-}
-.schedule-card {
-  border: 2px solid #d0c9d8;
-  border-radius: 14px;
-  background: #fff;
-  padding: 8px 10px;
-  transition: border-color 0.16s ease, background-color 0.16s ease,
-    box-shadow 0.16s ease;
-  outline: none;
-}
-.schedule-card:hover,
-.schedule-card:focus-visible {
-  border-color: #1565c0;
-}
-.schedule-card-active {
-  border-color: #1565c0;
-  background: #edf3ff;
-  box-shadow: inset 0 0 0 1px rgba(21, 101, 192, 0.05);
-}
-.schedule-card-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 5px;
-}
-.schedule-card-radio {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: 2px solid #7e7886;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.schedule-card-radio-active {
-  border-color: #1565c0;
-  box-shadow: inset 0 0 0 3px #1565c0;
-  background: #fff;
-}
-.schedule-card-title {
-  font-size: 0.79rem;
-  font-weight: 700;
-  color: #1f1d24;
-  line-height: 1.2;
-}
-.schedule-card-copy {
-  margin-top: 1px;
-  color: #5f5a67;
-  font-size: 0.68rem;
-  line-height: 1.25;
-}
-.schedule-card-body {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-  padding-left: 28px;
-  flex-wrap: wrap;
-}
-.schedule-inline-label,
-.schedule-start-label {
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: #1f1d24;
-}
-:deep(.schedule-interval-input input[type='number']) {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-:deep(.schedule-interval-input input[type='number']::-webkit-inner-spin-button),
-:deep(
-    .schedule-interval-input input[type='number']::-webkit-outer-spin-button
-  ) {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.schedule-unit-select {
-  max-width: 110px;
-}
-.schedule-crontab-input {
-  max-width: 280px;
-}
-.schedule-crontab-input-inline {
-  width: 100%;
-  max-width: 100%;
-}
-.schedule-start-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.schedule-start-input {
-  max-width: 220px;
-}
-.schedule-card-active :deep(.v-field) {
-  background: #ffffff;
-}
-.schedule-card-active :deep(.v-field__overlay) {
-  background: transparent;
-}
-.schedule-card-active :deep(.v-field__outline) {
-  --v-field-border-opacity: 1;
-}
 :deep(.schedule-start-input .v-field__input) {
   align-items: center;
 }
@@ -309,16 +205,13 @@ const startInput = computed({
   opacity: 0.82;
   transform: translateY(-1px);
 }
-@media (max-width: 900px) {
-  .schedule-card-body {
-    padding-left: 0;
-  }
+.schedule-card-active :deep(.v-field) {
+  background: #ffffff;
 }
-@media (max-width: 640px) {
-  .schedule-start-input,
-  .schedule-crontab-input {
-    max-width: 100%;
-    width: 100%;
-  }
+.schedule-card-active :deep(.v-field__overlay) {
+  background: transparent;
+}
+.schedule-card-active :deep(.v-field__outline) {
+  --v-field-border-opacity: 1;
 }
 </style>

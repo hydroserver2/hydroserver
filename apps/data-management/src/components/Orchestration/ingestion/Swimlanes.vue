@@ -1,40 +1,51 @@
 <template>
-  <div class="swimlanes-view">
-    <div class="etl-mappings">
-      <div class="etl-mappings-head">Source field</div>
-      <div class="etl-mappings-head etl-mappings-head-target">
+  <div class="flex flex-col gap-1">
+    <div
+      class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)] gap-[5px] items-center max-[960px]:grid-cols-1"
+    >
+      <div class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-1 col-end-2 max-[960px]:col-span-full">
+        Source field
+      </div>
+      <div class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-3 col-end-4 max-[960px]:col-span-full">
         Target datastream
       </div>
 
-      <div
-        v-for="(m, mi) in task.mappings"
-        :key="mi"
-        class="etl-mapping-row"
-      >
-        <div class="etl-mapping-source">
-          <div class="etl-source-display">
-            {{ m.sourceIdentifier || '—' }}
+      <template v-for="(m, mi) in task.mappings" :key="mi">
+        <div class="contents">
+          <div class="min-w-0 flex items-center">
+            <div
+              class="etl-source-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-2 bg-[#fdfdff] text-[0.86rem] text-[#1c1b1f] flex items-center [overflow-wrap:anywhere] [word-break:break-word]"
+            >
+              {{ m.sourceIdentifier || '—' }}
+            </div>
+          </div>
+
+          <div
+            class="flex items-center justify-center text-[#c0b8c9] min-h-[40px] max-[960px]:justify-start max-[960px]:min-h-0"
+          >
+            <v-icon :icon="mdiArrowRight" size="22" />
+          </div>
+
+          <div class="min-w-0 flex items-center">
+            <div
+              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] text-[0.86rem] text-[#1c1b1f] flex flex-col justify-center overflow-hidden"
+            >
+              <span class="font-semibold text-[#1c1b1f] text-[0.86rem] leading-[1.25] [overflow-wrap:anywhere] whitespace-normal">
+                {{ resolveTargetName(m) || '—' }}
+              </span>
+              <span
+                v-if="resolveThingName(m)"
+                class="text-[rgba(0,0,0,0.66)] text-[0.78rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
+              >
+                {{ resolveThingName(m) }}
+              </span>
+              <span class="text-[rgba(0,0,0,0.55)] text-[0.72rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal">
+                {{ targetDatastream(m)?.id || '—' }}
+              </span>
+            </div>
           </div>
         </div>
-
-        <div class="etl-mapping-arrow">
-          <v-icon :icon="mdiArrowRight" size="22" />
-        </div>
-
-        <div class="etl-mapping-target">
-          <div class="etl-target-display">
-            <span class="target-name">
-              {{ resolveTargetName(m) || '—' }}
-            </span>
-            <span v-if="resolveThingName(m)" class="target-thing">
-              {{ resolveThingName(m) }}
-            </span>
-            <span class="target-id">
-              {{ targetDatastream(m)?.id || '—' }}
-            </span>
-          </div>
-        </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -89,117 +100,3 @@ function resolveThingName(mapping: TaskMapping) {
   )
 }
 </script>
-
-<style scoped>
-.swimlanes-view {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.etl-mappings {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 2fr);
-  gap: 5px 5px;
-  align-items: center;
-}
-.etl-mappings-head {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #4f4b59;
-  font-size: 0.68rem;
-  padding-bottom: 4px;
-}
-.etl-mappings-head:first-child {
-  grid-column: 1 / 2;
-}
-.etl-mappings-head-target {
-  grid-column: 3 / 4;
-}
-.etl-mapping-row {
-  display: contents;
-}
-.etl-mapping-source,
-.etl-mapping-target {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-}
-.etl-mapping-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #c0b8c9;
-  min-height: 40px;
-}
-.etl-source-display {
-  width: 100%;
-  min-height: 40px;
-  border: 1px solid #d0c9d8;
-  border-radius: 10px;
-  padding: 8px 12px;
-  background: #fdfdff;
-  font-size: 0.86rem;
-  color: #1c1b1f;
-  display: flex;
-  align-items: center;
-  text-align: left;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-.etl-target-display {
-  width: 100%;
-  min-height: 40px;
-  border: 1px solid #d0c9d8;
-  border-radius: 10px;
-  padding: 6px 12px;
-  background: #f6f9ff;
-  font-size: 0.86rem;
-  color: #1c1b1f;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: left;
-  overflow: hidden;
-}
-.target-id {
-  color: rgba(0, 0, 0, 0.55);
-  overflow-wrap: anywhere;
-  white-space: normal;
-  font-size: 0.72rem;
-  margin-top: 2px;
-}
-.target-name {
-  font-weight: 600;
-  color: #1c1b1f;
-  font-size: 0.86rem;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-.target-thing {
-  color: rgba(0, 0, 0, 0.66);
-  overflow-wrap: anywhere;
-  white-space: normal;
-  font-size: 0.78rem;
-  margin-top: 2px;
-}
-
-@media (max-width: 960px) {
-  .etl-mappings {
-    grid-template-columns: 1fr;
-  }
-  .etl-mappings-head,
-  .etl-mappings-head-target {
-    grid-column: 1 / 2;
-  }
-  .etl-mapping-row {
-    display: contents;
-  }
-  .etl-mapping-arrow {
-    justify-content: flex-start;
-    min-height: 0;
-  }
-}
-</style>

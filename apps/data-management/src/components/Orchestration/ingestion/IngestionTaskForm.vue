@@ -1,10 +1,15 @@
 <template>
   <StickyForm>
     <template #header>
-      <div class="task-form-header">
-        <h2 class="task-form-title">{{ isEdit ? 'Edit task' : 'Add task' }}</h2>
-        <div v-if="headerContextLabel" class="task-form-context">
-          <span class="task-form-context-dot" />
+      <div class="px-4.5 pt-2.5 pb-2 max-[900px]:px-3.5">
+        <h2 class="text-[1rem] leading-[1.2] font-medium text-[#1c1b1f]">
+          {{ isEdit ? 'Edit task' : 'Add task' }}
+        </h2>
+        <div
+          v-if="headerContextLabel"
+          class="flex items-center gap-2 mt-0.75 text-[#4f4b59] text-[0.74rem] font-medium"
+        >
+          <span class="w-2.5 h-2.5 rounded-full bg-[#1565c0]" />
           <span>{{ headerContextLabel }}</span>
         </div>
       </div>
@@ -16,16 +21,16 @@
       v-model="valid"
       validate-on="blur"
     >
-      <div v-if="task" class="task-form-shell">
+      <div v-if="task" class="task-form-shell px-3.5 pt-2.5 pb-3 max-[640px]:pb-3.5">
         <IngestionTaskBasics v-model:task="task" />
 
-        <v-divider class="task-form-divider" />
+        <v-divider class="my-2" />
 
         <IngestionTaskSchedule v-model:task="task" />
 
         <v-divider
           v-if="perTaskPlaceholders.length"
-          class="task-form-divider"
+          class="my-2"
         />
 
         <IngestionTaskVariables
@@ -34,7 +39,7 @@
           :placeholders="perTaskPlaceholders"
         />
 
-        <v-divider class="task-form-divider" />
+        <v-divider class="my-2" />
 
         <IngestionTaskMappings
           ref="mappingsRef"
@@ -270,68 +275,20 @@ async function onSubmit() {
 :deep(.v-expansion-panel-text__wrapper) {
   padding: 0 !important;
 }
-
-.task-form-header {
-  padding: 10px 18px 8px;
-}
-.task-form-title {
-  font-size: 1rem;
-  line-height: 1.2;
-  font-weight: 500;
-  color: #1c1b1f;
-}
-.task-form-context {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 3px;
-  color: #4f4b59;
-  font-size: 0.74rem;
-  font-weight: 500;
-}
-.task-form-context-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #1565c0;
-}
-.task-form-shell {
-  padding: 10px 14px 12px;
-}
-.task-form-divider {
-  margin: 8px 0;
-}
 :deep(.task-form-shell .v-field) {
   --v-input-control-height: 38px;
 }
-
 :deep(.task-form-shell .v-field__input) {
   min-height: 38px;
   padding-top: 0;
   padding-bottom: 0;
   font-size: 0.86rem;
 }
-
 :deep(.task-form-shell .v-label) {
   font-size: 0.76rem;
 }
-
 :deep(.task-form-shell .v-messages) {
   min-height: 12px;
   font-size: 0.66rem;
-}
-
-@media (max-width: 900px) {
-  .task-form-header,
-  .task-form-shell {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-}
-
-@media (max-width: 640px) {
-  .task-form-shell {
-    padding-bottom: 14px;
-  }
 }
 </style>
