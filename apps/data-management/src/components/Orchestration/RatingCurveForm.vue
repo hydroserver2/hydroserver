@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>Create rating curve task</v-card-title>
+      <v-card-title>{{
+        isEditMode ? 'Edit rating curve task' : 'Create rating curve task'
+      }}</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
         variant="text"
@@ -35,6 +37,7 @@
           v-model="taskName"
           label="Task name *"
           :rules="rules.requiredAndMaxLength255"
+          :disabled="loadingExisting"
           class="mb-2"
         />
 
@@ -43,7 +46,7 @@
           :datastreams="siteDatastreams"
           label="Input datastream *"
           :loading="loading"
-          :disabled="!selectedThingId"
+          :disabled="!selectedThingId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
@@ -52,7 +55,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId"
+          :disabled="isEditMode || !selectedThingId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -77,12 +80,16 @@
             label="Rating curve *"
             clearable
             :disabled="!selectedThingId"
-            :loading="ratingCurvesLoading"
+            :loading="ratingCurvesLoading || loadingExisting"
             :rules="rules.required"
             class="mb-2"
           />
           <div
-            v-if="selectedThingId && !ratingCurvesLoading && !ratingCurveOptions.length"
+            v-if="
+              selectedThingId &&
+              !ratingCurvesLoading &&
+              !ratingCurveOptions.length
+            "
             class="text-caption text-medium-emphasis mb-3"
           >
             No rating curves found for this site. Switch to "Create new rating
@@ -166,7 +173,19 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
+        <v-btn-cancel :disabled="saving" @click="$emit('close')"
+          >Cancel</v-btn-cancel
+        >
+        <v-btn
+          v-if="isEditMode"
+          color="error"
+          variant="text"
+          :loading="deleting"
+          :disabled="saving"
+          @click="onDelete"
+        >
+          Delete task
+        </v-btn>
         <v-btn
           type="submit"
           variant="flat"
@@ -174,8 +193,9 @@
           class="text-none"
           :style="DATA_PRODUCT_SUBMIT_STYLE"
           :loading="saving"
+          :disabled="deleting"
         >
-          Create rating curve task
+          {{ isEditMode ? 'Save changes' : 'Create rating curve task' }}
         </v-btn>
       </v-card-actions>
     </v-form>
@@ -208,18 +228,25 @@ import DatastreamCardSelector from './DatastreamCardSelector.vue'
 const props = defineProps<{
   workspaceId: string
   initialThingId?: string | null
+  editTaskId?: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'created', task: DataProductTask): void
+  (e: 'updated', task: DataProductTask): void
+  (e: 'deleted'): void
   (e: 'close'): void
 }>()
+
+const isEditMode = computed(() => !!props.editTaskId)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
 const showInfo = ref(false)
 const loading = ref(false)
+const loadingExisting = ref(false)
 const saving = ref(false)
+const deleting = ref(false)
 const datastreams = ref<Datastream[]>([])
 const ratingCurves = ref<RatingCurve[]>([])
 const ratingCurvesLoading = ref(false)
@@ -229,6 +256,7 @@ const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const selectedRatingCurveId = ref<string | null>(null)
 const ratingCurveInputMode = ref<'existing' | 'create'>('existing')
+const existingTransformationId = ref<string | null>(null)
 
 const createFileInput = ref<HTMLInputElement | null>(null)
 const createCurveFile = ref<File | null>(null)
@@ -253,7 +281,9 @@ const siteDatastreams = computed(() => {
 
 const ratingCurveOptions = computed(() =>
   ratingCurves.value.map((curve) => ({
-    title: curve.description ? `${curve.name} - ${curve.description}` : curve.name,
+    title: curve.description
+      ? `${curve.name} - ${curve.description}`
+      : curve.name,
     value: curve.id,
   }))
 )
@@ -271,9 +301,41 @@ async function loadOptions() {
     datastreams.value = datastreamItems as Datastream[]
     if (selectedThingId.value) await loadRatingCurves(selectedThingId.value)
   } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to load rating curve form options.')
+    Snackbar.error(
+      error?.message || 'Unable to load rating curve form options.'
+    )
   } finally {
     loading.value = false
+  }
+}
+
+async function loadExistingTask() {
+  if (!props.editTaskId) return
+  loadingExisting.value = true
+  try {
+    const [taskRes, transformRes] = await Promise.all([
+      hs.dataProductTasks.get(props.editTaskId),
+      hs.dataProductTasks.listRatingCurveTransformations(props.editTaskId),
+    ])
+
+    if (taskRes.ok && taskRes.data?.name) {
+      taskName.value = taskRes.data.name
+    }
+
+    if (transformRes.ok && transformRes.data?.length) {
+      const t = transformRes.data[0]
+      existingTransformationId.value = t.id
+      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+      selectedRatingCurveId.value = (t.ratingCurve as any)?.id ?? null
+      ratingCurveInputMode.value = 'existing'
+    }
+  } catch (error: any) {
+    Snackbar.error(
+      error?.message || 'Unable to load existing rating curve task.'
+    )
+  } finally {
+    loadingExisting.value = false
   }
 }
 
@@ -283,9 +345,7 @@ async function loadRatingCurves(thingId: string) {
     const items = await hs.ratingCurves.listItemsForThing(thingId, {
       order_by: ['name'],
     })
-    ratingCurves.value = [...items].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )
+    ratingCurves.value = [...items].sort((a, b) => a.name.localeCompare(b.name))
   } catch (error: any) {
     ratingCurves.value = []
     Snackbar.error(error?.message || 'Unable to load rating curves.')
@@ -349,7 +409,8 @@ async function validateCreateFile(file: File | null): Promise<boolean> {
 }
 
 async function resolveRatingCurveId() {
-  if (ratingCurveInputMode.value === 'existing') return selectedRatingCurveId.value
+  if (ratingCurveInputMode.value === 'existing')
+    return selectedRatingCurveId.value
 
   const file = selectedCreateFile.value
   if (!selectedThingId.value || !file || !createCurveName.value.trim()) {
@@ -399,48 +460,110 @@ async function onSubmit() {
 
   saving.value = true
   try {
-    const ratingCurveId = await resolveRatingCurveId()
-    if (!ratingCurveId) return
-
-    const taskRes = await hs.dataProductTasks.create({
-      id: '',
-      name: taskName.value.trim(),
-      thingId: selectedThingId.value,
-      description: null,
-      schedule: null,
-    })
-
-    if (!taskRes.ok || !taskRes.data?.id) {
-      Snackbar.error(taskRes.message || 'Unable to create rating curve task.')
-      return
-    }
-
-    const transformRes = await hs.dataProductTasks.createRatingCurveTransformation(
-      taskRes.data.id,
-      {
-        inputDatastreamId: inputDatastreamId.value,
-        outputDatastreamId: outputDatastreamId.value,
-        ratingCurveId,
-      }
-    )
-
-    if (!transformRes.ok) {
-      Snackbar.error(
-        transformRes.message || 'Unable to create rating curve transformation.'
-      )
-      return
-    }
-
-    emit('created', taskRes.data)
-    emit('close')
+    if (isEditMode.value) await onUpdate()
+    else await onCreate()
   } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to create rating curve task.')
+    Snackbar.error(error?.message || 'Unable to save rating curve task.')
   } finally {
     saving.value = false
   }
 }
 
+async function onCreate() {
+  const ratingCurveId = await resolveRatingCurveId()
+  if (!ratingCurveId) return
+
+  const taskRes = await hs.dataProductTasks.create({
+    id: '',
+    name: taskName.value.trim(),
+    thingId: selectedThingId.value!,
+    description: null,
+    schedule: null,
+  })
+
+  if (!taskRes.ok || !taskRes.data?.id) {
+    Snackbar.error(taskRes.message || 'Unable to create rating curve task.')
+    return
+  }
+
+  const transformRes =
+    await hs.dataProductTasks.createRatingCurveTransformation(taskRes.data.id, {
+      inputDatastreamId: inputDatastreamId.value!,
+      outputDatastreamId: outputDatastreamId.value!,
+      ratingCurveId,
+    })
+
+  if (!transformRes.ok) {
+    Snackbar.error(
+      transformRes.message || 'Unable to create rating curve transformation.'
+    )
+    return
+  }
+
+  emit('created', taskRes.data)
+  emit('close')
+}
+
+async function onUpdate() {
+  const taskId = props.editTaskId!
+  const ratingCurveId = await resolveRatingCurveId()
+  if (!ratingCurveId) return
+
+  const taskRes = await hs.dataProductTasks.update({
+    id: taskId,
+    name: taskName.value.trim(),
+  })
+
+  if (!taskRes.ok) {
+    Snackbar.error(taskRes.message || 'Unable to update task name.')
+    return
+  }
+
+  if (existingTransformationId.value) {
+    const transformRes =
+      await hs.dataProductTasks.updateRatingCurveTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreamId: inputDatastreamId.value!,
+          ratingCurveId,
+        }
+      )
+
+    if (!transformRes.ok) {
+      Snackbar.error(
+        transformRes.message || 'Unable to update rating curve transformation.'
+      )
+      return
+    }
+  }
+
+  Snackbar.success('Rating curve task updated.')
+  emit('updated', taskRes.data!)
+  emit('close')
+}
+
+async function onDelete() {
+  if (!props.editTaskId) return
+  deleting.value = true
+  try {
+    const res = await hs.dataProductTasks.delete(props.editTaskId)
+    if (!res.ok) {
+      Snackbar.error(res.message || 'Unable to delete rating curve task.')
+      return
+    }
+    Snackbar.success('Rating curve task deleted.')
+    emit('deleted')
+    emit('close')
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to delete rating curve task.')
+  } finally {
+    deleting.value = false
+  }
+}
+
 watch(selectedThingId, (thingId) => {
+  if (isEditMode.value) return
   inputDatastreamId.value = null
   outputDatastreamId.value = null
   selectedRatingCurveId.value = null
@@ -458,5 +581,8 @@ watch(ratingCurveInputMode, () => {
   selectedRatingCurveId.value = null
 })
 
-onMounted(loadOptions)
+onMounted(async () => {
+  await loadOptions()
+  if (isEditMode.value) await loadExistingTask()
+})
 </script>

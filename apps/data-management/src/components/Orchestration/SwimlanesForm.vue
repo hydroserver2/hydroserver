@@ -9,309 +9,117 @@
     >
       At least one source target mapping is required.
     </v-alert>
-    <template v-if="!isAggregationTask">
-      <div class="etl-mappings">
-        <div class="etl-mappings-head">Source field</div>
-        <div class="etl-mappings-head etl-mappings-head-target">
-          Target datastream
-        </div>
+    <div class="etl-mappings">
+      <div class="etl-mappings-head">Source field</div>
+      <div class="etl-mappings-head etl-mappings-head-target">
+        Target datastream
+      </div>
 
-        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
-          <div class="etl-mapping-row">
-            <div class="etl-mapping-source">
-              <v-text-field
-                v-model="m.sourceIdentifier"
-                placeholder="CSV column or JSON key"
-                density="compact"
-                variant="outlined"
-                rounded="lg"
-                hide-details="auto"
-                :rules="rules.requiredAndMaxLength150"
-              />
-            </div>
+      <template v-for="(m, mi) in task.mappings as any[]" :key="mi">
+        <div class="etl-mapping-row">
+          <div class="etl-mapping-source">
+            <v-text-field
+              v-model="m.sourceIdentifier"
+              placeholder="CSV column or JSON key"
+              density="compact"
+              variant="outlined"
+              rounded="lg"
+              hide-details="auto"
+              :rules="rules.requiredAndMaxLength150"
+            />
+          </div>
 
-            <div class="etl-mapping-arrow">
-              <v-icon :icon="mdiArrowRight" size="22" />
-            </div>
+          <div class="etl-mapping-arrow">
+            <v-icon :icon="mdiArrowRight" size="22" />
+          </div>
 
-            <div class="etl-mapping-target">
-              <v-btn
-                v-if="!ensureSinglePath(m).targetIdentifier"
-                variant="outlined"
-                rounded="lg"
-                type="button"
-                class="etl-target-btn text-none"
-                :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
-                @click="openTargetSelector(mi, 0)"
-              >
-                <span class="etl-target-btn-label">
-                  <v-icon :icon="mdiPlusCircleOutline" size="18" />
-                  <span>Select target datastream</span>
+          <div class="etl-mapping-target">
+            <v-btn
+              v-if="!ensureSinglePath(m).targetIdentifier"
+              variant="outlined"
+              rounded="lg"
+              type="button"
+              class="etl-target-btn text-none"
+              :class="{ 'etl-target-btn-error': hasTargetError(mi, 0) }"
+              @click="openTargetSelector(mi, 0)"
+            >
+              <span class="etl-target-btn-label">
+                <v-icon :icon="mdiPlusCircleOutline" size="18" />
+                <span>Select target datastream</span>
+              </span>
+            </v-btn>
+
+            <v-btn
+              v-else
+              variant="outlined"
+              rounded="lg"
+              type="button"
+              class="etl-target-btn etl-target-btn-selected text-none"
+              @click="openTargetSelector(mi, 0)"
+            >
+              <span class="target-selector-content">
+                <span class="target-name">
+                  {{ datastreamNameById(ensureSinglePath(m).targetIdentifier) }}
                 </span>
-              </v-btn>
-
-              <v-btn
-                v-else
-                variant="outlined"
-                rounded="lg"
-                type="button"
-                class="etl-target-btn etl-target-btn-selected text-none"
-                @click="openTargetSelector(mi, 0)"
-              >
-                <span class="target-selector-content">
-                  <span class="target-name">
-                    {{
-                      datastreamNameById(ensureSinglePath(m).targetIdentifier)
-                    }}
-                  </span>
-                  <span
-                    v-if="
-                      datastreamThingNameById(
-                        ensureSinglePath(m).targetIdentifier
-                      )
-                    "
-                    class="target-thing"
-                  >
-                    {{
-                      datastreamThingNameById(
-                        ensureSinglePath(m).targetIdentifier
-                      )
-                    }}
-                  </span>
-                  <span class="target-id">{{
-                    String(ensureSinglePath(m).targetIdentifier)
-                  }}</span>
+                <span
+                  v-if="
+                    datastreamThingNameById(
+                      ensureSinglePath(m).targetIdentifier
+                    )
+                  "
+                  class="target-thing"
+                >
+                  {{
+                    datastreamThingNameById(
+                      ensureSinglePath(m).targetIdentifier
+                    )
+                  }}
                 </span>
-              </v-btn>
+                <span class="target-id">{{
+                  String(ensureSinglePath(m).targetIdentifier)
+                }}</span>
+              </span>
+            </v-btn>
 
-              <div
-                v-if="hasTargetError(mi, 0)"
-                class="text-error text-caption mt-1"
-              >
-                Target is required
-              </div>
-            </div>
-
-            <div class="etl-mapping-delete">
-              <v-btn
-                icon
-                variant="text"
-                color="red-lighten-1"
-                type="button"
-                :title="`Delete mapping`"
-                @click.stop="removeMapping(mi)"
-              >
-                <v-icon :icon="mdiTrashCanOutline" size="22" />
-              </v-btn>
+            <div
+              v-if="hasTargetError(mi, 0)"
+              class="text-error text-caption mt-1"
+            >
+              Target is required
             </div>
           </div>
-        </template>
 
-        <div class="etl-mapping-actions">
-          <v-btn
-            variant="outlined"
-            rounded="lg"
-            type="button"
-            class="text-none etl-add-mapping-btn"
-            :prepend-icon="mdiPlus"
-            @click="onAddMapping"
-          >
-            Add mapping
-          </v-btn>
-        </div>
-      </div>
-    </template>
-
-    <template v-else>
-      <div
-        :class="['swimlanes', { 'swimlanes-aggregation': isAggregationTask }]"
-      >
-        <div class="head">Source datastream</div>
-        <div class="head">Aggregation statistic</div>
-        <div class="head">Target datastream</div>
-
-        <template v-for="(m, mi) in (task.mappings as any[])" :key="mi">
-          <template v-for="(p, pi) in ((m as any).paths as any[])" :key="pi">
-            <div class="cell">
-              <template v-if="pi === 0" class="d-flex align-center w-100">
-                <v-btn
-                  v-if="!m.sourceIdentifier"
-                  size="small"
-                  variant="outlined"
-                  type="button"
-                  :color="
-                    aggregationSourceMissing ? 'error' : 'green-lighten-1'
-                  "
-                  class="mr-4 target-selector-btn text-none"
-                  :class="{
-                    'target-selector-btn-error': aggregationSourceMissing,
-                  }"
-                  @click="openAggregationDatastreamSelector('source', mi, pi)"
-                  :prepend-icon="mdiImport"
-                >
-                  Select source datastream
-                </v-btn>
-
-                <v-btn
-                  v-else
-                  size="small"
-                  variant="tonal"
-                  color="green-darken-2"
-                  type="button"
-                  class="mr-4 target-selector-btn target-selector-btn-selected text-none"
-                  :prepend-icon="mdiImport"
-                  @click="openAggregationDatastreamSelector('source', mi, pi)"
-                >
-                  <span class="target-selector-content">
-                    <span class="target-name">
-                      {{ datastreamNameById(m.sourceIdentifier) }}
-                    </span>
-                    <span
-                      v-if="datastreamThingNameById(m.sourceIdentifier)"
-                      class="target-thing"
-                    >
-                      {{ datastreamThingNameById(m.sourceIdentifier) }}
-                    </span>
-                    <span class="target-id">{{
-                      String(m.sourceIdentifier)
-                    }}</span>
-                  </span>
-                </v-btn>
-
-                <div
-                  v-if="aggregationSourceMissing"
-                  class="text-error text-caption mt-1"
-                >
-                  Source datastream is required
-                </div>
-              </template>
-            </div>
-
-            <div :class="['cell', 'aggregation-plain-cell']">
-              <v-select
-                class="aggregation-statistic-select"
-                :model-value="getAggregationStatistic(p)"
-                :items="aggregationStatisticOptions"
-                item-title="title"
-                item-value="value"
-                label="Aggregation statistic *"
-                density="compact"
-                :rules="rules.required"
-                @update:model-value="setAggregationStatistic(p, $event)"
-              />
-              <div
-                v-if="aggregationStatisticMissing"
-                class="text-error text-caption mt-1 aggregation-statistic-error"
-              >
-                Aggregation statistic is required
-              </div>
-            </div>
-
-            <div :class="['cell', 'd-flex', 'align-center', 'w-100']">
-              <div class="aggregation-field-stack">
-                <v-btn
-                  v-if="!p.targetIdentifier"
-                  size="small"
-                  variant="outlined"
-                  type="button"
-                  :color="
-                    aggregationTargetMissing ? 'error' : 'green-lighten-1'
-                  "
-                  class="mr-4 target-selector-btn text-none"
-                  :class="{
-                    'target-selector-btn-error': aggregationTargetMissing,
-                  }"
-                  @click="openAggregationDatastreamSelector('target', mi, pi)"
-                  :prepend-icon="mdiImport"
-                >
-                  Select target datastream
-                </v-btn>
-
-                <v-btn
-                  v-else
-                  size="small"
-                  variant="tonal"
-                  color="green-darken-2"
-                  type="button"
-                  class="mr-4 target-selector-btn target-selector-btn-selected text-none"
-                  :prepend-icon="mdiImport"
-                  @click="openAggregationDatastreamSelector('target', mi, pi)"
-                >
-                  <span class="target-selector-content">
-                    <span class="target-name">
-                      {{ datastreamNameById(p.targetIdentifier) }}
-                    </span>
-                    <span
-                      v-if="datastreamThingNameById(p.targetIdentifier)"
-                      class="target-thing"
-                    >
-                      {{ datastreamThingNameById(p.targetIdentifier) }}
-                    </span>
-                    <span class="target-id">{{
-                      String(p.targetIdentifier)
-                    }}</span>
-                  </span>
-                </v-btn>
-
-                <div
-                  v-if="aggregationTargetMissing"
-                  class="text-error text-caption mt-1 aggregation-field-error"
-                >
-                  Target datastream is required
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <div class="mapping-actions">
+          <div class="etl-mapping-delete">
             <v-btn
-              size="small"
+              icon
               variant="text"
-              color="red-darken-3"
+              color="red-lighten-1"
               type="button"
               :title="`Delete mapping`"
               @click.stop="removeMapping(mi)"
-              :prepend-icon="mdiTrashCanOutline"
             >
-              Delete mapping
-            </v-btn>
-
-            <v-btn
-              size="small"
-              :prepend-icon="mdiSourceBranch"
-              variant="text"
-              type="button"
-              @click="onAddMapping"
-            >
-              Add mapping
+              <v-icon :icon="mdiTrashCanOutline" size="22" />
             </v-btn>
           </div>
-          <v-divider
-            v-if="mi < task.mappings.length - 1"
-            class="mapping-actions"
-          />
-        </template>
-      </div>
+        </div>
+      </template>
 
-      <div class="mapping-actions" v-if="task.mappings.length === 0">
+      <div class="etl-mapping-actions">
         <v-btn
-          size="small"
-          :prepend-icon="mdiSourceBranch"
-          variant="text"
+          variant="outlined"
+          rounded="lg"
           type="button"
+          class="text-none etl-add-mapping-btn"
+          :prepend-icon="mdiPlus"
           @click="onAddMapping"
         >
           Add mapping
         </v-btn>
       </div>
-    </template>
+    </div>
   </v-form>
 
-  <v-dialog
-    v-if="!isAggregationTask"
-    v-model="datastreamSelectorOpen"
-    width="75rem"
-  >
+  <v-dialog v-model="datastreamSelectorOpen" width="75rem">
     <DatastreamSelectorCard
       card-title="Select a target datastream"
       @selected-datastream="onTargetSelected"
@@ -320,30 +128,10 @@
       :draft-datastreams="draftDatastreams"
     />
   </v-dialog>
-
-  <v-dialog
-    v-if="isAggregationTask"
-    v-model="aggregationDatastreamSelectorOpen"
-    width="75rem"
-  >
-    <DatastreamSelectorCard
-      :card-title="
-        aggregationSelectorRole === 'source'
-          ? 'Select source datastream'
-          : 'Select target datastream'
-      "
-      @selected-datastream="onAggregationDatastreamSelected"
-      @close="aggregationDatastreamSelectorOpen = false"
-      :enforce-unique-selections="aggregationSelectorRole === 'target'"
-      :draft-datastreams="
-        aggregationSelectorRole === 'target' ? draftDatastreams : undefined
-      "
-    />
-  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import type { Mapping, MappingPath, Task } from '@hydroserver/client'
+import type { Mapping, Task } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 import { storeToRefs } from 'pinia'
@@ -352,10 +140,8 @@ import { rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
 import {
   mdiArrowRight,
-  mdiImport,
   mdiPlus,
   mdiPlusCircleOutline,
-  mdiSourceBranch,
   mdiTrashCanOutline,
 } from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
@@ -373,14 +159,6 @@ const {
   workspaceThings,
 } = storeToRefs(orchestrationStore)
 const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
-const isAggregationTask = computed(
-  () => ((task.value as any)?.type ?? 'ETL') === 'Aggregation'
-)
-const aggregationStatisticOptions = [
-  { title: 'Simple mean', value: 'simple_mean' },
-  { title: 'Time-weighted daily mean', value: 'time_weighted_daily_mean' },
-  { title: 'Last value of day', value: 'last_value_of_day' },
-]
 const resolvedWorkspaceId = computed(() => {
   return (
     props.workspaceId ||
@@ -395,43 +173,9 @@ const isValid = ref(true)
 const showErrors = ref(false)
 const missingTargetKeys = ref<Set<string>>(new Set())
 const noMappingsError = ref(false)
-const aggregationSourceMissing = ref(false)
-const aggregationTargetMissing = ref(false)
-const aggregationStatisticMissing = ref(false)
 
 function hasTargetError(mi: number, pi: number) {
   return showErrors.value && missingTargetKeys.value.has(`${mi}:${pi}`)
-}
-
-function ensureAggregationTransformation(path: MappingPath): any {
-  if (!Array.isArray(path.dataTransformations)) path.dataTransformations = []
-  const existing = path.dataTransformations.find(
-    (t: any) => t?.type === 'aggregation'
-  ) as any
-  const transform =
-    existing ??
-    ({
-      type: 'aggregation',
-      aggregationStatistic: 'simple_mean',
-      timezoneMode: 'fixedOffset',
-      timezone: '-0700',
-    } as any)
-
-  if (!existing) path.dataTransformations = [transform]
-  return transform
-}
-
-function getAggregationStatistic(path: MappingPath) {
-  return (
-    ensureAggregationTransformation(path).aggregationStatistic || 'simple_mean'
-  )
-}
-
-function setAggregationStatistic(path: MappingPath, value: string) {
-  const transform = ensureAggregationTransformation(path)
-  transform.aggregationStatistic = value || 'simple_mean'
-  path.dataTransformations = [transform]
-  aggregationStatisticMissing.value = false
 }
 
 function ensureSinglePath(mapping: Mapping) {
@@ -458,13 +202,8 @@ function enforceMappingShape() {
   if (!Array.isArray(task.value.mappings)) {
     ;(task.value as any).mappings = []
   }
-  if (!task.value.mappings.length && isAggregationTask.value) {
-    task.value.mappings.push(createEmptyMapping())
-  }
-
   task.value.mappings.forEach((mapping: any) => {
-    const path = ensureSinglePath(mapping)
-    if (isAggregationTask.value) ensureAggregationTransformation(path)
+    ensureSinglePath(mapping)
   })
 }
 
@@ -473,7 +212,6 @@ function ensureInitialTaskMappings() {
     ;(task.value as any).mappings = []
   }
 
-  if (isAggregationTask.value) return
   if (task.value.mappings.length === 0) {
     task.value.mappings.push(createEmptyMapping())
   }
@@ -486,38 +224,6 @@ async function validate() {
   showErrors.value = true
   noMappingsError.value = task.value.mappings.length === 0
   if (noMappingsError.value) ok = false
-
-  if (isAggregationTask.value) {
-    enforceMappingShape()
-    aggregationSourceMissing.value = false
-    aggregationTargetMissing.value = false
-    aggregationStatisticMissing.value = false
-
-    task.value.mappings.forEach((mapping: any) => {
-      const path = mapping?.paths?.[0] as any
-      const statistic = path?.dataTransformations?.[0]?.aggregationStatistic
-
-      if (!mapping?.sourceIdentifier) aggregationSourceMissing.value = true
-      if (!path?.targetIdentifier) aggregationTargetMissing.value = true
-      if (typeof statistic !== 'string' || statistic.trim().length === 0) {
-        aggregationStatisticMissing.value = true
-      }
-    })
-
-    if (
-      aggregationSourceMissing.value ||
-      aggregationTargetMissing.value ||
-      aggregationStatisticMissing.value
-    ) {
-      ok = false
-    }
-    missingTargetKeys.value = new Set<string>()
-    return ok
-  }
-
-  aggregationSourceMissing.value = false
-  aggregationTargetMissing.value = false
-  aggregationStatisticMissing.value = false
 
   const nextMissingKeys = new Set<string>()
 
@@ -538,10 +244,6 @@ defineExpose({ validate })
 const datastreamSelectorOpen = ref(false)
 const activeMi = ref<number | null>(null)
 const activePi = ref<number | null>(null)
-const aggregationDatastreamSelectorOpen = ref(false)
-const aggregationSelectorRole = ref<'source' | 'target'>('source')
-const aggregationSelectorMi = ref<number | null>(null)
-const aggregationSelectorPi = ref<number | null>(null)
 
 function datastreamNameById(id: string | number | undefined | null) {
   return datastreamById(id)?.name || ''
@@ -574,22 +276,9 @@ function datastreamThingNameById(id: string | number | undefined | null) {
 }
 
 function openTargetSelector(mi: number, pi: number) {
-  if (isAggregationTask.value) return
   activeMi.value = mi
   activePi.value = pi
   datastreamSelectorOpen.value = true
-}
-
-function openAggregationDatastreamSelector(
-  role: 'source' | 'target',
-  mi: number,
-  pi: number
-) {
-  if (!isAggregationTask.value) return
-  aggregationSelectorRole.value = role
-  aggregationSelectorMi.value = mi
-  aggregationSelectorPi.value = pi
-  aggregationDatastreamSelectorOpen.value = true
 }
 
 function referencedTargetIds(): Set<string> {
@@ -642,29 +331,6 @@ function onTargetSelected(event: DatastreamExtended) {
   activeMi.value = activePi.value = null
 }
 
-function onAggregationDatastreamSelected(event: DatastreamExtended) {
-  const mi = aggregationSelectorMi.value
-  const pi = aggregationSelectorPi.value
-  if (mi == null || pi == null) return
-
-  const mapping = task.value.mappings[mi] as any
-  const path = mapping?.paths?.[pi]
-  if (!mapping || !path) return
-
-  if (aggregationSelectorRole.value === 'source') {
-    mapping.sourceIdentifier = event.id
-    aggregationSourceMissing.value = false
-  } else {
-    path.targetIdentifier = event.id
-    draftDatastreams.value = [event, ...draftDatastreams.value]
-    syncDraftDatastreams()
-    aggregationTargetMissing.value = false
-  }
-
-  aggregationSelectorMi.value = null
-  aggregationSelectorPi.value = null
-}
-
 function removeMapping(mi: number) {
   const mappings = task.value.mappings
   if (!Array.isArray(mappings) || mi < 0 || mi >= mappings.length) return
@@ -683,10 +349,6 @@ function createEmptyMapping() {
     ],
   } as any
 
-  if (isAggregationTask.value) {
-    ensureAggregationTransformation(mapping.paths[0])
-  }
-
   return mapping
 }
 
@@ -702,15 +364,9 @@ watch(
   () => task.value,
   () => {
     ensureInitialTaskMappings()
-    if (isAggregationTask.value) enforceMappingShape()
   },
   { immediate: true }
 )
-
-watch(isAggregationTask, () => {
-  ensureInitialTaskMappings()
-  if (isAggregationTask.value) enforceMappingShape()
-})
 
 watch(
   resolvedWorkspaceId,
@@ -887,7 +543,9 @@ watch(
 .target-selector-btn {
   max-width: calc(100% - 2.25rem);
   height: auto;
-  transition: transform 0.14s ease, box-shadow 0.14s ease,
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
     background-color 0.14s ease;
 }
 

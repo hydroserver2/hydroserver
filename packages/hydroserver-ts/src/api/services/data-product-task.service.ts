@@ -1,5 +1,8 @@
 import { HydroServerBaseService } from './base'
-import { DataProductTaskContract as C, RunContract } from '../../generated/contracts'
+import {
+  DataProductTaskContract as C,
+  RunContract,
+} from '../../generated/contracts'
 import { DataProductTask as M } from '../Models/data-product-task.model'
 import { apiMethods } from '../apiMethods'
 import type {
@@ -10,7 +13,10 @@ import type {
   IntervalUnit,
 } from '../../types'
 
-export class DataProductTaskService extends HydroServerBaseService<typeof C, M> {
+export class DataProductTaskService extends HydroServerBaseService<
+  typeof C,
+  M
+> {
   static route = C.route
   static writableKeys = C.writableKeys
   static Model = M
@@ -50,6 +56,33 @@ export class DataProductTaskService extends HydroServerBaseService<typeof C, M> 
     )
   }
 
+  listExpressionTransformations(taskId: string) {
+    return apiMethods.fetch(
+      `${this._route}/${taskId}/transformations/expression`
+    )
+  }
+
+  updateExpressionTransformation(
+    taskId: string,
+    transformationId: string,
+    payload: Partial<{
+      inputDatastreamId: string
+      variableName: string | null
+      formula: string
+    }>
+  ) {
+    return apiMethods.patch(
+      `${this._route}/${taskId}/transformations/expression/${transformationId}`,
+      payload
+    )
+  }
+
+  deleteExpressionTransformation(taskId: string, transformationId: string) {
+    return apiMethods.delete(
+      `${this._route}/${taskId}/transformations/expression/${transformationId}`
+    )
+  }
+
   /* ------------------ Rating Curve Transformations ------------------- */
 
   createRatingCurveTransformation(
@@ -63,6 +96,32 @@ export class DataProductTaskService extends HydroServerBaseService<typeof C, M> 
     return apiMethods.post(
       `${this._route}/${taskId}/transformations/rating-curve`,
       payload
+    )
+  }
+
+  listRatingCurveTransformations(taskId: string) {
+    return apiMethods.fetch(
+      `${this._route}/${taskId}/transformations/rating-curve`
+    )
+  }
+
+  updateRatingCurveTransformation(
+    taskId: string,
+    transformationId: string,
+    payload: Partial<{
+      inputDatastreamId: string
+      ratingCurveId: string
+    }>
+  ) {
+    return apiMethods.patch(
+      `${this._route}/${taskId}/transformations/rating-curve/${transformationId}`,
+      payload
+    )
+  }
+
+  deleteRatingCurveTransformation(taskId: string, transformationId: string) {
+    return apiMethods.delete(
+      `${this._route}/${taskId}/transformations/rating-curve/${transformationId}`
     )
   }
 
@@ -122,7 +181,10 @@ export class DataProductTaskService extends HydroServerBaseService<typeof C, M> 
   updateCompositeExpressionTransformation(
     taskId: string,
     transformationId: string,
-    payload: Omit<CompositeExpressionTransformationPayload, 'outputDatastreamId'>
+    payload: Omit<
+      CompositeExpressionTransformationPayload,
+      'outputDatastreamId'
+    >
   ) {
     return apiMethods.patch(
       `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`,
@@ -130,7 +192,10 @@ export class DataProductTaskService extends HydroServerBaseService<typeof C, M> 
     )
   }
 
-  deleteCompositeExpressionTransformation(taskId: string, transformationId: string) {
+  deleteCompositeExpressionTransformation(
+    taskId: string,
+    transformationId: string
+  ) {
     return apiMethods.delete(
       `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`
     )

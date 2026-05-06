@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>Create expression task</v-card-title>
+      <v-card-title>{{
+        isEditMode ? 'Edit expression task' : 'Create expression task'
+      }}</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
         variant="text"
@@ -26,13 +28,12 @@
           density="compact"
           class="mb-5"
         >
-          Apply an expression to each incoming data point independently. Enter
-          a single-line Python expression using
+          Apply an expression to each incoming data point independently. Enter a
+          single-line Python expression using
           <code>x</code> for the incoming value.
           <div class="mt-4">
-            For example, if you wanted a unit conversion from degrees
-            Fahrenheit (deg F) to Celsius (deg C), you'd type in '(x - 32) *
-            5/9'.
+            For example, if you wanted a unit conversion from degrees Fahrenheit
+            (deg F) to Celsius (deg C), you'd type in '(x - 32) * 5/9'.
           </div>
           <div class="mt-4">
             <strong>Allowed operators:</strong>
@@ -54,6 +55,7 @@
           v-model="taskName"
           label="Task name *"
           :rules="rules.requiredAndMaxLength255"
+          :disabled="loadingExisting"
           class="mb-2"
         />
 
@@ -62,7 +64,7 @@
           :datastreams="siteDatastreams"
           label="Input datastream *"
           :loading="loading"
-          :disabled="!selectedThingId"
+          :disabled="!selectedThingId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
@@ -71,7 +73,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId"
+          :disabled="isEditMode || !selectedThingId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -87,6 +89,7 @@
             exprAllowedTokens,
             exprBalancedParens,
           ]"
+          :disabled="loadingExisting"
         />
       </v-card-text>
 
@@ -94,7 +97,19 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
+        <v-btn-cancel :disabled="saving" @click="$emit('close')"
+          >Cancel</v-btn-cancel
+        >
+        <v-btn
+          v-if="isEditMode"
+          color="error"
+          variant="text"
+          :loading="deleting"
+          :disabled="saving"
+          @click="onDelete"
+        >
+          Delete task
+        </v-btn>
         <v-btn
           type="submit"
           variant="flat"
@@ -102,8 +117,9 @@
           class="text-none"
           :style="DATA_PRODUCT_SUBMIT_STYLE"
           :loading="saving"
+          :disabled="deleting"
         >
-          Create expression task
+          {{ isEditMode ? 'Save changes' : 'Create expression task' }}
         </v-btn>
       </v-card-actions>
     </v-form>
@@ -128,17 +144,24 @@ import DatastreamCardSelector from './DatastreamCardSelector.vue'
 const props = defineProps<{
   workspaceId: string
   initialThingId?: string | null
+  editTaskId?: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'created', task: DataProductTask): void
+  (e: 'updated', task: DataProductTask): void
+  (e: 'deleted'): void
   (e: 'close'): void
 }>()
+
+const isEditMode = computed(() => !!props.editTaskId)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
 const loading = ref(false)
+const loadingExisting = ref(false)
 const saving = ref(false)
+const deleting = ref(false)
 const showHelp = ref(false)
 const datastreams = ref<Datastream[]>([])
 
@@ -147,6 +170,7 @@ const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const formula = ref('')
 const selectedThingId = computed(() => props.initialThingId ?? null)
+const existingTransformationId = ref<string | null>(null)
 const ALLOWED_OPS = ['+', '-', '*', '/', '**', '(', ')']
 
 const siteDatastreams = computed(() => {
@@ -170,6 +194,33 @@ async function loadOptions() {
   }
 }
 
+async function loadExistingTask() {
+  if (!props.editTaskId) return
+  loadingExisting.value = true
+  try {
+    const [taskRes, transformRes] = await Promise.all([
+      hs.dataProductTasks.get(props.editTaskId),
+      hs.dataProductTasks.listExpressionTransformations(props.editTaskId),
+    ])
+
+    if (taskRes.ok && taskRes.data?.name) {
+      taskName.value = taskRes.data.name
+    }
+
+    if (transformRes.ok && transformRes.data?.length) {
+      const t = transformRes.data[0]
+      existingTransformationId.value = t.id
+      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+      formula.value = t.formula ?? ''
+    }
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to load existing expression task.')
+  } finally {
+    loadingExisting.value = false
+  }
+}
+
 async function onSubmit() {
   await formRef.value?.validate()
   if (!selectedThingId.value) {
@@ -181,51 +232,116 @@ async function onSubmit() {
 
   saving.value = true
   try {
-    const taskRes = await hs.dataProductTasks.create({
-      id: '',
-      name: taskName.value.trim(),
-      thingId: selectedThingId.value,
-      description: null,
-      schedule: null,
-    })
-
-    if (!taskRes.ok || !taskRes.data?.id) {
-      Snackbar.error(taskRes.message || 'Unable to create expression task.')
-      return
-    }
-
-    const transformRes = await hs.dataProductTasks.createExpressionTransformation(
-      taskRes.data.id,
-      {
-        inputDatastreamId: inputDatastreamId.value,
-        outputDatastreamId: outputDatastreamId.value,
-        variableName: 'x',
-        formula: formula.value.trim(),
-      }
-    )
-
-    if (!transformRes.ok) {
-      Snackbar.error(
-        transformRes.message || 'Unable to create expression transformation.'
-      )
-      return
-    }
-
-    emit('created', taskRes.data)
-    emit('close')
+    if (isEditMode.value) await onUpdate()
+    else await onCreate()
   } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to create expression task.')
+    Snackbar.error(error?.message || 'Unable to save expression task.')
   } finally {
     saving.value = false
   }
 }
 
+async function onCreate() {
+  const taskRes = await hs.dataProductTasks.create({
+    id: '',
+    name: taskName.value.trim(),
+    thingId: selectedThingId.value!,
+    description: null,
+    schedule: null,
+  })
+
+  if (!taskRes.ok || !taskRes.data?.id) {
+    Snackbar.error(taskRes.message || 'Unable to create expression task.')
+    return
+  }
+
+  const transformRes = await hs.dataProductTasks.createExpressionTransformation(
+    taskRes.data.id,
+    {
+      inputDatastreamId: inputDatastreamId.value!,
+      outputDatastreamId: outputDatastreamId.value!,
+      variableName: 'x',
+      formula: formula.value.trim(),
+    }
+  )
+
+  if (!transformRes.ok) {
+    Snackbar.error(
+      transformRes.message || 'Unable to create expression transformation.'
+    )
+    return
+  }
+
+  emit('created', taskRes.data)
+  emit('close')
+}
+
+async function onUpdate() {
+  const taskId = props.editTaskId!
+  const taskRes = await hs.dataProductTasks.update({
+    id: taskId,
+    name: taskName.value.trim(),
+  })
+
+  if (!taskRes.ok) {
+    Snackbar.error(taskRes.message || 'Unable to update task name.')
+    return
+  }
+
+  if (existingTransformationId.value) {
+    const transformRes =
+      await hs.dataProductTasks.updateExpressionTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreamId: inputDatastreamId.value!,
+          variableName: 'x',
+          formula: formula.value.trim(),
+        }
+      )
+
+    if (!transformRes.ok) {
+      Snackbar.error(
+        transformRes.message || 'Unable to update expression transformation.'
+      )
+      return
+    }
+  }
+
+  Snackbar.success('Expression task updated.')
+  emit('updated', taskRes.data!)
+  emit('close')
+}
+
+async function onDelete() {
+  if (!props.editTaskId) return
+  deleting.value = true
+  try {
+    const res = await hs.dataProductTasks.delete(props.editTaskId)
+    if (!res.ok) {
+      Snackbar.error(res.message || 'Unable to delete expression task.')
+      return
+    }
+    Snackbar.success('Expression task deleted.')
+    emit('deleted')
+    emit('close')
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to delete expression task.')
+  } finally {
+    deleting.value = false
+  }
+}
+
 watch(selectedThingId, () => {
+  if (isEditMode.value) return
   inputDatastreamId.value = null
   outputDatastreamId.value = null
 })
 
-onMounted(loadOptions)
+onMounted(async () => {
+  await loadOptions()
+  if (isEditMode.value) await loadExistingTask()
+})
 
 type Rule = (v: any) => true | string
 

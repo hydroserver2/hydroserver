@@ -74,6 +74,17 @@ vi.mock('@/utils/notifications', () => ({
   },
 }))
 
+vi.mock('@/components/Orchestration/Swimlanes.vue', () => ({
+  default: { template: '<div />' },
+}))
+
+vi.mock('@/components/Orchestration/TaskForm.vue', () => ({
+  default: {
+    props: ['oldTask'],
+    template: '<div class="task-form-stub" />',
+  },
+}))
+
 vi.mock('@/composables/useWorkspacePermissions', () => ({
   useWorkspacePermissions: () => ({
     checkPermissionsByWorkspaceId: vi.fn(() => true),
@@ -91,7 +102,29 @@ const makeDataProductTask = () => ({
   aggregationTransformations: [],
   compositeExpressionTransformations: [],
   expressionTransformations: [],
-  ratingCurveTransformations: [],
+  ratingCurveTransformations: [{ id: 'rating-transform-1' }],
+  latestRun: null,
+  schedule: {
+    enabled: true,
+    startTime: null,
+    nextRunAt: null,
+    crontab: null,
+    interval: 1,
+    intervalPeriod: 'days',
+  },
+})
+
+const makeEtlTask = () => ({
+  id: 'etl-task-1',
+  name: 'Ingestion task',
+  description: null,
+  dataConnection: {
+    id: 'connection-1',
+    name: 'Connection 1',
+    workspace: { id: 'workspace-1', name: 'Workspace 1' },
+  },
+  mappings: [],
+  taskVariables: {},
   latestRun: null,
   schedule: {
     enabled: true,
@@ -104,11 +137,17 @@ const makeDataProductTask = () => ({
 })
 
 const globalStubs = {
-  'v-dialog': { template: '<div><slot /></div>' },
+  'v-dialog': {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+      '<div><slot name="activator" :props="{ onClick: () => $emit(\'update:modelValue\', true) }" /><div v-if="modelValue"><slot /></div></div>',
+  },
   'v-icon': { template: '<span />' },
   'v-tooltip': {
     template: '<div><slot name="activator" :props="{}" /><slot /></div>',
   },
+  TaskForm: { props: ['oldTask'], template: '<div class="task-form-stub" />' },
 }
 
 const seedWorkspace = async () => {
@@ -129,6 +168,10 @@ describe('TaskDetails', () => {
     dataProductUpdateMock.mockReset()
     monitoringGetMock.mockReset()
     taskGetMock.mockReset()
+    taskGetMock.mockResolvedValue({
+      ok: true,
+      data: makeEtlTask(),
+    })
     dataProductGetMock.mockResolvedValue({
       ok: true,
       data: makeDataProductTask(),
@@ -163,14 +206,15 @@ describe('TaskDetails', () => {
   })
 
   it('uses the data-product task service when pausing a data-product task', async () => {
-    const { default: TaskDetails } = await import('../TaskDetails.vue')
+    const { default: SimpleProductTaskDetails } =
+      await import('@/components/Orchestration/SimpleProductTaskDetails.vue')
     await seedWorkspace()
 
-    const wrapper = shallowMount(TaskDetails, {
+    const wrapper = shallowMount(SimpleProductTaskDetails as any, {
       props: {
-        embedded: true,
+        taskLabel: 'rating curve',
         taskId: 'product-task-1',
-        taskKind: 'dataProduct',
+        embedded: true,
       },
       global: {
         stubs: globalStubs,
@@ -178,10 +222,7 @@ describe('TaskDetails', () => {
     })
     await flushPromises()
 
-    const pauseButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Pause'))
-    await pauseButton?.trigger('click')
+    await (wrapper.vm as any).togglePaused()
     await flushPromises()
 
     expect(dataProductUpdateMock).toHaveBeenCalledWith(
@@ -190,5 +231,27 @@ describe('TaskDetails', () => {
         schedule: expect.objectContaining({ enabled: false }),
       })
     )
+  })
+
+  it('loads ingestion details in the ingestion component', async () => {
+    const { default: IngestionTaskDetails } =
+      await import('@/components/Orchestration/IngestionTaskDetails.vue')
+    await seedWorkspace()
+
+    const wrapper = shallowMount(IngestionTaskDetails as any, {
+      props: {
+        taskId: 'etl-task-1',
+        embedded: true,
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+
+    expect(taskGetMock).toHaveBeenCalledWith('etl-task-1', {
+      expand_related: true,
+    })
+    expect(wrapper.text()).toContain('Ingestion task')
   })
 })
