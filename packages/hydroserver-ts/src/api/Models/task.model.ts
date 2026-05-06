@@ -7,7 +7,7 @@ export class Task {
   description: string | null = null
   taskVariables: Record<string, any> = {}
   dataConnectionId = ''
-  mappings: EtlMapping[] = []
+  mappings: TaskMapping[] = []
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<Task>) {
@@ -21,7 +21,7 @@ export interface TaskExpanded {
   description?: string | null
   taskVariables: Record<string, any>
   dataConnection: DataConnection
-  mappings: EtlMapping[]
+  mappings: TaskMapping[]
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }
@@ -57,6 +57,8 @@ export interface EtlMappingPostBody {
   sourceIdentifier: string
   targetDatastreamId: string
 }
+
+export type TaskMapping = EtlMapping | Mapping | EtlMappingPostBody
 
 // ---------------------------------------------------------------------------
 // Legacy stubs — mapping/transformation form components still use these types.

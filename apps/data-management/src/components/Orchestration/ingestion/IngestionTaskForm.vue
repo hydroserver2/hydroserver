@@ -43,7 +43,7 @@
         <IngestionTaskMappings
           ref="mappingsRef"
           v-model:task="task"
-          :workspace-id="taskWorkspaceId || null"
+          :workspace-id="workspaceId"
         />
       </div>
     </v-form>
@@ -60,98 +60,44 @@
 
 <script setup lang="ts">
 import { VForm } from 'vuetify/components'
-import { computed, Ref, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
+import { ref } from 'vue'
 import hs, {
   DataConnection,
+  EtlMappingPostBody,
+  Mapping,
+  PlaceholderVariable,
   Task,
   TaskExpanded,
+  TaskMapping,
   TaskSchedule,
 } from '@hydroserver/client'
-import { useTaskStore } from '@/store/task'
-import { useOrchestrationStore } from '@/store/orchestration'
 import StickyForm from '@/components/Forms/StickyForm.vue'
 import IngestionTaskBasics from './IngestionTaskBasics.vue'
 import IngestionTaskMappings from './IngestionTaskMappings.vue'
 import IngestionTaskSchedule from './IngestionTaskSchedule.vue'
 import IngestionTaskVariables from './IngestionTaskVariables.vue'
-import { useWorkspaceStore } from '@/store/workspaces'
 import { Snackbar } from '@/utils/notifications'
-
-const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const props = defineProps<{
   oldTask?: TaskExpanded
-  dataConnectionId: string
+  dataConnection: DataConnection
+  workspaceId: string
 }>()
-
-const { tasks } = storeToRefs(useTaskStore())
-const { workspaceTasks } = storeToRefs(useOrchestrationStore())
 
 const emit = defineEmits(['created', 'updated', 'close'])
 
-const isEdit = computed(() => !!props.oldTask || undefined)
+const isEdit = !!props.oldTask
 const valid = ref<boolean | null>(null)
 const myForm = ref<VForm>()
 const mappingsRef = ref<InstanceType<typeof IngestionTaskMappings>>()
 const submitLoading = ref(false)
-const dataConnection = ref<DataConnection | null>(null)
-const task = ref<Task>(new Task())
-const scheduleMode = ref<'interval' | 'crontab'>('interval')
-
-const taskWorkspaceId = computed(() => {
-  return (
-    (task.value as any).workspaceId ||
-    (task.value as any)?.workspace?.id ||
-    (dataConnection.value as any)?.workspace?.id ||
-    (props.oldTask?.dataConnection as any)?.workspace?.id ||
-    selectedWorkspace.value?.id ||
-    ''
-  )
-})
-const perTaskPlaceholders = computed<any[]>(() => {
-  const placeholders = (dataConnection.value as any)?.placeholderVariables || []
-  return placeholders.filter((v: any) => v?.type === 'per_task')
-})
-
-const timezoneLabel = computed(
-  () => Intl.DateTimeFormat().resolvedOptions().timeZone
+const workspaceId = props.workspaceId
+const perTaskPlaceholders = props.dataConnection.placeholderVariables.filter(
+  (variable): variable is PlaceholderVariable =>
+    variable.type === 'per_task'
 )
-const headerContextLabel = computed(() => {
-  return (
-    dataConnection.value?.name ||
-    (props.oldTask?.dataConnection as any)?.name ||
-    null
-  )
-})
-
-async function loadDataConnection(dataConnectionId?: string | null) {
-  if (!dataConnectionId) {
-    dataConnection.value = null
-    return
-  }
-
-  try {
-    const oldTaskDataConnection = props.oldTask?.dataConnection as
-      | DataConnection
-      | undefined
-    if (
-      oldTaskDataConnection &&
-      String((oldTaskDataConnection as any).id) === dataConnectionId
-    ) {
-      dataConnection.value = oldTaskDataConnection
-      return
-    }
-
-    const item = await hs.dataConnections.getItem(dataConnectionId, {
-      expand_related: true,
-    })
-    dataConnection.value = item
-  } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to load data connection.')
-    console.error(error)
-  }
-}
+const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
+const headerContextLabel = props.dataConnection.name || null
 
 function defaultSchedule(): TaskSchedule {
   const now = new Date().toISOString()
@@ -169,95 +115,128 @@ function ensureIsoUtc(s: string | null = ''): string | null {
   return s && !/([Zz]|[+-]\d{2}:\d{2})$/.test(s) ? s + 'Z' : s
 }
 
-function hydrateTask(source?: TaskExpanded) {
+function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule {
+  return schedule ? { ...schedule } : defaultSchedule()
+}
+
+function hydrateTask(source?: TaskExpanded): Task {
   const base = source
-    ? new Task(JSON.parse(JSON.stringify(source)))
-    : new Task()
+    ? new Task({
+        id: source.id,
+        name: source.name,
+        description: source.description ?? null,
+        taskVariables: { ...source.taskVariables },
+        dataConnectionId: source.dataConnection.id || props.dataConnection.id,
+        mappings: source.mappings.map(editableMappingFrom),
+        schedule: cloneSchedule(source.schedule),
+      })
+    : new Task({
+        dataConnectionId: props.dataConnection.id,
+        schedule: defaultSchedule(),
+        mappings: [],
+      })
 
-  if (!source) {
-    ;(base as any).type = 'ETL'
-    base.dataConnectionId = String(props.dataConnectionId)
-    if (dataConnection.value) {
-      ;(base as any).dataConnection = JSON.parse(
-        JSON.stringify(dataConnection.value)
-      )
-    }
-    const workspaceId =
-      (dataConnection.value as any)?.workspace?.id ??
-      selectedWorkspace.value?.id
-    if (workspaceId) {
-      ;(base as any).workspaceId = String(workspaceId)
-    }
-  }
-
-  ;(base as any).type = (base as any).type || 'ETL'
-  if (!base.schedule) base.schedule = defaultSchedule()
-  if (!base.mappings) base.mappings = []
-  if (!(base as any).workspaceId && (base as any).workspace?.id)
-    (base as any).workspaceId = String((base as any).workspace.id)
-  if (!base.dataConnectionId && (base as any).dataConnection?.id)
-    base.dataConnectionId = String((base as any).dataConnection.id)
   ;(['startTime', 'nextRunAt'] as const).forEach((k) => {
     if (base.schedule && base.schedule[k])
       base.schedule[k] = ensureIsoUtc(base.schedule[k])
   })
 
-  task.value = base
-  scheduleMode.value = base.schedule?.crontab ? 'crontab' : 'interval'
+  return base
 }
 
-function taskToPayload() {
-  const flatMappings = (task.value.mappings as any[]).map((mapping: any) => ({
-    sourceIdentifier: mapping.sourceIdentifier,
-    targetDatastreamId: String(
-      mapping.paths?.[0]?.targetIdentifier ??
-        mapping.targetDatastreamId ??
-        mapping.targetDatastream?.id ??
-        ''
+function initializeTaskVariables(base: Task) {
+  if (!perTaskPlaceholders.length) return
+
+  const current = base.taskVariables ?? {}
+  base.taskVariables = Object.fromEntries(
+    perTaskPlaceholders.map((placeholder) => [
+      placeholder.name,
+      current[placeholder.name] === undefined
+        ? ''
+        : current[placeholder.name],
+    ])
+  )
+}
+
+const task = ref<Task>(hydrateTask(props.oldTask))
+initializeTaskVariables(task.value)
+const scheduleMode = ref<'interval' | 'crontab'>(
+  task.value.schedule?.crontab ? 'crontab' : 'interval'
+)
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function stringifyIdentifier(value: unknown): string {
+  return value === undefined || value === null ? '' : String(value)
+}
+
+function editableMappingFrom(mapping: TaskMapping): Mapping {
+  const sourceIdentifier = stringifyIdentifier(mapping.sourceIdentifier)
+
+  if ('paths' in mapping) {
+    return {
+      sourceIdentifier,
+      paths:
+        mapping.paths.length > 0
+          ? mapping.paths.map((path) => ({
+              targetIdentifier: path.targetIdentifier,
+              dataTransformations: [...path.dataTransformations],
+            }))
+          : [{ targetIdentifier: '', dataTransformations: [] }],
+    }
+  }
+
+  return {
+    sourceIdentifier,
+    paths: [
+      {
+        targetIdentifier: targetDatastreamId(mapping),
+        dataTransformations: [],
+      },
+    ],
+  }
+}
+
+function targetDatastreamId(mapping: unknown): string {
+  if (!isRecord(mapping)) return ''
+
+  const paths = mapping.paths
+  if (Array.isArray(paths)) {
+    const firstPath = paths[0]
+    if (isRecord(firstPath) && firstPath.targetIdentifier) {
+      return String(firstPath.targetIdentifier)
+    }
+  }
+
+  if (mapping.targetDatastreamId) return String(mapping.targetDatastreamId)
+
+  const targetDatastream = mapping.targetDatastream
+  if (isRecord(targetDatastream) && targetDatastream.id) {
+    return String(targetDatastream.id)
+  }
+
+  return ''
+}
+
+function taskToPayload(): Task {
+  return new Task({
+    id: task.value.id,
+    name: task.value.name,
+    description: task.value.description,
+    taskVariables: task.value.taskVariables,
+    dataConnectionId: props.dataConnection.id,
+    schedule: task.value.schedule ?? defaultSchedule(),
+    mappings: task.value.mappings.map(
+      (mapping): EtlMappingPostBody => ({
+        sourceIdentifier: isRecord(mapping)
+          ? stringifyIdentifier(mapping.sourceIdentifier)
+          : '',
+        targetDatastreamId: targetDatastreamId(mapping),
+      })
     ),
-  }))
-
-  return { ...task.value, mappings: flatMappings } as any
-}
-
-watch(
-  () => props.oldTask,
-  (newTask) => hydrateTask(newTask),
-  { immediate: true }
-)
-
-watch(
-  () => props.dataConnectionId,
-  async (dataConnectionId) => {
-    await loadDataConnection(dataConnectionId)
-    hydrateTask(props.oldTask)
-  },
-  { immediate: true }
-)
-
-watch(
-  () => perTaskPlaceholders.value.map((p) => p.name).join('|'),
-  () => {
-    const names = perTaskPlaceholders.value.map((p) => p.name)
-    if (!names.length) return
-    if (!(task.value as any).taskVariables)
-      (task.value as any).taskVariables = {}
-    const next: Record<string, any> = {}
-    names.forEach((n) => {
-      next[n] =
-        (task.value as any).taskVariables[n] === undefined
-          ? ''
-          : (task.value as any).taskVariables[n]
-    })
-    ;(task.value as any).taskVariables = next
-  },
-  { immediate: true }
-)
-
-function upsertTaskList(listRef: { value: Task[] }, saved: Task) {
-  const index = listRef.value.findIndex((p) => p.id === saved.id)
-  if (index !== -1) listRef.value[index] = saved
-  else listRef.value = [...listRef.value, saved]
+  })
 }
 
 async function onSubmit() {
@@ -267,14 +246,12 @@ async function onSubmit() {
 
   submitLoading.value = true
   try {
-    ;(task.value as any).workspaceId = taskWorkspaceId.value || ''
-    ;(task.value as any).type = 'ETL'
-    task.value.dataConnectionId = String(props.dataConnectionId)
+    task.value.dataConnectionId = props.dataConnection.id
     if (!task.value.schedule) task.value.schedule = defaultSchedule()
 
     const payload = taskToPayload()
 
-    const res = isEdit.value
+    const res = isEdit
       ? await hs.tasks.update(payload)
       : await hs.tasks.create(payload)
 
@@ -285,14 +262,14 @@ async function onSubmit() {
     }
 
     const saved = res.data
-    upsertTaskList(tasks, saved)
-    upsertTaskList(workspaceTasks as unknown as Ref<Task[]>, saved)
-    hydrateTask(saved)
+    task.value = hydrateTask(saved)
 
-    emit(isEdit.value ? 'updated' : 'created', saved)
+    emit(isEdit ? 'updated' : 'created', saved)
     emit('close')
-  } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to save task.')
+  } catch (error: unknown) {
+    Snackbar.error(
+      error instanceof Error ? error.message : 'Unable to save task.'
+    )
     console.error(error)
   } finally {
     submitLoading.value = false

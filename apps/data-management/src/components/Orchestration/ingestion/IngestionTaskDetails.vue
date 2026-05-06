@@ -29,7 +29,7 @@
             <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
           </button>
 
-          <v-dialog width="80rem">
+          <v-dialog v-model="editTaskDialogOpen" width="80rem">
             <template #activator="{ props }">
               <button
                 v-bind="props"
@@ -43,11 +43,10 @@
             </template>
             <IngestionTaskForm
               :old-task="task"
-              :data-connection-id="
-                String(task.dataConnectionId || task.dataConnection?.id || '')
-              "
-              @close="onUpdated"
-              @updated="onUpdated"
+              :data-connection="task.dataConnection"
+              :workspace-id="workspaceId"
+              @close="closeEditTaskDialog"
+              @updated="onTaskUpdated"
             />
           </v-dialog>
 
@@ -144,6 +143,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
+const editTaskDialogOpen = ref(false)
 const {
   task,
   loadingRuns,
@@ -155,6 +155,7 @@ const {
   pauseDisabledReason,
   runNowDisabledReason,
   runNowRequested,
+  workspaceId,
   close,
   copy,
   deleteTask,
@@ -163,6 +164,15 @@ const {
   runNow,
   togglePaused,
 } = useSimpleTaskDetails('etl', props, emit)
+
+function closeEditTaskDialog() {
+  editTaskDialogOpen.value = false
+}
+
+function onTaskUpdated() {
+  closeEditTaskDialog()
+  onUpdated()
+}
 </script>
 
 <style scoped>

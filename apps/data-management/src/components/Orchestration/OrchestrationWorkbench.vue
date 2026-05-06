@@ -100,7 +100,8 @@
       width="80rem"
     >
       <IngestionTaskForm
-        :data-connection-id="selectedTaskDataConnection.id"
+        :data-connection="selectedTaskDataConnection"
+        :workspace-id="workspaceId"
         @close="closeCreateTaskDialog"
         @created="onTaskCreated"
       />

@@ -3,6 +3,7 @@ import type {
   DataProductTaskExpanded,
   MonitoringTaskExpanded,
   TaskExpanded,
+  TaskMapping,
   TaskRun,
 } from '@hydroserver/client'
 import {
@@ -22,6 +23,9 @@ import type {
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
 type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
+
+const targetDatastream = (mapping: TaskMapping) =>
+  'targetDatastream' in mapping ? mapping.targetDatastream : null
 
 type Inputs = {
   activeTab: Ref<TabId>
@@ -100,10 +104,10 @@ const resolveEtlTaskThingId = (
   datastreamThingMap: Record<string, string>
 ): string | null => {
   for (const mapping of task.mappings ?? []) {
-    const ds = mapping.targetDatastream as any
+    const ds = targetDatastream(mapping)
     const dsThingId = ds?.thingId ?? ds?.thing_id
     if (dsThingId) return dsThingId
-    const fromMap = datastreamThingMap[ds?.id]
+    const fromMap = ds?.id ? datastreamThingMap[ds.id] : null
     if (fromMap) return fromMap
   }
   return null

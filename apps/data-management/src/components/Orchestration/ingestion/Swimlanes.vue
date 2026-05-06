@@ -30,7 +30,7 @@
               {{ resolveThingName(m) }}
             </span>
             <span class="target-id">
-              {{ m.targetDatastream?.id || '—' }}
+              {{ targetDatastream(m)?.id || '—' }}
             </span>
           </div>
         </div>
@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import type { EtlMapping, TaskExpanded } from '@hydroserver/client'
+import type { TaskExpanded, TaskMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
 import { useOrchestrationStore } from '@/store/orchestration'
 
@@ -56,9 +56,14 @@ const {
   workspaceThings,
 } = storeToRefs(useOrchestrationStore())
 
-function resolveTargetName(m: EtlMapping) {
-  if (m.targetDatastream?.name) return m.targetDatastream.name
-  const id = m.targetDatastream?.id
+function targetDatastream(mapping: TaskMapping) {
+  return 'targetDatastream' in mapping ? mapping.targetDatastream : null
+}
+
+function resolveTargetName(mapping: TaskMapping) {
+  const datastream = targetDatastream(mapping)
+  if (datastream?.name) return datastream.name
+  const id = datastream?.id
   if (!id) return ''
   const key = String(id)
   return (
@@ -69,8 +74,8 @@ function resolveTargetName(m: EtlMapping) {
   )
 }
 
-function resolveThingName(m: EtlMapping) {
-  const ds = m.targetDatastream as any
+function resolveThingName(mapping: TaskMapping) {
+  const ds = targetDatastream(mapping)
   const dsId = ds?.id
   const thingId =
     ds?.thingId ??

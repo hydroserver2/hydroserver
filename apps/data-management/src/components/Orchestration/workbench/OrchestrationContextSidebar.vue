@@ -3,19 +3,25 @@
     <div class="sidebar-header">
       <div class="flex items-center">
         <span class="sidebar-title">{{ title }}</span>
-        <v-tooltip v-if="isIngestion" location="top" :disabled="canEdit">
+        <button
+          v-if="isIngestion && canEdit"
+          type="button"
+          class="sidebar-add ml-auto"
+          :style="{ background: accent }"
+          :aria-label="addLabel"
+          @click="$emit('create')"
+        >
+          <v-icon :icon="mdiPlus" size="16" color="white" />
+        </button>
+        <v-tooltip v-else-if="isIngestion" location="top">
           <template #activator="{ props: tooltipProps }">
             <span v-bind="tooltipProps" class="ml-auto inline-flex">
               <button
                 type="button"
                 class="sidebar-add"
-                :style="{
-                  background: accent,
-                  opacity: canEdit ? 1 : 0.5,
-                }"
-                :disabled="!canEdit"
+                :style="{ background: accent, opacity: 0.5 }"
+                disabled
                 :aria-label="addLabel"
-                @click="$emit('create')"
               >
                 <v-icon :icon="mdiPlus" size="16" color="white" />
               </button>
@@ -70,7 +76,20 @@
                 <span v-if="dc.payload?.type">· {{ dc.payload.type }}</span>
               </span>
               <span class="sidebar-item-actions">
-                <v-tooltip location="top" :disabled="canEdit">
+                <button
+                  v-if="canEdit"
+                  type="button"
+                  class="sidebar-item-action"
+                  :class="{
+                    'sidebar-item-action--selected':
+                      selectedConnectionId === dc.id,
+                  }"
+                  :aria-label="`Edit ${dc.name}`"
+                  @click.stop="$emit('edit-connection', dc)"
+                >
+                  <v-icon :icon="mdiPencil" size="15" />
+                </button>
+                <v-tooltip v-else location="top">
                   <template #activator="{ props: tooltipProps }">
                     <span v-bind="tooltipProps" class="inline-flex">
                       <button
@@ -80,9 +99,8 @@
                           'sidebar-item-action--selected':
                             selectedConnectionId === dc.id,
                         }"
-                        :disabled="!canEdit"
+                        disabled
                         :aria-label="`Edit ${dc.name}`"
-                        @click.stop="$emit('edit-connection', dc)"
                       >
                         <v-icon :icon="mdiPencil" size="15" />
                       </button>
@@ -90,7 +108,20 @@
                   </template>
                   <span>{{ READ_ONLY_TOOLTIP }}</span>
                 </v-tooltip>
-                <v-tooltip location="top" :disabled="canEdit">
+                <button
+                  v-if="canEdit"
+                  type="button"
+                  class="sidebar-item-action sidebar-item-action--danger"
+                  :class="{
+                    'sidebar-item-action--selected':
+                      selectedConnectionId === dc.id,
+                  }"
+                  :aria-label="`Delete ${dc.name}`"
+                  @click.stop="$emit('delete-connection', dc)"
+                >
+                  <v-icon :icon="mdiTrashCanOutline" size="15" />
+                </button>
+                <v-tooltip v-else location="top">
                   <template #activator="{ props: tooltipProps }">
                     <span v-bind="tooltipProps" class="inline-flex">
                       <button
@@ -100,9 +131,8 @@
                           'sidebar-item-action--selected':
                             selectedConnectionId === dc.id,
                         }"
-                        :disabled="!canEdit"
+                        disabled
                         :aria-label="`Delete ${dc.name}`"
-                        @click.stop="$emit('delete-connection', dc)"
                       >
                         <v-icon :icon="mdiTrashCanOutline" size="15" />
                       </button>
@@ -177,15 +207,24 @@
     </div>
 
     <div v-if="isIngestion" class="sidebar-footer">
-      <v-tooltip location="top" :disabled="canEdit">
+      <button
+        v-if="canEdit"
+        type="button"
+        class="sidebar-footer-btn"
+        :style="{ color: accent, borderColor: accent + '66' }"
+        @click="$emit('create')"
+      >
+        <v-icon :icon="mdiPlus" size="16" class="mr-1" />
+        {{ addLabel }}
+      </button>
+      <v-tooltip v-else location="top">
         <template #activator="{ props: tooltipProps }">
           <span v-bind="tooltipProps" class="inline-flex w-full">
             <button
               type="button"
               class="sidebar-footer-btn"
               :style="{ color: accent, borderColor: accent + '66' }"
-              :disabled="!canEdit"
-              @click="$emit('create')"
+              disabled
             >
               <v-icon :icon="mdiPlus" size="16" class="mr-1" />
               {{ addLabel }}

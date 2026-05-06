@@ -80,7 +80,7 @@ vi.mock('@/components/Orchestration/ingestion/Swimlanes.vue', () => ({
 
 vi.mock('@/components/Orchestration/ingestion/IngestionTaskForm.vue', () => ({
   default: {
-    props: ['oldTask', 'dataConnectionId'],
+    props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
   },
 }))
@@ -148,7 +148,7 @@ const globalStubs = {
     template: '<div><slot name="activator" :props="{}" /><slot /></div>',
   },
   IngestionTaskForm: {
-    props: ['oldTask', 'dataConnectionId'],
+    props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
   },
 }
