@@ -41,8 +41,11 @@
                 <span>Edit</span>
               </button>
             </template>
-            <TaskForm
+            <IngestionTaskForm
               :old-task="task"
+              :data-connection-id="
+                String(task.dataConnectionId || task.dataConnection?.id || '')
+              "
               @close="onUpdated"
               @updated="onUpdated"
             />
@@ -121,7 +124,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
-import TaskForm from '@/components/Orchestration/ingestion/TaskForm.vue'
+import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
 import Swimlanes from '@/components/Orchestration/ingestion/Swimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'

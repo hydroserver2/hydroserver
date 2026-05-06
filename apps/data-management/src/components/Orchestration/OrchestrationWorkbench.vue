@@ -99,8 +99,8 @@
       v-model="openCreateTask"
       width="80rem"
     >
-      <TaskForm
-        :initial-data-connection="selectedTaskDataConnection"
+      <IngestionTaskForm
+        :data-connection-id="selectedTaskDataConnection.id"
         @close="closeCreateTaskDialog"
         @created="onTaskCreated"
       />
@@ -227,11 +227,14 @@ const DataConnectionForm = defineAsyncComponent(
 const OrchestrationWorkspaceManager = defineAsyncComponent(
   () => import('@/components/Workspace/OrchestrationWorkspaceManager.vue')
 )
-const TaskForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/ingestion/TaskForm.vue')
+const IngestionTaskForm = defineAsyncComponent(
+  () => import('@/components/Orchestration/ingestion/IngestionTaskForm.vue')
 )
 const DeleteDataConnectionCard = defineAsyncComponent(
-  () => import('@/components/Orchestration/connections/DeleteDataConnectionCard.vue')
+  () =>
+    import(
+      '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
+    )
 )
 const TaskDetails = defineAsyncComponent(
   () => import('@/pages/TaskDetails.vue')
@@ -249,7 +252,8 @@ const RatingCurveForm = defineAsyncComponent(
   () => import('@/components/Orchestration/data-products/RatingCurveForm.vue')
 )
 const QualityManagementForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/monitoring/QualityManagementForm.vue')
+  () =>
+    import('@/components/Orchestration/monitoring/QualityManagementForm.vue')
 )
 
 const props = defineProps<{ workspaceId: string }>()

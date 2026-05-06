@@ -1,5 +1,13 @@
 <template>
-  <v-form ref="localForm" v-model="isValid" validate-on="input">
+  <div class="task-form-section">
+    <div class="task-form-section-header task-form-section-header-stack">
+      <h3 class="task-form-section-title">Data mapping</h3>
+      <p class="task-form-section-copy">
+        Map each source field (CSV column or JSON key) to a HydroServer
+        datastream.
+      </p>
+    </div>
+
     <v-alert
       v-if="showErrors && noMappingsError"
       type="error"
@@ -9,6 +17,7 @@
     >
       At least one source target mapping is required.
     </v-alert>
+
     <div class="etl-mappings">
       <div class="etl-mappings-head">Source field</div>
       <div class="etl-mappings-head etl-mappings-head-target">
@@ -95,7 +104,7 @@
               variant="text"
               color="red-lighten-1"
               type="button"
-              :title="`Delete mapping`"
+              title="Delete mapping"
               @click.stop="removeMapping(mi)"
             >
               <v-icon :icon="mdiTrashCanOutline" size="22" />
@@ -111,13 +120,13 @@
           type="button"
           class="text-none etl-add-mapping-btn"
           :prepend-icon="mdiPlus"
-          @click="onAddMapping"
+          @click="addMapping"
         >
           Add mapping
         </v-btn>
       </div>
     </div>
-  </v-form>
+  </div>
 
   <v-dialog v-model="datastreamSelectorOpen" width="75rem">
     <DatastreamSelectorCard
@@ -131,13 +140,11 @@
 </template>
 
 <script setup lang="ts">
-import type { Mapping, Task } from '@hydroserver/client'
+import type { DatastreamExtended, Mapping, Task } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
-import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 import { storeToRefs } from 'pinia'
-import { DatastreamExtended } from '@hydroserver/client'
+import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 import { rules } from '@/utils/rules'
-import { VForm } from 'vuetify/components'
 import {
   mdiArrowRight,
   mdiPlus,
@@ -150,6 +157,7 @@ const task = defineModel<Task>('task', { required: true })
 const props = defineProps<{
   workspaceId?: string | null
 }>()
+
 const orchestrationStore = useOrchestrationStore()
 const {
   linkedDatastreamIds,
@@ -159,6 +167,14 @@ const {
   workspaceThings,
 } = storeToRefs(orchestrationStore)
 const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
+
+const showErrors = ref(false)
+const missingTargetKeys = ref<Set<string>>(new Set())
+const noMappingsError = ref(false)
+const datastreamSelectorOpen = ref(false)
+const activeMappingIndex = ref<number | null>(null)
+const activePathIndex = ref<number | null>(null)
+
 const resolvedWorkspaceId = computed(() => {
   return (
     props.workspaceId ||
@@ -168,14 +184,16 @@ const resolvedWorkspaceId = computed(() => {
   )
 })
 
-const localForm = ref<VForm>()
-const isValid = ref(true)
-const showErrors = ref(false)
-const missingTargetKeys = ref<Set<string>>(new Set())
-const noMappingsError = ref(false)
-
-function hasTargetError(mi: number, pi: number) {
-  return showErrors.value && missingTargetKeys.value.has(`${mi}:${pi}`)
+function createEmptyMapping() {
+  return {
+    sourceIdentifier: '',
+    paths: [
+      {
+        targetIdentifier: '',
+        dataTransformations: [],
+      },
+    ],
+  } as any
 }
 
 function ensureSinglePath(mapping: Mapping) {
@@ -198,59 +216,26 @@ function ensureSinglePath(mapping: Mapping) {
   return mapping.paths[0]
 }
 
-function enforceMappingShape() {
+function ensureTaskMappings(addInitial = true) {
   if (!Array.isArray(task.value.mappings)) {
     ;(task.value as any).mappings = []
   }
+
   task.value.mappings.forEach((mapping: any) => {
     ensureSinglePath(mapping)
   })
-}
 
-function ensureInitialTaskMappings() {
-  if (!Array.isArray(task.value.mappings)) {
-    ;(task.value as any).mappings = []
-  }
-
-  if (task.value.mappings.length === 0) {
+  if (addInitial && task.value.mappings.length === 0) {
     task.value.mappings.push(createEmptyMapping())
   }
 }
 
-async function validate() {
-  const vuetify = await localForm.value?.validate()
-  let ok = (vuetify?.valid ?? isValid.value) === true
-
-  showErrors.value = true
-  noMappingsError.value = task.value.mappings.length === 0
-  if (noMappingsError.value) ok = false
-
-  const nextMissingKeys = new Set<string>()
-
-  task.value.mappings.forEach((m: any, mi) => {
-    const path = ensureSinglePath(m)
-    if (!path.targetIdentifier) {
-      ok = false
-      nextMissingKeys.add(`${mi}:0`)
-    }
-  })
-
-  missingTargetKeys.value = nextMissingKeys
-  return ok
-}
-
-defineExpose({ validate })
-
-const datastreamSelectorOpen = ref(false)
-const activeMi = ref<number | null>(null)
-const activePi = ref<number | null>(null)
-
-function datastreamNameById(id: string | number | undefined | null) {
-  return datastreamById(id)?.name || ''
+function hasTargetError(mi: number, pi: number) {
+  return showErrors.value && missingTargetKeys.value.has(`${mi}:${pi}`)
 }
 
 function datastreamById(id: string | number | undefined | null): any {
-  if (id === undefined || id === null || `${id}` === '') return ''
+  if (id === undefined || id === null || `${id}` === '') return null
   const key = String(id)
   return (
     workspaceDatastreams.value.find((d) => String(d.id) === key) ||
@@ -261,6 +246,10 @@ function datastreamById(id: string | number | undefined | null): any {
       .find((d: any) => d && String(d.id) === key) ||
     null
   )
+}
+
+function datastreamNameById(id: string | number | undefined | null) {
+  return datastreamById(id)?.name || ''
 }
 
 function datastreamThingNameById(id: string | number | undefined | null) {
@@ -276,16 +265,17 @@ function datastreamThingNameById(id: string | number | undefined | null) {
 }
 
 function openTargetSelector(mi: number, pi: number) {
-  activeMi.value = mi
-  activePi.value = pi
+  activeMappingIndex.value = mi
+  activePathIndex.value = pi
   datastreamSelectorOpen.value = true
 }
 
 function referencedTargetIds(): Set<string> {
   const ids = new Set<string>()
-  for (const m of task.value.mappings as any[]) {
-    for (const p of (m as any).paths) {
-      const id = p.targetIdentifier
+  for (const mapping of task.value.mappings as any[]) {
+    const paths = Array.isArray(mapping.paths) ? mapping.paths : []
+    for (const path of paths) {
+      const id = path.targetIdentifier
       if (id !== undefined && id !== null && String(id) !== '') {
         ids.add(String(id))
       }
@@ -310,17 +300,18 @@ function syncDraftDatastreams() {
 }
 
 function onTargetSelected(event: DatastreamExtended) {
-  const mi = activeMi.value,
-    pi = activePi.value
+  const mi = activeMappingIndex.value
+  const pi = activePathIndex.value
   if (mi == null || pi == null) return
-  const m = task.value.mappings[mi] as any
-  const p = m?.paths?.[pi]
 
-  p.targetIdentifier = event.id
+  const mapping = task.value.mappings[mi] as any
+  const path = mapping?.paths?.[pi]
+  if (!path) return
+
+  path.targetIdentifier = event.id
   draftDatastreams.value = [event, ...draftDatastreams.value]
   syncDraftDatastreams()
 
-  // remove only this row’s error
   const key = `${mi}:${pi}`
   if (missingTargetKeys.value.has(key)) {
     const next = new Set(missingTargetKeys.value)
@@ -328,7 +319,9 @@ function onTargetSelected(event: DatastreamExtended) {
     missingTargetKeys.value = next
   }
 
-  activeMi.value = activePi.value = null
+  activeMappingIndex.value = null
+  activePathIndex.value = null
+  datastreamSelectorOpen.value = false
 }
 
 function removeMapping(mi: number) {
@@ -338,21 +331,7 @@ function removeMapping(mi: number) {
   syncDraftDatastreams()
 }
 
-function createEmptyMapping() {
-  const mapping = {
-    sourceIdentifier: '',
-    paths: [
-      {
-        targetIdentifier: '',
-        dataTransformations: [],
-      },
-    ],
-  } as any
-
-  return mapping
-}
-
-function onAddMapping() {
+function addMapping() {
   if (!Array.isArray(task.value.mappings)) {
     ;(task.value as any).mappings = []
   }
@@ -360,11 +339,26 @@ function onAddMapping() {
   noMappingsError.value = false
 }
 
+function validate() {
+  ensureTaskMappings(false)
+  showErrors.value = true
+  noMappingsError.value = task.value.mappings.length === 0
+
+  const nextMissingKeys = new Set<string>()
+  task.value.mappings.forEach((mapping: any, mi) => {
+    const path = ensureSinglePath(mapping)
+    if (!path.targetIdentifier) nextMissingKeys.add(`${mi}:0`)
+  })
+
+  missingTargetKeys.value = nextMissingKeys
+  return !noMappingsError.value && nextMissingKeys.size === 0
+}
+
+defineExpose({ ensureTaskMappings, validate })
+
 watch(
   () => task.value,
-  () => {
-    ensureInitialTaskMappings()
-  },
+  () => ensureTaskMappings(),
   { immediate: true }
 )
 
@@ -386,6 +380,33 @@ watch(
 </script>
 
 <style scoped>
+.task-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.task-form-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.task-form-section-header-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.task-form-section-title {
+  font-size: 0.67rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #4f4b59;
+}
+.task-form-section-copy {
+  color: #5f5a67;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
 .etl-mappings {
   display: flex;
   flex-direction: column;
@@ -474,119 +495,12 @@ watch(
   font-size: 0.84rem;
   border-style: dashed;
 }
-
-:deep(.etl-mapping-source .v-field) {
-  --v-input-control-height: 38px;
-}
-
-:deep(.etl-mapping-source .v-field__input) {
-  min-height: 38px;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-size: 0.86rem;
-  text-align: left;
-}
-
-.swimlanes {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  column-gap: 12px;
-  row-gap: 8px;
-  margin-bottom: 12px;
-}
-.swimlanes-aggregation {
-  --aggregation-statistic-width: 18rem;
-  grid-template-columns:
-    minmax(0, 1fr)
-    fit-content(var(--aggregation-statistic-width))
-    minmax(0, 2fr);
-  column-gap: 12px;
-}
-.head {
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.6);
-  padding-bottom: 6px;
-}
-.cell {
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
-  padding: 6px 8px;
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.aggregation-plain-cell {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  min-height: 0;
-}
-.source {
-  background: transparent;
-  border: none;
-  padding-left: 0;
-}
-.source-empty {
-  min-height: 0;
-}
-.mapping-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  grid-column: 1 / -1; /* make the action row span all 3 columns */
-  margin-top: 4px;
-}
-
-.target-selector-btn {
-  max-width: calc(100% - 2.25rem);
-  height: auto;
-  transition:
-    transform 0.14s ease,
-    box-shadow 0.14s ease,
-    background-color 0.14s ease;
-}
-
-.swimlanes-aggregation .target-selector-btn {
-  margin-right: 0 !important;
-  max-width: 100%;
-  width: 100%;
-}
-
-.swimlanes-aggregation .aggregation-statistic-select,
-.swimlanes-aggregation .aggregation-statistic-error {
-  max-width: var(--aggregation-statistic-width);
-  width: var(--aggregation-statistic-width);
-}
-
-.target-selector-btn :deep(.v-btn__content) {
-  display: flex;
-  justify-content: flex-start;
-  text-align: left;
-  white-space: normal;
-  width: 100%;
-}
-
-.target-selector-btn:hover,
-.target-selector-btn:focus-visible {
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
-  transform: translateY(-1px);
-}
-
-.target-selector-btn-selected {
-  justify-content: flex-start;
-  min-width: 0;
-}
-
 .target-selector-content {
   display: block;
   max-width: 100%;
   line-height: 1.25;
   padding-block: 2px;
 }
-
 .target-id {
   display: block;
   color: rgba(0, 0, 0, 0.55);
@@ -594,7 +508,6 @@ watch(
   overflow-wrap: anywhere;
   white-space: normal;
 }
-
 .target-name {
   color: #1c1b1f;
   display: block;
@@ -602,7 +515,6 @@ watch(
   overflow-wrap: anywhere;
   white-space: normal;
 }
-
 .target-thing {
   color: rgba(0, 0, 0, 0.66);
   display: block;
@@ -610,24 +522,17 @@ watch(
   overflow-wrap: anywhere;
   white-space: normal;
 }
-
-.aggregation-field-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
+:deep(.etl-mapping-source .v-field) {
+  --v-input-control-height: 38px;
 }
-
-.target-selector-btn-error {
-  box-shadow: 0 0 0 1px rgba(211, 47, 47, 0.3);
+:deep(.etl-mapping-source .v-field__input) {
+  min-height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.86rem;
+  text-align: left;
 }
-
-.aggregation-field-error {
-  display: block;
-  width: 100%;
-}
-
-@media (max-width: 960px) {
+@media (max-width: 640px) {
   .etl-mappings-head-target {
     margin-left: 0;
   }
