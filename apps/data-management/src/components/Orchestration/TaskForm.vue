@@ -589,9 +589,7 @@ async function onSubmit() {
   border-radius: 14px;
   background: #fff;
   padding: 8px 10px;
-  transition:
-    border-color 0.16s ease,
-    background-color 0.16s ease,
+  transition: border-color 0.16s ease, background-color 0.16s ease,
     box-shadow 0.16s ease;
   outline: none;
 }
@@ -650,6 +648,17 @@ async function onSubmit() {
 }
 .schedule-interval-input {
   max-width: 62px;
+}
+:deep(.schedule-interval-input input[type='number']) {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+:deep(.schedule-interval-input input[type='number']::-webkit-inner-spin-button),
+:deep(
+    .schedule-interval-input input[type='number']::-webkit-outer-spin-button
+  ) {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .schedule-unit-select {
   max-width: 110px;
@@ -712,9 +721,9 @@ async function onSubmit() {
 }
 
 :deep(
-  .schedule-start-input
-    input[type='datetime-local']::-webkit-calendar-picker-indicator
-) {
+    .schedule-start-input
+      input[type='datetime-local']::-webkit-calendar-picker-indicator
+  ) {
   margin: 0;
   padding: 0;
   opacity: 0.82;

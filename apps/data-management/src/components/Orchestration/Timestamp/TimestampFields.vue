@@ -115,8 +115,8 @@ const props = defineProps<{
 const { dataConnection } = storeToRefs(useDataConnectionStore())
 
 const FORMAT_OPTIONS = [
-  { title: 'ISO 8601 / embedded offset', value: 'iso8601' },
-  { title: 'Naive (no timezone in string)', value: 'naive' },
+  { title: 'Full ISO 8601 (YYYY-MM-DD hh:mm:ss:ssss+hh:mm)', value: 'iso8601' },
+  { title: 'Naive ISO 8601 (no timezone in string)', value: 'naive' },
   { title: 'Custom format', value: 'custom' },
 ] as const
 
