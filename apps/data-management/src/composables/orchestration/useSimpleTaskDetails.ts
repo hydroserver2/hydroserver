@@ -110,9 +110,15 @@ export function useSimpleTaskDetails(
     return ''
   })
 
-  const runRows = computed(() =>
-    [task.value?.latestRun, ...runs.value]
-      .filter((run): run is TaskRun => !!run?.id)
+  const runRows = computed(() => {
+    const seen = new Set<string>()
+    return [task.value?.latestRun, ...runs.value]
+      .filter((run): run is TaskRun => {
+        if (!run?.id) return false
+        if (seen.has(run.id)) return false
+        seen.add(run.id)
+        return true
+      })
       .map((run) => ({
         id: run.id,
         domId: `task-run-${run.id}`,
@@ -133,7 +139,7 @@ export function useSimpleTaskDetails(
         })),
         raw: run,
       }))
-  )
+  })
 
   async function load() {
     if (!taskId.value) return
