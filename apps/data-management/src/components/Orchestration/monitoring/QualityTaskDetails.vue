@@ -8,18 +8,29 @@
         <span v-if="scheduleText" class="pill">{{ scheduleText }}</span>
       </div>
       <div class="actions">
-        <v-btn
-          variant="outlined"
+        <button
+          type="button"
+          class="header-btn header-btn--neutral"
           :disabled="!!pauseDisabledReason"
           @click="togglePaused"
         >
-          {{ task.schedule?.enabled ? 'Pause' : 'Resume' }}
-        </v-btn>
+          <v-icon
+            :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
+            size="16"
+          />
+          <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
+        </button>
         <v-dialog width="64rem">
           <template #activator="{ props }">
-            <v-btn v-bind="props" variant="outlined" :disabled="!canEdit"
-              >Edit</v-btn
+            <button
+              v-bind="props"
+              type="button"
+              class="header-btn header-btn--neutral"
+              :disabled="!canEdit"
             >
+              <v-icon :icon="mdiPencil" size="16" />
+              <span>Edit</span>
+            </button>
           </template>
           <QualityManagementForm
             :workspace-id="workspaceId"
@@ -32,24 +43,27 @@
         </v-dialog>
         <v-dialog width="34rem">
           <template #activator="{ props }">
-            <v-btn
+            <button
               v-bind="props"
-              color="error"
-              variant="outlined"
+              type="button"
+              class="header-btn header-btn--danger"
               :disabled="!canEdit"
-              >Delete</v-btn
             >
+              <v-icon :icon="mdiTrashCanOutline" size="16" />
+              <span>Delete</span>
+            </button>
           </template>
           <DeleteTaskCard :task="task" @delete="deleteTask" />
         </v-dialog>
-        <v-btn
-          color="success"
-          variant="outlined"
+        <button
+          type="button"
+          class="header-btn header-btn--run"
           :disabled="!!runNowDisabledReason"
           @click="runNow"
         >
-          {{ runNowRequested ? 'Run requested' : 'Run now' }}
-        </v-btn>
+          <v-icon :icon="mdiPlay" size="16" />
+          <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
+        </button>
       </div>
     </header>
     <section class="body">
@@ -74,6 +88,12 @@ import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
+import {
+  mdiPause,
+  mdiPencil,
+  mdiPlay,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 
 const props = defineProps<{
   taskId: string
@@ -147,6 +167,54 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #cac4d0;
+  border-radius: 8px;
+  color: #1c1b1f;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.1;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.header-btn :deep(.v-icon) {
+  flex: 0 0 auto;
+}
+.header-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+.header-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.header-btn--neutral {
+  border-color: #cac4d0;
+  color: #1c1b1f;
+}
+.header-btn--run {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+.header-btn--run:hover:not(:disabled) {
+  background: rgba(46, 125, 50, 0.08);
+}
+.header-btn--danger {
+  border-color: #b3261e;
+  color: #b3261e;
+}
+.header-btn--danger:hover:not(:disabled) {
+  background: rgba(179, 38, 30, 0.08);
+  border-color: #b3261e;
 }
 .body {
   flex: 1;
