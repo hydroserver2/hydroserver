@@ -226,7 +226,6 @@ async function onSubmit() {
   const res = isEdit.value
     ? await hs.dataConnections.update(formDataConnection.value)
     : await hs.dataConnections.create(body as any)
-  console.log('Data connection save response', res)
 
   if (res.ok) {
     if (isEdit.value) {
