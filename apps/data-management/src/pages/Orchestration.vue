@@ -9,7 +9,7 @@
     </div>
 
     <div v-if="!!selectedWorkspace" class="orchestration-page-body">
-      <OrchestrationWorkbench :workspace-id="selectedWorkspace.id" />
+      <OrchestrationWorkbench />
     </div>
   </div>
 </template>

@@ -206,6 +206,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline } from '@mdi/js'
+import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type RatingCurve,
@@ -224,9 +225,9 @@ import {
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  workspaceId: string
   initialThingId?: string | null
   editTaskId?: string | null
 }>()
@@ -239,6 +240,8 @@ const emit = defineEmits<{
 }>()
 
 const isEditMode = computed(() => !!props.editTaskId)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -291,10 +294,16 @@ const ratingCurveOptions = computed(() =>
 const selectedCreateFile = computed(() => createCurveFile.value)
 
 async function loadOptions() {
+  const workspaceId = selectedWorkspaceId.value
+  if (!workspaceId) {
+    datastreams.value = []
+    return
+  }
+
   loading.value = true
   try {
     const datastreamItems = await hs.datastreams.listAllItems({
-      workspace_id: [props.workspaceId],
+      workspace_id: [workspaceId],
       order_by: ['name'],
       expand_related: true,
     } as any)

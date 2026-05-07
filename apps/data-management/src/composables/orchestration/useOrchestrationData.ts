@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import hs, {
   DataConnection,
   DataProductTaskExpanded,
@@ -8,9 +8,12 @@ import hs, {
 } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 export function useOrchestrationData() {
   const { workspaceTasks } = storeToRefs(useOrchestrationStore())
+  const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+  const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
   const loading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
@@ -21,28 +24,41 @@ export function useOrchestrationData() {
 
   let fetchRequestId = 0
 
-  const fetchAll = async (workspaceId: string) => {
+  const fetchAll = async (requestedWorkspaceId = selectedWorkspaceId.value) => {
     const requestId = ++fetchRequestId
+    if (!requestedWorkspaceId) {
+      loading.value = false
+      dataConnections.value = []
+      workspaceTasks.value = []
+      dataProductTasks.value = []
+      monitoringTasks.value = []
+      things.value = []
+      datastreamThingByDatastreamId.value = {}
+      return
+    }
+
     loading.value = true
     try {
       const [dcItems, etlItems, dpItems, monItems, thingItems, dsItems] =
         await Promise.all([
           hs.dataConnections.listAllItems({
-            workspace_id: workspaceId,
+            workspace_id: requestedWorkspaceId,
             order_by: 'name',
           } as any),
-          hs.tasks.listAllItems({ workspace_id: workspaceId } as any),
+          hs.tasks.listAllItems({ workspace_id: requestedWorkspaceId } as any),
           hs.dataProductTasks.listAllItems({
-            workspace_id: [workspaceId],
+            workspace_id: [requestedWorkspaceId],
           } as any),
           hs.monitoringTasks.listAllItems({
-            workspace_id: [workspaceId],
+            workspace_id: [requestedWorkspaceId],
           } as any),
           hs.things.listAllItems({
-            workspace_id: [workspaceId],
+            workspace_id: [requestedWorkspaceId],
             order_by: ['name'],
           } as any),
-          hs.datastreams.listAllItems({ workspace_id: [workspaceId] } as any),
+          hs.datastreams.listAllItems({
+            workspace_id: [requestedWorkspaceId],
+          } as any),
         ])
 
       if (requestId !== fetchRequestId) return
@@ -66,9 +82,15 @@ export function useOrchestrationData() {
     }
   }
 
-  const refreshDataConnections = async (workspaceId: string) => {
+  const refreshDataConnections = async (
+    requestedWorkspaceId = selectedWorkspaceId.value
+  ) => {
+    if (!requestedWorkspaceId) {
+      dataConnections.value = []
+      return
+    }
     dataConnections.value = await hs.dataConnections.listAllItems({
-      workspace_id: workspaceId,
+      workspace_id: requestedWorkspaceId,
       order_by: 'name',
     } as any)
   }

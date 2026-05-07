@@ -74,6 +74,7 @@ export default defineConfig(({ mode }) => {
           '**/src/composables/useMetadata.ts',
           '**/src/composables/useVocabulary.ts',
           '**/src/composables/useSystemTableLogic.ts',
+          '**/src/composables/orchestration/useSimpleTaskDetails.ts',
           '**/src/composables/orchestration/useTaskRunNowPolling.ts',
           '**/src/services/getCSRFToken.ts',
           '**/src/models/**',

@@ -33,7 +33,6 @@
             </button>
           </template>
           <QualityManagementForm
-            :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
             @close="onUpdated"
@@ -113,7 +112,6 @@ const {
   pauseDisabledReason,
   runNowDisabledReason,
   runNowRequested,
-  workspaceId,
   close,
   copy,
   deleteTask,

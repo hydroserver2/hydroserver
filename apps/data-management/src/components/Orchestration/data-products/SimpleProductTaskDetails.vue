@@ -35,7 +35,6 @@
           </template>
           <AggregationForm
             v-if="taskLabel === 'aggregation'"
-            :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
             @close="onUpdated"
@@ -44,7 +43,6 @@
           />
           <ExpressionForm
             v-else-if="taskLabel === 'expression'"
-            :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
             @close="onUpdated"
@@ -53,7 +51,6 @@
           />
           <DerivationForm
             v-else-if="taskLabel === 'derivation'"
-            :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
             @close="onUpdated"
@@ -62,7 +59,6 @@
           />
           <RatingCurveForm
             v-else
-            :workspace-id="workspaceId"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
             @close="onUpdated"
@@ -159,7 +155,6 @@ const {
   pauseDisabledReason,
   runNowDisabledReason,
   runNowRequested,
-  workspaceId,
   close,
   copy,
   deleteTask,

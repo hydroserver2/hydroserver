@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue'
+import { computed, ref } from 'vue'
 import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
 import hs, {
   DataConnection,
@@ -125,23 +125,17 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { storeToRefs } from 'pinia'
 
-const props = defineProps<{
-  workspaceId: string
-}>()
-
 const openCreate = ref(false)
 const search = ref()
 const loading = ref(false)
-const { workspaces } = storeToRefs(useWorkspaceStore())
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { openDataConnectionTableDialog } = storeToRefs(useDataConnectionStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
-const workspaceForPage = computed(() =>
-  workspaces.value.find((workspace) => workspace.id === props.workspaceId)
-)
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const canEditWorkspace = computed(() => {
-  const workspace = workspaceForPage.value
+  const workspace = selectedWorkspace.value
   if (!workspace) return false
 
   const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
@@ -166,12 +160,16 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
       } as any),
     hs.dataConnections.delete,
     DataConnection,
-    toRef(props, 'workspaceId')
+    selectedWorkspaceId
   )
 
 const refreshTable = async () => {
+  if (!selectedWorkspaceId.value) {
+    items.value = []
+    return
+  }
   items.value = await hs.dataConnections.listAllItems({
-    workspace_id: [props.workspaceId],
+    workspace_id: [selectedWorkspaceId.value],
     expand_related: true,
     order_by: ['name'],
   } as any)

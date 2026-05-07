@@ -336,6 +336,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
+import { storeToRefs } from 'pinia'
 import hs, {
   type DataTransformation,
   type RatingCurve,
@@ -355,10 +356,10 @@ import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
   transformation?: DataTransformation
-  workspaceId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -383,7 +384,9 @@ type LocalTransformationDraft =
 
 const ALLOWED_OPS = ['+', '-', '*', '/', '**', '(', ')']
 const isEdit = computed(() => !!props.transformation)
-const canSelectThing = computed(() => !!props.workspaceId)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+const canSelectThing = computed(() => !!selectedWorkspaceId.value)
 
 function makeInitial(): LocalTransformationDraft {
   if (props.transformation?.type === 'expression') {
@@ -554,10 +557,11 @@ async function syncSelectedThingWithReference() {
   }
 
   const ratingCurveId = getRatingCurveReference(local.value)
-  if (!ratingCurveId || !props.workspaceId) return
+  const workspaceId = selectedWorkspaceId.value
+  if (!ratingCurveId || !workspaceId) return
 
   const curves = await hs.ratingCurves.listItems({
-    workspace_id: [props.workspaceId],
+    workspace_id: [workspaceId],
     fetch_all: true,
   } as any)
   const selectedCurve = curves.find(
@@ -709,7 +713,8 @@ async function createAttachmentForThing() {
 }
 
 async function loadThings() {
-  if (!props.workspaceId) {
+  const workspaceId = selectedWorkspaceId.value
+  if (!workspaceId) {
     things.value = []
     selectedThingId.value = null
     clearRatingCurveSelection()
@@ -719,7 +724,7 @@ async function loadThings() {
   thingsLoading.value = true
   try {
     things.value = await hs.things.listAllItems({
-      workspace_id: [props.workspaceId],
+      workspace_id: [workspaceId],
       order_by: ['name'],
     })
 
@@ -963,7 +968,7 @@ async function onSubmit() {
 }
 
 watch(
-  () => props.workspaceId,
+  selectedWorkspaceId,
   () => {
     loadThings()
   }

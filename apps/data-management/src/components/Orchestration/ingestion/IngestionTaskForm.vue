@@ -438,6 +438,7 @@ import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCa
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { useWorkspaceStore } from '@/store/workspaces'
 import {
   mdiArrowRight,
   mdiPlus,
@@ -448,7 +449,6 @@ import {
 const props = defineProps<{
   oldTask?: TaskExpanded
   dataConnection: DataConnection
-  workspaceId: string
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
@@ -457,7 +457,8 @@ const isEdit = !!props.oldTask
 const valid = ref<boolean | null>(null)
 const myForm = ref<VForm>()
 const submitLoading = ref(false)
-const workspaceId = props.workspaceId
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 const perTaskPlaceholders = props.dataConnection.placeholderVariables.filter(
   (variable): variable is PlaceholderVariable => variable.type === 'per_task'
 )
@@ -552,7 +553,7 @@ const scheduleMode = ref<'interval' | 'crontab'>(
 
 const resolvedWorkspaceId = computed(() => {
   return (
-    workspaceId ||
+    selectedWorkspaceId.value ||
     (task.value as any)?.workspaceId ||
     (task.value as any)?.workspace?.id ||
     null

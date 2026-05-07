@@ -31,7 +31,12 @@ type Emit = {
 
 export function useSimpleTaskDetails(
   kind: TaskKind,
-  props: { taskId?: string | null; runId?: string | null; embedded?: boolean; initialTask?: any },
+  props: {
+    taskId?: string | null
+    runId?: string | null
+    embedded?: boolean
+    initialTask?: any
+  },
   emit: Emit
 ) {
   const route = useRoute()
@@ -41,40 +46,23 @@ export function useSimpleTaskDetails(
   const loading = ref(false)
   const loadingRuns = ref(false)
   const runNowRequested = ref(false)
-  const { workspaces } = storeToRefs(useWorkspaceStore())
-  const { setSelectedWorkspaceById } = useWorkspaceStore()
-  const { checkPermissionsByWorkspaceId } = useWorkspacePermissions()
+  const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+  const { hasPermission } = useWorkspacePermissions()
 
   const taskId = computed(() => {
     if (props.taskId) return props.taskId
     const param = route.params.id
-    return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
+    return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
   })
 
-  const workspaceId = computed(() => {
-    const value = task.value
-    return (
-      value?.workspace?.id ??
-      value?.dataConnection?.workspace?.id ??
-      value?.thing?.workspaceId ??
-      value?.workspaceId ??
-      null
-    )
-  })
-
-  const workspace = computed(() => {
-    const embedded =
-      task.value?.workspace ?? task.value?.dataConnection?.workspace
-    if (embedded?.id) return embedded
-    return workspaces.value.find((item) => item.id === workspaceId.value)
-  })
+  const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
   const canEdit = computed(() => {
-    if (!workspace.value) return false
-    return checkPermissionsByWorkspaceId(
-      workspaceId.value,
+    if (!selectedWorkspace.value) return false
+    return hasPermission(
       PermissionResource.Workspace,
-      PermissionAction.Edit
+      PermissionAction.Edit,
+      selectedWorkspace.value
     )
   })
 
@@ -126,7 +114,9 @@ export function useSimpleTaskDetails(
         message: getTaskRunMessage(run),
         runtimeUrl: getTaskRunRuntimeUrl(run) ?? null,
         violations: getMonitoringRunViolations(run).map((violation, index) => ({
-          key: `${violation.ruleId ?? violation.datastreamId ?? 'violation'}-${index}`,
+          key: `${
+            violation.ruleId ?? violation.datastreamId ?? 'violation'
+          }-${index}`,
           datastreamName: violation.datastreamId ?? 'Datastream',
           ruleTypeLabel: `${violation.ruleType ?? ''}`.replace(/_/g, ' '),
           violationCount: violation.violationCount,
@@ -149,7 +139,6 @@ export function useSimpleTaskDetails(
       if (!response.ok)
         throw new Error(response.message || 'Unable to load task.')
       task.value = response.data
-      if (workspaceId.value) setSelectedWorkspaceById(workspaceId.value)
     } catch (error: any) {
       Snackbar.error(error?.message || 'Unable to load task.')
     } finally {

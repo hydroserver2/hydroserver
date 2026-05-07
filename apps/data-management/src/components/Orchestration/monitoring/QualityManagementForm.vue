@@ -13,7 +13,11 @@
         />
       </v-toolbar>
       <v-divider />
-      <v-progress-linear v-if="loadingExisting" indeterminate :color="QUALITY_ACCENT" />
+      <v-progress-linear
+        v-if="loadingExisting"
+        indeterminate
+        :color="QUALITY_ACCENT"
+      />
     </div>
 
     <v-form
@@ -33,8 +37,8 @@
           class="mb-5"
         >
           Quality tasks monitor one or more datastreams for range, rate of
-          change, persistence, and missing-data conditions. Each rule belongs
-          to this task and can notify the recipients below.
+          change, persistence, and missing-data conditions. Each rule belongs to
+          this task and can notify the recipients below.
         </v-alert>
 
         <v-text-field
@@ -337,6 +341,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
+import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type IntervalPeriod,
@@ -356,9 +361,9 @@ import {
   QUALITY_ACCENT_LIGHT,
 } from '../workbench/orchestrationTabs'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  workspaceId: string
   initialThingId?: string | null
   editTaskId?: string | null
 }>()
@@ -399,6 +404,7 @@ const makeRuleRow = (init: Partial<RuleRow> = {}): RuleRow => ({
 
 const isEditMode = computed(() => !!props.editTaskId)
 const selectedThingId = computed(() => props.initialThingId ?? null)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -441,11 +447,12 @@ const ruleTypeOptions: { title: string; value: MonitoringRuleType }[] = [
   { title: 'Missing data', value: 'missing_data' },
 ]
 
-const windowUnitOptions: { title: string; value: MonitoringRuleWindowUnit }[] = [
-  { title: 'Minutes', value: 'minutes' },
-  { title: 'Hours', value: 'hours' },
-  { title: 'Days', value: 'days' },
-]
+const windowUnitOptions: { title: string; value: MonitoringRuleWindowUnit }[] =
+  [
+    { title: 'Minutes', value: 'minutes' },
+    { title: 'Hours', value: 'hours' },
+    { title: 'Days', value: 'days' },
+  ]
 
 const scheduleUnitOptions = windowUnitOptions
 
@@ -602,10 +609,15 @@ function hydrateSchedule(schedule: TaskSchedule | null | undefined) {
 }
 
 async function loadDatastreams() {
+  if (!selectedWorkspace.value?.id) {
+    datastreams.value = []
+    return
+  }
+
   loadingDatastreams.value = true
   try {
     const items = await hs.datastreams.listAllItems({
-      workspace_id: [props.workspaceId],
+      workspace_id: [selectedWorkspace.value.id],
       order_by: ['name'],
       expand_related: true,
     } as any)
@@ -651,7 +663,9 @@ async function loadExistingTask() {
     recipients.value = [...(taskRes.data.recipients ?? [])]
     hydrateSchedule(taskRes.data.schedule)
 
-    const rows = ((rulesRes.ok ? rulesRes.data : []) as MonitoringRule[]).map(ruleToRow)
+    const rows = ((rulesRes.ok ? rulesRes.data : []) as MonitoringRule[]).map(
+      ruleToRow
+    )
     ruleRows.value = rows.length ? rows : []
     originalRulesById.value = Object.fromEntries(
       rows.filter((row) => row.id).map((row) => [row.id!, { ...row }])
@@ -727,7 +741,8 @@ async function syncRules(taskId: string) {
   for (const id of Object.keys(originalRulesById.value)) {
     if (!currentExistingIds.has(id)) {
       const res = await hs.monitoringTasks.deleteRule(taskId, id)
-      if (!res.ok) throw new Error(res.message || 'Unable to delete quality rule.')
+      if (!res.ok)
+        throw new Error(res.message || 'Unable to delete quality rule.')
     }
   }
 
@@ -743,7 +758,9 @@ async function syncRules(taskId: string) {
       if (row.id) {
         const deleteRes = await hs.monitoringTasks.deleteRule(taskId, row.id)
         if (!deleteRes.ok) {
-          throw new Error(deleteRes.message || 'Unable to replace quality rule.')
+          throw new Error(
+            deleteRes.message || 'Unable to replace quality rule.'
+          )
         }
       }
       const createRes = await hs.monitoringTasks.createRule(taskId, payload)
@@ -881,7 +898,10 @@ onMounted(async () => {
 
 .schedule-grid {
   display: grid;
-  grid-template-columns: minmax(160px, auto) minmax(120px, 0.4fr) minmax(150px, 0.6fr);
+  grid-template-columns: minmax(160px, auto) minmax(120px, 0.4fr) minmax(
+      150px,
+      0.6fr
+    );
   gap: 12px;
   align-items: start;
 }

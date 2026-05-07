@@ -312,6 +312,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiClose, mdiPlus, mdiInformationOutline } from '@mdi/js'
+import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type DataProductTask,
@@ -326,6 +327,7 @@ import {
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const ALLOWED_FUNCTIONS = [
   'abs',
@@ -351,7 +353,6 @@ const RESERVED_NAMES = new Set(ALLOWED_FUNCTIONS)
 const VAR_LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('')
 
 const props = defineProps<{
-  workspaceId: string
   initialThingId?: string | null
   editTaskId?: string | null
 }>()
@@ -377,6 +378,8 @@ const makeRow = (letter?: string): InputRow => ({
 })
 
 const isEditMode = computed(() => !!props.editTaskId)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const formRef = ref<VForm>()
 const valid = ref<boolean | null>(null)
@@ -503,10 +506,16 @@ const formulaAllowedTokens: Rule = (v) => {
 // --- Data loading ---
 
 async function loadDatastreams() {
+  const workspaceId = selectedWorkspaceId.value
+  if (!workspaceId) {
+    datastreams.value = []
+    return
+  }
+
   loadingDatastreams.value = true
   try {
     const items = await hs.datastreams.listAllItems({
-      workspace_id: [props.workspaceId],
+      workspace_id: [workspaceId],
       order_by: ['name'],
       expand_related: true,
     } as any)

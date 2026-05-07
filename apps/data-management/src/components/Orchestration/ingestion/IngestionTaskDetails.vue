@@ -42,7 +42,6 @@
             <IngestionTaskForm
               :old-task="task"
               :data-connection="task.dataConnection"
-              :workspace-id="workspaceId"
               @close="closeEditTaskDialog"
               @updated="onTaskUpdated"
             />
@@ -154,7 +153,6 @@ const {
   pauseDisabledReason,
   runNowDisabledReason,
   runNowRequested,
-  workspaceId,
   close,
   copy,
   deleteTask,

@@ -102,7 +102,6 @@
     >
       <IngestionTaskForm
         :data-connection="selectedTaskDataConnection"
-        :workspace-id="workspaceId"
         @close="closeCreateTaskDialog"
         @created="onTaskCreated"
       />
@@ -134,7 +133,6 @@
 
     <v-dialog v-model="openAggregationForm" width="60rem">
       <AggregationForm
-        :workspace-id="workspaceId"
         :initial-thing-id="selectedThingId"
         :edit-task-id="editingAggregationTaskId"
         @close="closeAggregationForm"
@@ -146,7 +144,6 @@
 
     <v-dialog v-model="openExpressionForm" width="60rem">
       <ExpressionForm
-        :workspace-id="workspaceId"
         :initial-thing-id="selectedThingId"
         @close="openExpressionForm = false"
         @created="onDataProductTaskCreated"
@@ -155,7 +152,6 @@
 
     <v-dialog v-model="openDerivationForm" width="60rem">
       <DerivationForm
-        :workspace-id="workspaceId"
         :initial-thing-id="selectedThingId"
         :edit-task-id="editingDerivationTaskId"
         @close="closeDerivationForm"
@@ -167,7 +163,6 @@
 
     <v-dialog v-model="openRatingCurveForm" width="60rem">
       <RatingCurveForm
-        :workspace-id="workspaceId"
         :initial-thing-id="selectedThingId"
         @close="openRatingCurveForm = false"
         @created="onDataProductTaskCreated"
@@ -176,7 +171,6 @@
 
     <v-dialog v-model="openQualityForm" width="64rem">
       <QualityManagementForm
-        :workspace-id="workspaceId"
         :initial-thing-id="selectedThingId"
         :edit-task-id="editingQualityTaskId"
         @close="closeQualityForm"
@@ -233,8 +227,6 @@ import {
   type TaskRow,
 } from './workbench/orchestrationTabs'
 
-const props = defineProps<{ workspaceId: string }>()
-
 const route = useRoute()
 
 const {
@@ -252,8 +244,9 @@ const {
 const { orchestrationSearch, orchestrationStatusFilter } = storeToRefs(
   useOrchestrationStore()
 )
-const { workspaces, selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const activeTab = ref<TabId>('ingestion')
 const activeView = ref<ActiveView>('tasks')
@@ -285,7 +278,7 @@ const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
       dataProduct: dataProductTasks,
       monitoring: monitoringTasks,
     },
-    currentWorkspaceId: () => props.workspaceId,
+    currentWorkspaceId: () => selectedWorkspaceId.value!,
   })
 
 const {
@@ -570,7 +563,7 @@ const selectSite = async (id: string) => {
 }
 
 watch(
-  () => props.workspaceId,
+  selectedWorkspaceId,
   async (newId) => {
     if (newId == null) return
     stopAll()
@@ -644,12 +637,12 @@ const openDeleteDialog = (dc: DataConnection) => {
 
 const onDataConnectionCreated = async () => {
   openCreateDataConnection.value = false
-  await refreshDataConnections(props.workspaceId)
+  await refreshDataConnections()
 }
 
 const onTaskCreated = async () => {
   closeCreateTaskDialog()
-  await fetchAll(props.workspaceId)
+  await fetchAll()
   autoSelectSidebar()
 }
 
@@ -673,18 +666,18 @@ const onDataProductTaskCreated = async () => {
   openDerivationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
-  await fetchAll(props.workspaceId)
+  await fetchAll()
   autoSelectSidebar()
 }
 
 const onQualityTaskChanged = async () => {
   closeQualityForm()
-  await fetchAll(props.workspaceId)
+  await fetchAll()
   autoSelectSidebar()
 }
 
 const onTaskDetailsChanged = async () => {
-  await fetchAll(props.workspaceId)
+  await fetchAll()
   autoSelectSidebar()
 }
 
@@ -727,7 +720,6 @@ const goToTask = async (row: TaskRow) => {
     name: 'Orchestration',
     query: {
       ...currentQuery,
-      workspaceId: props.workspaceId,
       taskId: row.id,
       taskKind: row.kind,
     },
