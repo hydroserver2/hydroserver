@@ -590,18 +590,6 @@ function datastreamNameById(id: string | undefined | null) {
   return datastreamById(id)?.name || ''
 }
 
-function datastreamThingNameById(id: string | undefined | null) {
-  const ds = datastreamById(id)
-  if (!ds) return ''
-  if (ds.thing?.name) return ds.thing.name
-  const thingId = ds.thingId ?? ds.thing?.id
-  if (!thingId) return ''
-  return (
-    workspaceThings.value.find((t) => String(t.id) === String(thingId))?.name ||
-    ''
-  )
-}
-
 function openTargetSelector(mi: number) {
   activeMappingIndex.value = mi
   datastreamSelectorOpen.value = true

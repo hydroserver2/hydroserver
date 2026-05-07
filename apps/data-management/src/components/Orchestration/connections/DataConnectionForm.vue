@@ -149,7 +149,8 @@ const normalizeNotificationRecipients = (values: readonly unknown[]) => {
 const isValidNotificationRecipient = (value: string) => emailPattern.test(value)
 
 const notificationRecipientEmails = computed<string[]>({
-  get: () => (formDataConnection.value as any).notification?.recipientEmails ?? [],
+  get: () =>
+    (formDataConnection.value as any).notification?.recipientEmails ?? [],
   set: (value) => {
     const dc = formDataConnection.value as any
     if (!dc.notification) dc.notification = {}
@@ -225,6 +226,7 @@ async function onSubmit() {
   const res = isEdit.value
     ? await hs.dataConnections.update(formDataConnection.value)
     : await hs.dataConnections.create(body as any)
+  console.log('Data connection save response', res)
 
   if (res.ok) {
     if (isEdit.value) {
