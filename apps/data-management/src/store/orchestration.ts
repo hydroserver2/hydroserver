@@ -8,6 +8,7 @@ import hs, {
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
+import type { ActiveView, TabId } from '@/components/Orchestration/workbench/orchestrationTabs'
 
 export const useOrchestrationStore = defineStore('orchestration', () => {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
@@ -19,6 +20,12 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceThings = ref<Thing[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
+
+  const activeTab = ref<TabId>('ingestion')
+  const activeView = ref<ActiveView>('tasks')
+  const selectedConnectionId = ref<string | null>(null)
+  const selectedThingId = ref<string | null>(null)
+  const sidebarSearch = ref('')
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
   const loadedWorkspaceThingsId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
@@ -147,6 +154,11 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     workspaceThings,
     orchestrationSearch,
     orchestrationStatusFilter,
+    activeTab,
+    activeView,
+    selectedConnectionId,
+    selectedThingId,
+    sidebarSearch,
     ensureWorkspaceDatastreams,
     ensureWorkspaceThings,
     resetWorkspaceDatastreams,

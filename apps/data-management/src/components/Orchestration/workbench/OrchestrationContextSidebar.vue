@@ -36,9 +36,7 @@
           :value="search"
           :placeholder="`Search ${title.toLowerCase()}…`"
           class="sidebar-search-input"
-          @input="
-            $emit('update:search', ($event.target as HTMLInputElement).value)
-          "
+          @input="search = ($event.target as HTMLInputElement).value"
         />
       </div>
     </div>
@@ -195,11 +193,11 @@
           </div>
           <span
             v-if="
-              selectedThingId !== thing.id && sidebarBadgeCount(thing.id) > 0
+              selectedThingId !== thing.id && props.issueCountForSite(thing.id) > 0
             "
             class="sidebar-item-badge"
           >
-            {{ sidebarBadgeCount(thing.id) }}
+            {{ props.issueCountForSite(thing.id) }}
           </span>
         </div>
         <div v-if="sites.length === 0" class="sidebar-empty">No sites yet.</div>
@@ -239,21 +237,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { mdiMagnify, mdiPencil, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
 import type { DataConnection, Thing } from '@hydroserver/client'
-import { READ_ONLY_TOOLTIP, type TabId } from './orchestrationTabs'
+import { useOrchestrationStore } from '@/store/orchestration'
+import { READ_ONLY_TOOLTIP, TAB_META } from './orchestrationTabs'
+
+const { activeTab, selectedConnectionId, selectedThingId, sidebarSearch: search } =
+  storeToRefs(useOrchestrationStore())
 
 const props = withDefaults(
   defineProps<{
-    activeTab: TabId
     connections: DataConnection[]
     sites: Thing[]
-    selectedConnectionId: string | null
-    selectedThingId: string | null
-    search: string
-    title: string
-    addLabel: string
-    accent: string
     canEdit: boolean
     taskCountForConnection: (id: string) => number
     issueCountForConnection: (id: string) => number
@@ -269,7 +265,6 @@ const props = withDefaults(
 )
 
 defineEmits<{
-  (e: 'update:search', value: string): void
   (e: 'select-connection', id: string): void
   (e: 'select-site', id: string): void
   (e: 'edit-connection', connection: DataConnection): void
@@ -277,10 +272,13 @@ defineEmits<{
   (e: 'create'): void
 }>()
 
-const isIngestion = computed(() => props.activeTab === 'ingestion')
-const isQuality = computed(() => props.activeTab === 'quality')
-
-const sidebarBadgeCount = (thingId: string) => props.issueCountForSite(thingId)
+const isIngestion = computed(() => activeTab.value === 'ingestion')
+const isQuality = computed(() => activeTab.value === 'quality')
+const accent = computed(() => TAB_META[activeTab.value].accent)
+const title = computed(() => (isIngestion.value ? 'Connections' : 'Sites'))
+const addLabel = computed(() =>
+  isIngestion.value ? 'Add data connection' : 'Add site'
+)
 </script>
 
 <style scoped>

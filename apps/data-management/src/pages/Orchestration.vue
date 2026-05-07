@@ -12,8 +12,6 @@
       <div class="orchestration-shell">
         <OrchestrationNavRail
           :tabs="tabs"
-          :active-tab="activeTab"
-          :active-view="activeView"
           @select-tab="setActiveTab"
           @open-workspaces="openWorkspaceManager"
           @open-hydro-loader="goToHydroLoader"
@@ -25,15 +23,8 @@
 
         <template v-else>
           <OrchestrationContextSidebar
-            :active-tab="activeTab"
             :connections="filteredConnections"
             :sites="filteredSites"
-            :selected-connection-id="selectedConnectionId"
-            :selected-thing-id="selectedThingId"
-            :search="sidebarSearch"
-            :title="sidebarTitle"
-            :add-label="addLabel"
-            :accent="activeAccent"
             :can-edit="canEditOrchestration"
             :task-count-for-connection="taskCountForConnection"
             :issue-count-for-connection="issueCountForConnection"
@@ -42,7 +33,6 @@
             :violation-count-for-site="violationCountForSite"
             :dot-color-for-connection="dotColorForConnection"
             :dot-color-for-site="dotColorForSite"
-            @update:search="sidebarSearch = $event"
             @select-connection="selectConnection"
             @select-site="selectSite"
             @edit-connection="openEditDialog"
@@ -65,9 +55,6 @@
 
           <TaskListPanel
             v-else
-            :active-tab="activeTab"
-            :accent="activeAccent"
-            :accent-light="activeAccentLight"
             :can-edit="canEditOrchestration"
             :loading="loading"
             :has-selection="hasSelection"
@@ -79,12 +66,8 @@
             :empty-heading="emptyHeading"
             :empty-message="emptyMessage"
             :empty-tasks-message="emptyTasksMessage"
-            :task-search="taskSearch"
-            :status-filter="statusFilter"
             :sort-key="sortKey"
             :sort-dir="sortDir"
-            @update:task-search="taskSearch = $event"
-            @update:status-filter="statusFilter = $event"
             @toggle-sort="toggleSort"
             @toggle-paused="onTogglePaused"
             @run-now="onRunNow"
@@ -233,7 +216,6 @@ import {
   countTaskIssues,
   taskHasIssue,
   worstDotColor,
-  type ActiveView,
   type TabDefinition,
   type TabId,
   type TaskKind,
@@ -254,20 +236,18 @@ const {
   refreshDataConnections,
 } = useOrchestrationData()
 
-const { orchestrationSearch, orchestrationStatusFilter } = storeToRefs(
-  useOrchestrationStore()
-)
+const {
+  orchestrationSearch,
+  orchestrationStatusFilter,
+  activeTab,
+  activeView,
+  selectedConnectionId,
+  selectedThingId,
+  sidebarSearch,
+} = storeToRefs(useOrchestrationStore())
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
-
-const activeTab = ref<TabId>('ingestion')
-const activeView = ref<ActiveView>('tasks')
-const sidebarSearch = ref('')
-const taskSearch = ref('')
-const statusFilter = ref<string[]>([])
-const selectedConnectionId = ref<string | null>(null)
-const selectedThingId = ref<string | null>(null)
 
 const selectedDataConnection = ref<DataConnection | null>(null)
 const selectedTaskDataConnection = ref<DataConnection | null>(null)
@@ -329,18 +309,6 @@ const tabs = computed<TabDefinition[]>(() => [
   { ...TAB_META.quality, issues: countTaskIssues(monitoringTaskRows.value) },
 ])
 
-const activeTabDef = computed(
-  () => tabs.value.find((t) => t.id === activeTab.value) ?? tabs.value[0]
-)
-const activeAccent = computed(() => activeTabDef.value.accent)
-const activeAccentLight = computed(() => activeTabDef.value.accentLight)
-
-const sidebarTitle = computed(() =>
-  activeTab.value === 'ingestion' ? 'Connections' : 'Sites'
-)
-const addLabel = computed(() =>
-  activeTab.value === 'ingestion' ? 'Add data connection' : 'Add site'
-)
 
 const filterByName = <T extends { name: string }>(items: T[], term: string) => {
   const q = term.trim().toLowerCase()
@@ -412,8 +380,8 @@ const visibleTasks = computed<TaskRow[]>(() => {
 })
 
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
-  const term = taskSearch.value.trim().toLowerCase()
-  const filters = new Set(statusFilter.value)
+  const term = orchestrationSearch.value.trim().toLowerCase()
+  const filters = new Set(orchestrationStatusFilter.value)
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
       const bucket = t.statusSort ?? 'Unknown'
@@ -532,9 +500,6 @@ const closeTaskDetails = async () => {
   await router.replace({ name: 'Orchestration', query: nextQuery })
 }
 
-const sameStringArray = (left: string[], right: string[]) =>
-  left.length === right.length &&
-  left.every((value, index) => value === right[index])
 
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
@@ -588,37 +553,6 @@ watch(
   { immediate: true }
 )
 
-// Persist task search + status filter across navigations via the store.
-watch(
-  orchestrationSearch,
-  (value) => {
-    if (value) taskSearch.value = value
-  },
-  { immediate: true }
-)
-watch(taskSearch, (value) => {
-  orchestrationSearch.value = value ?? ''
-})
-
-watch(
-  orchestrationStatusFilter,
-  (value) => {
-    const next = Array.isArray(value) ? value : []
-    if (!sameStringArray(statusFilter.value, next)) {
-      statusFilter.value = [...next]
-    }
-  },
-  { immediate: true }
-)
-watch(statusFilter, (value) => {
-  const next = Array.isArray(value) ? value : []
-  if (!Array.isArray(value)) {
-    statusFilter.value = [...next]
-  }
-  if (!sameStringArray(orchestrationStatusFilter.value, next)) {
-    orchestrationStatusFilter.value = [...next]
-  }
-})
 
 const openCreateDialog = () => {
   if (!canEditOrchestration.value) return

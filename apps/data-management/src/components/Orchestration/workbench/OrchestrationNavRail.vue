@@ -94,18 +94,17 @@
 
 <script setup lang="ts">
 import { mdiBriefcaseOutline, mdiDownloadBoxOutline } from '@mdi/js'
+import { storeToRefs } from 'pinia'
+import { useOrchestrationStore } from '@/store/orchestration'
 import {
   WORKSPACE_ACCENT,
   WORKSPACE_ACCENT_LIGHT,
-  type ActiveView,
   type TabDefinition,
   type TabId,
 } from './orchestrationTabs'
 
 defineProps<{
   tabs: TabDefinition[]
-  activeTab: TabId
-  activeView: ActiveView
 }>()
 
 defineEmits<{
@@ -113,6 +112,8 @@ defineEmits<{
   (e: 'open-workspaces'): void
   (e: 'open-hydro-loader'): void
 }>()
+
+const { activeTab, activeView } = storeToRefs(useOrchestrationStore())
 </script>
 
 <style scoped>

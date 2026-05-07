@@ -143,7 +143,7 @@
         density="compact"
         variant="outlined"
         class="detail-search"
-        @update:model-value="$emit('update:taskSearch', $event ?? '')"
+        @update:model-value="taskSearch = $event ?? ''"
       />
       <v-autocomplete
         :model-value="statusFilter"
@@ -161,7 +161,7 @@
         name="orchestration-status-filter"
         spellcheck="false"
         class="detail-status-filter"
-        @update:model-value="$emit('update:statusFilter', $event ?? [])"
+        @update:model-value="statusFilter = $event ?? []"
       >
         <template #selection="{ item, index }">
           <v-chip
@@ -363,6 +363,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -375,16 +377,17 @@ import {
   mdiPlus,
 } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
+import { useOrchestrationStore } from '@/store/orchestration'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import {
   DATA_PRODUCT_TYPE_COLORS,
   READ_ONLY_TOOLTIP,
   STATUS_OPTIONS,
+  TAB_META,
   type DataProductTaskType,
   type SortDir,
   type SortKey,
-  type TabId,
   type TaskRow,
 } from './orchestrationTabs'
 
@@ -394,10 +397,16 @@ const typeChipStyle = (taskType: DataProductTaskType) => {
   return { background: c.bg, color: c.text }
 }
 
+const {
+  activeTab,
+  orchestrationSearch: taskSearch,
+  orchestrationStatusFilter: statusFilter,
+} = storeToRefs(useOrchestrationStore())
+
+const accent = computed(() => TAB_META[activeTab.value].accent)
+const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
+
 const props = defineProps<{
-  activeTab: TabId
-  accent: string
-  accentLight: string
   canEdit: boolean
   loading: boolean
   hasSelection: boolean
@@ -409,15 +418,11 @@ const props = defineProps<{
   emptyHeading: string
   emptyMessage: string
   emptyTasksMessage: string
-  taskSearch: string
-  statusFilter: string[]
   sortKey: SortKey
   sortDir: SortDir
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:taskSearch', value: string): void
-  (e: 'update:statusFilter', value: string[]): void
   (e: 'toggle-sort', key: SortKey): void
   (e: 'toggle-paused', row: TaskRow): void
   (e: 'run-now', row: TaskRow): void
@@ -443,9 +448,9 @@ const sortIcon = (key: SortKey) => {
 }
 
 const removeStatusFilter = (index: number) => {
-  const next = [...props.statusFilter]
+  const next = [...statusFilter.value]
   next.splice(index, 1)
-  emit('update:statusFilter', next)
+  statusFilter.value = next
 }
 </script>
 
