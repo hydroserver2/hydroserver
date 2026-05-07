@@ -354,7 +354,7 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { formatTime } from '@/utils/time'
+import { formatTime, inputToIso, isoToInput } from '@/utils/time'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   QUALITY_ACCENT,
@@ -543,23 +543,6 @@ function normalizeRuleForType(row: RuleRow) {
   if (!row.windowIntervalUnits) row.windowIntervalUnits = 'hours'
 }
 
-function ensureIsoUtc(value: string | null = ''): string | null {
-  return value && !/([Zz]|[+-]\d{2}:\d{2})$/.test(value) ? `${value}Z` : value
-}
-
-function isoToInput(iso: string | null = ''): string {
-  if (!iso) return ''
-  const normalized = ensureIsoUtc(iso) ?? ''
-  const date = new Date(normalized)
-  if (Number.isNaN(date.getTime())) return ''
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
-  return local.toISOString().slice(0, 16)
-}
-
-function inputToIso(value: string): string {
-  const date = new Date(value)
-  return date.toISOString()
-}
 
 const scheduleStartInput = computed({
   get: () => isoToInput(scheduleStartTime.value),

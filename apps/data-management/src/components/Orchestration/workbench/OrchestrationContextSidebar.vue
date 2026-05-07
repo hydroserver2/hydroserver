@@ -193,11 +193,11 @@
           </div>
           <span
             v-if="
-              selectedThingId !== thing.id && props.issueCountForSite(thing.id) > 0
+              selectedThingId !== thing.id && issueCountForSite(thing.id) > 0
             "
             class="sidebar-item-badge"
           >
-            {{ props.issueCountForSite(thing.id) }}
+            {{ issueCountForSite(thing.id) }}
           </span>
         </div>
         <div v-if="sites.length === 0" class="sidebar-empty">No sites yet.</div>

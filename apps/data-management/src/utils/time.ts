@@ -1,3 +1,22 @@
+export function ensureIsoUtc(s: string | null = ''): string | null {
+  return s && !/([Zz]|[+-]\d{2}:\d{2})$/.test(s) ? s + 'Z' : s
+}
+
+export function isoToInput(iso: string | null = ''): string {
+  if (!iso) return ''
+  const normalized = ensureIsoUtc(iso) ?? ''
+  const d = new Date(normalized)
+  if (Number.isNaN(d.getTime())) return ''
+  const tzOffsetMs = d.getTimezoneOffset() * 60_000
+  const local = new Date(d.getTime() - tzOffsetMs)
+  return local.toISOString().slice(0, 16)
+}
+
+export function inputToIso(str = ''): string {
+  if (!str) return ''
+  return new Date(str).toISOString()
+}
+
 export const formatTime = (time?: string | null): string => {
   if (!time) return '–'
 

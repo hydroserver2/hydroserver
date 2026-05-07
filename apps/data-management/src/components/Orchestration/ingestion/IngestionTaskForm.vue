@@ -107,7 +107,7 @@
                   hide-details
                   variant="outlined"
                   rounded="lg"
-                  :rules="[(v) => !!v || 'Interval is required']"
+                  :rules="rules.required"
                 />
                 <v-select
                   v-model="task.schedule!.intervalPeriod"
@@ -119,7 +119,7 @@
                   variant="outlined"
                   density="compact"
                   rounded="lg"
-                  :rules="[(v) => !!v || 'Units are required']"
+                  :rules="rules.required"
                 />
               </div>
             </div>
@@ -131,7 +131,10 @@
                   scheduleMode === 'crontab',
               }"
               tabindex="0"
+              role="button"
               @click="selectScheduleMode('crontab')"
+              @keydown.enter.prevent="selectScheduleMode('crontab')"
+              @keydown.space.prevent="selectScheduleMode('crontab')"
             >
               <div class="flex items-start gap-2">
                 <span
@@ -142,13 +145,11 @@
                       : 'border-[#7e7886]'
                   "
                 />
-                <div>
-                  <div
-                    class="text-[0.86rem] font-bold leading-[1.2] text-[#1f1d24]"
-                    :class="{ 'text-[#1565c0]': scheduleMode === 'crontab' }"
-                  >
-                    Crontab expression
-                  </div>
+                <div
+                  class="text-[0.86rem] font-bold leading-[1.2] text-[#1f1d24]"
+                  :class="{ 'text-[#1565c0]': scheduleMode === 'crontab' }"
+                >
+                  Crontab expression
                 </div>
               </div>
 
@@ -164,7 +165,7 @@
                   variant="outlined"
                   rounded="lg"
                   density="compact"
-                  :rules="[(v) => !!v || 'Crontab expression is required']"
+                  :rules="rules.required"
                 />
               </div>
             </div>
@@ -276,7 +277,7 @@
               <div />
             </div>
 
-            <template v-for="(m, mi) in task.mappings as any[]" :key="mi">
+            <template v-for="(m, mi) in formMappings" :key="mi">
               <div
                 class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)_44px] items-center gap-2 max-[640px]:grid-cols-1 max-[640px]:gap-2"
               >
@@ -300,15 +301,15 @@
 
                 <div class="min-w-0 self-center">
                   <v-btn
-                    v-if="!ensureSinglePath(m).targetIdentifier"
+                    v-if="!m.targetDatastreamId"
                     variant="outlined"
                     rounded="lg"
                     type="button"
                     class="h-auto min-h-10 w-full justify-start border-2 border-dashed border-[#1565c0] bg-[#f6f9ff] px-3 py-1.5 text-left text-[0.84rem] text-[#1565c0] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
                     :class="{
-                      'border-[#d32f2f] text-[#d32f2f]': hasTargetError(mi, 0),
+                      'border-[#d32f2f] text-[#d32f2f]': hasTargetError(mi),
                     }"
-                    @click="openTargetSelector(mi, 0)"
+                    @click="openTargetSelector(mi)"
                   >
                     <span class="inline-flex items-center gap-1.5 font-bold">
                       <v-icon :icon="mdiPlusCircleOutline" size="18" />
@@ -321,43 +322,25 @@
                     variant="outlined"
                     rounded="lg"
                     type="button"
-                    class="h-auto min-h-[62px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left text-[0.84rem] text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
-                    @click="openTargetSelector(mi, 0)"
+                    class="h-auto min-h-[48px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left text-[0.84rem] text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
+                    @click="openTargetSelector(mi)"
                   >
                     <span class="block max-w-full leading-[1.25] py-[2px]">
                       <span
                         class="block whitespace-normal font-semibold text-[#1c1b1f] [overflow-wrap:anywhere]"
                       >
-                        {{
-                          datastreamNameById(
-                            ensureSinglePath(m).targetIdentifier
-                          )
-                        }}
-                      </span>
-                      <span
-                        v-if="
-                          datastreamThingNameById(
-                            ensureSinglePath(m).targetIdentifier
-                          )
-                        "
-                        class="block whitespace-normal text-[0.78rem] text-[rgba(0,0,0,0.66)] [overflow-wrap:anywhere]"
-                      >
-                        {{
-                          datastreamThingNameById(
-                            ensureSinglePath(m).targetIdentifier
-                          )
-                        }}
+                        {{ datastreamNameById(m.targetDatastreamId) }}
                       </span>
                       <span
                         class="block whitespace-normal text-[0.72rem] text-[rgba(0,0,0,0.55)] [overflow-wrap:anywhere]"
                       >
-                        {{ String(ensureSinglePath(m).targetIdentifier) }}
+                        {{ m.targetDatastreamId }}
                       </span>
                     </span>
                   </v-btn>
 
                   <div
-                    v-if="hasTargetError(mi, 0)"
+                    v-if="hasTargetError(mi)"
                     class="text-error text-caption mt-1"
                   >
                     Target is required
@@ -375,7 +358,11 @@
                     title="Delete mapping"
                     @click.stop="removeMapping(mi)"
                   >
-                    <v-icon :icon="mdiTrashCanOutline" size="22" />
+                    <v-icon
+                      :icon="mdiTrashCanOutline"
+                      color="red-darken-3"
+                      size="22"
+                    />
                   </v-btn>
                 </div>
               </div>
@@ -426,17 +413,16 @@ import hs, {
   DataConnection,
   DatastreamExtended,
   EtlMappingPostBody,
-  Mapping,
   PlaceholderVariable,
   Task,
   TaskExpanded,
-  TaskMapping,
   TaskSchedule,
 } from '@hydroserver/client'
 import StickyForm from '@/components/Forms/StickyForm.vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
+import { ensureIsoUtc, inputToIso, isoToInput } from '@/utils/time'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 import {
@@ -445,6 +431,8 @@ import {
   mdiPlusCircleOutline,
   mdiTrashCanOutline,
 } from '@mdi/js'
+
+type FormMapping = { sourceIdentifier: string; targetDatastreamId: string }
 
 const props = defineProps<{
   oldTask?: TaskExpanded
@@ -485,7 +473,6 @@ const missingTargetKeys = ref<Set<string>>(new Set())
 const noMappingsError = ref(false)
 const datastreamSelectorOpen = ref(false)
 const activeMappingIndex = ref<number | null>(null)
-const activePathIndex = ref<number | null>(null)
 
 function defaultSchedule(): TaskSchedule {
   return {
@@ -498,12 +485,20 @@ function defaultSchedule(): TaskSchedule {
   }
 }
 
-function ensureIsoUtc(s: string | null = ''): string | null {
-  return s && !/([Zz]|[+-]\d{2}:\d{2})$/.test(s) ? s + 'Z' : s
-}
-
 function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule {
   return schedule ? { ...schedule } : defaultSchedule()
+}
+
+function editableMappingFrom(mapping: any): FormMapping {
+  const id = mapping.targetDatastreamId
+    ? String(mapping.targetDatastreamId)
+    : mapping.targetDatastream?.id
+    ? String(mapping.targetDatastream.id)
+    : ''
+  return {
+    sourceIdentifier: String(mapping.sourceIdentifier ?? ''),
+    targetDatastreamId: id,
+  }
 }
 
 function hydrateTask(source?: TaskExpanded): Task {
@@ -514,7 +509,7 @@ function hydrateTask(source?: TaskExpanded): Task {
         description: source.description ?? null,
         taskVariables: { ...source.taskVariables },
         dataConnectionId: source.dataConnection.id || props.dataConnection.id,
-        mappings: source.mappings.map(editableMappingFrom),
+        mappings: source.mappings.map(editableMappingFrom) as any,
         schedule: cloneSchedule(source.schedule),
       })
     : new Task({
@@ -533,7 +528,6 @@ function hydrateTask(source?: TaskExpanded): Task {
 
 function initializeTaskVariables(base: Task) {
   if (!perTaskPlaceholders.length) return
-
   const current = base.taskVariables ?? {}
   base.taskVariables = Object.fromEntries(
     perTaskPlaceholders.map((placeholder) => [
@@ -545,289 +539,133 @@ function initializeTaskVariables(base: Task) {
 
 const task = ref<Task>(hydrateTask(props.oldTask))
 initializeTaskVariables(task.value)
-ensureTaskMappings()
+if (task.value.mappings.length === 0) {
+  task.value.mappings.push({
+    sourceIdentifier: '',
+    targetDatastreamId: '',
+  } as any)
+}
 
 const scheduleMode = ref<'interval' | 'crontab'>(
   task.value.schedule?.crontab ? 'crontab' : 'interval'
 )
 
-const resolvedWorkspaceId = computed(() => {
-  return (
-    selectedWorkspaceId.value ||
-    (task.value as any)?.workspaceId ||
-    (task.value as any)?.workspace?.id ||
-    null
-  )
-})
+const formMappings = computed(
+  () => task.value.mappings as unknown as FormMapping[]
+)
 
 const startInput = computed({
   get: () => isoToInput(task.value.schedule?.startTime ?? ''),
   set: (v: string) => {
-    ensureSchedule()
+    if (!task.value.schedule) task.value.schedule = defaultSchedule()
     task.value.schedule!.startTime = v ? inputToIso(v) : null
   },
 })
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function stringifyIdentifier(value: unknown): string {
-  return value === undefined || value === null ? '' : String(value)
-}
 
 function templateVariablePlaceholder(name: string) {
   return `e.g. ${name.toUpperCase()}`
 }
 
-function ensureSchedule() {
-  if (!task.value.schedule) task.value.schedule = defaultSchedule()
-}
-
 function selectScheduleMode(mode: 'interval' | 'crontab') {
-  ensureSchedule()
+  if (!task.value.schedule) task.value.schedule = defaultSchedule()
   scheduleMode.value = mode
   if (mode === 'interval') task.value.schedule!.crontab = null
 }
 
-function isoToInput(iso: string | null = ''): string {
-  if (!iso) return ''
-  const normalized = ensureIsoUtc(iso) ?? ''
-  const d = new Date(normalized)
-  if (Number.isNaN(d.getTime())) return ''
-  const tzOffsetMs = d.getTimezoneOffset() * 60_000
-  const local = new Date(d.getTime() - tzOffsetMs)
-  return local.toISOString().slice(0, 16)
+function hasTargetError(mi: number) {
+  return showErrors.value && missingTargetKeys.value.has(`${mi}`)
 }
 
-function inputToIso(str = ''): string {
-  if (!str) return ''
-  const parsed = new Date(str)
-  return parsed.toISOString()
-}
-
-function createEmptyMapping(): Mapping {
-  return {
-    sourceIdentifier: '',
-    paths: [
-      {
-        targetIdentifier: '',
-        dataTransformations: [],
-      },
-    ],
-  } as Mapping
-}
-
-function ensureSinglePath(mapping: Mapping) {
-  const targetDatastreamId = (mapping as any).targetDatastream?.id
-  if (!Array.isArray(mapping.paths) || mapping.paths.length === 0) {
-    mapping.paths = [
-      {
-        targetIdentifier: targetDatastreamId ? String(targetDatastreamId) : '',
-        dataTransformations: [],
-      },
-    ]
-  }
-  if (mapping.paths.length > 1) mapping.paths = [mapping.paths[0]]
-  if (!mapping.paths[0].targetIdentifier && targetDatastreamId) {
-    mapping.paths[0].targetIdentifier = String(targetDatastreamId)
-  }
-  if (!Array.isArray(mapping.paths[0].dataTransformations)) {
-    mapping.paths[0].dataTransformations = []
-  }
-  return mapping.paths[0]
-}
-
-function ensureTaskMappings(addInitial = true) {
-  if (!Array.isArray(task.value.mappings)) {
-    ;(task.value as any).mappings = []
-  }
-
-  task.value.mappings.forEach((mapping: any) => {
-    ensureSinglePath(mapping)
-  })
-
-  if (addInitial && task.value.mappings.length === 0) {
-    task.value.mappings.push(createEmptyMapping())
-  }
-}
-
-function hasTargetError(mi: number, pi: number) {
-  return showErrors.value && missingTargetKeys.value.has(`${mi}:${pi}`)
-}
-
-function datastreamById(id: string | number | undefined | null): any {
-  if (id === undefined || id === null || `${id}` === '') return null
-  const key = String(id)
+function datastreamById(id: string | undefined | null): any {
+  if (!id) return null
   return (
-    workspaceDatastreams.value.find((d) => String(d.id) === key) ||
-    linkedDatastreams.value.find((d) => String(d.id) === key) ||
-    draftDatastreams.value.find((d) => String(d.id) === key) ||
-    task.value.mappings
-      ?.map((mapping: any) => mapping?.targetDatastream)
-      .find((d: any) => d && String(d.id) === key) ||
+    workspaceDatastreams.value.find((d) => String(d.id) === id) ||
+    linkedDatastreams.value.find((d) => String(d.id) === id) ||
+    draftDatastreams.value.find((d) => String(d.id) === id) ||
     null
   )
 }
 
-function datastreamNameById(id: string | number | undefined | null) {
+function datastreamNameById(id: string | undefined | null) {
   return datastreamById(id)?.name || ''
 }
 
-function datastreamThingNameById(id: string | number | undefined | null) {
+function datastreamThingNameById(id: string | undefined | null) {
   const ds = datastreamById(id)
   if (!ds) return ''
   if (ds.thing?.name) return ds.thing.name
-  const thingId = ds.thingId ?? ds.thing_id ?? ds.thing?.id
+  const thingId = ds.thingId ?? ds.thing?.id
   if (!thingId) return ''
   return (
-    workspaceThings.value.find((thing) => String(thing.id) === String(thingId))
-      ?.name || ''
+    workspaceThings.value.find((t) => String(t.id) === String(thingId))?.name ||
+    ''
   )
 }
 
-function openTargetSelector(mi: number, pi: number) {
+function openTargetSelector(mi: number) {
   activeMappingIndex.value = mi
-  activePathIndex.value = pi
   datastreamSelectorOpen.value = true
 }
 
-function referencedTargetIds(): Set<string> {
-  const ids = new Set<string>()
-  for (const mapping of task.value.mappings as any[]) {
-    const paths = Array.isArray(mapping.paths) ? mapping.paths : []
-    for (const path of paths) {
-      const id = path.targetIdentifier
-      if (id !== undefined && id !== null && String(id) !== '') {
-        ids.add(String(id))
-      }
-    }
-  }
-  return ids
-}
-
 function syncDraftDatastreams() {
-  const refIds = referencedTargetIds()
+  const refIds = new Set(
+    formMappings.value.map((m) => m.targetDatastreamId).filter(Boolean)
+  )
   const keepIds = new Set(
     [...refIds].filter((id) => !linkedDatastreamIds.value.has(id))
   )
-
   const byId = new Map<string, DatastreamExtended>()
   for (const ds of draftDatastreams.value) {
     const key = String(ds.id)
     if (keepIds.has(key) && !byId.has(key)) byId.set(key, ds)
   }
-
   draftDatastreams.value = [...byId.values()]
 }
 
 function onTargetSelected(event: DatastreamExtended) {
   const mi = activeMappingIndex.value
-  const pi = activePathIndex.value
-  if (mi == null || pi == null) return
-
-  const mapping = task.value.mappings[mi] as any
-  const path = mapping?.paths?.[pi]
-  if (!path) return
-
-  path.targetIdentifier = event.id
+  if (mi == null) return
+  const m = formMappings.value[mi]
+  if (!m) return
+  m.targetDatastreamId = String(event.id)
   draftDatastreams.value = [event, ...draftDatastreams.value]
   syncDraftDatastreams()
-
-  const key = `${mi}:${pi}`
-  if (missingTargetKeys.value.has(key)) {
+  if (missingTargetKeys.value.has(`${mi}`)) {
     const next = new Set(missingTargetKeys.value)
-    next.delete(key)
+    next.delete(`${mi}`)
     missingTargetKeys.value = next
   }
-
   activeMappingIndex.value = null
-  activePathIndex.value = null
   datastreamSelectorOpen.value = false
 }
 
 function removeMapping(mi: number) {
-  const mappings = task.value.mappings
-  if (!Array.isArray(mappings) || mi < 0 || mi >= mappings.length) return
-  mappings.splice(mi, 1)
+  task.value.mappings.splice(mi, 1)
   syncDraftDatastreams()
 }
 
 function addMapping() {
-  if (!Array.isArray(task.value.mappings)) {
-    ;(task.value as any).mappings = []
-  }
-  task.value.mappings.push(createEmptyMapping())
+  task.value.mappings.push({
+    sourceIdentifier: '',
+    targetDatastreamId: '',
+  } as any)
   noMappingsError.value = false
 }
 
 function validateMappings() {
-  ensureTaskMappings(false)
   showErrors.value = true
-  noMappingsError.value = task.value.mappings.length === 0
-
+  noMappingsError.value = formMappings.value.length === 0
   const nextMissingKeys = new Set<string>()
-  task.value.mappings.forEach((mapping: any, mi) => {
-    const path = ensureSinglePath(mapping)
-    if (!path.targetIdentifier) nextMissingKeys.add(`${mi}:0`)
+  formMappings.value.forEach((m, mi) => {
+    if (!m.targetDatastreamId) nextMissingKeys.add(`${mi}`)
   })
-
   missingTargetKeys.value = nextMissingKeys
   return !noMappingsError.value && nextMissingKeys.size === 0
-}
-
-function editableMappingFrom(mapping: TaskMapping): Mapping {
-  const sourceIdentifier = stringifyIdentifier(mapping.sourceIdentifier)
-
-  if ('paths' in mapping) {
-    return {
-      sourceIdentifier,
-      paths:
-        mapping.paths.length > 0
-          ? mapping.paths.map((path) => ({
-              targetIdentifier: path.targetIdentifier,
-              dataTransformations: [...path.dataTransformations],
-            }))
-          : [{ targetIdentifier: '', dataTransformations: [] }],
-    }
-  }
-
-  return {
-    sourceIdentifier,
-    paths: [
-      {
-        targetIdentifier: targetDatastreamId(mapping),
-        dataTransformations: [],
-      },
-    ],
-  }
-}
-
-function targetDatastreamId(mapping: unknown): string {
-  if (!isRecord(mapping)) return ''
-
-  const paths = mapping.paths
-  if (Array.isArray(paths)) {
-    const firstPath = paths[0]
-    if (isRecord(firstPath) && firstPath.targetIdentifier) {
-      return String(firstPath.targetIdentifier)
-    }
-  }
-
-  if (mapping.targetDatastreamId) return String(mapping.targetDatastreamId)
-
-  const targetDatastream = mapping.targetDatastream
-  if (isRecord(targetDatastream) && targetDatastream.id) {
-    return String(targetDatastream.id)
-  }
-
-  return ''
 }
 
 function taskToPayload(): Task {
   const schedule = task.value.schedule ?? defaultSchedule()
   if (scheduleMode.value === 'interval') schedule.crontab = null
-
   return new Task({
     id: task.value.id,
     name: task.value.name,
@@ -835,12 +673,10 @@ function taskToPayload(): Task {
     taskVariables: task.value.taskVariables,
     dataConnectionId: props.dataConnection.id,
     schedule,
-    mappings: task.value.mappings.map(
-      (mapping): EtlMappingPostBody => ({
-        sourceIdentifier: isRecord(mapping)
-          ? stringifyIdentifier(mapping.sourceIdentifier)
-          : '',
-        targetDatastreamId: targetDatastreamId(mapping),
+    mappings: formMappings.value.map(
+      (m): EtlMappingPostBody => ({
+        sourceIdentifier: m.sourceIdentifier,
+        targetDatastreamId: m.targetDatastreamId,
       })
     ),
   })
@@ -850,28 +686,19 @@ async function onSubmit() {
   const mappingsValid = validateMappings()
   await myForm.value?.validate()
   if (!valid.value || !mappingsValid) return
-
   submitLoading.value = true
   try {
-    task.value.dataConnectionId = props.dataConnection.id
-    if (!task.value.schedule) task.value.schedule = defaultSchedule()
-
     const payload = taskToPayload()
-
     const res = isEdit
       ? await hs.tasks.update(payload)
       : await hs.tasks.create(payload)
-
     if (!res.ok) {
       Snackbar.error(res.message)
       console.error(res)
       return
     }
-
-    const saved = res.data
-    task.value = hydrateTask(saved)
-
-    emit(isEdit ? 'updated' : 'created', saved)
+    task.value = hydrateTask(res.data)
+    emit(isEdit ? 'updated' : 'created', res.data)
     emit('close')
   } catch (error: unknown) {
     Snackbar.error(
@@ -884,13 +711,7 @@ async function onSubmit() {
 }
 
 watch(
-  () => task.value,
-  () => ensureTaskMappings(),
-  { immediate: true }
-)
-
-watch(
-  resolvedWorkspaceId,
+  selectedWorkspaceId,
   async (workspaceId) => {
     if (!workspaceId) return
     try {
