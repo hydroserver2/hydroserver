@@ -47,7 +47,7 @@ test.describe('workspace transfers', () => {
     page,
   }) => {
     await authenticateSession(page, users.unaffiliated.email, users.unaffiliated.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await page.goto('/orchestration')
 
     await expect(
       page.getByRole('button', { name: 'Pending workspace transfer' })
@@ -73,7 +73,7 @@ test.describe('workspace transfers', () => {
     const workspaceName = `E2E Transfer Cancel ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
     await createWorkspace(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
@@ -85,7 +85,7 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
     const pendingRow = targetPage.getByRole('row', {
@@ -109,7 +109,7 @@ test.describe('workspace transfers', () => {
     const workspaceName = `E2E Transfer Accept ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
     await createWorkspace(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
@@ -121,7 +121,7 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
     const pendingRow = targetPage.getByRole('row', {

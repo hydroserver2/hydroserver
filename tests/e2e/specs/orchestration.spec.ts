@@ -10,7 +10,8 @@ test.describe('orchestration', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
     await expect(
@@ -28,7 +29,8 @@ test.describe('orchestration', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
 
@@ -53,7 +55,8 @@ test.describe('orchestration', () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(
       page.getByRole('heading', {
@@ -62,9 +65,6 @@ test.describe('orchestration', () => {
     ).toBeVisible()
     await selectWorkspace(page, fixtures.workspaces.public.name)
 
-    await expect(page).toHaveURL(
-      new RegExp(`workspaceId=${fixtures.workspaces.public.id}`)
-    )
     await expect(page.getByText(fixtures.orchestration.dataConnectionName)).toHaveCount(0)
 
     await selectWorkspace(page, fixtures.workspaces.private.name)
