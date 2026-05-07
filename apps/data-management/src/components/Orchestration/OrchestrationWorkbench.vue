@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
@@ -202,7 +202,6 @@ import router from '@/router/router'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useOrchestrationStore } from '@/store/orchestration'
-
 import { useOrchestrationData } from '@/composables/orchestration/useOrchestrationData'
 import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchestrationTaskRows'
 import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
@@ -210,6 +209,17 @@ import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowP
 import OrchestrationNavRail from './workbench/OrchestrationNavRail.vue'
 import OrchestrationContextSidebar from './workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from './workbench/TaskListPanel.vue'
+import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
+import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationWorkspaceManager.vue'
+import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
+import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
+import TaskDetails from '@/pages/TaskDetails.vue'
+import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
+import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
+import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
+import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
+import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
+
 import {
   TAB_META,
   TAB_TO_KIND,
@@ -222,41 +232,6 @@ import {
   type TaskKind,
   type TaskRow,
 } from './workbench/orchestrationTabs'
-
-const DataConnectionForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/connections/DataConnectionForm.vue')
-)
-const OrchestrationWorkspaceManager = defineAsyncComponent(
-  () => import('@/components/Workspace/OrchestrationWorkspaceManager.vue')
-)
-const IngestionTaskForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/ingestion/IngestionTaskForm.vue')
-)
-const DeleteDataConnectionCard = defineAsyncComponent(
-  () =>
-    import(
-      '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
-    )
-)
-const TaskDetails = defineAsyncComponent(
-  () => import('@/pages/TaskDetails.vue')
-)
-const AggregationForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/data-products/AggregationForm.vue')
-)
-const ExpressionForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/data-products/ExpressionForm.vue')
-)
-const DerivationForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/data-products/DerivationForm.vue')
-)
-const RatingCurveForm = defineAsyncComponent(
-  () => import('@/components/Orchestration/data-products/RatingCurveForm.vue')
-)
-const QualityManagementForm = defineAsyncComponent(
-  () =>
-    import('@/components/Orchestration/monitoring/QualityManagementForm.vue')
-)
 
 const props = defineProps<{ workspaceId: string }>()
 
@@ -277,7 +252,7 @@ const {
 const { orchestrationSearch, orchestrationStatusFilter } = storeToRefs(
   useOrchestrationStore()
 )
-const { workspaces } = storeToRefs(useWorkspaceStore())
+const { workspaces, selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 
 const activeTab = ref<TabId>('ingestion')
@@ -303,19 +278,15 @@ const openRatingCurveForm = ref(false)
 const openQualityForm = ref(false)
 const editingQualityTaskId = ref<string | null>(null)
 
-const {
-  runNowTriggeredByTaskId,
-  stopAll,
-  runTaskNow,
-  toggleSchedulePaused,
-} = useTaskRunNowPolling({
-  lists: {
-    etl: workspaceTasks,
-    dataProduct: dataProductTasks,
-    monitoring: monitoringTasks,
-  },
-  currentWorkspaceId: () => props.workspaceId,
-})
+const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
+  useTaskRunNowPolling({
+    lists: {
+      etl: workspaceTasks,
+      dataProduct: dataProductTasks,
+      monitoring: monitoringTasks,
+    },
+    currentWorkspaceId: () => props.workspaceId,
+  })
 
 const {
   etlTaskRows,
@@ -335,20 +306,12 @@ const {
   runNowTriggeredByTaskId,
 })
 
-const workspaceForPage = computed(() =>
-  workspaces.value.find((w) => w.id === props.workspaceId)
-)
-
 const canEditOrchestration = computed(() => {
-  const workspace = workspaceForPage.value
-  if (!workspace) return false
-  const roleName = `${workspace.collaboratorRole?.name ?? ''}`.toLowerCase()
-  if (isAdmin() || isOwner(workspace) || roleName === 'editor') return true
-  return hasPermission(
-    PermissionResource.Workspace,
-    PermissionAction.Edit,
-    workspace
-  )
+  const ws = selectedWorkspace.value
+  if (!ws) return false
+  const roleName = `${ws.collaboratorRole?.name ?? ''}`.toLowerCase()
+  if (isAdmin() || isOwner(ws) || roleName === 'editor') return true
+  return hasPermission(PermissionResource.Workspace, PermissionAction.Edit, ws)
 })
 
 const tabs = computed<TabDefinition[]>(() => [
@@ -521,8 +484,10 @@ const selectedTask = computed(() => {
   const taskId = selectedTaskId.value
   if (!taskId) return null
   const kind = selectedTaskKind.value
-  if (kind === 'etl') return workspaceTasks.value.find((t) => t.id === taskId) ?? null
-  if (kind === 'dataProduct') return dataProductTasks.value.find((t) => t.id === taskId) ?? null
+  if (kind === 'etl')
+    return workspaceTasks.value.find((t) => t.id === taskId) ?? null
+  if (kind === 'dataProduct')
+    return dataProductTasks.value.find((t) => t.id === taskId) ?? null
   return monitoringTasks.value.find((t) => t.id === taskId) ?? null
 })
 
