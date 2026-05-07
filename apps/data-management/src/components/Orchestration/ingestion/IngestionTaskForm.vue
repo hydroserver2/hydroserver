@@ -131,10 +131,7 @@
                   scheduleMode === 'crontab',
               }"
               tabindex="0"
-              role="button"
               @click="selectScheduleMode('crontab')"
-              @keydown.enter.prevent="selectScheduleMode('crontab')"
-              @keydown.space.prevent="selectScheduleMode('crontab')"
             >
               <div class="flex items-start gap-2">
                 <span
@@ -151,11 +148,6 @@
                     :class="{ 'text-[#1565c0]': scheduleMode === 'crontab' }"
                   >
                     Crontab expression
-                  </div>
-                  <div
-                    class="mt-0.5 text-[0.76rem] leading-[1.25] text-[#5f5a67]"
-                  >
-                    Advanced cron syntax
                   </div>
                 </div>
               </div>
@@ -495,10 +487,9 @@ const activeMappingIndex = ref<number | null>(null)
 const activePathIndex = ref<number | null>(null)
 
 function defaultSchedule(): TaskSchedule {
-  const now = new Date().toISOString()
   return {
     enabled: true,
-    startTime: now,
+    startTime: new Date().toISOString(),
     nextRunAt: null,
     crontab: null,
     interval: 1,
