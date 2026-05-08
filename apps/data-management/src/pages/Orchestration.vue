@@ -48,7 +48,7 @@
               :initial-task="selectedTask"
               embedded
               @close="closeTaskDetails"
-              @deleted="onTaskDetailsChanged"
+              @deleted="onTaskDeleted"
               @updated="onTaskDetailsChanged"
             />
           </section>
@@ -236,6 +236,7 @@ const {
   refreshDataConnections,
 } = useOrchestrationData()
 
+const orchestrationStore = useOrchestrationStore()
 const {
   orchestrationSearch,
   orchestrationStatusFilter,
@@ -244,7 +245,8 @@ const {
   selectedConnectionId,
   selectedThingId,
   sidebarSearch,
-} = storeToRefs(useOrchestrationStore())
+  draftDatastreams,
+} = storeToRefs(orchestrationStore)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
@@ -565,7 +567,12 @@ const openCreateTaskDialog = (dc: DataConnection) => {
   openCreateTask.value = true
 }
 
+const resetDraftDatastreams = () => {
+  draftDatastreams.value = []
+}
+
 const closeCreateTaskDialog = () => {
+  resetDraftDatastreams()
   openCreateTask.value = false
   selectedTaskDataConnection.value = null
 }
@@ -624,6 +631,13 @@ const onQualityTaskChanged = async () => {
 }
 
 const onTaskDetailsChanged = async () => {
+  resetDraftDatastreams()
+  await fetchAll()
+  autoSelectSidebar()
+}
+
+const onTaskDeleted = async () => {
+  resetDraftDatastreams()
   await fetchAll()
   autoSelectSidebar()
 }
@@ -639,10 +653,12 @@ const onDataConnectionDeleted = async () => {
   const id = selectedDataConnection.value.id
   try {
     await hs.dataConnections.delete(id)
-    dataConnections.value = dataConnections.value.filter((dc) => dc.id !== id)
+    resetDraftDatastreams()
+    await fetchAll()
     if (selectedConnectionId.value === id) {
       selectedConnectionId.value = dataConnections.value[0]?.id ?? null
     }
+    autoSelectSidebar()
     openDeleteDataConnection.value = false
   } catch (error) {
     console.error('Error deleting data connection', error)

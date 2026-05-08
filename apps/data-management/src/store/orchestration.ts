@@ -8,7 +8,10 @@ import hs, {
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
-import type { ActiveView, TabId } from '@/components/Orchestration/workbench/orchestrationTabs'
+import type {
+  ActiveView,
+  TabId,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 
 export const useOrchestrationStore = defineStore('orchestration', () => {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
@@ -35,9 +38,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     'targetDatastream' in mapping ? mapping.targetDatastream?.id : null
 
   const pathTargetIds = (mapping: TaskMapping) =>
-    'paths' in mapping
-      ? mapping.paths.map((path) => path.targetIdentifier)
-      : []
+    'paths' in mapping ? mapping.paths.map((path) => path.targetIdentifier) : []
 
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
@@ -49,6 +50,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     workspaceThingsRequestId += 1
     workspaceThings.value = []
     loadedWorkspaceThingsId.value = null
+  }
+
+  const resetDraftDatastreams = () => {
+    draftDatastreams.value = []
   }
 
   const linkedDatastreamIds = computed(() => {
@@ -133,10 +138,12 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       if (!wsId) {
         resetWorkspaceDatastreams()
         resetWorkspaceThings()
+        resetDraftDatastreams()
         return
       }
       if (loadedWorkspaceDatastreamId.value !== wsId) {
         resetWorkspaceDatastreams()
+        resetDraftDatastreams()
       }
       if (loadedWorkspaceThingsId.value !== wsId) {
         resetWorkspaceThings()
@@ -163,5 +170,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     ensureWorkspaceThings,
     resetWorkspaceDatastreams,
     resetWorkspaceThings,
+    resetDraftDatastreams,
   }
 })

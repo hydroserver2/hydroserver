@@ -387,7 +387,7 @@
 
     <template #actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
+      <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
       <v-btn-primary :loading="submitLoading" type="button" @click="onSubmit">
         Save task
       </v-btn-primary>
@@ -640,6 +640,11 @@ function addMapping() {
   noMappingsError.value = false
 }
 
+function closeForm() {
+  draftDatastreams.value = []
+  emit('close')
+}
+
 function validateMappings() {
   showErrors.value = true
   noMappingsError.value = formMappings.value.length === 0
@@ -687,7 +692,7 @@ async function onSubmit() {
     }
     task.value = hydrateTask(res.data)
     emit(isEdit ? 'updated' : 'created', res.data)
-    emit('close')
+    closeForm()
   } catch (error: unknown) {
     Snackbar.error(
       error instanceof Error ? error.message : 'Unable to save task.'
