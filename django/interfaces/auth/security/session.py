@@ -19,8 +19,6 @@ class SessionAuth(APIKeyCookie):
         if key and csrf_passed in [True, None] and request.user.is_authenticated:
             request.principal = request.user
             return request.user
-        elif key and csrf_passed:
-            raise HttpError(401, "Invalid or missing session cookie")
         elif key and csrf_passed is False:
             raise HttpError(403, "CSRF check Failed")
 

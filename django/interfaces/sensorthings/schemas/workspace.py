@@ -1,14 +1,12 @@
-from ninja import Schema
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from uuid import UUID
-from sensorthings.types import AnyHttpUrlString
 
 
-class WorkspaceProperties(Schema):
+class WorkspaceProperties(BaseModel):
     id: UUID
     name: str
-    link: AnyHttpUrlString
+    link: str
     is_private: bool
 
     model_config = ConfigDict(

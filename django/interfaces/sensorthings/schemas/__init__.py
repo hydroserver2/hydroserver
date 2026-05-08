@@ -1,12 +1,6 @@
-from .thing import ThingGetResponse, ThingListResponse
-from .sensor import SensorGetResponse, SensorListResponse
-from .observed_property import ObservedPropertyGetResponse, ObservedPropertyListResponse
-from .location import LocationGetResponse, LocationListResponse
-from .datastream import DatastreamGetResponse, DatastreamListResponse
-from .observation import (
-    ObservationGetResponse,
-    ObservationListResponse,
-    ObservationDataArrayResponse,
-    ObservationPostBody,
-    ObservationDataArrayPostBody,
-)
+from .thing import ThingProperties
+from .datastream import DatastreamProperties
+from .location import LocationProperties
+from .observed_property import ObservedPropertyProperties
+from .sensor import SensorMetadata, SensorProperties, sensorEncodingTypes
+from .observation import ObservationProperties

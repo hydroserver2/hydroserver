@@ -1,17 +1,11 @@
-from ninja import Schema
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from typing import Optional, Literal
 from uuid import UUID
-from sensorthings.types import AnyHttpUrlString
-from sensorthings.components.datastreams.schemas import (
-    DatastreamGetResponse as DefaultDatastreamGetResponse,
-    DatastreamListResponse as DefaultDatastreamListResponse,
-)
 from .workspace import WorkspaceProperties
 
 
-class DatastreamProperties(Schema):
+class DatastreamProperties(BaseModel):
     result_type: str
     status: Optional[str] = None
     sampled_medium: str
@@ -32,22 +26,9 @@ class DatastreamProperties(Schema):
     is_private: bool
     is_visible: bool
     workspace: WorkspaceProperties
-    file_attachments: dict[str, AnyHttpUrlString]
+    file_attachments: dict[str, str]
     tags: dict[str, str]
 
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
-
-
-class DatastreamGetResponse(DefaultDatastreamGetResponse):
-    observation_type: str
-    properties: DatastreamProperties
-
-    model_config = ConfigDict(
-        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
-    )
-
-
-class DatastreamListResponse(DefaultDatastreamListResponse):
-    value: list[DatastreamGetResponse]

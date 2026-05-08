@@ -129,7 +129,8 @@ INSTALLED_APPS = [
     "core.iam.auth.providers.orcidsandbox",
     "corsheaders",
     "easyaudit",
-    "sensorthings",
+    "sensorthings.versions.v1_1",
+    "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
     "django_celery_beat",
     "interfaces.api.apps.ApiConfig",
@@ -157,7 +158,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
-    "sensorthings.middleware.SensorThingsMiddleware",
 ]
 
 ROOT_URLCONF = "hydroserver.urls"
@@ -431,6 +431,34 @@ LOGGING = {
 
 # SensorThings Configuration
 
-ST_API_PREFIX = "api/sensorthings"
-ST_API_ID_QUALIFIER = "'"
-ST_API_ID_TYPE = UUID
+from interfaces.sensorthings.schemas import (
+    ThingProperties,
+    DatastreamProperties,
+    LocationProperties,
+    ObservedPropertyProperties,
+    SensorMetadata,
+    SensorProperties,
+    sensorEncodingTypes,
+)
+from asgiref.sync import sync_to_async
+from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+
+SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
+SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
+SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
+    sync_to_async(session_auth),
+    sync_to_async(bearer_auth),
+    sync_to_async(apikey_auth),
+    sync_to_async(anonymous_auth),
+]
+SENSORTHINGS_V1_1_ID_TYPE = UUID
+SENSORTHINGS_V1_1_ID_DELIMITER = "'"
+SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
+    "Things": ThingProperties,
+    "Datastreams": DatastreamProperties,
+    "Locations": LocationProperties,
+    "ObservedProperties": ObservedPropertyProperties,
+    "Sensors": SensorProperties,
+}
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_SCHEMA = SensorMetadata
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_VALUE_LITERAL = sensorEncodingTypes
