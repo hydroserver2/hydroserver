@@ -553,13 +553,14 @@ const closeWorkspaceScopedUi = () => {
 
 watch(
   selectedWorkspaceId,
-  async (newId) => {
+  async (newId, oldId) => {
     if (newId == null) return
+    const workspaceChanged = oldId != null && oldId !== newId
     stopAll()
     closeWorkspaceScopedUi()
     selectedConnectionId.value = null
     selectedThingId.value = null
-    await closeTaskDetails()
+    if (workspaceChanged) await closeTaskDetails()
     await fetchAll(newId)
     autoSelectSidebar()
   },
