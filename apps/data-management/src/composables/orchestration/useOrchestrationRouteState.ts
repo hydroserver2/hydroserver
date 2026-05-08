@@ -182,6 +182,7 @@ export function useOrchestrationRouteState() {
 
     await router.push({
       name: ORCHESTRATION_DETAIL_ROUTE_NAMES[detailType],
+      params: { view: DETAIL_VIEW[detailType] },
       query: {
         ...withoutTaskDetails(route.query),
         task_id: row.id,

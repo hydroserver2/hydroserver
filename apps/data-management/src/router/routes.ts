@@ -12,6 +12,18 @@ const validOrchestrationViews = new Set([
 ])
 
 const orchestrationComponent = () => import('@/pages/Orchestration.vue')
+const ingestionTaskDetailsComponent = () =>
+  import('@/components/Orchestration/ingestion/IngestionTaskDetails.vue')
+const aggregationTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/AggregationTaskDetails.vue')
+const expressionTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/ExpressionTaskDetails.vue')
+const derivationTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/DerivationTaskDetails.vue')
+const ratingCurveTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/RatingCurveTaskDetails.vue')
+const qualityTaskDetailsComponent = () =>
+  import('@/components/Orchestration/monitoring/QualityTaskDetails.vue')
 
 export const routes: RouteRecordRaw[] = [
   enableHomePage
@@ -90,72 +102,6 @@ export const routes: RouteRecordRaw[] = [
     redirect: '/orchestration/ingestion',
   },
   {
-    path: '/orchestration/ingestion/details/ingestion',
-    name: 'OrchestrationIngestionDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'ingestion',
-      orchestrationTaskDetail: 'ingestion',
-    },
-  },
-  {
-    path: '/orchestration/aggregation/details/aggregation',
-    name: 'OrchestrationAggregationDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'aggregation',
-      orchestrationTaskDetail: 'aggregation',
-    },
-  },
-  {
-    path: '/orchestration/aggregation/details/expression',
-    name: 'OrchestrationExpressionDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'aggregation',
-      orchestrationTaskDetail: 'expression',
-    },
-  },
-  {
-    path: '/orchestration/aggregation/details/derivation',
-    name: 'OrchestrationDerivationDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'aggregation',
-      orchestrationTaskDetail: 'derivation',
-    },
-  },
-  {
-    path: '/orchestration/aggregation/details/rating-curve',
-    name: 'OrchestrationRatingCurveDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'aggregation',
-      orchestrationTaskDetail: 'rating-curve',
-    },
-  },
-  {
-    path: '/orchestration/quality/details/quality',
-    name: 'OrchestrationQualityDetails',
-    component: orchestrationComponent,
-    meta: {
-      requiresAuth: true,
-      hideFooter: true,
-      orchestrationView: 'quality',
-      orchestrationTaskDetail: 'quality',
-    },
-  },
-  {
     path: '/orchestration/:view',
     name: 'OrchestrationView',
     component: orchestrationComponent,
@@ -168,6 +114,62 @@ export const routes: RouteRecordRaw[] = [
         return '/orchestration/ingestion'
       }
     },
+    children: [
+      {
+        path: 'details/ingestion',
+        name: 'OrchestrationIngestionDetails',
+        component: ingestionTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'ingestion',
+          orchestrationTaskDetail: 'ingestion',
+        },
+      },
+      {
+        path: 'details/aggregation',
+        name: 'OrchestrationAggregationDetails',
+        component: aggregationTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'aggregation',
+        },
+      },
+      {
+        path: 'details/expression',
+        name: 'OrchestrationExpressionDetails',
+        component: expressionTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'expression',
+        },
+      },
+      {
+        path: 'details/derivation',
+        name: 'OrchestrationDerivationDetails',
+        component: derivationTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'derivation',
+        },
+      },
+      {
+        path: 'details/rating-curve',
+        name: 'OrchestrationRatingCurveDetails',
+        component: ratingCurveTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'rating-curve',
+        },
+      },
+      {
+        path: 'details/quality',
+        name: 'OrchestrationQualityDetails',
+        component: qualityTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'quality',
+          orchestrationTaskDetail: 'quality',
+        },
+      },
+    ],
   },
   {
     path: '/hydroloader/download',

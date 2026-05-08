@@ -40,45 +40,50 @@
             @create="openCreateDialog"
           />
 
-          <section v-if="hasTaskDetails" class="detail detail--task">
-            <TaskDetails
-              :task-id="selectedTaskId"
-              :detail-type="selectedTaskDetailType"
-              :run-id="selectedRunId"
-              :initial-task="selectedTask"
-              embedded
-              @close="closeTaskDetails"
-              @deleted="onTaskDeleted"
-              @updated="onTaskDetailsChanged"
-            />
-          </section>
+          <RouterView v-slot="{ Component }">
+            <section
+              v-if="hasTaskDetails && Component"
+              class="detail detail--task"
+            >
+              <component
+                :is="Component"
+                :task-id="selectedTaskId"
+                :run-id="selectedRunId"
+                :initial-task="selectedTask"
+                embedded
+                @close="closeTaskDetails"
+                @deleted="onTaskDeleted"
+                @updated="onTaskDetailsChanged"
+              />
+            </section>
 
-          <TaskListPanel
-            v-else
-            :can-edit="canEditOrchestration"
-            :loading="loading"
-            :has-selection="hasSelection"
-            :detail-title="detailTitle"
-            :detail-type-badge="detailTypeBadge"
-            :selected-connection="selectedConnection"
-            :visible-tasks="visibleTasks"
-            :sorted-visible-tasks="sortedVisibleTasks"
-            :empty-heading="emptyHeading"
-            :empty-message="emptyMessage"
-            :empty-tasks-message="emptyTasksMessage"
-            :sort-key="sortKey"
-            :sort-dir="sortDir"
-            @toggle-sort="toggleSort"
-            @toggle-paused="onTogglePaused"
-            @run-now="onRunNow"
-            @open-task="goToTask"
-            @add-task="openCreateTaskDialog(selectedConnection!)"
-            @add-aggregation="openAggregationForm = true"
-            @add-expression="openExpressionForm = true"
-            @add-derivation="openDerivationForm = true"
-            @add-rating-curve="openRatingCurveForm = true"
-            @add-quality="openQualityForm = true"
-          />
+            <TaskListPanel
+              v-else
+              :can-edit="canEditOrchestration"
+              :loading="loading"
+              :has-selection="hasSelection"
+              :detail-title="detailTitle"
+              :detail-type-badge="detailTypeBadge"
+              :selected-connection="selectedConnection"
+              :visible-tasks="visibleTasks"
+              :sorted-visible-tasks="sortedVisibleTasks"
+              :empty-heading="emptyHeading"
+              :empty-message="emptyMessage"
+              :empty-tasks-message="emptyTasksMessage"
+              :sort-key="sortKey"
+              :sort-dir="sortDir"
+              @toggle-sort="toggleSort"
+              @toggle-paused="onTogglePaused"
+              @run-now="onRunNow"
+              @open-task="goToTask"
+              @add-task="openCreateTaskDialog(selectedConnection!)"
+              @add-aggregation="openAggregationForm = true"
+              @add-expression="openExpressionForm = true"
+              @add-derivation="openDerivationForm = true"
+              @add-rating-curve="openRatingCurveForm = true"
+              @add-quality="openQualityForm = true"
+            />
+          </RouterView>
         </template>
 
         <v-dialog v-model="openCreateDataConnection" width="60rem">
@@ -179,6 +184,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
@@ -205,7 +211,6 @@ import DataConnectionForm from '@/components/Orchestration/connections/DataConne
 import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationWorkspaceManager.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
-import TaskDetails from '@/pages/TaskDetails.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
@@ -224,7 +229,6 @@ import {
 
 const {
   view: routeView,
-  taskDetailType: selectedTaskDetailType,
   taskKind: selectedTaskKind,
   taskId: selectedTaskId,
   runId: selectedRunId,

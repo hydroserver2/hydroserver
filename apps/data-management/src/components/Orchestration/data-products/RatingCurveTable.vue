@@ -1090,6 +1090,7 @@ async function deleteAttachment() {
 function taskDetailsRoute(task: { id: string; workspaceId: string }) {
   return {
     name: 'OrchestrationRatingCurveDetails',
+    params: { view: 'aggregation' },
     query: {
       workspaceId: task.workspaceId,
       task_id: task.id,

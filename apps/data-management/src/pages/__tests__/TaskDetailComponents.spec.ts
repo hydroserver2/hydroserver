@@ -168,7 +168,7 @@ const seedWorkspace = async () => {
   ]
 }
 
-describe('TaskDetails', () => {
+describe('Task detail components', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     dataProductGetMock.mockReset()
