@@ -8,7 +8,31 @@ On playground.hydroserver.org website's main navigation menu, select the 'Data M
 
 <img src="/hydroserver-101/job-orchestration.png" alt="job orchestration" class="img-white-bg">
 
-On the top right of the 'Orchestration Systems' table click the 'Download Streaming Data Loader' button. This will take you to a page to select the download for Mac/Windows/Ubuntu. Click the download button for whatever machine you're running, open the newly downloaded file and follow the install instructions.
+On the top right of the 'Orchestration Systems' table click the 'Download Streaming Data Loader' button. This will take you to a page to select the download for Mac/Windows/Ubuntu. Click the download button for your operating system and follow the instructions below to set up the application.
+
+### macOS
+
+1. **Mount the Image:** Double-click the downloaded `.dmg` file to open the disk image.
+2. **Install:** Drag the **Streaming Data Loader** icon into your **Applications** folder.
+3. **Security Authorization:** Because this is a standalone build, macOS may block the initial launch. To allow the app:
+   * Open **System Settings** > **Privacy & Security**.
+   * Scroll down to the **Security** section.
+   * Click **Open Anyway** next to the notice regarding the application.
+4. **Launch:** You can now open the app directly from your Applications folder.
+
+### Windows
+1. **Extract Files:** Right-click the downloaded `.zip` file and select **Extract All...**. Choose a folder where you would like the application to reside.
+2. **Launch:** Navigate to the extracted folder and double-click the **Streaming Data Loader.exe** file.
+3. **SmartScreen Bypass:** If you see a "Windows protected your PC" message:
+   * Click **More info**.
+   * Click **Run anyway**.
+4. **Optional:** Right-click the executable and select **Pin to Taskbar** for easier access later.
+
+### Linux (Ubuntu)
+1. **Extract:** Unzip the archive to your preferred location.
+2. **Set Permissions:** Open a terminal in that folder and run the following command to make the file executable:
+   `chmod +x "Streaming Data Loader"`
+3. **Launch:** Double-click the executable or run it from the terminal using `./"Streaming Data Loader"`.
 
 When the application is successfully installed and opened, you'll see a login page. Point the Streaming Data Loader the workspace you created at https://playground.hydroserver.org.
 
