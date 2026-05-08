@@ -183,6 +183,7 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
+  type DataProductTask,
   PermissionAction,
   PermissionResource,
   type TaskExpanded,
@@ -662,12 +663,32 @@ const closeQualityForm = () => {
   editingQualityTaskId.value = null
 }
 
-const onDataProductTaskCreated = async () => {
+const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
   openAggregationForm.value = false
   openDerivationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
   await fetchAll()
+
+  const taskToPoll = dataProductTasks.value.find(
+    (task) => task.id === createdTask?.id
+  )
+
+  if (taskToPoll?.id) {
+    if (
+      taskToPoll.latestRun?.id &&
+      activeRunStatuses.has(taskToPoll.latestRun.status)
+    ) {
+      startPollingTaskRun(
+        'dataProduct',
+        taskToPoll.id,
+        taskToPoll.latestRun.id
+      )
+    } else if (!taskToPoll.latestRun) {
+      await runTaskNow('dataProduct', taskToPoll.id)
+    }
+  }
+
   autoSelectSidebar()
 }
 
