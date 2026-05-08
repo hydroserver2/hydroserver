@@ -2,13 +2,14 @@ from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth.hashers import check_password
 from ninja.security import APIKeyHeader
-from core.iam.models import APIKey
 
 
 class APIKeyAuth(APIKeyHeader):
     param_name = "X-Api-Key"
 
     def authenticate(self, request, key):
+        from core.iam.models import APIKey
+
         if not key or len(key) < 12:
             return None
 

@@ -1,17 +1,27 @@
-from uuid import UUID
 from django.core.exceptions import FieldError
 from django.db.models import F, Window
 from django.db.models.functions import RowNumber
 from ninja.errors import HttpError
 from odata_query.django.django_q import AstToDjangoQVisitor
-from sensorthings.components import field_schemas
+from sensorthings.types import Absent, OrderByDirection
 from core.sta import models as sta_models
 
 
 class SensorThingsUtils:
+
     @staticmethod
-    def strings_to_uuids(strings):
-        return [UUID(val) if isinstance(val, str) else val for val in strings]
+    def select_field(select, field, value, cast=None):
+        if select is not None and field not in select:
+            return Absent
+        return cast(value) if cast else value
+
+    @staticmethod
+    def iso_time_interval(begin, end):
+        if begin is None and end is None:
+            return None
+        begin_str = begin.isoformat() if begin else ".."
+        end_str = end.isoformat() if end else ".."
+        return f"{begin_str}/{end_str}"
 
     def transform_model_field(self, component, prop):
         if component.__name__ == "Thing":
@@ -62,63 +72,68 @@ class SensorThingsUtils:
             }.get(prop, prop)
 
         elif component.__name__ == "Datastream":
-            if prop.split("__")[0] in ["Thing", "Sensor", "ObservedProperty"]:
+            related = {
+                "Thing": "thing",
+                "Sensor": "sensor",
+                "ObservedProperty": "observed_property",
+            }
+            parent = prop.split("__")[0]
+            if parent in related:
                 return (
-                    getattr(field_schemas, prop.split("__")[0]).model_config[
-                        "json_schema_extra"
-                    ]["name_ref"][1]
+                    related[parent]
                     + "__"
                     + self.transform_model_field(
-                        component=getattr(field_schemas, prop.split("__")[0]),
+                        component=getattr(sta_models, parent),
                         prop="__".join(prop.split("__")[1:]),
                     )
                 )
-            else:
-                return {
-                    "unitOfMeasurement__name": "unit__name",
-                    "unitOfMeasurement__symbol": "unit__symbol",
-                    "unitOfMeasurement__definition": "unit__definition",
-                    "observationType": "observation_type",
-                    "observedArea": "observed_area",
-                    "properties__workspace__id": "thing__workspace_id",
-                    "properties__workspace__name": "thing__workspace__name",
-                    "properties__workspace__isPrivate": "thing__workspace__is_private",
-                    "properties__resultType": "result_type",
-                    "properties__status": "status",
-                    "properties__sampledMedium": "sampled_medium",
-                    "properties__valueCount": "value_count",
-                    "properties__noDataValue": "no_data_value",
-                    "properties__processingLevelCode": "processing_level__code",
-                    "properties__intendedTimeSpacing": "intended_time_spacing",
-                    "properties__intendedTimeSpacingUnitOfMeasurement": "intended_time_spacing_unit",
-                    "properties__aggregationStatistic": "aggregation_statistic",
-                    "properties__timeAggregationInterval": "time_aggregation_interval",
-                    "properties__timeAggregationIntervalUnitOfMeasurement": "time_aggregation_interval_unit",
-                }.get(prop, prop)
+            return {
+                "unitOfMeasurement__name": "unit__name",
+                "unitOfMeasurement__symbol": "unit__symbol",
+                "unitOfMeasurement__definition": "unit__definition",
+                "observationType": "observation_type",
+                "observedArea": "observed_area",
+                "properties__workspace__id": "thing__workspace_id",
+                "properties__workspace__name": "thing__workspace__name",
+                "properties__workspace__isPrivate": "thing__workspace__is_private",
+                "properties__resultType": "result_type",
+                "properties__status": "status",
+                "properties__sampledMedium": "sampled_medium",
+                "properties__valueCount": "value_count",
+                "properties__noDataValue": "no_data_value",
+                "properties__processingLevelCode": "processing_level__code",
+                "properties__intendedTimeSpacing": "intended_time_spacing",
+                "properties__intendedTimeSpacingUnitOfMeasurement": "intended_time_spacing_unit",
+                "properties__aggregationStatistic": "aggregation_statistic",
+                "properties__timeAggregationInterval": "time_aggregation_interval",
+                "properties__timeAggregationIntervalUnitOfMeasurement": "time_aggregation_interval_unit",
+            }.get(prop, prop)
 
         elif component.__name__ == "FeatureOfInterest":
             return prop
 
         elif component.__name__ == "Observation":
-            if prop.split("__")[0] in ["Datastream", "FeatureOfInterest"]:
+            related = {
+                "Datastream": "datastream",
+                "FeatureOfInterest": "feature_of_interest",
+            }
+            parent = prop.split("__")[0]
+            if parent in related:
                 return (
-                    getattr(field_schemas, prop.split("__")[0]).model_config[
-                        "json_schema_extra"
-                    ]["name_ref"][1]
+                    related[parent]
                     + "__"
                     + self.transform_model_field(
-                        component=getattr(field_schemas, prop.split("__")[0]),
+                        component=getattr(sta_models, parent),
                         prop="__".join(prop.split("__")[1:]),
                     )
                 )
-            else:
-                return {
-                    "phenomenonTime": "phenomenon_time",
-                    "resultTime": "result_time",
-                }.get(prop, prop)
+            return {
+                "phenomenonTime": "phenomenon_time",
+                "resultTime": "result_time",
+            }.get(prop, prop)
 
     def apply_filters(self, queryset, component, filters):
-        visitor = AstToDjangoQVisitor(getattr(sta_models, component.__name__))
+        visitor = AstToDjangoQVisitor(component)
         query_filter = visitor.visit(filters)
 
         for prop in list(query_filter.flatten()):
@@ -133,38 +148,29 @@ class SensorThingsUtils:
         except FieldError:
             raise HttpError(422, "Failed to parse filter parameter.")
 
-    def apply_order(self, queryset, component, order_by):
-        order_by = [
-            {
-                "field": self.transform_model_field(
-                    component, field["field"].replace("/", "__")
-                ),
-                "direction": field["direction"],
-            }
-            for field in order_by
-        ]
+    def apply_order(self, queryset, component, orderby):
+        if not orderby:
+            return queryset
 
-        queryset = queryset.order_by(
-            *[
-                f"{'-' if order_field['direction'] == 'desc' else ''}{order_field['field']}"
-                for order_field in order_by
-            ]
-        )
+        order_exprs = []
+        for field in orderby:
+            prop = "__".join(field.path)
+            model_field = self.transform_model_field(component, prop)
+            prefix = "-" if field.direction == OrderByDirection.DESC else ""
+            order_exprs.append(f"{prefix}{model_field}")
 
-        return queryset
+        return queryset.order_by(*order_exprs)
 
     @staticmethod
-    def apply_pagination(queryset, top: int = 100, skip: int = 0):
-        top = top if top >= 0 else 0
-        skip = skip if skip >= 0 else 0
-
-        return queryset[skip : skip + top]
+    def apply_pagination(queryset, top=100, skip=0):
+        top = max(0, int(top))
+        skip = max(0, int(skip))
+        return queryset[skip:skip + top]
 
     @staticmethod
-    def apply_window(queryset, partition_field: str, top: int = 100, skip: int = 0):
-        top = top if top >= 0 else 0
-        skip = skip if skip >= 0 else 0
-
+    def apply_window(queryset, partition_field, top=100, skip=0):
+        top = max(0, int(top))
+        skip = max(0, int(skip))
         return queryset.annotate(
             rn=Window(
                 expression=RowNumber(),
