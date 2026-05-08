@@ -1092,7 +1092,7 @@ function taskDetailsRoute(task: { id: string; workspaceId: string }) {
     name: 'OrchestrationRatingCurveDetails',
     params: { view: 'aggregation' },
     query: {
-      workspaceId: task.workspaceId,
+      workspace_id: task.workspaceId,
       task_id: task.id,
     },
   }

@@ -1,6 +1,8 @@
 import { computed } from 'vue'
 import { useRoute, type LocationQuery } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import router from '@/router/router'
+import { useWorkspaceStore } from '@/store/workspaces'
 import type {
   DataProductTaskType,
   TabId,
@@ -121,6 +123,7 @@ const withoutTaskDetails = (query: LocationQuery) => {
 
 export function useOrchestrationRouteState() {
   const route = useRoute()
+  const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
   const taskDetailType = computed(() =>
     normalizeOrchestrationTaskDetailType(route.meta.orchestrationTaskDetail)
@@ -144,6 +147,11 @@ export function useOrchestrationRouteState() {
 
   const taskId = computed(() => firstString(route.query.task_id))
   const runId = computed(() => firstString(route.query.run_id))
+  const workspaceId = computed(
+    () =>
+      firstString(route.query.workspace_id) ??
+      firstString(route.query.workspaceId)
+  )
 
   const hasTaskDetails = computed(
     () => taskDetailType.value !== null && taskId.value !== null
@@ -185,6 +193,7 @@ export function useOrchestrationRouteState() {
       params: { view: DETAIL_VIEW[detailType] },
       query: {
         ...withoutTaskDetails(route.query),
+        workspace_id: workspaceId.value ?? selectedWorkspace.value?.id,
         task_id: row.id,
       },
     })
@@ -196,6 +205,7 @@ export function useOrchestrationRouteState() {
     taskKind,
     taskId,
     runId,
+    workspaceId,
     hasTaskDetails,
     replaceView,
     closeTaskDetails,

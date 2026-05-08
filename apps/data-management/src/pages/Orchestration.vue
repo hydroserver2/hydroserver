@@ -232,6 +232,7 @@ const {
   taskKind: selectedTaskKind,
   taskId: selectedTaskId,
   runId: selectedRunId,
+  workspaceId: routeWorkspaceId,
   hasTaskDetails,
   replaceView,
   closeTaskDetails,
@@ -251,6 +252,7 @@ const {
 } = useOrchestrationData()
 
 const orchestrationStore = useOrchestrationStore()
+const workspaceStore = useWorkspaceStore()
 const {
   orchestrationSearch,
   orchestrationStatusFilter,
@@ -261,9 +263,25 @@ const {
   sidebarSearch,
   draftDatastreams,
 } = storeToRefs(orchestrationStore)
-const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+const applyRouteWorkspace = () => {
+  const targetWorkspaceId = routeWorkspaceId.value
+  if (!targetWorkspaceId || selectedWorkspace.value?.id === targetWorkspaceId) {
+    return false
+  }
+  if (
+    !workspaces.value.some((workspace) => workspace.id === targetWorkspaceId)
+  ) {
+    return false
+  }
+  workspaceStore.setSelectedWorkspaceById(targetWorkspaceId)
+  return true
+}
+
+watch([routeWorkspaceId, workspaces], applyRouteWorkspace, { immediate: true })
 
 watch(
   routeView,
@@ -494,6 +512,17 @@ const selectedTask = computed(() => {
   return monitoringTasks.value.find((t) => t.id === taskId) ?? null
 })
 
+const selectSidebarFromTaskDetails = () => {
+  const task = selectedTask.value as any
+  if (!hasTaskDetails.value || !task) return false
+  if (selectedTaskKind.value === 'etl') {
+    selectedConnectionId.value = task.dataConnection?.id ?? null
+    return !!selectedConnectionId.value
+  }
+  selectedThingId.value = task.thing?.id ?? null
+  return !!selectedThingId.value
+}
+
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
     const current = selectedConnectionId.value
@@ -556,13 +585,15 @@ watch(
   async (newId, oldId) => {
     if (newId == null) return
     const workspaceChanged = oldId != null && oldId !== newId
+    const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
     stopAll()
     closeWorkspaceScopedUi()
     selectedConnectionId.value = null
     selectedThingId.value = null
-    if (workspaceChanged) await closeTaskDetails()
+    if (workspaceChanged && !routeSelectedThisWorkspace)
+      await closeTaskDetails()
     await fetchAll(newId)
-    autoSelectSidebar()
+    if (!selectSidebarFromTaskDetails()) autoSelectSidebar()
   },
   { immediate: true }
 )
