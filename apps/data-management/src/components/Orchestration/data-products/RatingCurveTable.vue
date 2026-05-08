@@ -66,7 +66,9 @@
             >
               Preview unavailable
             </div>
-            <div v-else class="text-caption text-medium-emphasis">No points</div>
+            <div v-else class="text-caption text-medium-emphasis">
+              No points
+            </div>
           </div>
 
           <div class="rating-curve-item-main">
@@ -112,7 +114,11 @@
             {{ attachmentCountLabel }}
           </v-chip>
           <v-spacer />
-          <v-tooltip v-if="canEditThing" location="top" :disabled="canEditThing">
+          <v-tooltip
+            v-if="canEditThing"
+            location="top"
+            :disabled="canEditThing"
+          >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
@@ -216,7 +222,9 @@
                           variant="text"
                           color="delete"
                           :loading="isValidatingDelete(attachment.id)"
-                          :disabled="!canEditThing || isValidatingDelete(attachment.id)"
+                          :disabled="
+                            !canEditThing || isValidatingDelete(attachment.id)
+                          "
                           @click="handleDeleteClick(attachment)"
                         />
                       </span>
@@ -383,7 +391,9 @@
           class="mb-2 text-none"
           @click="openEditFilePicker"
         >
-          {{ selectedEditFile ? 'Change CSV file' : 'Choose replacement CSV file' }}
+          {{
+            selectedEditFile ? 'Change CSV file' : 'Choose replacement CSV file'
+          }}
         </v-btn>
         <div v-if="selectedEditFile" class="d-flex align-center mb-3">
           <span class="text-caption text-medium-emphasis">
@@ -392,7 +402,9 @@
             ({{ formatFileSize(selectedEditFile.size) }})
           </span>
           <v-spacer />
-          <v-btn variant="text" size="small" @click="clearEditFile">Clear</v-btn>
+          <v-btn variant="text" size="small" @click="clearEditFile"
+            >Clear</v-btn
+          >
         </div>
 
         <v-alert
@@ -463,7 +475,9 @@
 
   <v-dialog v-model="openDelete" width="30rem">
     <v-card>
-      <v-card-title class="text-h6 text-error">Delete rating curve</v-card-title>
+      <v-card-title class="text-h6 text-error"
+        >Delete rating curve</v-card-title
+      >
       <v-divider />
       <v-card-text class="pt-4">
         Delete <strong>{{ activeAttachment?.name }}</strong> from this site?
@@ -472,7 +486,11 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="openDelete = false">Cancel</v-btn-cancel>
-        <v-btn-primary color="error" :loading="saving" @click="deleteAttachment">
+        <v-btn-primary
+          color="error"
+          :loading="saving"
+          @click="deleteAttachment"
+        >
           Delete
         </v-btn-primary>
       </v-card-actions>
@@ -490,8 +508,9 @@
       <v-divider />
       <v-card-text class="pt-4">
         <div class="text-body-2 mb-3">
-          <strong>{{ blockedAttachment?.name }}</strong> is linked to one or more
-          tasks. Remove this rating curve from those tasks before deleting it.
+          <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
+          more tasks. Remove this rating curve from those tasks before deleting
+          it.
         </div>
         <div class="linked-task-buttons">
           <v-btn
@@ -610,7 +629,9 @@ const editPreviewError = ref('')
 
 const PREVIEW_SVG_WIDTH = 132
 const PREVIEW_SVG_HEIGHT = 38
-const previewRowsByAttachmentId = ref<Record<string, RatingCurvePreviewRow[]>>({})
+const previewRowsByAttachmentId = ref<Record<string, RatingCurvePreviewRow[]>>(
+  {}
+)
 const previewLoadingByAttachmentId = ref<Record<string, boolean>>({})
 const previewErrorByAttachmentId = ref<Record<string, string>>({})
 const downloadingByAttachmentId = ref<Record<string, boolean>>({})
@@ -622,8 +643,12 @@ const fittingMethodOptions = [
 ]
 
 const canEditThing = computed(() => props.canEdit)
-const inlineReadOnly = computed(() => props.inlineReadOnly && !canEditThing.value)
-const showManageButton = computed(() => canEditThing.value && !inlineReadOnly.value)
+const inlineReadOnly = computed(
+  () => props.inlineReadOnly && !canEditThing.value
+)
+const showManageButton = computed(
+  () => canEditThing.value && !inlineReadOnly.value
+)
 const readOnlyTooltip =
   'You have read-only access to this site. Ask an editor or owner to make changes.'
 const downloadTooltipText = 'Download rating curve'
@@ -664,8 +689,10 @@ const displayAttachments = computed<DisplayRatingCurve[]>(() => {
       return {
         id: attachment.id,
         name: pendingMetadata?.name ?? attachment.name,
-        description: pendingMetadata?.description ?? (attachment.description || ''),
-        fittingMethod: pendingMetadata?.fittingMethod ?? attachment.fittingMethod,
+        description:
+          pendingMetadata?.description ?? (attachment.description || ''),
+        fittingMethod:
+          pendingMetadata?.fittingMethod ?? attachment.fittingMethod,
         points: pendingReplace?.points ?? attachment.points ?? [],
         pending: false,
       }
@@ -729,7 +756,12 @@ const hasEditChanges = computed(
 const editPreviewPath = computed(() => {
   const points = toCurvePoints(editPreviewRows.value)
   const ranges = computeCurveRange(points)
-  return buildSparklinePath(points, ranges, PREVIEW_SVG_WIDTH, PREVIEW_SVG_HEIGHT)
+  return buildSparklinePath(
+    points,
+    ranges,
+    PREVIEW_SVG_WIDTH,
+    PREVIEW_SVG_HEIGHT
+  )
 })
 
 type RatingCurvePoint = { x: number; y: number }
@@ -825,9 +857,8 @@ async function refreshRatingCurves() {
       )
       for (const curve of ratingCurveStore.existingRatingCurves) {
         if (!deletedIds.has(String(curve.id))) {
-          previewRowsByAttachmentId.value[String(curve.id)] = pointsToPreviewRows(
-            curve.points ?? []
-          )
+          previewRowsByAttachmentId.value[String(curve.id)] =
+            pointsToPreviewRows(curve.points ?? [])
         }
       }
 
@@ -857,7 +888,9 @@ async function refreshRatingCurves() {
     const items = await hs.ratingCurves.listItemsForThing(props.thingId, {
       order_by: ['name'],
     })
-    backendRatingCurves.value = items.sort((a, b) => a.name.localeCompare(b.name))
+    backendRatingCurves.value = items.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
     emitRatingCurvesChanged()
     for (const curve of backendRatingCurves.value) {
       previewRowsByAttachmentId.value[String(curve.id)] = pointsToPreviewRows(
@@ -939,7 +972,8 @@ async function createAttachment() {
 
   const parsed = await parseRatingCurveCsvFile(file)
   const points = parsed.rows.map(
-    (row) => [Number(row.inputValue), Number(row.outputValue)] as RatingCurveTuple
+    (row) =>
+      [Number(row.inputValue), Number(row.outputValue)] as RatingCurveTuple
   )
   const previewRows = pointsToPreviewRows(points)
 
@@ -979,8 +1013,8 @@ async function createAttachment() {
     }
 
     const created = res.data
-    backendRatingCurves.value = [...backendRatingCurves.value, created].sort((a, b) =>
-      a.name.localeCompare(b.name)
+    backendRatingCurves.value = [...backendRatingCurves.value, created].sort(
+      (a, b) => a.name.localeCompare(b.name)
     )
     emitRatingCurvesChanged()
     previewRowsByAttachmentId.value[String(created.id)] = previewRows
@@ -999,13 +1033,17 @@ async function deleteAttachment() {
 
   if (props.deferPersist) {
     if (activeAttachment.value.pending) {
-      ratingCurveStore.removeQueuedRatingCurveCreate(String(activeAttachment.value.id))
+      ratingCurveStore.removeQueuedRatingCurveCreate(
+        String(activeAttachment.value.id)
+      )
       delete previewRowsByAttachmentId.value[String(activeAttachment.value.id)]
     } else {
       ratingCurveStore.queueExistingRatingCurveDelete(activeAttachment.value.id)
       delete previewRowsByAttachmentId.value[String(activeAttachment.value.id)]
       delete previewErrorByAttachmentId.value[String(activeAttachment.value.id)]
-      delete previewLoadingByAttachmentId.value[String(activeAttachment.value.id)]
+      delete previewLoadingByAttachmentId.value[
+        String(activeAttachment.value.id)
+      ]
     }
 
     openDelete.value = false
@@ -1051,10 +1089,10 @@ async function deleteAttachment() {
 
 function taskDetailsRoute(task: { id: string; workspaceId: string }) {
   return {
-    name: 'Orchestration',
+    name: 'OrchestrationRatingCurveDetails',
     query: {
       workspaceId: task.workspaceId,
-      taskId: task.id,
+      task_id: task.id,
     },
   }
 }
@@ -1107,7 +1145,8 @@ async function findTasksUsingRatingCurve(
         id: String(task.id),
         name: `${task.name ?? ''}`.trim(),
         workspaceId:
-          String(task.workspaceId ?? task.workspace?.id ?? workspaceId) || workspaceId,
+          String(task.workspaceId ?? task.workspace?.id ?? workspaceId) ||
+          workspaceId,
       }))
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to validate rating curve usage.')
@@ -1307,7 +1346,9 @@ async function hydrateEditPreview(item: DisplayRatingCurve) {
   editPreviewRows.value = [...previewRowsByAttachmentId.value[key]]
 }
 
-function getPreviewRows(attachmentId: string | number): RatingCurvePreviewRow[] {
+function getPreviewRows(
+  attachmentId: string | number
+): RatingCurvePreviewRow[] {
   return previewRowsByAttachmentId.value[String(attachmentId)] ?? []
 }
 
@@ -1330,7 +1371,12 @@ function isValidatingDelete(attachmentId: string | number) {
 function getPreviewPath(attachmentId: string | number): string {
   const points = toCurvePoints(getPreviewRows(attachmentId))
   const ranges = computeCurveRange(points)
-  return buildSparklinePath(points, ranges, PREVIEW_SVG_WIDTH, PREVIEW_SVG_HEIGHT)
+  return buildSparklinePath(
+    points,
+    ranges,
+    PREVIEW_SVG_WIDTH,
+    PREVIEW_SVG_HEIGHT
+  )
 }
 
 async function downloadAttachment(item: DisplayRatingCurve) {
@@ -1368,14 +1414,14 @@ function triggerDownloadBlob(blob: Blob, filename: string) {
 }
 
 function buildDownloadFilename(name: string) {
-  const sanitized = `${name ?? ''}`
-    .trim()
-    .replace(/[\\/:*?"<>|]+/g, '_')
+  const sanitized = `${name ?? ''}`.trim().replace(/[\\/:*?"<>|]+/g, '_')
   const baseName = sanitized || 'rating_curve'
   return /\.csv$/i.test(baseName) ? baseName : `${baseName}.csv`
 }
 
-function pointsToPreviewRows(points: RatingCurveTuple[]): RatingCurvePreviewRow[] {
+function pointsToPreviewRows(
+  points: RatingCurveTuple[]
+): RatingCurvePreviewRow[] {
   return points.map(([inputValue, outputValue]) => ({
     inputValue: String(inputValue),
     outputValue: String(outputValue),
@@ -1392,7 +1438,9 @@ function toCurvePoints(rows: RatingCurvePreviewRow[]): RatingCurvePoint[] {
     .sort((a, b) => a.x - b.x)
 }
 
-function computeCurveRange(points: RatingCurvePoint[]): RatingCurveRange | null {
+function computeCurveRange(
+  points: RatingCurvePoint[]
+): RatingCurveRange | null {
   if (!points.length) return null
 
   let xMin = points[0].x

@@ -4,6 +4,15 @@ import { enableHomePage } from '@/config/homeConfig'
 const disableAccountCreation =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
 
+const validOrchestrationViews = new Set([
+  'ingestion',
+  'aggregation',
+  'quality',
+  'workspaces',
+])
+
+const orchestrationComponent = () => import('@/pages/Orchestration.vue')
+
 export const routes: RouteRecordRaw[] = [
   enableHomePage
     ? {
@@ -78,8 +87,87 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/orchestration',
     name: 'Orchestration',
-    component: () => import('@/pages/Orchestration.vue'),
+    redirect: '/orchestration/ingestion',
+  },
+  {
+    path: '/orchestration/ingestion/details/ingestion',
+    name: 'OrchestrationIngestionDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'ingestion',
+      orchestrationTaskDetail: 'ingestion',
+    },
+  },
+  {
+    path: '/orchestration/aggregation/details/aggregation',
+    name: 'OrchestrationAggregationDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'aggregation',
+      orchestrationTaskDetail: 'aggregation',
+    },
+  },
+  {
+    path: '/orchestration/aggregation/details/expression',
+    name: 'OrchestrationExpressionDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'aggregation',
+      orchestrationTaskDetail: 'expression',
+    },
+  },
+  {
+    path: '/orchestration/aggregation/details/derivation',
+    name: 'OrchestrationDerivationDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'aggregation',
+      orchestrationTaskDetail: 'derivation',
+    },
+  },
+  {
+    path: '/orchestration/aggregation/details/rating-curve',
+    name: 'OrchestrationRatingCurveDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'aggregation',
+      orchestrationTaskDetail: 'rating-curve',
+    },
+  },
+  {
+    path: '/orchestration/quality/details/quality',
+    name: 'OrchestrationQualityDetails',
+    component: orchestrationComponent,
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      orchestrationView: 'quality',
+      orchestrationTaskDetail: 'quality',
+    },
+  },
+  {
+    path: '/orchestration/:view',
+    name: 'OrchestrationView',
+    component: orchestrationComponent,
     meta: { requiresAuth: true, hideFooter: true },
+    beforeEnter: (to) => {
+      const view = Array.isArray(to.params.view)
+        ? to.params.view[0]
+        : to.params.view
+      if (!validOrchestrationViews.has(`${view}`)) {
+        return '/orchestration/ingestion'
+      }
+    },
   },
   {
     path: '/hydroloader/download',

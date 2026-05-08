@@ -14,28 +14,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import hs from '@hydroserver/client'
 import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
 import AggregationTaskDetails from '@/components/Orchestration/data-products/AggregationTaskDetails.vue'
 import ExpressionTaskDetails from '@/components/Orchestration/data-products/ExpressionTaskDetails.vue'
 import DerivationTaskDetails from '@/components/Orchestration/data-products/DerivationTaskDetails.vue'
 import RatingCurveTaskDetails from '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
 import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
-import type { TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
+import {
+  normalizeOrchestrationTaskDetailType,
+  type OrchestrationTaskDetailType,
+} from '@/composables/orchestration/useOrchestrationRouteState'
 
 const props = withDefaults(
   defineProps<{
     taskId?: string | null
-    taskKind?: TaskKind | null
+    detailType?: OrchestrationTaskDetailType | null
     runId?: string | null
     embedded?: boolean
     initialTask?: any
   }>(),
   {
     taskId: null,
-    taskKind: null,
+    detailType: null,
     runId: null,
     embedded: false,
     initialTask: null,
@@ -45,66 +47,36 @@ const props = withDefaults(
 defineEmits(['close', 'deleted', 'updated'])
 
 const route = useRoute()
-const productType = ref<string | null>(null)
-const resolvedTask = ref<any>(null)
 
 const resolvedTaskId = computed(() => {
   if (props.taskId) return props.taskId
-  const param = route.params.id
-  return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
+  const value = route.query.task_id
+  if (Array.isArray(value)) return value[0] ?? ''
+  return typeof value === 'string' ? value : ''
 })
 
 const resolvedRunId = computed(() => {
   if (props.runId) return props.runId
-  const value = route.query.runId
+  const value = route.query.run_id
   return typeof value === 'string' ? value : null
 })
 
-const resolvedKind = computed<TaskKind>(() => {
-  if (props.taskKind) return props.taskKind
-  const value = route.query.taskKind
-  if (value === 'dataProduct' || value === 'monitoring') return value
-  return 'etl'
-})
-
-const detailsComponent = computed(() => {
-  if (resolvedKind.value === 'etl') return IngestionTaskDetails
-  if (resolvedKind.value === 'monitoring') return QualityTaskDetails
-  if (productType.value === 'aggregation') return AggregationTaskDetails
-  if (productType.value === 'expression') return ExpressionTaskDetails
-  if (productType.value === 'derivation') return DerivationTaskDetails
-  if (productType.value === 'ratingCurve') return RatingCurveTaskDetails
-  return null
-})
-
-async function resolveProductType() {
-  productType.value = null
-  resolvedTask.value = null
-  if (resolvedKind.value !== 'dataProduct' || !resolvedTaskId.value) return
-  const response = await hs.dataProductTasks.get(resolvedTaskId.value, {
-    expand_related: true,
-  })
-  const task = response.data as any
-  resolvedTask.value = task
-  if (task?.aggregationTransformations?.length)
-    productType.value = 'aggregation'
-  else if (task?.expressionTransformations?.length)
-    productType.value = 'expression'
-  else if (task?.compositeExpressionTransformations?.length)
-    productType.value = 'derivation'
-  else if (task?.ratingCurveTransformations?.length)
-    productType.value = 'ratingCurve'
-}
-
-// For dataProduct tasks, reuse the already-fetched (expand_related) task to avoid a
-// duplicate fetch inside the detail component. For etl/monitoring, pass through the
-// list-level task the parent already has.
-const initialTaskForComponent = computed(() =>
-  resolvedKind.value === 'dataProduct' ? resolvedTask.value : props.initialTask
+const resolvedDetailType = computed(
+  () =>
+    props.detailType ??
+    normalizeOrchestrationTaskDetailType(route.meta.orchestrationTaskDetail)
 )
 
-onMounted(resolveProductType)
-watch([resolvedTaskId, resolvedKind], resolveProductType)
+const detailsComponent = computed(() => {
+  if (resolvedDetailType.value === 'ingestion') return IngestionTaskDetails
+  if (resolvedDetailType.value === 'aggregation') return AggregationTaskDetails
+  if (resolvedDetailType.value === 'expression') return ExpressionTaskDetails
+  if (resolvedDetailType.value === 'derivation') return DerivationTaskDetails
+  if (resolvedDetailType.value === 'rating-curve') return RatingCurveTaskDetails
+  if (resolvedDetailType.value === 'quality') return QualityTaskDetails
+  return null
+})
+const initialTaskForComponent = computed(() => props.initialTask)
 </script>
 
 <style scoped>

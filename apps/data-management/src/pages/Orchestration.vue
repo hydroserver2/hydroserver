@@ -40,10 +40,10 @@
             @create="openCreateDialog"
           />
 
-          <section v-if="selectedTaskId" class="detail detail--task">
+          <section v-if="hasTaskDetails" class="detail detail--task">
             <TaskDetails
               :task-id="selectedTaskId"
-              :task-kind="selectedTaskKind"
+              :detail-type="selectedTaskDetailType"
               :run-id="selectedRunId"
               :initial-task="selectedTask"
               embedded
@@ -179,7 +179,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
@@ -196,6 +195,7 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import { useOrchestrationData } from '@/composables/orchestration/useOrchestrationData'
 import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchestrationTaskRows'
 import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
+import { useOrchestrationRouteState } from '@/composables/orchestration/useOrchestrationRouteState'
 
 import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
@@ -214,17 +214,25 @@ import QualityManagementForm from '@/components/Orchestration/monitoring/Quality
 
 import {
   TAB_META,
-  TAB_TO_KIND,
   countTaskIssues,
   taskHasIssue,
   worstDotColor,
   type TabDefinition,
   type TabId,
-  type TaskKind,
   type TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-const route = useRoute()
+const {
+  view: routeView,
+  taskDetailType: selectedTaskDetailType,
+  taskKind: selectedTaskKind,
+  taskId: selectedTaskId,
+  runId: selectedRunId,
+  hasTaskDetails,
+  replaceView,
+  closeTaskDetails,
+  pushTaskDetails,
+} = useOrchestrationRouteState()
 
 const {
   loading,
@@ -252,6 +260,19 @@ const {
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+watch(
+  routeView,
+  (view) => {
+    if (view === 'workspaces') {
+      activeView.value = 'workspaces'
+    } else {
+      activeView.value = 'tasks'
+      activeTab.value = view
+    }
+  },
+  { immediate: true }
+)
 const activeRunStatuses = new Set(['PENDING', 'STARTED'])
 
 const selectedDataConnection = ref<DataConnection | null>(null)
@@ -276,13 +297,13 @@ const {
   startPollingTaskRun,
   toggleSchedulePaused,
 } = useTaskRunNowPolling({
-    lists: {
-      etl: workspaceTasks,
-      dataProduct: dataProductTasks,
-      monitoring: monitoringTasks,
-    },
-    currentWorkspaceId: () => selectedWorkspaceId.value!,
-  })
+  lists: {
+    etl: workspaceTasks,
+    dataProduct: dataProductTasks,
+    monitoring: monitoringTasks,
+  },
+  currentWorkspaceId: () => selectedWorkspaceId.value!,
+})
 
 const {
   etlTaskRows,
@@ -318,7 +339,6 @@ const tabs = computed<TabDefinition[]>(() => [
   },
   { ...TAB_META.quality, issues: countTaskIssues(monitoringTaskRows.value) },
 ])
-
 
 const filterByName = <T extends { name: string }>(items: T[], term: string) => {
   const q = term.trim().toLowerCase()
@@ -459,57 +479,16 @@ const emptyTasksMessage = computed(() =>
     : 'No tasks are writing data to this site yet.'
 )
 
-const selectedTaskId = computed(() => {
-  const value = route.query.taskId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
 const selectedTask = computed(() => {
   const taskId = selectedTaskId.value
-  if (!taskId) return null
   const kind = selectedTaskKind.value
+  if (!taskId || !kind) return null
   if (kind === 'etl')
     return workspaceTasks.value.find((t) => t.id === taskId) ?? null
   if (kind === 'dataProduct')
     return dataProductTasks.value.find((t) => t.id === taskId) ?? null
   return monitoringTasks.value.find((t) => t.id === taskId) ?? null
 })
-
-const selectedRunId = computed(() => {
-  const value = route.query.runId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
-const selectedTaskKind = computed<TaskKind>(() => {
-  const value = route.query.taskKind
-  if (value === 'etl' || value === 'dataProduct' || value === 'monitoring') {
-    return value
-  }
-
-  const taskId = selectedTaskId.value
-  const row = taskId
-    ? [
-        ...etlTaskRows.value,
-        ...dataProductTaskRows.value,
-        ...monitoringTaskRows.value,
-      ].find((candidate) => candidate.id === taskId)
-    : null
-  return row?.kind ?? TAB_TO_KIND[activeTab.value]
-})
-
-const hasTaskDetailsQuery = computed(
-  () => selectedTaskId.value !== null || selectedRunId.value !== null
-)
-
-const closeTaskDetails = async () => {
-  if (!hasTaskDetailsQuery.value) return
-  const nextQuery = { ...route.query }
-  delete nextQuery.taskId
-  delete nextQuery.taskKind
-  delete nextQuery.runId
-  await router.replace({ name: 'Orchestration', query: nextQuery })
-}
-
 
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
@@ -524,16 +503,13 @@ const autoSelectSidebar = () => {
 }
 
 const setActiveTab = async (tab: TabId) => {
-  activeView.value = 'tasks'
-  activeTab.value = tab
   sidebarSearch.value = ''
+  await replaceView(tab)
   autoSelectSidebar()
-  await closeTaskDetails()
 }
 
 const openWorkspaceManager = async () => {
-  activeView.value = 'workspaces'
-  await closeTaskDetails()
+  await replaceView('workspaces')
 }
 
 const goToHydroLoader = async () => {
@@ -585,7 +561,6 @@ watch(
   },
   { immediate: true }
 )
-
 
 const openCreateDialog = () => {
   if (!canEditOrchestration.value) return
@@ -679,11 +654,7 @@ const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
       taskToPoll.latestRun?.id &&
       activeRunStatuses.has(taskToPoll.latestRun.status)
     ) {
-      startPollingTaskRun(
-        'dataProduct',
-        taskToPoll.id,
-        taskToPoll.latestRun.id
-      )
+      startPollingTaskRun('dataProduct', taskToPoll.id, taskToPoll.latestRun.id)
     } else if (!taskToPoll.latestRun) {
       await runTaskNow('dataProduct', taskToPoll.id)
     }
@@ -745,16 +716,7 @@ const onTogglePaused = async (row: TaskRow) => {
 }
 
 const goToTask = async (row: TaskRow) => {
-  const currentQuery = { ...(router.currentRoute.value.query ?? {}) }
-  delete currentQuery.runId
-  await router.push({
-    name: 'Orchestration',
-    query: {
-      ...currentQuery,
-      taskId: row.id,
-      taskKind: row.kind,
-    },
-  })
+  await pushTaskDetails(row)
 }
 </script>
 

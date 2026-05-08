@@ -1,4 +1,4 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -147,6 +147,10 @@ const globalStubs = {
   'v-tooltip': {
     template: '<div><slot name="activator" :props="{}" /><slot /></div>',
   },
+  'v-tab': { template: '<button><slot /></button>' },
+  'v-tabs': { template: '<div><slot /></div>' },
+  TaskRunHistory: { template: '<div />' },
+  TaskStatus: { template: '<span />' },
   IngestionTaskForm: {
     props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
@@ -185,15 +189,16 @@ describe('TaskDetails', () => {
     })
   })
 
-  it('fetches data-product task details from the data-product task endpoint', async () => {
-    const { default: TaskDetails } = await import('../TaskDetails.vue')
+  it('fetches rating-curve task details from the data-product task endpoint', async () => {
+    const { default: RatingCurveTaskDetails } = await import(
+      '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
+    )
     await seedWorkspace()
 
-    shallowMount(TaskDetails, {
+    mount(RatingCurveTaskDetails as any, {
       props: {
         embedded: true,
         taskId: 'product-task-1',
-        taskKind: 'dataProduct',
       },
       global: {
         stubs: globalStubs,
