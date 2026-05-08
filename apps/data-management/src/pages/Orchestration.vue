@@ -549,13 +549,36 @@ const selectSite = async (id: string) => {
   await closeTaskDetails()
 }
 
+const closeWorkspaceScopedUi = () => {
+  openCreateDataConnection.value = false
+  openCreateTask.value = false
+  openEditDataConnection.value = false
+  openDeleteDataConnection.value = false
+  openAggregationForm.value = false
+  openExpressionForm.value = false
+  openDerivationForm.value = false
+  openRatingCurveForm.value = false
+  openQualityForm.value = false
+  selectedDataConnection.value = null
+  selectedTaskDataConnection.value = null
+  editingAggregationTaskId.value = null
+  editingDerivationTaskId.value = null
+  editingQualityTaskId.value = null
+  sidebarSearch.value = ''
+  orchestrationSearch.value = ''
+  orchestrationStatusFilter.value = []
+  draftDatastreams.value = []
+}
+
 watch(
   selectedWorkspaceId,
   async (newId) => {
     if (newId == null) return
     stopAll()
+    closeWorkspaceScopedUi()
     selectedConnectionId.value = null
     selectedThingId.value = null
+    await closeTaskDetails()
     await fetchAll(newId)
     autoSelectSidebar()
   },
