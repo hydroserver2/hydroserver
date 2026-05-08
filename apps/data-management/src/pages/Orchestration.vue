@@ -185,6 +185,7 @@ import hs, {
   DataConnection,
   PermissionAction,
   PermissionResource,
+  type TaskExpanded,
 } from '@hydroserver/client'
 
 import router from '@/router/router'
@@ -250,6 +251,7 @@ const {
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+const activeRunStatuses = new Set(['PENDING', 'STARTED'])
 
 const selectedDataConnection = ref<DataConnection | null>(null)
 const selectedTaskDataConnection = ref<DataConnection | null>(null)
@@ -266,8 +268,13 @@ const openRatingCurveForm = ref(false)
 const openQualityForm = ref(false)
 const editingQualityTaskId = ref<string | null>(null)
 
-const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
-  useTaskRunNowPolling({
+const {
+  runNowTriggeredByTaskId,
+  stopAll,
+  runTaskNow,
+  startPollingTaskRun,
+  toggleSchedulePaused,
+} = useTaskRunNowPolling({
     lists: {
       etl: workspaceTasks,
       dataProduct: dataProductTasks,
@@ -594,9 +601,26 @@ const onDataConnectionCreated = async () => {
   await refreshDataConnections()
 }
 
-const onTaskCreated = async () => {
+const onTaskCreated = async (createdTask?: TaskExpanded) => {
   closeCreateTaskDialog()
   await fetchAll()
+  const taskToPoll =
+    (createdTask?.latestRun?.id ? createdTask : null) ??
+    workspaceTasks.value.find((task) => task.id === createdTask?.id)
+
+  if (!taskToPoll?.id) {
+    autoSelectSidebar()
+    return
+  }
+
+  if (
+    taskToPoll?.latestRun?.id &&
+    activeRunStatuses.has(taskToPoll.latestRun.status)
+  ) {
+    startPollingTaskRun('etl', taskToPoll.id, taskToPoll.latestRun.id)
+  } else if (!taskToPoll?.latestRun) {
+    await runTaskNow('etl', taskToPoll.id)
+  }
   autoSelectSidebar()
 }
 

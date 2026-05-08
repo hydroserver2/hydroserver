@@ -7,8 +7,8 @@ import type {
 } from '@hydroserver/client'
 import { serviceForKind, type TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-const POLL_INTERVAL_MS = 4000
-const POLL_DURATION_MS = 30_000
+const POLL_INTERVAL_MS = 3000
+const POLL_DURATION_MS = 21_000
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILURE']
 const ACTIVE_RUN_STATUSES = new Set(['PENDING', 'STARTED'])
 
@@ -144,6 +144,17 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     taskPollTimeouts.set(taskId, timeoutId)
   }
 
+  const startPollingTaskRun = (
+    kind: TaskKind,
+    taskId: string,
+    runId: string,
+    startedAt = Date.now()
+  ) => {
+    runNowTriggeredByTaskId[taskId] = true
+    runNowStartedAt.set(taskId, startedAt)
+    schedulePoll(kind, taskId, runId, startedAt, currentWorkspaceId())
+  }
+
   const runTaskNow = async (kind: TaskKind, taskId: string) => {
     runNowTriggeredByTaskId[taskId] = true
     const startedAt = Date.now()
@@ -157,7 +168,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       const requestedRun = response.ok ? (response.data as TaskRun) ?? null : null
       if (requestedRun?.id) {
         syncLatestRun(kind, taskId, requestedRun)
-        schedulePoll(kind, taskId, requestedRun.id, startedAt, currentWorkspaceId())
+        startPollingTaskRun(kind, taskId, requestedRun.id, startedAt)
       } else {
         runNowTriggeredByTaskId[taskId] = false
         runNowStartedAt.delete(taskId)
@@ -193,6 +204,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     runNowTriggeredByTaskId,
     stopAll,
     runTaskNow,
+    startPollingTaskRun,
     toggleSchedulePaused,
   }
 }
