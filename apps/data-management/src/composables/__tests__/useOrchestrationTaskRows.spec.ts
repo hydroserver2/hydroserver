@@ -115,5 +115,15 @@ describe('useOrchestrationTaskRows', () => {
       { name: 'B', nextRunAt: null },
       { name: 'A', nextRunAt: '2025-01-01T00:00:00Z' },
     ])
+
+    rows.toggleSort('taskType')
+    expect(rows.sortKey.value).toBe('taskType')
+    expect(
+      rows.sortRows([
+        { name: 'Mean stage', taskType: 'Aggregation' } as any,
+        { name: 'Curve output', taskType: 'Rating curve' } as any,
+        { name: 'Derived flow', taskType: 'Derivation' } as any,
+      ]).map((row) => row.taskType)
+    ).toEqual(['Aggregation', 'Derivation', 'Rating curve'])
   })
 })

@@ -195,6 +195,8 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
         cmp = compareNullableDate(a.lastRunAt, b.lastRunAt)
       else if (sortKey.value === 'nextRunAt')
         cmp = compareNullableDate(a.nextRunAt, b.nextRunAt)
+      else if (sortKey.value === 'taskType')
+        cmp = compareText(a.taskType, b.taskType)
       return cmp * dir
     })
     return out

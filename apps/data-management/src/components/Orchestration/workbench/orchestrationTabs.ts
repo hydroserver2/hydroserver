@@ -19,7 +19,12 @@ import {
 export type TabId = 'ingestion' | 'aggregation' | 'quality'
 export type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
 export type ActiveView = 'tasks' | 'workspaces'
-export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
+export type SortKey =
+  | 'name'
+  | 'status'
+  | 'lastRunAt'
+  | 'nextRunAt'
+  | 'taskType'
 export type SortDir = 'asc' | 'desc'
 
 export type DataProductTaskType =
@@ -38,6 +43,13 @@ export const DATA_PRODUCT_TYPE_COLORS: Record<
   Derivation: { text: '#FF8F00', bg: '#FFF8E1' },
   'Rating curve': { text: '#283593', bg: '#E8EAF6' },
 }
+
+export const DATA_PRODUCT_TYPE_OPTIONS = [
+  'Aggregation',
+  'Expression',
+  'Derivation',
+  'Rating curve',
+] as const satisfies readonly NonNullable<DataProductTaskType>[]
 
 export function getDataProductTypeColors(taskType: DataProductTaskType) {
   return taskType ? DATA_PRODUCT_TYPE_COLORS[taskType] : null

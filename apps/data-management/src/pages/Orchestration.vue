@@ -70,9 +70,6 @@
               :empty-heading="emptyHeading"
               :empty-message="emptyMessage"
               :empty-tasks-message="emptyTasksMessage"
-              :sort-key="sortKey"
-              :sort-dir="sortDir"
-              @toggle-sort="toggleSort"
               @toggle-paused="onTogglePaused"
               @run-now="onRunNow"
               @open-task="goToTask"
@@ -256,6 +253,7 @@ const workspaceStore = useWorkspaceStore()
 const {
   orchestrationSearch,
   orchestrationStatusFilter,
+  orchestrationTaskTypeFilter,
   activeTab,
   activeView,
   selectedConnectionId,
@@ -332,10 +330,6 @@ const {
   dataProductTaskRows,
   monitoringTaskRows,
   activeTaskRows,
-  sortKey,
-  sortDir,
-  toggleSort,
-  sortRows,
 } = useOrchestrationTaskRows({
   activeTab,
   workspaceTasks,
@@ -434,13 +428,24 @@ const visibleTasks = computed<TaskRow[]>(() => {
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
   const term = orchestrationSearch.value.trim().toLowerCase()
   const filters = new Set(orchestrationStatusFilter.value)
+  const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
       const bucket = t.statusSort ?? 'Unknown'
       if (!filters.has(bucket)) return false
     }
+    if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
+      if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
     if (!term) return true
-    const haystack = [t.name, t.statusName, t.statusSort, t.lastRun, t.nextRun]
+    const haystack = [
+      t.name,
+      t.statusName,
+      t.statusSort,
+      t.lastRun,
+      t.nextRun,
+      t.taskType,
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
@@ -448,9 +453,7 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
   })
 })
 
-const sortedVisibleTasks = computed<TaskRow[]>(() =>
-  sortRows(searchedVisibleTasks.value)
-)
+const sortedVisibleTasks = computed<TaskRow[]>(() => searchedVisibleTasks.value)
 
 const hasSelection = computed(() =>
   activeTab.value === 'ingestion'
@@ -577,6 +580,7 @@ const closeWorkspaceScopedUi = () => {
   sidebarSearch.value = ''
   orchestrationSearch.value = ''
   orchestrationStatusFilter.value = []
+  orchestrationTaskTypeFilter.value = []
   draftDatastreams.value = []
 }
 
