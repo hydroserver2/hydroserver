@@ -98,8 +98,8 @@ export const AGGREGATION_ACCENT = '#6A1B9A'
 export const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
 export const QUALITY_ACCENT = '#00695C'
 export const QUALITY_ACCENT_LIGHT = '#E0F2F1'
-export const WORKSPACE_ACCENT = '#455A64'
-export const WORKSPACE_ACCENT_LIGHT = '#ECEFF1'
+export const WORKSPACE_ACCENT = '#2E7D32'
+export const WORKSPACE_ACCENT_LIGHT = '#E8F5E9'
 
 export const TAB_META: Record<
   TabId,
