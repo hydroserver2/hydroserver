@@ -51,7 +51,7 @@
                 :run-id="selectedRunId"
                 :initial-task="selectedTask"
                 embedded
-                @close="closeTaskDetails"
+                @close="closeTaskDetailsAndSync"
                 @deleted="onTaskDeleted"
                 @updated="onTaskDetailsChanged"
               />
@@ -230,8 +230,11 @@ const {
   taskId: selectedTaskId,
   runId: selectedRunId,
   workspaceId: routeWorkspaceId,
+  dataConnectionId: routeDataConnectionId,
+  siteId: routeSiteId,
   hasTaskDetails,
   replaceView,
+  replaceSelectedGroup,
   closeTaskDetails,
   pushTaskDetails,
 } = useOrchestrationRouteState()
@@ -526,6 +529,20 @@ const selectSidebarFromTaskDetails = () => {
   return !!selectedThingId.value
 }
 
+const selectSidebarFromRouteGroup = () => {
+  if (activeTab.value === 'ingestion') {
+    const id = routeDataConnectionId.value
+    if (!id || !connectionsById.value.has(id)) return false
+    selectedConnectionId.value = id
+    return true
+  }
+
+  const id = routeSiteId.value
+  if (!id || !thingsById.value.has(id)) return false
+  selectedThingId.value = id
+  return true
+}
+
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
     const current = selectedConnectionId.value
@@ -538,10 +555,32 @@ const autoSelectSidebar = () => {
   }
 }
 
+const selectedGroupIdForTab = (tab: TabId) =>
+  tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
+
+const syncSelectedGroupToRoute = async () => {
+  if (activeView.value === 'workspaces' || hasTaskDetails.value) return
+  await replaceSelectedGroup(
+    activeTab.value,
+    selectedGroupIdForTab(activeTab.value)
+  )
+}
+
+const autoSelectSidebarAndSync = async () => {
+  autoSelectSidebar()
+  await syncSelectedGroupToRoute()
+}
+
+const closeTaskDetailsAndSync = async () => {
+  await closeTaskDetails()
+  await syncSelectedGroupToRoute()
+}
+
 const setActiveTab = async (tab: TabId) => {
   sidebarSearch.value = ''
-  await replaceView(tab)
+  await replaceView(tab, selectedGroupIdForTab(tab))
   autoSelectSidebar()
+  await syncSelectedGroupToRoute()
 }
 
 const openWorkspaceManager = async () => {
@@ -554,12 +593,12 @@ const goToHydroLoader = async () => {
 
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
-  await closeTaskDetails()
+  await replaceView('ingestion', id)
 }
 
 const selectSite = async (id: string) => {
   selectedThingId.value = id
-  await closeTaskDetails()
+  await replaceView(activeTab.value, id)
 }
 
 const closeWorkspaceScopedUi = () => {
@@ -597,9 +636,35 @@ watch(
     if (workspaceChanged && !routeSelectedThisWorkspace)
       await closeTaskDetails()
     await fetchAll(newId)
-    if (!selectSidebarFromTaskDetails()) autoSelectSidebar()
+    if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
+      autoSelectSidebar()
+    }
+    await syncSelectedGroupToRoute()
   },
   { immediate: true }
+)
+
+watch(
+  [routeDataConnectionId, routeSiteId, routeView],
+  async () => {
+    if (
+      loading.value ||
+      activeView.value === 'workspaces' ||
+      hasTaskDetails.value
+    ) {
+      return
+    }
+
+    if (selectSidebarFromRouteGroup()) return
+
+    const hasRouteSelection =
+      activeTab.value === 'ingestion'
+        ? !!routeDataConnectionId.value
+        : !!routeSiteId.value
+    if (!hasRouteSelection) return
+
+    await autoSelectSidebarAndSync()
+  }
 )
 
 const openCreateDialog = () => {
@@ -648,7 +713,7 @@ const onTaskCreated = async (createdTask?: TaskExpanded) => {
     workspaceTasks.value.find((task) => task.id === createdTask?.id)
 
   if (!taskToPoll?.id) {
-    autoSelectSidebar()
+    await autoSelectSidebarAndSync()
     return
   }
 
@@ -660,7 +725,7 @@ const onTaskCreated = async (createdTask?: TaskExpanded) => {
   } else if (!taskToPoll?.latestRun) {
     await runTaskNow('etl', taskToPoll.id)
   }
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const closeAggregationForm = () => {
@@ -700,25 +765,25 @@ const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
     }
   }
 
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const onQualityTaskChanged = async () => {
   closeQualityForm()
   await fetchAll()
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const onTaskDetailsChanged = async () => {
   resetDraftDatastreams()
   await fetchAll()
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const onTaskDeleted = async () => {
   resetDraftDatastreams()
   await fetchAll()
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const onDataConnectionUpdated = (updated: DataConnection) => {
@@ -737,7 +802,7 @@ const onDataConnectionDeleted = async () => {
     if (selectedConnectionId.value === id) {
       selectedConnectionId.value = dataConnections.value[0]?.id ?? null
     }
-    autoSelectSidebar()
+    await autoSelectSidebarAndSync()
     openDeleteDataConnection.value = false
   } catch (error) {
     console.error('Error deleting data connection', error)

@@ -121,6 +121,17 @@ const withoutTaskDetails = (query: LocationQuery) => {
   return nextQuery
 }
 
+const withoutSelectedGroup = (query: LocationQuery) => {
+  const nextQuery = { ...query }
+  delete nextQuery.data_connection_id
+  delete nextQuery.dataConnectionId
+  delete nextQuery.site_id
+  delete nextQuery.siteId
+  delete nextQuery.thing_id
+  delete nextQuery.thingId
+  return nextQuery
+}
+
 export function useOrchestrationRouteState() {
   const route = useRoute()
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
@@ -152,16 +163,64 @@ export function useOrchestrationRouteState() {
       firstString(route.query.workspace_id) ??
       firstString(route.query.workspaceId)
   )
+  const dataConnectionId = computed(
+    () =>
+      firstString(route.query.data_connection_id) ??
+      firstString(route.query.dataConnectionId)
+  )
+  const siteId = computed(
+    () =>
+      firstString(route.query.site_id) ??
+      firstString(route.query.siteId) ??
+      firstString(route.query.thing_id) ??
+      firstString(route.query.thingId)
+  )
 
   const hasTaskDetails = computed(
     () => taskDetailType.value !== null && taskId.value !== null
   )
 
-  const replaceView = async (nextView: OrchestrationView) => {
+  const queryForSelectedGroup = (
+    nextView: OrchestrationView,
+    selectedGroupId?: string | null
+  ) => {
+    const nextQuery = withoutSelectedGroup(withoutTaskDetails(route.query))
+    const nextWorkspaceId = workspaceId.value ?? selectedWorkspace.value?.id
+    if (nextWorkspaceId) nextQuery.workspace_id = nextWorkspaceId
+
+    if (selectedGroupId && nextView === 'ingestion') {
+      nextQuery.data_connection_id = selectedGroupId
+    } else if (
+      selectedGroupId &&
+      (nextView === 'aggregation' || nextView === 'quality')
+    ) {
+      nextQuery.site_id = selectedGroupId
+    }
+
+    return nextQuery
+  }
+
+  const replaceView = async (
+    nextView: OrchestrationView,
+    selectedGroupId?: string | null
+  ) => {
     await router.replace({
       name: ORCHESTRATION_VIEW_ROUTE_NAME,
       params: { view: nextView },
-      query: {},
+      query: queryForSelectedGroup(nextView, selectedGroupId),
+    })
+  }
+
+  const replaceSelectedGroup = async (
+    nextView: OrchestrationView,
+    selectedGroupId?: string | null
+  ) => {
+    if (taskDetailType.value) return
+
+    await router.replace({
+      name: ORCHESTRATION_VIEW_ROUTE_NAME,
+      params: { view: nextView },
+      query: queryForSelectedGroup(nextView, selectedGroupId),
     })
   }
 
@@ -206,8 +265,11 @@ export function useOrchestrationRouteState() {
     taskId,
     runId,
     workspaceId,
+    dataConnectionId,
+    siteId,
     hasTaskDetails,
     replaceView,
+    replaceSelectedGroup,
     closeTaskDetails,
     pushTaskDetails,
   }
