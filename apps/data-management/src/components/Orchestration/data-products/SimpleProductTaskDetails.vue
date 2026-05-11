@@ -21,7 +21,7 @@
           />
           <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
         </button>
-        <v-dialog width="60rem">
+        <v-dialog v-model="editDialogOpen" width="60rem">
           <template #activator="{ props }">
             <button
               v-bind="props"
@@ -37,32 +37,32 @@
             v-if="taskLabel === 'aggregation'"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
-            @close="onUpdated"
-            @updated="onUpdated"
+            @close="closeEditDialog"
+            @updated="onFormUpdated"
             @deleted="deleteTask"
           />
           <ExpressionForm
             v-else-if="taskLabel === 'expression'"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
-            @close="onUpdated"
-            @updated="onUpdated"
+            @close="closeEditDialog"
+            @updated="onFormUpdated"
             @deleted="deleteTask"
           />
           <DerivationForm
             v-else-if="taskLabel === 'derivation'"
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
-            @close="onUpdated"
-            @updated="onUpdated"
+            @close="closeEditDialog"
+            @updated="onFormUpdated"
             @deleted="deleteTask"
           />
           <RatingCurveForm
             v-else
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
-            @close="onUpdated"
-            @updated="onUpdated"
+            @close="closeEditDialog"
+            @updated="onFormUpdated"
             @deleted="deleteTask"
           />
         </v-dialog>
@@ -128,12 +128,7 @@ import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurv
 import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
-import {
-  mdiPause,
-  mdiPencil,
-  mdiPlay,
-  mdiTrashCanOutline,
-} from '@mdi/js'
+import { mdiPause, mdiPencil, mdiPlay, mdiTrashCanOutline } from '@mdi/js'
 
 const props = defineProps<{
   taskLabel: 'aggregation' | 'expression' | 'derivation' | 'rating curve'
@@ -144,6 +139,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
+const editDialogOpen = ref(false)
 const {
   task,
   loadingRuns,
@@ -163,6 +159,15 @@ const {
   runNow,
   togglePaused,
 } = useSimpleTaskDetails('dataProduct', props, emit)
+
+function closeEditDialog() {
+  editDialogOpen.value = false
+}
+
+function onFormUpdated() {
+  closeEditDialog()
+  onUpdated()
+}
 </script>
 
 <style scoped>
