@@ -247,7 +247,11 @@
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
-      <v-btn-primary :loading="submitLoading" type="button" @click="onSubmit">
+      <v-btn-primary
+        :loading="submitLoading"
+        :color="INGESTION_ACCENT"
+        type="submit"
+      >
         Save task
       </v-btn-primary>
     </template>
@@ -285,6 +289,7 @@ import { rules } from '@/utils/rules'
 import { ensureIsoUtc } from '@/utils/time'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { INGESTION_ACCENT } from '../workbench/orchestrationTabs'
 import {
   mdiArrowRight,
   mdiPlus,

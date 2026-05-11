@@ -1,9 +1,11 @@
 <template>
   <v-card class="d-flex flex-column" style="max-height: 90vh">
     <div class="shrink-0">
-      <v-toolbar :style="toolbarStyle" flat>
+      <v-toolbar :color="QUALITY_ACCENT" flat>
         <v-card-title>{{
-          isEditMode ? 'Edit quality task' : 'Create quality task'
+          isEditMode
+            ? 'Edit quality monitoring task'
+            : 'Create quality monitoring task'
         }}</v-card-title>
         <v-btn
           :icon="mdiInformationOutline"
@@ -250,17 +252,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')">
           Cancel
         </v-btn-cancel>
-        <v-btn
+        <v-btn-primary
           type="submit"
-          variant="flat"
-          rounded="lg"
-          class="text-none"
-          :style="submitStyle"
+          :color="QUALITY_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create quality task' }}
-        </v-btn>
+        </v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -353,15 +352,6 @@ const recipientInputError = ref('')
 const ruleRows = ref<RuleRow[]>([makeRuleRow()])
 const ruleErrors = ref<string[]>([])
 const schedule = ref<TaskSchedule | null>(null)
-
-const toolbarStyle = computed(() => ({
-  background: QUALITY_ACCENT_LIGHT,
-  color: QUALITY_ACCENT,
-}))
-const submitStyle = computed(() => ({
-  background: QUALITY_ACCENT,
-  color: 'white',
-}))
 
 const ruleTypeOptions: { title: string; value: MonitoringRuleType }[] = [
   { title: 'Range', value: 'range' },
@@ -808,6 +798,5 @@ onMounted(async () => {
   .window-interval-fields {
     grid-template-columns: minmax(0, 1fr);
   }
-
 }
 </style>

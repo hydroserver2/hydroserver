@@ -290,17 +290,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
-        <v-btn
+        <v-btn-primary
           type="submit"
-          variant="flat"
-          rounded="lg"
-          class="text-none"
-          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create derivation task' }}
-        </v-btn>
+        </v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -322,7 +319,6 @@ import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_SUBMIT_STYLE,
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
