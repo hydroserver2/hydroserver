@@ -283,16 +283,6 @@
           >Cancel</v-btn-cancel
         >
         <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
-        >
-          Delete task
-        </v-btn>
-        <v-btn
           type="submit"
           variant="flat"
           rounded="lg"
@@ -533,7 +523,9 @@ async function loadExistingTask() {
   try {
     const [taskRes, transformRes] = await Promise.all([
       hs.dataProductTasks.get(props.editTaskId),
-      hs.dataProductTasks.listCompositeExpressionTransformations(props.editTaskId),
+      hs.dataProductTasks.listCompositeExpressionTransformations(
+        props.editTaskId
+      ),
     ])
 
     if (taskRes.ok && taskRes.data?.name) {
@@ -635,17 +627,18 @@ async function onCreate(
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createCompositeExpressionTransformation(
-    taskRes.data.id,
-    {
-      outputDatastreamId: outputDatastreamId.value!,
-      inputDatastreams,
-      formula: formula.value.trim(),
-      outputInterval: outputInterval.value!,
-      outputIntervalUnits: outputIntervalUnits.value,
-      ...gapPayload,
-    }
-  )
+  const transformRes =
+    await hs.dataProductTasks.createCompositeExpressionTransformation(
+      taskRes.data.id,
+      {
+        outputDatastreamId: outputDatastreamId.value!,
+        inputDatastreams,
+        formula: formula.value.trim(),
+        outputInterval: outputInterval.value!,
+        outputIntervalUnits: outputIntervalUnits.value,
+        ...gapPayload,
+      }
+    )
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -678,17 +671,18 @@ async function onUpdate(
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateCompositeExpressionTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        inputDatastreams,
-        formula: formula.value.trim(),
-        outputInterval: outputInterval.value!,
-        outputIntervalUnits: outputIntervalUnits.value,
-        ...gapPayload,
-      }
-    )
+    const transformRes =
+      await hs.dataProductTasks.updateCompositeExpressionTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreams,
+          formula: formula.value.trim(),
+          outputInterval: outputInterval.value!,
+          outputIntervalUnits: outputIntervalUnits.value,
+          ...gapPayload,
+        }
+      )
 
     if (!transformRes.ok) {
       Snackbar.error(

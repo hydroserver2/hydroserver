@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>{{ isEditMode ? 'Edit aggregation task' : 'Create aggregation task' }}</v-card-title>
+      <v-card-title>{{
+        isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
+      }}</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
         variant="text"
@@ -32,8 +34,8 @@
           density="compact"
           class="mb-5"
         >
-          Aggregate observations from an input datastream into fixed-length
-          time buckets and write the results to an output datastream.
+          Aggregate observations from an input datastream into fixed-length time
+          buckets and write the results to an output datastream.
         </v-alert>
 
         <v-text-field
@@ -66,7 +68,9 @@
 
         <v-divider class="mb-4" />
 
-        <div class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase">
+        <div
+          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+        >
           Aggregation settings
         </div>
 
@@ -111,30 +115,26 @@
           min="1"
           hint="Buckets with fewer than this many values will be skipped."
           persistent-hint
-          :rules="minValues !== null && minValues !== undefined ? [positiveInteger] : []"
+          :rules="
+            minValues !== null && minValues !== undefined
+              ? [positiveInteger]
+              : []
+          "
           :disabled="loadingExisting"
           clearable
           class="mb-2"
           @click:clear="minValues = null"
         />
-
       </v-card-text>
 
       <v-divider />
 
       <v-card-actions>
         <v-spacer />
-        <v-btn-cancel :disabled="saving" @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
+        <v-btn-cancel :disabled="saving" @click="$emit('close')"
+          >Cancel</v-btn-cancel
         >
-          Delete task
-        </v-btn>
+
         <v-btn
           type="submit"
           variant="flat"
@@ -239,7 +239,6 @@ const positiveInteger: Rule = (v) => {
   return (Number.isInteger(n) && n >= 1) || 'Must be a positive whole number.'
 }
 
-
 async function loadDatastreams() {
   const workspaceId = selectedWorkspaceId.value
   if (!workspaceId) {
@@ -332,20 +331,20 @@ async function onCreate() {
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createAggregationTransformation(
-    taskRes.data.id,
-    {
+  const transformRes =
+    await hs.dataProductTasks.createAggregationTransformation(taskRes.data.id, {
       inputDatastreamId: inputDatastreamId.value!,
       outputDatastreamId: outputDatastreamId.value!,
       aggregationMethod: aggregationMethod.value,
       outputInterval: outputInterval.value!,
       outputIntervalUnits: outputIntervalUnits.value,
       minValues: minValues.value ?? null,
-    }
-  )
+    })
 
   if (!transformRes.ok) {
-    Snackbar.error(transformRes.message || 'Unable to create aggregation transformation.')
+    Snackbar.error(
+      transformRes.message || 'Unable to create aggregation transformation.'
+    )
     return
   }
 
@@ -367,21 +366,24 @@ async function onUpdate() {
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateAggregationTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        inputDatastreamId: inputDatastreamId.value!,
-        outputDatastreamId: outputDatastreamId.value!,
-        aggregationMethod: aggregationMethod.value,
-        outputInterval: outputInterval.value!,
-        outputIntervalUnits: outputIntervalUnits.value,
-        minValues: minValues.value ?? null,
-      }
-    )
+    const transformRes =
+      await hs.dataProductTasks.updateAggregationTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
+          aggregationMethod: aggregationMethod.value,
+          outputInterval: outputInterval.value!,
+          outputIntervalUnits: outputIntervalUnits.value,
+          minValues: minValues.value ?? null,
+        }
+      )
 
     if (!transformRes.ok) {
-      Snackbar.error(transformRes.message || 'Unable to update aggregation transformation.')
+      Snackbar.error(
+        transformRes.message || 'Unable to update aggregation transformation.'
+      )
       return
     }
   }
@@ -419,7 +421,6 @@ watch(
     }
   }
 )
-
 
 onMounted(async () => {
   await loadDatastreams()

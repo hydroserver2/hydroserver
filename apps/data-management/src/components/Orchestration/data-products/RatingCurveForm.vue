@@ -177,16 +177,6 @@
           >Cancel</v-btn-cancel
         >
         <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
-        >
-          Delete task
-        </v-btn>
-        <v-btn
           type="submit"
           variant="flat"
           rounded="lg"

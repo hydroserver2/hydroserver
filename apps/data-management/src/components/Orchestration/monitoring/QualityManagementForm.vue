@@ -312,16 +312,6 @@
           Cancel
         </v-btn-cancel>
         <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
-        >
-          Delete task
-        </v-btn>
-        <v-btn
           type="submit"
           variant="flat"
           rounded="lg"
@@ -542,7 +532,6 @@ function normalizeRuleForType(row: RuleRow) {
   if (row.ruleType !== 'rate_of_change') row.maxValue = null
   if (!row.windowIntervalUnits) row.windowIntervalUnits = 'hours'
 }
-
 
 const scheduleStartInput = computed({
   get: () => isoToInput(scheduleStartTime.value),
