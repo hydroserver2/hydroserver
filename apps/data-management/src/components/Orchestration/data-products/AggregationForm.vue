@@ -60,7 +60,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="isEditMode || !selectedThingId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
@@ -160,6 +160,7 @@ import hs, {
   type Datastream,
   type DataProductTask,
   type AggregationMethod,
+  type AggregationTransformationValues,
   type IntervalUnit,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
@@ -199,6 +200,9 @@ const deleting = ref(false)
 const datastreams = ref<Datastream[]>([])
 
 const existingTransformationId = ref<string | null>(null)
+const originalTransformation = ref<AggregationTransformationValues | null>(
+  null
+)
 
 const taskName = ref('')
 const inputDatastreamId = ref<string | null>(null)
@@ -237,6 +241,35 @@ type Rule = (v: any) => true | string
 const positiveInteger: Rule = (v) => {
   const n = Number(v)
   return (Number.isInteger(n) && n >= 1) || 'Must be a positive whole number.'
+}
+
+function normalizeOptionalInteger(value: unknown) {
+  if (value === null || value === undefined || value === '') return null
+  return Number(value)
+}
+
+function currentTransformationValues(): AggregationTransformationValues {
+  return {
+    inputDatastreamId: inputDatastreamId.value,
+    aggregationMethod: aggregationMethod.value,
+    outputInterval: normalizeOptionalInteger(outputInterval.value),
+    outputIntervalUnits: outputIntervalUnits.value,
+    minValues: normalizeOptionalInteger(minValues.value),
+  }
+}
+
+function transformationHasChanges() {
+  const original = originalTransformation.value
+  if (!original) return true
+
+  const current = currentTransformationValues()
+  return (
+    current.inputDatastreamId !== original.inputDatastreamId ||
+    current.aggregationMethod !== original.aggregationMethod ||
+    current.outputInterval !== original.outputInterval ||
+    current.outputIntervalUnits !== original.outputIntervalUnits ||
+    current.minValues !== original.minValues
+  )
 }
 
 async function loadDatastreams() {
@@ -283,6 +316,7 @@ async function loadExistingTask() {
       outputInterval.value = t.outputInterval
       outputIntervalUnits.value = t.outputIntervalUnits
       minValues.value = t.minValues ?? null
+      originalTransformation.value = currentTransformationValues()
     }
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to load existing task.')
@@ -365,14 +399,13 @@ async function onUpdate() {
     return
   }
 
-  if (existingTransformationId.value) {
+  if (existingTransformationId.value && transformationHasChanges()) {
     const transformRes =
       await hs.dataProductTasks.updateAggregationTransformation(
         taskId,
         existingTransformationId.value,
         {
           inputDatastreamId: inputDatastreamId.value!,
-          outputDatastreamId: outputDatastreamId.value!,
           aggregationMethod: aggregationMethod.value,
           outputInterval: outputInterval.value!,
           outputIntervalUnits: outputIntervalUnits.value,
@@ -386,6 +419,8 @@ async function onUpdate() {
       )
       return
     }
+
+    originalTransformation.value = currentTransformationValues()
   }
 
   Snackbar.success('Aggregation task updated.')

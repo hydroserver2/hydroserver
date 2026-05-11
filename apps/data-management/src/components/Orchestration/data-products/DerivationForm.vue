@@ -53,7 +53,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="isEditMode || !selectedThingId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
