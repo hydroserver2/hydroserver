@@ -94,72 +94,11 @@
 
         <v-divider class="mb-4" />
 
-        <div class="section-heading mb-3">Schedule</div>
-        <v-switch
-          v-model="scheduleEnabled"
-          :color="QUALITY_ACCENT"
-          density="compact"
-          hide-details
+        <ScheduleFields
+          v-model="schedule"
           :disabled="loadingExisting"
-          label="Run this task on a schedule"
-          class="mb-2"
+          :color="QUALITY_ACCENT"
         />
-
-        <div v-if="scheduleEnabled" class="schedule-grid mb-4">
-          <v-btn-toggle
-            v-model="scheduleMode"
-            mandatory
-            divided
-            density="compact"
-            :disabled="loadingExisting"
-            class="schedule-mode"
-          >
-            <v-btn value="interval" class="text-none">Interval</v-btn>
-            <v-btn value="crontab" class="text-none">Crontab</v-btn>
-          </v-btn-toggle>
-
-          <template v-if="scheduleMode === 'interval'">
-            <v-text-field
-              v-model.number="scheduleInterval"
-              label="Every *"
-              type="number"
-              min="1"
-              density="compact"
-              :rules="[...rules.required, positiveInteger]"
-              :disabled="loadingExisting"
-            />
-            <v-select
-              v-model="scheduleIntervalPeriod"
-              :items="scheduleUnitOptions"
-              item-title="title"
-              item-value="value"
-              label="Unit *"
-              density="compact"
-              :rules="rules.required"
-              :disabled="loadingExisting"
-            />
-          </template>
-
-          <v-text-field
-            v-else
-            v-model="scheduleCrontab"
-            label="Crontab expression *"
-            placeholder="0 9 * * *"
-            density="compact"
-            :rules="rules.required"
-            :disabled="loadingExisting"
-            class="schedule-crontab"
-          />
-
-          <v-text-field
-            v-model="scheduleStartInput"
-            label="Start"
-            type="datetime-local"
-            density="compact"
-            :disabled="loadingExisting"
-            class="schedule-start"
-          />
-        </div>
 
         <v-divider class="mb-4" />
 
@@ -334,7 +273,6 @@ import { mdiInformationOutline, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
-  type IntervalPeriod,
   type MonitoringRule,
   type MonitoringRulePayload,
   type MonitoringRuleType,
@@ -344,13 +282,14 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { formatTime, inputToIso, isoToInput } from '@/utils/time'
+import { formatTime } from '@/utils/time'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   QUALITY_ACCENT,
   QUALITY_ACCENT_LIGHT,
 } from '../workbench/orchestrationTabs'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
@@ -413,13 +352,7 @@ const recipientInput = ref('')
 const recipientInputError = ref('')
 const ruleRows = ref<RuleRow[]>([makeRuleRow()])
 const ruleErrors = ref<string[]>([])
-
-const scheduleEnabled = ref(false)
-const scheduleMode = ref<'interval' | 'crontab'>('interval')
-const scheduleInterval = ref<number | null>(1)
-const scheduleIntervalPeriod = ref<IntervalPeriod>('days')
-const scheduleCrontab = ref('')
-const scheduleStartTime = ref<string | null>(new Date().toISOString())
+const schedule = ref<TaskSchedule | null>(null)
 
 const toolbarStyle = computed(() => ({
   background: QUALITY_ACCENT_LIGHT,
@@ -443,8 +376,6 @@ const windowUnitOptions: { title: string; value: MonitoringRuleWindowUnit }[] =
     { title: 'Hours', value: 'hours' },
     { title: 'Days', value: 'days' },
   ]
-
-const scheduleUnitOptions = windowUnitOptions
 
 const siteDatastreams = computed(() =>
   datastreamsForThing(datastreams.value, selectedThingId.value)
@@ -533,53 +464,6 @@ function normalizeRuleForType(row: RuleRow) {
   if (!row.windowIntervalUnits) row.windowIntervalUnits = 'hours'
 }
 
-const scheduleStartInput = computed({
-  get: () => isoToInput(scheduleStartTime.value),
-  set: (value: string) => {
-    scheduleStartTime.value = value ? inputToIso(value) : null
-  },
-})
-
-function schedulePayload(): TaskSchedule | null {
-  if (!scheduleEnabled.value) return null
-  if (scheduleMode.value === 'crontab') {
-    return {
-      enabled: true,
-      startTime: scheduleStartTime.value,
-      nextRunAt: null,
-      crontab: scheduleCrontab.value.trim(),
-      interval: null,
-      intervalPeriod: null,
-    }
-  }
-  return {
-    enabled: true,
-    startTime: scheduleStartTime.value,
-    nextRunAt: null,
-    crontab: null,
-    interval: scheduleInterval.value,
-    intervalPeriod: scheduleIntervalPeriod.value,
-  }
-}
-
-function hydrateSchedule(schedule: TaskSchedule | null | undefined) {
-  if (!schedule) {
-    scheduleEnabled.value = false
-    scheduleMode.value = 'interval'
-    scheduleInterval.value = 1
-    scheduleIntervalPeriod.value = 'days'
-    scheduleCrontab.value = ''
-    scheduleStartTime.value = new Date().toISOString()
-    return
-  }
-  scheduleEnabled.value = true
-  scheduleMode.value = schedule.crontab ? 'crontab' : 'interval'
-  scheduleInterval.value = schedule.interval ?? 1
-  scheduleIntervalPeriod.value = schedule.intervalPeriod ?? 'days'
-  scheduleCrontab.value = schedule.crontab ?? ''
-  scheduleStartTime.value = schedule.startTime ?? new Date().toISOString()
-}
-
 async function loadDatastreams() {
   if (!selectedWorkspace.value?.id) {
     datastreams.value = []
@@ -633,7 +517,7 @@ async function loadExistingTask() {
     taskName.value = taskRes.data.name ?? ''
     description.value = taskRes.data.description ?? ''
     recipients.value = [...(taskRes.data.recipients ?? [])]
-    hydrateSchedule(taskRes.data.schedule)
+    schedule.value = taskRes.data.schedule ?? null
 
     const rows = ((rulesRes.ok ? rulesRes.data : []) as MonitoringRule[]).map(
       ruleToRow
@@ -782,7 +666,7 @@ async function onCreate() {
     thingId: selectedThingId.value!,
     description: description.value.trim() || null,
     recipients: recipients.value,
-    schedule: schedulePayload(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -803,7 +687,7 @@ async function onUpdate() {
     name: taskName.value.trim(),
     description: description.value.trim() || null,
     recipients: recipients.value,
-    schedule: schedulePayload(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data) {
@@ -848,12 +732,6 @@ watch(
   }
 )
 
-watch(scheduleEnabled, (enabled) => {
-  if (enabled && !scheduleStartTime.value) {
-    scheduleStartTime.value = new Date().toISOString()
-  }
-})
-
 onMounted(async () => {
   await loadDatastreams()
   if (isEditMode.value) await loadExistingTask()
@@ -866,25 +744,6 @@ onMounted(async () => {
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-}
-
-.schedule-grid {
-  display: grid;
-  grid-template-columns: minmax(160px, auto) minmax(120px, 0.4fr) minmax(
-      150px,
-      0.6fr
-    );
-  gap: 12px;
-  align-items: start;
-}
-
-.schedule-mode,
-.schedule-crontab {
-  grid-column: span 1;
-}
-
-.schedule-start {
-  grid-column: 1 / -1;
 }
 
 .empty-rules {
@@ -942,7 +801,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 760px) {
-  .schedule-grid,
   .rule-fields {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -951,8 +809,5 @@ onMounted(async () => {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .schedule-start {
-    grid-column: auto;
-  }
 }
 </style>

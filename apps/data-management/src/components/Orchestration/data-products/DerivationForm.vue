@@ -49,6 +49,14 @@
           class="mb-2"
         />
 
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
+
         <DatastreamCardSelector
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
@@ -307,6 +315,7 @@ import hs, {
   type Datastream,
   type DataProductTask,
   type IntervalUnit,
+  type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
@@ -317,6 +326,7 @@ import {
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const ALLOWED_FUNCTIONS = [
@@ -383,6 +393,7 @@ const datastreams = ref<Datastream[]>([])
 const existingTransformationId = ref<string | null>(null)
 
 const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const inputs = ref<InputRow[]>([makeRow('a'), makeRow('b')])
 const formula = ref('')
@@ -530,6 +541,7 @@ async function loadExistingTask() {
 
     if (taskRes.ok && taskRes.data?.name) {
       taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
     }
 
     if (transformRes.ok && transformRes.data?.length) {
@@ -619,7 +631,7 @@ async function onCreate(
     name: taskName.value.trim(),
     thingId,
     description: null,
-    schedule: null,
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -663,6 +675,7 @@ async function onUpdate(
   const taskRes = await hs.dataProductTasks.update({
     id: taskId,
     name: taskName.value.trim(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok) {

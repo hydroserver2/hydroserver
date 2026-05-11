@@ -59,6 +59,14 @@
           class="mb-2"
         />
 
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
+
         <DatastreamCardSelector
           v-model="inputDatastreamId"
           :datastreams="siteDatastreams"
@@ -121,7 +129,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import type { VForm } from 'vuetify/components'
 import { mdiInformationOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
-import hs, { type Datastream, type DataProductTask } from '@hydroserver/client'
+import hs, {
+  type Datastream,
+  type DataProductTask,
+  type TaskSchedule,
+} from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
@@ -131,6 +143,7 @@ import {
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
@@ -159,6 +172,7 @@ const showHelp = ref(false)
 const datastreams = ref<Datastream[]>([])
 
 const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const formula = ref('')
@@ -203,6 +217,7 @@ async function loadExistingTask() {
 
     if (taskRes.ok && taskRes.data?.name) {
       taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
     }
 
     if (transformRes.ok && transformRes.data?.length) {
@@ -245,7 +260,7 @@ async function onCreate() {
     name: taskName.value.trim(),
     thingId: selectedThingId.value!,
     description: null,
-    schedule: null,
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -279,6 +294,7 @@ async function onUpdate() {
   const taskRes = await hs.dataProductTasks.update({
     id: taskId,
     name: taskName.value.trim(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok) {
