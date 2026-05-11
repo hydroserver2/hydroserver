@@ -39,6 +39,10 @@ export const DATA_PRODUCT_TYPE_COLORS: Record<
   'Rating curve': { text: '#283593', bg: '#E8EAF6' },
 }
 
+export function getDataProductTypeColors(taskType: DataProductTaskType) {
+  return taskType ? DATA_PRODUCT_TYPE_COLORS[taskType] : null
+}
+
 export type TaskRow = {
   id: string
   kind: TaskKind

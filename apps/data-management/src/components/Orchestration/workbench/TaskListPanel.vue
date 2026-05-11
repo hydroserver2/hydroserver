@@ -381,10 +381,10 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import {
-  DATA_PRODUCT_TYPE_COLORS,
   READ_ONLY_TOOLTIP,
   STATUS_OPTIONS,
   TAB_META,
+  getDataProductTypeColors,
   type DataProductTaskType,
   type SortDir,
   type SortKey,
@@ -392,9 +392,9 @@ import {
 } from './orchestrationTabs'
 
 const typeChipStyle = (taskType: DataProductTaskType) => {
-  if (!taskType) return {}
-  const c = DATA_PRODUCT_TYPE_COLORS[taskType]
-  return { background: c.bg, color: c.text }
+  const colors = getDataProductTypeColors(taskType)
+  if (!colors) return {}
+  return { background: colors.bg, color: colors.text }
 }
 
 const {

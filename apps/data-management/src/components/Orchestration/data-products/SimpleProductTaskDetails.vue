@@ -4,8 +4,9 @@
       <button class="back" @click="close">← {{ backLabel }}</button>
       <div class="title">
         <h2>{{ task.name }}</h2>
-        <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
-        <span class="pill">{{ taskLabel }}</span>
+        <span class="pill task-type-pill" :style="taskTypePillStyle">
+          {{ taskLabel }}
+        </span>
         <span v-if="scheduleText" class="pill">{{ scheduleText }}</span>
       </div>
       <div class="actions">
@@ -118,8 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
+import { computed, ref } from 'vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
@@ -128,6 +128,10 @@ import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurv
 import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
+import {
+  getDataProductTypeColors,
+  type DataProductTaskType,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 import { mdiPause, mdiPencil, mdiPlay, mdiTrashCanOutline } from '@mdi/js'
 
 const props = defineProps<{
@@ -140,6 +144,14 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
 const editDialogOpen = ref(false)
+
+const taskTypePillStyle = computed(() => {
+  const label = toDataProductTaskType(props.taskLabel)
+  const colors = getDataProductTypeColors(label)
+  if (!colors) return {}
+  return { background: colors.bg, color: colors.text }
+})
+
 const {
   task,
   loadingRuns,
@@ -159,6 +171,23 @@ const {
   runNow,
   togglePaused,
 } = useSimpleTaskDetails('dataProduct', props, emit)
+
+function toDataProductTaskType(
+  label: typeof props.taskLabel
+): DataProductTaskType {
+  switch (label) {
+    case 'aggregation':
+      return 'Aggregation'
+    case 'expression':
+      return 'Expression'
+    case 'derivation':
+      return 'Derivation'
+    case 'rating curve':
+      return 'Rating curve'
+    default:
+      return null
+  }
+}
 
 function closeEditDialog() {
   editDialogOpen.value = false
@@ -209,6 +238,9 @@ h2 {
   border-radius: 4px;
   padding: 2px 7px;
   text-transform: capitalize;
+}
+.task-type-pill {
+  font-weight: 600;
 }
 .actions {
   display: flex;
