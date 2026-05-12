@@ -20,11 +20,19 @@
             :disabled="!!pauseDisabledReason"
             @click.stop="togglePaused"
           >
+            <NoScheduleIcon v-if="!task.schedule" />
             <v-icon
-              :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
+              v-else
+              :icon="task.schedule.enabled ? mdiPause : mdiPlay"
               size="16"
             />
-            <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
+            <span>{{
+              !task.schedule
+                ? 'No schedule'
+                : task.schedule.enabled
+                ? 'Pause'
+                : 'Resume'
+            }}</span>
           </button>
 
           <v-dialog v-model="editTaskDialogOpen" width="80rem">
@@ -122,6 +130,7 @@ import { ref } from 'vue'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
+import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import Swimlanes from '@/components/Orchestration/ingestion/Swimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'

@@ -449,21 +449,22 @@
                     variant="text"
                     size="small"
                     color="black"
-                    :icon="item.schedule?.enabled ? mdiPause : mdiPlay"
-                    :disabled="!canEdit"
+                    icon
+                    :disabled="pauseButtonDisabled(item)"
                     class="task-pause-btn"
                     aria-label="Pause or resume task"
                     @click.stop="$emit('toggle-paused', item)"
-                  />
+                  >
+                    <NoScheduleIcon v-if="!item.schedule" />
+                    <v-icon
+                      v-else
+                      :icon="item.schedule.enabled ? mdiPause : mdiPlay"
+                      size="16"
+                    />
+                  </v-btn>
                 </span>
               </template>
-              <span>{{
-                !canEdit
-                  ? READ_ONLY_TOOLTIP
-                  : item.schedule?.enabled
-                  ? 'Pause task'
-                  : 'Resume task'
-              }}</span>
+              <span>{{ pauseTooltipText(item) }}</span>
             </v-tooltip>
             <v-btn
               v-if="canEdit && !item.userClickedRunNow"
@@ -514,6 +515,7 @@ import type { DataConnection } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
+import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
@@ -620,6 +622,14 @@ const removeTaskTypeFilter = (index: number) => {
 const ruleCountLabel = (item: TaskRow) => {
   const count = item.qualityRuleCount ?? 0
   return `${count} rule${count === 1 ? '' : 's'}`
+}
+
+const pauseButtonDisabled = (item: TaskRow) => !props.canEdit || !item.schedule
+
+const pauseTooltipText = (item: TaskRow) => {
+  if (!props.canEdit) return READ_ONLY_TOOLTIP
+  if (!item.schedule) return 'This task has no schedule configured.'
+  return item.schedule.enabled ? 'Pause task' : 'Resume task'
 }
 </script>
 

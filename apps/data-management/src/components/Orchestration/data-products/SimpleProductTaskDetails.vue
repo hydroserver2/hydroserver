@@ -16,11 +16,19 @@
           :disabled="!!pauseDisabledReason"
           @click="togglePaused"
         >
+          <NoScheduleIcon v-if="!task.schedule" />
           <v-icon
-            :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
+            v-else
+            :icon="task.schedule.enabled ? mdiPause : mdiPlay"
             size="16"
           />
-          <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
+          <span>{{
+            !task.schedule
+              ? 'No schedule'
+              : task.schedule.enabled
+              ? 'Pause'
+              : 'Resume'
+          }}</span>
         </button>
         <v-dialog v-model="editDialogOpen" width="60rem">
           <template #activator="{ props }">
@@ -121,6 +129,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
+import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
