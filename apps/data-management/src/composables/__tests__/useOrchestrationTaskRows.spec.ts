@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useOrchestrationTaskRows } from '../orchestration/useOrchestrationTaskRows'
 
 describe('useOrchestrationTaskRows', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   const buildRows = () =>
     useOrchestrationTaskRows({
       activeTab: ref('ingestion'),
@@ -93,6 +97,42 @@ describe('useOrchestrationTaskRows', () => {
       qualityRuleSummary: '2 RANGE CHECK, 1 SPIKE CHECK',
       monitoringRulesViolated: 2,
     })
+  })
+
+  it('displays inferred next run times for scheduled data product rows', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-13T12:00:00Z'))
+
+    const rows = useOrchestrationTaskRows({
+      activeTab: ref('aggregation'),
+      workspaceTasks: ref([]),
+      dataProductTasks: ref([
+        {
+          id: 'dp-interval',
+          name: 'Scheduled rating curve',
+          thing: { id: 'thing-2' },
+          latestRun: null,
+          schedule: {
+            enabled: true,
+            startTime: '2026-03-13T13:00:00Z',
+            nextRunAt: null,
+            crontab: null,
+            interval: 1,
+            intervalPeriod: 'days',
+          },
+          ratingCurveTransformations: [{}],
+        },
+      ] as any),
+      monitoringTasks: ref([]),
+      datastreamThingByDatastreamId: ref({}),
+      runNowTriggeredByTaskId: {},
+    })
+
+    const row = rows.dataProductTaskRows.value[0]
+    expect(row.nextRunAt).toBe('2026-03-14T13:00:00.000Z')
+    expect(row.nextRun).not.toBe('-')
+
+    vi.useRealTimers()
   })
 
   it('switches active rows and sorts by the selected field', () => {

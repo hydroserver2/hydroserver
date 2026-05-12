@@ -9,6 +9,7 @@ import type {
 import {
   getDisplayedTaskStatus,
   getMonitoringRulesViolated,
+  getTaskNextRunAt,
   getTaskRunMessage,
   getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
@@ -43,6 +44,12 @@ const buildRowBase = (
 ) => {
   const schedule = task.schedule ?? null
   const latestRun = (task as any).latestRun as TaskRun | null | undefined
+  const nextRunAtDate = getTaskNextRunAt(task as any)
+  const hasValidCachedNextRun =
+    !!schedule?.nextRunAt && !Number.isNaN(new Date(schedule.nextRunAt).getTime())
+  const nextRunAt = hasValidCachedNextRun
+    ? schedule?.nextRunAt ?? null
+    : nextRunAtDate?.toISOString() ?? null
   return {
     id: task.id,
     kind,
@@ -52,9 +59,9 @@ const buildRowBase = (
     statusName: getTaskStatusText(task as any),
     statusSort: getDisplayedTaskStatus(task as any),
     lastRun: latestRun?.startedAt ? formatTime(latestRun.startedAt) : '-',
-    nextRun: schedule?.nextRunAt ? formatTime(schedule.nextRunAt) : '-',
+    nextRun: nextRunAt ? formatTime(nextRunAt) : '-',
     lastRunAt: latestRun?.startedAt ?? null,
-    nextRunAt: schedule?.nextRunAt ?? null,
+    nextRunAt,
     lastRunMessage: getTaskRunMessage(latestRun as any),
     taskType: null as DataProductTaskType,
     userClickedRunNow: !!runNowTriggeredByTaskId[task.id],
