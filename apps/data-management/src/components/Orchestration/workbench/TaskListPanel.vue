@@ -365,9 +365,63 @@
         </template>
 
         <template #item.qualityRuleSummary="{ item }">
-          <span class="task-rules">
-            {{ item.qualityRuleSummary || 'No rules' }}
-          </span>
+          <v-tooltip
+            v-if="(item.qualityRuleCount ?? 0) > 0"
+            location="bottom"
+            :open-delay="0"
+            :close-delay="80"
+            content-class="pa-0 ma-0 bg-transparent"
+          >
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="task-rules-count">
+                {{ ruleCountLabel(item) }}
+              </span>
+            </template>
+
+            <v-card
+              elevation="2"
+              rounded="lg"
+              class="ma-0 pa-0"
+              style="max-width: 360px; min-width: 240px"
+            >
+              <v-card-title class="px-4 py-2">
+                <v-row no-gutters align="center" style="width: 100%">
+                  <v-col>
+                    <div
+                      class="text-h6"
+                      style="white-space: normal; word-break: break-word"
+                    >
+                      Quality rules
+                    </div>
+                  </v-col>
+                  <v-col cols="auto">
+                    <v-chip size="small" color="teal-darken-1" variant="tonal">
+                      {{ ruleCountLabel(item) }}
+                    </v-chip>
+                  </v-col>
+                </v-row>
+              </v-card-title>
+
+              <v-divider />
+
+              <v-card-text class="py-2 px-4">
+                <v-row dense>
+                  <template
+                    v-for="rule in item.qualityRuleBreakdown ?? []"
+                    :key="rule.label"
+                  >
+                    <v-col cols="8" class="font-weight-medium">
+                      {{ rule.label }}
+                    </v-col>
+                    <v-col cols="4">
+                      {{ rule.count }}
+                    </v-col>
+                  </template>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-tooltip>
+          <span v-else class="text-slate-400">No rules</span>
         </template>
 
         <template #item.monitoringRulesViolated="{ item }">
@@ -562,6 +616,11 @@ const removeTaskTypeFilter = (index: number) => {
   next.splice(index, 1)
   taskTypeFilter.value = next
 }
+
+const ruleCountLabel = (item: TaskRow) => {
+  const count = item.qualityRuleCount ?? 0
+  return `${count} rule${count === 1 ? '' : 's'}`
+}
 </script>
 
 <style scoped>
@@ -694,10 +753,13 @@ const removeTaskTypeFilter = (index: number) => {
 .tasks-table :deep(td) {
   padding: 13px 12px;
 }
-.task-rules {
+.task-rules-count {
   color: #475569;
+  cursor: default;
   font-size: 13px;
+  font-weight: 600;
   max-width: 320px;
+  white-space: nowrap;
 }
 .task-violation-chip {
   font-weight: 700;

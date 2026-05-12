@@ -95,6 +95,11 @@ describe('useOrchestrationTaskRows', () => {
       kind: 'monitoring',
       thingId: 'thing-3',
       qualityRuleSummary: '2 RANGE CHECK, 1 SPIKE CHECK',
+      qualityRuleCount: 3,
+      qualityRuleBreakdown: [
+        { label: 'RANGE CHECK', count: 2 },
+        { label: 'SPIKE CHECK', count: 1 },
+      ],
       monitoringRulesViolated: 2,
     })
   })

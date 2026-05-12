@@ -72,6 +72,8 @@ export type TaskRow = {
   thingId: string | null
   taskType: DataProductTaskType
   qualityRuleSummary?: string
+  qualityRuleCount?: number
+  qualityRuleBreakdown?: Array<{ label: string; count: number }>
   monitoringRulesViolated?: number
   userClickedRunNow: boolean
   raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded

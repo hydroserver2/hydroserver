@@ -84,7 +84,7 @@ const humanizeRuleType = (value: string) =>
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
-const resolveMonitoringRuleSummary = (task: MonitoringTaskExpanded) => {
+const resolveMonitoringRules = (task: MonitoringTaskExpanded) => {
   const ruleCounts = new Map<string, number>()
   for (const monitored of task.monitoredDatastreams ?? []) {
     for (const rule of monitored.rules ?? []) {
@@ -95,13 +95,26 @@ const resolveMonitoringRuleSummary = (task: MonitoringTaskExpanded) => {
   }
 
   const total = [...ruleCounts.values()].reduce((sum, count) => sum + count, 0)
-  if (total === 0) return 'No rules'
-
-  const parts = [...ruleCounts.entries()]
+  const breakdown = [...ruleCounts.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([type, count]) => `${count} ${humanizeRuleType(type)}`)
+    .map(([type, count]) => ({
+      label: humanizeRuleType(type),
+      count,
+    }))
 
-  return parts.join(', ')
+  if (total === 0) {
+    return {
+      total,
+      breakdown,
+      summary: 'No rules',
+    }
+  }
+
+  const summary = breakdown
+    .map((item) => `${item.count} ${item.label}`)
+    .join(', ')
+
+  return { total, breakdown, summary }
 }
 
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
@@ -163,13 +176,18 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
   )
 
   const monitoringTaskRows = computed<TaskRow[]>(() =>
-    monitoringTasks.value.map((t) => ({
-      ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
-      dataConnectionId: null,
-      thingId: t.thing?.id ?? null,
-      qualityRuleSummary: resolveMonitoringRuleSummary(t),
-      monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
-    }))
+    monitoringTasks.value.map((t) => {
+      const rules = resolveMonitoringRules(t)
+      return {
+        ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
+        dataConnectionId: null,
+        thingId: t.thing?.id ?? null,
+        qualityRuleSummary: rules.summary,
+        qualityRuleCount: rules.total,
+        qualityRuleBreakdown: rules.breakdown,
+        monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
+      }
+    })
   )
 
   const activeTaskRows = computed<TaskRow[]>(() => {
