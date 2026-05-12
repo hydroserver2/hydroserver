@@ -103,6 +103,12 @@
             No rating curves found for this site. Switch to "Create new rating
             curve" to add one.
           </div>
+
+          <RatingCurvePreview
+            v-if="selectedRatingCurve"
+            :rating-curve="selectedRatingCurve"
+            class="mb-4"
+          />
         </template>
 
         <template v-else>
@@ -221,6 +227,7 @@ import {
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import RatingCurvePreview from './RatingCurvePreview.vue'
 import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
@@ -287,6 +294,12 @@ const ratingCurveOptions = computed(() =>
       : curve.name,
     value: curve.id,
   }))
+)
+
+const selectedRatingCurve = computed(() =>
+  ratingCurves.value.find(
+    (curve) => String(curve.id) === String(selectedRatingCurveId.value)
+  )
 )
 
 const selectedCreateFile = computed(() => createCurveFile.value)
