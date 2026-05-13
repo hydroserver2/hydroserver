@@ -192,9 +192,9 @@ const refreshSensorTable = () => (sensorKey.value += 1)
 
 const metaMap: Record<string, any> = {
   0: {
-    name: 'Sensors',
+    name: 'Methods',
     openDialog: () => (openSensorCreate.value = true),
-    singularName: 'sensor',
+    singularName: 'method',
   },
   1: {
     name: 'Observed properties',

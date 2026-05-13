@@ -29,7 +29,7 @@ const details = computed(() => [
   { label: 'Unit', value: unit() },
   { label: 'Intended time spacing', value: spacing(props.datastream.intendedTimeSpacing, props.datastream.intendedTimeSpacingUnit) },
   { label: 'Aggregation statistic & unit', value: aggregationStatisticAndUnit() },
-  { label: 'Sensor (method)', value: sensorMethod() },
+  { label: 'Method', value: sensorMethod() },
   { label: 'Sampled medium', value: props.datastream.sampledMedium || '-' },
   { label: 'Value count', value: formatCount(props.datastream.valueCount) },
 ])

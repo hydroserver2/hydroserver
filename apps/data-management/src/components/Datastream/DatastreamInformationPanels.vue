@@ -55,7 +55,7 @@
       </v-expansion-panel-text>
     </v-expansion-panel>
 
-    <v-expansion-panel title="Sensor">
+    <v-expansion-panel title="Method">
       <v-expansion-panel-text>
         <v-list dense>
           <v-list-item v-for="(item, index) in sensorItems" :key="index">
