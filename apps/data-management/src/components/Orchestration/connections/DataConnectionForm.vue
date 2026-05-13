@@ -91,6 +91,7 @@ import ExtractorForm from './extractors/ExtractorForm.vue'
 import TransformerForm from './transformers/TransformerForm.vue'
 import hs, { DataConnection } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
+import { ensureNotificationSchedule } from '@/utils/orchestration/dataConnectionNotifications'
 
 const props = defineProps<{
   dataConnection?: DataConnection
@@ -219,6 +220,8 @@ async function onSubmit() {
   }
 
   formDataConnection.value.workspace = selectedWorkspace.value
+  ensureNotificationSchedule(formDataConnection.value)
+
   const body = {
     ...formDataConnection.value,
     workspaceId: selectedWorkspace.value?.id,
