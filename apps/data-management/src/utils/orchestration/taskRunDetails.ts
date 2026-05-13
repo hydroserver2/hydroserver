@@ -231,12 +231,12 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
 
   return (
     firstString(
+      extractorRuntime?.sourceUri,
+      extractorRuntime?.source_uri,
       result.runtimeSourceUri,
       result.runtime_source_uri,
       result.runtimeUrl,
-      result.runtime_url,
-      extractorRuntime?.sourceUri,
-      extractorRuntime?.source_uri
+      result.runtime_url
     ) ?? null
   )
 }

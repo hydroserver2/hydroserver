@@ -188,7 +188,9 @@ export function useSimpleTaskDetails(
 
       try {
         const response = await service.getTaskRun(task.value.id, runId)
-        const updatedRun = response.ok ? (response.data as TaskRun) ?? null : null
+        const updatedRun = response.ok
+          ? (response.data as TaskRun) ?? null
+          : null
         if (updatedRun?.id) {
           upsertRun(updatedRun)
           if (!ACTIVE_RUN_STATUSES.has(updatedRun.status)) {

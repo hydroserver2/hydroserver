@@ -251,6 +251,7 @@
         :loading="submitLoading"
         :color="INGESTION_ACCENT"
         type="submit"
+        @click="onSubmit"
       >
         Save task
       </v-btn-primary>

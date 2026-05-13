@@ -104,6 +104,27 @@ describe('task run detail helpers', () => {
     expect(getTaskRunRuntimeUrl(run)).toBe('https://example.com/runtime.csv')
   })
 
+  it('prefers rendered extractor runtime URI over configured template aliases', () => {
+    const run: TaskRun = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      startedAt: '2026-03-12T12:00:00Z',
+      finishedAt: '2026-03-12T12:05:00Z',
+      result: {
+        runtime_source_uri: 'https://example.com/{site}/template.csv',
+        runtime_variables: {
+          extractor: {
+            source_uri: 'https://example.com/site-1/runtime.csv',
+          },
+        },
+      },
+    }
+
+    expect(getTaskRunRuntimeUrl(run)).toBe(
+      'https://example.com/site-1/runtime.csv'
+    )
+  })
+
   it('treats failure status as failed', () => {
     expect(
       taskRunHasFailures({
