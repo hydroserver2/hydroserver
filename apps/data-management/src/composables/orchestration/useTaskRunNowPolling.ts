@@ -155,6 +155,67 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     schedulePoll(kind, taskId, runId, startedAt, currentWorkspaceId())
   }
 
+  const startPollingForLatestRun = (
+    kind: TaskKind,
+    taskId: string,
+    startedAt = Date.now(),
+    workspaceId = currentWorkspaceId()
+  ) => {
+    stopPollingFor(taskId)
+    runNowTriggeredByTaskId[taskId] = true
+    runNowStartedAt.set(taskId, startedAt)
+
+    if (Date.now() - startedAt >= POLL_DURATION_MS) {
+      runNowTriggeredByTaskId[taskId] = false
+      return
+    }
+
+    const svc = serviceForKind(kind)
+    const timeoutId = window.setTimeout(async () => {
+      if (workspaceId !== currentWorkspaceId()) {
+        runNowTriggeredByTaskId[taskId] = false
+        stopPollingFor(taskId)
+        return
+      }
+
+      try {
+        const updated = (await svc.getItem(taskId, {
+          expand_related: true,
+        })) as AnyTask | null
+
+        if (workspaceId !== currentWorkspaceId()) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopPollingFor(taskId)
+          return
+        }
+
+        if (updated) {
+          upsertTask(kind, updated)
+          const latestRun = (updated as any).latestRun as
+            | TaskRun
+            | null
+            | undefined
+
+          if (latestRun?.id) {
+            if (ACTIVE_RUN_STATUSES.has(latestRun.status)) {
+              startPollingTaskRun(kind, taskId, latestRun.id, startedAt)
+            } else {
+              runNowTriggeredByTaskId[taskId] = false
+              stopPollingFor(taskId)
+            }
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error polling task for latest run', error)
+      }
+
+      startPollingForLatestRun(kind, taskId, startedAt, workspaceId)
+    }, POLL_INTERVAL_MS)
+
+    taskPollTimeouts.set(taskId, timeoutId)
+  }
+
   const runTaskNow = async (kind: TaskKind, taskId: string) => {
     runNowTriggeredByTaskId[taskId] = true
     const startedAt = Date.now()
@@ -205,6 +266,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     stopAll,
     runTaskNow,
     startPollingTaskRun,
+    startPollingForLatestRun,
     toggleSchedulePaused,
   }
 }

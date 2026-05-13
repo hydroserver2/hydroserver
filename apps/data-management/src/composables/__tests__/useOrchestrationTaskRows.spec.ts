@@ -94,6 +94,8 @@ describe('useOrchestrationTaskRows', () => {
       id: 'mon-1',
       kind: 'monitoring',
       thingId: 'thing-3',
+      statusName: 'Needs attention',
+      statusSort: 'Needs attention',
       qualityRuleSummary: '2 RANGE CHECK, 1 SPIKE CHECK',
       qualityRuleCount: 3,
       qualityRuleBreakdown: [
@@ -138,6 +140,37 @@ describe('useOrchestrationTaskRows', () => {
     expect(row.nextRun).not.toBe('-')
 
     vi.useRealTimers()
+  })
+
+  it('displays completed monitoring runs as OK instead of Pending', () => {
+    const rows = useOrchestrationTaskRows({
+      activeTab: ref('quality'),
+      workspaceTasks: ref([]),
+      dataProductTasks: ref([]),
+      monitoringTasks: ref([
+        {
+          id: 'mon-ok',
+          name: 'Quality OK',
+          thing: { id: 'thing-1' },
+          latestRun: {
+            id: 'run-ok',
+            status: 'SUCCESS',
+            result: { rulesViolated: 0 },
+            startedAt: '2026-03-13T12:00:00Z',
+          },
+          schedule: null,
+          monitoredDatastreams: [],
+        },
+      ] as any),
+      datastreamThingByDatastreamId: ref({}),
+      runNowTriggeredByTaskId: {},
+    })
+
+    expect(rows.monitoringTaskRows.value[0]).toMatchObject({
+      statusName: 'OK',
+      statusSort: 'OK',
+      lastRunAt: '2026-03-13T12:00:00Z',
+    })
   })
 
   it('switches active rows and sorts by the selected field', () => {

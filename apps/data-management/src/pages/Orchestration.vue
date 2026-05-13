@@ -169,7 +169,7 @@
             :initial-thing-id="selectedThingId"
             :edit-task-id="editingQualityTaskId"
             @close="closeQualityForm"
-            @created="onQualityTaskChanged"
+            @created="onQualityTaskCreated"
             @updated="onQualityTaskChanged"
             @deleted="onQualityTaskChanged"
           />
@@ -186,6 +186,7 @@ import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
   type DataProductTask,
+  type MonitoringTask,
   PermissionAction,
   PermissionResource,
   type TaskExpanded,
@@ -318,6 +319,7 @@ const {
   stopAll,
   runTaskNow,
   startPollingTaskRun,
+  startPollingForLatestRun,
   toggleSchedulePaused,
 } = useTaskRunNowPolling({
   lists: {
@@ -762,6 +764,28 @@ const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
       startPollingTaskRun('dataProduct', taskToPoll.id, taskToPoll.latestRun.id)
     } else if (!taskToPoll.latestRun) {
       await runTaskNow('dataProduct', taskToPoll.id)
+    }
+  }
+
+  await autoSelectSidebarAndSync()
+}
+
+const onQualityTaskCreated = async (createdTask?: MonitoringTask) => {
+  closeQualityForm()
+  await fetchAll()
+
+  const taskToPoll = monitoringTasks.value.find(
+    (task) => task.id === createdTask?.id
+  )
+
+  if (taskToPoll?.id) {
+    if (
+      taskToPoll.latestRun?.id &&
+      activeRunStatuses.has(taskToPoll.latestRun.status)
+    ) {
+      startPollingTaskRun('monitoring', taskToPoll.id, taskToPoll.latestRun.id)
+    } else if (!taskToPoll.latestRun) {
+      startPollingForLatestRun('monitoring', taskToPoll.id)
     }
   }
 
