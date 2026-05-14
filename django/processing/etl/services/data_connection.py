@@ -117,6 +117,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         timestamp_key: str,
         uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
         description: str | None = None,
+        auth_header_name: str | None = None,
+        auth_header_value: str | None = None,
         timestamp_format: str | None = None,
         timezone_type: Literal["utc", "offset", "iana"] | None = None,
         timezone: str | None = None,
@@ -143,6 +145,9 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         if not DataConnection.can_principal_create(principal=principal, workspace=workspace):
             raise PermissionError("You do not have permission to create this data connection.")
 
+        if (auth_header_name is None) != (auth_header_value is None):
+            raise ValueError("auth_header_name and auth_header_value must both be provided or both be omitted.")
+
         timestamp = Timestamp(
             timestamp_type="iso" if timestamp_format is None else "custom",
             timestamp_format=timestamp_format,
@@ -157,6 +162,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 name=name,
                 description=description,
                 source_url=source_url,
+                auth_header_name=auth_header_name,
+                auth_header_value=auth_header_value,
                 timestamp_key=timestamp_key,
                 timestamp_format=timestamp.timestamp_format,
                 timezone_type=timestamp.timezone_type,
@@ -200,6 +207,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         principal: User | APIKey | None,
         name: str | Unset = Unset,
         source_url: str | Unset = Unset,
+        auth_header_name: str | None | Unset = Unset,
+        auth_header_value: str | None | Unset = Unset,
         payload_type: Literal["CSV", "JSON"] | Unset = Unset,
         timestamp_key: str | Unset = Unset,
         description: str | None | Unset = Unset,
@@ -227,6 +236,14 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             action="edit",
             principal=principal
         )
+
+        resolved_auth_header_name = auth_header_name \
+            if auth_header_name is not Unset else data_connection.auth_header_name
+        resolved_auth_header_value = auth_header_value \
+            if auth_header_value is not Unset else data_connection.auth_header_value
+
+        if (resolved_auth_header_name is None) != (resolved_auth_header_value is None):
+            raise ValueError("auth_header_name and auth_header_value must both be provided or both be omitted.")
 
         if any(field is not Unset for field in [timestamp_format, timezone_type, timezone]):
             timestamp_type: Literal["iso", "custom"] = (
@@ -281,6 +298,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         editable_fields = {
             "name": name, "source_url": source_url, "description": description, "timestamp_key": timestamp_key,
+            "auth_header_name": auth_header_name, "auth_header_value": auth_header_value,
         }
 
         for field, value in editable_fields.items():

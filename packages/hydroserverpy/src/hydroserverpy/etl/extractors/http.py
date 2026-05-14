@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 class HTTPExtractor(Extractor):
     source_uri: str = Field(..., json_schema_extra={"template": True})
+    auth_header_name: str | None = None
+    auth_header_value: str | None = None
 
     def extract(
         self,
@@ -23,12 +25,16 @@ class HTTPExtractor(Extractor):
 
         runtime_data = self.render_runtime_data(**kwargs)
         source_uri = runtime_data['source_uri']
+        auth_headers = {}
 
         timeout_seconds = 120
         logger.info("Requesting data from source URI")
 
+        if self.auth_header_name and self.auth_header_value:
+            auth_headers[self.auth_header_name] = self.auth_header_value
+
         try:
-            response = requests.get(source_uri, timeout=timeout_seconds)
+            response = requests.get(source_uri, headers=auth_headers, timeout=timeout_seconds)
         except requests.exceptions.Timeout as e:
             raise ETLError(
                 f"Request to {source_uri} timed out after {timeout_seconds} seconds."

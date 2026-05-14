@@ -304,7 +304,9 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         etl_mappings = task.etl_mappings.all()
 
         extractor = HTTPExtractor(
-            source_uri=data_connection.source_url
+            source_uri=data_connection.source_url,
+            auth_header_name=data_connection.auth_header_name,
+            auth_header_value=data_connection.auth_header_value
         )
 
         timestamp = Timestamp(
