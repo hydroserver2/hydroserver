@@ -48,16 +48,25 @@
                 label="Header name"
                 placeholder="Authorization"
                 clearable
+                autocomplete="off"
+                name="data-connection-auth-header-name"
                 density="compact"
                 :rules="authHeaderNameRules"
               />
               <v-text-field
                 v-model="formDataConnection.authHeaderValue"
-                :type="showAuthHeaderValue ? 'text' : 'password'"
+                type="text"
                 label="Header value"
                 placeholder="Bearer abc123"
                 clearable
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                name="data-connection-auth-header-value"
                 density="compact"
+                :class="{
+                  'auth-header-value-field--masked': !showAuthHeaderValue,
+                }"
                 :rules="authHeaderValueRules"
                 :append-inner-icon="showAuthHeaderValue ? mdiEyeOff : mdiEye"
                 @click:append-inner="showAuthHeaderValue = !showAuthHeaderValue"
@@ -140,9 +149,6 @@ const { dataConnection: formDataConnection } = storeToRefs(
 )
 
 const isEdit = computed(() => !!props.dataConnection)
-formDataConnection.value = !!props.dataConnection
-  ? props.dataConnection
-  : new DataConnection()
 const valid = ref(false)
 const myForm = ref<VForm>()
 
@@ -151,19 +157,14 @@ const transformerRef = ref<any>(null)
 
 const loaded = ref(false)
 const isSubmitting = ref(false)
-const advancedFeaturesEnabled = ref(
-  !!(
-    formDataConnection.value.authHeaderName ||
-    formDataConnection.value.authHeaderValue ||
-    (formDataConnection.value as any).notification?.recipientEmails?.length
-  )
-)
+const advancedFeaturesEnabled = ref(false)
 const showAuthHeaderValue = ref(false)
 const notificationRecipientInput = ref('')
 const notificationRecipientInputError = ref('')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const authHeaderNameOptions = ['Authorization', 'X-API-Key']
+const defaultAuthHeaderName = authHeaderNameOptions[0]
 
 const toRecipientString = (value: unknown) => {
   if (typeof value === 'string') return value.trim()
@@ -219,13 +220,35 @@ const authHeaderNameRules = [
     toRecipientString(value).length <= 255 || 'Maximum 255 characters allowed.',
 ]
 
-const authHeaderValueRules = [
-  (value: string | null) =>
-    !advancedFeaturesEnabled.value ||
-    !!toRecipientString(value) ||
-    !toRecipientString(formDataConnection.value.authHeaderName) ||
-    'Header value is required when a header name is provided.',
-]
+const authHeaderValueRules: Array<(value: string | null) => true | string> = []
+
+function hasAdvancedFeatures(dataConnection?: DataConnection) {
+  if (!dataConnection) return false
+
+  return !!(
+    toRecipientString(dataConnection.authHeaderName) ||
+    toRecipientString(dataConnection.authHeaderValue) ||
+    (dataConnection as any).notification?.recipientEmails?.length
+  )
+}
+
+function ensureDefaultAuthHeaderName() {
+  if (
+    !toRecipientString(formDataConnection.value.authHeaderName) &&
+    !toRecipientString(formDataConnection.value.authHeaderValue)
+  ) {
+    formDataConnection.value.authHeaderName = defaultAuthHeaderName
+  }
+}
+
+function resetFormState(dataConnection?: DataConnection) {
+  formDataConnection.value = dataConnection ?? new DataConnection()
+  advancedFeaturesEnabled.value = hasAdvancedFeatures(formDataConnection.value)
+  if (advancedFeaturesEnabled.value) ensureDefaultAuthHeaderName()
+  showAuthHeaderValue.value = false
+  notificationRecipientInput.value = ''
+  notificationRecipientInputError.value = ''
+}
 
 function addNotificationRecipient() {
   const email = notificationRecipientInput.value.trim().replace(/,+$/, '')
@@ -259,6 +282,17 @@ watch(notificationRecipientInput, () => {
   if (notificationRecipientInputError.value) {
     notificationRecipientInputError.value = ''
   }
+})
+
+watch(
+  () => props.dataConnection,
+  (dataConnection) => resetFormState(dataConnection),
+  { immediate: true }
+)
+
+watch(advancedFeaturesEnabled, (enabled) => {
+  if (enabled) ensureDefaultAuthHeaderName()
+  notificationRecipientInputError.value = ''
 })
 
 async function validate() {
@@ -356,6 +390,10 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr);
   gap: 12px;
+}
+
+.auth-header-value-field--masked :deep(input) {
+  -webkit-text-security: disc;
 }
 
 @media (max-width: 640px) {
