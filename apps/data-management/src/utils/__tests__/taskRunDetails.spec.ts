@@ -15,6 +15,7 @@ import {
 
 describe('task run detail helpers', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -430,7 +431,8 @@ describe('task run detail helpers', () => {
       latestRun: null,
     })
 
-    expect(next?.toISOString()).toBe('2026-03-13T20:30:00.000Z')
-    vi.useRealTimers()
+    expect(next?.toISOString()).toBe(
+      new Date(2026, 2, 13, 14, 30).toISOString()
+    )
   })
 })
