@@ -172,8 +172,25 @@
             class="mr-1"
             @click:close="removeStatusFilter(index)"
           >
+            <v-icon
+              :icon="statusIcon(item.value)"
+              size="14"
+              class="mr-1"
+              :style="{ color: statusIconColor(item.value) }"
+            />
             <span>{{ item.title }}</span>
           </v-chip>
+        </template>
+        <template #item="{ props: itemProps, item }">
+          <v-list-item v-bind="itemProps">
+            <template #prepend>
+              <v-icon
+                :icon="statusIcon(item.value)"
+                size="18"
+                :style="{ color: statusIconColor(item.value) }"
+              />
+            </template>
+          </v-list-item>
         </template>
       </v-autocomplete>
       <v-autocomplete
@@ -253,89 +270,8 @@
         </template>
 
         <template #item.statusSort="{ item }">
-          <div v-if="activeTab === 'quality'" class="quality-run-stack">
-            <v-tooltip
-              location="bottom"
-              :open-delay="0"
-              :close-delay="80"
-              content-class="pa-0 ma-0 bg-transparent"
-              max-width="520"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <TaskStatus :status="item.statusSort" :paused="false" />
-                </span>
-              </template>
-              <v-card
-                elevation="6"
-                rounded="lg"
-                class="ma-0 pa-0 border border-slate-200"
-                style="max-width: 520px"
-              >
-                <v-card-text class="px-4 py-3">
-                  <div class="mb-1 flex items-center justify-between gap-3">
-                    <div
-                      class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
-                    >
-                      Last run summary
-                    </div>
-                    <div
-                      v-if="item.lastRun && item.lastRun !== '-'"
-                      class="text-xs font-medium text-slate-500"
-                    >
-                      {{ item.lastRun }}
-                    </div>
-                  </div>
-                  <div class="text-sm leading-snug text-slate-800">
-                    {{ item.lastRunMessage || 'No run history available yet.' }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-tooltip>
-            <v-tooltip
-              v-if="item.noWorkWarning"
-              location="top"
-              :open-delay="0"
-              :close-delay="80"
-              content-class="pa-0 ma-0 bg-transparent"
-              max-width="320"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <v-chip
-                  v-bind="tooltipProps"
-                  size="x-small"
-                  density="comfortable"
-                  color="amber-darken-3"
-                  variant="tonal"
-                  :prepend-icon="mdiAlert"
-                  rounded="lg"
-                  class="task-no-work-chip"
-                >
-                  {{ item.noWorkWarning.label }}
-                </v-chip>
-              </template>
-              <v-card
-                elevation="6"
-                rounded="lg"
-                class="ma-0 pa-0 border border-slate-200"
-                style="max-width: 320px"
-              >
-                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
-                  {{ item.noWorkWarning.message }}
-                </v-card-text>
-              </v-card>
-            </v-tooltip>
-            <div class="quality-run-time">
-              <span class="quality-run-label">Last</span>
-              <span class="task-time">{{ item.lastRun }}</span>
-            </div>
-            <div class="quality-run-time">
-              <span class="quality-run-label">Next</span>
-              <span class="task-time">{{ item.nextRun }}</span>
-            </div>
-          </div>
-          <div v-else-if="activeTab === 'aggregation'" class="task-status-cell">
-            <div class="aggregation-run-cell">
+          <div class="task-status-cell">
+            <div class="task-run-cell">
               <v-tooltip
                 location="bottom"
                 :open-delay="0"
@@ -346,7 +282,7 @@
                 <template #activator="{ props: tooltipProps }">
                   <span
                     v-bind="tooltipProps"
-                    class="aggregation-status-icon"
+                    class="task-status-icon"
                     :style="{ color: statusIconColor(item.statusSort) }"
                     :aria-label="item.statusSort"
                   >
@@ -365,8 +301,12 @@
                     >
                       Last run summary
                     </div>
-                    <div class="text-[0.95rem] font-semibold leading-snug text-slate-900">
-                      {{ item.lastRunMessage || 'No run history available yet.' }}
+                    <div
+                      class="text-[0.95rem] font-semibold leading-snug text-slate-900"
+                    >
+                      {{
+                        item.lastRunMessage || 'No run history available yet.'
+                      }}
                     </div>
                     <div
                       class="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500"
@@ -381,13 +321,13 @@
                   </v-card-text>
                 </v-card>
               </v-tooltip>
-              <div class="aggregation-run-times">
-                <div class="aggregation-run-time">
-                  <span class="quality-run-label">Last</span>
+              <div class="task-run-times">
+                <div class="task-run-time">
+                  <span class="task-run-label">Last</span>
                   <span class="task-time">{{ item.lastRun }}</span>
                 </div>
-                <div class="aggregation-run-time">
-                  <span class="quality-run-label">Next</span>
+                <div class="task-run-time">
+                  <span class="task-run-label">Next</span>
                   <span class="task-time">{{ item.nextRun }}</span>
                 </div>
               </div>
@@ -420,80 +360,9 @@
                 class="ma-0 pa-0 border border-slate-200"
                 style="max-width: 320px"
               >
-                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
-                  {{ item.noWorkWarning.message }}
-                </v-card-text>
-              </v-card>
-            </v-tooltip>
-          </div>
-          <div v-else class="task-status-cell">
-            <v-tooltip
-              location="bottom"
-              :open-delay="0"
-              :close-delay="80"
-              content-class="pa-0 ma-0 bg-transparent"
-              max-width="520"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <TaskStatus :status="item.statusSort" :paused="false" />
-                </span>
-              </template>
-              <v-card
-                elevation="6"
-                rounded="lg"
-                class="ma-0 pa-0 border border-slate-200"
-                style="max-width: 520px"
-              >
-                <v-card-text class="px-4 py-3">
-                  <div class="mb-1 flex items-center justify-between gap-3">
-                    <div
-                      class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
-                    >
-                      Last run summary
-                    </div>
-                    <div
-                      v-if="item.lastRun && item.lastRun !== '-'"
-                      class="text-xs font-medium text-slate-500"
-                    >
-                      {{ item.lastRun }}
-                    </div>
-                  </div>
-                  <div class="text-sm leading-snug text-slate-800">
-                    {{ item.lastRunMessage || 'No run history available yet.' }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-tooltip>
-            <v-tooltip
-              v-if="item.noWorkWarning"
-              location="top"
-              :open-delay="0"
-              :close-delay="80"
-              content-class="pa-0 ma-0 bg-transparent"
-              max-width="320"
-            >
-              <template #activator="{ props: tooltipProps }">
-                <v-chip
-                  v-bind="tooltipProps"
-                  size="x-small"
-                  density="comfortable"
-                  color="amber-darken-3"
-                  variant="tonal"
-                  :prepend-icon="mdiAlert"
-                  rounded="lg"
-                  class="task-no-work-chip"
+                <v-card-text
+                  class="px-4 py-3 text-sm leading-snug text-slate-800"
                 >
-                  {{ item.noWorkWarning.label }}
-                </v-chip>
-              </template>
-              <v-card
-                elevation="6"
-                rounded="lg"
-                class="ma-0 pa-0 border border-slate-200"
-                style="max-width: 320px"
-              >
-                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
                   {{ item.noWorkWarning.message }}
                 </v-card-text>
               </v-card>
@@ -679,7 +548,6 @@ import {
 } from '@mdi/js'
 import type { DataConnection } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
-import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import HealthPills from '@/components/Orchestration/shared/HealthPills.vue'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import {
@@ -701,7 +569,7 @@ const typeChipStyle = (taskType: DataProductTaskType) => {
 const taskTypeSelectionStyle = (taskType: unknown) =>
   typeChipStyle(taskType as DataProductTaskType)
 
-const statusIcon = (status: TaskRow['statusSort']) => {
+const statusIcon = (status: unknown) => {
   if (status === 'OK') return mdiCheckCircleOutline
   if (status === 'Needs attention') return mdiAlertCircleOutline
   if (status === 'Behind schedule') return mdiClockAlertOutline
@@ -710,7 +578,7 @@ const statusIcon = (status: TaskRow['statusSort']) => {
   return mdiHelpCircleOutline
 }
 
-const statusIconColor = (status: TaskRow['statusSort']) => {
+const statusIconColor = (status: unknown) => {
   if (status === 'OK') return '#2E7D32'
   if (status === 'Needs attention') return '#B71C1C'
   if (status === 'Behind schedule') return '#BF360C'
@@ -730,19 +598,9 @@ const accent = computed(() => TAB_META[activeTab.value].accent)
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 const defaultSortBy = [{ key: 'name', order: 'asc' }] as const
 const tableHeaders = computed(() => {
-  const headers = [
-    { title: 'Task name', key: 'name' },
-  ]
+  const headers = [{ title: 'Task name', key: 'name' }]
 
-  if (activeTab.value === 'quality' || activeTab.value === 'aggregation') {
-    headers.push({ title: 'Run status', key: 'statusSort' })
-  } else {
-    headers.push(
-      { title: 'Status', key: 'statusSort' },
-      { title: 'Last run', key: 'lastRunAt' },
-      { title: 'Next run', key: 'nextRunAt' }
-    )
-  }
+  headers.push({ title: 'Status', key: 'statusSort' })
 
   if (activeTab.value === 'aggregation') {
     headers.push({ title: 'Type', key: 'taskType' })
@@ -968,57 +826,36 @@ const pauseTooltipText = (item: TaskRow) => {
 .task-violation-chip {
   font-weight: 700;
 }
-.quality-run-stack {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 11rem;
-  padding-block: 0.35rem 0.2rem;
-}
-.quality-run-stack :deep(.v-chip) {
-  margin-bottom: 0.08rem !important;
-}
-.aggregation-run-cell {
+.task-run-cell {
   align-items: center;
   display: inline-flex;
   gap: 8px;
   min-width: 0;
 }
-.aggregation-status-icon {
+.task-status-icon {
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
   justify-content: center;
   line-height: 1;
 }
-.aggregation-run-times {
+.task-run-times {
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
   min-width: 0;
 }
-.aggregation-run-time {
+.task-run-time {
   align-items: baseline;
   display: grid;
   gap: 0.35rem;
   grid-template-columns: 2rem minmax(0, 1fr);
   line-height: 1.15;
 }
-.aggregation-run-time .task-time {
+.task-run-time .task-time {
   line-height: 1.15;
 }
-.quality-run-time {
-  align-items: baseline;
-  display: grid;
-  gap: 0.35rem;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  line-height: 1.15;
-}
-.quality-run-time .task-time {
-  line-height: 1.15;
-}
-.quality-run-label {
+.task-run-label {
   color: #64748b;
   font-size: 0.68rem;
   font-weight: 700;
