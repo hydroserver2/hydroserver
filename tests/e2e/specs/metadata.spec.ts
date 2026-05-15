@@ -13,7 +13,7 @@ test.describe('metadata management', () => {
       page.getByRole('heading', { name: 'Manage metadata' })
     ).toBeVisible()
     await expect(page.getByText('Selected workspace:', { exact: false })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Sensors' }).first()).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Methods' }).first()).toBeVisible()
     await expect(
       page.getByRole('tab', { name: 'Observed properties' }).first()
     ).toBeVisible()
@@ -38,8 +38,8 @@ test.describe('metadata management', () => {
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     const systemTable = page.getByTestId('system-metadata-table')
 
-    await workspaceTable.getByRole('tab', { name: 'Sensors' }).click()
-    await systemTable.getByRole('tab', { name: 'Sensors' }).click()
+    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
+    await systemTable.getByRole('tab', { name: 'Methods' }).click()
 
     await expect(
       workspaceTable.locator('tr').filter({ hasText: 'Private Assigned Sensor' }).first()
@@ -49,46 +49,46 @@ test.describe('metadata management', () => {
     ).toBeVisible()
   })
 
-  test('workspace sensor metadata can be created, updated, and deleted', async ({
+  test('workspace method metadata can be created, updated, and deleted', async ({
     page,
   }) => {
-    const sensorName = `E2E Sensor ${Date.now()}`
-    const renamedSensorName = `${sensorName} Updated`
+    const methodName = `E2E Method ${Date.now()}`
+    const renamedMethodName = `${methodName} Updated`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Sensors' }).click()
-    await workspaceTable.getByRole('button', { name: /Add new sensor/i }).click()
+    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
+    await workspaceTable.getByRole('button', { name: /Add new method/i }).click()
 
     await fillCombobox(page, 'Method Type *', 'E2E Method Type')
     await page.getByLabel('Description *').fill(
-      'Temporary sensor created by the Playwright metadata CRUD suite.'
+      'Temporary method created by the Playwright metadata CRUD suite.'
     )
-    await page.getByLabel('Name *').fill(sensorName)
+    await page.getByLabel('Name *').fill(methodName)
     await page.getByRole('button', { name: 'Save' }).click()
 
-    const sensorRow = page.locator('tr').filter({ hasText: sensorName }).first()
-    await expect(sensorRow).toBeVisible()
+    const methodRow = page.locator('tr').filter({ hasText: methodName }).first()
+    await expect(methodRow).toBeVisible()
 
-    await sensorRow.locator('.v-icon').first().click()
-    await page.getByLabel('Name *').fill(renamedSensorName)
+    await methodRow.locator('.v-icon').first().click()
+    await page.getByLabel('Name *').fill(renamedMethodName)
     await page.getByRole('button', { name: 'Update' }).click()
 
-    const renamedSensorRow = page
+    const renamedMethodRow = page
       .locator('tr')
-      .filter({ hasText: renamedSensorName })
+      .filter({ hasText: renamedMethodName })
       .first()
-    await expect(renamedSensorRow).toBeVisible()
+    await expect(renamedMethodRow).toBeVisible()
 
-    await renamedSensorRow.locator('.v-icon').nth(1).click()
+    await renamedMethodRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText("isn't being used by any datastreams")).toBeVisible()
     await page.getByRole('button', { name: 'Delete' }).click()
 
     await expect(
-      page.locator('tr').filter({ hasText: renamedSensorName })
+      page.locator('tr').filter({ hasText: renamedMethodName })
     ).toHaveCount(0)
   })
 
@@ -298,7 +298,7 @@ test.describe('metadata management', () => {
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Sensors' }).click()
+    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
 
     const assignedSensorRow = workspaceTable
       .locator('tr')

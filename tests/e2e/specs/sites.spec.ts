@@ -224,7 +224,7 @@ test.describe('sites and workspaces', () => {
     await page.getByTestId('add-datastream-button').click()
     await chooseAutocompleteOption(
       page,
-      'Select sensor *',
+      'Select method *',
       'Public Assigned Sensor'
     )
     await chooseAutocompleteOption(
