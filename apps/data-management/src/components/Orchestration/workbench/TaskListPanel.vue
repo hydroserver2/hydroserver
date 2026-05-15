@@ -334,6 +334,98 @@
               <span class="task-time">{{ item.nextRun }}</span>
             </div>
           </div>
+          <div v-else-if="activeTab === 'aggregation'" class="task-status-cell">
+            <div class="aggregation-run-cell">
+              <v-tooltip
+                location="bottom"
+                :open-delay="0"
+                :close-delay="80"
+                content-class="pa-0 ma-0 bg-transparent"
+                max-width="640"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <span
+                    v-bind="tooltipProps"
+                    class="aggregation-status-icon"
+                    :style="{ color: statusIconColor(item.statusSort) }"
+                    :aria-label="item.statusSort"
+                  >
+                    <v-icon :icon="statusIcon(item.statusSort)" size="20" />
+                  </span>
+                </template>
+                <v-card
+                  elevation="6"
+                  rounded="lg"
+                  class="ma-0 pa-0 border border-slate-200"
+                  style="max-width: 560px; min-width: 360px"
+                >
+                  <v-card-text class="px-4 py-3">
+                    <div
+                      class="mb-1 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
+                    >
+                      Last run summary
+                    </div>
+                    <div class="text-[0.95rem] font-semibold leading-snug text-slate-900">
+                      {{ item.lastRunMessage || 'No run history available yet.' }}
+                    </div>
+                    <div
+                      class="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500"
+                    >
+                      <v-icon
+                        :icon="statusIcon(item.statusSort)"
+                        size="14"
+                        :style="{ color: statusIconColor(item.statusSort) }"
+                      />
+                      <span>{{ item.statusSort }}</span>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-tooltip>
+              <div class="aggregation-run-times">
+                <div class="aggregation-run-time">
+                  <span class="quality-run-label">Last</span>
+                  <span class="task-time">{{ item.lastRun }}</span>
+                </div>
+                <div class="aggregation-run-time">
+                  <span class="quality-run-label">Next</span>
+                  <span class="task-time">{{ item.nextRun }}</span>
+                </div>
+              </div>
+            </div>
+            <v-tooltip
+              v-if="item.noWorkWarning"
+              location="top"
+              :open-delay="0"
+              :close-delay="80"
+              content-class="pa-0 ma-0 bg-transparent"
+              max-width="320"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  size="x-small"
+                  density="comfortable"
+                  color="amber-darken-3"
+                  variant="tonal"
+                  :prepend-icon="mdiAlert"
+                  rounded="lg"
+                  class="task-no-work-chip"
+                >
+                  {{ item.noWorkWarning.label }}
+                </v-chip>
+              </template>
+              <v-card
+                elevation="6"
+                rounded="lg"
+                class="ma-0 pa-0 border border-slate-200"
+                style="max-width: 320px"
+              >
+                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
+                  {{ item.noWorkWarning.message }}
+                </v-card-text>
+              </v-card>
+            </v-tooltip>
+          </div>
           <div v-else class="task-status-cell">
             <v-tooltip
               location="bottom"
@@ -572,10 +664,16 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
   mdiAlert,
+  mdiAlertCircleOutline,
   mdiChevronRight,
+  mdiCheckCircleOutline,
+  mdiClockAlertOutline,
+  mdiClockOutline,
   mdiFilterVariant,
+  mdiHelpCircleOutline,
   mdiMagnify,
   mdiPause,
+  mdiPauseCircleOutline,
   mdiPlay,
   mdiPlus,
 } from '@mdi/js'
@@ -603,6 +701,24 @@ const typeChipStyle = (taskType: DataProductTaskType) => {
 const taskTypeSelectionStyle = (taskType: unknown) =>
   typeChipStyle(taskType as DataProductTaskType)
 
+const statusIcon = (status: TaskRow['statusSort']) => {
+  if (status === 'OK') return mdiCheckCircleOutline
+  if (status === 'Needs attention') return mdiAlertCircleOutline
+  if (status === 'Behind schedule') return mdiClockAlertOutline
+  if (status === 'Loading paused') return mdiPauseCircleOutline
+  if (status === 'Pending') return mdiClockOutline
+  return mdiHelpCircleOutline
+}
+
+const statusIconColor = (status: TaskRow['statusSort']) => {
+  if (status === 'OK') return '#2E7D32'
+  if (status === 'Needs attention') return '#B71C1C'
+  if (status === 'Behind schedule') return '#BF360C'
+  if (status === 'Loading paused') return '#546E7A'
+  if (status === 'Pending') return '#1565C0'
+  return '#6B7280'
+}
+
 const {
   activeTab,
   orchestrationSearch: taskSearch,
@@ -618,7 +734,7 @@ const tableHeaders = computed(() => {
     { title: 'Task name', key: 'name' },
   ]
 
-  if (activeTab.value === 'quality') {
+  if (activeTab.value === 'quality' || activeTab.value === 'aggregation') {
     headers.push({ title: 'Run status', key: 'statusSort' })
   } else {
     headers.push(
@@ -862,6 +978,35 @@ const pauseTooltipText = (item: TaskRow) => {
 }
 .quality-run-stack :deep(.v-chip) {
   margin-bottom: 0.08rem !important;
+}
+.aggregation-run-cell {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+.aggregation-status-icon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  line-height: 1;
+}
+.aggregation-run-times {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+.aggregation-run-time {
+  align-items: baseline;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  line-height: 1.15;
+}
+.aggregation-run-time .task-time {
+  line-height: 1.15;
 }
 .quality-run-time {
   align-items: baseline;
