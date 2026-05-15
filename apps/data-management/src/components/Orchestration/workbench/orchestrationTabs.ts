@@ -34,6 +34,11 @@ export type DataProductTaskType =
   | 'Rating curve'
   | null
 
+export type TaskNoWorkWarning = {
+  label: string
+  message: string
+} | null
+
 export const DATA_PRODUCT_TYPE_COLORS: Record<
   NonNullable<DataProductTaskType>,
   { text: string; bg: string }
@@ -75,6 +80,7 @@ export type TaskRow = {
   qualityRuleCount?: number
   qualityRuleBreakdown?: Array<{ label: string; count: number }>
   monitoringRulesViolated?: number
+  noWorkWarning: TaskNoWorkWarning
   userClickedRunNow: boolean
   raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 }

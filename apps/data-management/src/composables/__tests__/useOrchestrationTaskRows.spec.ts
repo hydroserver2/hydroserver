@@ -74,6 +74,7 @@ describe('useOrchestrationTaskRows', () => {
       thingId: 'thing-1',
       userClickedRunNow: true,
       taskType: null,
+      noWorkWarning: null,
       lastRunAt: '2025-01-02T00:00:00Z',
       nextRunAt: '2025-01-03T00:00:00Z',
     })
@@ -89,6 +90,7 @@ describe('useOrchestrationTaskRows', () => {
       kind: 'dataProduct',
       thingId: 'thing-2',
       taskType: 'Rating curve',
+      noWorkWarning: null,
     })
     expect(rows.monitoringTaskRows.value[0]).toMatchObject({
       id: 'mon-1',
@@ -103,6 +105,64 @@ describe('useOrchestrationTaskRows', () => {
         { label: 'SPIKE CHECK', count: 1 },
       ],
       monitoringRulesViolated: 2,
+      noWorkWarning: null,
+    })
+  })
+
+  it('flags tasks that have no configured work', () => {
+    const rows = useOrchestrationTaskRows({
+      activeTab: ref('ingestion'),
+      workspaceTasks: ref([
+        {
+          id: 'etl-empty',
+          name: 'Empty import',
+          dataConnection: { id: 'dc-1' },
+          latestRun: null,
+          schedule: null,
+          mappings: [],
+        },
+      ] as any),
+      dataProductTasks: ref([
+        {
+          id: 'dp-empty',
+          name: 'Empty product',
+          thing: { id: 'thing-2' },
+          latestRun: null,
+          schedule: null,
+          aggregationTransformations: [],
+          compositeExpressionTransformations: [],
+          expressionTransformations: [],
+          ratingCurveTransformations: [],
+        },
+      ] as any),
+      monitoringTasks: ref([
+        {
+          id: 'mon-empty',
+          name: 'Empty quality task',
+          thing: { id: 'thing-3' },
+          latestRun: null,
+          schedule: null,
+          monitoredDatastreams: [{ rules: [] }],
+        },
+      ] as any),
+      datastreamThingByDatastreamId: ref({}),
+      runNowTriggeredByTaskId: {},
+    })
+
+    expect(rows.etlTaskRows.value[0].noWorkWarning).toEqual({
+      label: 'No mappings',
+      message:
+        "This task has no mappings configured, so running it won't do anything.",
+    })
+    expect(rows.dataProductTaskRows.value[0].noWorkWarning).toEqual({
+      label: 'No mappings',
+      message:
+        "This task has no transformations configured, so running it won't do anything.",
+    })
+    expect(rows.monitoringTaskRows.value[0].noWorkWarning).toEqual({
+      label: 'No rules',
+      message:
+        "This quality task has no rules configured, so running it won't do anything.",
     })
   })
 

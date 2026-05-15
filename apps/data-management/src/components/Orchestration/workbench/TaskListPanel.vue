@@ -292,6 +292,39 @@
                 </v-card-text>
               </v-card>
             </v-tooltip>
+            <v-tooltip
+              v-if="item.noWorkWarning"
+              location="top"
+              :open-delay="0"
+              :close-delay="80"
+              content-class="pa-0 ma-0 bg-transparent"
+              max-width="320"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  size="x-small"
+                  density="comfortable"
+                  color="amber-darken-3"
+                  variant="tonal"
+                  :prepend-icon="mdiAlert"
+                  rounded="lg"
+                  class="task-no-work-chip"
+                >
+                  {{ item.noWorkWarning.label }}
+                </v-chip>
+              </template>
+              <v-card
+                elevation="6"
+                rounded="lg"
+                class="ma-0 pa-0 border border-slate-200"
+                style="max-width: 320px"
+              >
+                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
+                  {{ item.noWorkWarning.message }}
+                </v-card-text>
+              </v-card>
+            </v-tooltip>
             <div class="quality-run-time">
               <span class="quality-run-label">Last</span>
               <span class="task-time">{{ item.lastRun }}</span>
@@ -301,45 +334,79 @@
               <span class="task-time">{{ item.nextRun }}</span>
             </div>
           </div>
-          <v-tooltip
-            v-else
-            location="bottom"
-            :open-delay="0"
-            :close-delay="80"
-            content-class="pa-0 ma-0 bg-transparent"
-            max-width="520"
-          >
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <TaskStatus :status="item.statusSort" :paused="false" />
-              </span>
-            </template>
-            <v-card
-              elevation="6"
-              rounded="lg"
-              class="ma-0 pa-0 border border-slate-200"
-              style="max-width: 520px"
+          <div v-else class="task-status-cell">
+            <v-tooltip
+              location="bottom"
+              :open-delay="0"
+              :close-delay="80"
+              content-class="pa-0 ma-0 bg-transparent"
+              max-width="520"
             >
-              <v-card-text class="px-4 py-3">
-                <div class="mb-1 flex items-center justify-between gap-3">
-                  <div
-                    class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
-                  >
-                    Last run summary
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps" class="inline-flex">
+                  <TaskStatus :status="item.statusSort" :paused="false" />
+                </span>
+              </template>
+              <v-card
+                elevation="6"
+                rounded="lg"
+                class="ma-0 pa-0 border border-slate-200"
+                style="max-width: 520px"
+              >
+                <v-card-text class="px-4 py-3">
+                  <div class="mb-1 flex items-center justify-between gap-3">
+                    <div
+                      class="text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-slate-600"
+                    >
+                      Last run summary
+                    </div>
+                    <div
+                      v-if="item.lastRun && item.lastRun !== '-'"
+                      class="text-xs font-medium text-slate-500"
+                    >
+                      {{ item.lastRun }}
+                    </div>
                   </div>
-                  <div
-                    v-if="item.lastRun && item.lastRun !== '-'"
-                    class="text-xs font-medium text-slate-500"
-                  >
-                    {{ item.lastRun }}
+                  <div class="text-sm leading-snug text-slate-800">
+                    {{ item.lastRunMessage || 'No run history available yet.' }}
                   </div>
-                </div>
-                <div class="text-sm leading-snug text-slate-800">
-                  {{ item.lastRunMessage || 'No run history available yet.' }}
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-tooltip>
+                </v-card-text>
+              </v-card>
+            </v-tooltip>
+            <v-tooltip
+              v-if="item.noWorkWarning"
+              location="top"
+              :open-delay="0"
+              :close-delay="80"
+              content-class="pa-0 ma-0 bg-transparent"
+              max-width="320"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-chip
+                  v-bind="tooltipProps"
+                  size="x-small"
+                  density="comfortable"
+                  color="amber-darken-3"
+                  variant="tonal"
+                  :prepend-icon="mdiAlert"
+                  rounded="lg"
+                  class="task-no-work-chip"
+                >
+                  {{ item.noWorkWarning.label }}
+                </v-chip>
+              </template>
+              <v-card
+                elevation="6"
+                rounded="lg"
+                class="ma-0 pa-0 border border-slate-200"
+                style="max-width: 320px"
+              >
+                <v-card-text class="px-4 py-3 text-sm leading-snug text-slate-800">
+                  {{ item.noWorkWarning.message }}
+                </v-card-text>
+              </v-card>
+            </v-tooltip>
+          </div>
         </template>
 
         <template #item.lastRunAt="{ item }">
@@ -504,6 +571,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
+  mdiAlert,
   mdiChevronRight,
   mdiFilterVariant,
   mdiMagnify,
@@ -753,6 +821,16 @@ const pauseTooltipText = (item: TaskRow) => {
 .task-name {
   font-weight: 500;
   color: #1c1b1f;
+}
+.task-status-cell {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.task-no-work-chip {
+  font-size: 10.5px;
+  font-weight: 700;
 }
 .task-time {
   color: #49454f;

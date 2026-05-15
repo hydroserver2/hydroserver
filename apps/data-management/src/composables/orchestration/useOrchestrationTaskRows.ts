@@ -20,6 +20,7 @@ import type {
   SortKey,
   TabId,
   TaskKind,
+  TaskNoWorkWarning,
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
@@ -27,6 +28,24 @@ type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 
 const targetDatastream = (mapping: TaskMapping) =>
   'targetDatastream' in mapping ? mapping.targetDatastream : null
+
+const ETL_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No mappings',
+  message:
+    "This task has no mappings configured, so running it won't do anything.",
+}
+
+const DATA_PRODUCT_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No mappings',
+  message:
+    "This task has no transformations configured, so running it won't do anything.",
+}
+
+const MONITORING_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No rules',
+  message:
+    "This quality task has no rules configured, so running it won't do anything.",
+}
 
 type Inputs = {
   activeTab: Ref<TabId>
@@ -64,6 +83,7 @@ const buildRowBase = (
     nextRunAt,
     lastRunMessage: getTaskRunMessage(latestRun as any),
     taskType: null as DataProductTaskType,
+    noWorkWarning: null as TaskNoWorkWarning,
     userClickedRunNow: !!runNowTriggeredByTaskId[task.id],
     raw: task,
   }
@@ -78,6 +98,40 @@ const resolveDataProductTaskType = (
   if (t.ratingCurveTransformations?.length) return 'Rating curve'
   return null
 }
+
+const hasEtlMapping = (mapping: TaskMapping) => {
+  const anyMapping = mapping as any
+  if (anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId) {
+    return true
+  }
+  return Array.isArray(anyMapping.paths) && anyMapping.paths.length > 0
+}
+
+const getEtlNoWorkWarning = (task: TaskExpanded): TaskNoWorkWarning =>
+  Array.isArray(task.mappings) && task.mappings.some(hasEtlMapping)
+    ? null
+    : ETL_NO_WORK_WARNING
+
+const getDataProductNoWorkWarning = (
+  task: DataProductTaskExpanded
+): TaskNoWorkWarning =>
+  [
+    task.aggregationTransformations,
+    task.compositeExpressionTransformations,
+    task.expressionTransformations,
+    task.ratingCurveTransformations,
+  ].some((transformations) => (transformations ?? []).length > 0)
+    ? null
+    : DATA_PRODUCT_NO_WORK_WARNING
+
+const getMonitoringNoWorkWarning = (
+  task: MonitoringTaskExpanded
+): TaskNoWorkWarning =>
+  (task.monitoredDatastreams ?? []).some(
+    (monitored) => (monitored.rules ?? []).length > 0
+  )
+    ? null
+    : MONITORING_NO_WORK_WARNING
 
 const humanizeRuleType = (value: string) =>
   value
@@ -163,6 +217,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       ...buildRowBase(t, 'etl', runNowTriggeredByTaskId),
       dataConnectionId: (t as any).dataConnection?.id ?? null,
       thingId: resolveEtlTaskThingId(t, datastreamThingByDatastreamId.value),
+      noWorkWarning: getEtlNoWorkWarning(t),
     }))
   )
 
@@ -172,6 +227,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       dataConnectionId: null,
       thingId: t.thing?.id ?? null,
       taskType: resolveDataProductTaskType(t),
+      noWorkWarning: getDataProductNoWorkWarning(t),
     }))
   )
 
@@ -182,6 +238,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
         ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
         dataConnectionId: null,
         thingId: t.thing?.id ?? null,
+        noWorkWarning: getMonitoringNoWorkWarning(t),
         qualityRuleSummary: rules.summary,
         qualityRuleCount: rules.total,
         qualityRuleBreakdown: rules.breakdown,
