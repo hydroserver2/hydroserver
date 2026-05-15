@@ -1352,6 +1352,28 @@
       },
       "DataConnectionPatchBody": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {
@@ -1411,6 +1433,28 @@
       },
       "DataConnectionPostBody": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {
@@ -1567,6 +1611,28 @@
       },
       "DataConnectionResponse": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {

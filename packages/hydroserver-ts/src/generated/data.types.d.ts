@@ -2284,6 +2284,10 @@ export interface components {
         DataConnectionOrderBy: "id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName";
         /** DataConnectionPatchBody */
         DataConnectionPatchBody: {
+            /** Authheadername */
+            authHeaderName?: string | null;
+            /** Authheadervalue */
+            authHeaderValue?: string | null;
             /** Description */
             description?: string | null;
             /** Name */
@@ -2301,6 +2305,10 @@ export interface components {
         };
         /** DataConnectionPostBody */
         DataConnectionPostBody: {
+            /** Authheadername */
+            authHeaderName?: string | null;
+            /** Authheadervalue */
+            authHeaderValue?: string | null;
             /** Description */
             description?: string | null;
             /**
@@ -2359,6 +2367,10 @@ export interface components {
         };
         /** DataConnectionResponse */
         DataConnectionResponse: {
+            /** Authheadername */
+            authHeaderName?: string | null;
+            /** Authheadervalue */
+            authHeaderValue?: string | null;
             /** Description */
             description?: string | null;
             /**
