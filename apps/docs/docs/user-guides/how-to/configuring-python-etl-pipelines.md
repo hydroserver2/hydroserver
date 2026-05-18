@@ -1,4 +1,4 @@
-# Overview of the `hydroserverpy.etl` Package
+# Configuring Python ETL Pipelines
 
 The `hydroserverpy.etl` package provides a framework for building Extract, Transform, and Load (ETL) pipelines that move time series data from external sources into a HydroServer instance. This guide covers how to configure a pipeline, run it, interpret results, and debug errors.
 

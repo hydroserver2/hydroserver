@@ -1,6 +1,6 @@
 # HydroServer Python Client
 
-The hydroserverpy Python package provides an interface for managing HydroServer data and metadata, loading observations, and performing data quality control. This guide will go over how to install the package and connect to a HydroServer instance. Full hydroserverpy documentation and examples can be found [here](https://hydroserver2.github.io/hydroserver/how-to/hydroserverpy/hydroserverpy-examples.html).
+The hydroserverpy Python package provides an interface for managing HydroServer data and metadata, loading observations, and performing data quality control. This guide will go over how to install the package and connect to a HydroServer instance. Full hydroserverpy documentation and examples can be found [here](https://hydroserver2.github.io/hydroserver/user-guides/how-to/hydroserverpy/using-the-python-client.html).
 
 ## Installation
 
@@ -41,4 +41,3 @@ hs_api = HydroServer(
 ## Funding and Acknowledgements
 
 Funding for this project was provided by the National Oceanic & Atmospheric Administration (NOAA), awarded to the Cooperative Institute for Research to Operations in Hydrology (CIROH) through the NOAA Cooperative Agreement with The University of Alabama (NA22NWS4320003). Utah State University is a founding member of CIROH and receives funding under subaward from the University of Alabama. Additional funding and support have been provided by the State of Utah Division of Water Rights, the World Meteorological Organization, and the Utah Water Research laboratory at Utah State University.
-
