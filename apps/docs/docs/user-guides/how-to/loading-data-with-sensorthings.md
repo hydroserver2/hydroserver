@@ -3,7 +3,7 @@
 The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or
 modified using the Data Management API.
 
-### Observations
+## Observations
 
 Observations can be posted to HydroServer via the SensorThings API using two different methods. The first uses a more
 verbose body and can be used to post one Observation per request. The example POST body below shows how to format this
@@ -52,12 +52,12 @@ Observations for two different Datastreams.
 ]
 ```
 
-### Python Data Posting Examples
+## Python Data Posting Examples
 
 This section contains several examples showing how to post data to the SensorThings API using the Python
 "requests" module.
 
-#### Post a single Observation to the SensorThings API
+### Post a single Observation to the SensorThings API
 
 ```python
 import requests
@@ -84,7 +84,7 @@ if response.status_code == 201:
    print('Observation was posted successfully.')
 ```
 
-#### Post several Observations to the SensorThings API using the dataArray format
+### Post several Observations to the SensorThings API using the dataArray format
 
 ```python
 import requests
