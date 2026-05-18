@@ -139,6 +139,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/using-the-python-client",
               },
               {
+                text: "Configuring Python ETL Pipelines",
+                link: "/user-guides/how-to/configuring-python-etl-pipelines",
+              },
+              {
                 text: "Loading Data with the SensorThings API",
                 link: "/user-guides/how-to/loading-data-with-sensorthings",
               },

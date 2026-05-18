@@ -2,8 +2,6 @@
 
 The `hydroserverpy.etl` package provides a framework for building Extract, Transform, and Load (ETL) pipelines that move time series data from external sources into a HydroServer instance. This guide covers how to configure a pipeline, run it, interpret results, and debug errors.
 
----
-
 ## Overview
 
 A pipeline is made up of three components:
@@ -13,8 +11,6 @@ A pipeline is made up of three components:
 - A **Loader** that writes the transformed observations to HydroServer datastreams.
 
 These are assembled into an `ETLPipeline` and executed with a set of data mappings that describe which source columns map to which HydroServer datastream targets.
-
----
 
 ## Configuring a Pipeline
 
@@ -311,8 +307,6 @@ pipeline = ETLPipeline(
 )
 ```
 
----
-
 ## Running the Pipeline
 
 Call `run()` with the data mappings and any template variables required by the extractor or transformer:
@@ -333,8 +327,6 @@ context = pipeline.run(
     raise_on_error=False,
 )
 ```
-
----
 
 ## Viewing Results
 
@@ -374,8 +366,6 @@ for target_id, target in results.target_results.items():
 | `FAILED`     | The pipeline did not reach the load stage |
 | `RUNNING`    | The pipeline is currently executing |
 | `PENDING`    | The pipeline has not yet started |
-
----
 
 ## Debugging Errors
 
