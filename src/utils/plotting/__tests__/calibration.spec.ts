@@ -171,6 +171,85 @@ describe('calibration', () => {
     })
   })
 
+  describe('loadFromStorage (module-init path)', () => {
+    // `loadFromStorage` is called once at module evaluation to seed
+    // `activeProfile`. Re-importing the module after seeding
+    // localStorage in different shapes exercises each branch:
+    //   - missing key → fall back to DEFAULT
+    //   - corrupt JSON → catch → DEFAULT
+    //   - parsed but missing required field → DEFAULT
+    //   - well-formed → use the stored value
+    const SK = 'qc-utils:calibration:v1'
+    const reloadModule = async () => {
+      vi.resetModules()
+      // Re-stub the worker import for the fresh module instance.
+      vi.doMock('../value-threshold.worker?worker&inline', () =>
+        import('./workerMocks').then((m) => ({ default: m.MockValueThresholdWorker }))
+      )
+      return await import('../calibration')
+    }
+
+    it('seeds the default profile when localStorage has no entry', async () => {
+      localStorage.removeItem(SK)
+      const cal = await reloadModule()
+      expect(cal.getCalibration().measuredAt).toBe(0)
+      expect(cal.getCalibration().userAgent).toBe('default')
+    })
+
+    it('seeds the default profile when localStorage holds invalid JSON', async () => {
+      localStorage.setItem(SK, '<<<not json>>>')
+      const cal = await reloadModule()
+      expect(cal.getCalibration().measuredAt).toBe(0)
+    })
+
+    it('seeds the default profile when the parsed entry is missing required fields', async () => {
+      localStorage.setItem(SK, JSON.stringify({ foo: 'bar' }))
+      const cal = await reloadModule()
+      expect(cal.getCalibration().measuredAt).toBe(0)
+    })
+
+    it('seeds the default profile when the parsed entry is JSON null', async () => {
+      localStorage.setItem(SK, 'null')
+      const cal = await reloadModule()
+      expect(cal.getCalibration().measuredAt).toBe(0)
+    })
+
+    it('seeds from a well-formed stored profile', async () => {
+      const profile = {
+        spawnOverheadMs: 12.5,
+        inlinePerUnitMs: 0.001,
+        workerPerUnitMs: 0.0005,
+        units: 100,
+        measuredAt: Date.now(),
+        userAgent: 'stored-test',
+      }
+      localStorage.setItem(SK, JSON.stringify(profile))
+      const cal = await reloadModule()
+      expect(cal.getCalibration().spawnOverheadMs).toBe(12.5)
+      expect(cal.getCalibration().userAgent).toBe('stored-test')
+    })
+
+    it('seeds the default profile when localStorage is undefined (server env)', async () => {
+      const realLocalStorage = globalThis.localStorage
+      // Stub the global so the module-init `typeof localStorage`
+      // check fires the early-return branch.
+      Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        get() { return undefined },
+      })
+      try {
+        const cal = await reloadModule()
+        expect(cal.getCalibration().measuredAt).toBe(0)
+      } finally {
+        Object.defineProperty(globalThis, 'localStorage', {
+          configurable: true,
+          value: realLocalStorage,
+          writable: true,
+        })
+      }
+    })
+  })
+
   describe('onCalibrationChange', () => {
     it('notifies subscribers after a benchmark runs', async () => {
       const listener = vi.fn()

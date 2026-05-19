@@ -4,11 +4,13 @@
  * See `docs/HISTORY_SCRIPT.md` for the full design rationale. The
  * short version:
  *
- *   - **Save:** walk `record.history`, strip runtime-only fields
- *     (`isLoading`, `duration`, `executionMode`, `selected`), keep
- *     `method`, `args`, and the optional `status` flag. Wrap with
- *     a `version`, `createdAt`, and the wall-clock `window` the
- *     consumer was working in.
+ *   - **Save:** walk `record.history`, strip the truly ephemeral
+ *     fields (`isLoading`, `duration`, `executionMode`, `selected`),
+ *     keep `method`, `args`, the optional `status` flag, and the
+ *     authoring `timestamp` (preserved verbatim so the saved script
+ *     records when each step originally ran). Wrap with a `version`,
+ *     `createdAt`, and the wall-clock `window` the consumer was
+ *     working in.
  *
  *   - **Load:** reset `history` + `redoStack`, `record.reload()`,
  *     then `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
@@ -61,6 +63,13 @@ export function serializeHistory(
       args: h.args ? [...h.args] : [],
     };
     if (h.status === "failed") op.status = "failed";
+    // Round-trip the original push-time stamp for audit / display.
+    // Guard against non-finite values so a script that round-tripped
+    // through a loosely-typed surface (e.g. JSON.parse over the wire)
+    // can't poison the schema.
+    if (typeof h.timestamp === "number" && Number.isFinite(h.timestamp)) {
+      op.timestamp = h.timestamp;
+    }
     return op;
   });
 
@@ -130,6 +139,17 @@ export function parseScript(json: unknown): QcScript {
       args: [...o.args],
     };
     if (o.status === "failed") op.status = "failed";
+    // `timestamp` is optional. Validate when present so a malformed
+    // string / NaN doesn't slip through; ignore silently when absent
+    // (pre-v1.1 scripts, hand-written JSON without the field).
+    if (o.timestamp !== undefined) {
+      if (typeof o.timestamp !== "number" || !Number.isFinite(o.timestamp)) {
+        throw new Error(
+          `Operation ${i} \`timestamp\` must be a finite epoch-ms number when present.`
+        );
+      }
+      op.timestamp = o.timestamp;
+    }
     return op;
   });
 

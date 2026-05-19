@@ -36,7 +36,8 @@ The on-disk JSON IS the wire format.
 6. **Keep parameter args, not derived state.** The script captures
    "what the user told the operation to do," not "what the operation
    produced." Derived data (selection indices, per-entry timing) is
-   recomputed on replay; only inputs and per-op success/failure are
+   recomputed on replay; only inputs, per-op success/failure, and
+   the original authoring `timestamp` (kept verbatim for audit) are
    persisted.
 
 ## Non-goals
@@ -51,7 +52,7 @@ The on-disk JSON IS the wire format.
   Comments panel attaches) are tracked in a separate Pinia store
   outside `ObservationRecord.history`. They need their own
   serialization story; bundling them in here would conflate two
-  conceptually distinct edit streams. **(Open question — see below.)**
+  conceptually distinct edit streams.
 
 ---
 
@@ -66,10 +67,10 @@ The on-disk JSON IS the wire format.
     "endDate":   "2024-06-30T23:59:59.999Z"
   },
   "operations": [
-    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }] },
-    { "method": "DELETE_POINTS",   "args": [] },
-    { "method": "FILL_GAPS",       "args": [[15, "m"], [5, "m"], true, -9999] },
-    { "method": "ADD_POINTS",      "args": [[[1737000000000, 12.4], [1737003600000, 12.5]]] }
+    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }], "timestamp": 1745597000000 },
+    { "method": "DELETE_POINTS",   "args": [],                         "timestamp": 1745597015000 },
+    { "method": "FILL_GAPS",       "args": [[15, "m"], [5, "m"], true, -9999], "timestamp": 1745597032000 },
+    { "method": "ADD_POINTS",      "args": [[[1737000000000, 12.4], [1737003600000, 12.5]]], "timestamp": 1745597048000 }
   ]
 }
 ```
@@ -88,25 +89,36 @@ The on-disk JSON IS the wire format.
 
 ### Per-operation entry
 
-| Field    | Type    | Required | Notes                                                              |
-|----------|---------|----------|--------------------------------------------------------------------|
-| `method` | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
-| `args`   | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
-| `status` | string  | no       | `"failed"` if the operation threw at author-time, omitted otherwise. Round-tripped on save/load so failed steps stay visibly failed. |
+| Field       | Type    | Required | Notes                                                              |
+|-------------|---------|----------|--------------------------------------------------------------------|
+| `method`    | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
+| `args`      | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
+| `status`    | string  | no       | `"failed"` if the operation threw at author-time, omitted otherwise. Round-tripped on save/load so failed steps stay visibly failed. |
+| `timestamp` | number  | no       | Wall-clock epoch-milliseconds (UTC) when the operation was originally dispatched. Preserved verbatim for audit / display. Omitted in pre-v1.1 scripts and may be absent on hand-written JSON; the loader accepts both shapes. |
 
 The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 `[method, ...args]`. A loaded script is replayed via
 `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
+
+`timestamp` is **record-keeping, not replay input.** The loader does
+not forward it to the dispatcher: `dispatchAction` / `dispatchFilter`
+stamp fresh `Date.now()` values at replay time so the in-memory
+`HistoryItem.timestamp` reflects when the operation actually ran in
+the current session. The persisted value survives in the saved
+script for later audit (and for any consumer that wants to show
+"originally run at …" alongside the replay time).
 
 ---
 
 ## Per-method serialization rules
 
 The runtime `HistoryItem` carries fields the script doesn't need:
-`isLoading`, `duration`, `executionMode`, `selected`. These are all
+`isLoading`, `duration`, `executionMode`, `selected`. These are
 either ephemeral (loading state, timing) or recomputable on replay
-(`selected`). The script saves only `method`, `args`, and the
-optional `status` field (used to round-trip author-time failures).
+(`selected`). The script persists `method`, `args`, the optional
+`status` field (used to round-trip author-time failures), and the
+optional `timestamp` (the original push-time stamp, preserved for
+audit even though the replay re-stamps the runtime `HistoryItem`).
 
 **Every method's `args` serializes verbatim.** No per-method elide
 or re-inject machinery. The save layer is `JSON.stringify`-grade

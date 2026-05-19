@@ -517,6 +517,60 @@ describe('ObservationRecord', () => {
       expect(selection).toEqual([]);
     });
 
+    it('FIND_GAPS respects an optional [from, to] range', async () => {
+      const spacingMs = 15 * 60 * 1000;
+      const startMs = Date.UTC(2023, 0, 1);
+      // Two gaps: one outside the window (between 1 and 2), one inside
+      // (between 4 and 5). With the range clipped to [2, 5], the
+      // pre-window gap should be invisible to the scan.
+      const datetimes = [
+        startMs,
+        startMs + spacingMs,
+        startMs + spacingMs + 4 * 60 * 60 * 1000,                     // pre-window gap
+        startMs + spacingMs + 4 * 60 * 60 * 1000 + spacingMs,
+        startMs + spacingMs + 4 * 60 * 60 * 1000 + 2 * spacingMs,
+        startMs + spacingMs + 4 * 60 * 60 * 1000 + 2 * spacingMs + 4 * 60 * 60 * 1000, // in-window gap
+        startMs + spacingMs + 4 * 60 * 60 * 1000 + 2 * spacingMs + 4 * 60 * 60 * 1000 + spacingMs,
+      ];
+      const dataValues = datetimes.map((_, i) => i);
+      const local = new ObservationRecord({ datetimes, dataValues });
+      await local.reload();
+
+      const fromTs = datetimes[2];
+      const toTs = datetimes[6];
+      const selection = await local.dispatch(
+        EnumFilterOperations.FIND_GAPS,
+        30,
+        TimeUnit.MINUTE,
+        [fromTs, toTs],
+      );
+      // The pre-window gap (indices 1-2) is excluded; only the
+      // in-window gap (indices 4-5) survives.
+      expect(selection.sort((a, b) => a - b)).toEqual([4, 5]);
+    });
+
+    it('PERSISTENCE respects an optional [from, to] range', async () => {
+      const spacingMs = 15 * 60 * 1000;
+      const startMs = Date.UTC(2023, 0, 1);
+      const datetimes = Array.from({ length: 10 }, (_, i) => startMs + i * spacingMs);
+      // Two plateaus: one in [0..2] (value 1), one in [5..8] (value 3).
+      // Range clipped to [3..9] excludes the first plateau entirely.
+      const dataValues = [1, 1, 1, 2, 2, 3, 3, 3, 3, 4];
+      const local = new ObservationRecord({ datetimes, dataValues });
+      await local.reload();
+
+      const fromTs = datetimes[3];
+      const toTs = datetimes[9];
+      const selection = await local.dispatch(
+        EnumFilterOperations.PERSISTENCE,
+        3,
+        [fromTs, toTs],
+      );
+      // First plateau falls outside the window; only the second
+      // (indices 5..8) qualifies.
+      expect(selection.sort((a, b) => a - b)).toEqual([5, 6, 7, 8]);
+    });
+
     it('VALUE_THRESHOLD respects an optional [from, to] range', async () => {
       // Fixture from `buildUniformData(20, 0, 10)`: 20 points,
       // 15-minute spacing starting at `Date.UTC(2023, 0, 1)`.

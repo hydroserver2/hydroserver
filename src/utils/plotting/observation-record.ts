@@ -430,6 +430,7 @@ export class ObservationRecord {
         method: action,
         args,
         isLoading: true,
+        timestamp: Date.now(),
       };
       this.history.push(historyItem);
 
@@ -571,6 +572,7 @@ export class ObservationRecord {
         method: action,
         args: args,
         isLoading: true,
+        timestamp: Date.now(),
       };
 
       const lastItem = this.history[this.history.length - 1];

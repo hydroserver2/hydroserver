@@ -85,6 +85,45 @@ describe('serializeHistory', () => {
     const ok = serializeHistory(rec, SAMPLE_WINDOW);
     expect(ok.operations[0].status).toBeUndefined();
   });
+
+  it('round-trips the per-operation timestamp into QcScriptOperation.timestamp', async () => {
+    const before = Date.now();
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    const after = Date.now();
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const ts = script.operations[0].timestamp;
+    expect(typeof ts).toBe('number');
+    // Dispatch stamps Date.now() at push time — must land inside the
+    // [before, after] window we captured around the dispatch call.
+    expect(ts).toBeGreaterThanOrEqual(before);
+    expect(ts).toBeLessThanOrEqual(after);
+  });
+
+  it('omits timestamp from the script when the history entry has no timestamp', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    // Simulate an entry constructed outside the dispatch path (no
+    // stamp). serializeHistory must not invent one.
+    delete rec.history[0].timestamp;
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(script.operations[0].timestamp).toBeUndefined();
+  });
+
+  it('skips non-finite timestamp values during serialize', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].timestamp = NaN;
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(script.operations[0].timestamp).toBeUndefined();
+  });
+
+  it('serializes args as an empty array when the history entry has no args', async () => {
+    // The `h.args ? [...h.args] : []` ternary's else branch only
+    // fires when args is undefined / falsy. Construct an entry by
+    // hand so the dispatch path doesn't auto-fill `args = []`.
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    delete rec.history[0].args;
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(script.operations[0].args).toEqual([]);
+  });
 });
 
 describe('parseScript', () => {
@@ -106,6 +145,41 @@ describe('parseScript', () => {
     expect(() =>
       parseScript({ version: '2', createdAt: '', window: SAMPLE_WINDOW, operations: [] })
     ).toThrow(/Unsupported QC script version/);
+  });
+
+  it('rejects a non-object root (null, primitive, undefined)', () => {
+    expect(() => parseScript(null)).toThrow(/QC script must be a JSON object/);
+    expect(() => parseScript(undefined)).toThrow(/QC script must be a JSON object/);
+    expect(() => parseScript('not-a-script')).toThrow(/QC script must be a JSON object/);
+    expect(() => parseScript(42)).toThrow(/QC script must be a JSON object/);
+  });
+
+  it('rejects a missing or non-string `createdAt`', () => {
+    expect(() =>
+      parseScript({ version: '1', window: SAMPLE_WINDOW, operations: [] })
+    ).toThrow(/missing `createdAt`/);
+    expect(() =>
+      parseScript({ version: '1', createdAt: 12345, window: SAMPLE_WINDOW, operations: [] })
+    ).toThrow(/missing `createdAt`/);
+  });
+
+  it('rejects window entries whose start/end dates are not ISO-8601 strings', () => {
+    expect(() =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: { startDate: 12345, endDate: '2024-01-02T00:00:00.000Z' },
+        operations: [],
+      })
+    ).toThrow(/ISO-8601 strings/);
+    expect(() =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: { startDate: '2024-01-01T00:00:00.000Z', endDate: null },
+        operations: [],
+      })
+    ).toThrow(/ISO-8601 strings/);
   });
 
   it('rejects unknown method names', () => {
@@ -138,6 +212,100 @@ describe('parseScript', () => {
         operations: [{ method: 'VALUE_THRESHOLD', args: 'not-an-array' }],
       })
     ).toThrow(/args.*array/);
+  });
+
+  it('rejects a top-level `operations` field that is not an array', () => {
+    expect(() =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: 'oops',
+      })
+    ).toThrow(/operations.*array/);
+  });
+
+  it('rejects per-op entries that are not objects (null, primitive)', () => {
+    const bad = (entry: unknown) => () =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [entry],
+      });
+    expect(bad(null)).toThrow(/Operation 0 must be an object/);
+    expect(bad('VALUE_THRESHOLD')).toThrow(/Operation 0 must be an object/);
+    expect(bad(42)).toThrow(/Operation 0 must be an object/);
+  });
+
+  it('rejects per-op entries missing a string `method`', () => {
+    expect(() =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [{ args: [] }],
+      })
+    ).toThrow(/missing string `method`/);
+    expect(() =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [{ method: 42, args: [] }],
+      })
+    ).toThrow(/missing string `method`/);
+  });
+
+  it('accepts an optional finite-number timestamp on a per-operation entry', () => {
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], timestamp: 1745597000000 },
+      ],
+    });
+    expect(script.operations[0].timestamp).toBe(1745597000000);
+  });
+
+  it('tolerates pre-v1.1 operations without a timestamp (backward-compatible)', () => {
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
+    });
+    expect(script.operations[0].timestamp).toBeUndefined();
+  });
+
+  it('rejects a non-finite timestamp (NaN, Infinity, wrong type)', () => {
+    const bad = (timestamp: unknown) => () =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], timestamp }],
+      });
+    expect(bad('1745597000000')).toThrow(/timestamp.*finite/);
+    expect(bad(NaN)).toThrow(/timestamp.*finite/);
+    expect(bad(Infinity)).toThrow(/timestamp.*finite/);
+  });
+
+  it('round-trips an operation marked status: "failed" through parseScript', () => {
+    // Drives the `o.status === "failed"` branch of parseScript so
+    // the field copies onto the resulting QcScriptOperation. The
+    // serializeHistory equivalent already covers the other half of
+    // the round-trip.
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [], status: 'failed' },
+      ],
+    });
+    expect(script.operations[0].status).toBe('failed');
   });
 });
 
@@ -297,6 +465,39 @@ describe('applyScript — round-trip', () => {
     expect(fresh.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
   });
 
+  it('replay re-stamps HistoryItem.timestamp with Date.now() and ignores the persisted value', async () => {
+    // Persisted timestamp is intentionally far in the past — if the
+    // loader forwarded it, the replayed entry would carry that
+    // antique stamp. The contract is that it does NOT: dispatch
+    // stamps a fresh `Date.now()` for the new execution, leaving the
+    // saved value untouched in the script for later audit.
+    const PERSISTED = Date.UTC(2020, 0, 1); // 2020-01-01
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], timestamp: PERSISTED },
+      ],
+    });
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const before = Date.now();
+    await applyScript(fresh, script);
+    const after = Date.now();
+
+    const ts = fresh.history[0].timestamp;
+    expect(typeof ts).toBe('number');
+    expect(ts).not.toBe(PERSISTED);
+    expect(ts).toBeGreaterThanOrEqual(before);
+    expect(ts).toBeLessThanOrEqual(after);
+    // The original script object is unchanged — the saved value
+    // survives for later audit even though replay overwrote the
+    // in-memory field.
+    expect(script.operations[0].timestamp).toBe(PERSISTED);
+  });
+
   it('reports failures via ApplyScriptReport without aborting the rest of the script', async () => {
     // The failed op sits at index 0; the subsequent ADD_POINTS
     // (edit) breaks the filter chain so the cross-filter-replace
@@ -331,5 +532,53 @@ describe('applyScript — round-trip', () => {
     const failedEntry = fresh.history.find(h => h.status === 'failed');
     expect(failedEntry).toBeDefined();
     expect(failedEntry?.method).toBe('VALUE_THRESHOLD');
+  });
+
+  it('catches Error throws from dispatch and surfaces .message in the report', async () => {
+    // Covers the `e instanceof Error ? e.message : ...` true branch
+    // of applyScript's defensive catch.
+    const stub = {
+      history: [],
+      redoStack: [],
+      reload: async () => { },
+      dispatch: async () => { throw new Error('boom-with-stack'); },
+    } as unknown as ObservationRecord;
+
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
+    });
+    const report = await applyScript(stub, script);
+    expect(report.failed).toHaveLength(1);
+    expect(report.failed[0].error).toBe('boom-with-stack');
+  });
+
+  it('catches non-Error throws from dispatch and stringifies the value into the report', async () => {
+    // `dispatchAction` / `dispatchFilter` normally swallow handler
+    // errors themselves, but the catch in `applyScript` is defensive
+    // and handles a bare throw too. Stub `record.dispatch` so it
+    // throws a plain string — the catch path must stringify it
+    // (line 220's `e instanceof Error ? e.message : String(e)`
+    // ternary) and record it in `report.failed[].error` without
+    // aborting the surrounding loop.
+    const stub = {
+      history: [],
+      redoStack: [],
+      reload: async () => { },
+      dispatch: async () => { throw 'plain-string-failure'; },
+    } as unknown as ObservationRecord;
+
+    const script = parseScript({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
+    });
+    const report = await applyScript(stub, script);
+    expect(report.applied).toBe(0);
+    expect(report.failed).toHaveLength(1);
+    expect(report.failed[0].error).toBe('plain-string-failure');
   });
 });

@@ -48,13 +48,6 @@ export default defineConfig(({ mode }) => {
     globals: true,
     environment: "happy-dom",
     include: ["src/**/__tests__/*.spec.ts"],
-    // Pre-existing failures excluded so CI gate can ship; tracked as known issues for a future test-infrastructure phase.
-    // - ellapsed-time.spec.ts: WIP author bug (toBe([]) instead of toEqual([])).
-    // - requestInterceptor.spec.ts (one test): pre-existing assertion mismatch under happy-dom.
-    exclude: [
-      "**/ellapsed-time.spec.ts",
-      "**/requestInterceptor.spec.ts",
-    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "lcov"],
@@ -70,7 +63,6 @@ export default defineConfig(({ mode }) => {
         "**/*.d.ts",
         "src/index.ts",
         "src/types/**", // type definitions — not executable code
-        "src/utils/ellapsed-time.ts", // exercised only by excluded WIP-broken spec
         "**/__tests__/**",
         "**/*.worker.ts",
       ],

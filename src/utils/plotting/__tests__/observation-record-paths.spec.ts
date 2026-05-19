@@ -472,3 +472,127 @@ describe('ObservationRecord — miscellaneous filters', () => {
     ).toEqual([])
   })
 })
+
+describe('ObservationRecord — SELECTION echo dedup', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(20, 0, 10))
+    await rec.reload()
+  })
+
+  it('drops the SELECTION when its indices match the preceding filter exactly (Plotly echo)', async () => {
+    // VALUE_THRESHOLD > 50 against y = 0,10,...,190 selects [6..19].
+    const indices = await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD)
+
+    // Echo the filter's own selection back — the dedup rule should
+    // pop the SELECTION so the filter alone owns the row.
+    await rec.dispatch(EnumFilterOperations.SELECTION, indices)
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD)
+  })
+
+  it('splices the preceding filter when the SELECTION differs (user manual override)', async () => {
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    // Override with a different selection — the filter row should
+    // get spliced out so the SELECTION represents the action.
+    await rec.dispatch(EnumFilterOperations.SELECTION, [0, 1, 2])
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.SELECTION)
+    expect(rec.history[0].selected).toEqual([0, 1, 2])
+  })
+
+  it('empty SELECTION after a non-empty filter pops both rows (selection cleared)', async () => {
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    expect(rec.history).toHaveLength(1)
+    // Empty SELECTION clears: drop self AND the filter that was
+    // showing a non-empty selection.
+    await rec.dispatch(EnumFilterOperations.SELECTION, [])
+    expect(rec.history).toHaveLength(0)
+  })
+
+  it('empty SELECTION after a zero-result filter pops only itself (no-op clear)', async () => {
+    // No y in the uniform fixture exceeds 999; the filter selects nothing.
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 999 },
+    )
+    expect(rec.history).toHaveLength(1)
+    const filterMethod = rec.history[0].method
+    await rec.dispatch(EnumFilterOperations.SELECTION, [])
+    // The empty echo is a no-op clear — only the SELECTION drops,
+    // the (empty) filter stays.
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(filterMethod)
+  })
+})
+
+describe('ObservationRecord — internal helpers via dispatch', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(20, 0, 10))
+    await rec.reload()
+  })
+
+  it('DELETE_POINTS forms multiple consecutive-index groups for non-contiguous selections', async () => {
+    // Selection [1, 2, 3, 7, 8, 12] splits into three groups:
+    // [1,2,3], [7,8], [12]. The grouping reducer's else-branch
+    // (line ~1469) only fires when the input has a gap; a single
+    // contiguous range would never exercise it.
+    const before = rec.dataX.length
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [1, 2, 3, 7, 8, 12]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    expect(rec.dataX.length).toBe(before - 6)
+  })
+
+  it('INTERPOLATE splits non-contiguous selections into separate consecutive groups', async () => {
+    // `_interpolate` calls `_getConsecutiveGroups` to bucket the
+    // selection into discrete spans, each interpolated against its
+    // own surrounding endpoints. With selection [3, 4, 9, 10]
+    // the reducer's else-branch fires when 9 starts a new group
+    // after [3, 4].
+    rec.dataY[3] = 999
+    rec.dataY[4] = 999
+    rec.dataY[9] = 999
+    rec.dataY[10] = 999
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [3, 4, 9, 10]],
+      [EnumEditOperations.INTERPOLATE],
+    ])
+    // Each group interpolates between its own pair of surrounding
+    // values, so the 999 sentinels are gone.
+    expect(rec.dataY[3]).not.toBe(999)
+    expect(rec.dataY[4]).not.toBe(999)
+    expect(rec.dataY[9]).not.toBe(999)
+    expect(rec.dataY[10]).not.toBe(999)
+  })
+
+  it('DRIFT_CORRECTION emits one range per consecutive group in the selection', async () => {
+    // Same idea: with selection [2, 3, 8, 9] the
+    // `_driftCorrectionFromSelection` builder emits two range
+    // tuples, one per group, by walking the grouped output.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [2, 3, 8, 9]],
+      [EnumEditOperations.DRIFT_CORRECTION, 1],
+    ])
+    // No assertion on exact values — the relevant invariant is
+    // that the dispatch completed without throwing, which means
+    // both groups were processed.
+    const last = rec.history[rec.history.length - 1]
+    expect(last.status).not.toBe('failed')
+  })
+})

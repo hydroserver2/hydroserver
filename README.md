@@ -204,10 +204,19 @@ import {
 } from '@uwrl/qc-utils'
 ```
 
-A HydroServer REST client (`api`, `apiMethods`, request / response
-interceptors) and a `Snackbar` notification helper are also exported,
-but they're carried for the qc-app's convenience — most consumers can
-ignore them.
+A `Snackbar` notification helper is also exported for browser
+consumers. It's the package's only DOM-touching symbol — the QC
+engine itself is headless.
+
+```ts
+import { Snackbar } from '@uwrl/qc-utils'
+Snackbar.success('Saved')
+```
+
+For HydroServer REST calls, use `@hydroserver/client` directly. An
+earlier `services/` REST client lived in this package and was
+removed in `0.1.0` when the qc-app finished its migration to the
+dedicated client.
 
 ## Browser requirements
 

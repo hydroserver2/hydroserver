@@ -89,6 +89,16 @@ export type HistoryItem = {
    * `import.meta.env.DEV` is truthy.
    */
   executionMode?: "worker" | "inline";
+  /**
+   * Wall-clock epoch-milliseconds (UTC) at which the dispatch site
+   * pushed this entry — i.e. when the user (or script replay) ran
+   * the operation. Stamped at push time in `dispatchAction` /
+   * `dispatchFilter`, so re-dispatches from `undo()` / `redo()` /
+   * `applyScript` overwrite an older value with the replay time.
+   * Optional because the field is runtime-only: it is stripped on
+   * `serializeHistory` and re-stamped when the loader replays.
+   */
+  timestamp?: number;
 };
 
 // --- QC History Script (save / load format) ----------------------
@@ -113,6 +123,18 @@ export type QcScriptOperation = {
   method: EnumEditOperations | EnumFilterOperations;
   args: any[];
   status?: "success" | "failed";
+  /**
+   * Wall-clock epoch-milliseconds (UTC) at which the operation was
+   * originally dispatched — round-tripped verbatim so the saved
+   * script preserves the authoring timeline for audit / display.
+   * Optional because pre-v1.1 scripts (and any consumer that hand-
+   * writes the JSON without timestamps) must still load. The replay
+   * path does NOT use this value to re-stamp `HistoryItem.timestamp`:
+   * `dispatchAction` / `dispatchFilter` stamp fresh `Date.now()` at
+   * replay time so the in-memory history reflects when the operation
+   * actually ran in this session.
+   */
+  timestamp?: number;
 };
 
 /** A serialized QC history. Schema `version: "1"`. */
