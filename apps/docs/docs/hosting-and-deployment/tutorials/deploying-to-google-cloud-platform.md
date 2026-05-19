@@ -12,7 +12,7 @@ This tutorial provides instructions for deploying a demo HydroServer environment
 [**Google Cloud Platform (GCP)**](https://cloud.google.com) resources provisioned with 
 [**Terraform**](https://developer.hashicorp.com/terraform/docs). The deployment includes configuration of 
 [**Cloud Run**](https://cloud.google.com/run/docs/overview/what-is-cloud-run), 
-[**Cloud SQL**](https://cloud.google.com/sql), and other required AWS services.
+[**Cloud SQL**](https://cloud.google.com/sql), and other required GCP services.
 
 Before proceeding, ensure you have:
 
