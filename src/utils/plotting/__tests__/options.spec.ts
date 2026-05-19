@@ -77,6 +77,8 @@ import {
   labelColorFor,
   buildQualifierBand,
   createPlotlyOption,
+  findGapIndices,
+  insertGapBreaks,
 } from '../options'
 
 const makeSeries = (overrides: Partial<Record<string, unknown>> = {}) => {
@@ -221,5 +223,113 @@ describe('createPlotlyOption', () => {
     const opts = createPlotlyOption([qc, other])
     const layout = opts.layout as Record<string, any>
     expect(layout.yaxis2.visible).toBe(false)
+  })
+
+  it('emits a lines-only gap overlay when intendedSpacingMs is set', () => {
+    // Spacing 1.5 → the [1,2,3,4,5] x grid (Δ=1) never exceeds, so the
+    // overlay's x/y match the main trace verbatim — but the trace
+    // pair is still emitted so the line-drawing path is exercised
+    // regardless of whether real gaps are present.
+    qcDatastream.value = { id: 'qc' }
+    const qc = makeSeries({ id: 'qc', intendedSpacingMs: 1.5 })
+    const opts = createPlotlyOption([qc])
+    const main = opts.traces.find((t: any) => t.id === 'qc') as any
+    const overlay = opts.traces.find(
+      (t: any) => t._gapOverlayFor === 'qc'
+    ) as any
+    expect(main.mode).toBe('markers')
+    expect(overlay).toBeDefined()
+    expect(overlay.mode).toBe('lines')
+    expect(overlay.id).toBeUndefined()
+    expect(overlay._isGapOverlay).toBe(true)
+    expect(overlay.yaxis).toBe(main.yaxis)
+    // No gap > 1.5 in the grid, so the overlay arrays match the main
+    // arrays element-for-element.
+    expect(Array.from(overlay.x as Float64Array)).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('inserts NaN-y break points in the overlay where gaps exceed the spacing', () => {
+    qcDatastream.value = { id: 'qc' }
+    const x = new Float64Array([0, 10, 20, 200, 210])
+    const y = new Float64Array([1, 2, 3, 4, 5])
+    const qc = makeSeries({
+      id: 'qc',
+      intendedSpacingMs: 15,
+      data: { dataX: x, dataY: y, history: [] },
+    })
+    const opts = createPlotlyOption([qc])
+    const overlay = opts.traces.find(
+      (t: any) => t._gapOverlayFor === 'qc'
+    ) as any
+    const oy = Array.from(overlay.y as Float64Array)
+    // Exactly one gap (20 → 200), so exactly one NaN injected.
+    expect(oy.filter((v) => Number.isNaN(v)).length).toBe(1)
+    // Original samples preserved.
+    expect(oy.filter((v) => !Number.isNaN(v))).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('omits the gap overlay when intendedSpacingMs is null/zero', () => {
+    const a = makeSeries({ id: 'a', intendedSpacingMs: null })
+    const b = makeSeries({ id: 'b', color: COLORS[2], intendedSpacingMs: 0 })
+    const opts = createPlotlyOption([a, b])
+    const overlays = opts.traces.filter((t: any) => t._isGapOverlay)
+    expect(overlays.length).toBe(0)
+    // Default mode for the series-without-cadence path is markers-only.
+    const aTrace = opts.traces.find((t: any) => t.id === 'a') as any
+    expect(aTrace.mode).toBe('markers')
+  })
+})
+
+describe('findGapIndices', () => {
+  it('returns an empty array when no consecutive points exceed the threshold', () => {
+    expect(findGapIndices([0, 1, 2, 3], 1.5)).toEqual([])
+  })
+
+  it('returns an empty array for arrays with fewer than 2 points', () => {
+    expect(findGapIndices([], 1)).toEqual([])
+    expect(findGapIndices([42], 1)).toEqual([])
+  })
+
+  it('flags the index of each point that follows an oversized gap', () => {
+    // Gap 100→200 is 100 > 50, gap 250→500 is 250 > 50.
+    expect(findGapIndices([100, 200, 250, 500], 50)).toEqual([1, 3])
+  })
+
+  it('uses strict greater-than (gap exactly equal to threshold is not a break)', () => {
+    expect(findGapIndices([0, 10, 20], 10)).toEqual([])
+  })
+})
+
+describe('insertGapBreaks', () => {
+  it('returns the originals unchanged when there are no gaps', () => {
+    const x = new Float64Array([1, 2, 3])
+    const y = new Float64Array([10, 20, 30])
+    const out = insertGapBreaks(x, y, [])
+    expect(out.x).toBe(x)
+    expect(out.y).toBe(y)
+  })
+
+  it('inserts (midpoint, NaN) at each gap index', () => {
+    const x = [0, 10, 100, 110]
+    const y = [1, 2, 3, 4]
+    const out = insertGapBreaks(x, y, [2])
+    expect(Array.from(out.x as Float64Array)).toEqual([0, 10, 55, 100, 110])
+    const ys = Array.from(out.y as Float64Array)
+    expect(ys[0]).toBe(1)
+    expect(ys[1]).toBe(2)
+    expect(Number.isNaN(ys[2])).toBe(true)
+    expect(ys[3]).toBe(3)
+    expect(ys[4]).toBe(4)
+  })
+
+  it('handles multiple gaps in order', () => {
+    const x = [0, 10, 100, 200, 1000]
+    const y = [1, 2, 3, 4, 5]
+    const out = insertGapBreaks(x, y, [2, 4])
+    const xs = Array.from(out.x as Float64Array)
+    expect(xs.length).toBe(x.length + 2)
+    // Two NaN-y break points, one per gap.
+    const ys = Array.from(out.y as Float64Array)
+    expect(ys.filter((v) => Number.isNaN(v)).length).toBe(2)
   })
 })

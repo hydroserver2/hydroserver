@@ -197,7 +197,8 @@ export const handleRelayout = async (
       visiblePoints.value = 0
 
       // Find number of visible points per trace.
-      const traceCount = plotlyRef.value?.data.length ?? 0
+      const liveTraces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
+      const traceCount = liveTraces.length
       const perTraceVisible: number[] = new Array(traceCount).fill(0)
       for (let i = 0; i < traceCount; i++) {
         const xs = traceXAsNumbers(plotlyRef.value, i)
@@ -205,7 +206,7 @@ export const handleRelayout = async (
         const endIdx = findFirstGreaterOrEqual(xs, xRange?.[1])
         const count = endIdx - startIdx
         perTraceVisible[i] = count
-        visiblePoints.value += count
+        if (!liveTraces[i]?._isGapOverlay) visiblePoints.value += count
       }
 
       if (Number.isFinite(xStart) && Number.isFinite(xEnd)) {
@@ -223,7 +224,7 @@ export const handleRelayout = async (
       const tooltipsWillRun = areTooltipsEnabled.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
-      const traces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
+      const traces = liveTraces
       const perTraceOpacity = perTraceVisible.map((n) => {
         if (tooltipsWillRun) return 1
         if (tooltipsMode.value === 'manual') return 0

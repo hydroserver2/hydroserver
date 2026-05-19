@@ -21,6 +21,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView, waitForSelection } from './support/app'
 import { expectHistoryContains } from './support/ops'
+import { FIXTURE_OBS_START_MS } from './support/fixtures'
 
 /**
  * Fixture: 20 points → ~4h gap → 20 more points. Gives Find Gaps /
@@ -28,7 +29,11 @@ import { expectHistoryContains } from './support/ops'
  * for the selection-driven edits that come after.
  */
 function observationsWithGap() {
-  const startMs = Date.parse('2024-01-01T00:00:00Z')
+  // Anchor to FIXTURE_OBS_START_MS (relative to "now") so the series
+  // falls inside the QC app's default 1w window — a hard-coded literal
+  // would slide out of range as the calendar moves and leave the main
+  // plot empty.
+  const startMs = FIXTURE_OBS_START_MS
   const spacingMs = 15 * 60 * 1000
   const phenomenonTime: string[] = []
   const result: number[] = []

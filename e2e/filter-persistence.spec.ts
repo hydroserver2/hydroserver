@@ -8,9 +8,12 @@
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView, waitForSelection } from './support/app'
+import { FIXTURE_OBS_START_MS } from './support/fixtures'
 
 function observationsWithPlateau() {
-  const startMs = Date.parse('2024-01-01T00:00:00Z')
+  // See FIXTURE_OBS_START_MS — anchored to "now" so the series sits
+  // inside the QC app's default 1w window.
+  const startMs = FIXTURE_OBS_START_MS
   const spacingMs = 15 * 60 * 1000
   const result: number[] = []
   // 5-point plateau at y=7, then 15 varying points.

@@ -193,19 +193,24 @@ async function clearAll() {
 }
 
 const toggleVisibility = async (datastream: Datastream) => {
-  const traceIndex = plotlyRef.value?.data.findIndex(
+  const traces = plotlyRef.value?.data ?? []
+  const mainIndex = traces.findIndex(
     (trace) => (trace as AppPlotlyTrace).id == datastream.id
   )
-  if (traceIndex !== undefined && traceIndex >= 0) {
-    const isVisible = plotlyRef.value?.data[traceIndex].visible
-    visibleDict.value[datastream.id] = !(
-      isVisible === true || isVisible == undefined
-    )
-    await toggleTraceVisibility(
-      plotlyRef.value,
-      traceIndex,
-      visibleDict.value[datastream.id]
-    )
+  if (mainIndex < 0) return
+
+  const isVisible = traces[mainIndex].visible
+  const nextVisible = !(isVisible === true || isVisible == undefined)
+  visibleDict.value[datastream.id] = nextVisible
+
+  // Gap overlays carry no `id`, only `_gapOverlayFor` — toggle them
+  // alongside the main trace so hiding a datastream removes both its
+  // markers and its line.
+  for (let i = 0; i < traces.length; i++) {
+    const t = traces[i] as AppPlotlyTrace
+    if (i === mainIndex || t._gapOverlayFor === datastream.id) {
+      await toggleTraceVisibility(plotlyRef.value, i, nextVisible)
+    }
   }
 }
 

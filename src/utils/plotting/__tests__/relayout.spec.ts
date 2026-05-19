@@ -39,6 +39,12 @@ const isUpdating = ref(false)
 const areTooltipsEnabled = ref(true)
 const visiblePoints = ref(0)
 const tooltipsMaxDataPoints = ref(10000)
+// `tooltipsMode` (added in src/store/plotly.ts) gates the
+// auto/manual marker-opacity branch in handleRelayout. The mock has
+// to expose it or `tooltipsMode.value` throws inside the debounced
+// body and the tests that drive that branch fail with an
+// unhandled-rejection cascade.
+const tooltipsMode = ref<'manual' | 'auto'>('auto')
 
 vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
@@ -47,6 +53,7 @@ vi.mock('@/store/plotly', () => ({
     areTooltipsEnabled,
     visiblePoints,
     tooltipsMaxDataPoints,
+    tooltipsMode,
     selectedSeries: ref(null),
     editHistory: ref([]),
     suppressedEchoSelection: ref<number[] | null>(null),
@@ -74,6 +81,7 @@ const resetStoreState = () => {
   areTooltipsEnabled.value = true
   visiblePoints.value = 0
   tooltipsMaxDataPoints.value = 10000
+  tooltipsMode.value = 'auto'
   qcDatastream.value = null
   selectedData.value = null
   plotlyMock.relayout.mockClear()

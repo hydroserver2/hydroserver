@@ -1,0 +1,179 @@
+# Developer Onboarding
+
+Goal of this doc: get a new contributor from "fresh checkout" to "I can
+make a change and verify it" in under an hour, and tell them honestly
+where the documentation gaps are so they don't waste a day finding out.
+
+## Prerequisites
+
+| Tool       | Version          | Notes                                                       |
+|------------|------------------|-------------------------------------------------------------|
+| Node.js    | 20 LTS or 23.x   | CI runs 20; the demo deploy workflow runs 23. Either works. |
+| npm        | 10+              | Ships with Node.                                            |
+| Git        | any recent       |                                                             |
+| A browser  | Chrome 111+ / Firefox 119+ / Safari 16.4+ | Required for `SharedArrayBuffer` and typed-array `resize()`. |
+
+You do **not** need:
+
+- Python, Postgres, or any backend tooling. The app talks to a deployed
+  HydroServer (`playground.hydroserver.org` by default).
+- Docker. Everything is npm-driven.
+
+## First-day setup
+
+```bash
+git clone https://github.com/hydroserver2/hydroserver-qc-app.git
+cd hydroserver-qc-app
+npm install
+```
+
+Create `.env.local` with at minimum:
+
+```dotenv
+VITE_APP_API_URL=https://playground.hydroserver.org
+```
+
+See [README — Configuration](../README.md#configuration) for the rest of
+the optional keys.
+
+```bash
+npm run dev          # http://127.0.0.1:1203
+```
+
+**Use `http://127.0.0.1:1203`, not `http://localhost:1203`.** The
+playground backend's CORS allowlist pins the IP literal; the `localhost`
+hostname makes every API request fail and the app silently never mounts.
+The dev-server is configured for `127.0.0.1:1203` to match.
+
+If you hit a blank page with `Failed to fetch app settings` in the
+console, it's almost always one of:
+
+1. Hitting `localhost:` instead of `127.0.0.1:`.
+2. `VITE_APP_API_URL` missing or pointing somewhere unreachable.
+3. The backend doesn't serve `Cross-Origin-Resource-Policy` and COOP/COEP
+   is on — try `VITE_APP_DISABLE_COOP=1`.
+
+## Project tour, in reading order
+
+Read these files in order:
+
+1. `README.md` — what the app does + config.
+2. `docs/ARCHITECTURE.md` — stack, source layout, data flow.
+3. `src/App.vue` and `src/main.ts` — entry point, plugin wiring.
+4. `src/pages/Home.vue` and `src/components/VisualizeData.vue` — the
+   landing experience.
+5. `src/store/dataVisualization.ts` and `src/store/plotly.ts` — the two
+   stores that hold "what the user sees on the plot."
+6. `src/composables/useFilterDispatch.ts` and `useQcSubmission.ts` —
+   the two end-to-end flows worth tracing.
+7. `qc-utils/src/utils/plotting/observation-record.ts` — the QC engine's
+   dispatch surface. You don't need to read the kernels; the dispatcher
+   is the contract.
+
+## Day-to-day workflow
+
+```bash
+npm run dev               # vite dev server, http://127.0.0.1:1203
+npm test                  # vitest, watch mode
+npm run coverage          # vitest one-shot + v8 coverage (80% threshold)
+npm run test:e2e          # playwright, headed
+npm run test:e2e:ci       # playwright, headless (CI mode)
+npm run build             # vue-tsc + vite build → dist/
+```
+
+Run `npm run coverage` before you push — that's what CI gates on.
+
+### Working with linked qc-utils
+
+When you need to change qc-utils alongside the app:
+
+```bash
+# Terminal 1 — qc-utils sibling repo
+cd ../qc-utils
+npm install
+npm link              # registers @uwrl/qc-utils in the local npm registry
+npm run dev           # vite build --watch
+
+# Terminal 2 — qc-app
+cd ../hydroserver-qc-app
+npm run link-qc-utils # npm link @uwrl/qc-utils
+npm run dev
+```
+
+Refresh the browser to pick up `qc-utils` changes — HMR doesn't propagate
+through linked packages. If type errors look stale after editing qc-utils
+types, run `npm run build` once in `qc-utils` to refresh `.d.ts`.
+
+To unlink: `npm unlink @uwrl/qc-utils && npm install`.
+
+## LSP-first navigation
+
+The project relies on the language server for code navigation, not text
+search. Use:
+
+- `goToDefinition` / `goToImplementation` to jump.
+- `findReferences` before renaming a function — there will be call sites
+  you don't expect.
+- `workspaceSymbol` to find where something is defined.
+- `hover` for type info without reading the file.
+
+Use Grep / Glob for non-semantic lookups: literal strings, comments,
+config values, filename discovery.
+
+## Coding conventions
+
+- TypeScript strict mode. No `any` without a comment explaining why.
+- Vue 3 Composition API with `<script setup>`. Options API is not used.
+- Pinia stores for cross-component state; component-local state stays in
+  `ref` / `reactive` inside the component.
+- Comments only for the non-obvious *why*. Don't restate the code.
+- Commit format: `{type}({scope}): {description}` — `feat`, `fix`,
+  `test`, `refactor`, `perf`, `docs`, `style`, `chore`.
+
+## Where the documentation is solid
+
+- README + this docs folder cover stack, configuration, build, deploy,
+  test, and the QC script format.
+- `qc-utils/docs/CALIBRATION.md` and `qc-utils/docs/HISTORY_SCRIPT.md`
+  are the canonical references for the worker dispatch and save/load
+  formats.
+- Inline comments are concentrated where it matters: the few places that
+  have a hidden invariant (`suppressedEchoSelection` in `plotly.ts`, the
+  `<` vs `<=` fix in `observations.ts`, the in-place clear in
+  `useQcSubmission.ts`) carry the rationale.
+
+## Documentation gaps a new team will hit
+
+Be upfront about these — they're the things you'll have to read code to
+learn:
+
+1. **Result qualifiers are partial.** The `QualifyingComments` op panel
+   exists and writes to the in-memory history, but the submit path
+   (`useQcSubmission.ts`) currently serializes only `phenomenonTime` and
+   `result` — qualifier codes are deferred pending the HydroServer API
+   adding a workable columnar response. There's a TODO in
+   `useQcSubmission.ts:42` that points at this.
+2. **No load-testing artifacts.** "How big a datastream can you QC in
+   one session?" is answered empirically per browser via the calibration
+   pass, but there is no published "this is the supported envelope"
+   document. See [PERFORMANCE.md](./PERFORMANCE.md) for the design
+   characteristics, but expect to measure your own workloads.
+
+## Where to ask for help
+
+- [Issue tracker](https://github.com/hydroserver2/hydroserver/issues) —
+  bugs and feature requests for the HydroServer project as a whole.
+- The qc-utils repo's issues for QC engine bugs.
+- The HydroServer documentation site at
+  <https://hydroserver2.github.io/hydroserver/> — the operator-facing
+  HydroServer docs cover the backend the app talks to.
+
+## See also
+
+- [README](../README.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [DEPLOYMENT.md](./DEPLOYMENT.md)
+- [API_REFERENCE.md](./API_REFERENCE.md)
+- [QUALITY.md](./QUALITY.md)
+- [PERFORMANCE.md](./PERFORMANCE.md)
+- [USER_GUIDE.md](./USER_GUIDE.md)

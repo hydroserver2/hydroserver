@@ -64,7 +64,11 @@
                     v-bind="tp"
                     size="x-small"
                     variant="tonal"
-                    color="grey-darken-1"
+                    :color="
+                      !datastreamCountsLoading && datastreamCount(ws.id) > 0
+                        ? 'primary'
+                        : 'grey-darken-1'
+                    "
                     prepend-icon="mdi-chart-timeline-variant"
                   >
                     <template v-if="datastreamCountsLoading">…</template>
@@ -83,7 +87,11 @@
                     v-bind="tp"
                     size="x-small"
                     variant="tonal"
-                    color="grey-darken-1"
+                    :color="
+                      !qualifierCountsLoading && qualifierCount(ws.id) > 0
+                        ? 'primary'
+                        : 'grey-darken-1'
+                    "
                     prepend-icon="mdi-flag-outline"
                   >
                     <template v-if="qualifierCountsLoading">…</template>

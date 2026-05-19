@@ -20,8 +20,15 @@ test.describe('edit history toolbar', () => {
     await setupEditView(page)
     await selectAllPoints(page)
     await openOp(page, 'changeValues')
-    await page.getByLabel('Value').fill('1')
-    await page.getByRole('button', { name: 'Apply' }).click()
+    // Press Enter on the field instead of clicking Apply — same reason
+    // as the selectAllPoints helper: Firefox occasionally fires the
+    // Apply click before Vuetify's v-text-field commits, which leaves
+    // the button's `:disabled` guard tripped and silently swallows the
+    // click. The field's `@keyup.enter` handler dispatches in one
+    // event, removing the commit/click race.
+    const value = page.getByLabel('Value')
+    await value.fill('1')
+    await value.press('Enter')
     await expectHistoryContains(page, 'Change Values')
   })
 

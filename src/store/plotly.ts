@@ -152,6 +152,16 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const plotlyOptions: Ref<PlotlyChartOptions> = ref(createPlotlyOption([]))
   const plotlyRef: Ref<AppPlotlyHTMLElement | null> = ref(null)
   // ^ Populated during DataVisualization onMounted hook (handleNewPlot).
+  /**
+   * Monotonic counter bumped once per `handleNewPlot` run. `Plotly.newPlot`
+   * reuses the same DOM element (so `plotlyRef.value`'s identity does not
+   * change) but purges every externally-attached event listener — code
+   * outside `handleNewPlot` that subscribes to `plotly_relayout` /
+   * `plotly_restyle` (e.g. `ContextPlot.vue`) needs a positive signal to
+   * re-attach. Watch this ref instead of trying to detect element
+   * re-creation.
+   */
+  const mainPlotEpoch = ref(0)
 
   /**
    * This function searches through the Pinia store's GraphSeries[] to determine which colors,
@@ -311,7 +321,35 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       // as COLORS[0] (black); we still assign a slot here so the series
       // retains its colour if it's ever demoted from QC.
       color: assignFreeColor(),
+      intendedSpacingMs: spacingMsFromDatastream(datastream),
     } as GraphSeries
+  }
+
+  /**
+   * Convert a datastream's declared `intendedTimeSpacing` (+ unit) into
+   * milliseconds. Returns null when either field is missing or unusable
+   * so the plotter falls back to drawing lines through every gap.
+   */
+  function spacingMsFromDatastream(
+    ds: Datastream | (Datastream & { intendedTimeSpacing?: number; intendedTimeSpacingUnit?: string | null })
+  ): number | null {
+    const raw = (ds as { intendedTimeSpacing?: number }).intendedTimeSpacing
+    const n = Number(raw)
+    if (!Number.isFinite(n) || n <= 0) return null
+    const unit = (ds as { intendedTimeSpacingUnit?: string | null })
+      .intendedTimeSpacingUnit
+    switch (unit) {
+      case 'seconds':
+        return n * 1000
+      case 'minutes':
+        return n * 60 * 1000
+      case 'hours':
+        return n * 60 * 60 * 1000
+      case 'days':
+        return n * 24 * 60 * 60 * 1000
+      default:
+        return null
+    }
   }
 
   /**
@@ -371,6 +409,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     fetchGraphSeries,
     plotlyOptions,
     plotlyRef,
+    mainPlotEpoch,
     isUpdating,
     isSubmitting,
     tooltipsMaxDataPoints,

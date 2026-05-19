@@ -56,7 +56,8 @@ export const handleNewPlot = async (
   element?: HTMLElement,
   opts?: { preserveZoom?: boolean }
 ) => {
-  const { plotlyOptions, plotlyRef } = storeToRefs(usePlotlyStore())
+  const { plotlyOptions, plotlyRef, mainPlotEpoch } =
+    storeToRefs(usePlotlyStore())
 
   if (!element && plotlyRef.value?.data) {
     const visibleBySeriesId: Record<string, boolean | 'legendonly'> = {}
@@ -72,8 +73,13 @@ export const handleNewPlot = async (
     }
     for (const trace of plotlyOptions.value.traces) {
       const t = trace as AppPlotlyTrace
-      if (!t.id) continue
-      const carried = visibleBySeriesId[t.id]
+      // Gap overlays expose `_gapOverlayFor` instead of `id` so the
+      // selection-by-id lookup keeps targeting the main trace; we still
+      // want them to inherit the user's hide/show choice so the line
+      // disappears with the markers it shadows.
+      const lookupId = t.id ?? t._gapOverlayFor
+      if (!lookupId) continue
+      const carried = visibleBySeriesId[lookupId]
       if (carried !== undefined) {
         ; (t as { visible?: boolean | 'legendonly' }).visible = carried
       }
@@ -133,6 +139,11 @@ export const handleNewPlot = async (
     plotlyOptions.value.config
   )
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
+  // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
+  // identity is unchanged and Vue's ref watchers don't refire. It does
+  // wipe externally-attached listeners (the ContextPlot's brush sync,
+  // etc.) — bump an epoch so those subscribers know to re-attach.
+  mainPlotEpoch.value++
 
   // Debounce long enough that a rapid scroll-wheel burst collapses
   // into a single post-gesture sweep. 250 ms used to cut it off

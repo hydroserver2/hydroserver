@@ -16,6 +16,25 @@ export const PROC_LEVEL_ID = 'pl-raw'
 export const OBSERVED_PROP_ID = 'op-streamflow'
 export const SENSOR_ID = 'sensor-adv'
 
+/**
+ * Synthetic-observation timing constants, anchored to "now" at module
+ * load so the generated series always falls inside the QC app's default
+ * `1w` time-range window. Hard-coding a literal anchor (e.g.
+ * `2024-01-01`) was a footgun: as the calendar moved past the fixture,
+ * the main plot — which slices by `[beginDate, endDate]` — silently
+ * collapsed to an empty window even though the ContextPlot (which uses
+ * all observations un-windowed) kept looking correct. Specs that build
+ * custom observation series should import `FIXTURE_OBS_START_MS` and
+ * derive their timestamps from it for the same reason.
+ */
+export const FIXTURE_OBS_SPACING_MS = 15 * 60 * 1000
+export const FIXTURE_OBS_COUNT = 120
+export const FIXTURE_OBS_END_MS = Date.now()
+export const FIXTURE_OBS_START_MS =
+  FIXTURE_OBS_END_MS - (FIXTURE_OBS_COUNT - 1) * FIXTURE_OBS_SPACING_MS
+export const FIXTURE_OBS_START_ISO = new Date(FIXTURE_OBS_START_MS).toISOString()
+export const FIXTURE_OBS_END_ISO = new Date(FIXTURE_OBS_END_MS).toISOString()
+
 export const workspaces = [
   {
     id: WORKSPACE_ID,
@@ -99,10 +118,10 @@ export const datastreams = [
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID,
     sensorId: SENSOR_ID,
-    phenomenonBeginTime: '2024-01-01T00:00:00Z',
-    phenomenonEndTime: '2024-01-02T05:45:00Z',
-    resultBeginTime: '2024-01-01T00:00:00Z',
-    resultEndTime: '2024-01-02T05:45:00Z',
+    phenomenonBeginTime: FIXTURE_OBS_START_ISO,
+    phenomenonEndTime: FIXTURE_OBS_END_ISO,
+    resultBeginTime: FIXTURE_OBS_START_ISO,
+    resultEndTime: FIXTURE_OBS_END_ISO,
     // `expand_related: true` populates these nested objects on the
     // real server; the filter panel + table reads `ds.thing.id`,
     // `ds.observedProperty.name`, etc. without optional chaining in
@@ -142,18 +161,18 @@ export const datastreams = [
  * Generate a deterministic, well-shaped synthetic observation set:
  * `count` samples at 15-minute spacing starting at `startMs`, with
  * values following `y = 10 + 5 * sin(i / 5)` so every filter op has
- * interesting but predictable points to select.
+ * interesting but predictable points to select. The default anchor is
+ * `FIXTURE_OBS_START_MS` (relative to "now") so the series always lies
+ * inside the QC app's default `1w` time-range window.
  */
 export function buildObservations(
-  count = 120,
-  startIso = '2024-01-01T00:00:00Z'
+  count = FIXTURE_OBS_COUNT,
+  startMs = FIXTURE_OBS_START_MS
 ) {
-  const startMs = Date.parse(startIso)
-  const spacingMs = 15 * 60 * 1000
   const phenomenonTime: string[] = new Array(count)
   const result: number[] = new Array(count)
   for (let i = 0; i < count; i++) {
-    phenomenonTime[i] = new Date(startMs + i * spacingMs).toISOString()
+    phenomenonTime[i] = new Date(startMs + i * FIXTURE_OBS_SPACING_MS).toISOString()
     result[i] = +(10 + 5 * Math.sin(i / 5)).toFixed(3)
   }
   return { phenomenonTime, result }

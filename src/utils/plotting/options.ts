@@ -42,6 +42,19 @@ export type AppPlotlyTrace = Partial<PlotData> & {
    * trace slice starts.
    */
   _windowStartIdx?: number
+  /**
+   * Marks a lines-only companion trace that exists to break the rendered
+   * line at gaps wider than the source datastream's intended cadence.
+   * The main trace it shadows stays selectable and keeps stable indices;
+   * the overlay carries no `id` so the selection lookup ignores it.
+   */
+  _isGapOverlay?: boolean
+  /**
+   * Datastream id of the main trace this gap overlay belongs to. Lets
+   * visibility toggles and replot-state carries route to both traces
+   * even though only the main trace exposes the public `id`.
+   */
+  _gapOverlayFor?: string
 }
 
 /**
@@ -100,6 +113,56 @@ export const LABEL_COLORS = [
 export const labelColorFor = (lineColor: string): string => {
   const idx = COLORS.indexOf(lineColor)
   return idx >= 0 ? LABEL_COLORS[idx] : LABEL_COLORS[0]
+}
+
+/**
+ * Indices `i` (i >= 1) where `x[i] - x[i-1] > thresholdMs` — every spot
+ * where a synthetic break should be inserted to disconnect the rendered
+ * line. Callers pass `intendedSpacingMs`; a strict `>` matches "wider
+ * than the intended cadence" without flagging cadence-tight points.
+ */
+export const findGapIndices = (
+  x: ArrayLike<number>,
+  thresholdMs: number
+): number[] => {
+  const gaps: number[] = []
+  for (let i = 1; i < x.length; i++) {
+    if ((x[i] as number) - (x[i - 1] as number) > thresholdMs) gaps.push(i)
+  }
+  return gaps
+}
+
+/**
+ * Return a copy of `x`/`y` with a synthetic NaN-y break point inserted
+ * at the midpoint of each gap in `gaps`. Numeric `x` is preserved so
+ * `findFirstGreaterOrEqual` keeps working on the overlay; NaN `y`
+ * is what Plotly uses to disconnect the line. Returns the originals
+ * unchanged when `gaps` is empty so the caller can keep the existing
+ * typed-array views.
+ */
+export const insertGapBreaks = (
+  x: ArrayLike<number>,
+  y: ArrayLike<number>,
+  gaps: number[]
+): { x: ArrayLike<number>; y: ArrayLike<number> } => {
+  if (!gaps.length) return { x, y }
+  const newLen = x.length + gaps.length
+  const newX = new Float64Array(newLen)
+  const newY = new Float64Array(newLen)
+  let g = 0
+  let dst = 0
+  for (let i = 0; i < x.length; i++) {
+    if (g < gaps.length && gaps[g] === i) {
+      newX[dst] = ((x[i - 1] as number) + (x[i] as number)) / 2
+      newY[dst] = NaN
+      dst++
+      g++
+    }
+    newX[dst] = x[i] as number
+    newY[dst] = y[i] as number
+    dst++
+  }
+  return { x: newX, y: newY }
 }
 
 // Colour palette for qualifier-flag markers along the bottom of the plot.
@@ -333,24 +396,27 @@ export const createPlotlyOption = (
       if (count > DENSITY_HIDE_MARKERS) markerOpacity = 0
     }
 
+    // Main trace is markers-only. When the source datastream declares an
+    // intended cadence, a sibling overlay trace draws the connecting line
+    // with NaN-y breaks at gaps; otherwise the series renders as a pure
+    // scatter plot. Either way the main trace owns selection and point
+    // indices, so its `line` attribute would be dead config — omitted.
     const trace: AppPlotlyTrace = {
       id: s.id,
       x: xData,
       y: yData,
       yaxis: axisRef,
       type: 'scattergl',
-      mode: 'lines+markers',
+      mode: 'markers',
       // https://github.com/plotly/plotly.js/issues/5927
       hoverinfo: 'skip', // Fixes performance issues, but disables tooltips
       name: s.name,
       showLegend: false,
       marker: { color, opacity: markerOpacity },
-      line: { color },
     }
 
     if (isQc) {
       trace.marker = { ...(trace.marker ?? {}), color: COLORS[0] }
-      trace.line = { ...(trace.line ?? {}), color: COLORS[0] }
       trace.selected = { marker: { color: 'red', opacity: 1 } }
 
       trace._windowStartIdx = (rawX?.length && Number.isFinite(windowStartMs))
@@ -410,6 +476,38 @@ export const createPlotlyOption = (
     }
 
     traces.push(trace)
+
+    // Gap-aware line rendering. When the source datastream declares an
+    // intended cadence, a sibling overlay trace draws the connecting
+    // line with NaN-y break points at every gap wider than the cadence,
+    // so the rendered polyline visually disconnects across real gaps.
+    // Series without a declared cadence stay as a pure scatter — the
+    // main trace already renders markers-only, so simply not pushing
+    // an overlay is enough. The overlay carries no `id`, so
+    // selection/lookup logic that finds traces by datastream id keeps
+    // targeting the main trace and its stable point indices.
+    const spacingMs = s.intendedSpacingMs ?? null
+    if (spacingMs && spacingMs > 0 && xData?.length && yData?.length) {
+      const gaps = findGapIndices(xData as ArrayLike<number>, spacingMs)
+      const broken = insertGapBreaks(
+        xData as ArrayLike<number>,
+        yData as ArrayLike<number>,
+        gaps
+      )
+      const overlay: AppPlotlyTrace = {
+        x: broken.x as unknown as PlotData['x'],
+        y: broken.y as unknown as PlotData['y'],
+        yaxis: axisRef,
+        type: 'scattergl',
+        mode: 'lines',
+        hoverinfo: 'skip',
+        showLegend: false,
+        line: { color: isQc ? COLORS[0] : color },
+        _isGapOverlay: true,
+        _gapOverlayFor: s.id,
+      }
+      traces.push(overlay)
+    }
   })
 
   // Reverse so the top of the legend paints last.

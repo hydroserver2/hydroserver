@@ -67,6 +67,7 @@
           <!-- Auto mode: show live counter in place of the toggle button -->
           <div
             v-if="tooltipsMode === 'auto'"
+            data-testid="tooltips-counter"
             class="plot-toolbar__points-cell plot-toolbar__points-cell--counter"
             aria-live="polite"
             :title="

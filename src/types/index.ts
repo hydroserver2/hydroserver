@@ -16,4 +16,13 @@ export interface GraphSeries {
    * `COLORS[0]` regardless of its stored `color`.
    */
   color: string
+  /**
+   * Datastream's intended observation cadence, in milliseconds. When set,
+   * the plot breaks the line wherever consecutive observations sit
+   * farther apart than this value, so true data gaps render as
+   * disconnected segments. Null/undefined when the datastream has no
+   * declared cadence — those series draw lines through every gap as
+   * before.
+   */
+  intendedSpacingMs?: number | null
 }

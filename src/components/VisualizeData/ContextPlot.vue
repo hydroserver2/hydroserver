@@ -46,7 +46,8 @@ import type { GraphSeries } from '@/types'
 const TARGET_POINTS = 2000
 const MIN_BRUSH_PX = 8
 
-const { plotlyRef, graphSeriesArray } = storeToRefs(usePlotlyStore())
+const { plotlyRef, graphSeriesArray, mainPlotEpoch } =
+  storeToRefs(usePlotlyStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
 
 const rootEl = ref<HTMLDivElement>()
@@ -469,8 +470,13 @@ function attachMainListener() {
   syncHiddenFromMain()
 }
 
+// `plotlyRef` only changes identity on first mount — `handleNewPlot`
+// reuses the same DOM node on every replot. `mainPlotEpoch` bumps on
+// every `Plotly.newPlot` run (which purges externally-attached event
+// listeners), so we watch it too and re-bind the relayout/restyle
+// handlers that drive the context brush.
 watch(
-  plotlyRef,
+  [plotlyRef, mainPlotEpoch],
   () => {
     attachMainListener()
     syncBrushFromMain()
