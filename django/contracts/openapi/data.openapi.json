@@ -672,6 +672,11 @@
             ],
             "title": "Minvalues"
           },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
           "outputInterval": {
             "title": "Outputinterval",
             "type": "integer"
@@ -1153,6 +1158,11 @@
               }
             ],
             "title": "Maxgapintervalunits"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
           },
           "outputInterval": {
             "title": "Outputinterval",
@@ -3860,6 +3870,11 @@
           "inputDatastreamId": {
             "format": "uuid",
             "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
             "type": "string"
           },
           "variableName": {
@@ -6738,6 +6753,11 @@
           "inputDatastreamId": {
             "format": "uuid",
             "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
             "type": "string"
           },
           "ratingCurveId": {

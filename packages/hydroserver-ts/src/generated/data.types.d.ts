@@ -2054,6 +2054,11 @@ export interface components {
             inputDatastreamId?: string;
             /** Minvalues */
             minValues?: number | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
             /** Outputinterval */
             outputInterval?: number;
             /**
@@ -2217,6 +2222,11 @@ export interface components {
             maxGapInterval?: number | null;
             /** Maxgapintervalunits */
             maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
             /** Outputinterval */
             outputInterval?: number;
             /**
@@ -3175,6 +3185,11 @@ export interface components {
              * Format: uuid
              */
             inputDatastreamId?: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
             /** Variablename */
             variableName?: string | null;
         };
@@ -4126,6 +4141,11 @@ export interface components {
              * Format: uuid
              */
             inputDatastreamId?: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
             /**
              * Ratingcurveid
              * Format: uuid

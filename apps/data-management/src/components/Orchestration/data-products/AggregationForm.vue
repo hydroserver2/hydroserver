@@ -68,7 +68,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="isEditMode || !selectedThingId || loadingExisting"
+          :disabled="!selectedThingId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
@@ -256,6 +256,7 @@ function normalizeOptionalInteger(value: unknown) {
 function currentTransformationValues(): AggregationTransformationValues {
   return {
     inputDatastreamId: inputDatastreamId.value,
+    outputDatastreamId: outputDatastreamId.value,
     aggregationMethod: aggregationMethod.value,
     outputInterval: normalizeOptionalInteger(outputInterval.value),
     outputIntervalUnits: outputIntervalUnits.value,
@@ -270,6 +271,7 @@ function transformationHasChanges() {
   const current = currentTransformationValues()
   return (
     current.inputDatastreamId !== original.inputDatastreamId ||
+    current.outputDatastreamId !== original.outputDatastreamId ||
     current.aggregationMethod !== original.aggregationMethod ||
     current.outputInterval !== original.outputInterval ||
     current.outputIntervalUnits !== original.outputIntervalUnits ||
@@ -413,6 +415,7 @@ async function onUpdate() {
         existingTransformationId.value,
         {
           inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
           aggregationMethod: aggregationMethod.value,
           outputInterval: outputInterval.value!,
           outputIntervalUnits: outputIntervalUnits.value,

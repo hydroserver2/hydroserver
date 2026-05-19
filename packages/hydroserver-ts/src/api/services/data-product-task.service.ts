@@ -65,6 +65,7 @@ export class DataProductTaskService extends HydroServerBaseService<
     taskId: string,
     transformationId: string,
     payload: Partial<{
+      outputDatastreamId: string
       inputDatastreamId: string
       variableName: string | null
       formula: string
@@ -108,6 +109,7 @@ export class DataProductTaskService extends HydroServerBaseService<
     taskId: string,
     transformationId: string,
     payload: Partial<{
+      outputDatastreamId: string
       inputDatastreamId: string
       ratingCurveId: string
     }>

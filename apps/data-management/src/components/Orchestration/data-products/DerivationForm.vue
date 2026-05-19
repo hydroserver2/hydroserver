@@ -61,7 +61,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="isEditMode || !selectedThingId || loadingExisting"
+          :disabled="!selectedThingId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
@@ -685,6 +685,7 @@ async function onUpdate(
         taskId,
         existingTransformationId.value,
         {
+          outputDatastreamId: outputDatastreamId.value!,
           inputDatastreams,
           formula: formula.value.trim(),
           outputInterval: outputInterval.value!,

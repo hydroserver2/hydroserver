@@ -16,6 +16,7 @@ export type IntervalUnit = AggregationTransformationPayload['outputIntervalUnits
 
 export type AggregationTransformationValues = {
   inputDatastreamId: string | null
+  outputDatastreamId: string | null
   aggregationMethod: AggregationMethod
   outputInterval: number | null
   outputIntervalUnits: IntervalUnit

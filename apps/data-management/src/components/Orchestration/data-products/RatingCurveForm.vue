@@ -63,7 +63,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="isEditMode || !selectedThingId || loadingExisting"
+          :disabled="!selectedThingId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -548,6 +548,7 @@ async function onUpdate() {
         existingTransformationId.value,
         {
           inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
           ratingCurveId,
         }
       )
