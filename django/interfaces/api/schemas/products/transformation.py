@@ -153,17 +153,20 @@ class AggregationTransformationPostBody(_TransformationPostBodyBase):
 # --- Per-type patch body schemas ---
 
 class RatingCurveTransformationPatchBody(BasePatchBody):
+    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
     rating_curve: uuid.UUID = Field(alias="ratingCurveId")
 
 
 class ExpressionTransformationPatchBody(BasePatchBody):
+    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
     variable_name: Optional[str]
     formula: str
 
 
 class CompositeExpressionTransformationPatchBody(BasePatchBody):
+    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastreams: list[TransformationInputPostBody]
     formula: str
     output_interval_units: Period
@@ -173,6 +176,7 @@ class CompositeExpressionTransformationPatchBody(BasePatchBody):
 
 
 class AggregationTransformationPatchBody(BasePatchBody):
+    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
     aggregation_method: AggregationMethod
     output_interval_units: Period
