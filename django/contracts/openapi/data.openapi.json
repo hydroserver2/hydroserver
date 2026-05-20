@@ -672,6 +672,11 @@
             ],
             "title": "Minvalues"
           },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
           "outputInterval": {
             "title": "Outputinterval",
             "type": "integer"
@@ -1154,6 +1159,11 @@
             ],
             "title": "Maxgapintervalunits"
           },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
           "outputInterval": {
             "title": "Outputinterval",
             "type": "integer"
@@ -1352,6 +1362,28 @@
       },
       "DataConnectionPatchBody": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {
@@ -1411,6 +1443,28 @@
       },
       "DataConnectionPostBody": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {
@@ -1567,6 +1621,28 @@
       },
       "DataConnectionResponse": {
         "properties": {
+          "authHeaderName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadername"
+          },
+          "authHeaderValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authheadervalue"
+          },
           "description": {
             "anyOf": [
               {
@@ -3794,6 +3870,11 @@
           "inputDatastreamId": {
             "format": "uuid",
             "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
             "type": "string"
           },
           "variableName": {
@@ -6672,6 +6753,11 @@
           "inputDatastreamId": {
             "format": "uuid",
             "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
             "type": "string"
           },
           "ratingCurveId": {

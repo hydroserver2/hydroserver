@@ -26,48 +26,91 @@
           :rules="rules.requiredAndMaxLength255"
           density="compact"
         />
-        <v-combobox
-          v-model="notificationRecipientEmails"
-          v-model:search="notificationRecipientInput"
-          :items="[]"
-          label="Notification recipients"
-          placeholder="Type an email address and press Enter"
-          multiple
-          clearable
-          hide-no-data
-          hide-selected
-          density="compact"
-          :rules="notificationRecipientRules"
-          :error-messages="
-            notificationRecipientInputError
-              ? [notificationRecipientInputError]
-              : []
-          "
-          @keydown.enter.prevent="addNotificationRecipient"
-          @keydown.tab="addNotificationRecipient"
-          @blur="addNotificationRecipient"
-        >
-          <template #selection="{ item, index }">
-            <v-chip
-              size="small"
-              color="blue-grey"
-              variant="tonal"
-              rounded
-              closable
-              class="mr-1 mb-1 max-w-full"
-              @click:close="removeNotificationRecipient(index)"
-            >
-              <span class="truncate">{{ item.title }}</span>
-            </v-chip>
-          </template>
-        </v-combobox>
-        <p class="mb-4 text-sm text-medium-emphasis">
-          Add the email recipients who should receive daily orchestration
-          summary notifications for this data connection.
-        </p>
 
         <ExtractorForm ref="extractorRef" />
         <TransformerForm ref="transformerRef" />
+
+        <div class="ma-2">
+          <v-switch
+            v-model="advancedFeaturesEnabled"
+            color="primary"
+            density="compact"
+            hide-details
+            label="Advanced features"
+          />
+
+          <div v-if="advancedFeaturesEnabled" class="advanced-features-body">
+            <p class="font-weight-bold mb-2">Authentication header</p>
+            <div class="auth-header-grid">
+              <v-combobox
+                v-model="formDataConnection.authHeaderName"
+                :items="authHeaderNameOptions"
+                label="Header name"
+                placeholder="Authorization"
+                clearable
+                autocomplete="off"
+                name="data-connection-auth-header-name"
+                density="compact"
+                :rules="authHeaderNameRules"
+              />
+              <v-text-field
+                v-model="formDataConnection.authHeaderValue"
+                type="text"
+                label="Header value"
+                placeholder="Bearer abc123"
+                clearable
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                name="data-connection-auth-header-value"
+                density="compact"
+                :class="{
+                  'auth-header-value-field--masked': !showAuthHeaderValue,
+                }"
+                :rules="authHeaderValueRules"
+                :append-inner-icon="showAuthHeaderValue ? mdiEyeOff : mdiEye"
+                @click:append-inner="showAuthHeaderValue = !showAuthHeaderValue"
+              />
+            </div>
+
+            <p class="font-weight-bold mb-2">Email notifications</p>
+            <v-combobox
+              v-model="notificationRecipientEmails"
+              v-model:search="notificationRecipientInput"
+              :items="[]"
+              label="Notification recipients"
+              placeholder="Type an email address and press Enter"
+              multiple
+              clearable
+              hide-no-data
+              hide-selected
+              density="compact"
+              :rules="notificationRecipientRules"
+              :error-messages="
+                notificationRecipientInputError
+                  ? [notificationRecipientInputError]
+                  : []
+              "
+              @keydown.enter.prevent="addNotificationRecipient"
+              @keydown.tab="addNotificationRecipient"
+              @blur="addNotificationRecipient"
+            >
+              <template #selection="{ item, index }">
+                <v-chip
+                  size="small"
+                  color="blue-grey"
+                  variant="tonal"
+                  rounded
+                  closable
+                  class="mr-1 mb-1 max-w-full"
+                  @click:close="removeNotificationRecipient(index)"
+                >
+                  <span class="truncate">{{ item.title }}</span>
+                </v-chip>
+              </template>
+            </v-combobox>
+          </div>
+        </div>
       </div>
     </v-form>
 
@@ -91,6 +134,8 @@ import ExtractorForm from './extractors/ExtractorForm.vue'
 import TransformerForm from './transformers/TransformerForm.vue'
 import hs, { DataConnection } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
+import { ensureNotificationSchedule } from '@/utils/orchestration/dataConnectionNotifications'
+import { mdiEye, mdiEyeOff } from '@mdi/js'
 
 const props = defineProps<{
   dataConnection?: DataConnection
@@ -104,9 +149,6 @@ const { dataConnection: formDataConnection } = storeToRefs(
 )
 
 const isEdit = computed(() => !!props.dataConnection)
-formDataConnection.value = !!props.dataConnection
-  ? props.dataConnection
-  : new DataConnection()
 const valid = ref(false)
 const myForm = ref<VForm>()
 
@@ -115,10 +157,14 @@ const transformerRef = ref<any>(null)
 
 const loaded = ref(false)
 const isSubmitting = ref(false)
+const advancedFeaturesEnabled = ref(false)
+const showAuthHeaderValue = ref(false)
 const notificationRecipientInput = ref('')
 const notificationRecipientInputError = ref('')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const authHeaderNameOptions = ['Authorization', 'X-API-Key']
+const defaultAuthHeaderName = authHeaderNameOptions[0]
 
 const toRecipientString = (value: unknown) => {
   if (typeof value === 'string') return value.trim()
@@ -164,6 +210,46 @@ const notificationRecipientRules = [
     'All notification recipient emails must be valid.',
 ]
 
+const authHeaderNameRules = [
+  (value: string | null) =>
+    !advancedFeaturesEnabled.value ||
+    !!toRecipientString(value) ||
+    !toRecipientString(formDataConnection.value.authHeaderValue) ||
+    'Header name is required when a header value is provided.',
+  (value: string | null) =>
+    toRecipientString(value).length <= 255 || 'Maximum 255 characters allowed.',
+]
+
+const authHeaderValueRules: Array<(value: string | null) => true | string> = []
+
+function hasAdvancedFeatures(dataConnection?: DataConnection) {
+  if (!dataConnection) return false
+
+  return !!(
+    toRecipientString(dataConnection.authHeaderName) ||
+    toRecipientString(dataConnection.authHeaderValue) ||
+    (dataConnection as any).notification?.recipientEmails?.length
+  )
+}
+
+function ensureDefaultAuthHeaderName() {
+  if (
+    !toRecipientString(formDataConnection.value.authHeaderName) &&
+    !toRecipientString(formDataConnection.value.authHeaderValue)
+  ) {
+    formDataConnection.value.authHeaderName = defaultAuthHeaderName
+  }
+}
+
+function resetFormState(dataConnection?: DataConnection) {
+  formDataConnection.value = dataConnection ?? new DataConnection()
+  advancedFeaturesEnabled.value = hasAdvancedFeatures(formDataConnection.value)
+  if (advancedFeaturesEnabled.value) ensureDefaultAuthHeaderName()
+  showAuthHeaderValue.value = false
+  notificationRecipientInput.value = ''
+  notificationRecipientInputError.value = ''
+}
+
 function addNotificationRecipient() {
   const email = notificationRecipientInput.value.trim().replace(/,+$/, '')
   if (!email) {
@@ -198,6 +284,17 @@ watch(notificationRecipientInput, () => {
   }
 })
 
+watch(
+  () => props.dataConnection,
+  (dataConnection) => resetFormState(dataConnection),
+  { immediate: true }
+)
+
+watch(advancedFeaturesEnabled, (enabled) => {
+  if (enabled) ensureDefaultAuthHeaderName()
+  notificationRecipientInputError.value = ''
+})
+
 async function validate() {
   const validExtractor = await extractorRef.value.validate()
   const validTransformer = await transformerRef.value.validate()
@@ -208,7 +305,7 @@ async function onSubmit() {
   const etlValid = await validate()
   if (!etlValid) return
 
-  if (!addNotificationRecipient()) return
+  if (advancedFeaturesEnabled.value && !addNotificationRecipient()) return
 
   isSubmitting.value = true
 
@@ -219,6 +316,9 @@ async function onSubmit() {
   }
 
   formDataConnection.value.workspace = selectedWorkspace.value
+  normalizeAdvancedFields(formDataConnection.value)
+  ensureNotificationSchedule(formDataConnection.value)
+
   const body = {
     ...formDataConnection.value,
     workspaceId: selectedWorkspace.value?.id,
@@ -244,6 +344,30 @@ async function onSubmit() {
   emit('close')
 }
 
+function normalizeAdvancedFields(dataConnection: DataConnection) {
+  if (!advancedFeaturesEnabled.value) {
+    dataConnection.authHeaderName = null
+    dataConnection.authHeaderValue = null
+    dataConnection.notification = null
+    return
+  }
+
+  const authHeaderName = `${dataConnection.authHeaderName ?? ''}`.trim()
+  const authHeaderValue = `${dataConnection.authHeaderValue ?? ''}`.trim()
+
+  dataConnection.authHeaderName = authHeaderName || null
+  dataConnection.authHeaderValue = authHeaderValue || null
+
+  const recipientEmails =
+    dataConnection.notification?.recipientEmails.filter(Boolean) ?? []
+
+  if (recipientEmails.length === 0) {
+    dataConnection.notification = null
+  } else if (dataConnection.notification) {
+    dataConnection.notification.recipientEmails = recipientEmails
+  }
+}
+
 onMounted(async () => {
   loaded.value = true
 })
@@ -256,5 +380,26 @@ onMounted(async () => {
   overflow: visible;
   padding: 16px 24px;
   scrollbar-gutter: stable both-edges;
+}
+
+.advanced-features-body {
+  margin-top: 12px;
+}
+
+.auth-header-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr);
+  gap: 12px;
+}
+
+.auth-header-value-field--masked :deep(input) {
+  -webkit-text-security: disc;
+}
+
+@media (max-width: 640px) {
+  .auth-header-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 </style>

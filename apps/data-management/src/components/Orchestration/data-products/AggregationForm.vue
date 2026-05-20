@@ -1,7 +1,9 @@
 <template>
   <v-card>
     <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
-      <v-card-title>{{ isEditMode ? 'Edit aggregation task' : 'Create aggregation task' }}</v-card-title>
+      <v-card-title>{{
+        isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
+      }}</v-card-title>
       <v-btn
         :icon="mdiInformationOutline"
         variant="text"
@@ -32,8 +34,8 @@
           density="compact"
           class="mb-5"
         >
-          Aggregate observations from an input datastream into fixed-length
-          time buckets and write the results to an output datastream.
+          Aggregate observations from an input datastream into fixed-length time
+          buckets and write the results to an output datastream.
         </v-alert>
 
         <v-text-field
@@ -43,6 +45,14 @@
           :disabled="loadingExisting"
           class="mb-2"
         />
+
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
 
         <DatastreamCardSelector
           v-model="inputDatastreamId"
@@ -66,7 +76,9 @@
 
         <v-divider class="mb-4" />
 
-        <div class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase">
+        <div
+          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+        >
           Aggregation settings
         </div>
 
@@ -111,41 +123,34 @@
           min="1"
           hint="Buckets with fewer than this many values will be skipped."
           persistent-hint
-          :rules="minValues !== null && minValues !== undefined ? [positiveInteger] : []"
+          :rules="
+            minValues !== null && minValues !== undefined
+              ? [positiveInteger]
+              : []
+          "
           :disabled="loadingExisting"
           clearable
           class="mb-2"
           @click:clear="minValues = null"
         />
-
       </v-card-text>
 
       <v-divider />
 
       <v-card-actions>
         <v-spacer />
-        <v-btn-cancel :disabled="saving" @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
+        <v-btn-cancel :disabled="saving" @click="$emit('close')"
+          >Cancel</v-btn-cancel
         >
-          Delete task
-        </v-btn>
-        <v-btn
+
+        <v-btn-primary
           type="submit"
-          variant="flat"
-          rounded="lg"
-          class="text-none"
-          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create aggregation task' }}
-        </v-btn>
+        </v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -160,17 +165,19 @@ import hs, {
   type Datastream,
   type DataProductTask,
   type AggregationMethod,
+  type AggregationTransformationValues,
   type IntervalUnit,
+  type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_SUBMIT_STYLE,
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
@@ -199,8 +206,10 @@ const deleting = ref(false)
 const datastreams = ref<Datastream[]>([])
 
 const existingTransformationId = ref<string | null>(null)
+const originalTransformation = ref<AggregationTransformationValues | null>(null)
 
 const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const aggregationMethod = ref<AggregationMethod>('mean')
@@ -239,6 +248,36 @@ const positiveInteger: Rule = (v) => {
   return (Number.isInteger(n) && n >= 1) || 'Must be a positive whole number.'
 }
 
+function normalizeOptionalInteger(value: unknown) {
+  if (value === null || value === undefined || value === '') return null
+  return Number(value)
+}
+
+function currentTransformationValues(): AggregationTransformationValues {
+  return {
+    inputDatastreamId: inputDatastreamId.value,
+    outputDatastreamId: outputDatastreamId.value,
+    aggregationMethod: aggregationMethod.value,
+    outputInterval: normalizeOptionalInteger(outputInterval.value),
+    outputIntervalUnits: outputIntervalUnits.value,
+    minValues: normalizeOptionalInteger(minValues.value),
+  }
+}
+
+function transformationHasChanges() {
+  const original = originalTransformation.value
+  if (!original) return true
+
+  const current = currentTransformationValues()
+  return (
+    current.inputDatastreamId !== original.inputDatastreamId ||
+    current.outputDatastreamId !== original.outputDatastreamId ||
+    current.aggregationMethod !== original.aggregationMethod ||
+    current.outputInterval !== original.outputInterval ||
+    current.outputIntervalUnits !== original.outputIntervalUnits ||
+    current.minValues !== original.minValues
+  )
+}
 
 async function loadDatastreams() {
   const workspaceId = selectedWorkspaceId.value
@@ -273,6 +312,7 @@ async function loadExistingTask() {
 
     if (taskRes.ok && taskRes.data?.name) {
       taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
     }
 
     if (transformRes.ok && transformRes.data?.length) {
@@ -284,6 +324,7 @@ async function loadExistingTask() {
       outputInterval.value = t.outputInterval
       outputIntervalUnits.value = t.outputIntervalUnits
       minValues.value = t.minValues ?? null
+      originalTransformation.value = currentTransformationValues()
     }
   } catch (error: any) {
     Snackbar.error(error?.message || 'Unable to load existing task.')
@@ -324,7 +365,7 @@ async function onCreate() {
     name: taskName.value.trim(),
     thingId,
     description: null,
-    schedule: null,
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -332,20 +373,20 @@ async function onCreate() {
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createAggregationTransformation(
-    taskRes.data.id,
-    {
+  const transformRes =
+    await hs.dataProductTasks.createAggregationTransformation(taskRes.data.id, {
       inputDatastreamId: inputDatastreamId.value!,
       outputDatastreamId: outputDatastreamId.value!,
       aggregationMethod: aggregationMethod.value,
       outputInterval: outputInterval.value!,
       outputIntervalUnits: outputIntervalUnits.value,
       minValues: minValues.value ?? null,
-    }
-  )
+    })
 
   if (!transformRes.ok) {
-    Snackbar.error(transformRes.message || 'Unable to create aggregation transformation.')
+    Snackbar.error(
+      transformRes.message || 'Unable to create aggregation transformation.'
+    )
     return
   }
 
@@ -359,6 +400,7 @@ async function onUpdate() {
   const taskRes = await hs.dataProductTasks.update({
     id: taskId,
     name: taskName.value.trim(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok) {
@@ -366,24 +408,29 @@ async function onUpdate() {
     return
   }
 
-  if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateAggregationTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        inputDatastreamId: inputDatastreamId.value!,
-        outputDatastreamId: outputDatastreamId.value!,
-        aggregationMethod: aggregationMethod.value,
-        outputInterval: outputInterval.value!,
-        outputIntervalUnits: outputIntervalUnits.value,
-        minValues: minValues.value ?? null,
-      }
-    )
+  if (existingTransformationId.value && transformationHasChanges()) {
+    const transformRes =
+      await hs.dataProductTasks.updateAggregationTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
+          aggregationMethod: aggregationMethod.value,
+          outputInterval: outputInterval.value!,
+          outputIntervalUnits: outputIntervalUnits.value,
+          minValues: minValues.value ?? null,
+        }
+      )
 
     if (!transformRes.ok) {
-      Snackbar.error(transformRes.message || 'Unable to update aggregation transformation.')
+      Snackbar.error(
+        transformRes.message || 'Unable to update aggregation transformation.'
+      )
       return
     }
+
+    originalTransformation.value = currentTransformationValues()
   }
 
   Snackbar.success('Aggregation task updated.')
@@ -419,7 +466,6 @@ watch(
     }
   }
 )
-
 
 onMounted(async () => {
   await loadDatastreams()

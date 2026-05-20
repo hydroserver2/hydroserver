@@ -163,6 +163,63 @@ def test_create_data_connection(get_principal, principal, workspace, error, erro
 
 
 @pytest.mark.parametrize(
+    "auth_header_name, auth_header_value, error",
+    [
+        ("X-API-Key", "secret", None),
+        (None, None, None),
+        ("X-API-Key", None, ValueError),
+        (None, "secret", ValueError),
+    ],
+)
+def test_create_data_connection_auth_headers(get_principal, auth_header_name, auth_header_value, error):
+    params = {**_create_params(), "auth_header_name": auth_header_name, "auth_header_value": auth_header_value}
+    if error:
+        with pytest.raises(error):
+            data_connection_service.create(
+                principal=get_principal("owner"),
+                workspace=uuid.UUID(PRIVATE_WORKSPACE),
+                **params,
+            )
+    else:
+        result = data_connection_service.create(
+            principal=get_principal("owner"),
+            workspace=uuid.UUID(PRIVATE_WORKSPACE),
+            **params,
+        )
+        assert result.auth_header_name == auth_header_name
+        assert result.auth_header_value == auth_header_value
+
+
+@pytest.mark.parametrize(
+    "auth_header_name, auth_header_value, error",
+    [
+        ("X-API-Key", "secret", None),
+        (None, None, None),
+        ("X-API-Key", None, ValueError),
+        (None, "secret", ValueError),
+    ],
+)
+def test_update_data_connection_auth_headers(get_principal, auth_header_name, auth_header_value, error):
+    if error:
+        with pytest.raises(error):
+            data_connection_service.update(
+                data_connection=uuid.UUID(DC1),
+                principal=get_principal("owner"),
+                auth_header_name=auth_header_name,
+                auth_header_value=auth_header_value,
+            )
+    else:
+        result = data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            auth_header_name=auth_header_name,
+            auth_header_value=auth_header_value,
+        )
+        assert result.auth_header_name == auth_header_name
+        assert result.auth_header_value == auth_header_value
+
+
+@pytest.mark.parametrize(
     "principal, data_connection, error, error_fragment",
     [
         # Authorized

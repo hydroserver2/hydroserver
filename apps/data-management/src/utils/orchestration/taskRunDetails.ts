@@ -7,6 +7,7 @@ type TaskStatusLike = {
     enabled?: boolean | null
     nextRunAt?: string | null
     startTime?: string | null
+    crontab?: string | null
     interval?: number | null
     intervalPeriod?: string | null
   } | null
@@ -54,6 +55,119 @@ const parseDate = (value?: string | null) => {
   return Number.isNaN(date.valueOf()) ? null : date
 }
 
+function parseCronField(
+  field: string,
+  min: number,
+  max: number
+): Set<number> | null {
+  const values = new Set<number>()
+  const parts = field.split(',').map((part) => part.trim())
+  if (!parts.length || parts.some((part) => !part)) return null
+
+  for (const part of parts) {
+    const [rangePart, stepPart] = part.split('/')
+    const step = stepPart ? Number(stepPart) : 1
+    if (!Number.isInteger(step) || step < 1) return null
+
+    let start = min
+    let end = max
+    if (rangePart !== '*') {
+      if (rangePart.includes('-')) {
+        const [rawStart, rawEnd] = rangePart.split('-').map(Number)
+        start = rawStart
+        end = rawEnd
+      } else {
+        start = Number(rangePart)
+        end = start
+      }
+    }
+
+    if (
+      !Number.isInteger(start) ||
+      !Number.isInteger(end) ||
+      start < min ||
+      end > max ||
+      start > end
+    ) {
+      return null
+    }
+
+    for (let value = start; value <= end; value += step) values.add(value)
+  }
+
+  return values
+}
+
+function parseCronDayOfWeek(field: string) {
+  const values = parseCronField(field, 0, 7)
+  if (!values) return null
+  if (values.has(7)) {
+    values.add(0)
+    values.delete(7)
+  }
+  return values
+}
+
+const matchesCron = (
+  date: Date,
+  fields: {
+    minutes: Set<number>
+    hours: Set<number>
+    daysOfMonth: Set<number>
+    months: Set<number>
+    daysOfWeek: Set<number>
+  }
+) =>
+  fields.minutes.has(date.getMinutes()) &&
+  fields.hours.has(date.getHours()) &&
+  fields.daysOfMonth.has(date.getDate()) &&
+  fields.months.has(date.getMonth() + 1) &&
+  fields.daysOfWeek.has(date.getDay())
+
+const inferCrontabNextRunAt = (task?: TaskStatusLike | null) => {
+  const schedule = task?.schedule
+  if (!schedule?.crontab) return null
+
+  const parts = schedule.crontab.trim().split(/\s+/)
+  if (parts.length !== 5) return null
+
+  const minutes = parseCronField(parts[0], 0, 59)
+  const hours = parseCronField(parts[1], 0, 23)
+  const daysOfMonth = parseCronField(parts[2], 1, 31)
+  const months = parseCronField(parts[3], 1, 12)
+  const daysOfWeek = parseCronDayOfWeek(parts[4])
+
+  if (!minutes || !hours || !daysOfMonth || !months || !daysOfWeek) return null
+
+  const startDate = parseDate(schedule.startTime)
+  const now = new Date()
+  const base =
+    startDate && startDate.getTime() > now.getTime() ? startDate : now
+  const candidate = new Date(base)
+  candidate.setSeconds(0, 0)
+  if (candidate.getTime() < base.getTime()) {
+    candidate.setMinutes(candidate.getMinutes() + 1)
+  }
+
+  const maxMinutesToSearch = 366 * 24 * 60
+  for (let offset = 0; offset <= maxMinutesToSearch; offset += 1) {
+    if (
+      matchesCron(candidate, {
+        minutes,
+        hours,
+        daysOfMonth,
+        months,
+        daysOfWeek,
+      })
+    ) {
+      return candidate
+    }
+    candidate.setMinutes(candidate.getMinutes() + 1)
+  }
+
+  return null
+}
+
 const inferIntervalNextRunAt = (task?: TaskStatusLike | null) => {
   const schedule = task?.schedule
   if (!schedule?.interval || !schedule.intervalPeriod) return null
@@ -75,6 +189,11 @@ const inferIntervalNextRunAt = (task?: TaskStatusLike | null) => {
 
   return new Date(baseDate.getTime() + schedule.interval * unitMs)
 }
+
+export const getTaskNextRunAt = (task?: TaskStatusLike | null) =>
+  parseDate(task?.schedule?.nextRunAt) ??
+  inferIntervalNextRunAt(task) ??
+  inferCrontabNextRunAt(task)
 
 export const getTaskRunResult = (run?: TaskRun | null): TaskRunResultLike =>
   (asObject(run?.result) ?? {}) as TaskRunResultLike
@@ -112,12 +231,12 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
 
   return (
     firstString(
+      extractorRuntime?.sourceUri,
+      extractorRuntime?.source_uri,
       result.runtimeSourceUri,
       result.runtime_source_uri,
       result.runtimeUrl,
-      result.runtime_url,
-      extractorRuntime?.sourceUri,
-      extractorRuntime?.source_uri
+      result.runtime_url
     ) ?? null
   )
 }
@@ -206,7 +325,7 @@ export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType => {
     return 'Pending'
   }
 
-  const next = parseDate(schedule.nextRunAt) ?? inferIntervalNextRunAt(task)
+  const next = getTaskNextRunAt(task)
   if (next) {
     return next.getTime() < Date.now() ? 'Behind schedule' : 'OK'
   }

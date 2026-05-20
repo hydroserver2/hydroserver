@@ -18,10 +18,11 @@
               This web application is an instance of the HydroServer Data
               Management App, which provides a user-friendly interface for
               managing monitoring sites and their metadata. HydroServer is an
-              open-source suite of software tools designed to make sensor data
-              management easier. HydroServer is freely available and uses the
-              Open Geospatial Consortium's (OGC) SensorThings application
-              programming interface and data model standard. For more
+              open-source suite of software tools designed to make
+              environmental data management easier. HydroServer is freely
+              available and uses the Open Geospatial Consortium's (OGC)
+              SensorThings application programming interface and data model
+              standard. For more
               information about hydroserver, visit
               <v-btn
                 class="ma-0 pa-0"

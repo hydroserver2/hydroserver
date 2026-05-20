@@ -25,7 +25,7 @@
 
   <v-dialog v-model="openDelete" width="40rem">
     <DeleteMetadataCard
-      itemName="sensor"
+      itemName="method"
       :itemID="item.id"
       parameter-name="sensor_id"
       @delete="onDelete"

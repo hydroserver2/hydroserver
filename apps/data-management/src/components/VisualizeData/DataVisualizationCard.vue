@@ -6,8 +6,8 @@
 
     <div v-if="showNoDataWarning" class="plot-warning">
       <v-alert type="warning" density="comfortable" variant="tonal">
-        No data available for the selected date range. Please select a
-        different date range to re-plot.
+        No data available for the selected date range. Please select a different
+        date range to re-plot.
       </v-alert>
     </div>
 
@@ -149,9 +149,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
-import {
-  getXRangeBounds,
-} from '@/utils/plotting/plotly'
+import { getXRangeBounds } from '@/utils/plotting/plotly'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
 
 const emit = defineEmits(['copy-state'])
@@ -160,7 +158,6 @@ const props = defineProps({
   cardHeight: { type: Number, required: true },
 })
 
-const { onDateBtnClick } = useDataVisStore()
 const {
   showSummaryStatistics,
   dataZoomStart,
@@ -446,7 +443,9 @@ const updating = computed(() =>
 const isDataAvailable = computed(() =>
   graphSeriesArray.value.some((series) => series.data && series.data.length > 0)
 )
-const hasSelectedDatastreams = computed(() => plottedDatastreams.value.length > 0)
+const hasSelectedDatastreams = computed(
+  () => plottedDatastreams.value.length > 0
+)
 
 const hasLoadedSelectedSeries = computed(() => {
   if (!plottedDatastreams.value.length) return false
@@ -481,84 +480,26 @@ const showPlot = computed(() => canPlot.value && viewMode.value === 'plot')
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value))
 const RANGE_MATCH_TOLERANCE_MS = 5 * 60 * 1000
-const PRESET_MATCH_TOLERANCE_MS = 36 * 60 * 60 * 1000
 
 const isWithinTolerance = (value: number, target: number, tolerance: number) =>
   Math.abs(value - target) <= tolerance
 
-const getMostRecentEndTime = () =>
-  plottedDatastreams.value.reduce((latest, ds) => {
-    if (!ds.phenomenonEndTime) return latest
-    const dsEndDate = new Date(ds.phenomenonEndTime)
-    return dsEndDate > latest ? dsEndDate : latest
-  }, new Date(0))
+const preserveLiveAxisRanges = () => {
+  if (!plotlyRef.value || !plotlyOptions.value) return
+  if (!xAxisRange.value && !Object.keys(yAxisRanges.value).length) return
 
-const getOldestBeginTime = () =>
-  plottedDatastreams.value.reduce((oldest, ds) => {
-    if (!ds.phenomenonBeginTime) return oldest
-    const dsBeginDate = new Date(ds.phenomenonBeginTime)
-    return dsBeginDate < oldest ? dsBeginDate : oldest
-  }, endDate.value)
+  const liveLayout = plotlyRef.value.layout
+  const nextLayout = plotlyOptions.value.layout
+  if (!liveLayout || !nextLayout) return
 
-const getPhenomenonRange = () => {
-  let min = Infinity
-  let max = -Infinity
-
-  plottedDatastreams.value.forEach((ds) => {
-    if (ds.phenomenonBeginTime) {
-      const begin = new Date(ds.phenomenonBeginTime).getTime()
-      if (Number.isFinite(begin)) min = Math.min(min, begin)
-    }
-    if (ds.phenomenonEndTime) {
-      const end = new Date(ds.phenomenonEndTime).getTime()
-      if (Number.isFinite(end)) max = Math.max(max, end)
-    }
+  Object.keys(nextLayout).forEach((key) => {
+    if (key !== 'xaxis' && !/^yaxis\d*$/.test(key)) return
+    const liveRange = liveLayout[key]?.range
+    const nextAxis = nextLayout[key]
+    if (!nextAxis || !Array.isArray(liveRange) || liveRange.length !== 2) return
+    nextAxis.range = [...liveRange]
+    nextAxis.autorange = false
   })
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return null
-  return { min, max }
-}
-
-const matchPresetRange = (rangeStart: number, rangeEnd: number) => {
-  if (!plottedDatastreams.value.length) return null
-
-  const mostRecentEnd = getMostRecentEndTime().getTime()
-  if (!Number.isFinite(mostRecentEnd)) return null
-  if (!isWithinTolerance(rangeEnd, mostRecentEnd, PRESET_MATCH_TOLERANCE_MS))
-    return null
-
-  const end = new Date(mostRecentEnd)
-  const candidates = [
-    {
-      id: 0,
-      begin: new Date(end.getFullYear(), end.getMonth() - 1, end.getDate()),
-    },
-    {
-      id: 1,
-      begin: new Date(end.getFullYear(), end.getMonth() - 6, end.getDate()),
-    },
-    {
-      id: 2,
-      begin: new Date(end.getFullYear(), 0, 1),
-    },
-    {
-      id: 3,
-      begin: new Date(end.getFullYear() - 1, end.getMonth(), end.getDate()),
-    },
-    {
-      id: 4,
-      begin: getOldestBeginTime(),
-    },
-  ]
-
-  const match = candidates.find((candidate) =>
-    isWithinTolerance(
-      rangeStart,
-      candidate.begin.getTime(),
-      PRESET_MATCH_TOLERANCE_MS
-    )
-  )
-  return match ? match.id : null
 }
 
 const handleRelayout = async (eventData: any) => {
@@ -685,30 +626,13 @@ const handleRelayout = async (eventData: any) => {
     isWithinTolerance(rangeStart, currentStart, RANGE_MATCH_TOLERANCE_MS) &&
     isWithinTolerance(rangeEnd, currentEnd, RANGE_MATCH_TOLERANCE_MS)
 
-  if (!rangeMatchesCurrent) {
-    const phenomenonRange = getPhenomenonRange()
-    const rangeMatchesDataBounds =
-      isWithinTolerance(rangeStart, bounds.min, RANGE_MATCH_TOLERANCE_MS) &&
-      isWithinTolerance(rangeEnd, bounds.max, RANGE_MATCH_TOLERANCE_MS)
-    const needsFullRange =
-      phenomenonRange &&
-      (bounds.min > phenomenonRange.min + RANGE_MATCH_TOLERANCE_MS ||
-        bounds.max < phenomenonRange.max - RANGE_MATCH_TOLERANCE_MS)
-    const matchedPresetId =
-      rangeMatchesDataBounds && needsFullRange
-        ? 4
-        : matchPresetRange(rangeStart, rangeEnd)
-    if (matchedPresetId !== null) {
-      onDateBtnClick(matchedPresetId)
-    }
-  }
+  if (rangeMatchesCurrent) xAxisRange.value = null
 }
 
-const debouncedRelayout = debounce(handleRelayout, 250)
+const debouncedRelayout = debounce(handleRelayout, 450)
 
 const attachHandlers = () => {
   if (!plotlyRef.value || handlersAttached.value) return
-  plotlyRef.value.on('plotly_redraw', debouncedRelayout)
   plotlyRef.value.on('plotly_relayout', debouncedRelayout)
   plotlyRef.value.on('plotly_afterplot', applyLargeSeriesModeForCurrentRange)
   handlersAttached.value = true
@@ -719,6 +643,7 @@ const renderPlot = async () => {
 
   const Plotly = await ensurePlotly()
   const { traces, layout, config } = plotlyOptions.value
+  preserveLiveAxisRanges()
   if (!plotlyRef.value) {
     plotlyRef.value = await Plotly.newPlot(
       plotContainer.value,

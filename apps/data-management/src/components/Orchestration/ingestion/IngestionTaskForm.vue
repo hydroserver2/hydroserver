@@ -48,148 +48,7 @@
 
         <v-divider class="my-4" />
 
-        <div class="flex flex-col gap-3">
-          <div class="flex items-baseline gap-2">
-            <h3
-              class="text-[0.72rem] font-extrabold uppercase tracking-[0.08em] text-[#4f4b59]"
-            >
-              Schedule
-            </h3>
-            <span class="text-[0.78rem] leading-[1.3] text-[#5f5a67]">
-              {{ timezoneLabel }}
-            </span>
-          </div>
-
-          <div
-            class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3"
-          >
-            <div
-              class="min-h-[92px] cursor-pointer rounded-lg border border-[#d0c9d8] bg-white px-3 py-3 outline-none transition-[border-color,background-color,box-shadow] duration-[160ms] ease-in-out hover:border-[#1565c0] focus-visible:border-[#1565c0]"
-              :class="{
-                '!border-2 !border-[#1565c0] !bg-[#edf3ff] shadow-[inset_0_0_0_1px_rgba(21,101,192,0.05)] [&_.v-field]:bg-white [&_.v-field__overlay]:bg-transparent [&_.v-field__outline]:[--v-field-border-opacity:1]':
-                  scheduleMode === 'interval',
-              }"
-              tabindex="0"
-              role="button"
-              @click="selectScheduleMode('interval')"
-              @keydown.enter.prevent="selectScheduleMode('interval')"
-              @keydown.space.prevent="selectScheduleMode('interval')"
-            >
-              <div class="flex items-start gap-2">
-                <span
-                  class="mt-px size-4 shrink-0 rounded-full border-2"
-                  :class="
-                    scheduleMode === 'interval'
-                      ? 'border-[#1565c0] shadow-[inset_0_0_0_3px_#1565c0] bg-white'
-                      : 'border-[#7e7886]'
-                  "
-                />
-                <div
-                  class="text-[0.86rem] font-bold leading-[1.2] text-[#1565c0]"
-                  :class="{ 'text-[#1f1d24]': scheduleMode !== 'interval' }"
-                >
-                  Repeating interval
-                </div>
-              </div>
-
-              <div
-                v-if="scheduleMode === 'interval'"
-                class="mt-3 flex flex-wrap items-center gap-2 pl-6 max-[900px]:pl-0"
-              >
-                <span class="text-[0.82rem] font-medium text-[#1f1d24]"
-                  >Every</span
-                >
-                <v-text-field
-                  v-model.number="task.schedule!.interval"
-                  class="max-w-20"
-                  type="number"
-                  min="1"
-                  hide-details
-                  variant="outlined"
-                  rounded="lg"
-                  :rules="rules.required"
-                />
-                <v-select
-                  v-model="task.schedule!.intervalPeriod"
-                  class="max-w-[112px]"
-                  :items="intervalUnitOptions"
-                  item-title="title"
-                  item-value="value"
-                  hide-details
-                  variant="outlined"
-                  density="compact"
-                  rounded="lg"
-                  :rules="rules.required"
-                />
-              </div>
-            </div>
-
-            <div
-              class="min-h-[92px] cursor-pointer rounded-lg border border-[#d0c9d8] bg-white px-3 py-3 outline-none transition-[border-color,background-color,box-shadow] duration-[160ms] ease-in-out hover:border-[#1565c0] focus-visible:border-[#1565c0]"
-              :class="{
-                '!border-2 !border-[#1565c0] !bg-[#edf3ff] shadow-[inset_0_0_0_1px_rgba(21,101,192,0.05)] [&_.v-field]:bg-white [&_.v-field__overlay]:bg-transparent [&_.v-field__outline]:[--v-field-border-opacity:1]':
-                  scheduleMode === 'crontab',
-              }"
-              tabindex="0"
-              role="button"
-              @click="selectScheduleMode('crontab')"
-              @keydown.enter.prevent="selectScheduleMode('crontab')"
-              @keydown.space.prevent="selectScheduleMode('crontab')"
-            >
-              <div class="flex items-start gap-2">
-                <span
-                  class="mt-px size-4 shrink-0 rounded-full border-2"
-                  :class="
-                    scheduleMode === 'crontab'
-                      ? 'border-[#1565c0] shadow-[inset_0_0_0_3px_#1565c0] bg-white'
-                      : 'border-[#7e7886]'
-                  "
-                />
-                <div
-                  class="text-[0.86rem] font-bold leading-[1.2] text-[#1f1d24]"
-                  :class="{ 'text-[#1565c0]': scheduleMode === 'crontab' }"
-                >
-                  Crontab expression
-                </div>
-              </div>
-
-              <div
-                v-if="scheduleMode === 'crontab'"
-                class="mt-3 flex flex-wrap items-center gap-2 pl-6 max-[900px]:pl-0"
-              >
-                <v-text-field
-                  v-model="task.schedule!.crontab"
-                  class="w-full max-[640px]:max-w-full"
-                  placeholder="0 9 * * *"
-                  hide-details
-                  variant="outlined"
-                  rounded="lg"
-                  density="compact"
-                  :rules="rules.required"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <label
-              class="text-[0.82rem] font-medium text-[#1f1d24]"
-              for="task-start-time"
-            >
-              Start
-            </label>
-            <v-text-field
-              id="task-start-time"
-              v-model="startInput"
-              class="schedule-start-input max-w-[250px] max-[640px]:w-full max-[640px]:max-w-full"
-              type="datetime-local"
-              hide-details
-              variant="outlined"
-              rounded="lg"
-              density="compact"
-            />
-          </div>
-        </div>
+        <ScheduleFields v-model="task.schedule" color="#1565c0" />
 
         <v-divider v-if="perTaskPlaceholders.length" class="my-4" />
 
@@ -387,8 +246,13 @@
 
     <template #actions>
       <v-spacer />
-      <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary :loading="submitLoading" type="button" @click="onSubmit">
+      <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
+      <v-btn-primary
+        :loading="submitLoading"
+        :color="INGESTION_ACCENT"
+        type="submit"
+        @click="onSubmit"
+      >
         Save task
       </v-btn-primary>
     </template>
@@ -420,11 +284,13 @@ import hs, {
 } from '@hydroserver/client'
 import StickyForm from '@/components/Forms/StickyForm.vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
+import ScheduleFields from '@/components/Orchestration/shared/ScheduleFields.vue'
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
-import { ensureIsoUtc, inputToIso, isoToInput } from '@/utils/time'
+import { ensureIsoUtc } from '@/utils/time'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { INGESTION_ACCENT } from '../workbench/orchestrationTabs'
 import {
   mdiArrowRight,
   mdiPlus,
@@ -451,12 +317,6 @@ const perTaskPlaceholders = props.dataConnection.placeholderVariables.filter(
   (variable): variable is PlaceholderVariable => variable.type === 'per_task'
 )
 const headerContextLabel = props.dataConnection.name || null
-const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
-const intervalUnitOptions = [
-  { value: 'minutes', title: 'Minutes' },
-  { value: 'hours', title: 'Hours' },
-  { value: 'days', title: 'Days' },
-] as const
 
 const orchestrationStore = useOrchestrationStore()
 const {
@@ -485,8 +345,8 @@ function defaultSchedule(): TaskSchedule {
   }
 }
 
-function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule {
-  return schedule ? { ...schedule } : defaultSchedule()
+function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule | null {
+  return schedule ? { ...schedule } : null
 }
 
 function editableMappingFrom(mapping: any): FormMapping {
@@ -546,30 +406,12 @@ if (task.value.mappings.length === 0) {
   } as any)
 }
 
-const scheduleMode = ref<'interval' | 'crontab'>(
-  task.value.schedule?.crontab ? 'crontab' : 'interval'
-)
-
 const formMappings = computed(
   () => task.value.mappings as unknown as FormMapping[]
 )
 
-const startInput = computed({
-  get: () => isoToInput(task.value.schedule?.startTime ?? ''),
-  set: (v: string) => {
-    if (!task.value.schedule) task.value.schedule = defaultSchedule()
-    task.value.schedule!.startTime = v ? inputToIso(v) : null
-  },
-})
-
 function templateVariablePlaceholder(name: string) {
   return `e.g. ${name.toUpperCase()}`
-}
-
-function selectScheduleMode(mode: 'interval' | 'crontab') {
-  if (!task.value.schedule) task.value.schedule = defaultSchedule()
-  scheduleMode.value = mode
-  if (mode === 'interval') task.value.schedule!.crontab = null
 }
 
 function hasTargetError(mi: number) {
@@ -640,6 +482,11 @@ function addMapping() {
   noMappingsError.value = false
 }
 
+function closeForm() {
+  draftDatastreams.value = []
+  emit('close')
+}
+
 function validateMappings() {
   showErrors.value = true
   noMappingsError.value = formMappings.value.length === 0
@@ -652,15 +499,13 @@ function validateMappings() {
 }
 
 function taskToPayload(): Task {
-  const schedule = task.value.schedule ?? defaultSchedule()
-  if (scheduleMode.value === 'interval') schedule.crontab = null
   return new Task({
     id: task.value.id,
     name: task.value.name,
     description: task.value.description,
     taskVariables: task.value.taskVariables,
     dataConnectionId: props.dataConnection.id,
-    schedule,
+    schedule: task.value.schedule,
     mappings: formMappings.value.map(
       (m): EtlMappingPostBody => ({
         sourceIdentifier: m.sourceIdentifier,
@@ -687,7 +532,7 @@ async function onSubmit() {
     }
     task.value = hydrateTask(res.data)
     emit(isEdit ? 'updated' : 'created', res.data)
-    emit('close')
+    closeForm()
   } catch (error: unknown) {
     Snackbar.error(
       error instanceof Error ? error.message : 'Unable to save task.'

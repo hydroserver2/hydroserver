@@ -56,6 +56,8 @@ export class DataConnection {
   name = ''
   description: string | null = null
   sourceUrl = ''
+  authHeaderName: string | null = null
+  authHeaderValue: string | null = null
   workspace: Workspace | null = null
   timestamp: TimestampConfig = { key: '' }
   payload: Payload = { type: 'CSV' }

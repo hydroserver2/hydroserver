@@ -6,8 +6,3 @@ export const DATA_PRODUCT_TOOLBAR_STYLE = {
   backgroundColor: DATA_PRODUCT_ACCENT_DARK,
   color: 'white',
 }
-
-export const DATA_PRODUCT_SUBMIT_STYLE = {
-  backgroundColor: DATA_PRODUCT_ACCENT,
-  color: 'white',
-}

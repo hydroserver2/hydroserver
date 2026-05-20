@@ -40,45 +40,47 @@
             @create="openCreateDialog"
           />
 
-          <section v-if="selectedTaskId" class="detail detail--task">
-            <TaskDetails
-              :task-id="selectedTaskId"
-              :task-kind="selectedTaskKind"
-              :run-id="selectedRunId"
-              :initial-task="selectedTask"
-              embedded
-              @close="closeTaskDetails"
-              @deleted="onTaskDetailsChanged"
-              @updated="onTaskDetailsChanged"
-            />
-          </section>
+          <RouterView v-slot="{ Component }">
+            <section
+              v-if="hasTaskDetails && Component"
+              class="detail detail--task"
+            >
+              <component
+                :is="Component"
+                :task-id="selectedTaskId"
+                :run-id="selectedRunId"
+                :initial-task="selectedTask"
+                embedded
+                @close="closeTaskDetailsAndSync"
+                @deleted="onTaskDeleted"
+                @updated="onTaskDetailsChanged"
+              />
+            </section>
 
-          <TaskListPanel
-            v-else
-            :can-edit="canEditOrchestration"
-            :loading="loading"
-            :has-selection="hasSelection"
-            :detail-title="detailTitle"
-            :detail-type-badge="detailTypeBadge"
-            :selected-connection="selectedConnection"
-            :visible-tasks="visibleTasks"
-            :sorted-visible-tasks="sortedVisibleTasks"
-            :empty-heading="emptyHeading"
-            :empty-message="emptyMessage"
-            :empty-tasks-message="emptyTasksMessage"
-            :sort-key="sortKey"
-            :sort-dir="sortDir"
-            @toggle-sort="toggleSort"
-            @toggle-paused="onTogglePaused"
-            @run-now="onRunNow"
-            @open-task="goToTask"
-            @add-task="openCreateTaskDialog(selectedConnection!)"
-            @add-aggregation="openAggregationForm = true"
-            @add-expression="openExpressionForm = true"
-            @add-derivation="openDerivationForm = true"
-            @add-rating-curve="openRatingCurveForm = true"
-            @add-quality="openQualityForm = true"
-          />
+            <TaskListPanel
+              v-else
+              :can-edit="canEditOrchestration"
+              :loading="loading"
+              :has-selection="hasSelection"
+              :detail-title="detailTitle"
+              :detail-type-badge="detailTypeBadge"
+              :selected-connection="selectedConnection"
+              :visible-tasks="visibleTasks"
+              :sorted-visible-tasks="sortedVisibleTasks"
+              :empty-heading="emptyHeading"
+              :empty-message="emptyMessage"
+              :empty-tasks-message="emptyTasksMessage"
+              @toggle-paused="onTogglePaused"
+              @run-now="onRunNow"
+              @open-task="goToTask"
+              @add-task="openCreateTaskDialog(selectedConnection!)"
+              @add-aggregation="openAggregationForm = true"
+              @add-expression="openExpressionForm = true"
+              @add-derivation="openDerivationForm = true"
+              @add-rating-curve="openRatingCurveForm = true"
+              @add-quality="openQualityForm = true"
+            />
+          </RouterView>
         </template>
 
         <v-dialog v-model="openCreateDataConnection" width="60rem">
@@ -167,7 +169,7 @@
             :initial-thing-id="selectedThingId"
             :edit-task-id="editingQualityTaskId"
             @close="closeQualityForm"
-            @created="onQualityTaskChanged"
+            @created="onQualityTaskCreated"
             @updated="onQualityTaskChanged"
             @deleted="onQualityTaskChanged"
           />
@@ -179,12 +181,15 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
+  type DataProductTask,
+  type MonitoringTask,
   PermissionAction,
   PermissionResource,
+  type TaskExpanded,
 } from '@hydroserver/client'
 
 import router from '@/router/router'
@@ -194,6 +199,7 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import { useOrchestrationData } from '@/composables/orchestration/useOrchestrationData'
 import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchestrationTaskRows'
 import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
+import { useOrchestrationRouteState } from '@/composables/orchestration/useOrchestrationRouteState'
 
 import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
@@ -203,7 +209,6 @@ import DataConnectionForm from '@/components/Orchestration/connections/DataConne
 import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationWorkspaceManager.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
-import TaskDetails from '@/pages/TaskDetails.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
@@ -212,17 +217,28 @@ import QualityManagementForm from '@/components/Orchestration/monitoring/Quality
 
 import {
   TAB_META,
-  TAB_TO_KIND,
   countTaskIssues,
   taskHasIssue,
   worstDotColor,
   type TabDefinition,
   type TabId,
-  type TaskKind,
   type TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-const route = useRoute()
+const {
+  view: routeView,
+  taskKind: selectedTaskKind,
+  taskId: selectedTaskId,
+  runId: selectedRunId,
+  workspaceId: routeWorkspaceId,
+  dataConnectionId: routeDataConnectionId,
+  siteId: routeSiteId,
+  hasTaskDetails,
+  replaceView,
+  replaceSelectedGroup,
+  closeTaskDetails,
+  pushTaskDetails,
+} = useOrchestrationRouteState()
 
 const {
   loading,
@@ -236,18 +252,52 @@ const {
   refreshDataConnections,
 } = useOrchestrationData()
 
+const orchestrationStore = useOrchestrationStore()
+const workspaceStore = useWorkspaceStore()
 const {
   orchestrationSearch,
   orchestrationStatusFilter,
+  orchestrationTaskTypeFilter,
   activeTab,
   activeView,
   selectedConnectionId,
   selectedThingId,
   sidebarSearch,
-} = storeToRefs(useOrchestrationStore())
-const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+  draftDatastreams,
+} = storeToRefs(orchestrationStore)
+const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+const applyRouteWorkspace = () => {
+  const targetWorkspaceId = routeWorkspaceId.value
+  if (!targetWorkspaceId || selectedWorkspace.value?.id === targetWorkspaceId) {
+    return false
+  }
+  if (
+    !workspaces.value.some((workspace) => workspace.id === targetWorkspaceId)
+  ) {
+    return false
+  }
+  workspaceStore.setSelectedWorkspaceById(targetWorkspaceId)
+  return true
+}
+
+watch([routeWorkspaceId, workspaces], applyRouteWorkspace, { immediate: true })
+
+watch(
+  routeView,
+  (view) => {
+    if (view === 'workspaces') {
+      activeView.value = 'workspaces'
+    } else {
+      activeView.value = 'tasks'
+      activeTab.value = view
+    }
+  },
+  { immediate: true }
+)
+const activeRunStatuses = new Set(['PENDING', 'STARTED'])
 
 const selectedDataConnection = ref<DataConnection | null>(null)
 const selectedTaskDataConnection = ref<DataConnection | null>(null)
@@ -264,25 +314,27 @@ const openRatingCurveForm = ref(false)
 const openQualityForm = ref(false)
 const editingQualityTaskId = ref<string | null>(null)
 
-const { runNowTriggeredByTaskId, stopAll, runTaskNow, toggleSchedulePaused } =
-  useTaskRunNowPolling({
-    lists: {
-      etl: workspaceTasks,
-      dataProduct: dataProductTasks,
-      monitoring: monitoringTasks,
-    },
-    currentWorkspaceId: () => selectedWorkspaceId.value!,
-  })
+const {
+  runNowTriggeredByTaskId,
+  stopAll,
+  runTaskNow,
+  startPollingTaskRun,
+  startPollingForLatestRun,
+  toggleSchedulePaused,
+} = useTaskRunNowPolling({
+  lists: {
+    etl: workspaceTasks,
+    dataProduct: dataProductTasks,
+    monitoring: monitoringTasks,
+  },
+  currentWorkspaceId: () => selectedWorkspaceId.value!,
+})
 
 const {
   etlTaskRows,
   dataProductTaskRows,
   monitoringTaskRows,
   activeTaskRows,
-  sortKey,
-  sortDir,
-  toggleSort,
-  sortRows,
 } = useOrchestrationTaskRows({
   activeTab,
   workspaceTasks,
@@ -308,7 +360,6 @@ const tabs = computed<TabDefinition[]>(() => [
   },
   { ...TAB_META.quality, issues: countTaskIssues(monitoringTaskRows.value) },
 ])
-
 
 const filterByName = <T extends { name: string }>(items: T[], term: string) => {
   const q = term.trim().toLowerCase()
@@ -382,13 +433,24 @@ const visibleTasks = computed<TaskRow[]>(() => {
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
   const term = orchestrationSearch.value.trim().toLowerCase()
   const filters = new Set(orchestrationStatusFilter.value)
+  const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
       const bucket = t.statusSort ?? 'Unknown'
       if (!filters.has(bucket)) return false
     }
+    if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
+      if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
     if (!term) return true
-    const haystack = [t.name, t.statusName, t.statusSort, t.lastRun, t.nextRun]
+    const haystack = [
+      t.name,
+      t.statusName,
+      t.statusSort,
+      t.lastRun,
+      t.nextRun,
+      t.taskType,
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
@@ -396,9 +458,7 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
   })
 })
 
-const sortedVisibleTasks = computed<TaskRow[]>(() =>
-  sortRows(searchedVisibleTasks.value)
-)
+const sortedVisibleTasks = computed<TaskRow[]>(() => searchedVisibleTasks.value)
 
 const hasSelection = computed(() =>
   activeTab.value === 'ingestion'
@@ -449,15 +509,10 @@ const emptyTasksMessage = computed(() =>
     : 'No tasks are writing data to this site yet.'
 )
 
-const selectedTaskId = computed(() => {
-  const value = route.query.taskId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
 const selectedTask = computed(() => {
   const taskId = selectedTaskId.value
-  if (!taskId) return null
   const kind = selectedTaskKind.value
+  if (!taskId || !kind) return null
   if (kind === 'etl')
     return workspaceTasks.value.find((t) => t.id === taskId) ?? null
   if (kind === 'dataProduct')
@@ -465,41 +520,30 @@ const selectedTask = computed(() => {
   return monitoringTasks.value.find((t) => t.id === taskId) ?? null
 })
 
-const selectedRunId = computed(() => {
-  const value = route.query.runId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
-const selectedTaskKind = computed<TaskKind>(() => {
-  const value = route.query.taskKind
-  if (value === 'etl' || value === 'dataProduct' || value === 'monitoring') {
-    return value
+const selectSidebarFromTaskDetails = () => {
+  const task = selectedTask.value as any
+  if (!hasTaskDetails.value || !task) return false
+  if (selectedTaskKind.value === 'etl') {
+    selectedConnectionId.value = task.dataConnection?.id ?? null
+    return !!selectedConnectionId.value
   }
-
-  const taskId = selectedTaskId.value
-  const row = taskId
-    ? [
-        ...etlTaskRows.value,
-        ...dataProductTaskRows.value,
-        ...monitoringTaskRows.value,
-      ].find((candidate) => candidate.id === taskId)
-    : null
-  return row?.kind ?? TAB_TO_KIND[activeTab.value]
-})
-
-const hasTaskDetailsQuery = computed(
-  () => selectedTaskId.value !== null || selectedRunId.value !== null
-)
-
-const closeTaskDetails = async () => {
-  if (!hasTaskDetailsQuery.value) return
-  const nextQuery = { ...route.query }
-  delete nextQuery.taskId
-  delete nextQuery.taskKind
-  delete nextQuery.runId
-  await router.replace({ name: 'Orchestration', query: nextQuery })
+  selectedThingId.value = task.thing?.id ?? null
+  return !!selectedThingId.value
 }
 
+const selectSidebarFromRouteGroup = () => {
+  if (activeTab.value === 'ingestion') {
+    const id = routeDataConnectionId.value
+    if (!id || !connectionsById.value.has(id)) return false
+    selectedConnectionId.value = id
+    return true
+  }
+
+  const id = routeSiteId.value
+  if (!id || !thingsById.value.has(id)) return false
+  selectedThingId.value = id
+  return true
+}
 
 const autoSelectSidebar = () => {
   if (activeTab.value === 'ingestion') {
@@ -513,17 +557,36 @@ const autoSelectSidebar = () => {
   }
 }
 
-const setActiveTab = async (tab: TabId) => {
-  activeView.value = 'tasks'
-  activeTab.value = tab
-  sidebarSearch.value = ''
+const selectedGroupIdForTab = (tab: TabId) =>
+  tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
+
+const syncSelectedGroupToRoute = async () => {
+  if (activeView.value === 'workspaces' || hasTaskDetails.value) return
+  await replaceSelectedGroup(
+    activeTab.value,
+    selectedGroupIdForTab(activeTab.value)
+  )
+}
+
+const autoSelectSidebarAndSync = async () => {
   autoSelectSidebar()
+  await syncSelectedGroupToRoute()
+}
+
+const closeTaskDetailsAndSync = async () => {
   await closeTaskDetails()
+  await syncSelectedGroupToRoute()
+}
+
+const setActiveTab = async (tab: TabId) => {
+  sidebarSearch.value = ''
+  await replaceView(tab, selectedGroupIdForTab(tab))
+  autoSelectSidebar()
+  await syncSelectedGroupToRoute()
 }
 
 const openWorkspaceManager = async () => {
-  activeView.value = 'workspaces'
-  await closeTaskDetails()
+  await replaceView('workspaces')
 }
 
 const goToHydroLoader = async () => {
@@ -532,27 +595,79 @@ const goToHydroLoader = async () => {
 
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
-  await closeTaskDetails()
+  await replaceView('ingestion', id)
 }
 
 const selectSite = async (id: string) => {
   selectedThingId.value = id
-  await closeTaskDetails()
+  await replaceView(activeTab.value, id)
+}
+
+const closeWorkspaceScopedUi = () => {
+  openCreateDataConnection.value = false
+  openCreateTask.value = false
+  openEditDataConnection.value = false
+  openDeleteDataConnection.value = false
+  openAggregationForm.value = false
+  openExpressionForm.value = false
+  openDerivationForm.value = false
+  openRatingCurveForm.value = false
+  openQualityForm.value = false
+  selectedDataConnection.value = null
+  selectedTaskDataConnection.value = null
+  editingAggregationTaskId.value = null
+  editingDerivationTaskId.value = null
+  editingQualityTaskId.value = null
+  sidebarSearch.value = ''
+  orchestrationSearch.value = ''
+  orchestrationStatusFilter.value = []
+  orchestrationTaskTypeFilter.value = []
+  draftDatastreams.value = []
 }
 
 watch(
   selectedWorkspaceId,
-  async (newId) => {
+  async (newId, oldId) => {
     if (newId == null) return
+    const workspaceChanged = oldId != null && oldId !== newId
+    const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
     stopAll()
+    closeWorkspaceScopedUi()
     selectedConnectionId.value = null
     selectedThingId.value = null
+    if (workspaceChanged && !routeSelectedThisWorkspace)
+      await closeTaskDetails()
     await fetchAll(newId)
-    autoSelectSidebar()
+    if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
+      autoSelectSidebar()
+    }
+    await syncSelectedGroupToRoute()
   },
   { immediate: true }
 )
 
+watch(
+  [routeDataConnectionId, routeSiteId, routeView],
+  async () => {
+    if (
+      loading.value ||
+      activeView.value === 'workspaces' ||
+      hasTaskDetails.value
+    ) {
+      return
+    }
+
+    if (selectSidebarFromRouteGroup()) return
+
+    const hasRouteSelection =
+      activeTab.value === 'ingestion'
+        ? !!routeDataConnectionId.value
+        : !!routeSiteId.value
+    if (!hasRouteSelection) return
+
+    await autoSelectSidebarAndSync()
+  }
+)
 
 const openCreateDialog = () => {
   if (!canEditOrchestration.value) return
@@ -565,7 +680,12 @@ const openCreateTaskDialog = (dc: DataConnection) => {
   openCreateTask.value = true
 }
 
+const resetDraftDatastreams = () => {
+  draftDatastreams.value = []
+}
+
 const closeCreateTaskDialog = () => {
+  resetDraftDatastreams()
   openCreateTask.value = false
   selectedTaskDataConnection.value = null
 }
@@ -587,10 +707,27 @@ const onDataConnectionCreated = async () => {
   await refreshDataConnections()
 }
 
-const onTaskCreated = async () => {
+const onTaskCreated = async (createdTask?: TaskExpanded) => {
   closeCreateTaskDialog()
   await fetchAll()
-  autoSelectSidebar()
+  const taskToPoll =
+    (createdTask?.latestRun?.id ? createdTask : null) ??
+    workspaceTasks.value.find((task) => task.id === createdTask?.id)
+
+  if (!taskToPoll?.id) {
+    await autoSelectSidebarAndSync()
+    return
+  }
+
+  if (
+    taskToPoll?.latestRun?.id &&
+    activeRunStatuses.has(taskToPoll.latestRun.status)
+  ) {
+    startPollingTaskRun('etl', taskToPoll.id, taskToPoll.latestRun.id)
+  } else if (!taskToPoll?.latestRun) {
+    await runTaskNow('etl', taskToPoll.id)
+  }
+  await autoSelectSidebarAndSync()
 }
 
 const closeAggregationForm = () => {
@@ -608,24 +745,69 @@ const closeQualityForm = () => {
   editingQualityTaskId.value = null
 }
 
-const onDataProductTaskCreated = async () => {
+const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
   openAggregationForm.value = false
   openDerivationForm.value = false
   openExpressionForm.value = false
   openRatingCurveForm.value = false
   await fetchAll()
-  autoSelectSidebar()
+
+  const taskToPoll = dataProductTasks.value.find(
+    (task) => task.id === createdTask?.id
+  )
+
+  if (taskToPoll?.id) {
+    if (
+      taskToPoll.latestRun?.id &&
+      activeRunStatuses.has(taskToPoll.latestRun.status)
+    ) {
+      startPollingTaskRun('dataProduct', taskToPoll.id, taskToPoll.latestRun.id)
+    } else if (!taskToPoll.latestRun) {
+      await runTaskNow('dataProduct', taskToPoll.id)
+    }
+  }
+
+  await autoSelectSidebarAndSync()
+}
+
+const onQualityTaskCreated = async (createdTask?: MonitoringTask) => {
+  closeQualityForm()
+  await fetchAll()
+
+  const taskToPoll = monitoringTasks.value.find(
+    (task) => task.id === createdTask?.id
+  )
+
+  if (taskToPoll?.id) {
+    if (
+      taskToPoll.latestRun?.id &&
+      activeRunStatuses.has(taskToPoll.latestRun.status)
+    ) {
+      startPollingTaskRun('monitoring', taskToPoll.id, taskToPoll.latestRun.id)
+    } else if (!taskToPoll.latestRun) {
+      startPollingForLatestRun('monitoring', taskToPoll.id)
+    }
+  }
+
+  await autoSelectSidebarAndSync()
 }
 
 const onQualityTaskChanged = async () => {
   closeQualityForm()
   await fetchAll()
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
 }
 
 const onTaskDetailsChanged = async () => {
+  resetDraftDatastreams()
   await fetchAll()
-  autoSelectSidebar()
+  await autoSelectSidebarAndSync()
+}
+
+const onTaskDeleted = async () => {
+  resetDraftDatastreams()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
 }
 
 const onDataConnectionUpdated = (updated: DataConnection) => {
@@ -639,10 +821,12 @@ const onDataConnectionDeleted = async () => {
   const id = selectedDataConnection.value.id
   try {
     await hs.dataConnections.delete(id)
-    dataConnections.value = dataConnections.value.filter((dc) => dc.id !== id)
+    resetDraftDatastreams()
+    await fetchAll()
     if (selectedConnectionId.value === id) {
       selectedConnectionId.value = dataConnections.value[0]?.id ?? null
     }
+    await autoSelectSidebarAndSync()
     openDeleteDataConnection.value = false
   } catch (error) {
     console.error('Error deleting data connection', error)
@@ -661,16 +845,7 @@ const onTogglePaused = async (row: TaskRow) => {
 }
 
 const goToTask = async (row: TaskRow) => {
-  const currentQuery = { ...(router.currentRoute.value.query ?? {}) }
-  delete currentQuery.runId
-  await router.push({
-    name: 'Orchestration',
-    query: {
-      ...currentQuery,
-      taskId: row.id,
-      taskKind: row.kind,
-    },
-  })
+  await pushTaskDetails(row)
 }
 </script>
 

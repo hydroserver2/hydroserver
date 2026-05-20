@@ -77,6 +77,8 @@ class DataConnection(models.Model, PermissionChecker):
         on_delete=models.CASCADE,
     )
     source_url = models.TextField()
+    auth_header_name = models.CharField(max_length=255, null=True, blank=True)
+    auth_header_value = models.TextField(null=True, blank=True)
     timestamp_key = models.CharField(max_length=255)
     timestamp_format = models.CharField(max_length=255, blank=True, null=True)
     timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)

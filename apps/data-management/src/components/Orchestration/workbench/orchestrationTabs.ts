@@ -19,7 +19,12 @@ import {
 export type TabId = 'ingestion' | 'aggregation' | 'quality'
 export type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
 export type ActiveView = 'tasks' | 'workspaces'
-export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt'
+export type SortKey =
+  | 'name'
+  | 'status'
+  | 'lastRunAt'
+  | 'nextRunAt'
+  | 'taskType'
 export type SortDir = 'asc' | 'desc'
 
 export type DataProductTaskType =
@@ -29,6 +34,11 @@ export type DataProductTaskType =
   | 'Rating curve'
   | null
 
+export type TaskNoWorkWarning = {
+  label: string
+  message: string
+} | null
+
 export const DATA_PRODUCT_TYPE_COLORS: Record<
   NonNullable<DataProductTaskType>,
   { text: string; bg: string }
@@ -37,6 +47,17 @@ export const DATA_PRODUCT_TYPE_COLORS: Record<
   Expression: { text: '#006064', bg: '#E0F7FA' },
   Derivation: { text: '#FF8F00', bg: '#FFF8E1' },
   'Rating curve': { text: '#283593', bg: '#E8EAF6' },
+}
+
+export const DATA_PRODUCT_TYPE_OPTIONS = [
+  'Aggregation',
+  'Expression',
+  'Derivation',
+  'Rating curve',
+] as const satisfies readonly NonNullable<DataProductTaskType>[]
+
+export function getDataProductTypeColors(taskType: DataProductTaskType) {
+  return taskType ? DATA_PRODUCT_TYPE_COLORS[taskType] : null
 }
 
 export type TaskRow = {
@@ -56,7 +77,10 @@ export type TaskRow = {
   thingId: string | null
   taskType: DataProductTaskType
   qualityRuleSummary?: string
+  qualityRuleCount?: number
+  qualityRuleBreakdown?: Array<{ label: string; count: number }>
   monitoringRulesViolated?: number
+  noWorkWarning: TaskNoWorkWarning
   userClickedRunNow: boolean
   raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 }
@@ -82,8 +106,8 @@ export const AGGREGATION_ACCENT = '#6A1B9A'
 export const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
 export const QUALITY_ACCENT = '#00695C'
 export const QUALITY_ACCENT_LIGHT = '#E0F2F1'
-export const WORKSPACE_ACCENT = '#455A64'
-export const WORKSPACE_ACCENT_LIGHT = '#ECEFF1'
+export const WORKSPACE_ACCENT = '#2E7D32'
+export const WORKSPACE_ACCENT_LIGHT = '#E8F5E9'
 
 export const TAB_META: Record<
   TabId,

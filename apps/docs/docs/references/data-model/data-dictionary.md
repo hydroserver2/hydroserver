@@ -248,22 +248,22 @@ A Workspace is the ownership and access-control boundary for most HydroServer-ma
 
 A pending transfer record used when ownership of a Workspace is being transferred to another User.
 
-| Required | Attribute    | Definition                                                             | Data Type  |
-| -------- | ------------ | ---------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation. | BigInteger |
-| M        | workspace_id | A foreign key identifier for the Workspace being transferred.          | UUID       |
-| M        | new_owner_id | A foreign key identifier for the new owner.                            | BigInteger |
-| M        | initiated    | The datetime when the transfer was initiated.                          | Datetime   |
+| Required | Attribute    | Definition                                                                                                | Data Type  |
+| -------- | ------------ | --------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation.                                    | BigInteger |
+| M        | workspace_id | A one-to-one foreign key identifier for the Workspace being transferred. Each Workspace may have at most one pending transfer. | UUID       |
+| M        | new_owner_id | A foreign key identifier for the new owner.                                                               | BigInteger |
+| M        | initiated    | The datetime when the transfer was initiated.                                                             | Datetime   |
 
 ## WorkspaceDeleteConfirmation
 
 A pending confirmation record used when a Workspace deletion has been initiated.
 
-| Required | Attribute    | Definition                                                           | Data Type  |
-| -------- | ------------ | -------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceDeleteConfirmation. | BigInteger |
-| M        | workspace_id | A foreign key identifier for the Workspace to be deleted.            | UUID       |
-| M        | initiated    | The datetime when deletion confirmation was initiated.               | Datetime   |
+| Required | Attribute    | Definition                                                                                                       | Data Type  |
+| -------- | ------------ | ---------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id           | A primary key unique identifier for the WorkspaceDeleteConfirmation.                                             | BigInteger |
+| M        | workspace_id | A one-to-one foreign key identifier for the Workspace to be deleted. Each Workspace may have at most one pending delete confirmation. | UUID       |
+| M        | initiated    | The datetime when deletion confirmation was initiated.                                                           | Datetime   |
 
 ## Role
 
@@ -282,12 +282,12 @@ A Role is a named collection of permissions that can be assigned to collaborator
 
 A Permission associates a Role with an allowed action on a resource type.
 
-| Required | Attribute       | Definition                                                                | Data Type  |
-| -------- | --------------- | ------------------------------------------------------------------------- | ---------- |
-| M        | id              | A primary key unique identifier for the Permission.                       | BigInteger |
-| M        | role_id         | A foreign key identifier for the Role to which the Permission belongs.    | UUID       |
-| M        | permission_type | The permitted action, such as `view`, `create`, `edit`, `delete`, or `*`. | String     |
-| M        | resource_type   | The resource type to which the Permission applies.                        | String     |
+| Required | Attribute       | Definition                                                                                                                                                                                                              | Data Type  |
+| -------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id              | A primary key unique identifier for the Permission.                                                                                                                                                                     | BigInteger |
+| M        | role_id         | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                  | UUID       |
+| M        | permission_type | The permitted action: `*`, `view`, `create`, `edit`, or `delete`.                                                                                                                                                       | String     |
+| M        | resource_type   | The resource type to which the Permission applies. One of `*`, `APIKey`, `Role`, `Collaborator`, `Thing`, `Datastream`, `Observation`, `Sensor`, `ObservedProperty`, `ProcessingLevel`, `Unit`, `ResultQualifier`, `ETL`, `DataProduct`, or `DataMonitoring`. | String     |
 
 ## Collaborator
 
@@ -345,98 +345,240 @@ A file attached to a Datastream.
 
 **NOTE**: The database enforces a unique constraint on `(datastream_id, name)`.
 
-## OrchestrationSystem
+# Orchestration
 
-An OrchestrationSystem identifies the engine or environment used to run automated HydroServer tasks.
-
-| Required | Attribute                 | Definition                                                                                                                               | Data Type |
-| -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id                        | A primary key unique identifier for the OrchestrationSystem.                                                                             | UUID      |
-| O        | workspace_id              | A foreign key identifier for the Workspace that owns the OrchestrationSystem. If omitted, the OrchestrationSystem is shared system-wide. | UUID      |
-| M        | name                      | A descriptive name for the OrchestrationSystem.                                                                                          | String    |
-| M        | orchestration_system_type | A text string indicating the type of orchestration system.                                                                               | String    |
-
-## DataConnection
-
-A DataConnection stores the extraction, transformation, and loading configuration used by HydroServer ETL tasks.
-
-| Required | Attribute            | Definition                                                                                                                     | Data Type |
-| -------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------- |
-| M        | id                   | A primary key unique identifier for the DataConnection.                                                                        | UUID      |
-| M        | name                 | A descriptive name for the DataConnection.                                                                                     | String    |
-| M        | data_connection_type | A text string indicating the type of DataConnection.                                                                           | String    |
-| O        | workspace_id         | A foreign key identifier for the Workspace that owns the DataConnection. If omitted, the DataConnection is shared system-wide. | UUID      |
-| O        | extractor_type       | The type of extractor configured for the DataConnection.                                                                       | String    |
-| M        | extractor_settings   | A JSON object storing extractor configuration settings.                                                                        | JSON      |
-| O        | transformer_type     | The type of transformer configured for the DataConnection.                                                                     | String    |
-| M        | transformer_settings | A JSON object storing transformer configuration settings.                                                                      | JSON      |
-| O        | loader_type          | The type of loader configured for the DataConnection.                                                                          | String    |
-| M        | loader_settings      | A JSON object storing loader configuration settings.                                                                           | JSON      |
-
-## DataConnectionNotificationRecipient
-
-A notification email recipient associated with a DataConnection.
-
-| Required | Attribute          | Definition                                                                   | Data Type  |
-| -------- | ------------------ | ---------------------------------------------------------------------------- | ---------- |
-| M        | id                 | A primary key unique identifier for the DataConnectionNotificationRecipient. | BigInteger |
-| M        | data_connection_id | A foreign key identifier for the DataConnection.                             | UUID       |
-| M        | email              | An email address that receives notifications for the DataConnection.         | Email      |
-
-**NOTE**: The database enforces a unique constraint on `(data_connection_id, email)`.
+HydroServer's orchestration layer defines a base `Task` model that is extended by domain-specific task subclasses in the ETL, Data Products, and Data Monitoring apps. Each domain task is a multi-table-inheritance child of the base Task: its primary key is the inherited `task_ptr_id` (the parent Task's UUID), and the row in the subclass table joins with the row in the orchestration `task` table.
 
 ## Task
 
-A Task defines an automated HydroServer workflow, including the associated DataConnection, orchestration target, schedule, and runtime variables.
+A Task defines an automated HydroServer workflow. It holds the schedule and run state shared by every task subtype. Each concrete task subclass — `EtlTask`, `DataProductTask`, and `MonitoringTask` — extends this model through multi-table inheritance.
 
-| Required | Attribute               | Definition                                                                                                                                   | Data Type  |
-| -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id                      | A primary key unique identifier for the Task.                                                                                                | UUID       |
-| M        | name                    | A descriptive name for the Task.                                                                                                             | String     |
-| M        | task_type               | A text string indicating the Task type. The database stores this as a free-form string with a default of `ETL`; it does not enforce an enum. | String     |
-| M        | workspace_id            | A foreign key identifier for the Workspace that owns the Task.                                                                               | UUID       |
-| O        | data_connection_id      | A foreign key identifier for the DataConnection used by the Task.                                                                            | UUID       |
-| M        | orchestration_system_id | A foreign key identifier for the OrchestrationSystem used by the Task.                                                                       | UUID       |
-| O        | periodic_task_id        | A one-to-one identifier for the associated scheduler record in `django_celery_beat`. Each Task maps to at most one periodic task record.     | BigInteger |
-| M        | paused                  | A boolean value indicating whether the Task is paused.                                                                                       | Boolean    |
-| O        | next_run_at             | The datetime when the Task is expected to run next.                                                                                          | Datetime   |
-| M        | extractor_variables     | A JSON object storing runtime variables for the extractor.                                                                                   | JSON       |
-| M        | transformer_variables   | A JSON object storing runtime variables for the transformer.                                                                                 | JSON       |
-| M        | loader_variables        | A JSON object storing runtime variables for the loader.                                                                                      | JSON       |
-
-## TaskMapping
-
-A TaskMapping associates an incoming source identifier with one or more target mapping paths.
-
-| Required | Attribute         | Definition                                                          | Data Type |
-| -------- | ----------------- | ------------------------------------------------------------------- | --------- |
-| M        | id                | A primary key unique identifier for the TaskMapping.                | UUID      |
-| M        | task_id           | A foreign key identifier for the Task to which the mapping belongs. | UUID      |
-| M        | source_identifier | A text identifier representing an incoming source field or path.    | String    |
-
-## TaskMappingPath
-
-A TaskMappingPath maps a source identifier to a target identifier and any configured transformations.
-
-| Required | Attribute            | Definition                                                                 | Data Type |
-| -------- | -------------------- | -------------------------------------------------------------------------- | --------- |
-| M        | id                   | A primary key unique identifier for the TaskMappingPath.                   | UUID      |
-| M        | task_mapping_id      | A foreign key identifier for the TaskMapping to which the path belongs.    | UUID      |
-| M        | target_identifier    | A text identifier representing the destination field or path.              | String    |
-| M        | data_transformations | A JSON array of transformation definitions applied along the mapping path. | JSON      |
+| Required | Attribute        | Definition                                                                                                                               | Data Type  |
+| -------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id               | A primary key unique identifier for the Task. Domain task subclasses share this identifier.                                              | UUID       |
+| M        | name             | A descriptive name for the Task.                                                                                                         | String     |
+| O        | description      | A text description for the Task.                                                                                                         | Text       |
+| O        | periodic_task_id | A one-to-one identifier for the associated scheduler record in `django_celery_beat`. Each Task maps to at most one periodic task record. | BigInteger |
+| O        | next_run_at      | The datetime when the Task is expected to run next.                                                                                      | Datetime   |
 
 ## TaskRun
 
 A TaskRun stores the execution history for a Task.
 
-| Required | Attribute   | Definition                                                      | Data Type |
-| -------- | ----------- | --------------------------------------------------------------- | --------- |
-| M        | id          | A primary key unique identifier for the TaskRun.                | UUID      |
-| M        | task_id     | A foreign key identifier for the Task to which the run belongs. | UUID      |
-| M        | status      | A text string indicating the run status.                        | String    |
-| M        | started_at  | The datetime when the TaskRun started.                          | Datetime  |
-| O        | finished_at | The datetime when the TaskRun finished.                         | Datetime  |
-| O        | result      | A JSON object storing execution result details.                 | JSON      |
+| Required | Attribute   | Definition                                                                          | Data Type |
+| -------- | ----------- | ----------------------------------------------------------------------------------- | --------- |
+| M        | id          | A primary key unique identifier for the TaskRun.                                    | UUID      |
+| M        | task_id     | A foreign key identifier for the Task to which the run belongs.                     | UUID      |
+| M        | status      | A text string indicating the run status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. | String    |
+| O        | message     | A text string describing the outcome or error message for the run.                  | Text      |
+| M        | started_at  | The datetime when the TaskRun started. Automatically populated on creation.         | Datetime  |
+| O        | finished_at | The datetime when the TaskRun finished.                                             | Datetime  |
+| O        | result      | A JSON object storing execution result details.                                     | JSON      |
+
+# ETL
+
+The ETL app models the configuration used to extract data from an external source and load it into HydroServer Datastreams.
+
+## DataConnection
+
+A DataConnection describes a single external data source: where to fetch payloads, how to authenticate, and how to interpret the timestamps in the response. A DataConnection is shared across one or more `EtlTask` instances and one optional notification configuration.
+
+| Required | Attribute         | Definition                                                                                                  | Data Type |
+| -------- | ----------------- | ----------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                | A primary key unique identifier for the DataConnection.                                                     | UUID      |
+| M        | name              | A descriptive name for the DataConnection.                                                                  | String    |
+| O        | description       | A text description for the DataConnection.                                                                  | Text      |
+| M        | workspace_id      | A foreign key identifier for the Workspace that owns the DataConnection.                                    | UUID      |
+| M        | source_url        | The URL template fetched by the extractor. May contain placeholder variables resolved at run time.          | Text      |
+| O        | auth_header_name  | The name of an HTTP header used to authenticate against the source URL (e.g. `Authorization`).              | String    |
+| O        | auth_header_value | The value sent with the auth header, such as an API token. Stored as plain text.                            | Text      |
+| M        | timestamp_key     | The field name or column key that identifies the timestamp in the source payload.                           | String    |
+| O        | timestamp_format  | An optional format string used to parse non-ISO timestamps from the source payload.                         | String    |
+| O        | timezone_type     | The kind of timezone interpretation applied to the timestamps: `utc`, `offset`, or `iana`.                  | String    |
+| O        | timezone          | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.             | String    |
+
+## PlaceholderVariable
+
+A PlaceholderVariable defines a named substitution that is resolved into the DataConnection's `source_url` at run time.
+
+| Required | Attribute          | Definition                                                                                                  | Data Type |
+| -------- | ------------------ | ----------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                 | A primary key unique identifier for the PlaceholderVariable.                                                | UUID      |
+| M        | data_connection_id | A foreign key identifier for the DataConnection to which the placeholder belongs.                           | UUID      |
+| M        | name               | The placeholder name as it appears in the `source_url` template.                                            | String    |
+| M        | variable_type      | The type of value substituted at run time: `run_time`, `latest_observation_timestamp`, or `per_task`.       | String    |
+| O        | timestamp_format   | An optional format string used to render the substituted value when the value is a timestamp.               | String    |
+
+## Payload
+
+A Payload describes how the response body returned by the extractor should be parsed. Each DataConnection has at most one Payload row.
+
+| Required | Attribute          | Definition                                                                                              | Data Type |
+| -------- | ------------------ | ------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                 | A primary key unique identifier for the Payload.                                                        | UUID      |
+| M        | data_connection_id | A one-to-one foreign key identifier for the DataConnection to which the Payload belongs.                | UUID      |
+| M        | payload_type       | The payload encoding: `CSV` or `JSON`.                                                                  | String    |
+| O        | header_row         | For CSV payloads, the row index containing column headers.                                              | Integer   |
+| O        | data_start_row     | For CSV payloads, the row index where data begins.                                                      | Integer   |
+| O        | delimiter          | For CSV payloads, the field delimiter: `,`, `\t`, `;`, `\|`, or ` `.                                    | String    |
+| O        | jmespath           | For JSON payloads, a JMESPath expression used to select observation records out of the response body.  | Text      |
+
+## DataConnectionNotification
+
+A DataConnectionNotification records the configuration for the periodic data freshness notification associated with a DataConnection.
+
+| Required | Attribute          | Definition                                                                                                                                              | Data Type  |
+| -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | data_connection_id | The primary key for the DataConnectionNotification — a one-to-one foreign key to DataConnection. Each DataConnection has at most one notification row. | UUID       |
+| O        | periodic_task_id   | A one-to-one identifier for the associated scheduler record in `django_celery_beat`.                                                                    | BigInteger |
+
+## DataConnectionNotificationRecipient
+
+A notification email recipient associated with a DataConnectionNotification.
+
+| Required | Attribute       | Definition                                                                       | Data Type |
+| -------- | --------------- | -------------------------------------------------------------------------------- | --------- |
+| M        | id              | A primary key unique identifier for the DataConnectionNotificationRecipient.     | UUID      |
+| M        | notification_id | A foreign key identifier for the DataConnectionNotification.                     | UUID      |
+| M        | email           | An email address that receives notifications for the parent DataConnection.      | Email     |
+
+**NOTE**: The database enforces a unique constraint on `(notification_id, email)`.
+
+## EtlTask
+
+An EtlTask extends `Task` with the ETL-specific configuration that links the run to a DataConnection and any runtime overrides used by the extractor, transformer, and loader.
+
+| Required | Attribute          | Definition                                                                                                | Data Type |
+| -------- | ------------------ | --------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                 | A primary key unique identifier for the EtlTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID      |
+| M        | data_connection_id | A foreign key identifier for the DataConnection used by the EtlTask.                                      | UUID      |
+| M        | task_variables     | A JSON object storing runtime variables substituted into the DataConnection placeholders for this Task.   | JSON      |
+
+## EtlMapping
+
+An EtlMapping associates a source identifier produced by the DataConnection with the target Datastream into which the values should be loaded. The previous `TaskMapping` / `TaskMappingPath` pair has been collapsed into this single model.
+
+| Required | Attribute             | Definition                                                                  | Data Type |
+| -------- | --------------------- | --------------------------------------------------------------------------- | --------- |
+| M        | id                    | A primary key unique identifier for the EtlMapping.                         | UUID      |
+| M        | etl_task_id           | A foreign key identifier for the EtlTask to which the mapping belongs.      | UUID      |
+| M        | source_identifier     | A text identifier representing an incoming source field or column.          | String    |
+| M        | target_datastream_id  | A foreign key identifier for the Datastream that receives the mapped values. | UUID      |
+
+# Data Products
+
+The Data Products app models derived Datastreams produced by transformations such as rating curves, expressions, and time-series aggregations.
+
+## DataProductTask
+
+A DataProductTask extends `Task` with the data-product context — the Thing under which the derived Datastreams are organized.
+
+| Required | Attribute | Definition                                                                                                       | Data Type |
+| -------- | --------- | ---------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id        | A primary key unique identifier for the DataProductTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID      |
+| M        | thing_id  | A foreign key identifier for the Thing that owns the derived Datastreams produced by this task.                  | UUID      |
+
+## DataProductTransformation
+
+A DataProductTransformation describes how a single derived (output) Datastream is computed from one or more input Datastreams.
+
+| Required | Attribute              | Definition                                                                                                                          | Data Type |
+| -------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                     | A primary key unique identifier for the DataProductTransformation.                                                                  | UUID      |
+| M        | task_id                | A foreign key identifier for the DataProductTask to which the transformation belongs.                                               | UUID      |
+| M        | output_datastream_id   | A one-to-one foreign key identifier for the Datastream that receives the transformation output.                                     | UUID      |
+| M        | transformation_type    | The type of transformation: `rating_curve`, `expression`, `composite_expression`, or `aggregation`.                                 | String    |
+| O        | rating_curve_id        | A foreign key identifier for the RatingCurve used when `transformation_type` is `rating_curve`.                                     | UUID      |
+| O        | formula                | An expression string used when `transformation_type` is `expression` or `composite_expression`.                                     | Text      |
+| O        | output_interval_units  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
+| O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |
+| O        | timezone_type          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |
+| O        | timezone               | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.                                     | String    |
+| O        | aggregation_method     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, or `last`.                       | String    |
+| O        | max_gap_interval_units | For `aggregation` transformations, the unit of the maximum allowed gap within a window.                                             | String    |
+| O        | max_gap_interval       | For `aggregation` transformations, the positive count of `max_gap_interval_units` allowed within a window before the bin is dropped. | Integer   |
+| O        | min_values             | For `aggregation` transformations, the minimum number of input observations required per window.                                    | Integer   |
+
+## DataProductTransformationInput
+
+A DataProductTransformationInput records a single input Datastream consumed by a DataProductTransformation, optionally bound to a named variable in the formula.
+
+| Required | Attribute         | Definition                                                                                                  | Data Type |
+| -------- | ----------------- | ----------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                | A primary key unique identifier for the DataProductTransformationInput.                                     | UUID      |
+| M        | transformation_id | A foreign key identifier for the DataProductTransformation that consumes the input.                         | UUID      |
+| M        | datastream_id     | A foreign key identifier for the input Datastream.                                                          | UUID      |
+| O        | variable_name     | The variable name used in the transformation `formula` to reference this input.                             | String    |
+
+**NOTE**: The database enforces a unique constraint on `(transformation_id, variable_name)` when `variable_name` is not null.
+
+## RatingCurve
+
+A RatingCurve defines a mapping from input values to output values, used by `rating_curve` transformations to convert one Datastream (e.g. stage) to another (e.g. discharge).
+
+| Required | Attribute      | Definition                                                                          | Data Type |
+| -------- | -------------- | ----------------------------------------------------------------------------------- | --------- |
+| M        | id             | A primary key unique identifier for the RatingCurve.                                | UUID      |
+| M        | thing_id       | A foreign key identifier for the Thing to which the RatingCurve belongs.            | UUID      |
+| M        | name           | A descriptive name for the RatingCurve.                                             | String    |
+| O        | description    | A text description for the RatingCurve.                                             | Text      |
+| M        | fitting_method | The method used to fit the curve: `linear` or `power_law`.                          | String    |
+
+## RatingCurvePoint
+
+A RatingCurvePoint defines a single (input, output) sample used to fit a RatingCurve.
+
+| Required | Attribute       | Definition                                                              | Data Type |
+| -------- | --------------- | ----------------------------------------------------------------------- | --------- |
+| M        | id              | A primary key unique identifier for the RatingCurvePoint.               | UUID      |
+| M        | rating_curve_id | A foreign key identifier for the RatingCurve to which the point belongs. | UUID      |
+| M        | input_value     | The input value of the point (e.g. stage).                              | Float     |
+| M        | output_value    | The output value of the point (e.g. discharge).                         | Float     |
+
+# Data Monitoring
+
+The Data Monitoring app models scheduled checks that evaluate Datastreams against quality-control rules and notify recipients when rules are violated.
+
+## MonitoringTask
+
+A MonitoringTask extends `Task` with the data-monitoring context — the Thing whose Datastreams are evaluated.
+
+| Required | Attribute | Definition                                                                                                  | Data Type |
+| -------- | --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id        | A primary key unique identifier for the MonitoringTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID   |
+| M        | thing_id  | A foreign key identifier for the Thing whose Datastreams are monitored by this task.                        | UUID      |
+
+## MonitoringRule
+
+A MonitoringRule defines a single quality-control check applied to a Datastream by a MonitoringTask.
+
+| Required | Attribute             | Definition                                                                                              | Data Type |
+| --------- | --------------------- | ------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                    | A primary key unique identifier for the MonitoringRule.                                                 | UUID      |
+| M        | task_id               | A foreign key identifier for the MonitoringTask to which the rule belongs.                              | UUID      |
+| M        | datastream_id         | A foreign key identifier for the Datastream evaluated by the rule.                                      | UUID      |
+| M        | rule_type             | The type of rule: `range`, `rate_of_change`, `persistence`, or `missing_data`.                          | String    |
+| O        | last_checked_at       | The datetime when the rule was last evaluated.                                                          | Datetime  |
+| O        | min_value             | For `range` rules, the lower bound of the allowed range.                                                | Float     |
+| O        | max_value             | For `range` rules, the upper bound of the allowed range.                                                | Float     |
+| O        | window_interval       | For window-based rules, the positive number of `window_interval_units` evaluated by the rule.           | Integer   |
+| O        | window_interval_units | For window-based rules, the unit of the evaluation window: `minutes`, `hours`, or `days`.               | String    |
+
+**NOTE**: The database enforces a unique constraint on `(task_id, datastream_id, rule_type)`.
+
+## MonitoringNotificationRecipient
+
+A notification email recipient associated with a MonitoringTask.
+
+| Required | Attribute | Definition                                                          | Data Type |
+| -------- | --------- | ------------------------------------------------------------------- | --------- |
+| M        | id        | A primary key unique identifier for the MonitoringNotificationRecipient. | UUID |
+| M        | task_id   | A foreign key identifier for the MonitoringTask.                    | UUID      |
+| M        | email     | An email address that receives notifications for the MonitoringTask. | Email     |
+
+**NOTE**: The database enforces a unique constraint on `(task_id, email)`.
+
+# Reference Data
 
 ## Controlled Vocabulary Tables
 

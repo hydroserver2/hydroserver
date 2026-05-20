@@ -128,7 +128,7 @@
               <span>{{ item.sampledMedium }}</span>
             </p>
             <p class="datastream-line">
-              <strong class="mr-2">Sensor:</strong>
+              <strong class="mr-2">Method:</strong>
               <span>{{ item.sensorName }}</span>
             </p>
             <p class="datastream-line">
@@ -422,7 +422,7 @@
             <span>{{ item.sampledMedium }}</span>
           </p>
           <p class="datastream-line">
-            <strong class="mr-2">Sensor:</strong>
+            <strong class="mr-2">Method:</strong>
             <span>{{ item.sensorName }}</span>
           </p>
           <p class="datastream-line">

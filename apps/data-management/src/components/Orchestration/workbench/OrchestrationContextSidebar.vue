@@ -46,7 +46,7 @@
         <div
           v-for="dc in connections"
           :key="dc.id"
-          class="sidebar-item"
+          class="sidebar-item sidebar-item--connection"
           :class="{ selected: selectedConnectionId === dc.id }"
           :style="
             selectedConnectionId === dc.id
@@ -340,6 +340,7 @@ const addLabel = computed(() =>
   overflow-y: auto;
 }
 .sidebar-item {
+  position: relative;
   padding: 10px 14px;
   cursor: pointer;
   border-bottom: 1px solid #ebebeb;
@@ -362,6 +363,9 @@ const addLabel = computed(() =>
   flex: 1;
   min-width: 0;
 }
+.sidebar-item--connection .sidebar-item-body {
+  padding-right: 62px;
+}
 .sidebar-item-title {
   font-size: 13px;
   color: inherit;
@@ -376,7 +380,6 @@ const addLabel = computed(() =>
   min-height: 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 6px;
 }
 .sidebar-item.selected .sidebar-item-meta {
@@ -394,6 +397,9 @@ const addLabel = computed(() =>
   font-weight: 700;
 }
 .sidebar-item-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
   display: flex;
   align-items: center;
   gap: 2px;

@@ -13,6 +13,11 @@
 
 <script setup lang="ts">
 import SimpleProductTaskDetails from './SimpleProductTaskDetails.vue'
-defineProps<{ taskId: string; runId?: string | null; embedded?: boolean; initialTask?: any }>()
+defineProps<{
+  taskId: string
+  runId?: string | null
+  embedded?: boolean
+  initialTask?: any
+}>()
 defineEmits(['close', 'deleted', 'updated'])
 </script>

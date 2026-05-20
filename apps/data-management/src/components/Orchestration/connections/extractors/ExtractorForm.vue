@@ -1,37 +1,35 @@
 <template>
   <v-form ref="localForm" v-model="isValid" validate-on="input">
-    <v-card class="mt-4" color="brown-darken-4" variant="outlined" rounded="lg">
-      <v-toolbar title="Source" color="brown" />
+    <v-card color="brown-darken-4" variant="outlined" rounded="lg">
+      <v-toolbar color="brown">
+        <v-row align="center" class="pt-0">
+          <v-col cols="auto" class="pr-0">
+            <v-card-item><v-card-title>Source URL</v-card-title></v-card-item>
+          </v-col>
+          <v-col class="pl-0">
+            <v-icon
+              :icon="mdiHelpCircleOutline"
+              @click="showUrlHelp = !showUrlHelp"
+              color="white"
+              size="small"
+            />
+          </v-col>
+        </v-row>
+      </v-toolbar>
 
-      <v-row align="center" class="px-2 pt-0">
-        <v-col cols="auto" class="pr-0">
-          <v-card-item><v-card-title>URL</v-card-title></v-card-item>
-        </v-col>
-        <v-col class="pl-0">
-          <v-icon
-            :icon="mdiHelpCircleOutline"
-            @click="showUrlHelp = !showUrlHelp"
-            color="grey"
-            size="small"
-          />
-        </v-col>
-      </v-row>
-
-      <v-card-text v-if="showUrlHelp" class="pt-0">
+      <v-card-text v-if="showUrlHelp" class="pt-4 pb-0">
         Specify the HTTP endpoint to fetch data from. Use
         <code>{placeholders}</code> for dynamic values:
-        <ul class="ma-4">
+        <ul class="mt-4 mx-4">
           <li>
-            <strong>Per-task variables</strong> — supplied individually for
-            each task.
+            <strong>Per-task variables</strong> — supplied individually for each
+            task.
           </li>
           <li>
             <strong>Latest observation timestamp</strong> — last ingested
             timestamp for a datastream.
           </li>
-          <li>
-            <strong>Run-time variables</strong> — computed at run time.
-          </li>
+          <li><strong>Run-time variables</strong> — computed at run time.</li>
         </ul>
       </v-card-text>
 
@@ -87,23 +85,23 @@
               </v-radio-group>
             </v-col>
             <v-col v-if="getPlaceholderMode(variable) === 'runtime'">
-                <v-select
-                  v-model="variable.type"
-                  :items="runtimeSourceOptions"
-                  label="Runtime source *"
-                  density="compact"
-                  rounded="lg"
-                  variant="outlined"
-                  :rules="rules.required"
-                  hide-details
-                  clearable
+              <v-select
+                v-model="variable.type"
+                :items="runtimeSourceOptions"
+                label="Runtime source *"
+                density="compact"
+                rounded="lg"
+                variant="outlined"
+                :rules="rules.required"
+                hide-details
+                clearable
+              />
+              <div class="mt-8">
+                <TimestampFormat
+                  :target="getPlaceholderTimestamp(variable)"
+                  color="brown-darken-4"
                 />
-                <div class="mt-8">
-                  <TimestampFormat
-                    :target="getPlaceholderTimestamp(variable)"
-                    color="brown-darken-4"
-                  />
-                </div>
+              </div>
             </v-col>
           </v-row>
         </v-card-text>

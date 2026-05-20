@@ -4,7 +4,6 @@
       <button class="back" @click="close">← {{ backLabel }}</button>
       <div class="title">
         <h2>{{ task.name }}</h2>
-        <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
         <span v-if="scheduleText" class="pill">{{ scheduleText }}</span>
       </div>
       <div class="actions">
@@ -14,11 +13,19 @@
           :disabled="!!pauseDisabledReason"
           @click="togglePaused"
         >
+          <NoScheduleIcon v-if="!task.schedule" />
           <v-icon
-            :icon="task.schedule?.enabled ? mdiPause : mdiPlay"
+            v-else
+            :icon="task.schedule.enabled ? mdiPause : mdiPlay"
             size="16"
           />
-          <span>{{ task.schedule?.enabled ? 'Pause' : 'Resume' }}</span>
+          <span>{{
+            !task.schedule
+              ? 'No schedule'
+              : task.schedule.enabled
+              ? 'Pause'
+              : 'Resume'
+          }}</span>
         </button>
         <v-dialog width="64rem">
           <template #activator="{ props }">
@@ -82,8 +89,8 @@
 </template>
 
 <script setup lang="ts">
-import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
+import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
@@ -107,7 +114,6 @@ const {
   runRows,
   canEdit,
   backLabel,
-  statusName,
   scheduleText,
   pauseDisabledReason,
   runNowDisabledReason,
@@ -164,13 +170,17 @@ h2 {
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-self: start;
   gap: 8px;
 }
 .header-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   gap: 8px;
+  height: 34px;
   min-height: 34px;
   padding: 0 14px;
   background: #ffffff;

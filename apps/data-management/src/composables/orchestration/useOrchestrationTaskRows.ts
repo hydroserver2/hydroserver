@@ -9,6 +9,7 @@ import type {
 import {
   getDisplayedTaskStatus,
   getMonitoringRulesViolated,
+  getTaskNextRunAt,
   getTaskRunMessage,
   getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
@@ -19,6 +20,7 @@ import type {
   SortKey,
   TabId,
   TaskKind,
+  TaskNoWorkWarning,
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
@@ -26,6 +28,24 @@ type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 
 const targetDatastream = (mapping: TaskMapping) =>
   'targetDatastream' in mapping ? mapping.targetDatastream : null
+
+const ETL_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No mappings',
+  message:
+    "This task has no mappings configured, so running it won't do anything.",
+}
+
+const DATA_PRODUCT_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No mappings',
+  message:
+    "This task has no transformations configured, so running it won't do anything.",
+}
+
+const MONITORING_NO_WORK_WARNING: TaskNoWorkWarning = {
+  label: 'No rules',
+  message:
+    "This quality task has no rules configured, so running it won't do anything.",
+}
 
 type Inputs = {
   activeTab: Ref<TabId>
@@ -43,6 +63,12 @@ const buildRowBase = (
 ) => {
   const schedule = task.schedule ?? null
   const latestRun = (task as any).latestRun as TaskRun | null | undefined
+  const nextRunAtDate = getTaskNextRunAt(task as any)
+  const hasValidCachedNextRun =
+    !!schedule?.nextRunAt && !Number.isNaN(new Date(schedule.nextRunAt).getTime())
+  const nextRunAt = hasValidCachedNextRun
+    ? schedule?.nextRunAt ?? null
+    : nextRunAtDate?.toISOString() ?? null
   return {
     id: task.id,
     kind,
@@ -52,11 +78,12 @@ const buildRowBase = (
     statusName: getTaskStatusText(task as any),
     statusSort: getDisplayedTaskStatus(task as any),
     lastRun: latestRun?.startedAt ? formatTime(latestRun.startedAt) : '-',
-    nextRun: schedule?.nextRunAt ? formatTime(schedule.nextRunAt) : '-',
+    nextRun: nextRunAt ? formatTime(nextRunAt) : '-',
     lastRunAt: latestRun?.startedAt ?? null,
-    nextRunAt: schedule?.nextRunAt ?? null,
+    nextRunAt,
     lastRunMessage: getTaskRunMessage(latestRun as any),
     taskType: null as DataProductTaskType,
+    noWorkWarning: null as TaskNoWorkWarning,
     userClickedRunNow: !!runNowTriggeredByTaskId[task.id],
     raw: task,
   }
@@ -72,12 +99,46 @@ const resolveDataProductTaskType = (
   return null
 }
 
+const hasEtlMapping = (mapping: TaskMapping) => {
+  const anyMapping = mapping as any
+  if (anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId) {
+    return true
+  }
+  return Array.isArray(anyMapping.paths) && anyMapping.paths.length > 0
+}
+
+const getEtlNoWorkWarning = (task: TaskExpanded): TaskNoWorkWarning =>
+  Array.isArray(task.mappings) && task.mappings.some(hasEtlMapping)
+    ? null
+    : ETL_NO_WORK_WARNING
+
+const getDataProductNoWorkWarning = (
+  task: DataProductTaskExpanded
+): TaskNoWorkWarning =>
+  [
+    task.aggregationTransformations,
+    task.compositeExpressionTransformations,
+    task.expressionTransformations,
+    task.ratingCurveTransformations,
+  ].some((transformations) => (transformations ?? []).length > 0)
+    ? null
+    : DATA_PRODUCT_NO_WORK_WARNING
+
+const getMonitoringNoWorkWarning = (
+  task: MonitoringTaskExpanded
+): TaskNoWorkWarning =>
+  (task.monitoredDatastreams ?? []).some(
+    (monitored) => (monitored.rules ?? []).length > 0
+  )
+    ? null
+    : MONITORING_NO_WORK_WARNING
+
 const humanizeRuleType = (value: string) =>
   value
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
-const resolveMonitoringRuleSummary = (task: MonitoringTaskExpanded) => {
+const resolveMonitoringRules = (task: MonitoringTaskExpanded) => {
   const ruleCounts = new Map<string, number>()
   for (const monitored of task.monitoredDatastreams ?? []) {
     for (const rule of monitored.rules ?? []) {
@@ -88,13 +149,26 @@ const resolveMonitoringRuleSummary = (task: MonitoringTaskExpanded) => {
   }
 
   const total = [...ruleCounts.values()].reduce((sum, count) => sum + count, 0)
-  if (total === 0) return 'No rules'
-
-  const parts = [...ruleCounts.entries()]
+  const breakdown = [...ruleCounts.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([type, count]) => `${count} ${humanizeRuleType(type)}`)
+    .map(([type, count]) => ({
+      label: humanizeRuleType(type),
+      count,
+    }))
 
-  return parts.join(', ')
+  if (total === 0) {
+    return {
+      total,
+      breakdown,
+      summary: 'No rules',
+    }
+  }
+
+  const summary = breakdown
+    .map((item) => `${item.count} ${item.label}`)
+    .join(', ')
+
+  return { total, breakdown, summary }
 }
 
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
@@ -143,6 +217,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       ...buildRowBase(t, 'etl', runNowTriggeredByTaskId),
       dataConnectionId: (t as any).dataConnection?.id ?? null,
       thingId: resolveEtlTaskThingId(t, datastreamThingByDatastreamId.value),
+      noWorkWarning: getEtlNoWorkWarning(t),
     }))
   )
 
@@ -152,17 +227,24 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       dataConnectionId: null,
       thingId: t.thing?.id ?? null,
       taskType: resolveDataProductTaskType(t),
+      noWorkWarning: getDataProductNoWorkWarning(t),
     }))
   )
 
   const monitoringTaskRows = computed<TaskRow[]>(() =>
-    monitoringTasks.value.map((t) => ({
-      ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
-      dataConnectionId: null,
-      thingId: t.thing?.id ?? null,
-      qualityRuleSummary: resolveMonitoringRuleSummary(t),
-      monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
-    }))
+    monitoringTasks.value.map((t) => {
+      const rules = resolveMonitoringRules(t)
+      return {
+        ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
+        dataConnectionId: null,
+        thingId: t.thing?.id ?? null,
+        noWorkWarning: getMonitoringNoWorkWarning(t),
+        qualityRuleSummary: rules.summary,
+        qualityRuleCount: rules.total,
+        qualityRuleBreakdown: rules.breakdown,
+        monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
+      }
+    })
   )
 
   const activeTaskRows = computed<TaskRow[]>(() => {
@@ -195,6 +277,8 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
         cmp = compareNullableDate(a.lastRunAt, b.lastRunAt)
       else if (sortKey.value === 'nextRunAt')
         cmp = compareNullableDate(a.nextRunAt, b.nextRunAt)
+      else if (sortKey.value === 'taskType')
+        cmp = compareText(a.taskType, b.taskType)
       return cmp * dir
     })
     return out

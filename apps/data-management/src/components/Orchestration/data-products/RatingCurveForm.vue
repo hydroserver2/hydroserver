@@ -41,6 +41,14 @@
           class="mb-2"
         />
 
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
+
         <DatastreamCardSelector
           v-model="inputDatastreamId"
           :datastreams="siteDatastreams"
@@ -55,7 +63,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="isEditMode || !selectedThingId || loadingExisting"
+          :disabled="!selectedThingId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -95,6 +103,12 @@
             No rating curves found for this site. Switch to "Create new rating
             curve" to add one.
           </div>
+
+          <RatingCurvePreview
+            v-if="selectedRatingCurve"
+            :rating-curve="selectedRatingCurve"
+            class="mb-4"
+          />
         </template>
 
         <template v-else>
@@ -176,27 +190,15 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
-        <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
-        >
-          Delete task
-        </v-btn>
-        <v-btn
+        <v-btn-primary
           type="submit"
-          variant="flat"
-          rounded="lg"
           class="text-none"
-          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create rating curve task' }}
-        </v-btn>
+        </v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -211,6 +213,7 @@ import hs, {
   type Datastream,
   type RatingCurve,
   type DataProductTask,
+  type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
@@ -221,10 +224,11 @@ import {
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_SUBMIT_STYLE,
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import RatingCurvePreview from './RatingCurvePreview.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
@@ -255,6 +259,7 @@ const ratingCurves = ref<RatingCurve[]>([])
 const ratingCurvesLoading = ref(false)
 
 const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const selectedRatingCurveId = ref<string | null>(null)
@@ -289,6 +294,12 @@ const ratingCurveOptions = computed(() =>
       : curve.name,
     value: curve.id,
   }))
+)
+
+const selectedRatingCurve = computed(() =>
+  ratingCurves.value.find(
+    (curve) => String(curve.id) === String(selectedRatingCurveId.value)
+  )
 )
 
 const selectedCreateFile = computed(() => createCurveFile.value)
@@ -329,6 +340,7 @@ async function loadExistingTask() {
 
     if (taskRes.ok && taskRes.data?.name) {
       taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
     }
 
     if (transformRes.ok && transformRes.data?.length) {
@@ -487,7 +499,7 @@ async function onCreate() {
     name: taskName.value.trim(),
     thingId: selectedThingId.value!,
     description: null,
-    schedule: null,
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -521,6 +533,7 @@ async function onUpdate() {
   const taskRes = await hs.dataProductTasks.update({
     id: taskId,
     name: taskName.value.trim(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok) {
@@ -535,6 +548,7 @@ async function onUpdate() {
         existingTransformationId.value,
         {
           inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
           ratingCurveId,
         }
       )

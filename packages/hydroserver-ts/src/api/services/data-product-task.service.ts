@@ -6,12 +6,11 @@ import {
 import { DataProductTask as M } from '../Models/data-product-task.model'
 import { apiMethods } from '../apiMethods'
 import type {
+  AggregationTransformationPatchPayload,
   AggregationTransformationPayload,
-  AggregationTransformationResponse,
+  CompositeExpressionTransformationPatchPayload,
   CompositeExpressionTransformationPayload,
-  CompositeExpressionTransformationResponse,
-  IntervalUnit,
-} from '../../types'
+} from './data-product-transformation.types'
 
 export class DataProductTaskService extends HydroServerBaseService<
   typeof C,
@@ -66,6 +65,7 @@ export class DataProductTaskService extends HydroServerBaseService<
     taskId: string,
     transformationId: string,
     payload: Partial<{
+      outputDatastreamId: string
       inputDatastreamId: string
       variableName: string | null
       formula: string
@@ -109,6 +109,7 @@ export class DataProductTaskService extends HydroServerBaseService<
     taskId: string,
     transformationId: string,
     payload: Partial<{
+      outputDatastreamId: string
       inputDatastreamId: string
       ratingCurveId: string
     }>
@@ -146,7 +147,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   updateAggregationTransformation(
     taskId: string,
     transformationId: string,
-    payload: Partial<AggregationTransformationPayload>
+    payload: AggregationTransformationPatchPayload
   ) {
     return apiMethods.patch(
       `${this._route}/${taskId}/transformations/aggregation/${transformationId}`,
@@ -181,10 +182,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   updateCompositeExpressionTransformation(
     taskId: string,
     transformationId: string,
-    payload: Omit<
-      CompositeExpressionTransformationPayload,
-      'outputDatastreamId'
-    >
+    payload: CompositeExpressionTransformationPatchPayload
   ) {
     return apiMethods.patch(
       `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`,

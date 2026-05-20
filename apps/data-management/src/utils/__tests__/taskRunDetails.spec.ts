@@ -4,6 +4,7 @@ import {
   getDisplayedTaskStatus,
   getMonitoringRunViolations,
   getMonitoringRulesViolated,
+  getTaskNextRunAt,
   getTaskRunMessage,
   getTaskRunResult,
   getTaskRunRuntimeUrl,
@@ -14,6 +15,7 @@ import {
 
 describe('task run detail helpers', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -27,6 +29,7 @@ describe('task run detail helpers', () => {
     expect(getTaskRunStatusText()).toBe('Unknown')
     expect(getTaskStatusText()).toBe('Unknown')
     expect(getDisplayedTaskStatus()).toBe('Unknown')
+    expect(getTaskNextRunAt()).toBeNull()
   })
 
   it('prefers message aliases and runtime url aliases from raw ETL payloads', () => {
@@ -100,6 +103,27 @@ describe('task run detail helpers', () => {
     }
 
     expect(getTaskRunRuntimeUrl(run)).toBe('https://example.com/runtime.csv')
+  })
+
+  it('prefers rendered extractor runtime URI over configured template aliases', () => {
+    const run: TaskRun = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      startedAt: '2026-03-12T12:00:00Z',
+      finishedAt: '2026-03-12T12:05:00Z',
+      result: {
+        runtime_source_uri: 'https://example.com/{site}/template.csv',
+        runtime_variables: {
+          extractor: {
+            source_uri: 'https://example.com/site-1/runtime.csv',
+          },
+        },
+      },
+    }
+
+    expect(getTaskRunRuntimeUrl(run)).toBe(
+      'https://example.com/site-1/runtime.csv'
+    )
   })
 
   it('treats failure status as failed', () => {
@@ -356,5 +380,59 @@ describe('task run detail helpers', () => {
     ).toBe('Pending')
 
     vi.useRealTimers()
+  })
+
+  it('infers an interval next run when the cached schedule value is empty', () => {
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: null,
+        interval: 2,
+        intervalPeriod: 'hours',
+      },
+      latestRun: {
+        id: 'run-interval',
+        status: 'SUCCESS',
+        startedAt: '2026-03-13T10:00:00Z',
+        result: { failureCount: 0 },
+      },
+    })
+
+    expect(next?.toISOString()).toBe('2026-03-13T12:00:00.000Z')
+  })
+
+  it('prefers the backend cached next run when present', () => {
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: '2026-03-14T08:30:00Z',
+        interval: 2,
+        intervalPeriod: 'hours',
+      },
+      latestRun: {
+        id: 'run-interval',
+        status: 'SUCCESS',
+        startedAt: '2026-03-13T10:00:00Z',
+        result: { failureCount: 0 },
+      },
+    })
+
+    expect(next?.toISOString()).toBe('2026-03-14T08:30:00.000Z')
+  })
+
+  it('infers a crontab next run when the cached schedule value is empty', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-13T12:00:00Z'))
+
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: null,
+        startTime: '2026-03-13T10:00:00Z',
+        crontab: '30 14 * * *',
+      },
+      latestRun: null,
+    })
+
+    expect(next?.toISOString()).toBe(
+      new Date(2026, 2, 13, 14, 30).toISOString()
+    )
   })
 })

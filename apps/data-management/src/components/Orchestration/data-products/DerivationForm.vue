@@ -49,6 +49,14 @@
           class="mb-2"
         />
 
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
+
         <DatastreamCardSelector
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
@@ -282,27 +290,14 @@
         <v-btn-cancel :disabled="saving" @click="$emit('close')"
           >Cancel</v-btn-cancel
         >
-        <v-btn
-          v-if="isEditMode"
-          color="error"
-          variant="text"
-          :loading="deleting"
-          :disabled="saving"
-          @click="onDelete"
-        >
-          Delete task
-        </v-btn>
-        <v-btn
+        <v-btn-primary
           type="submit"
-          variant="flat"
-          rounded="lg"
-          class="text-none"
-          :style="DATA_PRODUCT_SUBMIT_STYLE"
+          :color="DATA_PRODUCT_ACCENT"
           :loading="saving"
           :disabled="deleting"
         >
           {{ isEditMode ? 'Save changes' : 'Create derivation task' }}
-        </v-btn>
+        </v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -317,16 +312,17 @@ import hs, {
   type Datastream,
   type DataProductTask,
   type IntervalUnit,
+  type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
-  DATA_PRODUCT_SUBMIT_STYLE,
   DATA_PRODUCT_TOOLBAR_STYLE,
 } from '@/utils/orchestration/dataProductTheme'
 import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const ALLOWED_FUNCTIONS = [
@@ -393,6 +389,7 @@ const datastreams = ref<Datastream[]>([])
 const existingTransformationId = ref<string | null>(null)
 
 const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const inputs = ref<InputRow[]>([makeRow('a'), makeRow('b')])
 const formula = ref('')
@@ -533,11 +530,14 @@ async function loadExistingTask() {
   try {
     const [taskRes, transformRes] = await Promise.all([
       hs.dataProductTasks.get(props.editTaskId),
-      hs.dataProductTasks.listCompositeExpressionTransformations(props.editTaskId),
+      hs.dataProductTasks.listCompositeExpressionTransformations(
+        props.editTaskId
+      ),
     ])
 
     if (taskRes.ok && taskRes.data?.name) {
       taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
     }
 
     if (transformRes.ok && transformRes.data?.length) {
@@ -627,7 +627,7 @@ async function onCreate(
     name: taskName.value.trim(),
     thingId,
     description: null,
-    schedule: null,
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
@@ -635,17 +635,18 @@ async function onCreate(
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createCompositeExpressionTransformation(
-    taskRes.data.id,
-    {
-      outputDatastreamId: outputDatastreamId.value!,
-      inputDatastreams,
-      formula: formula.value.trim(),
-      outputInterval: outputInterval.value!,
-      outputIntervalUnits: outputIntervalUnits.value,
-      ...gapPayload,
-    }
-  )
+  const transformRes =
+    await hs.dataProductTasks.createCompositeExpressionTransformation(
+      taskRes.data.id,
+      {
+        outputDatastreamId: outputDatastreamId.value!,
+        inputDatastreams,
+        formula: formula.value.trim(),
+        outputInterval: outputInterval.value!,
+        outputIntervalUnits: outputIntervalUnits.value,
+        ...gapPayload,
+      }
+    )
 
   if (!transformRes.ok) {
     Snackbar.error(
@@ -670,6 +671,7 @@ async function onUpdate(
   const taskRes = await hs.dataProductTasks.update({
     id: taskId,
     name: taskName.value.trim(),
+    schedule: schedule.value,
   })
 
   if (!taskRes.ok) {
@@ -678,17 +680,19 @@ async function onUpdate(
   }
 
   if (existingTransformationId.value) {
-    const transformRes = await hs.dataProductTasks.updateCompositeExpressionTransformation(
-      taskId,
-      existingTransformationId.value,
-      {
-        inputDatastreams,
-        formula: formula.value.trim(),
-        outputInterval: outputInterval.value!,
-        outputIntervalUnits: outputIntervalUnits.value,
-        ...gapPayload,
-      }
-    )
+    const transformRes =
+      await hs.dataProductTasks.updateCompositeExpressionTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          outputDatastreamId: outputDatastreamId.value!,
+          inputDatastreams,
+          formula: formula.value.trim(),
+          outputInterval: outputInterval.value!,
+          outputIntervalUnits: outputIntervalUnits.value,
+          ...gapPayload,
+        }
+      )
 
     if (!transformRes.ok) {
       Snackbar.error(

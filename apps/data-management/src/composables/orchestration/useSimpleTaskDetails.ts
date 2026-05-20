@@ -1,4 +1,4 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hs, {
@@ -29,6 +29,10 @@ type Emit = {
   (e: 'updated'): void
 }
 
+const POLL_INTERVAL_MS = 3000
+const POLL_DURATION_MS = 21_000
+const ACTIVE_RUN_STATUSES = new Set(['PENDING', 'STARTED'])
+
 export function useSimpleTaskDetails(
   kind: TaskKind,
   props: {
@@ -46,6 +50,7 @@ export function useSimpleTaskDetails(
   const loading = ref(false)
   const loadingRuns = ref(false)
   const runNowRequested = ref(false)
+  const runPollTimeouts = new Map<string, number>()
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { hasPermission } = useWorkspacePermissions()
 
@@ -131,6 +136,79 @@ export function useSimpleTaskDetails(
       }))
   })
 
+  function upsertRun(run: TaskRun) {
+    if (!run?.id) return
+    if (task.value?.latestRun?.id === run.id) {
+      task.value = { ...task.value, latestRun: run }
+    }
+
+    const index = runs.value.findIndex((existing) => existing.id === run.id)
+    if (index === -1) {
+      runs.value = [run, ...runs.value]
+      return
+    }
+
+    const next = [...runs.value]
+    next[index] = run
+    runs.value = next
+  }
+
+  function stopPollingRun(runId: string) {
+    const timeoutId = runPollTimeouts.get(runId)
+    if (timeoutId) window.clearTimeout(timeoutId)
+    runPollTimeouts.delete(runId)
+  }
+
+  function stopAllRunPolling() {
+    runPollTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    runPollTimeouts.clear()
+  }
+
+  function pollRunUntilComplete(runId: string, startedPollingAt = Date.now()) {
+    if (!task.value?.id || !runId) return
+    stopPollingRun(runId)
+
+    if (Date.now() - startedPollingAt >= POLL_DURATION_MS) {
+      runNowRequested.value = false
+      return
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      if (!task.value?.id) {
+        runNowRequested.value = false
+        stopPollingRun(runId)
+        return
+      }
+
+      if (Date.now() - startedPollingAt >= POLL_DURATION_MS) {
+        runNowRequested.value = false
+        stopPollingRun(runId)
+        return
+      }
+
+      try {
+        const response = await service.getTaskRun(task.value.id, runId)
+        const updatedRun = response.ok
+          ? (response.data as TaskRun) ?? null
+          : null
+        if (updatedRun?.id) {
+          upsertRun(updatedRun)
+          if (!ACTIVE_RUN_STATUSES.has(updatedRun.status)) {
+            runNowRequested.value = false
+            stopPollingRun(runId)
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error polling task run status', error)
+      }
+
+      pollRunUntilComplete(runId, startedPollingAt)
+    }, POLL_INTERVAL_MS)
+
+    runPollTimeouts.set(runId, timeoutId)
+  }
+
   async function load() {
     if (!taskId.value) return
     loading.value = true
@@ -139,6 +217,12 @@ export function useSimpleTaskDetails(
       if (!response.ok)
         throw new Error(response.message || 'Unable to load task.')
       task.value = response.data
+      if (
+        task.value?.latestRun?.id &&
+        ACTIVE_RUN_STATUSES.has(task.value.latestRun.status)
+      ) {
+        pollRunUntilComplete(task.value.latestRun.id)
+      }
     } catch (error: any) {
       Snackbar.error(error?.message || 'Unable to load task.')
     } finally {
@@ -158,6 +242,13 @@ export function useSimpleTaskDetails(
       if (!response.ok)
         throw new Error(response.message || 'Unable to fetch runs.')
       runs.value = response.data ?? []
+      const activeLatestRun = task.value?.latestRun
+      if (
+        activeLatestRun?.id &&
+        ACTIVE_RUN_STATUSES.has(activeLatestRun.status)
+      ) {
+        pollRunUntilComplete(activeLatestRun.id)
+      }
     } catch (error: any) {
       Snackbar.error(error?.message || 'Unable to fetch runs.')
     } finally {
@@ -190,7 +281,11 @@ export function useSimpleTaskDetails(
       const response = await service.runTask(task.value.id)
       if (!response.ok)
         throw new Error(response.message || 'Unable to run task.')
-      if (response.data?.id) task.value.latestRun = response.data
+      if (response.data?.id) {
+        task.value.latestRun = response.data
+        upsertRun(response.data)
+        pollRunUntilComplete(response.data.id)
+      }
       Snackbar.success('Run requested.')
     } catch (error: any) {
       runNowRequested.value = false
@@ -233,6 +328,8 @@ export function useSimpleTaskDetails(
     if (!task.value || kind === 'etl') await load()
     await fetchRuns()
   })
+
+  onBeforeUnmount(stopAllRunPolling)
 
   return {
     task,

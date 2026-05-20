@@ -142,6 +142,8 @@ class DataConnectionResponse(BaseGetResponse):
     name: str
     description: Optional[str] = None
     source_url: str
+    auth_header_name: Optional[str] = None
+    auth_header_value: Optional[str] = None
     workspace: WorkspaceSummaryResponse
     timestamp: TimestampResponse
     payload: Union[CSVPayloadResponse, JSONPayloadResponse]
@@ -170,6 +172,8 @@ class DataConnectionPostBody(BasePostBody):
     name: str
     description: Optional[str] = None
     source_url: str
+    auth_header_name: Optional[str] = None
+    auth_header_value: Optional[str] = None
     workspace_id: uuid.UUID
     timestamp: TimestampPostBody
     payload: Union[CSVPayloadPostBody, JSONPayloadPostBody]
@@ -181,6 +185,8 @@ class DataConnectionPatchBody(BasePatchBody):
     name: str
     description: Optional[str] = None
     source_url: str
+    auth_header_name: Optional[str] = None
+    auth_header_value: Optional[str] = None
     timestamp: TimestampPatchBody
     payload: PayloadPatchBody
     placeholder_variables: list[PlaceholderVariablePatchBody]
