@@ -31,7 +31,7 @@ and ≥78% branches** (see `vite.config.ts`). The branches threshold sits
 two points below the rest because a few uncovered branches in the
 qualifier-band path of `options.ts` and the relayout-echo path of
 `selected.ts` require heavy Plotly-DOM fixture setup for marginal
-signal. Raising it back to 80 is on the backlog.
+signal.
 
 ### What is covered
 
@@ -103,8 +103,7 @@ slip through type-check today (unused vars, floating promises, etc).
 `DataVisualization.vue`, `PlottedDatastreams.vue`, and `FilterPanel.vue`
 are the three highest-complexity SFCs without unit tests. They are
 exercised by E2E specs but lack the per-branch coverage the rest of the
-project has. Expanding unit coverage for stores and these large SFCs is
-on the backlog.
+project has.
 
 ### 4. Pinia store JSDoc is uneven
 

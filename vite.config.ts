@@ -46,9 +46,9 @@ export default defineConfig(({ mode }) => {
       headers: env.VITE_APP_DISABLE_COOP === '1'
         ? undefined
         : {
-            'Cross-Origin-Opener-Policy': 'same-origin',
-            'Cross-Origin-Embedder-Policy': 'require-corp',
-          },
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
     },
     resolve: {
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts', '.py'],
@@ -72,8 +72,6 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       coverage: {
         exclude: [
-          // Phase 02: individual opt-in for stores + three SFCs; blanket excludes removed.
-          // Untested stores stay excluded until covered by a future phase
           '**/src/store/observations.ts',
           '**/src/store/hydroserver.ts',
           '**/src/store/user.ts',

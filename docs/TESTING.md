@@ -1,7 +1,6 @@
 # Testing
 
-How to run, write, and debug tests in `hydroserver-qc-app`, plus the
-maintenance traps that have bitten the project before.
+How to run, write, and debug tests in `hydroserver-qc-app`.
 
 For *what is and isn't covered* (and the rationale behind the
 exclusion list), see [QUALITY.md](./QUALITY.md). This document is
@@ -156,7 +155,7 @@ gate is:
 - Branches: **78%** (sits two points lower because a handful of
   branches in `options.ts`'s qualifier-band path and `selected.ts`'s
   relayout-echo path require Plotly-DOM fixture setup that isn't
-  worth the marginal signal; raising to 80 is on the backlog.)
+  worth the marginal signal)
 
 The exclusion list (`coverage.exclude`) is the longest single bit
 of config in the file. Each entry is a deliberate scope decision —
@@ -285,13 +284,6 @@ spacing ending at "now"). The datastream's `phenomenonBeginTime` /
 `phenomenonEndTime` and the default `buildObservations()` series
 derive from this anchor.
 
-**Why:** the QC app's default time-range preset is `1w`. A
-hard-coded literal anchor (the original `2024-01-01`) would slide
-out of the default window as the calendar advanced, leaving the
-main plot rendering an empty slice while the un-windowed
-ContextPlot still looked correct — see the "main plot looks flat"
-trap in [CLAUDE.md](../CLAUDE.md).
-
 Specs that build custom observation series (gap fixtures, plateau
 fixtures, etc.) **must** import `FIXTURE_OBS_START_MS` and derive
 their timestamps from it:
@@ -304,9 +296,6 @@ function observationsWithGap() {
   // …
 }
 ```
-
-If you grep for `2024-01-01` in `e2e/`, the only legitimate hit
-should be the comment in `fixtures.ts` that explains the trap.
 
 ### Test hooks
 
@@ -341,14 +330,6 @@ them so the next contributor doesn't rediscover them.
    ```
    `selectAllPoints`, `history.spec.ts`'s Change-Values preamble,
    and the tooltip-threshold spec already follow this pattern.
-
-2. **`--headed` ≠ debugging.** Running the full suite with
-   `--headed` opens N browser windows simultaneously (where N =
-   `workers`), each contending for the OS compositor. Visible
-   Firefox windows in particular hit 30-second timeouts that
-   never reproduce headless. Use `--ui` (UI mode with watch
-   support) for iteration, or `--workers=1 --headed
-   --project=firefox` to isolate a single spec.
 
 3. **The dev-server URL must be `127.0.0.1`, not `localhost`.**
    Configured in `playwright.config.ts` and `vite.config.ts`. If a
@@ -404,12 +385,6 @@ targeting `main`. The job:
 1. `npx vue-tsc --noEmit` — type-check.
 2. `npm run coverage` — Vitest with the 80%/78% gates above.
 3. `npm run build` — Vite production build.
-
-**E2E is NOT run in CI today.** The Playwright suite is local-only;
-adding it to CI is on the backlog (workers conflict with the
-limited GitHub Actions runner resources, and the suite takes ~8
-minutes serially). Until then, spec changes need a local
-`npm run test:e2e:ci` run before merging.
 
 ---
 
@@ -511,8 +486,6 @@ When coverage drops below threshold after a code change:
 
 - [QUALITY.md](./QUALITY.md) — what is covered, what isn't, and why
 - [ONBOARDING.md](./ONBOARDING.md) — the wider learning path
-- [CLAUDE.md](../CLAUDE.md) — preview-server gotchas (the "main
-  plot is flat" trap; COOP/COEP headers; `127.0.0.1` vs `localhost`)
 - [`vite.config.ts`](../vite.config.ts) — source of truth on
   Vitest config and coverage policy
 - [`playwright.config.ts`](../playwright.config.ts) — source of
