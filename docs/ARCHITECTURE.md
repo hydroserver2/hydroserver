@@ -261,7 +261,3 @@ either way (just slower on large edits).
 - [PERFORMANCE.md](./PERFORMANCE.md) — performance characteristics and scaling
 - [QUALITY.md](./QUALITY.md) — testing posture, code quality, tech debt
 - [USER_GUIDE.md](./USER_GUIDE.md) — operator-facing feature walkthrough
-- [`qc-utils/docs/HISTORY_SCRIPT.md`](../../qc-utils/docs/HISTORY_SCRIPT.md)
-  — QC script format
-- [`qc-utils/docs/CALIBRATION.md`](../../qc-utils/docs/CALIBRATION.md)
-  — worker calibration methodology

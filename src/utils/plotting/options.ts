@@ -1,5 +1,6 @@
 import { usePlotlyStore } from '@/store/plotly'
 import { GraphSeries } from '@/types'
+import Plotly from 'plotly.js-dist'
 import type {
   Config,
   Data,
@@ -12,7 +13,7 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useQualifierStore } from '@/store/qualifiers'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
-import { DENSITY_HIDE_MARKERS } from './internal'
+import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
 import { undoZoom, redoZoom } from './zoom'
 import { fitXaxisToVisible, fitYaxisToVisible } from './operations'
 
@@ -203,6 +204,66 @@ const iconRedoZoom = {
 }
 
 /**
+ * Modebar handler for the custom Reset Axes button. Computes the X
+ * data extent directly from the live traces and pins the X axis to
+ * it; for Y axes (which fit per-axis to the traces actually attached
+ * to them, no global pooling) it falls back to Plotly's autorange.
+ *
+ * Why not just `xaxis.autorange: true`? Plotly's date-axis autorange
+ * was observed to occasionally resolve to a ~1-year default window
+ * instead of the data extent (symptom: ticks vanish; the next pan
+ * snaps the axis into year 2000). Reading `trace.x` ourselves makes
+ * the result deterministic.
+ */
+const resetAxesClick = (gd: unknown): void => {
+  const root = gd as
+    | {
+        _fullLayout?: Record<string, unknown>
+        data?: Array<{ x?: ArrayLike<number | string> }>
+      }
+    | null
+  const fl = root?._fullLayout
+  if (!root || !fl) return
+
+  const toMs = (v: number | string): number =>
+    typeof v === 'string' ? Date.parse(v) : Number(v)
+
+  // Series are time-sorted, so first + last give the per-trace
+  // extent in O(1). Min/max across all visible traces.
+  let xMin = Infinity
+  let xMax = -Infinity
+  for (const t of root.data ?? []) {
+    const xs = t?.x
+    if (!xs || !xs.length) continue
+    const first = toMs((xs as ArrayLike<number | string>)[0] as number | string)
+    const last = toMs(
+      (xs as ArrayLike<number | string>)[xs.length - 1] as number | string
+    )
+    if (Number.isFinite(first) && first < xMin) xMin = first
+    if (Number.isFinite(last) && last > xMax) xMax = last
+  }
+
+  const update: Record<string, boolean | [number, number]> = {}
+  if (Number.isFinite(xMin) && Number.isFinite(xMax) && xMin < xMax) {
+    update['xaxis.range'] = [xMin, xMax]
+    update['xaxis.autorange'] = false
+  } else {
+    update['xaxis.autorange'] = true
+  }
+  for (const key of Object.keys(fl)) {
+    if (Y_AXIS_KEY_RE.test(key)) update[`${key}.autorange`] = true
+  }
+  void Plotly.relayout(gd as Plotly.Root, update as unknown as Partial<Layout>)
+}
+
+// House icon for the custom Reset Axes button. FontAwesome `home`.
+const iconReset = {
+  width: 576,
+  height: 512,
+  path: 'M575.8 255.5c0 18-15 32.1-32 32.1l-32 0 .7 160.2c0 2.7-.2 5.4-.5 8.1l0 16.2c0 22.1-17.9 40-40 40l-16 0c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1L416 512l-24 0c-22.1 0-40-17.9-40-40l0-24 0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32l0 64 0 24c0 22.1-17.9 40-40 40l-24 0-31.9 0c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2l-16 0c-22.1 0-40-17.9-40-40l0-112c0-.9 0-1.9 .1-2.8l0-69.7-32 0c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z',
+}
+
+/**
  * Collects qualifier applications for the QC datastream and emits a dedicated
  * band of scatter traces (one per unique qualifier code) at the bottom of the
  * plot. Returns null when there is nothing to render.
@@ -322,11 +383,12 @@ export const createPlotlyOption = (
   seriesArray: GraphSeries[]
 ): PlotlyChartOptions => {
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
-  const { previewMode, hiddenAxisIds, plotlyRef } = storeToRefs(
+  const { previewMode, hiddenAxisIds, hiddenTraceIds, plotlyRef } = storeToRefs(
     usePlotlyStore()
   )
   const isPreview = previewMode?.value ?? false
   const hiddenAxes = hiddenAxisIds?.value ?? new Set<string>()
+  const hiddenTraces = hiddenTraceIds?.value ?? new Set<string>()
 
   // Density range for pre-seeding marker opacity.
   const live = (plotlyRef?.value as unknown as { layout?: Partial<Layout> } | null)
@@ -475,6 +537,16 @@ export const createPlotlyOption = (
       if (isAxisVisible) visibleNonQcCount++
     }
 
+    // Honour the eye-toggle state stashed in the store (and seeded
+    // from the share URL on hydrate). Without this, a URL that
+    // carries `h=<bitmask>` would correctly mark the series as
+    // hidden in the sidebar but the trace would still render on the
+    // plot until the user manually toggled the eye again.
+    const isTraceVisible = !hiddenTraces.has(s.id)
+    if (!isTraceVisible) {
+      trace.visible = false
+    }
+
     traces.push(trace)
 
     // Gap-aware line rendering. When the source datastream declares an
@@ -506,6 +578,10 @@ export const createPlotlyOption = (
         _isGapOverlay: true,
         _gapOverlayFor: s.id,
       }
+      // The eye toggle hides marker + gap overlay together; mirror
+      // the main trace's visibility flag on the overlay so a hidden
+      // series doesn't leak its connecting line through.
+      if (!isTraceVisible) overlay.visible = false
       traces.push(overlay)
     }
   })
@@ -600,18 +676,36 @@ export const createPlotlyOption = (
     click: fitYaxisToVisible,
   }
 
+  // Custom Reset Axes button. Replaces Plotly's stock `resetScale2d`,
+  // which restores from `_rangeInitial0/1`. Those markers get pinned
+  // to whatever range was active when the user first interacted with
+  // the plot — which on a fresh reload with a URL zoom is the URL
+  // view, not the data extent. Reset then bounces back to the URL
+  // view instead of the data extent, which the user perceived as
+  // "Reset doesn't work."
+  //
+  // Our implementation reads the data extent directly off the live
+  // traces, so Reset always lands on the actual data span regardless
+  // of how the user got there. See `resetAxesClick` below.
+  const resetAxesButton = {
+    name: 'Reset axes',
+    title: 'Reset axes',
+    icon: iconReset,
+    click: resetAxesClick,
+  }
+
   const modebarGroups: unknown[][] = isPreview
     ? [
       [undoZoomButton, redoZoomButton],
       ['zoom2d', 'zoomIn2d', 'zoomOut2d'],
       ['pan2d'],
-      ['resetScale2d'],
+      [resetAxesButton],
     ]
     : [
       [undoZoomButton, redoZoomButton],
       ['zoom2d', 'zoomIn2d', 'zoomOut2d'],
       ['pan2d', 'select2d', 'lasso2d'],
-      ['resetScale2d'],
+      [resetAxesButton],
       [fitXButton, fitYButton],
     ]
 

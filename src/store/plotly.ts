@@ -96,6 +96,25 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const hiddenAxisIds = ref<Set<string>>(new Set())
 
   /**
+   * Eye-toggle state. Datastream ids whose main + gap-overlay traces
+   * are hidden on the plot via the per-row toggle in
+   * `PlottedDatastreams`. Lifted to the store (it lived as local
+   * component state) so the share URL can reflect it; the toggle
+   * itself still drives `Plotly.restyle` calls inside
+   * `PlottedDatastreams`. Datastreams not present in the set are
+   * visible.
+   */
+  const hiddenTraceIds = ref<Set<string>>(new Set())
+
+  /**
+   * Active center-column tab. `'plot'` shows the Plotly chart,
+   * `'table'` shows the editable observation table. Lifted out of
+   * `Plot.vue`'s local state so the share URL can capture which tab
+   * the sender was looking at.
+   */
+  const activeTab = ref<'plot' | 'table'>('plot')
+
+  /**
    * Horizontal title chips rendered above each non-QC right-side axis
    * (see `.plot-axis-chip` in Plot.vue). Replaces Plotly's rotated
    * vertical axis titles — horizontal text is much easier to scan
@@ -201,6 +220,28 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
   const canUndoZoom = computed(() => zoomUndoStack.value.length > 1)
   const canRedoZoom = computed(() => zoomRedoStack.value.length > 0)
+
+  /**
+   * Live ranges currently shown on the plot. Top of the undo stack
+   * after every relayout (zoom, pan, axis drag) — `null` when nothing
+   * has been recorded yet (initial mount before the first layout
+   * settles). The share URL watcher subscribes to this so the link
+   * reflects the latest viewport without poking into the stack
+   * internals.
+   */
+  const currentZoom = computed<ZoomState | null>(() => {
+    const stack = zoomUndoStack.value
+    return stack.length ? (stack[stack.length - 1] as ZoomState) : null
+  })
+
+  /**
+   * Zoom state seeded from a share URL. Set by the URL hydrator before
+   * the plot is drawn for the first time. `Plot.vue`'s mount hook
+   * checks this after the initial `handleNewPlot` and, when present,
+   * applies the ranges via `Plotly.relayout` then clears the ref. Null
+   * means "no URL-supplied zoom, render at the default fit."
+   */
+  const pendingShareZoom = ref<ZoomState | null>(null)
 
   function clearZoomHistory() {
     zoomUndoStack.value = []
@@ -316,11 +357,16 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       name: datastream.name,
       data,
       yAxisLabel,
-      // Persist the non-QC colour on the series itself so reorders in
-      // PlottedDatastreams don't reshuffle line colours. QC always renders
-      // as COLORS[0] (black); we still assign a slot here so the series
-      // retains its colour if it's ever demoted from QC.
-      color: assignFreeColor(),
+      // Colour assignment is deferred to `assignSeriesColors`, which
+      // runs once after every refresh against the full ordered list
+      // of plotted datastreams. Doing it here used to read a stale
+      // `graphSeriesArray` when several series cold-loaded in
+      // parallel (each `Promise.all` branch saw the array before the
+      // other branches' pushes had landed), so two new series could
+      // both claim `COLORS[1]` and the same reload would re-roll
+      // different colour pairs depending on fetch-completion order.
+      // Leave a sentinel here; the post-refresh assigner fills it in.
+      color: '',
       intendedSpacingMs: spacingMsFromDatastream(datastream),
     } as GraphSeries
   }
@@ -353,17 +399,50 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   }
 
   /**
-   * Pick the first colour in `COLORS[1..]` that no currently-plotted
-   * series is using. If every slot is taken, wrap back to the second
-   * colour rather than reusing black (`COLORS[0]`), which is reserved
+   * Deterministically (re)assign non-QC line colours across the
+   * currently plotted series. Walks `orderedIds` (the legend order
+   * from `plottedDatastreams`) once. Series that already carry a
+   * non-empty `color` keep it; series with the empty-string sentinel
+   * claim the first `COLORS[1..]` slot not held by an earlier series
+   * in the walk.
+   *
+   * Race-safe because the walk is synchronous and reads the array
+   * exactly once. Stable across reloads because the walk order is
+   * the user-facing legend order, not fetch-completion order — so
+   * the same `plottedDatastreams` configuration yields the same
+   * colour assignment every time.
+   *
+   * If every slot is already in use, the assigner wraps back to
+   * `COLORS[1]` rather than touching `COLORS[0]`, which is reserved
    * for the QC datastream.
    */
-  function assignFreeColor(): string {
-    const used = new Set(graphSeriesArray.value.map((s) => s.color))
-    for (let i = 1; i < COLORS.length; i++) {
-      if (!used.has(COLORS[i])) return COLORS[i]
+  function assignSeriesColors(orderedIds: string[]): void {
+    const byId = new Map(graphSeriesArray.value.map((s) => [s.id, s]))
+    const used = new Set<string>()
+    // First pass: collect colours already locked in.
+    for (const id of orderedIds) {
+      const series = byId.get(id)
+      if (series && series.color) used.add(series.color)
     }
-    return COLORS[1]
+    // Second pass: fill the gaps, claiming the first free slot.
+    let nextHint = 1
+    for (const id of orderedIds) {
+      const series = byId.get(id)
+      if (!series || series.color) continue
+      let pick = ''
+      // Start from where we last paused so the worst case is linear
+      // in `COLORS.length`, not quadratic in `orderedIds.length`.
+      for (let i = nextHint; i < COLORS.length; i++) {
+        if (!used.has(COLORS[i] as string)) {
+          pick = COLORS[i] as string
+          nextHint = i + 1
+          break
+        }
+      }
+      if (!pick) pick = COLORS[1] as string
+      series.color = pick
+      used.add(pick)
+    }
   }
 
   /**
@@ -376,7 +455,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     const { qcDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return COLORS[0]
     const series = graphSeriesArray.value.find((s) => s.id === id)
-    return series?.color ?? COLORS[1]
+    // `||` (not `??`) so the empty-string sentinel emitted by
+    // `fetchGraphSeries` before `assignSeriesColors` runs also falls
+    // back gracefully. Downstream Plotly options need a real colour
+    // string; rendering a swatch as "" silently breaks the chip.
+    return series?.color || COLORS[1]
   }
 
   /**
@@ -390,7 +473,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     const { qcDatastream } = storeToRefs(useDataVisStore())
     if (qcDatastream.value?.id === id) return LABEL_COLORS[0]
     const series = graphSeriesArray.value.find((s) => s.id === id)
-    return series ? labelColorFor(series.color) : LABEL_COLORS[1]
+    if (!series || !series.color) return LABEL_COLORS[1]
+    return labelColorFor(series.color)
   }
 
   return {
@@ -406,6 +490,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     clearChartState,
     colorForDatastream,
     labelColorForDatastream,
+    assignSeriesColors,
     fetchGraphSeries,
     plotlyOptions,
     plotlyRef,
@@ -421,6 +506,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     hover,
     crosshair,
     hiddenAxisIds,
+    hiddenTraceIds,
+    activeTab,
     axisChips,
     previewMode,
     // Zoom history
@@ -429,6 +516,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     suppressZoomHistory,
     canUndoZoom,
     canRedoZoom,
+    currentZoom,
+    pendingShareZoom,
     clearZoomHistory,
     pushZoomState,
   }

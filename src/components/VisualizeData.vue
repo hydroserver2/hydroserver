@@ -415,6 +415,11 @@ import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useQcSubmission } from '@/composables/useQcSubmission'
+import {
+  decodeShareState,
+  encodeShareState,
+  type ShareState,
+} from '@/utils/share'
 import { useDataSelection } from '@/composables/useDataSelection'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
@@ -436,8 +441,20 @@ const {
 const { currentView, selectedDrawer, isDrawerOpen, selectedOperation } =
   storeToRefs(useUIStore())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
-const { editHistory, isUpdating, isSubmitting, selectedSeries } =
-  storeToRefs(usePlotlyStore())
+const {
+  editHistory,
+  isUpdating,
+  isSubmitting,
+  selectedSeries,
+  activeTab,
+  hiddenTraceIds,
+  hiddenAxisIds,
+  currentZoom,
+  pendingShareZoom,
+  tooltipsMode,
+  tooltipsManualEnabled,
+  tooltipsMaxDataPoints,
+} = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { refreshGraphSeriesArray, setPlottedDatastreams } = useDataVisStore()
 const { clearSelected } = useDataSelection()
@@ -584,62 +601,90 @@ const router = useRouter()
 
 // Hydrate state from the URL once datastream metadata is available.
 const hydrateFromUrl = () => {
-  const mode = String(route.query.mode ?? '').toLowerCase()
-  if (mode === 'edit') {
+  const state = decodeShareState(route.query as Record<string, unknown>)
+
+  if (state.editView) {
     currentView.value = DrawerType.Edit
     selectedDrawer.value = DrawerType.Edit
     isDrawerOpen.value = true
-  } else if (mode === 'select') {
+  } else {
     currentView.value = DrawerType.Select
     selectedDrawer.value = DrawerType.Select
   }
 
-  const splitCsv = (v: unknown) =>
-    typeof v === 'string' && v.length ? v.split(',').filter(Boolean) : []
+  if (state.tableTab) activeTab.value = 'table'
+  else activeTab.value = 'plot'
 
-  // Filters first — the store's filteredDatastreams watcher prunes
-  // plottedDatastreams whose thing/op/pl is filtered out, so we need these
-  // set before we assign plottedDatastreams below.
-  const thingIds = splitCsv(route.query.things)
+  // Filters first; the store's filteredDatastreams watcher prunes
+  // plottedDatastreams whose thing/op/pl is filtered out, so we
+  // need these set before we assign plottedDatastreams below.
+  const thingIds = state.thingIds ?? []
   selectedThings.value = thingIds
     .map((id) => things.value.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => !!t)
-  selectedObservedPropertyNames.value = splitCsv(route.query.observedProperties)
-  selectedProcessingLevelNames.value = splitCsv(route.query.processingLevels)
+  selectedObservedPropertyNames.value = state.observedPropertyNames ?? []
+  selectedProcessingLevelNames.value = state.processingLevelNames ?? []
 
-  const ids = splitCsv(route.query.datastreams)
+  const ids = state.datastreamIds ?? []
   const resolved = ids
     .map((id) => datastreams.value.find((ds) => ds.id === id))
     .filter((ds): ds is NonNullable<typeof ds> => !!ds)
+  // QC target is the first id by convention.
+  const qcId = resolved[0]?.id ?? null
 
-  const qcId = typeof route.query.qc === 'string' ? route.query.qc : ''
-
-  const parseDate = (v: unknown) => {
-    if (typeof v !== 'string' || !v) return null
-    const d = new Date(v)
-    return isNaN(d.getTime()) ? null : d
-  }
-  const begin = parseDate(route.query.begin)
-  const end = parseDate(route.query.end)
-
-  const btn = Number(route.query.dateBtn)
-  if (Number.isFinite(btn)) selectedDateBtnId.value = btn
-  else if (begin || end) selectedDateBtnId.value = -1
-
-  // Apply the date window BEFORE loading datastreams so the first fetch
-  // uses the correct range.
-  if (begin || end) {
-    if (begin) beginDate.value = begin
-    if (end) endDate.value = end
-  } else if (Number.isFinite(btn)) {
-    const option = dateOptions.value.find((o) => o.id === btn)
+  // Apply the date window BEFORE loading datastreams so the first
+  // fetch uses the correct range.
+  if (state.datePresetId != null && state.datePresetId >= 0) {
+    selectedDateBtnId.value = state.datePresetId
+    const option = dateOptions.value.find((o) => o.id === state.datePresetId)
     if (option) {
       endDate.value = new Date()
       beginDate.value = option.calculateBeginDate()
     }
+  } else if (state.beginMs != null || state.endMs != null) {
+    selectedDateBtnId.value = -1
+    if (state.beginMs != null) beginDate.value = new Date(state.beginMs)
+    if (state.endMs != null) endDate.value = new Date(state.endMs)
   }
 
-  void setPlottedDatastreams(resolved, qcId || null)
+  // Visibility — translate the boolean lists back into the store's
+  // hidden-id sets so the eye / axis toggles match the sender's view.
+  if (state.traceVisibility) {
+    hiddenTraceIds.value = new Set(
+      ids.filter((_, i) => state.traceVisibility?.[i] === false)
+    )
+  } else {
+    hiddenTraceIds.value = new Set()
+  }
+  if (state.axisVisibility) {
+    hiddenAxisIds.value = new Set(
+      ids.filter((_, i) => state.axisVisibility?.[i] === false)
+    )
+  } else {
+    hiddenAxisIds.value = new Set()
+  }
+
+  // Data points marker mode + threshold.
+  if (state.dataPointsMode === 'manualOn') {
+    tooltipsMode.value = 'manual'
+    tooltipsManualEnabled.value = true
+  } else if (state.dataPointsMode === 'manualOff') {
+    tooltipsMode.value = 'manual'
+    tooltipsManualEnabled.value = false
+  } else {
+    tooltipsMode.value = 'auto'
+  }
+  if (state.dataPointsThreshold != null) {
+    tooltipsMaxDataPoints.value = state.dataPointsThreshold
+  }
+
+  // Park the URL-supplied zoom so the Plot's mount hook can apply it
+  // after `handleNewPlot` finishes the default-fit render.
+  pendingShareZoom.value = state.zoom
+    ? { xRange: state.zoom.xRange, yRanges: state.zoom.yRanges }
+    : null
+
+  void setPlottedDatastreams(resolved, qcId)
 }
 
 if (datastreams.value.length) {
@@ -656,13 +701,22 @@ if (datastreams.value.length) {
   )
 }
 
-// Push URL updates when the user changes plotted datastreams, qc target, or
-// mode — using replace so we don't spam browser history on every toggle.
+// Push URL updates whenever any piece of share-relevant state moves.
+// `router.replace` keeps the browser history clean (no entry per
+// click). Heavy lifting (key choice, default-elision, compaction)
+// lives in `share.ts` so this watcher reads as a plain assembly of
+// inputs.
+const SHARE_KEYS = [
+  'ws', 'm', 'tab', 'ds', 'r', 'from', 'to',
+  't', 'op', 'pl', 'h', 'ya', 'z', 'yz', 'dp', 'th',
+] as const
+
 watch(
   [
     plottedDatastreams,
     qcDatastream,
     currentView,
+    activeTab,
     beginDate,
     endDate,
     selectedDateBtnId,
@@ -670,45 +724,52 @@ watch(
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
     selectedWorkspaceId,
+    hiddenTraceIds,
+    hiddenAxisIds,
+    currentZoom,
+    tooltipsMode,
+    tooltipsManualEnabled,
+    tooltipsMaxDataPoints,
   ],
   () => {
     const ids = plottedDatastreams.value.map((ds) => ds.id)
-    const query: Record<string, string> = {}
-    // Workspace goes in the query so a shared link lands the recipient
-    // in the same HydroServer context the sender had. The workspace
-    // router guard (`guards.ts`) consumes this on incoming navigation
-    // and switches the active workspace when it differs from the
-    // recipient's current selection.
-    if (selectedWorkspaceId.value) query.workspace = selectedWorkspaceId.value
-    if (currentView.value === DrawerType.Edit) query.mode = 'edit'
-    else if (currentView.value === DrawerType.Select) query.mode = 'select'
-    if (ids.length) query.datastreams = ids.join(',')
-    if (qcDatastream.value?.id) query.qc = qcDatastream.value.id
-    if (beginDate.value) query.begin = beginDate.value.toISOString()
-    if (endDate.value) query.end = endDate.value.toISOString()
-    if (Number.isFinite(selectedDateBtnId.value))
-      query.dateBtn = String(selectedDateBtnId.value)
-    if (selectedThings.value.length)
-      query.things = selectedThings.value.map((t) => t.id).join(',')
-    if (selectedObservedPropertyNames.value.length)
-      query.observedProperties = selectedObservedPropertyNames.value.join(',')
-    if (selectedProcessingLevelNames.value.length)
-      query.processingLevels = selectedProcessingLevelNames.value.join(',')
+    const isEdit = currentView.value === DrawerType.Edit
 
+    const state: ShareState = {
+      workspaceId: selectedWorkspaceId.value || null,
+      editView: isEdit,
+      tableTab: activeTab.value === 'table',
+      datastreamIds: ids,
+      datePresetId: Number.isFinite(selectedDateBtnId.value)
+        ? selectedDateBtnId.value
+        : null,
+      beginMs: beginDate.value ? beginDate.value.getTime() : null,
+      endMs: endDate.value ? endDate.value.getTime() : null,
+      // Sidebar filters only matter on the Select view (they drive
+      // the datastreams table, not the plot). Skip them in Edit
+      // links to keep URLs short.
+      thingIds: isEdit ? [] : selectedThings.value.map((t) => t.id),
+      observedPropertyNames: isEdit
+        ? []
+        : selectedObservedPropertyNames.value,
+      processingLevelNames: isEdit ? [] : selectedProcessingLevelNames.value,
+      traceVisibility: ids.map((id) => !hiddenTraceIds.value.has(id)),
+      axisVisibility: ids.map((id) => !hiddenAxisIds.value.has(id)),
+      zoom: currentZoom.value ?? undefined,
+      dataPointsMode:
+        tooltipsMode.value === 'auto'
+          ? 'auto'
+          : tooltipsManualEnabled.value
+            ? 'manualOn'
+            : 'manualOff',
+      dataPointsThreshold: tooltipsMaxDataPoints.value,
+    }
+
+    const query = encodeShareState(state)
     const current = route.query
-    const keys = [
-      'workspace',
-      'mode',
-      'datastreams',
-      'qc',
-      'begin',
-      'end',
-      'dateBtn',
-      'things',
-      'observedProperties',
-      'processingLevels',
-    ]
-    const unchanged = keys.every((k) => (current[k] ?? '') === (query[k] ?? ''))
+    const unchanged = SHARE_KEYS.every(
+      (k) => (current[k] ?? '') === (query[k] ?? '')
+    )
     if (unchanged) return
 
     router.replace({ query })

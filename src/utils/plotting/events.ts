@@ -56,7 +56,7 @@ export const handleNewPlot = async (
   element?: HTMLElement,
   opts?: { preserveZoom?: boolean }
 ) => {
-  const { plotlyOptions, plotlyRef, mainPlotEpoch } =
+  const { plotlyOptions, plotlyRef, mainPlotEpoch, pendingShareZoom } =
     storeToRefs(usePlotlyStore())
 
   if (!element && plotlyRef.value?.data) {
@@ -139,6 +139,39 @@ export const handleNewPlot = async (
     plotlyOptions.value.config
   )
   plotlyRef.value = newElement as unknown as typeof plotlyRef.value
+
+  // Share-URL zoom: one-shot directive set by the URL hydrator. Apply
+  // it via `Plotly.relayout` after `Plotly.newPlot` and clear the
+  // ref. The first `handleNewPlot` after mount usually has empty
+  // traces (the rebuild is queued behind the catalog fetch), so we
+  // gate on `traces.length` to skip until the rebuild lands with
+  // real data.
+  //
+  // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
+  // for Reset Axes — the custom Reset button in `options.ts`
+  // computes the data extent directly from `trace.x` rather than
+  // relying on Plotly's internal anchors.
+  if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
+    const snap = pendingShareZoom.value
+    const update: Record<string, [number, number] | boolean> = {}
+    if (snap.xRange) {
+      update['xaxis.range'] = [...snap.xRange]
+      update['xaxis.autorange'] = false
+    }
+    for (const [axisName, range] of Object.entries(snap.yRanges ?? {})) {
+      const layoutKey =
+        axisName === 'y' ? 'yaxis' : `yaxis${axisName.slice(1)}`
+      update[`${layoutKey}.range`] = [...range]
+      update[`${layoutKey}.autorange`] = false
+    }
+    if (Object.keys(update).length) {
+      await Plotly.relayout(
+        newElement as unknown as Plotly.Root,
+        update as unknown as Partial<Plotly.Layout>
+      )
+    }
+    pendingShareZoom.value = null
+  }
   // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
   // identity is unchanged and Vue's ref watchers don't refire. It does
   // wipe externally-attached listeners (the ContextPlot's brush sync,

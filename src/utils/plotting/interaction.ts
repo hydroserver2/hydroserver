@@ -555,23 +555,57 @@ export const handleWheel = (event: WheelEvent) => {
 
   if (!pendingWheelZoom) pendingWheelZoom = { y: {} }
 
+  // Compute the pivot from the LIVE `gd.layout` range + the axis's
+  // current pixel length, NOT from `_fullLayout.xaxis.p2c`. Plotly's
+  // p2c closures aren't always refreshed after a `Plotly.relayout`
+  // (the cached `_m` / `_b` linear-mapping coefficients lag behind
+  // `ax.range`), so on the second-and-later wheel tick in a burst
+  // the pivot would land tens of milliseconds off the cursor's
+  // actual data position. That offset accumulates and reads as a
+  // pan on top of the zoom — exactly what the user reported.
+  // Computing the pivot manually from the up-to-date range
+  // sidesteps the stale closure entirely.
+  const live = (gd as { layout?: Record<string, unknown> } | null)?.layout
+  const liveAxisRange = (
+    key: string
+  ): { lo: number; hi: number } | null => {
+    const ax = (live as Record<string, { range?: Array<string | number> }>)?.[
+      key
+    ]
+    const r = ax?.range
+    if (!r || r.length < 2) return null
+    const toNum = (v: string | number) =>
+      typeof v === 'string' ? Date.parse(v) : Number(v)
+    const lo = toNum(r[0] as string | number)
+    const hi = toNum(r[1] as string | number)
+    return Number.isFinite(lo) && Number.isFinite(hi) ? { lo, hi } : null
+  }
+
   // Pin the pivot to the first event of the burst; subsequent events
   // in the same frame compose their factors against that pivot.
   if (zoomX) {
-    const pivot = Number(xaxis.p2c(pxRel - xLeft))
-    if (Number.isFinite(pivot)) {
-      pendingWheelZoom.x ??= { key: 'xaxis', pivot, factor: 1 }
-      pendingWheelZoom.x.factor *= tickFactor
+    const r = liveAxisRange('xaxis')
+    if (r && xaxis._length) {
+      const pivot = r.lo + ((pxRel - xLeft) / xaxis._length) * (r.hi - r.lo)
+      if (Number.isFinite(pivot)) {
+        pendingWheelZoom.x ??= { key: 'xaxis', pivot, factor: 1 }
+        pendingWheelZoom.x.factor *= tickFactor
+      }
     }
   }
 
   for (const key of yAxisKeys) {
     const ax = (fullLayout as unknown as Record<string, {
       _offset?: number
-      p2c?: (px: number) => number
+      _length?: number
     }>)[key]
-    if (ax?._offset == null || !ax.p2c) continue
-    const pivot = Number(ax.p2c(pyRel - ax._offset))
+    if (ax?._offset == null || !ax._length) continue
+    const r = liveAxisRange(key)
+    if (!r) continue
+    // Y axes are oriented bottom-up: pixel offset 0 maps to
+    // `range[1]` (top), `_length` maps to `range[0]` (bottom).
+    const t = (pyRel - ax._offset) / ax._length
+    const pivot = r.hi - t * (r.hi - r.lo)
     if (!Number.isFinite(pivot)) continue
     pendingWheelZoom.y[key] ??= { key, pivot, factor: 1 }
     pendingWheelZoom.y[key].factor *= tickFactor

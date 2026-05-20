@@ -9,6 +9,7 @@ const mockUpdateOptions = vi.fn()
 const mockClearChartState = vi.fn()
 const mockClearZoomHistory = vi.fn()
 const mockFetchGraphSeries = vi.fn().mockResolvedValue({ id: 'stub', data: {} })
+const mockAssignSeriesColors = vi.fn()
 const mockRedraw = vi.fn()
 const mockFetchObservationsInRange = vi
   .fn()
@@ -22,6 +23,7 @@ vi.mock('@/store/plotly', () => ({
     clearChartState: mockClearChartState,
     clearZoomHistory: mockClearZoomHistory,
     fetchGraphSeries: mockFetchGraphSeries,
+    assignSeriesColors: mockAssignSeriesColors,
     redraw: mockRedraw,
   }),
 }))

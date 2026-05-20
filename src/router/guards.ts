@@ -42,13 +42,13 @@ export const guards: RouteGuard[] = [
     return next.startsWith('/') ? { path: next } : { name: next }
   },
 
-  // Shared-link workspace switch — if an incoming URL carries
-  // `?workspace=<id>`, switch the active workspace so recipients of
-  // a shared link land in the sender's workspace without stopping at
-  // the picker. Covers in-app navigations; the fresh-page-load case
-  // is handled synchronously in `main.ts` before `app.mount`.
+  // Shared-link workspace switch. An incoming URL carrying `?ws=<id>`
+  // switches the active workspace so recipients of a shared link
+  // land in the sender's workspace without stopping at the picker.
+  // Covers in-app navigations; the fresh-page-load case is handled
+  // synchronously in `main.ts` before `app.mount`.
   (to) => {
-    const urlId = typeof to.query.workspace === 'string' ? to.query.workspace : ''
+    const urlId = typeof to.query.ws === 'string' ? to.query.ws : ''
     if (!urlId) return null
     const ws = useWorkspaceStore()
     if (ws.selectedWorkspaceId === urlId) return null

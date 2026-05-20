@@ -4,10 +4,14 @@
  * Drives the mocked-backend e2e harness through every notable UI state
  * (workspaces, home/select, plot, edit view, each filter/edit/add
  * panel, edit history, submit dialog) and writes one PNG per state to
- * `docs/images/`. Re-run when the UI changes substantively so the
- * USER_GUIDE.md figures stay in sync.
+ * `docs/images/`.
  *
- * Run with: `npx playwright test screenshots --project=chromium`.
+ * Skipped by default so a normal `npx playwright test` run doesn't
+ * touch the on-disk PNGs (otherwise every CI / local run produces a
+ * noisy diff of regenerated screenshots). Set `CAPTURE_SCREENSHOTS=1`
+ * to opt in:
+ *
+ *     CAPTURE_SCREENSHOTS=1 npx playwright test screenshots --project=chromium
  *
  * Most captures use a Locator so each PNG is tightly cropped to the
  * region the doc actually references. The viewport is intentionally
@@ -40,14 +44,44 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const OUT = path.resolve(__dirname, '..', 'docs', 'images')
 
+/**
+ * Wait for the Plotly chart in the page (if any) to finish its
+ * post-mount layout. `handleNewPlot` runs inside a 200 ms setTimeout
+ * in `Plot.vue`'s mount hook, and a ResizeObserver fires a frame
+ * later to size the canvas to its container — both happen *after*
+ * `setupEditView`'s "Filter Data is visible" gate. Without this
+ * extra wait the screenshot captures the initial undersized layout,
+ * leaving an empty stripe between the right edge of the plotting
+ * area and the v-card edge. We poll `_fullLayout.width` against the
+ * gd element's actual `offsetWidth` and bail out (no chart on the
+ * page) when the selector doesn't resolve.
+ */
+async function waitForPlotLayoutSettled(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const gd = document.querySelector('.plot-main') as
+        | (HTMLElement & { _fullLayout?: { width: number } })
+        | null
+      if (!gd) return true
+      const layout = gd._fullLayout
+      if (!layout?.width) return false
+      // Allow a few pixels of slop — Plotly rounds.
+      return Math.abs(layout.width - gd.offsetWidth) <= 4
+    },
+    undefined,
+    { timeout: 5_000 }
+  )
+}
+
 async function snapPage(page: Page, name: string) {
+  await waitForPlotLayoutSettled(page)
   await page.waitForTimeout(250)
   await page.screenshot({ path: path.join(OUT, name), fullPage: false })
 }
 
 async function snapEl(loc: Locator, name: string) {
   await loc.waitFor({ state: 'visible' })
-  // Small settle to let Vuetify finish transitions before capture.
+  await waitForPlotLayoutSettled(loc.page())
   await loc.page().waitForTimeout(250)
   await loc.screenshot({ path: path.join(OUT, name) })
 }
@@ -63,7 +97,14 @@ const TALL_VIEWPORT = { width: 1440, height: 1800 }
 /** Standard viewport for "overview" shots (login, workspaces, full edit view). */
 const STD_VIEWPORT = { width: 1440, height: 900 }
 
+const SHOULD_CAPTURE = process.env.CAPTURE_SCREENSHOTS === '1'
+
 test.describe('docs screenshots', () => {
+  test.skip(
+    !SHOULD_CAPTURE,
+    'Opt-in only — set CAPTURE_SCREENSHOTS=1 to regenerate docs/images/ PNGs.'
+  )
+
   test('login page', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
     await installMocks(page, { authenticated: false })

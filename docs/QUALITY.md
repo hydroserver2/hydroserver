@@ -127,7 +127,6 @@ Highlights:
 
 - No formal API reference per-Pinia-store before this docs folder existed.
 - No diagram of the auth flow.
-- No customer-facing help site; the user guide lives in this repo.
 
 ### 7. Some persistence keys lack version handling
 

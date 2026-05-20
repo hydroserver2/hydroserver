@@ -180,10 +180,9 @@ import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions, colorForDatastream, labelColorForDatastream } =
   usePlotlyStore()
-const { plotlyRef, graphSeriesArray, hiddenAxisIds } = storeToRefs(
-  usePlotlyStore()
-)
-import { Ref, ref, computed } from 'vue'
+const { plotlyRef, graphSeriesArray, hiddenAxisIds, hiddenTraceIds } =
+  storeToRefs(usePlotlyStore())
+import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 
 const { plottedDatastreams, qcDatastream, loadingStates } =
@@ -193,7 +192,18 @@ const {
   setQcDatastream: setQcInStore,
   clearPlottedDatastreams,
 } = useDataVisStore()
-const visibleDict: Ref<{ [key: string]: boolean }> = ref({})
+
+// Per-row visibility derived from the store's `hiddenTraceIds`.
+// Template treats `visibleDict[id] === false` as "hidden"; this
+// computed view keeps that contract while moving the source of truth
+// into the store (so the share URL can read it).
+const visibleDict = computed<Record<string, boolean>>(() => {
+  const out: Record<string, boolean> = {}
+  for (const ds of plottedDatastreams.value) {
+    out[ds.id] = !hiddenTraceIds.value.has(ds.id)
+  }
+  return out
+})
 
 const setQcDatastream = async (datastream: Datastream) => {
   await setQcInStore(datastream.id)
@@ -225,7 +235,7 @@ const loadStatus = (id: string) => {
  * clearing graph series, zoom history, and QC in one step.
  */
 async function clearAll() {
-  visibleDict.value = {}
+  hiddenTraceIds.value = new Set()
   await clearPlottedDatastreams()
 }
 
@@ -238,9 +248,16 @@ const toggleVisibility = async (datastream: Datastream) => {
 
   const isVisible = traces[mainIndex].visible
   const nextVisible = !(isVisible === true || isVisible == undefined)
-  visibleDict.value[datastream.id] = nextVisible
 
-  // Gap overlays carry no `id`, only `_gapOverlayFor` — toggle them
+  // Mirror the new visibility into the store-backed set. Mutating
+  // a fresh Set instance (rather than in-place) lets pinia notify
+  // any deep watcher (e.g. the URL share watcher).
+  const next = new Set(hiddenTraceIds.value)
+  if (nextVisible) next.delete(datastream.id)
+  else next.add(datastream.id)
+  hiddenTraceIds.value = next
+
+  // Gap overlays carry no `id`, only `_gapOverlayFor`; toggle them
   // alongside the main trace so hiding a datastream removes both its
   // markers and its line.
   for (let i = 0; i < traces.length; i++) {

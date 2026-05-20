@@ -448,6 +448,7 @@ const {
   axisChips,
   previewMode,
   plotlyRef,
+  activeTab,
 } = storeToRefs(usePlotlyStore())
 const { selectedData, hasSelectionShape, qcDatastream, dateOptions, endDate } =
   storeToRefs(useDataVisStore())
@@ -495,7 +496,15 @@ function setTooltipsMode(mode: 'manual' | 'auto') {
   if (mode === 'manual') modeMenuOpen.value = false
   handleRelayout(null)
 }
-const tab = ref('plot')
+// Lifted into the plotly store (`activeTab`) so the share URL can
+// pick up which tab the sender was looking at. Local alias keeps the
+// template churn-free.
+const tab = computed({
+  get: () => activeTab.value,
+  set: (v: string) => {
+    activeTab.value = v === 'table' ? 'table' : 'plot'
+  },
+})
 
 // The floating hover readout shows y in the QC trace's native coord
 // space (handleMouseMove converts via the primary yaxis `p2c`). Label
@@ -786,6 +795,11 @@ onMounted(async () => {
     if (!props.preview && editorDateBtnId.value != null) {
       onEditorDatePreset(editorDateBtnId.value)
     }
+
+    // URL-supplied zoom is consumed inside `handleNewPlot` itself
+    // (see the `pendingShareZoom` block in `utils/plotting/events.ts`),
+    // so whichever render lands first — mount-time or rebuild-time —
+    // picks it up. No mount-side apply needed here.
 
     // Attach the container-size observer after the Plotly instance
     // is actually live. Observing earlier is wasted effort because

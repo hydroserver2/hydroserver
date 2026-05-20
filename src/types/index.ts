@@ -10,10 +10,15 @@ export interface GraphSeries {
   data: ObservationRecord
   yAxisLabel: string
   /**
-   * Non-QC line colour, assigned at fetch time from the free slots of
-   * `COLORS[1..]` and persisted on the series so reordering the legend
-   * doesn't reshuffle colours. The QC series always renders as
-   * `COLORS[0]` regardless of its stored `color`.
+   * Non-QC line colour. Assigned by `assignSeriesColors` after every
+   * refresh of the graph-series array, walking `plottedDatastreams`
+   * in legend order and claiming the first `COLORS[1..]` slot not
+   * already taken by an earlier series in the walk. Persisted on the
+   * series so reordering the legend doesn't reshuffle colours, and so
+   * a series whose fetch is still in flight gets a colour as soon as
+   * its place in the legend is known. Empty string until the first
+   * assignment runs. The QC series always renders as `COLORS[0]`
+   * regardless of its stored value.
    */
   color: string
   /**

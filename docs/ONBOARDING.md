@@ -106,20 +106,6 @@ types, run `npm run build` once in `qc-utils` to refresh `.d.ts`.
 
 To unlink: `npm unlink @uwrl/qc-utils && npm install`.
 
-## LSP-first navigation
-
-The project relies on the language server for code navigation, not text
-search. Use:
-
-- `goToDefinition` / `goToImplementation` to jump.
-- `findReferences` before renaming a function — there will be call sites
-  you don't expect.
-- `workspaceSymbol` to find where something is defined.
-- `hover` for type info without reading the file.
-
-Use Grep / Glob for non-semantic lookups: literal strings, comments,
-config values, filename discovery.
-
 ## Coding conventions
 
 - TypeScript strict mode. No `any` without a comment explaining why.
@@ -130,22 +116,7 @@ config values, filename discovery.
 - Commit format: `{type}({scope}): {description}` — `feat`, `fix`,
   `test`, `refactor`, `perf`, `docs`, `style`, `chore`.
 
-## Where the documentation is solid
-
-- README + this docs folder cover stack, configuration, build, deploy,
-  test, and the QC script format.
-- `qc-utils/docs/CALIBRATION.md` and `qc-utils/docs/HISTORY_SCRIPT.md`
-  are the canonical references for the worker dispatch and save/load
-  formats.
-- Inline comments are concentrated where it matters: the few places that
-  have a hidden invariant (`suppressedEchoSelection` in `plotly.ts`, the
-  `<` vs `<=` fix in `observations.ts`, the in-place clear in
-  `useQcSubmission.ts`) carry the rationale.
-
-## Documentation gaps a new team will hit
-
-Be upfront about these — they're the things you'll have to read code to
-learn:
+## Documentation gaps
 
 1. **Result qualifiers are partial.** The `QualifyingComments` op panel
    exists and writes to the in-memory history, but the submit path

@@ -63,23 +63,129 @@ const fakeZoom = (source: ZoomState['source'] = 'user'): ZoomState => ({
   source,
 })
 
-describe('usePlotlyStore.assignFreeColor', () => {
+describe('usePlotlyStore.assignSeriesColors', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     qcId.value = null
   })
 
-  it('returns COLORS[1] when no series are plotted', async () => {
+  it('hands out colours in legend order for a fresh cold load', async () => {
     const { usePlotlyStore } = await import('@/store/plotly')
     const store = usePlotlyStore()
-    // assignFreeColor is not in the public return surface; exercise via fetchGraphSeries?
-    // Instead, seed series and observe that colorForDatastream reflects the palette,
-    // and assert assignFreeColor indirectly by watching what redraw/colorForDatastream use.
-    // The function itself is module-private but we can assert palette selection through
-    // the behaviour of colorForDatastream + manually pushing entries onto graphSeriesArray.
-    expect(store.graphSeriesArray).toEqual([])
-    expect(COLORS[1]).toBe('#aec7e8')
+    // Three new series, all colourless (the post-fetch sentinel).
+    store.graphSeriesArray.push(
+      makeSeries('a', ''),
+      makeSeries('b', ''),
+      makeSeries('c', '')
+    )
+    store.assignSeriesColors(['a', 'b', 'c'])
+    expect(store.graphSeriesArray.map((s) => s.color)).toEqual([
+      COLORS[1],
+      COLORS[2],
+      COLORS[3],
+    ])
+  })
+
+  it('is deterministic across reloads with the same legend order', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const a1 = usePlotlyStore()
+    a1.graphSeriesArray.push(
+      makeSeries('a', ''),
+      makeSeries('b', ''),
+      makeSeries('c', '')
+    )
+    a1.assignSeriesColors(['a', 'b', 'c'])
+    const first = a1.graphSeriesArray.map((s) => s.color)
+
+    // Brand-new pinia (simulating a reload that restarts the store).
+    setActivePinia(createPinia())
+    const a2 = usePlotlyStore()
+    a2.graphSeriesArray.push(
+      makeSeries('a', ''),
+      makeSeries('b', ''),
+      makeSeries('c', '')
+    )
+    a2.assignSeriesColors(['a', 'b', 'c'])
+    const second = a2.graphSeriesArray.map((s) => s.color)
+
+    expect(second).toEqual(first)
+  })
+
+  it('keeps an already-assigned colour on subsequent refreshes', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    // `a` already has a (potentially out-of-order) colour. Shouldn't move.
+    store.graphSeriesArray.push(
+      makeSeries('a', COLORS[3] as string),
+      makeSeries('b', '')
+    )
+    store.assignSeriesColors(['a', 'b'])
+    expect(store.graphSeriesArray.find((s) => s.id === 'a')!.color).toBe(
+      COLORS[3]
+    )
+    // `b` skips the slot `a` is using and takes the first remaining one.
+    expect(store.graphSeriesArray.find((s) => s.id === 'b')!.color).toBe(
+      COLORS[1]
+    )
+  })
+
+  it('reuses a colour slot once the series holding it is removed', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.graphSeriesArray.push(
+      makeSeries('a', ''),
+      makeSeries('b', '')
+    )
+    store.assignSeriesColors(['a', 'b'])
+    // Remove `a`, add `c`. `c` reclaims COLORS[1], the slot `a` had.
+    store.graphSeriesArray.splice(
+      store.graphSeriesArray.findIndex((s) => s.id === 'a'),
+      1
+    )
+    store.graphSeriesArray.push(makeSeries('c', ''))
+    store.assignSeriesColors(['b', 'c'])
+    expect(store.graphSeriesArray.find((s) => s.id === 'b')!.color).toBe(
+      COLORS[2]
+    )
+    expect(store.graphSeriesArray.find((s) => s.id === 'c')!.color).toBe(
+      COLORS[1]
+    )
+  })
+
+  it('hands out distinct colours when several series resolve concurrently', async () => {
+    // Simulate the cold-load race: every series arrives with `color: ''`
+    // pushed in legend order via `Promise.all`. Pre-fix, two of them
+    // could read the array before any push landed and claim the same
+    // slot; the assigner now runs after every push and picks slots
+    // deterministically.
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    const ids = ['a', 'b', 'c', 'd', 'e']
+    for (const id of ids) store.graphSeriesArray.push(makeSeries(id, ''))
+    store.assignSeriesColors(ids)
+    const colours = store.graphSeriesArray.map((s) => s.color)
+    expect(new Set(colours).size).toBe(ids.length) // no duplicates
+    expect(colours).toEqual([
+      COLORS[1],
+      COLORS[2],
+      COLORS[3],
+      COLORS[4],
+      COLORS[5],
+    ])
+  })
+
+  it('wraps back to COLORS[1] when more series than palette slots exist', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    // Plot enough series to consume every COLORS[1..] slot.
+    const palette = COLORS.length - 1 // skip the QC slot
+    const ids = Array.from({ length: palette + 1 }, (_, i) => `ds-${i}`)
+    for (const id of ids) store.graphSeriesArray.push(makeSeries(id, ''))
+    store.assignSeriesColors(ids)
+    // The overflow series falls back to COLORS[1] rather than touching
+    // COLORS[0] (which is reserved for QC).
+    expect(store.graphSeriesArray.at(-1)!.color).toBe(COLORS[1])
   })
 
   it('colorForDatastream falls back to COLORS[1] for unknown id when no series match', async () => {
@@ -92,6 +198,13 @@ describe('usePlotlyStore.assignFreeColor', () => {
     const { usePlotlyStore } = await import('@/store/plotly')
     const store = usePlotlyStore()
     expect(store.colorForDatastream(undefined)).toBe(COLORS[1])
+  })
+
+  it('colorForDatastream falls back to COLORS[1] while a series colour is still the empty sentinel', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.graphSeriesArray.push(makeSeries('a', ''))
+    expect(store.colorForDatastream('a')).toBe(COLORS[1])
   })
 })
 

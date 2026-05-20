@@ -19,6 +19,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     updateOptions,
     clearChartState,
     fetchGraphSeries,
+    assignSeriesColors,
   } = usePlotlyStore()
   const { fetchObservationsInRange } = useObservationStore()
 
@@ -472,6 +473,16 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     graphSeriesArray.value.sort(
       (a, b) => (indexByDs.get(a.id) ?? 0) - (indexByDs.get(b.id) ?? 0)
     )
+
+    // Colour assignment runs once per refresh, after every fetch
+    // has landed and the array is in legend order. Doing it here
+    // (rather than inline in `fetchGraphSeries`) eliminates the
+    // race where two parallel cold fetches both read the array
+    // before either's push had landed and ended up claiming the
+    // same colour slot — visible as two non-QC traces sharing a
+    // line colour, and as different colours rolling on each reload
+    // depending on which fetch resolved first.
+    assignSeriesColors(plottedDatastreams.value.map((ds) => ds.id))
 
     return results
   }

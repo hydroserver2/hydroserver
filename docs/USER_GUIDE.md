@@ -237,6 +237,40 @@ sooner. The new value applies on **Apply** (or on Enter).
 
 The setting is persisted locally, so it survives reloads.
 
+### Share link
+
+The address bar is always a shareable representation of the current
+plot. Click the share icon in the plot toolbar to copy the URL to
+the clipboard; you can also just copy from the bar manually.
+
+The URL encodes everything needed to reproduce what the sender is
+looking at:
+
+- **Workspace** (`ws`)
+- **View** (Select vs Edit; `m=e` for Edit)
+- **Active center-column tab** (`tab=t` for Table)
+- **Plotted datastreams** (`ds`), in order. The first id is the QC
+  target.
+- **Time window**: either a preset id (`r=0..5`) which the recipient
+  re-anchors to *their* "now", or an explicit `from` / `to` pair as
+  base36 second-epochs when the sender used a custom range.
+- **Per-trace eye-toggle visibility** (`h`) and **per-axis
+  visibility** (`ya`) as hex bitmasks over the `ds` order.
+- **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`)
+  for axes that aren't at their default fit.
+- **Data points mode** (`dp`) and **threshold** (`th`) when they
+  differ from the app defaults.
+
+Defaults are elided to keep URLs short. Sidebar filters
+(things / observed properties / processing levels) are kept in the
+URL only on the Select view, because they drive the datastreams
+table rather than the plot.
+
+> **Not** shared via URL: edit history (use **Export QC script**
+> for that), the current point selection (it would change the
+> moment the recipient hovered), drawer widths, and other
+> personal-preference layout state.
+
 ### Plotted datastreams list
 
 The right-hand list (visible on both Select and Edit views) is the

@@ -127,8 +127,11 @@ describe('captureCurrentZoomState', () => {
     const snap = captureCurrentZoomState('user')
     expect(snap).not.toBeNull()
     expect(snap!.xRange).toEqual([100, 200])
-    expect(snap!.yRanges.yaxis).toEqual([1, 10])
-    expect(snap!.yRanges.yaxis2).toEqual([0, 5])
+    // Normalised to trace-axis-ref form (`yaxis` → `y`, `yaxis2` →
+    // `y2`) so the share-URL encoder + decoder + applyZoomState all
+    // speak the same dialect.
+    expect(snap!.yRanges.y).toEqual([1, 10])
+    expect(snap!.yRanges.y2).toEqual([0, 5])
     expect(snap!.source).toBe('user')
   })
 
@@ -167,7 +170,7 @@ describe('recordZoomIfSettled (exercises sameRange/sameZoomState)', () => {
   it('no-ops when current snapshot matches top of undo stack (within 0.5%)', () => {
     storeState.zoomUndoStack.push({
       xRange: [0, 1000],
-      yRanges: { yaxis: [0, 10] },
+      yRanges: { y: [0, 10] },
       source: 'user',
     })
     recordZoomIfSettled('user')
@@ -177,7 +180,7 @@ describe('recordZoomIfSettled (exercises sameRange/sameZoomState)', () => {
   it('pushes when snapshot is a new state (x differs beyond threshold)', () => {
     storeState.zoomUndoStack.push({
       xRange: [0, 1000],
-      yRanges: { yaxis: [0, 10] },
+      yRanges: { y: [0, 10] },
       source: 'user',
     })
     plotlyRefRef.value = {
@@ -193,7 +196,7 @@ describe('recordZoomIfSettled (exercises sameRange/sameZoomState)', () => {
   it('pushes when a y-axis range differs beyond threshold', () => {
     storeState.zoomUndoStack.push({
       xRange: [0, 1000],
-      yRanges: { yaxis: [0, 10] },
+      yRanges: { y: [0, 10] },
       source: 'user',
     })
     plotlyRefRef.value = {
@@ -209,7 +212,7 @@ describe('recordZoomIfSettled (exercises sameRange/sameZoomState)', () => {
   it('treats ranges within 0.5% as same (no push)', () => {
     storeState.zoomUndoStack.push({
       xRange: [0, 1000],
-      yRanges: { yaxis: [0, 10] },
+      yRanges: { y: [0, 10] },
       source: 'user',
     })
     plotlyRefRef.value = {
@@ -291,7 +294,9 @@ describe('applyZoomState', () => {
     plotlyRefRef.value = { layout: {} }
     await applyZoomState({
       xRange: [0, 10],
-      yRanges: { yaxis: [0, 1] },
+      // `y` (trace-axis ref) — applyZoomState converts to `yaxis`
+      // before emitting the Plotly relayout payload.
+      yRanges: { y: [0, 1] },
       source: 'user',
     })
     // suppressZoomHistory is cleared asynchronously via setTimeout(…, 450)

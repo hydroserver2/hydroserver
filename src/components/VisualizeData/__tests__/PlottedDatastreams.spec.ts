@@ -20,6 +20,7 @@ const loadingStates = ref(new Map<string, boolean>())
 const graphSeriesArray = ref<any[]>([])
 const plotlyRef = ref<any>(null)
 const hiddenAxisIds = ref<Set<string>>(new Set())
+const hiddenTraceIds = ref<Set<string>>(new Set())
 
 const toggleDatastream = vi.fn().mockResolvedValue(undefined)
 const setQcInStore = vi.fn().mockResolvedValue(undefined)
@@ -44,6 +45,7 @@ vi.mock('@/store/plotly', () => ({
     plotlyRef,
     graphSeriesArray,
     hiddenAxisIds,
+    hiddenTraceIds,
     updateOptions,
     colorForDatastream,
     labelColorForDatastream,

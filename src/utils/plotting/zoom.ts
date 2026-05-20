@@ -41,13 +41,21 @@ export const captureCurrentZoomState = (
   const xRange: [number, number] | null =
     Number.isFinite(xStart) && Number.isFinite(xEnd) ? [xStart, xEnd] : null
 
+  // Y ranges are stored keyed by the *trace axis reference* (`y`,
+  // `y2`, `y3`, …), matching the form the share-URL encoder and
+  // decoder use. Plotly's layout exposes the same axis under
+  // `yaxis`/`yaxis2`/…; we normalise here so every consumer downstream
+  // (zoom history, currentZoom watcher, URL writer, applyZoomState)
+  // can speak one dialect.
   const yRanges: Record<string, [number, number]> = {}
   for (const key of Object.keys(layout)) {
     if (!Y_AXIS_KEY_RE.test(key)) continue
     const axis = layout[key] as Partial<LayoutAxis> | undefined
     const r = axis?.range as Array<number> | undefined
     if (!r || !Number.isFinite(r[0]) || !Number.isFinite(r[1])) continue
-    yRanges[key] = [Number(r[0]), Number(r[1])]
+    // `yaxis` → `y`, `yaxis2` → `y2`, …
+    const axisRef = key === 'yaxis' ? 'y' : `y${key.slice('yaxis'.length)}`
+    yRanges[axisRef] = [Number(r[0]), Number(r[1])]
   }
 
   return { xRange, yRanges, source }
@@ -131,9 +139,14 @@ export const applyZoomState = async (state: ZoomState): Promise<void> => {
   } else {
     update['xaxis.autorange'] = true
   }
-  for (const [key, range] of Object.entries(state.yRanges)) {
-    update[`${key}.range`] = [range[0], range[1]]
-    update[`${key}.autorange`] = false
+  // `state.yRanges` is keyed by trace-axis ref (`y`, `y2`, …). The
+  // Plotly relayout API addresses the same axes under their layout
+  // names (`yaxis`, `yaxis2`, …), so convert before emitting.
+  for (const [axisRef, range] of Object.entries(state.yRanges)) {
+    const layoutKey =
+      axisRef === 'y' ? 'yaxis' : `yaxis${axisRef.slice(1)}`
+    update[`${layoutKey}.range`] = [range[0], range[1]]
+    update[`${layoutKey}.autorange`] = false
   }
 
   store.suppressZoomHistory = true
