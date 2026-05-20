@@ -42,8 +42,6 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      // Phase 1 bar is "lint runs honestly", not "comprehensive TS lint".
-      // Downgrade rules that fire on existing source so CI exits 0; tighten in a future phase.
       "no-unused-vars": "warn",
       "no-undef": "warn",
       "no-empty": "warn",
