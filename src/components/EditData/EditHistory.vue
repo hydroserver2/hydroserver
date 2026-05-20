@@ -200,7 +200,7 @@
           <div
             class="edit-history__row px-3 py-1 d-flex align-center"
             :class="{
-              'edit-history__row--loading': entry.isLoading,
+              'edit-history__row--loading': entry.execution?.inFlight,
               'edit-history__row--open': openIndex === index,
             }"
           >
@@ -226,7 +226,7 @@
               :icon="iconForMethod(entry.method)"
               size="16"
               :color="
-                entry.status === 'failed'
+                entry.execution?.status === 'failed'
                   ? 'error'
                   : colorForMethod(entry.method)
               "
@@ -242,9 +242,9 @@
             <!-- Failure badge — surfaces ops that threw at author
                  time so the user knows the entry didn't actually
                  apply. The same flag round-trips through
-                 save/load via `HistoryItem.status`. -->
+                 save/load via `HistoryItem.execution.status`. -->
             <v-tooltip
-              v-if="entry.status === 'failed'"
+              v-if="entry.execution?.status === 'failed'"
               location="start"
               text="Operation failed — see console for details"
             >
@@ -265,29 +265,29 @@
                  thresholds without opening devtools. Hidden in prod
                  via `import.meta.env.DEV`. -->
             <v-chip
-              v-if="isDev && entry.executionMode"
+              v-if="isDev && entry.execution?.mode"
               size="x-small"
               variant="tonal"
-              :color="entry.executionMode === 'inline' ? 'success' : 'primary'"
+              :color="entry.execution.mode === 'inline' ? 'success' : 'primary'"
               class="mr-1 flex-shrink-0 edit-history__mode-chip"
               :title="
-                entry.executionMode === 'inline'
+                entry.execution.mode === 'inline'
                   ? 'Ran on the main thread (inline)'
                   : 'Ran on a web worker'
               "
             >
-              {{ entry.executionMode }}
+              {{ entry.execution.mode }}
             </v-chip>
 
             <span
-              v-if="entry.duration"
+              v-if="entry.execution?.durationMs"
               class="text-caption text-medium-emphasis flex-shrink-0 mr-1"
             >
-              {{ formatDuration(entry.duration) }}
+              {{ formatDuration(entry.execution.durationMs) }}
             </span>
 
             <v-progress-circular
-              v-if="entry.isLoading"
+              v-if="entry.execution?.inFlight"
               size="14"
               width="2"
               color="primary"
@@ -303,7 +303,7 @@
                   variant="text"
                   density="comfortable"
                   icon="mdi-reload"
-                  :disabled="isUpdating || entry.isLoading"
+                  :disabled="isUpdating || entry.execution?.inFlight"
                   @click="onReloadHistory(index)"
                 />
               </template>

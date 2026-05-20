@@ -94,6 +94,38 @@ function makeSeries(overrides: Partial<any> = {}) {
   }
 }
 
+/**
+ * Build a `HistoryItem`-shaped object with a populated
+ * `execution` record. Mirrors what `ObservationRecord.dispatch*`
+ * would produce so the EditHistory template's
+ * `entry.execution.inFlight` / `.status` / `.mode` / `.durationMs`
+ * reads find the fields they expect. Callers pass any execution
+ * overrides as a single object (e.g. `{ durationMs: 12 }`).
+ */
+function makeEntry(
+  method: string,
+  args: any[] = [],
+  execution: Partial<{
+    startedAt: number
+    inFlight: boolean
+    status: 'success' | 'failed'
+    durationMs: number
+    mode: 'worker' | 'inline'
+    datasetSize: number
+    selectionSize: number
+  }> = {},
+) {
+  return {
+    method,
+    args,
+    execution: {
+      startedAt: 0,
+      inFlight: false,
+      ...execution,
+    },
+  }
+}
+
 function createWrapper(props: Record<string, unknown> = {}) {
   return mount(EditHistory, {
     props,
@@ -116,7 +148,7 @@ describe('EditHistory.vue', () => {
   })
 
   it('disables undo with history when isUpdating is true', async () => {
-    editHistory.value = [{ method: 'FOO', args: [] }]
+    editHistory.value = [makeEntry('FOO')]
     isUpdating.value = true
     const wrapper = createWrapper()
     await flushPromises()
@@ -124,7 +156,7 @@ describe('EditHistory.vue', () => {
   })
 
   it('enables undo with at least one history entry', async () => {
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     const wrapper = createWrapper()
     await flushPromises()
     expect(wrapper.find('[data-testid="history-undo-btn"]').attributes('disabled')).toBeUndefined()
@@ -139,7 +171,7 @@ describe('EditHistory.vue', () => {
 
   it('shows count chip when editCount > 0', async () => {
     const wrapper = createWrapper()
-    editHistory.value = [{ method: 'A', args: [] }, { method: 'B', args: [] }]
+    editHistory.value = [makeEntry('A'), makeEntry('B')]
     await flushPromises()
     expect(wrapper.text()).toContain('2')
   })
@@ -151,8 +183,8 @@ describe('EditHistory.vue', () => {
 
   it('renders entries with formatted method labels', async () => {
     editHistory.value = [
-      { method: 'ADD_POINTS', args: [1, [1, 2, 3], { k: 'v' }, 'str'], duration: 10, icon: 'mdi-plus' },
-      { method: 'SHIFT_DATETIMES', args: [], duration: 5 },
+      makeEntry('ADD_POINTS', [1, [1, 2, 3], { k: 'v' }, 'str'], { durationMs: 10 }),
+      makeEntry('SHIFT_DATETIMES', [], { durationMs: 5 }),
     ]
     const wrapper = createWrapper()
     await flushPromises()
@@ -163,7 +195,7 @@ describe('EditHistory.vue', () => {
 
   it('expands and collapses the args drawer', async () => {
     editHistory.value = [
-      { method: 'ADD_POINTS', args: [[1, 2, 3, 4, 5, 6, 7], [], { a: 1 }, 42], duration: 12 },
+      makeEntry('ADD_POINTS', [[1, 2, 3, 4, 5, 6, 7], [], { a: 1 }, 42], { durationMs: 12 }),
     ]
     const wrapper = createWrapper()
     await flushPromises()
@@ -204,7 +236,7 @@ describe('EditHistory.vue actions', () => {
 
   it('undo button calls undo and dispatches replayed selection', async () => {
     vi.useFakeTimers()
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     const wrapper = createWrapper()
     await flushPromises()
     await wrapper.find('[data-testid="history-undo-btn"]').trigger('click')
@@ -254,7 +286,7 @@ describe('EditHistory.vue actions', () => {
 
   it('per-step reload button calls reloadHistory with entry index', async () => {
     vi.useFakeTimers()
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     selectedSeries.value.data.reloadHistory = vi.fn().mockResolvedValue([9])
     const wrapper = createWrapper()
     await flushPromises()
@@ -270,7 +302,7 @@ describe('EditHistory.vue actions', () => {
 
   it('Ctrl+Z on window triggers undo', async () => {
     vi.useFakeTimers()
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     const undoSpy = selectedSeries.value.data.undo
     createWrapper()
     await flushPromises()
@@ -306,7 +338,7 @@ describe('EditHistory.vue actions', () => {
 
   it('ignores Ctrl+Z originating from an input element', async () => {
     vi.useFakeTimers()
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     const undoSpy = selectedSeries.value.data.undo
     createWrapper()
     await flushPromises()
@@ -323,7 +355,7 @@ describe('EditHistory.vue actions', () => {
 
   it('ignores keydown without modifier', async () => {
     vi.useFakeTimers()
-    editHistory.value = [{ method: 'ADD_POINTS', args: [] }]
+    editHistory.value = [makeEntry('ADD_POINTS')]
     const undoSpy = selectedSeries.value.data.undo
     createWrapper()
     await flushPromises()

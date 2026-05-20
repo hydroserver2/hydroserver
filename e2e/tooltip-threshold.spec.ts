@@ -54,6 +54,15 @@ async function openModeMenu(page: Page) {
 }
 
 test.describe('data-points combobox', () => {
+  // Each scenario takes ~18–20 s serially on Firefox — boot, plot,
+  // setup, several menu open/close cycles, and a page.reload() in
+  // beforeEach. With Playwright's default `workers: 2` cap, two of
+  // these scenarios contending for the shared dev server can each
+  // run 30–40 s, blowing the default 30 s per-test budget. Bump
+  // the budget here rather than serializing the file so the suite
+  // stays parallel-friendly.
+  test.setTimeout(60_000)
+
   test.beforeEach(async ({ page }) => {
     await installMocks(page)
     await setupEditView(page)
@@ -110,37 +119,45 @@ test.describe('data-points combobox', () => {
     await expect(page.getByTestId('tooltips-toggle-btn')).toHaveCount(0)
   })
 
-  test('Apply commits the new threshold, Enter does the same, and Escape discards', async ({
-    page,
-  }) => {
+  // Each commit path lives in its own test so a slow Firefox boot +
+  // five menu open/close cycles + three counter polls can't cumulatively
+  // blow the per-test 30 s budget. Splitting also localizes failures:
+  // "Enter doesn't commit" no longer hides behind "Apply was slow."
+  test('Apply commits the new threshold', async ({ page }) => {
     expect(await readDisplayedThreshold(page)).toBe(10_000)
 
-    // --- Apply path -------------------------------------------------
     await openModeMenu(page)
     const input = page.getByTestId('threshold-input').locator('input')
     await expect(input).toBeVisible()
     await input.fill('25000')
 
-    // Buffered: nothing has changed in the counter yet (menu obscures
-    // it while open, so re-check after close).
+    // applyThreshold sets `modeMenuOpen.value = false` on success, so
+    // the menu unmounts itself; the counter then reads the committed
+    // value once the menu is out of the way.
     await page.getByTestId('threshold-apply-btn').click()
     await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
     await expect.poll(() => readDisplayedThreshold(page)).toBe(25_000)
+  })
 
-    // --- Escape-discard path ---------------------------------------
+  test('Enter on the threshold field commits via the keyup.enter handler', async ({ page }) => {
+    expect(await readDisplayedThreshold(page)).toBe(10_000)
+
+    await openModeMenu(page)
+    const input = page.getByTestId('threshold-input').locator('input')
+    await input.fill('5000')
+    await input.press('Enter')
+    await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
+    await expect.poll(() => readDisplayedThreshold(page)).toBe(5_000)
+  })
+
+  test('Escape discards an in-progress edit without committing', async ({ page }) => {
+    expect(await readDisplayedThreshold(page)).toBe(10_000)
+
     await openModeMenu(page)
     await page.getByTestId('threshold-input').locator('input').fill('99999')
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
-    expect(await readDisplayedThreshold(page)).toBe(25_000)
-
-    // --- Enter path -------------------------------------------------
-    await openModeMenu(page)
-    const enterInput = page.getByTestId('threshold-input').locator('input')
-    await enterInput.fill('5000')
-    await enterInput.press('Enter')
-    await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
-    await expect.poll(() => readDisplayedThreshold(page)).toBe(5_000)
+    expect(await readDisplayedThreshold(page)).toBe(10_000)
   })
 
   test('Apply is disabled while the buffered value is below the 100-pt floor', async ({
