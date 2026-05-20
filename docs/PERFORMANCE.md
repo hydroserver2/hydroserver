@@ -8,8 +8,7 @@ This document answers two questions:
    deployments?** (the "fit")
 
 It is design-review + measured-behavior, not a marketing benchmark. The
-numbers are calibrated per-device by the qc-utils calibration layer (see
-[`qc-utils/docs/CALIBRATION.md`](../../qc-utils/docs/CALIBRATION.md)), so
+numbers are calibrated per-device by the qc-utils calibration layer, so
 your envelope on a 2018 laptop is different from your envelope on a 2024
 desktop — that's the whole point of the calibration mechanism.
 
@@ -84,10 +83,6 @@ profile and lets users re-benchmark on demand.
 
 The first time the app loads, `ensureCalibration()` is fired on idle, so
 the first real edit already has a decision.
-
-**Read [`qc-utils/docs/CALIBRATION.md`](../../qc-utils/docs/CALIBRATION.md)
-before tuning the dispatch.** It documents the measurement methodology
-and per-op cost table.
 
 ## SharedArrayBuffer requirement
 
@@ -207,5 +202,3 @@ backend capacity are the constraints, not the QC App itself.
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [QUALITY.md](./QUALITY.md)
-- [`qc-utils/docs/CALIBRATION.md`](../../qc-utils/docs/CALIBRATION.md)
-- [`qc-utils/docs/PERFORMANCE.md`](../../qc-utils/docs/PERFORMANCE.md)

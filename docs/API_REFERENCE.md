@@ -4,10 +4,6 @@ This is a reference for the surfaces a developer integrates against —
 both the in-app TypeScript surfaces (Pinia stores, composables, plotting
 utils) and the external HydroServer REST endpoints the app consumes.
 
-For the QC engine itself (operation enums, dispatch, history scripts),
-see [`qc-utils/docs/API_REFERENCE.md`](../../qc-utils/docs/API_REFERENCE.md)
-and [`qc-utils/docs/HISTORY_SCRIPT.md`](../../qc-utils/docs/HISTORY_SCRIPT.md).
-
 ## Design principles
 
 - **No app-specific API.** The QC App is a client of HydroServer; it
@@ -271,9 +267,6 @@ Wire shape:
 }
 ```
 
-See [`qc-utils/docs/HISTORY_SCRIPT.md`](../../qc-utils/docs/HISTORY_SCRIPT.md)
-for per-op arg shapes, versioning rules, and the round-trip contract.
-
 ## Integrating from outside
 
 If you want to reuse the QC engine in a non-Vue context — a Jupyter
@@ -290,6 +283,4 @@ plus the QC script file as input. Treat anything else as private.
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [PERFORMANCE.md](./PERFORMANCE.md)
-- [`qc-utils/docs/HISTORY_SCRIPT.md`](../../qc-utils/docs/HISTORY_SCRIPT.md)
-- [`qc-utils/docs/CALIBRATION.md`](../../qc-utils/docs/CALIBRATION.md)
 - HydroServer documentation: <https://hydroserver2.github.io/hydroserver/>
