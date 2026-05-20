@@ -431,34 +431,22 @@ LOGGING = {
 
 # SensorThings Configuration
 
-from interfaces.sensorthings.schemas import (
-    ThingProperties,
-    DatastreamProperties,
-    LocationProperties,
-    ObservedPropertyProperties,
-    SensorMetadata,
-    SensorProperties,
-    sensorEncodingTypes,
-)
-from asgiref.sync import sync_to_async
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
-
 SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
 SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
 SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
-    sync_to_async(session_auth),
-    sync_to_async(bearer_auth),
-    sync_to_async(apikey_auth),
-    sync_to_async(anonymous_auth),
+    "interfaces.auth.security.session_auth",
+    "interfaces.auth.security.bearer_auth",
+    "interfaces.auth.security.apikey_auth",
+    "interfaces.auth.security.anonymous_auth",
 ]
 SENSORTHINGS_V1_1_ID_TYPE = UUID
 SENSORTHINGS_V1_1_ID_DELIMITER = "'"
 SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
-    "Things": ThingProperties,
-    "Datastreams": DatastreamProperties,
-    "Locations": LocationProperties,
-    "ObservedProperties": ObservedPropertyProperties,
-    "Sensors": SensorProperties,
+    "Things": "interfaces.sensorthings.schemas.ThingProperties",
+    "Datastreams": "interfaces.sensorthings.schemas.DatastreamProperties",
+    "Locations": "interfaces.sensorthings.schemas.LocationProperties",
+    "ObservedProperties": "interfaces.sensorthings.schemas.ObservedPropertyProperties",
+    "Sensors": "interfaces.sensorthings.schemas.SensorProperties",
 }
-SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_SCHEMA = SensorMetadata
-SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_VALUE_LITERAL = sensorEncodingTypes
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_SCHEMA = "interfaces.sensorthings.schemas.SensorMetadata"
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_VALUE_LITERAL = "interfaces.sensorthings.schemas.sensorEncodingTypes"
