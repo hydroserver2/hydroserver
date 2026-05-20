@@ -1,12 +1,12 @@
 # Datastreams
 
-A `datastream` is a time series of observations for a particular observed property created at a monitoring site. The datastream concept encompases all o fthe metadata describing exactly one time series or "stream" of data at that monitoring site.
+A `datastream` is a time series of observations for a particular observed property created at a monitoring site. The datastream concept encompasses all of the metadata describing exactly one time series or "stream" of data at that monitoring site.
 
 For example, you could have a datastream of:
 
 - Water temperature (the observed property)
 - having Units of Degree Celsius
-- in the Logan River at Mendon Road (the the monitoring site's location)
+- in the Logan River at Mendon Road (the monitoring site's location)
 - with Processing Level 0, Raw data (the processing level)
 - a Sampled Medium of Surface Water
 - measured using A YSI EXO2 Multiparameter Water Quality Sonde sensor
@@ -40,8 +40,8 @@ Below is a brief definition of each available linked metadata group a datastream
 
 **- Sensor** is the device or, more broadly, the methodology used to collect the data. The Sensor model captures details like type, manufacturer, and model, essential for understanding data collection methods. In some cases, observations do not result directly from a sensor measurement. For example a discharge value that is derived from a stage value using a site-specific rating curve. These cases can also be described using "Sensor" metadata, and we maintain this within the Sensor entity for consistency with SensorThings' conventions.
 
-**- Result Qualifier** provides additional information about the result of an observation, like its accuracy, reliability, or field conditions that may have impacted the observation result. Each Result Qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a Result Qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
+**- Result Qualifier** provides additional information about the result of an observation, like its accuracy, reliability, or field conditions that may have impacted the observation result. Each result qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a result qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
 
 ## Data Support and Spacing
 
-It is important to specify both the support and spacing of the data to ensure proper interpretation by users. Each datastream has a time aggregation interval that serves as a definition of the measurment support - i.e., the temporal window over which each individual data value is measured and aggregated (if aggregation is implemented). Each datastream also has an intended time spacing that defines the intended amount of time between each data value within that datastream. 
+It is important to specify both the support and spacing of the data to ensure proper interpretation by users. Each datastream has a time aggregation interval that serves as a definition of the measurement support – i.e., the temporal window over which each data value is measured and aggregated (if aggregation is implemented). Each datastream also has an intended time spacing that defines the intended amount of time between each data value within that datastream. 
