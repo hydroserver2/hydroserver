@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { setActivePinia, createPinia, getActivePinia, defineStore } from 'pinia'
 
 const { selectedWorkspaceId, hsRef, mockList, mockCreate } = vi.hoisted(() => {
@@ -63,7 +63,13 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  getActivePinia()?._s.forEach((store: any) => store.$dispose())
+  // `_s` is Pinia's internal store-registry Map; the published `Pinia`
+  // type doesn't expose it but it's stable across versions and is the
+  // canonical way to tear down all stores between tests.
+  ;(getActivePinia() as unknown as
+    | { _s?: Map<string, { $dispose: () => void }> }
+    | undefined
+  )?._s?.forEach((store) => store.$dispose())
 })
 
 describe('useQualifierStore.applyQualifiers', () => {

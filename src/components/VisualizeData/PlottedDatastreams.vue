@@ -177,6 +177,7 @@ import {
   toggleTraceVisibility,
 } from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
+import type { GraphSeries } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions, colorForDatastream, labelColorForDatastream } =
   usePlotlyStore()
@@ -246,7 +247,9 @@ const toggleVisibility = async (datastream: Datastream) => {
   )
   if (mainIndex < 0) return
 
-  const isVisible = traces[mainIndex].visible
+  const mainTrace = traces[mainIndex] as AppPlotlyTrace | undefined
+  const isVisible = (mainTrace as { visible?: boolean | 'legendonly' } | undefined)
+    ?.visible
   const nextVisible = !(isVisible === true || isVisible == undefined)
 
   // Mirror the new visibility into the store-backed set. Mutating
@@ -313,12 +316,14 @@ function onDragEnd() {
 function reorder(from: number, to: number) {
   const list = plottedDatastreams.value
   const moved = list.splice(from, 1)[0]
+  if (!moved) return
   list.splice(to, 0, moved)
 
-  const series = graphSeriesArray.value
+  const series = graphSeriesArray.value as GraphSeries[]
   const fromSeries = series.findIndex((s) => s.id === moved.id)
   if (fromSeries >= 0) {
     const movedSeries = series.splice(fromSeries, 1)[0]
+    if (!movedSeries) return
     const ids = list.map((d) => d.id)
     const newIdx = ids.indexOf(moved.id)
     series.splice(Math.max(0, newIdx), 0, movedSeries)

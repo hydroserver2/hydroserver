@@ -94,10 +94,15 @@ function virtualTableStub() {
       </div>
     `,
     methods: {
-      resolveRowClass(index: number) {
-        if (typeof this.rowProps === 'function') {
+      resolveRowClass(index: number): Record<string, unknown> {
+        const self = this as unknown as {
+          rowProps?: (item: { internalItem: { index: number } }) => {
+            class?: Record<string, unknown>
+          }
+        }
+        if (typeof self.rowProps === 'function') {
           const item = { internalItem: { index } }
-          const res = this.rowProps(item)
+          const res = self.rowProps(item)
           return res?.class ?? {}
         }
         return {}
@@ -551,7 +556,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     // chip renders but code is ''
-    const rowHtml = wrapper.findAll('.vdtv-row').at(0).html()
+    const rowHtml = wrapper.findAll('.vdtv-row').at(0)!.html()
     expect(rowHtml).toContain('<')
   })
 
@@ -562,7 +567,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     qualifierById.value = { q1: { code: 'SUS', description: 'Suspicious' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
-    const html = wrapper.findAll('.vdtv-row').at(0).html()
+    const html = wrapper.findAll('.vdtv-row').at(0)!.html()
     expect(html).toContain('SUS: Suspicious')
     expect(html).toContain('alice')
   })
@@ -574,7 +579,7 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     qualifierById.value = { q1: { code: 'SUS', description: 'Suspicious' } }
     const wrapper = createWrapperWithSlots()
     await flushPromises()
-    const html = wrapper.findAll('.vdtv-row').at(0).html()
+    const html = wrapper.findAll('.vdtv-row').at(0)!.html()
     expect(html).toContain('SUS: Suspicious')
     expect(html).not.toContain('alice')
   })
@@ -633,8 +638,8 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const rows = wrapper.findAll('.vdtv-row')
-    expect(rows.at(0).classes()).not.toContain('row--selected')
-    expect(rows.at(1).classes()).toContain('row--selected')
+    expect(rows.at(0)!.classes()).not.toContain('row--selected')
+    expect(rows.at(1)!.classes()).toContain('row--selected')
   })
 
   it('applies row--edited when a row has a pending value edit', async () => {
@@ -642,7 +647,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     await flushPromises()
     valueCell(wrapper, 0).vm.$emit('save', '99')
     await flushPromises()
-    const row = wrapper.findAll('.vdtv-row').at(0)
+    const row = wrapper.findAll('.vdtv-row').at(0)!
     expect(row.classes()).toContain('row--edited')
   })
 
@@ -652,7 +657,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     await flushPromises()
     datetimeCell(wrapper, 0).vm.$emit('save', '2024-06-06T06:06:06')
     await flushPromises()
-    const row = wrapper.findAll('.vdtv-row').at(0)
+    const row = wrapper.findAll('.vdtv-row').at(0)!
     expect(row.classes()).toContain('row--selected')
     expect(row.classes()).toContain('row--edited')
   })
@@ -660,7 +665,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
   it('applies neither class for an unmodified, unselected row', async () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
-    const row = wrapper.findAll('.vdtv-row').at(0)
+    const row = wrapper.findAll('.vdtv-row').at(0)!
     expect(row.classes()).not.toContain('row--selected')
     expect(row.classes()).not.toContain('row--edited')
   })
@@ -684,7 +689,10 @@ describe('DataTable.vue ResizeObserver integration', () => {
   })
 
   it('uses bodyEl.clientHeight when non-zero and updates on resize', async () => {
-    let capturedCallback: ((entries: any) => void) | null = null
+    // The cast tells TS the class-constructor assignment widens the
+    // value back to the callable type — without it the analyzer pins
+    // the variable to `null` after the literal initialiser.
+    let capturedCallback = null as ((entries: any) => void) | null
     class CapturingRO {
       constructor(cb: any) {
         capturedCallback = cb

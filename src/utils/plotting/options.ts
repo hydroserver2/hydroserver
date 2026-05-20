@@ -113,7 +113,10 @@ export const LABEL_COLORS = [
 /** Companion text colour for a `COLORS[i]` line; falls back to QC grey. */
 export const labelColorFor = (lineColor: string): string => {
   const idx = COLORS.indexOf(lineColor)
-  return idx >= 0 ? LABEL_COLORS[idx] : LABEL_COLORS[0]
+  // Both array indices land on entries defined above; the non-null
+  // assertions keep noUncheckedIndexedAccess quiet without inventing
+  // a runtime fallback for a guaranteed-defined position.
+  return idx >= 0 ? LABEL_COLORS[idx]! : LABEL_COLORS[0]!
 }
 
 /**
@@ -395,11 +398,18 @@ export const createPlotlyOption = (
     ?.layout?.xaxis?.range as Array<string | number> | undefined
   const parseCoord = (v: string | number): number =>
     typeof v === 'string' ? Date.parse(v) : Number(v)
-  const densityStart = live
-    ? parseCoord(live[0])
+  // `live` is `Array<string | number>` after the cast above; under
+  // noUncheckedIndexedAccess the index access returns `… | undefined`,
+  // so guard before parsing. Falling through to the date-pickers'
+  // range is the correct seed when the live range hasn't been
+  // populated yet (fresh plot).
+  const liveStart = live?.[0]
+  const liveEnd = live?.[1]
+  const densityStart = liveStart !== undefined
+    ? parseCoord(liveStart)
     : Number(beginDate?.value?.getTime?.())
-  const densityEnd = live
-    ? parseCoord(live[1])
+  const densityEnd = liveEnd !== undefined
+    ? parseCoord(liveEnd)
     : Number(endDate?.value?.getTime?.())
   const densityRangeValid =
     Number.isFinite(densityStart) && Number.isFinite(densityEnd)
@@ -602,11 +612,11 @@ export const createPlotlyOption = (
     )
     : null
   if (qualifierBand) {
+    const yaxisMap = yaxis as Record<string, Partial<LayoutAxis>>
     for (const key of Object.keys(yaxis)) {
-      ; (yaxis as Record<string, Partial<LayoutAxis>>)[key].domain = [
-        qualifierBand.mainAxisBottom,
-        1,
-      ]
+      const axis = yaxisMap[key]
+      if (!axis) continue
+      axis.domain = [qualifierBand.mainAxisBottom, 1]
     }
     ; (yaxis as Record<string, Partial<LayoutAxis>>)[qualifierBand.axisKey] =
       qualifierBand.axis

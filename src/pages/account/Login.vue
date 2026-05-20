@@ -7,7 +7,6 @@
           <v-divider class="my-2"></v-divider>
           <v-form
             class="login-form"
-            ref="form"
             @submit.prevent="formLogin"
             v-model="valid"
           >
@@ -82,7 +81,6 @@ import { storeToRefs } from 'pinia'
 
 const email = ref('')
 const password = ref('')
-const form = ref(null)
 const valid = ref(false)
 const loading = ref(false)
 const disableAccountCreation =

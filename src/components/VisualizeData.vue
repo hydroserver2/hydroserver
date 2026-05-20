@@ -680,8 +680,15 @@ const hydrateFromUrl = () => {
 
   // Park the URL-supplied zoom so the Plot's mount hook can apply it
   // after `handleNewPlot` finishes the default-fit render.
+  // Carry `source: 'user'` so the zoom-history recorder treats this
+  // as a deliberate viewport choice (URL share is an intentional user
+  // action), matching the ZoomState contract.
   pendingShareZoom.value = state.zoom
-    ? { xRange: state.zoom.xRange, yRanges: state.zoom.yRanges }
+    ? {
+        xRange: state.zoom.xRange,
+        yRanges: state.zoom.yRanges,
+        source: 'user',
+      }
     : null
 
   void setPlottedDatastreams(resolved, qcId)

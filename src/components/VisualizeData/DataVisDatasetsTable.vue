@@ -205,21 +205,18 @@
         </template>
 
         <template #no-data>
-          <div class="datasets-table__empty">
-            <v-icon icon="mdi-database-search-outline" size="32" class="mb-2" />
-            <div class="text-body-2 mb-1">No datastreams to show</div>
-            <div class="text-caption text-medium-emphasis">
-              Adjust the filters in the left drawer or clear the search.
-            </div>
-          </div>
-        </template>
-
-        <template #no-results>
-          <div class="datasets-table__empty">
+          <div v-if="search" class="datasets-table__empty">
             <v-icon icon="mdi-magnify-close" size="32" class="mb-2" />
             <div class="text-body-2 mb-1">No matches for "{{ search }}"</div>
             <div class="text-caption text-medium-emphasis">
               Try a shorter search term or clear it to see all datastreams.
+            </div>
+          </div>
+          <div v-else class="datasets-table__empty">
+            <v-icon icon="mdi-database-search-outline" size="32" class="mb-2" />
+            <div class="text-body-2 mb-1">No datastreams to show</div>
+            <div class="text-caption text-medium-emphasis">
+              Adjust the filters in the left drawer or clear the search.
             </div>
           </div>
         </template>
@@ -241,6 +238,7 @@ import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import { Datastream } from '@hydroserver/client'
+import type { DatastreamExtended } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 const { hs } = storeToRefs(useHydroServer())
 
@@ -251,7 +249,11 @@ const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
 const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
-const selectedDatastream = ref<Datastream | null>(null)
+// The catalog endpoint returns enriched datastream records with the
+// nested `unit` / `observedProperty` / `thing` etc. relationships, so
+// the info card receives `Datastream & DatastreamExtended` at runtime
+// even though `Datastream[]` is what the list APIs declare.
+const selectedDatastream = ref<(Datastream & DatastreamExtended) | null>(null)
 
 const downloadSelected = async (plottedDatastreams: Datastream[]) => {
   downloading.value = true
@@ -273,7 +275,7 @@ const onRowClick = (event: Event, item: any) => {
     (d) => d.id === selectedDatastreamId
   )
   if (foundDatastream) {
-    selectedDatastream.value = foundDatastream
+    selectedDatastream.value = foundDatastream as Datastream & DatastreamExtended
     openInfoCard.value = true
   } else selectedDatastream.value = null
 }

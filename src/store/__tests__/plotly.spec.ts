@@ -1,12 +1,11 @@
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { setActivePinia, createPinia, defineStore } from 'pinia'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // vi.hoisted vars are safe to reference inside vi.mock factories.
 // options.ts imports usePlotlyStore (circular), so we inline constants here.
 const { COLORS, LABEL_COLORS, qcId } = vi.hoisted(() => {
-  const { ref, computed } = require('vue') as typeof import('vue')
-  const { defineStore } = require('pinia') as typeof import('pinia')
+  const { ref } = require('vue') as typeof import('vue')
   const qcId = ref<string | null>(null)
   const COLORS = [
     '#3f3f3f', '#aec7e8', '#ffbb78', '#98df8a', '#c5b0d5',

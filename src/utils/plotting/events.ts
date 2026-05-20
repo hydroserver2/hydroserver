@@ -1,6 +1,7 @@
 import { usePlotlyStore } from '@/store/plotly'
 import Plotly from 'plotly.js-dist'
 import type {
+  Layout,
   LayoutAxis,
   PlotData,
   PlotlyHTMLElement,
@@ -44,7 +45,15 @@ const handleClick = async (eventData: PlotMouseEvent) => {
       : alreadySelected.push(point.pointIndex)
     alreadySelected.sort()
 
-    await Plotly.update(plotlyRef.value as Plotly.Root, {}, { selections: [] }, [0])
+    // `selections` is a Plotly layout-level option that the published
+    // type omits from `Partial<Layout>`. Cast through `unknown` to
+    // bypass the gap.
+    await Plotly.update(
+      plotlyRef.value as Plotly.Root,
+      {},
+      { selections: [] } as unknown as Partial<Layout>,
+      [0]
+    )
     await Plotly.restyle(plotlyRef.value as Plotly.Root, {
       selectedpoints: [[...alreadySelected]],
     })
@@ -92,8 +101,8 @@ export const handleNewPlot = async (
     plotlyRef.value?.layout &&
     plotlyRef.value?.data
   ) {
-    const oldLayout = plotlyRef.value.layout as Record<string, unknown>
-    const newLayout = plotlyOptions.value.layout as Record<string, unknown>
+    const oldLayout = plotlyRef.value.layout as unknown as Record<string, unknown>
+    const newLayout = plotlyOptions.value.layout as unknown as Record<string, unknown>
 
     const oldXRange = (oldLayout.xaxis as Partial<LayoutAxis> | undefined)
       ?.range as Array<string | number> | undefined

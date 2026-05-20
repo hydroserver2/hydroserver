@@ -270,7 +270,9 @@ const intendedCadence = computed<{
   if (!Number.isFinite(amount) || amount <= 0 || !unit) return null
   // @ts-ignore
   const code = TimeUnit[unit as keyof typeof TimeUnit]
-  const ms = amount * timeUnitMultipliers[code] * 1000
+  const multiplier = timeUnitMultipliers[code]
+  if (multiplier === undefined) return null
+  const ms = amount * multiplier * 1000
   return { amount, unit, ms }
 })
 

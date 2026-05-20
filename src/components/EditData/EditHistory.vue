@@ -453,7 +453,7 @@ function formatMethod(method: string) {
   return method
     .toLowerCase()
     .split('_')
-    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : ''))
     .join(' ')
 }
 

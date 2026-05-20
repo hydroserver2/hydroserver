@@ -2,7 +2,7 @@ import { GraphSeries } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, Ref, ref } from 'vue'
 import { HistoryItem } from "@uwrl/qc-utils"
-import type { LayoutAxis } from 'plotly.js-dist'
+import type { LayoutAxis, PlotData } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
 
 import {
@@ -60,7 +60,10 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     return visiblePoints.value <= tooltipsMaxDataPoints.value
   })
   const showCoordinates = ref(false)
-  const hover = ref({ x: 0, y: 0 })
+  // `x` is the numeric epoch under the cursor. `y` is rendered as a
+  // pre-rounded string (toFixed(4)) by interaction.ts so the readout
+  // chip can use it directly without further formatting.
+  const hover = ref<{ x: number; y: number | string }>({ x: 0, y: 0 })
 
   /**
    * Crosshair droplines (horizontal to the QC y-axis, vertical to the
@@ -267,7 +270,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * Set the initial chart options.
    */
   function updateOptions() {
-    plotlyOptions.value = createPlotlyOption(graphSeriesArray.value)
+    // The cast pins the array shape so vue-tsc's structural check
+    // against qc-utils' deep ObservationRecord type doesn't blow up
+    // on the public PlotlyChartOptions param. `graphSeriesArray` is
+    // already typed as `GraphSeries[]`.
+    plotlyOptions.value = createPlotlyOption(graphSeriesArray.value as GraphSeries[])
   }
 
   /**
@@ -318,12 +325,15 @@ export const usePlotlyStore = defineStore('Plotly', () => {
 
     // Update all traces. `opts.traces` is `Data[]`; each entry carries the
     // QC-app trace shape (`AppPlotlyTrace`) including numeric `x`/`y`.
+    // `Plotly.update` accepts an array-of-arrays for multi-trace updates
+    // but the published `Partial<PlotData>` types `x`/`y` as a single
+    // Datum[]; cast through `unknown` to bypass that narrow shape.
     await applyTraceUpdate(
       plotlyRef.value,
       {
         x: opts.traces.map((t) => (t as AppPlotlyTrace).x),
         y: opts.traces.map((t) => (t as AppPlotlyTrace).y),
-      },
+      } as unknown as Partial<PlotData>,
       opts.layout
     )
 
@@ -345,8 +355,17 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       await data.reload()
     }
 
-    const propName = datastream.observedProperty?.name
-    const unitSymbol = datastream.unit?.symbol
+    // HydroServer returns full `observedProperty` / `unit` objects on
+    // the wire even though the published `Datastream` type only carries
+    // their ids. The catalog endpoint enriches the response, so we
+    // narrow with an inline shape rather than swapping the public type
+    // (callers throughout the app still pass plain `Datastream`).
+    const enriched = datastream as Datastream & {
+      observedProperty?: { name?: string }
+      unit?: { symbol?: string }
+    }
+    const propName = enriched.observedProperty?.name
+    const unitSymbol = enriched.unit?.symbol
     const yAxisLabel =
       propName && unitSymbol
         ? `${propName} (${unitSymbol})`
@@ -439,7 +458,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
           break
         }
       }
-      if (!pick) pick = COLORS[1] as string
+      if (!pick) pick = COLORS[1]!
       series.color = pick
       used.add(pick)
     }
@@ -451,15 +470,15 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * persisted on its `GraphSeries` when it was added to the plot.
    */
   function colorForDatastream(id: string | undefined): string {
-    if (!id) return COLORS[1]
+    if (!id) return COLORS[1]!
     const { qcDatastream } = storeToRefs(useDataVisStore())
-    if (qcDatastream.value?.id === id) return COLORS[0]
+    if (qcDatastream.value?.id === id) return COLORS[0]!
     const series = graphSeriesArray.value.find((s) => s.id === id)
     // `||` (not `??`) so the empty-string sentinel emitted by
     // `fetchGraphSeries` before `assignSeriesColors` runs also falls
     // back gracefully. Downstream Plotly options need a real colour
     // string; rendering a swatch as "" silently breaks the chip.
-    return series?.color || COLORS[1]
+    return series?.color || COLORS[1]!
   }
 
   /**
@@ -469,11 +488,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    * against the row background (the pastel line colours don't).
    */
   function labelColorForDatastream(id: string | undefined): string {
-    if (!id) return LABEL_COLORS[1]
+    if (!id) return LABEL_COLORS[1]!
     const { qcDatastream } = storeToRefs(useDataVisStore())
-    if (qcDatastream.value?.id === id) return LABEL_COLORS[0]
+    if (qcDatastream.value?.id === id) return LABEL_COLORS[0]!
     const series = graphSeriesArray.value.find((s) => s.id === id)
-    if (!series || !series.color) return LABEL_COLORS[1]
+    if (!series || !series.color) return LABEL_COLORS[1]!
     return labelColorFor(series.color)
   }
 

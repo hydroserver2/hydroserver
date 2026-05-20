@@ -7,14 +7,17 @@
     "dev": "vite",
     "up": "taze major -I",
     "docker-dev": "vite --host 0.0.0.0",
-    "build": "vue-tsc && vite build",
-    "build-prod": "vue-tsc && vite build --mode prod",
+    "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
+    "build-prod": "vue-tsc --noEmit -p tsconfig.app.json && vite build --mode prod",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.test.json",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test --ui",
     "test:e2e:ci": "playwright test",
     "test:e2e:live": "cross-env E2E_LIVE=1 playwright test qc-golden-path --headed",
     "coverage": "vitest run --coverage --environment jsdom",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "link-qc-utils": "npm link @uwrl/qc-utils"
   },
   "dependencies": {
@@ -28,7 +31,6 @@
     "jwt-decode": "^4.0.0",
     "lodash-es": "^4.17.23",
     "maska": "^3.2.0",
-    "npm": "^11.8.0",
     "p-limit": "^7.2.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
@@ -39,6 +41,7 @@
     "vuetify": "^3.11.8"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.0",
     "@mdi/font": "^7.4.47",
     "@playwright/test": "^1.59.1",
     "@types/lodash-es": "^4.17.12",
@@ -52,15 +55,19 @@
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.24",
     "cross-env": "^10.1.0",
+    "eslint": "^10.0.0",
+    "eslint-plugin-vue": "^10.0.0",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "rxjs": "^7.8.2",
     "sass": "^1.97.3",
     "taze": "^19.9.2",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.0.0",
     "vite": "^7.3.1",
     "vite-plugin-vuetify": "^2.1.3",
     "vitest": "^4.0.18",
+    "vue-eslint-parser": "^10.0.0",
     "vue-tsc": "^3.2.4"
   }
 }

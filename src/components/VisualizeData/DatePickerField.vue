@@ -280,6 +280,7 @@ const makeController = (ctl: InputCtl) => {
       if (document.activeElement !== input) return
       const idx = segmentAt(ctl.shape.segments, input.selectionStart ?? 0)
       const seg = ctl.shape.segments[idx]
+      if (!seg) return
       input.setSelectionRange(seg[0], seg[1])
     })
   }
@@ -290,6 +291,7 @@ const makeController = (ctl: InputCtl) => {
     requestAnimationFrame(() => {
       const idx = segmentAt(ctl.shape.segments, input.selectionStart ?? 0)
       const seg = ctl.shape.segments[idx]
+      if (!seg) return
       input.setSelectionRange(seg[0], seg[1])
     })
   }
@@ -327,6 +329,7 @@ const makeController = (ctl: InputCtl) => {
       // now fully filled. Otherwise leave the caret where it landed.
       const segIdx = segmentAt(ctl.shape.segments, target)
       const seg = ctl.shape.segments[segIdx]
+      if (!seg) return
       const segNowFull = isSegmentFilled(nextVal, seg)
       const nextSeg =
         segNowFull && segIdx + 1 < ctl.shape.segments.length
@@ -383,6 +386,7 @@ const makeController = (ctl: InputCtl) => {
       if (next < 0 || next >= ctl.shape.segments.length) return
       ev.preventDefault()
       const seg = ctl.shape.segments[next]
+      if (!seg) return
       input.setSelectionRange(seg[0], seg[1])
     }
   }

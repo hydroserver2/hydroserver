@@ -450,7 +450,7 @@ const {
   plotlyRef,
   activeTab,
 } = storeToRefs(usePlotlyStore())
-const { selectedData, hasSelectionShape, qcDatastream, dateOptions, endDate } =
+const { selectedData, hasSelectionShape, qcDatastream, dateOptions } =
   storeToRefs(useDataVisStore())
 
 const allPresetId = computed(
@@ -459,20 +459,15 @@ const allPresetId = computed(
 const editorDateBtnId = ref<number | null>(allPresetId.value)
 
 /**
- * UI flags derived from `tooltipsMode` + the live point count.
- *
- * `tooltipsActive` mirrors `areTooltipsEnabled` from the store —
- * it's the actual rendered state. `tooltipsAutoDisabled` is only
- * meaningful in `auto` mode: it's the case where the threshold
- * suppressed an otherwise-on toggle. Manual modes ignore the
- * threshold so it's never "auto-disabled" there.
+ * `tooltipsAutoDisabled` is only meaningful in `auto` mode: it's the
+ * case where the live point count suppressed an otherwise-on toggle.
+ * Manual modes ignore the threshold so it's never "auto-disabled".
  */
 const tooltipsAutoDisabled = computed(
   () =>
     tooltipsMode.value === 'auto' &&
     visiblePoints.value > tooltipsMaxDataPoints.value
 )
-const tooltipsActive = computed(() => areTooltipsEnabled.value)
 const tooltipsModeOptions = [
   {
     value: 'manual',
@@ -512,11 +507,26 @@ const tab = computed({
 // "what series is this and in what units" — especially important when
 // other traces live on their own right-side axes.
 const yReadoutLabel = computed(() => {
-  const name = qcDatastream.value?.observedProperty?.name
+  // The wire response enriches `observedProperty`/`unit` even though
+  // the published Datastream type only carries their ids. Same shape
+  // as in `plotly.ts#fetchGraphSeries`.
+  const ds = qcDatastream.value as
+    | (typeof qcDatastream.value & {
+        observedProperty?: { name?: string }
+        unit?: { symbol?: string }
+      })
+    | null
+  const name = ds?.observedProperty?.name
   return name ? name : 'y'
 })
 const yReadoutUnit = computed(() => {
-  const symbol = qcDatastream.value?.unit?.symbol
+  const ds = qcDatastream.value as
+    | (typeof qcDatastream.value & {
+        observedProperty?: { name?: string }
+        unit?: { symbol?: string }
+      })
+    | null
+  const symbol = ds?.unit?.symbol
   return symbol ? ` ${symbol}` : ''
 })
 

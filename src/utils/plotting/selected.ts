@@ -2,7 +2,6 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import type {
-  PlotData,
   PlotMouseEvent,
   PlotRelayoutEvent,
   PlotSelectionEvent,
@@ -39,13 +38,16 @@ export const handleSelected = async (
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
   const trace = plotlyRef.value?.data.find(
-    (t: Partial<PlotData>) => (t as AppPlotlyTrace).id == qcDatastream.value?.id
-  ) as (AppPlotlyTrace & { selectedpoints?: number[] }) | undefined
+    (t) => (t as AppPlotlyTrace).id == qcDatastream.value?.id
+  ) as AppPlotlyTrace | undefined
 
   // Plotly's `selectedpoints` are indices into the *windowed* x/y
   // arrays; offset by the window's start position before storing.
-  const windowOffset = (trace as AppPlotlyTrace)?._windowStartIdx ?? 0
-  const rawSelected = trace?.selectedpoints
+  // The published `Partial<PlotData>.selectedpoints` type is `Datum[]`
+  // (string | number | Date | null) but every trace this app produces
+  // populates it from a number array, so the cast is safe.
+  const windowOffset = trace?._windowStartIdx ?? 0
+  const rawSelected = trace?.selectedpoints as number[] | undefined
   selectedData.value = rawSelected?.length
     ? rawSelected.map((i) => i + windowOffset)
     : null

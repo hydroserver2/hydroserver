@@ -101,6 +101,7 @@ import { EnumEditOperations } from '@uwrl/qc-utils'
 import { computed } from 'vue'
 import { formatDate } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
+import type { PlotData } from 'plotly.js-dist'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { useUIStore, DriftCorrectionMethods } from '@/store/userInterface'
 const { recordPostActionSelection } = useFilterDispatch()
@@ -152,9 +153,11 @@ const onDriftCorrection = async () => {
 }
 
 const getGroupStart = (group: number[]) => {
-  const xData = plotlyRef.value?.data[0].x
-  if (!xData) return ''
-  return formatDate(new Date(xData[group[0] as number]))
+  const trace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
+  const xData = trace?.x as number[] | undefined
+  const firstIdx = group[0]
+  if (!xData || firstIdx === undefined) return ''
+  return formatDate(new Date(xData[firstIdx] as number))
 }
 </script>
 

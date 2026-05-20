@@ -110,7 +110,10 @@ const { selectedSeries } = storeToRefs(usePlotlyStore())
 const dataBounds = computed<{ min: number; max: number } | null>(() => {
   const dataX = selectedSeries.value?.data.dataX
   if (!dataX?.length) return null
-  return { min: dataX[0], max: dataX[dataX.length - 1] }
+  const first = dataX[0]
+  const last = dataX[dataX.length - 1]
+  if (first === undefined || last === undefined) return null
+  return { min: first, max: last }
 })
 
 const clampTs = (ts: number): number => {

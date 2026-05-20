@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Type-check (vue-tsc)
-        run: npx vue-tsc --noEmit
+        run: npm run typecheck
 
       - name: Coverage (vitest, 80% threshold)
         run: npm run coverage

@@ -54,11 +54,11 @@ const symbols = [
 ]
 
 onMounted(() => {
-  const series = graphSeriesArray.value.find((s) => s.id === props.datastreamId)
-  if (series?.seriesOption) {
-    selectedLineType.value = series.seriesOption.lineStyle?.type || 'none'
-    selectedSymbol.value = series.seriesOption.symbol || 'none'
-  }
+  // `seriesOption` was an echarts-era field that hasn't been migrated
+  // to the Plotly trace shape (`GraphSeries` has no such property).
+  // The card isn't wired into the current UI yet, so we leave the
+  // defaults in place until a Plotly-native style payload is defined.
+  void graphSeriesArray.value.find((s) => s.id === props.datastreamId)
 })
 
 function onSubmit() {

@@ -217,7 +217,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
     if (qcIndex < 0) return
     const qcTrace = traces[qcIndex] as AppPlotlyTrace
 
-    const liveLayout = gd.layout as
+    const liveLayout = gd.layout as unknown as
       | Record<string, Partial<LayoutAxis> | unknown>
       | undefined
     const liveXRange = (
@@ -228,8 +228,12 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 
     const xs = traceXAsNumbers(gd, qcIndex)
     if (!xs.length) return
-    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
-    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+    // First/last value of liveXRange might be undefined under
+    // noUncheckedIndexedAccess; default to +/- Infinity so the binary
+    // search returns the full range when the live layout is missing
+    // an axis range (fresh plot, before the user has touched zoom).
+    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
+    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1] ?? Infinity)
     if (endIdx - startIdx <= 0) return
 
     // QC always lives on the primary `yaxis` (see `createPlotlyOption`).
@@ -250,6 +254,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
         if (yv < yRangeMin || yv > yRangeMax) continue
       }
       const x = xs[j]
+      if (x === undefined) continue
       if (x < xMin) xMin = x
       if (x > xMax) xMax = x
     }
@@ -308,11 +313,13 @@ export const fitYaxisToVisible = async (_eventData?: unknown) => {
     )?.map((d) => (typeof d == 'string' ? Date.parse(d) : d))
 
     const xs = traceXAsNumbers(plotlyRef.value, qcTraceIndex)
-    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0])
-    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1])
+    const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
+    const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1] ?? Infinity)
     if (endIdx - startIdx <= 0) return
 
-    const yData = (plotlyRef.value?.data[qcTraceIndex].y ?? []) as ArrayLike<number>
+    const yData =
+      ((plotlyRef.value?.data[qcTraceIndex] as Partial<PlotData> | undefined)?.y ??
+        []) as ArrayLike<number>
 
     // Clamp to the QC axis's stored range to keep edge outliers
     // (Infinity / sentinel values) from blowing the crop open. Strict

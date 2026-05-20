@@ -19,6 +19,7 @@ import {
   parseScript,
   serializeHistory,
   type ApplyScriptReport,
+  type ObservationRecord,
   type QcScript,
 } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
@@ -66,7 +67,10 @@ export function useQcScript() {
     const series = selectedSeries.value?.data
     if (!series) throw new Error('No QC series loaded.')
 
-    const script = serializeHistory(series, {
+    // qc-utils' `ObservationRecord` exposes a deep typed shape; the
+    // cast pins the value to that public type so vue-tsc doesn't try
+    // to structurally re-derive it from the live worker bindings.
+    const script = serializeHistory(series as ObservationRecord, {
       startDate: beginDate.value.toISOString(),
       endDate: endDate.value.toISOString(),
     })
@@ -113,7 +117,7 @@ export function useQcScript() {
       new Date(script.window.endDate)
     )
 
-    return await applyScript(series, script)
+    return await applyScript(series as ObservationRecord, script)
   }
 
   return { exportScript, importScript }

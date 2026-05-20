@@ -72,8 +72,8 @@ export const computeIntendedTickvals = (
 
   const niceMultipliers = [
     1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 45, 60, 90, 120,
-  ]
-  let chosen = niceMultipliers[niceMultipliers.length - 1]
+  ] as const
+  let chosen: number = niceMultipliers[niceMultipliers.length - 1]!
   for (const m of niceMultipliers) {
     if (m >= raw) {
       chosen = m
@@ -111,7 +111,9 @@ export const tickvalsEqual = (
   if (!a || !b) return false
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
-    if (Math.abs(a[i] - b[i]) > 1) return false
+    const ai = a[i]!
+    const bi = b[i]!
+    if (Math.abs(ai - bi) > 1) return false
   }
   return true
 }
@@ -202,8 +204,8 @@ export const handleRelayout = async (
       const perTraceVisible: number[] = new Array(traceCount).fill(0)
       for (let i = 0; i < traceCount; i++) {
         const xs = traceXAsNumbers(plotlyRef.value, i)
-        const startIdx = findFirstGreaterOrEqual(xs, xRange?.[0])
-        const endIdx = findFirstGreaterOrEqual(xs, xRange?.[1])
+        const startIdx = findFirstGreaterOrEqual(xs, xStart)
+        const endIdx = findFirstGreaterOrEqual(xs, xEnd)
         const count = endIdx - startIdx
         perTraceVisible[i] = count
         if (!liveTraces[i]?._isGapOverlay) visiblePoints.value += count
@@ -231,7 +233,7 @@ export const handleRelayout = async (
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
       })
 
-      const currentOpacities = (plotlyRef.value?.data ?? []).map((t: Partial<PlotData>) => {
+      const currentOpacities = (plotlyRef.value?.data ?? []).map((t) => {
         const m = (t as Partial<PlotData>).marker as
           | { opacity?: number }
           | undefined
@@ -290,12 +292,13 @@ export const handleRelayout = async (
         newHoverTemplate = ''
       }
 
-      if (plotlyRef.value?.data[0].hoverinfo !== newHoverState) {
+      const firstTrace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
+      if (firstTrace?.hoverinfo !== newHoverState) {
         if (newHoverState === 'x+y' && !areTooltipsEnabled.value) {
           return
         }
 
-        await Plotly.restyle(plotlyRef.value, {
+        await Plotly.restyle(plotlyRef.value as Plotly.Root, {
           hoverinfo: newHoverState,
           hovertemplate: newHoverTemplate,
         } as Partial<PlotData>)

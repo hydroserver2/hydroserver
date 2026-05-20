@@ -228,7 +228,7 @@ const collectRightAxes = (
  * changes.
  */
 export const widenYAxisDragRects = (gd: HTMLElement): void => {
-  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as unknown as
     | Record<string, unknown>
     | undefined
   if (!fl) return
@@ -267,8 +267,9 @@ export const widenYAxisDragRects = (gd: HTMLElement): void => {
   const graphWidth = gd.clientWidth
   for (let i = 0; i < rightAxes.length; i++) {
     const current = rightAxes[i]
-    const rightEdge =
-      i + 1 < rightAxes.length ? rightAxes[i + 1].lineX : graphWidth
+    if (!current) continue
+    const next = rightAxes[i + 1]
+    const rightEdge = next ? next.lineX : graphWidth
     spans.push({
       subplotId: current.subplotId,
       zoneLeft: current.lineX,
@@ -318,7 +319,7 @@ export const widenYAxisDragRects = (gd: HTMLElement): void => {
  * rects on each relayout and our DOM edits don't survive a rebuild.
  */
 export const suppressHiddenAxisDragRects = (gd: HTMLElement): void => {
-  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as unknown as
     | Record<string, unknown>
     | undefined
   if (!fl) return
@@ -381,7 +382,7 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
     }
     return
   }
-  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as
+  const fl = (gd as unknown as PrivatePlotlyHTMLElement)._fullLayout as unknown as
     | Record<string, unknown>
     | undefined
   if (!fl) return
@@ -636,8 +637,11 @@ const applyWheelZoom = async (zoom: WheelPending): Promise<void> => {
   const applyAxis = (key: string, pivot: number, factor: number): void => {
     const range = liveLayout[key]?.range as Array<string | number> | undefined
     if (!range) return
-    const a = toNumber(range[0])
-    const b = toNumber(range[1])
+    const r0 = range[0]
+    const r1 = range[1]
+    if (r0 === undefined || r1 === undefined) return
+    const a = toNumber(r0)
+    const b = toNumber(r1)
     if (!Number.isFinite(a) || !Number.isFinite(b)) return
     const newA = pivot - (pivot - a) * factor
     const newB = pivot + (b - pivot) * factor

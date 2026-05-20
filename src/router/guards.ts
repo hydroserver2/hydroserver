@@ -1,7 +1,5 @@
-import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs from '@hydroserver/client'
-import { storeToRefs } from 'pinia'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 
 export type RouteGuard = (

@@ -11,6 +11,7 @@ import {
   setSelectedPoints,
 } from '@/utils/plotting/plotly'
 import type { AppPlotlyTrace } from '@/utils/plotting/plotly'
+import type { PlotData } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 
 import { computed } from 'vue'
@@ -133,10 +134,17 @@ export function useDataSelection() {
   // fallback was unreachable. The computeds now always return a Date,
   // and the downstream string helpers stop guarding against a value
   // that can't appear.
+  const traceX = (): number[] | undefined => {
+    const trace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
+    return trace?.x as number[] | undefined
+  }
+
   const startDate = computed(() => {
     if (selectedData.value?.length) {
       const startIndex = selectedData.value[0] as number
-      return new Date(plotlyRef.value?.data[0].x[startIndex])
+      const xs = traceX()
+      const ts = xs?.[startIndex]
+      if (ts !== undefined) return new Date(ts)
     }
     return selectedSeries.value?.data.beginTime ?? new Date()
   })
@@ -146,7 +154,9 @@ export function useDataSelection() {
       const endIndex = selectedData.value[
         selectedData.value.length - 1
       ] as number
-      return new Date(plotlyRef.value?.data[0].x[endIndex])
+      const xs = traceX()
+      const ts = xs?.[endIndex]
+      if (ts !== undefined) return new Date(ts)
     }
     return selectedSeries.value?.data.endTime ?? new Date()
   })

@@ -200,15 +200,25 @@ const gapPlans = computed<GapPlan[]>(() => {
   if (endIdx <= startIdx) return []
   const plans: GapPlan[] = []
   for (let i = startIdx + 1; i <= endIdx; i++) {
-    const span = dataX[i] - dataX[i - 1]
+    const leftTs = dataX[i - 1]
+    const rightTs = dataX[i]
+    const leftY = dataY[i - 1]
+    const rightY = dataY[i]
+    if (
+      leftTs === undefined ||
+      rightTs === undefined ||
+      leftY === undefined ||
+      rightY === undefined
+    ) continue
+    const span = rightTs - leftTs
     if (span > threshold) {
       plans.push({
-        leftTs: dataX[i - 1],
-        rightTs: dataX[i],
+        leftTs,
+        rightTs,
         leftIdx: i - 1,
         rightIdx: i,
-        leftY: dataY[i - 1],
-        rightY: dataY[i],
+        leftY,
+        rightY,
       })
     }
   }

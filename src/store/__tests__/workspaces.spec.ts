@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 
 const { hsRef, mockList } = vi.hoisted(() => {

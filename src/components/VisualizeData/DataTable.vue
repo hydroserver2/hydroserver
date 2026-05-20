@@ -86,17 +86,17 @@
             hide-details
             density="compact"
             :model-value="selectedData?.includes(index)"
-            @update:model-value="onSelectChange($event, index)"
+            @update:model-value="(v) => onSelectChange(v === true, index)"
           />
         </template>
 
         <template #item.datetime="{ index }">
           <EditableCell
             :value="formatDatetimeLocal(selectedSeries?.data.dataX[index])"
-            :display="formatDate(new Date(selectedSeries?.data.dataX[index]))"
+            :display="formatDate(new Date(selectedSeries?.data.dataX[index] as number))"
             :edited="datetimeEdits.has(index)"
             :original-display="
-              formatDate(new Date(selectedSeries?.data.dataX[index]))
+              formatDate(new Date(selectedSeries?.data.dataX[index] as number))
             "
             :edited-display="
               datetimeEdits.has(index)

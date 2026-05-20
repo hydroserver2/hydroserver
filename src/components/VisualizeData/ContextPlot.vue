@@ -46,6 +46,15 @@ import type { GraphSeries } from '@/types'
 const TARGET_POINTS = 2000
 const MIN_BRUSH_PX = 8
 
+// Plotly's PlotlyHTMLElement extends EventEmitter at runtime, but the
+// published types only surface `.on` / `.removeAllListeners`. We use the
+// node-style `.removeListener(event, handler)` form to unsubscribe a
+// specific handler — declare the shape here so the call sites don't
+// need scattered `as any` casts.
+type PlotlyEventEmitter = {
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
+}
+
 const { plotlyRef, graphSeriesArray, mainPlotEpoch } =
   storeToRefs(usePlotlyStore())
 const { qcDatastream } = storeToRefs(useDataVisStore())
@@ -367,7 +376,9 @@ function onPointerUp(e: PointerEvent) {
 async function buildOrUpdate() {
   const el = plotEl.value
   if (!el) return
-  const { traces, extent } = buildContextTraces(graphSeriesArray.value)
+  const { traces, extent } = buildContextTraces(
+    graphSeriesArray.value as GraphSeries[]
+  )
   dataExtent = extent
 
   if (!extent || !traces.length) {
@@ -455,13 +466,19 @@ function attachMainListener() {
   const gd = plotlyRef.value as PlotlyHTMLElement | null
   if (!gd) return
   if (mainRelayoutHandler) {
-    gd.removeListener?.('plotly_relayout', mainRelayoutHandler as never)
+    ;(gd as unknown as PlotlyEventEmitter).removeListener?.(
+      'plotly_relayout',
+      mainRelayoutHandler as never
+    )
   }
   mainRelayoutHandler = () => syncBrushFromMain()
   gd.on('plotly_relayout', mainRelayoutHandler as never)
 
   if (mainRestyleHandler) {
-    gd.removeListener?.('plotly_restyle', mainRestyleHandler as never)
+    ;(gd as unknown as PlotlyEventEmitter).removeListener?.(
+      'plotly_restyle',
+      mainRestyleHandler as never
+    )
   }
   mainRestyleHandler = () => syncHiddenFromMain()
   gd.on('plotly_restyle', mainRestyleHandler as never)
@@ -503,9 +520,13 @@ onMounted(async () => {
       if (!ctxGd) return
       const anyGd = ctxGd as unknown as { _fullLayout?: unknown }
       if (!anyGd._fullLayout) return
-      void Plotly.Plots.resize(ctxGd as unknown as Plotly.Root).then(() =>
-        syncBrushFromMain()
-      )
+      // `Plotly.Plots.resize` is typed as returning `void` in
+      // plotly.js-dist's public surface but actually returns a Promise
+      // at runtime. Cast through `unknown` to chain the brush sync
+      // after layout settles.
+      void (
+        Plotly.Plots.resize(ctxGd as unknown as Plotly.Root) as unknown as Promise<void>
+      ).then(() => syncBrushFromMain())
     })
     resizeObs.observe(rootEl.value)
   }
@@ -521,11 +542,17 @@ onBeforeUnmount(() => {
   }
   const gd = plotlyRef.value as PlotlyHTMLElement | null
   if (mainRelayoutHandler) {
-    gd?.removeListener?.('plotly_relayout', mainRelayoutHandler as never)
+    ;(gd as unknown as PlotlyEventEmitter | null)?.removeListener?.(
+      'plotly_relayout',
+      mainRelayoutHandler as never
+    )
     mainRelayoutHandler = null
   }
   if (mainRestyleHandler) {
-    gd?.removeListener?.('plotly_restyle', mainRestyleHandler as never)
+    ;(gd as unknown as PlotlyEventEmitter | null)?.removeListener?.(
+      'plotly_restyle',
+      mainRestyleHandler as never
+    )
     mainRestyleHandler = null
   }
   if (pendingMainUpdate != null) {
