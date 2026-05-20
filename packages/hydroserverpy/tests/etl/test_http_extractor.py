@@ -92,13 +92,13 @@ class TestHTTPExtractorSuccess:
         response = _make_response(chunks=[b"data"])
         with patch("requests.get", return_value=response) as mock_get:
             extractor.extract()
-        mock_get.assert_called_once_with("https://example.com/data.csv", timeout=120)
+        mock_get.assert_called_once_with("https://example.com/data.csv", headers={}, timeout=120)
 
     def test_template_uri_is_rendered_before_request(self, templated_extractor):
         response = _make_response(chunks=[b"data"])
         with patch("requests.get", return_value=response) as mock_get:
             templated_extractor.extract(path="files/data.csv")
-        mock_get.assert_called_once_with("https://example.com/files/data.csv", timeout=120)
+        mock_get.assert_called_once_with("https://example.com/files/data.csv", headers={}, timeout=120)
 
     def test_timeout_is_120_seconds(self, extractor):
         response = _make_response(chunks=[b"data"])
