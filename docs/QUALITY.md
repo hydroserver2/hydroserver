@@ -20,9 +20,10 @@ than discovering.
   read off the code (e.g. the `suppressedEchoSelection` sentinel in
   `plotly.ts`, the `<` vs `<=` fix in `observations.ts`, the in-place
   clear in `useQcSubmission.ts`).
-- **Prettier** for formatting (`.prettierrc`). No ESLint config in the
-  qc-app repo today — lint is run on the qc-utils sibling but not here.
-  This is a known gap (see "Tech debt" below).
+- **Prettier** for formatting (`.prettierrc`) plus **ESLint** (`eslint.config.js`)
+  for typescript-eslint + eslint-plugin-vue. `npm run lint` runs the
+  configured ruleset across `src/` and `e2e/`; `npm run lint:fix`
+  applies the auto-fixable suggestions.
 
 ## Test coverage
 
@@ -91,36 +92,14 @@ HydroServer API team either making the columnar response carry
 qualifiers via opt-in (`include=resultQualifierCodes`) or speeding up
 the row mode. Tracked inline as a TODO.
 
-### 2. No ESLint config
-
-`prettier` formats but there is no lint pass. qc-utils has eslint; the
-QC App does not. Adding one is straightforward — typescript-eslint +
-vue-eslint-config-typescript — and would catch a class of issues that
-slip through type-check today (unused vars, floating promises, etc).
-
-### 3. Three large SFCs not yet unit-tested
+### 2. Three large SFCs not yet unit-tested
 
 `DataVisualization.vue`, `PlottedDatastreams.vue`, and `FilterPanel.vue`
 are the three highest-complexity SFCs without unit tests. They are
 exercised by E2E specs but lack the per-branch coverage the rest of the
 project has.
 
-### 4. Pinia store JSDoc is uneven
-
-Some stores (`dataVisualization`, `plotly`) carry rich per-ref
-docstrings; others (`uiLayout`, `operationParams`) carry almost none.
-The store *behavior* is consistent, but a new contributor reading them
-will get an asymmetric experience.
-
-### 5. The plotting layer narrative
-
-Each file under `src/utils/plotting/` is short and single-purpose,
-but the composition into a redraw is implicit. The rationale for the
-current split lives in commit history rather than a written design
-doc. Tracing a single op end-to-end (panel → dispatch → restyle) is
-the fastest way to learn the layer.
-
-### 6. Documentation gaps
+### 3. Documentation gaps
 
 Listed in [ONBOARDING.md "Documentation gaps a new team will hit"](./ONBOARDING.md#documentation-gaps-a-new-team-will-hit).
 Highlights:
@@ -128,37 +107,13 @@ Highlights:
 - No formal API reference per-Pinia-store before this docs folder existed.
 - No diagram of the auth flow.
 
-### 7. Some persistence keys lack version handling
-
-`workspaces`, `userInterface`, `uiLayout`, and `operationParams` are
-persisted to `localStorage` without an explicit version key on the
-persisted slice. If we ever need to break the shape, we'll have to
-either prefix the key or do a one-time blow-away — the patch is small
-but it is technical debt today. `qc-utils:calibration:v1` is the
-template to copy.
-
-### 8. The `apiMethods` re-export in qc-utils
+### 4. The `apiMethods` re-export in qc-utils
 
 `@uwrl/qc-utils` re-exports a HydroServer REST client (`api`,
 `apiMethods`, interceptors) and a `Snackbar` helper for legacy reasons.
 The QC App uses `@hydroserver/client` for the REST calls and
 `Snackbar` from qc-utils — the qc-utils `api` is not consumed by the
 app. Cleaning this up means a coordinated release of both packages.
-
-### 9. `package.json` carries a transitive `npm` dependency
-
-`"npm": "^11.8.0"` is listed under `dependencies`. This is an oddity —
-npm is the package manager, not an app dependency. It's harmless but
-should be removed during the next dependency sweep.
-
-### 10. The demo deployment workflow inlines `.env` generation
-
-`hydroserver_qc_app_demo_deployment.yaml` writes `.env` with a heredoc
-that's missing the closing `EOF` line and only includes two of the
-documented env keys. This currently works because `VITE_APP_API_URL`
-is sourced from `PROXY_BASE_URL`, but it diverges from the documented
-config surface. Worth normalizing during the next deploy-workflow
-refresh.
 
 ## Dependency management
 
@@ -187,6 +142,7 @@ To balance the debt list:
 
 - [TESTING.md](./TESTING.md) — how to run, write, and debug tests
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [PLOTTING.md](./PLOTTING.md) — plotting-layer composition end-to-end
 - [ONBOARDING.md](./ONBOARDING.md) — documentation gaps and learning path
 - [PERFORMANCE.md](./PERFORMANCE.md) — performance characteristics
 - `vite.config.ts` — the source of truth on coverage thresholds + excludes

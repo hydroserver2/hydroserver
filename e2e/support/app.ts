@@ -29,7 +29,7 @@ export async function waitForHomeReady(page: Page): Promise<void> {
  *
  * The payload shape mirrors what pinia-plugin-persistedstate writes
  * for the `workspaces` store (configured in `store/workspaces.ts`
- * with `key: 'qc-app.selected-workspace'`, `pick: ['selectedWorkspace']`).
+ * with `key: 'qc:selectedWorkspace:v1'`, `pick: ['selectedWorkspace']`).
  */
 export async function seedWorkspaceSelection(page: Page): Promise<void> {
   const workspace = {
@@ -46,7 +46,7 @@ export async function seedWorkspaceSelection(page: Page): Promise<void> {
     ({ ws }) => {
       try {
         localStorage.setItem(
-          'qc-app.selected-workspace',
+          'qc:selectedWorkspace:v1',
           JSON.stringify({ selectedWorkspace: ws })
         )
       } catch {

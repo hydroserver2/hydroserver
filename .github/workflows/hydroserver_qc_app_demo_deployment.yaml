@@ -105,8 +105,10 @@ jobs:
         working-directory: ./qc_app
         run: |
           cat << EOF > .env
-          VITE_APP_PROXY_BASE_URL=${{ vars.PROXY_BASE_URL }}
+          VITE_APP_API_URL=${{ vars.PROXY_BASE_URL }}
           VITE_APP_ROUTE=${{ vars.APP_ROUTE }}
+          VITE_APP_VERSION=${{ github.sha }}
+          EOF
       - name: Build QC App
         working-directory: ./qc_app
         run: npm run build

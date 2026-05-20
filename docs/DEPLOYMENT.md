@@ -63,7 +63,9 @@ deploys to AWS. The flow:
    - Assumes the IAM role via OIDC (`aws-actions/configure-aws-credentials`).
    - Checks out the chosen branch.
    - Sets up Node 23.x with `package-lock.json` caching.
-   - Generates `.env` with `VITE_APP_PROXY_BASE_URL` and `VITE_APP_ROUTE`.
+   - Generates `.env` with `VITE_APP_API_URL` (sourced from
+     `PROXY_BASE_URL`), `VITE_APP_ROUTE`, and `VITE_APP_VERSION` (the
+     deploy commit SHA).
    - Runs `npm install && npm ci` then `npm run build`.
    - Syncs `./dist/` to
      `s3://hydroserver-qc-demo-app-${environment}-${account}/quality-control-demo/`

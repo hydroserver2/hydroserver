@@ -78,7 +78,7 @@ test.describe('filter range toggle', () => {
     await expect
       .poll(async () =>
         await page.evaluate(() =>
-          localStorage.getItem('qc.userInterface.filterRangeActive')
+          localStorage.getItem('qc:userInterface:v1')
         )
       )
       .toContain('"filterRangeActive":true')

@@ -109,23 +109,14 @@
       </div>
     </div>
   </div>
-
-  <v-dialog v-if="seriesDatastream" v-model="openStyleModal" width="40rem">
-    <!-- <SeriesStyleCard
-      :datastream-id="seriesDatastream.id"
-      @submit="updateSeriesOption"
-      @close="openStyleModal = false"
-    /> -->
-  </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
 import Plot from '@/components/VisualizeData/Plot.vue'
-import { Datastream } from '@hydroserver/client'
 
 defineProps<{
   preview?: boolean
@@ -134,8 +125,6 @@ defineProps<{
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 
 const { loadingStates, plottedDatastreams } = storeToRefs(useDataVisStore())
-const openStyleModal = ref(false)
-const seriesDatastream = ref<Datastream | null>(null)
 
 const isUpdating = computed(() =>
   Array.from(loadingStates.value.values()).some((isLoading) => isLoading)

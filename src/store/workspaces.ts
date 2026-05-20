@@ -139,10 +139,11 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
 }, {
   // Only the user's selection needs to survive reloads; the list of
   // available workspaces is refetched on every session from the
-  // server. Keeping a stable `key` means existing installs with a
-  // selection stored under this key don't get force-logged out.
+  // server. The `:v1` suffix lets us invalidate stored selections by
+  // bumping the version when the persisted shape changes (matches the
+  // `qc-utils:calibration:v1` template).
   persist: {
-    key: 'qc-app.selected-workspace',
+    key: 'qc:selectedWorkspace:v1',
     pick: ['selectedWorkspace'],
   },
 })

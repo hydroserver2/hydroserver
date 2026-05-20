@@ -216,8 +216,10 @@ export const useUIStore = defineStore('userInterface', () => {
   // active filter window are panel state and reseed from data bounds
   // on each mount — restoring stale ms across sessions would point at
   // a window that no longer overlaps the current datastream's data.
+  // `:v1` suffix matches the `qc-utils:calibration:v1` template so we
+  // can invalidate the persisted value by bumping the version.
   persist: {
-    key: 'qc.userInterface.filterRangeActive',
+    key: 'qc:userInterface:v1',
     pick: ['filterRangeActive'],
   },
 })
