@@ -153,9 +153,21 @@ export async function installMocks(
       const params = new URL(url).searchParams
       const page = Number(params.get('page') ?? '1')
       const series = observationsById[dsId] ?? observations
+      // Honour the `phenomenon_time_min` / `phenomenon_time_max`
+      // params the client always sends. Without this, the app's
+      // cache-extension logic in `fetchObservationsInRange` (which
+      // re-fetches the segment outside its cached window every time
+      // the range moves) would receive the full fixture series on
+      // each call and stack duplicates into the ObservationRecord —
+      // visible as wrong point counts and a long phantom line
+      // connecting the first and last observations.
+      const tMin = parseISOorNull(params.get('phenomenon_time_min'))
+      const tMax = parseISOorNull(params.get('phenomenon_time_max'))
+      const sliced =
+        tMin == null && tMax == null ? series : sliceSeries(series, tMin, tMax)
       // Only the first page carries data; subsequent pages are empty
       // so the client's pagination loop terminates.
-      const data = page === 1 ? series : { phenomenonTime: [], result: [] }
+      const data = page === 1 ? sliced : { phenomenonTime: [], result: [] }
       return json(route, { data }, 200, { 'X-Total-Pages': '1' })
     }
 
@@ -222,6 +234,34 @@ async function safeJson(request: ReturnType<Page['request']> | any): Promise<any
   } catch {
     return null
   }
+}
+
+function parseISOorNull(value: string | null): number | null {
+  if (!value) return null
+  const t = Date.parse(value)
+  return Number.isFinite(t) ? t : null
+}
+
+/**
+ * Mirror the real backend's `phenomenon_time_min` / `phenomenon_time_max`
+ * filtering. Bounds are inclusive on both ends, matching how the QC
+ * app issues its cache-extension queries.
+ */
+function sliceSeries(
+  series: { phenomenonTime: string[]; result: number[] },
+  tMin: number | null,
+  tMax: number | null
+): { phenomenonTime: string[]; result: number[] } {
+  const phenomenonTime: string[] = []
+  const result: number[] = []
+  for (let i = 0; i < series.phenomenonTime.length; i++) {
+    const ts = Date.parse(series.phenomenonTime[i] as string)
+    if (tMin != null && ts < tMin) continue
+    if (tMax != null && ts > tMax) continue
+    phenomenonTime.push(series.phenomenonTime[i] as string)
+    result.push(series.result[i] as number)
+  }
+  return { phenomenonTime, result }
 }
 
 export { DATASTREAM_ID, WORKSPACE_ID, UNIT_ID }

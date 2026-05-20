@@ -141,6 +141,27 @@ test.describe('docs screenshots', () => {
     await snapPage(page, 'edit-view-multi.png')
   })
 
+  test('data points mode menu (auto, threshold visible)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page)
+    await setupEditView(page)
+    await page.getByTestId('tooltips-mode-btn').click()
+    const menu = page.getByTestId('tooltips-mode-menu')
+    await expect(menu).toBeVisible({ timeout: 5_000 })
+    await snapEl(menu, 'data-points-menu.png')
+  })
+
+  test('table view (observations editable rows)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page)
+    await setupEditView(page)
+    // Plot tab is the default; switch to Table.
+    await page.getByRole('button', { name: /^Table$/ }).click()
+    // Give the virtualised table a beat to render its first slice.
+    await page.waitForTimeout(500)
+    await snapPage(page, 'table-view.png')
+  })
+
   test('plot help menu (open)', async ({ page }) => {
     await page.setViewportSize(STD_VIEWPORT)
     await installMocks(page)

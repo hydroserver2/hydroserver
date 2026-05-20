@@ -157,8 +157,85 @@ The chart at the top of the center column has a Plotly toolbar with:
   an edit.
 - **Reset axes**: back to the full plotted window.
 
-Clicking a single point selects just that point. Clicking the empty
-plot area clears the selection.
+Hover any toolbar icon to see its name. The left side of the toolbar
+flips between **Plot** and **Table** views (see below); the right
+side carries the **data points toggle**, a share-link button, and
+the `?` help menu.
+
+Clicking a single point on the plot selects just that point.
+Clicking the empty plot area clears the selection.
+
+### Plot ↔ Table tabs
+
+The segmented control at the top-left of the plot toolbar (`Plot` /
+`Table`) switches the center column between the Plotly chart and an
+editable observation table. Both tabs operate on the same QC
+datastream and share the selection state; flipping between them
+preserves edits, history, and the currently selected points.
+
+The **Table** tab opens a virtualized list of the QC target's
+observations:
+
+![Table view of the QC target](./images/table-view.png)
+
+What you can do here:
+
+- **Edit values inline.** Click a `Value` cell to enter edit mode,
+  type a new number, press Enter (or click outside) to commit. The
+  cell shows a chip indicating the prior value so a typo is easy to
+  spot.
+- **Edit timestamps inline.** Click a `Datetime` cell to open a
+  `datetime-local` picker; the same edit-then-commit flow applies.
+- **Bulk-select for an operation.** The leading checkbox column
+  toggles a row in or out of the selection. Selected rows match the
+  selection on the plot, so you can stage a Delete points / Change
+  values / Interpolate edit from the table just as you would from a
+  box-select on the chart.
+- **Track pending edits.** The toolbar chip `N unsaved` lights up
+  whenever the table has uncommitted edits. **Discard** rolls every
+  pending edit back; **Save changes** flushes them through the same
+  history machinery as a Change-values or Shift-datetimes operation
+  (one history entry per cell type).
+- **Inspect qualifiers.** The `Qualifiers` column shows the
+  qualifier codes attached to each observation (set via the
+  Qualifying comments panel). Hover a chip for its description.
+
+The table is the fastest path for a small number of targeted edits.
+For anything wider (a hundred points, a window of bad values, a
+drift correction) the plot's box-select gestures + Edit drawer are
+faster.
+
+### Data points toggle
+
+The chart-timeline icon at the top-right of the plot toolbar
+controls whether **individual point markers** are drawn on top of
+the line. Lines stay visible either way; only the marker dots are
+gated. Turning markers off is the fastest way to make a busy plot
+readable, or to recover responsiveness when scrolling around a
+dense series.
+
+Click the caret next to the icon to open the mode menu:
+
+![Data points mode menu](./images/data-points-menu.png)
+
+Two modes are available:
+
+- **Manual toggle**: the icon doubles as an on/off button. Click it
+  to flip markers on or off. The icon's appearance reflects the
+  current state.
+- **Automatic** (default): markers render until the count of
+  visible points exceeds a threshold (default `10,000`), then drop
+  out so the chart stays smooth. In this mode the icon is replaced
+  by a live counter showing `visible / threshold` so you can see how
+  close you are to the cutoff. Hover the counter for the exact
+  numbers.
+
+The threshold input below the mode list edits the cutoff used in
+Automatic mode. Raise it on fast machines if you want markers on
+even denser views; lower it on slow machines to drop markers
+sooner. The new value applies on **Apply** (or on Enter).
+
+The setting is persisted locally, so it survives reloads.
 
 ### Plotted datastreams list
 
