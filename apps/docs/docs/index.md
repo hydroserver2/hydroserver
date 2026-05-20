@@ -15,7 +15,7 @@ hero:
       link: /introduction/getting-started
     - theme: alt
       text: Introduction
-      link: /introduction/introduction
+      link: /introduction/
     - theme: alt
       text: GitHub
       link: https://github.com/hydroserver2/hydroserver
