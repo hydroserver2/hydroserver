@@ -120,13 +120,33 @@
           :style="{ color: labelColorForDatastream(datastream.id) }"
         >
           <div class="plotted-item__title" :title="datastream.name">
-            {{ datastream.name }}
+            <span>{{ datastream.name }}</span>
+            <v-tooltip
+              v-if="!loadStatus(datastream.id).loading && loadStatus(datastream.id).count === 0"
+              location="top"
+              text="No observations in the current time window"
+            >
+              <template #activator="{ props: tp }">
+                <v-icon
+                  v-bind="tp"
+                  class="plotted-item__empty-flag"
+                  icon="mdi-database-off-outline"
+                  size="14"
+                  color="warning"
+                  aria-label="No data in window"
+                />
+              </template>
+            </v-tooltip>
           </div>
           <div class="plotted-item__subtitle">
-            {{
-              datastream.valueCount?.toLocaleString?.() ?? datastream.valueCount
-            }}
-            obs
+            <template v-if="loadStatus(datastream.id).loading">
+              loading…
+            </template>
+            <template v-else>
+              {{ loadStatus(datastream.id).count.toLocaleString() }} pt{{
+                loadStatus(datastream.id).count === 1 ? '' : 's'
+              }} loaded
+            </template>
           </div>
         </div>
 
@@ -182,6 +202,23 @@ const setQcDatastream = async (datastream: Datastream) => {
 const isUpdating = computed(() =>
   Array.from(loadingStates.value.values()).some((isLoading) => isLoading)
 )
+
+/**
+ * Per-datastream load state for the row subtitle: how many points
+ * are currently loaded in the window, plus whether a fetch is still
+ * in flight. Reads directly off `graphSeriesArray` so the count stays
+ * accurate after window changes, undo/redo, or fill/delete edits that
+ * mutate the series. Returns `loading: true` while the series is
+ * still resolving and `count: 0` once observations land outside the
+ * window.
+ */
+const loadStatus = (id: string) => {
+  const series = graphSeriesArray.value.find((s) => s.id === id)
+  if (!series) return { loading: true, count: 0 }
+  const loading = series.data.isLoading
+  const count = series.data.dataX?.length ?? 0
+  return { loading, count }
+}
 
 /**
  * Remove every plotted datastream at once. The store action handles
@@ -424,10 +461,17 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item__title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 600;
   /* Wrap long names instead of truncating. */
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+.plotted-item__empty-flag {
+  flex-shrink: 0;
 }
 
 .plotted-item__subtitle {

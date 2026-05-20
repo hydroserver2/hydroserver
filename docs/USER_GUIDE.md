@@ -1,4 +1,4 @@
-# User Guide — HydroServer Quality Control App
+# User Guide: HydroServer Quality Control App
 
 This guide is for the operator: the hydrologist or technician who picks
 a datastream, marks the bad points, and submits the cleaned series back
@@ -8,11 +8,6 @@ shortest path to common QC tasks.
 If you are looking for developer / deployment docs, start with
 [ARCHITECTURE.md](./ARCHITECTURE.md) instead.
 
-> The screenshots in this guide are auto-captured from the mocked-
-> backend e2e harness. Re-generate them after substantive UI changes
-> with `npx playwright test screenshots --project=chromium` from the
-> `hydroserver-qc-app` folder. Output lands in `docs/images/`.
-
 ## What this app does
 
 The QC App is the operator's view of HydroServer's quality control
@@ -21,7 +16,7 @@ pipeline. With it you can:
 1. **Browse** sites and datastreams in a HydroServer workspace.
 2. **Plot up to five datastreams** on a synchronized multi-axis chart
    for visual context.
-3. **Pick one datastream as the QC target** — the rest are read-only
+3. **Pick one datastream as the QC target.** The rest are read-only
    reference traces.
 4. **Filter** suspicious points using value thresholds, time windows,
    change detection, rate-of-change limits, gap detection, or
@@ -29,8 +24,8 @@ pipeline. With it you can:
 5. **Edit** the selected points: change values, interpolate, drift-
    correct, shift datetimes, delete, fill gaps, add points, attach
    qualifier flags.
-6. **Save your edits as a QC script** — a JSON file you can replay on
-   the same or another datastream later.
+6. **Save your edits as a QC script** (a JSON file you can replay on
+   the same or another datastream later).
 7. **Submit** the cleaned observations back to HydroServer.
 
 Everything runs in your browser. The backend never sees your edit
@@ -45,7 +40,7 @@ history until you press Save.
 | **Datastream** | A single time-series at a site: one variable, one sensor, one processing level. |
 | **Observation** | A single (timestamp, value) measurement. |
 | **QC target** | The datastream you are editing. There is always exactly one QC target when the Edit view is open. |
-| **Context traces** | The other plotted datastreams. Visible but read-only — they exist to give you context for the QC target. |
+| **Context traces** | The other plotted datastreams. Visible but read-only. They exist to give you context for the QC target. |
 | **History** | The ordered list of filters + edits you've applied in the current session. Undo / redo / save / load all operate on this list. |
 | **Selection** | The set of point indices a filter (or your click / lasso) produced. Edits operate on the current selection. |
 | **QC script** | A JSON file holding your history. Reusable across datastreams; the canonical save format. |
@@ -61,7 +56,7 @@ history until you press Save.
    ![Login page](./images/login.png)
 
 3. On the **Workspaces** page, pick the workspace you want to work in.
-   The choice is remembered locally — next time you sign in you'll
+   The choice is remembered locally, so next time you sign in you'll
    land directly on Home.
 
    ![Workspaces picker](./images/workspaces.png)
@@ -77,8 +72,8 @@ COOP/COEP configuration ([DEPLOYMENT.md](./DEPLOYMENT.md) covers this).
 ## The screen, top to bottom
 
 The two main views are **Select** (browse + preview) and **Edit** (the
-QC workbench). The narrow icon column on the far left — the navigation
-rail — switches between them.
+QC workbench). The narrow icon column on the far left (the navigation
+rail) switches between them.
 
 ### Navigation rail
 
@@ -88,7 +83,7 @@ A thin, always-visible column of icons.
 |------|--------|
 | HydroServer logo | Go home. Resets the current view. Prompts before discarding unsaved edits. |
 | Cursor (Select) | Show the Select drawer + plot. |
-| Pencil (Edit) | Open the Edit view. **Disabled** until you've picked a QC datastream — tooltip explains why. |
+| Pencil (Edit) | Open the Edit view. **Disabled** until you've picked a QC datastream; the tooltip explains why. |
 | Stopwatch (Performance) | Open the Performance Calibration dialog. See "Performance" below. |
 | Grid (Workspace) | Switch workspace. |
 | Logout | Sign out. |
@@ -108,7 +103,7 @@ by dragging its right edge.
 
 The drawer has two collapsible sections:
 
-- **Time range** — the loaded time window. The two date pickers (`From`
+- **Time range**: the loaded time window. The two date pickers (`From`
   / `To`) are the source of truth; below them is a row of preset chips:
   **1w**, **1m**, **6m**, **1y**, **YTD**, **All**. Picking a preset
   re-fetches observations from the server. A `Custom` chip appears
@@ -119,7 +114,7 @@ The drawer has two collapsible sections:
   > can show an empty window for old data and make the plot look
   > broken.
 
-- **Datastream filters** — pick the site, observed property, and
+- **Datastream filters**: pick the site, observed property, and
   processing level. The list of matching datastreams updates live.
 
 The main area is split top/bottom:
@@ -128,7 +123,7 @@ The main area is split top/bottom:
   (or "No datastream plotted"), and the **Start editing** button that
   jumps to the Edit view. The right pane of the card lists currently
   plotted datastreams.
-- **Bottom card** is the **Datastreams table** — every datastream the
+- **Bottom card** is the **Datastreams table**: every datastream the
   filters match. Each row has a plot toggle; the first datastream you
   toggle on becomes the QC target (radio button column).
 
@@ -158,12 +153,37 @@ The chart at the top of the center column has a Plotly toolbar with:
 
 - **Zoom** (drag a horizontal box on the x-axis)
 - **Pan** (hold + drag)
-- **Box select / Lasso select** — the primary way to select points for
+- **Box select / Lasso select**: the primary way to select points for
   an edit.
-- **Reset axes** — back to the full plotted window.
+- **Reset axes**: back to the full plotted window.
 
 Clicking a single point selects just that point. Clicking the empty
 plot area clears the selection.
+
+### Plotted datastreams list
+
+The right-hand list (visible on both Select and Edit views) is the
+roster of currently plotted datastreams. Each row carries:
+
+- A drag handle to reorder the list (drag the QC target's row to
+  promote / demote it; the line colors track the order).
+- A colored radio dot that picks the **QC target**. The active row is
+  tinted; the other rows render in their reference colour.
+- An **eye** toggle that hides the trace from the plot without
+  unplotting it. Hidden rows render with a strikethrough.
+- A **Y-axis** toggle (non-QC rows only) that collapses that
+  datastream's secondary axis.
+- The datastream name and a subtitle showing the number of points
+  loaded **in the current time window**, e.g. `1,248 pts loaded`.
+  While the fetch is still in flight the subtitle reads `loading…`.
+- An `×` button to unplot the row.
+
+If a plotted datastream has no observations in the current window
+(either because the dataset is empty there or because the chosen time
+range doesn't cover its data), the row title shows a small
+warning-tinted database icon. Hover it for the tooltip "No
+observations in the current time window". Widening the time range
+(or clicking **All** in the Time range section) usually clears it.
 
 ### Edit drawer (left)
 
@@ -187,9 +207,37 @@ icon-colored avatar, the title and one-line description, and an `×`
 button to close. All panels list the **current selection size** at the
 top (when relevant). All commit buttons live in the panel footer.
 
-A filter panel always exposes an optional **Date range mask** section
-at the top. By default the operation runs against the full datastream;
-toggle the mask on to restrict it to a datetime window.
+### Date range mask
+
+Every filter panel (except **Datetime range**, which already owns its
+own picker) opens with a collapsed **Date range mask** section at the
+top. By default the filter scans the full datastream. Click **Enable
+date range mask** to constrain it to a datetime window.
+
+![Filter panel with the Date range mask enabled](./images/panel-date-range-mask.png)
+
+When enabled, the section exposes:
+
+- Two date/time pickers (`From` / `To`); these are the source of
+  truth.
+- Preset chips (**1W**, **1M**, **3M**, **6M**, **1Y**, **YTD**,
+  **All**) that snap the pickers to a common window relative to the
+  loaded data.
+- A draggable blue band overlaid on the plot. Resize it by dragging
+  either edge, or move it whole by dragging its middle. The pickers
+  and the band stay in sync.
+
+Run the filter as usual (value thresholds, change threshold, rate of
+change, find gaps, persistence) and only points inside the window
+are considered. Filters whose result is a selection (Find gaps,
+Datetime range) honour the mask too. The `×` icon in the section
+header disables the mask and reverts to "full datastream" scanning;
+closing the operation panel also clears the mask.
+
+Use the mask when you want to QC a specific event window without
+touching the rest of the series: e.g. flag persistence runs only
+inside a known outage, or apply a value threshold only to last
+month's data.
 
 ### Filter operations
 
@@ -199,7 +247,7 @@ operation acts on.
 #### Value thresholds
 
 Flag any point whose value satisfies a chosen comparator (`>=`, `>`,
-`==`, `<`, `<=`). Combine multiple comparators — each appears as a
+`==`, `<`, `<=`). Combine multiple comparators; each appears as a
 removable chip under "Applied".
 
 ![Value thresholds panel](./images/panel-valueThreshold.png)
@@ -219,7 +267,7 @@ draggable band overlaid on the plot.
 
 ![Datetime range panel](./images/panel-datetimeRange.png)
 
-The selection updates live as you drag the band or edit the dates —
+The selection updates live as you drag the band or edit the dates;
 there's no commit button. The alert at the bottom shows the running
 count of points caught.
 
@@ -248,13 +296,13 @@ Locate gaps in time between consecutive observations that exceed a
 threshold. The panel uses the shared gap finder: a date-range stager,
 threshold with units, snap chips (when the datastream declares an
 intended cadence), and red bands overlaid on the plot. The endpoints
-of every detected gap are selected on the plot — there's no commit
+of every detected gap are selected on the plot; there's no commit
 button.
 
 ![Find gaps panel](./images/panel-gaps.png)
 
 The **Re-select gaps** button at the bottom re-applies the current gap
-endpoints to the plot — useful when a box-select or lasso has wiped
+endpoints to the plot. Useful when a box-select or lasso has wiped
 the visible selection.
 
 #### Persistence
@@ -310,7 +358,7 @@ unit. Useful when a sensor's clock was off.
 ![Shift datetimes panel](./images/panel-shiftDatetimes.png)
 
 When the QC datastream declares an `intendedTimeSpacing`, the panel
-shows snap chips — `0.5×`, `1×`, `2×` — that pre-fill the amount with
+shows snap chips (`0.5×`, `1×`, `2×`) that pre-fill the amount with
 a multiple of the intended cadence. The active chip gets a check
 mark.
 
@@ -367,11 +415,11 @@ or a constant NoData value at a chosen cadence.
 The panel reuses the Find-gaps finder at the top (date range,
 threshold, snap chips, plot-overlay bands), then adds:
 
-- **Fill with a value every &lt;amount&gt; &lt;unit&gt;** — the
+- **Fill with a value every &lt;amount&gt; &lt;unit&gt;**: the
   insertion cadence. A **Match intended cadence** chip is shown when
   the datastream declares one; `0.5×`, `1×`, `2×` snap chips fine-tune
   from there.
-- **Interpolate fill values** checkbox — when on, inserted values are
+- **Interpolate fill values** checkbox: when on, inserted values are
   linearly interpolated between the gap endpoints. When off, the
   panel reveals a **NoData value** field that's used for every
   inserted point.
@@ -407,7 +455,7 @@ The body shows:
   button.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
-  - A failure badge (red `!`) if the op threw at author time — common
+  - A failure badge (red `!`) if the op threw at author time. Common
     after a script import that references something missing in this
     datastream.
   - A duration badge.
@@ -457,7 +505,7 @@ The app will:
 3. Show a Snackbar with `Loaded N operations`, plus a warning if any
    ops failed.
 
-Per-op failures do not abort the replay — the app keeps going. If
+Per-op failures do not abort the replay; the app keeps going. If
 your script targets columns that don't exist in the new datastream
 (e.g. a qualifier code that isn't registered), that specific op fails
 and shows a red `!` badge on its history row, but the rest still run.
@@ -466,7 +514,7 @@ and shows a red `!` badge on its history row, but the rest still run.
 
 - **Repeatable QC.** Apply the same QC routine across all your
   conductivity sensors with one script.
-- **Audit trail.** Save the script before submitting — you have a
+- **Audit trail.** Save the script before submitting, so you have a
   record of every transformation you applied.
 - **Iterate offline.** Edit the script's JSON if you want to tweak a
   threshold without re-clicking through the panels.
@@ -476,10 +524,10 @@ and shows a red `!` badge on its history row, but the rest still run.
 When you're satisfied with the edits, hit one of the action buttons at
 the top of the right sidebar:
 
-- **Save** — uploads and keeps you in the Edit view.
-- **Save & Close** — uploads, clears history, and drops you back to
+- **Save**: uploads and keeps you in the Edit view.
+- **Save & Close**: uploads, clears history, and drops you back to
   the Select view.
-- **Close** — abandons the session. If you have unsaved edits the
+- **Close**: abandons the session. If you have unsaved edits the
   Unsaved-edits dialog intercepts you.
 
 Clicking Save (or Save & Close) opens a confirmation dialog so a
@@ -489,18 +537,12 @@ misclick won't push data to the server.
 
 Once you confirm:
 
-1. The app POSTs the cleaned observations to HydroServer with
-   `mode: 'replace'` — this overwrites the existing observations in
+1. The app POSTs the cleaned observations to HydroServer, which overwrites the existing observations in
    the plotted window.
 2. On success, the Snackbar shows "Quality-controlled observations
    submitted" and the local history is cleared.
-3. On failure, the Snackbar shows the backend's error message verbatim
-   — show that to your administrator if you need help.
-
-> **Warning:** Save is **destructive on the backend** — it replaces
-> the observations in the plotted window. If you might want to revert,
-> export a QC script *before* saving and keep the original raw
-> observations separately. The QC App itself can't undo a Submit.
+3. On failure, the Snackbar shows the backend's error message verbatim.
+   Show that to your administrator if you need help.
 
 ## Performance and big datastreams
 
@@ -535,7 +577,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 ### "I want to drift-correct a known-bad interval."
 
 1. Plot the datastream. Zoom in to the bad interval on the chart.
-2. Drag a box select around the interval — you need at least two
+2. Drag a box select around the interval. You need at least two
    consecutive points.
 3. Open the Edit drawer → **Drift correction** → set the drift amount
    (the offset to apply linearly from start to end of the selection)
@@ -549,7 +591,7 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 1. Load the new week of data on the same datastream.
 2. Open the Edit history header → click the tray-arrow-up icon →
    pick last week's JSON.
-3. The script's authored window may differ from this week's — the app
+3. The script's authored window may differ from this week's; the app
    will fetch the script's window. To re-apply against the new window
    instead, save the new window first, edit the script's `window`
    field in a text editor, then re-import.
@@ -565,14 +607,14 @@ unsaved edits, the app asks first.
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
-| Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. | Click **All** in Time range. |
-| Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream — the first becomes the QC target. |
+| Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click **All** in Time range. |
+| Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream; the first becomes the QC target. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
-| Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim — share that with your admin. |
+| Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim; share that with your admin. |
 | The history shows a red failed entry after Load | The script referenced something missing in this datastream. | The rest of the script still ran; click the chevron on the row to see its arguments. |
 
 ## See also
 
 - [README](../README.md)
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — what's running behind the screen
+- [ARCHITECTURE.md](./ARCHITECTURE.md): what's running behind the screen
 - HydroServer documentation: <https://hydroserver2.github.io/hydroserver/>
