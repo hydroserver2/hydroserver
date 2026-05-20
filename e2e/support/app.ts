@@ -8,7 +8,7 @@
  */
 
 import { expect, type Page } from '@playwright/test'
-import { WORKSPACE_ID } from './fixtures'
+import { DATASTREAM_ID, WORKSPACE_ID } from './fixtures'
 
 /** Wait for the datastreams table to become visible on Home. */
 export async function waitForHomeReady(page: Page): Promise<void> {
@@ -91,13 +91,24 @@ export async function gotoHome(page: Page): Promise<void> {
 }
 
 /**
- * Plot the first datastream in the table and wait for observations
- * to finish loading (data-loading-indicator hidden). The table is
- * virtualised but with our fixture there's only one row so the first
- * `plot-checkbox-*` element is always the target.
+ * Plot the canonical fixture datastream (`DATASTREAM_ID`) and wait
+ * for observations to finish loading. Multi-datastream specs use
+ * `plotDatastreamById` to add companions on top.
  */
 export async function plotFirstDatastream(page: Page): Promise<void> {
-  const plotBtn = page.locator('[data-testid^="plot-checkbox-"]').first()
+  await plotDatastreamById(page, DATASTREAM_ID)
+}
+
+/**
+ * Plot a specific datastream by id. Use for multi-datastream specs
+ * where the row order in the virtualised table isn't predictable
+ * across reloads.
+ */
+export async function plotDatastreamById(
+  page: Page,
+  id: string
+): Promise<void> {
+  const plotBtn = page.getByTestId(`plot-checkbox-${id}`)
   await expect(plotBtn).toBeVisible({ timeout: 15_000 })
   await plotBtn.click()
   await page

@@ -37,11 +37,22 @@ import {
 
 export interface MockOptions {
   /**
-   * Override the observation payload for the test datastream.
-   * Pass a factory so each spec can size / shape its series; if
-   * omitted, a 120-point sine wave is served.
+   * Override the observation payload for the primary test datastream
+   * (`DATASTREAM_ID`). Pass a factory so each spec can size / shape its
+   * series; if omitted, a 120-point sine wave is served.
    */
   observations?: { phenomenonTime: string[]; result: number[] }
+  /**
+   * Per-datastream-id observation override. Lets multi-datastream
+   * specs serve a distinct series for each plotted datastream
+   * without having to install a second mocks layer. Falls back to
+   * `observations` (then `buildObservations()`) for any id not
+   * listed here.
+   */
+  observationsById?: Record<
+    string,
+    { phenomenonTime: string[]; result: number[] }
+  >
   /**
    * Accumulates every bulk-create submission the app makes while the
    * mocks are active. Consumers can assert on request ordering /
@@ -94,6 +105,7 @@ export async function installMocks(
 ): Promise<void> {
   const authenticated = options.authenticated ?? true
   const observations = options.observations ?? buildObservations()
+  const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
 
   // Preflights for anything — the real server serves OPTIONS via
@@ -137,11 +149,13 @@ export async function installMocks(
     // --- Observations list (columnar) ---
     const obsList = path.match(/\/api\/data\/datastreams\/([^/]+)\/observations$/)
     if (obsList && method === 'GET') {
+      const dsId = obsList[1]
       const params = new URL(url).searchParams
       const page = Number(params.get('page') ?? '1')
+      const series = observationsById[dsId] ?? observations
       // Only the first page carries data; subsequent pages are empty
       // so the client's pagination loop terminates.
-      const data = page === 1 ? observations : { phenomenonTime: [], result: [] }
+      const data = page === 1 ? series : { phenomenonTime: [], result: [] }
       return json(route, { data }, 200, { 'X-Total-Pages': '1' })
     }
 

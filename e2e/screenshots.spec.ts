@@ -25,9 +25,16 @@ import {
   setupEditView,
   openOp,
   plotFirstDatastream,
+  plotDatastreamById,
   waitForHomeReady,
 } from './support/app'
 import { selectAllPoints } from './support/ops'
+import {
+  DATASTREAM_ID,
+  DATASTREAM_ID_B,
+  buildObservations,
+  buildTemperatureObservations,
+} from './support/fixtures'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -98,6 +105,71 @@ test.describe('docs screenshots', () => {
     await installMocks(page)
     await setupEditView(page)
     await snapPage(page, 'edit-view.png')
+  })
+
+  test('home (two datastreams on independent y-axes)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page, {
+      observationsById: {
+        [DATASTREAM_ID]: buildObservations(),
+        [DATASTREAM_ID_B]: buildTemperatureObservations(),
+      },
+    })
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    // Plot redraws asynchronously after the second add; give Plotly
+    // a beat to layout both Y axes + chips before we capture.
+    await page.waitForTimeout(800)
+    await snapPage(page, 'home-multi-datastreams.png')
+  })
+
+  test('edit view (two datastreams, secondary axis visible)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page, {
+      observationsById: {
+        [DATASTREAM_ID]: buildObservations(),
+        [DATASTREAM_ID_B]: buildTemperatureObservations(),
+      },
+    })
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await page.getByTestId('nav-rail-item-edit').click()
+    await expect(page.getByText('Filter Data')).toBeVisible()
+    await page.waitForTimeout(800)
+    await snapPage(page, 'edit-view-multi.png')
+  })
+
+  test('plot help menu (open)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page)
+    await setupEditView(page)
+    // The help button is the only `?` icon in the toolbar.
+    await page
+      .getByRole('button', { name: /plot controls/i })
+      .click()
+    const menu = page.locator('.plot-help').first()
+    await expect(menu).toBeVisible({ timeout: 5_000 })
+    await snapEl(menu, 'plot-help-menu.png')
+  })
+
+  test('plotted datastreams list (multiple rows)', async ({ page }) => {
+    await page.setViewportSize(STD_VIEWPORT)
+    await installMocks(page, {
+      observationsById: {
+        [DATASTREAM_ID]: buildObservations(),
+        [DATASTREAM_ID_B]: buildTemperatureObservations(),
+      },
+    })
+    await gotoHome(page)
+    await plotDatastreamById(page, DATASTREAM_ID)
+    await plotDatastreamById(page, DATASTREAM_ID_B)
+    await page.waitForTimeout(600)
+    const list = page
+      .locator('.select-view__plotted')
+      .first()
+    await snapEl(list, 'plotted-datastreams-list.png')
   })
 
   const filterOps = [

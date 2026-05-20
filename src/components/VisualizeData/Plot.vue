@@ -78,9 +78,14 @@
           >
             <span
               class="plot-toolbar__points-count"
-              :class="{ 'plot-toolbar__points-count--over': tooltipsAutoDisabled }"
-            >{{ visiblePoints.toLocaleString() }}</span>
-            <span class="plot-toolbar__points-count-sep">/{{ tooltipsMaxDataPoints.toLocaleString() }}</span>
+              :class="{
+                'plot-toolbar__points-count--over': tooltipsAutoDisabled,
+              }"
+              >{{ visiblePoints.toLocaleString() }}</span
+            >
+            <span class="plot-toolbar__points-count-sep"
+              >/{{ tooltipsMaxDataPoints.toLocaleString() }}</span
+            >
           </div>
           <!-- Manual mode: toggle button -->
           <button
@@ -155,7 +160,8 @@
                 <v-divider class="my-1" />
                 <div class="px-3 pt-1 pb-3">
                   <div class="text-caption text-medium-emphasis mb-2">
-                    Points stop rendering above this count — only the line remains.<br>Raise on fast machines, lower on slow ones.
+                    Points stop rendering above this count — only the line
+                    remains.<br />Raise on fast machines, lower on slow ones.
                   </div>
                   <div class="d-flex align-center gap-2">
                     <v-text-field
@@ -223,8 +229,7 @@
 
           <v-card max-width="360" class="plot-help">
             <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
-              <v-icon icon="mdi-gesture-tap" size="20" />
-              Plot controls
+              Plot tips
             </v-card-title>
             <v-divider />
             <v-list density="compact" class="py-1" lines="two">
@@ -254,21 +259,22 @@
               <v-list-subheader
                 class="text-uppercase text-caption font-weight-bold"
               >
-                Toolbar icons
+                Keyboard
               </v-list-subheader>
               <v-list-item
-                v-for="(b, i) in modebarIcons"
-                :key="`mb-${i}`"
+                v-for="(k, i) in keyboardShortcuts"
+                :key="`k-${i}`"
                 class="px-4"
               >
                 <template v-slot:prepend>
-                  <v-icon :icon="b.icon" size="18" class="mr-2" />
+                  <v-icon :icon="k.icon" size="18" class="mr-2" />
                 </template>
                 <v-list-item-title class="text-body-2 font-weight-medium">
-                  {{ b.title }}
+                  {{ k.title }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption">
-                  {{ b.desc }}
+                  <kbd class="plot-help__kbd">{{ k.keys }}</kbd>
+                  {{ k.desc }}
                 </v-list-item-subtitle>
               </v-list-item>
             </v-list>
@@ -302,12 +308,16 @@
             <template v-if="!preview">
               <div
                 class="plot-context-strip"
-                :title="contextPlotCollapsed ? 'Expand overview' : 'Collapse overview'"
+                :title="
+                  contextPlotCollapsed ? 'Expand overview' : 'Collapse overview'
+                "
                 @click="contextPlotCollapsed = !contextPlotCollapsed"
               >
                 <v-icon
                   size="12"
-                  :icon="contextPlotCollapsed ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  :icon="
+                    contextPlotCollapsed ? 'mdi-chevron-up' : 'mdi-chevron-down'
+                  "
                 />
               </div>
               <ContextPlot v-show="!contextPlotCollapsed" />
@@ -700,79 +710,57 @@ const applyThreshold = () => {
   }
 }
 
+// Curated list of gestures the Plotly toolbar tooltips don't cover.
+// Toolbar buttons themselves expose their own native `title` on hover,
+// so there's no point repeating them here.
 const gestures = [
   {
     icon: 'mdi-cursor-default-click-outline',
-    title: 'Click a point',
-    desc: 'Toggle a single point in the selection',
-  },
-  {
-    icon: 'mdi-selection-drag',
-    title: 'Box / lasso select',
-    desc: 'Enable Box or Lasso on the toolbar, then drag across the plot',
-  },
-  {
-    icon: 'mdi-pan',
-    title: 'Pan',
-    desc: 'With Pan active, drag anywhere to move the view',
+    title: 'Click a point to toggle it',
+    desc: 'Adds or removes a single point from the selection without affecting the rest.',
   },
   {
     icon: 'mdi-mouse',
-    title: 'Scroll to zoom',
-    desc: 'Scroll over the plot to zoom in or out on time',
+    title: 'Scroll to zoom time',
+    desc: 'Wheel up zooms in on the cursor, wheel down zooms out. Y axes stay put.',
   },
   {
     icon: 'mdi-arrow-expand-vertical',
-    title: 'Resize an axis',
-    desc: 'Drag near the ends of a Y axis to rescale that axis only',
+    title: 'Rescale one axis',
+    desc: 'Drag near either end of an axis to stretch it',
   },
-]
-
-const modebarIcons = [
   {
-    icon: 'mdi-magnify-plus-outline',
-    title: 'Zoom',
-    desc: 'Drag a rectangle to zoom the view to that region',
+    icon: 'mdi-arrow-up-down',
+    title: 'Pan one axis',
+    desc: 'Drag the middle of an axis to translate only that axis.',
+  },
+  {
+    icon: 'mdi-chart-areaspline',
+    title: 'Use the overview strip',
+    desc: 'Drag the band on the bottom mini-plot to set the visible time window.',
   },
   {
     icon: 'mdi-cursor-move',
-    title: 'Pan',
-    desc: 'Drag anywhere to move the plot without changing zoom',
+    title: 'Crosshair on hover',
+    desc: 'Lines up the cursor across X and Y axes, even when tooltips are off.',
+  },
+]
+
+// Keyboard shortcuts that fire from the Edit view at large, not from a
+// toolbar control. Listed here because the plot is where the user
+// actually feels them.
+const keyboardShortcuts = [
+  {
+    icon: 'mdi-undo-variant',
+    title: 'Undo',
+    keys: 'Ctrl+Z',
+    desc: 'Reverts the last filter or edit.',
   },
   {
-    icon: 'mdi-vector-rectangle',
-    title: 'Box Select',
-    desc: 'Drag a rectangle to select all contained points',
-  },
-  {
-    icon: 'mdi-lasso',
-    title: 'Lasso Select',
-    desc: 'Draw a free-form shape to select enclosed points',
-  },
-  {
-    icon: 'mdi-magnify-plus',
-    title: 'Zoom in / out',
-    desc: 'Step the x-axis zoom in or out',
-  },
-  {
-    icon: 'mdi-home-outline',
-    title: 'Reset view',
-    desc: 'Return to the default zoom. Does not change the begin/end dates in the sidebar.',
-  },
-  {
-    icon: 'mdi-arrow-collapse-horizontal',
-    title: 'Fit X to visible',
-    desc: 'Fit the X axis to currently visible data',
-  },
-  {
-    icon: 'mdi-arrow-collapse-vertical',
-    title: 'Fit Y to visible',
-    desc: 'Fit the Y axis to currently visible data',
-  },
-  {
-    icon: 'mdi-cursor-default-outline',
-    title: 'Hover tools',
-    desc: 'Show nearest point or compare across traces on hover',
+    icon: 'mdi-redo-variant',
+    title: 'Redo',
+    keys: 'Ctrl+Y',
+    desc: 'Re-applies the last undone step (Ctrl+Shift+Z also works).',
   },
 ]
 
@@ -1188,6 +1176,28 @@ const onTabChange = () => {
 
 .plot-help :deep(.v-list-item) {
   min-height: 44px;
+}
+
+/* The help menu's subtitle is a single line by default (Vuetify's
+   default v-card-subtitle uses overflow:hidden + nowrap); allow it
+   to wrap so the full hint reads in the 360px-wide menu. */
+.plot-help :deep(.v-card-subtitle) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.4;
+}
+
+.plot-help__kbd {
+  display: inline-block;
+  padding: 0 4px;
+  margin-right: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.18);
+  border-radius: 3px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .plot-context-strip {

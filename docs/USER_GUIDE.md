@@ -185,6 +185,87 @@ warning-tinted database icon. Hover it for the tooltip "No
 observations in the current time window". Widening the time range
 (or clicking **All** in the Time range section) usually clears it.
 
+![Plotted datastreams list with two rows](./images/plotted-datastreams-list.png)
+
+### Plotting multiple datastreams
+
+You can plot up to **5 datastreams at a time**. The plotted count and
+cap are surfaced in the Datastreams table toolbar as a chip
+("`N/5 plotted`"); once you hit the cap the unchecked rows disable
+their plot toggles and a tooltip explains why. Unplot a row from
+either the table or the list to free up a slot.
+
+![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
+
+When more than one datastream is on the plot:
+
+- The **first** datastream you plot becomes the **QC target** and
+  uses the primary (left) Y axis. Its line draws in black with a
+  point marker on every observation.
+- Each additional datastream gets its **own Y axis** on the right
+  side of the plot. The chip at the top of each axis carries the
+  datastream's display name plus its unit (e.g. `Water Temperature
+  (°C)`). Up to four secondary axes stack side by side.
+- Axis chips are colored to match their line so you can tell at a
+  glance which trace goes with which axis.
+
+Once a datastream is on the plot, the **plotted datastreams list**
+on the right is where you manage it (see the previous section for
+the row anatomy). The interactions most relevant to multi-series
+work:
+
+- **QC target picker**: clicking the colored radio dot on a non-QC
+  row promotes that datastream to the QC target. The primary Y axis
+  rebinds to its scale and the previous QC datastream demotes to a
+  secondary axis. The Edit view shows only the QC target's points
+  for selection; context traces are read-only.
+- **Eye toggle**: hide / show a trace on the plot without unplotting
+  it. Useful when one series is visually crowding the others. Hidden
+  rows render with a strikethrough; their axis stays on the plot so
+  the scale doesn't jump.
+- **Y-axis toggle** (non-QC rows only): collapse just the secondary
+  axis without removing the trace. Reach for it when the extra axes
+  start eating horizontal room and you don't actually need the
+  numeric scale.
+- **Drag handle**: drag a row up or down to reorder the legend. The
+  plot redraws so the trace colors track the new order.
+- **× button**: unplot the row entirely. Removing the QC target
+  promotes the next plotted row to QC.
+
+### Pan and zoom across axes
+
+The Plotly toolbar at the top of the chart drives the X-axis
+gestures (Zoom, Pan, Reset). For Y axes the gestures are slightly
+different and worth knowing about when you're juggling several
+datastreams:
+
+- **X-axis zoom**: drag a horizontal box on the time grid (Zoom
+  tool), or scroll over the plot. Every axis stays time-synchronised.
+- **X-axis pan**: enable Pan in the toolbar, then drag the plot
+  body. The context plot at the bottom is also draggable; it acts
+  as an overview thumbnail.
+- **Per-axis Y zoom**: hover near the ends of any Y axis and drag.
+  Only that axis rescales; sibling axes keep their current view.
+  This is how you "compare units": drop the temperature axis to a
+  tight window without touching streamflow.
+- **Per-axis Y pan**: hover the middle of a Y axis and drag.
+- **Reset**: the home icon on the Plotly toolbar returns to the
+  default zoom (does not change the begin/end dates in the
+  sidebar).
+- **Fit Y to visible**: the vertical-collapse icon in the toolbar
+  rescales every Y axis to the currently visible X window. Handy
+  after a deep zoom when one trace ends up off-axis.
+
+The `?` (help) menu in the plot toolbar carries a "Plot tips" card
+listing the hidden gestures (per-axis pan/zoom, scroll-to-zoom,
+crosshair, overview strip) and the keyboard shortcuts (`Ctrl+Z`
+undo, `Ctrl+Y` redo). Toolbar icons aren't listed there because
+each one already shows its name on hover.
+
+![Plot tips help menu](./images/plot-help-menu.png)
+
+![Edit view with two datastreams plotted on independent axes](./images/edit-view-multi.png)
+
 ### Edit drawer (left)
 
 The drawer is a vertical column of operation rows, grouped into three
