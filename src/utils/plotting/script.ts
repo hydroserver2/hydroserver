@@ -4,13 +4,14 @@
  * See `docs/HISTORY_SCRIPT.md` for the full design rationale. The
  * short version:
  *
- *   - **Save:** walk `record.history`, strip the truly ephemeral
- *     fields (`isLoading`, `duration`, `executionMode`, `selected`),
- *     keep `method`, `args`, the optional `status` flag, and the
- *     authoring `timestamp` (preserved verbatim so the saved script
- *     records when each step originally ran). Wrap with a `version`,
- *     `createdAt`, and the wall-clock `window` the consumer was
- *     working in.
+ *   - **Save:** walk `record.history`, keep `method` and `args`,
+ *     project the live `HistoryExecution` into a `QcScriptExecution`
+ *     (drop `inFlight` since a serialized entry is always
+ *     resolved; keep the rest — `startedAt`, `status`, `durationMs`,
+ *     `mode`, `datasetSize`, `selectionSize`). The runtime-only
+ *     `selected` array is recomputed on replay and not persisted.
+ *     Wrap with a `version`, `createdAt`, and the wall-clock
+ *     `window` the consumer was working in.
  *
  *   - **Load:** reset `history` + `redoStack`, `record.reload()`,
  *     then `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
@@ -32,6 +33,7 @@ import {
   EnumEditOperations,
   EnumFilterOperations,
   QcScript,
+  QcScriptExecution,
   QcScriptOperation,
   QcScriptWindow,
 } from "../../types";
@@ -44,6 +46,94 @@ const ALL_METHODS = new Set<string>([
   ...Object.values(EnumEditOperations),
   ...Object.values(EnumFilterOperations),
 ]);
+
+/**
+ * Project a runtime `HistoryExecution` into the serialized
+ * `QcScriptExecution` shape, dropping `inFlight` (always false in a
+ * resolved entry) and rejecting non-finite numeric values so a
+ * round-tripped script can't poison the schema. Returns `undefined`
+ * when the resulting projection would be empty, so callers can skip
+ * the field entirely on the wire instead of emitting `{}`.
+ */
+function projectExecution(
+  exec: import("../../types").HistoryExecution | undefined,
+): QcScriptExecution | undefined {
+  if (!exec) return undefined;
+  const out: QcScriptExecution = {};
+  const num = (v: unknown): number | undefined =>
+    typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  const startedAt = num(exec.startedAt);
+  if (startedAt !== undefined) out.startedAt = startedAt;
+  if (exec.status === "success" || exec.status === "failed") out.status = exec.status;
+  const durationMs = num(exec.durationMs);
+  if (durationMs !== undefined) out.durationMs = durationMs;
+  if (exec.mode === "worker" || exec.mode === "inline") out.mode = exec.mode;
+  const datasetSize = num(exec.datasetSize);
+  if (datasetSize !== undefined) out.datasetSize = datasetSize;
+  const selectionSize = num(exec.selectionSize);
+  if (selectionSize !== undefined) out.selectionSize = selectionSize;
+  return Object.keys(out).length === 0 ? undefined : out;
+}
+
+/**
+ * Parse the optional `execution` field from a per-op JSON entry.
+ * Each field is independently typed-narrowed; malformed values
+ * throw a single descriptive error so the caller can surface the
+ * exact field that drifted. Returns `undefined` when the field is
+ * absent so backward-compatibility with pre-execution scripts is
+ * preserved.
+ */
+function parseExecution(
+  raw: unknown,
+  index: number,
+): QcScriptExecution | undefined {
+  if (raw === undefined) return undefined;
+  if (!raw || typeof raw !== "object") {
+    throw new Error(`Operation ${index} \`execution\` must be an object when present.`);
+  }
+  const o = raw as Record<string, unknown>;
+  const out: QcScriptExecution = {};
+  const assertFiniteNumber = (field: string, value: unknown) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      throw new Error(
+        `Operation ${index} \`execution.${field}\` must be a finite number when present.`
+      );
+    }
+  };
+  if (o.startedAt !== undefined) {
+    assertFiniteNumber("startedAt", o.startedAt);
+    out.startedAt = o.startedAt as number;
+  }
+  if (o.status !== undefined) {
+    if (o.status !== "success" && o.status !== "failed") {
+      throw new Error(
+        `Operation ${index} \`execution.status\` must be "success" or "failed" when present.`
+      );
+    }
+    out.status = o.status;
+  }
+  if (o.durationMs !== undefined) {
+    assertFiniteNumber("durationMs", o.durationMs);
+    out.durationMs = o.durationMs as number;
+  }
+  if (o.mode !== undefined) {
+    if (o.mode !== "worker" && o.mode !== "inline") {
+      throw new Error(
+        `Operation ${index} \`execution.mode\` must be "worker" or "inline" when present.`
+      );
+    }
+    out.mode = o.mode;
+  }
+  if (o.datasetSize !== undefined) {
+    assertFiniteNumber("datasetSize", o.datasetSize);
+    out.datasetSize = o.datasetSize as number;
+  }
+  if (o.selectionSize !== undefined) {
+    assertFiniteNumber("selectionSize", o.selectionSize);
+    out.selectionSize = o.selectionSize as number;
+  }
+  return out;
+}
 
 /**
  * Serialize an `ObservationRecord`'s history into a `QcScript`.
@@ -62,14 +152,8 @@ export function serializeHistory(
       method: h.method,
       args: h.args ? [...h.args] : [],
     };
-    if (h.status === "failed") op.status = "failed";
-    // Round-trip the original push-time stamp for audit / display.
-    // Guard against non-finite values so a script that round-tripped
-    // through a loosely-typed surface (e.g. JSON.parse over the wire)
-    // can't poison the schema.
-    if (typeof h.timestamp === "number" && Number.isFinite(h.timestamp)) {
-      op.timestamp = h.timestamp;
-    }
+    const exec = projectExecution(h.execution);
+    if (exec) op.execution = exec;
     return op;
   });
 
@@ -138,18 +222,8 @@ export function parseScript(json: unknown): QcScript {
       method: o.method as EnumEditOperations | EnumFilterOperations,
       args: [...o.args],
     };
-    if (o.status === "failed") op.status = "failed";
-    // `timestamp` is optional. Validate when present so a malformed
-    // string / NaN doesn't slip through; ignore silently when absent
-    // (pre-v1.1 scripts, hand-written JSON without the field).
-    if (o.timestamp !== undefined) {
-      if (typeof o.timestamp !== "number" || !Number.isFinite(o.timestamp)) {
-        throw new Error(
-          `Operation ${i} \`timestamp\` must be a finite epoch-ms number when present.`
-        );
-      }
-      op.timestamp = o.timestamp;
-    }
+    const exec = parseExecution(o.execution, i);
+    if (exec) op.execution = exec;
     return op;
   });
 
@@ -202,10 +276,10 @@ export async function applyScript(
       // based on whether the method is in EnumFilterOperations.
       await record.dispatch(op.method, ...op.args);
       // The dispatch path's catch block writes
-      // `historyItem.status = "failed"` on throw. Read it back to
-      // decide whether to count as applied.
+      // `historyItem.execution.status = "failed"` on throw. Read it
+      // back to decide whether to count as applied.
       const last = record.history[record.history.length - 1];
-      if (last?.status === "failed") {
+      if (last?.execution.status === "failed") {
         report.failed.push({
           index: i,
           method: op.method,

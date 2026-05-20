@@ -334,8 +334,8 @@ build failure all gate the same job.
 routing tests:
 
 - Worker spawn fails → fallback to inline?
-- Inline core throws → `HistoryItem.status === 'failed'`, history
-  entry survives, redo stack preserved?
+- Inline core throws → `HistoryItem.execution.status === 'failed'`,
+  history entry survives, redo stack preserved?
 - Replay during `undo()` doesn't clobber the redo stack?
 
 Mirror the existing pattern: induce the failure (mock a worker to
@@ -351,22 +351,29 @@ When a worker handler changes:
 - Run `observation-record.spec.ts` — drift surfaces here, not in
   `workers.spec.ts`.
 
-When `HistoryItem` grows a field:
-- Decide whether the field should survive `serializeHistory`. If
-  yes (like `timestamp`), update `script.ts` and add a round-trip
-  test. If no (like `isLoading`, `duration`, `executionMode`,
-  `selected`), document the elision in the same place.
-- Update the type listing in
-  [API_REFERENCE.md](./API_REFERENCE.md)'s `interface HistoryItem`
-  section.
+When `HistoryItem` or `HistoryExecution` grows a field:
+- Decide whether the field is a per-dispatch *audit* fact (mode,
+  duration, dataset size) — those go on `HistoryExecution`. UI
+  state that doesn't describe the dispatch itself (e.g. a
+  user-set pin) belongs on `HistoryItem`.
+- Decide whether it should survive `serializeHistory`. If yes
+  (like `mode` or `datasetSize`), extend `projectExecution` /
+  `parseExecution` in `script.ts` and add a round-trip test. If
+  no (like `inFlight`, which is meaningless for a serialized op),
+  document the elision in `script.ts`.
+- Update the type listings in
+  [API_REFERENCE.md](./API_REFERENCE.md) (`interface HistoryItem`
+  and `interface HistoryExecution`) and the same blocks in
+  [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-When `QcScriptOperation` grows a field:
-- Update `serializeHistory` to populate it.
-- Update `parseScript` to validate it (reject malformed shapes —
-  pre-existing `timestamp` validation is the template).
+When `QcScriptOperation` or `QcScriptExecution` grows a field:
+- Update `projectExecution` to populate it on serialize and
+  `parseExecution` to validate it on load (reject malformed
+  shapes — `assertFiniteNumber` and the enum guards are the
+  templates).
 - Update [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md): JSON example,
-  per-operation entry table, and the per-method-serialization-rules
-  paragraph.
+  per-operation entry table, the `execution` sub-fields table,
+  and the per-method-serialization-rules paragraph.
 - Add round-trip tests to `script.spec.ts`.
 
 When a new Vitest major version lands:

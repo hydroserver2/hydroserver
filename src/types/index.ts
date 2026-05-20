@@ -72,33 +72,83 @@ export enum LogicalOperation {
   E = "Equal",
 }
 
-export type HistoryItem = {
-  method: EnumEditOperations | EnumFilterOperations;
-  isLoading: boolean;
-  args?: any[];
-  duration?: number;
-  selected?: number[];
+/**
+ * Per-dispatch runtime information attached to every `HistoryItem`.
+ *
+ * Populated in two phases by `ObservationRecord.dispatchAction` /
+ * `dispatchFilter`:
+ *
+ *   - **Push time**: `startedAt`, `inFlight: true`, `datasetSize`,
+ *     and (for selection-consuming edits) `selectionSize` are set
+ *     before the handler runs.
+ *   - **Resolve time**: `status`, `durationMs`, `mode`, and (for
+ *     filters) `selectionSize` are set when the handler returns or
+ *     throws.
+ *
+ * The qc-app reads this object to drive the EditHistory UI
+ * (per-row spinner via `inFlight`, failure badge via `status`,
+ * duration text via `durationMs`, dev-only worker/inline chip via
+ * `mode`). Replays from `undo()` / `redo()` / `applyScript` build
+ * a fresh execution record for the new run rather than re-stamping
+ * the saved one.
+ */
+export interface HistoryExecution {
+  /**
+   * Wall-clock epoch-milliseconds (UTC) when the dispatch site pushed
+   * this entry. Re-stamped on every replay so the in-memory value
+   * always reflects the current session's execution. `serializeHistory`
+   * persists it for audit; the script loader does not restore it.
+   */
+  startedAt: number;
+  /**
+   * True from the moment the dispatch pushed the entry until the
+   * handler resolves (success or failure). Drives per-row spinners
+   * in the qc-app.
+   */
+  inFlight: boolean;
+  /** Final outcome — `undefined` while `inFlight` is `true`. */
   status?: "success" | "failed";
   /**
-   * Whether the operation actually ran on a web worker or inline on
-   * the main thread. Populated by the `ObservationRecord` dispatch
-   * site based on the calibration decision and any always-inline /
-   * always-worker handler behaviour. Mainly useful in dev for
-   * verifying that the calibration layer is routing as expected —
-   * the qc-app surfaces a small badge per history entry when
-   * `import.meta.env.DEV` is truthy.
+   * Wall-clock duration in milliseconds. Set after the handler
+   * resolves. `undefined` while `inFlight`.
    */
-  executionMode?: "worker" | "inline";
+  durationMs?: number;
   /**
-   * Wall-clock epoch-milliseconds (UTC) at which the dispatch site
-   * pushed this entry — i.e. when the user (or script replay) ran
-   * the operation. Stamped at push time in `dispatchAction` /
-   * `dispatchFilter`, so re-dispatches from `undo()` / `redo()` /
-   * `applyScript` overwrite an older value with the replay time.
-   * Optional because the field is runtime-only: it is stripped on
-   * `serializeHistory` and re-stamped when the loader replays.
+   * Whether the op actually ran on a web worker or inline on the
+   * main thread. Populated based on the calibration decision and
+   * any always-inline / always-worker handler behaviour. Mainly
+   * useful in dev for verifying that the calibration layer is
+   * routing as expected.
    */
-  timestamp?: number;
+  mode?: "worker" | "inline";
+  /**
+   * Number of observations in the record at the time the op ran,
+   * captured at push time. Reflects the pre-edit shape — i.e.
+   * exactly what the handler saw on entry. Useful for retrospective
+   * perf inspection: "this op took 300ms because the record had
+   * 500k points."
+   */
+  datasetSize?: number;
+  /**
+   * Number of indices the op acted on. For filters this is the
+   * size of the resulting selection (populated at resolve time);
+   * for selection-consuming edits it's the size of the preceding
+   * SELECTION (populated at push time). `undefined` when not
+   * applicable (e.g. ADD_POINTS, which is datetime-addressed).
+   */
+  selectionSize?: number;
+}
+
+export type HistoryItem = {
+  method: EnumEditOperations | EnumFilterOperations;
+  args?: any[];
+  selected?: number[];
+  /**
+   * Per-dispatch runtime information. Always present; some fields
+   * populate at push time, others fill in after the handler resolves.
+   * See `HistoryExecution` for the two-phase population rules.
+   */
+  execution: HistoryExecution;
 };
 
 // --- QC History Script (save / load format) ----------------------
@@ -114,27 +164,37 @@ export type QcScriptWindow = {
   endDate: string;
 };
 
+/**
+ * The execution record persisted alongside a saved script operation.
+ * Mirrors `HistoryExecution` minus the runtime-only `inFlight` flag,
+ * since a serialized op is always "resolved" by definition. Every
+ * field is optional so pre-v1.1 scripts (and any consumer that
+ * hand-writes the JSON) still load.
+ *
+ * Replays do **not** restore these values onto the new
+ * `HistoryItem.execution`; the dispatch site stamps fresh runtime
+ * data for the current session. Persistence is for audit only:
+ * "this op originally ran inline on a 50k record in 240ms."
+ */
+export type QcScriptExecution = {
+  startedAt?: number;
+  status?: "success" | "failed";
+  durationMs?: number;
+  mode?: "worker" | "inline";
+  datasetSize?: number;
+  selectionSize?: number;
+};
+
 /** A single replayable operation entry. Mirrors the
  *  `[method, ...args]` tuple shape that
- *  `ObservationRecord.dispatch` accepts. `status` round-trips
- *  author-time failures so failed steps stay visibly failed across
- *  save / load. */
+ *  `ObservationRecord.dispatch` accepts. `execution` carries
+ *  per-dispatch audit data (timing, mode, dataset shape) round-
+ *  tripped verbatim so the saved script preserves the authoring
+ *  context for review. */
 export type QcScriptOperation = {
   method: EnumEditOperations | EnumFilterOperations;
   args: any[];
-  status?: "success" | "failed";
-  /**
-   * Wall-clock epoch-milliseconds (UTC) at which the operation was
-   * originally dispatched — round-tripped verbatim so the saved
-   * script preserves the authoring timeline for audit / display.
-   * Optional because pre-v1.1 scripts (and any consumer that hand-
-   * writes the JSON without timestamps) must still load. The replay
-   * path does NOT use this value to re-stamp `HistoryItem.timestamp`:
-   * `dispatchAction` / `dispatchFilter` stamp fresh `Date.now()` at
-   * replay time so the in-memory history reflects when the operation
-   * actually ran in this session.
-   */
-  timestamp?: number;
+  execution?: QcScriptExecution;
 };
 
 /** A serialized QC history. Schema `version: "1"`. */

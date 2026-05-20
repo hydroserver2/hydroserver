@@ -19,8 +19,8 @@ import ValueThresholdWorker from './value-threshold.worker?worker&inline'
  *      hardware) to predict the crossover size for each op.
  *   3. Cache the measurements in `localStorage` keyed by a version
  *      tag and refresh on explicit user action, on staleness, or
- *      when we detect systematic mispredictions via the `.duration`
- *      already logged on each `HistoryItem`.
+ *      when we detect systematic mispredictions via the
+ *      `execution.durationMs` already logged on each `HistoryItem`.
  *
  * `shouldUseWorker()` is the single public decision function that
  * `ObservationRecord.dispatchAction` / `dispatchFilter` consult. Both
@@ -124,10 +124,10 @@ interface OperationDescriptor {
 
 /**
  * Hand-curated table — values are starting points tuned on a
- * mid-range laptop; refine as we collect telemetry on `.duration`.
- * Keep this table exhaustive over `EnumEditOperations` +
- * `EnumFilterOperations` so a typo in the caller surfaces as a
- * type error, not a silent fallback.
+ * mid-range laptop; refine as we collect telemetry on
+ * `execution.durationMs`. Keep this table exhaustive over
+ * `EnumEditOperations` + `EnumFilterOperations` so a typo in the
+ * caller surfaces as a type error, not a silent fallback.
  */
 const OPERATION_TABLE: Record<
   EnumEditOperations | EnumFilterOperations,

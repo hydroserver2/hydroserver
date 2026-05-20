@@ -73,46 +73,75 @@ describe('serializeHistory', () => {
     expect(op.icon).toBeUndefined();
   });
 
-  it('round-trips status: "failed" but omits the field for successful entries', async () => {
+  it('round-trips execution.status into the persisted op, omitting it for successful entries', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 0 });
-    // Manually mark the entry as failed (the dispatch path sets this
-    // on its own catch block; here we simulate post-hoc).
-    rec.history[0].status = 'failed';
+    rec.history[0].execution.status = 'failed';
     const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].status).toBe('failed');
+    expect(script.operations[0].execution?.status).toBe('failed');
 
-    rec.history[0].status = 'success';
+    rec.history[0].execution.status = 'success';
     const ok = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(ok.operations[0].status).toBeUndefined();
+    expect(ok.operations[0].execution?.status).toBe('success');
   });
 
-  it('round-trips the per-operation timestamp into QcScriptOperation.timestamp', async () => {
+  it('round-trips execution.startedAt verbatim into the persisted op', async () => {
     const before = Date.now();
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     const after = Date.now();
     const script = serializeHistory(rec, SAMPLE_WINDOW);
-    const ts = script.operations[0].timestamp;
-    expect(typeof ts).toBe('number');
+    const startedAt = script.operations[0].execution?.startedAt;
+    expect(typeof startedAt).toBe('number');
     // Dispatch stamps Date.now() at push time — must land inside the
     // [before, after] window we captured around the dispatch call.
-    expect(ts).toBeGreaterThanOrEqual(before);
-    expect(ts).toBeLessThanOrEqual(after);
+    expect(startedAt).toBeGreaterThanOrEqual(before);
+    expect(startedAt).toBeLessThanOrEqual(after);
   });
 
-  it('omits timestamp from the script when the history entry has no timestamp', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
-    // Simulate an entry constructed outside the dispatch path (no
-    // stamp). serializeHistory must not invent one.
-    delete rec.history[0].timestamp;
+  it('round-trips execution.durationMs / mode / datasetSize / selectionSize for an edit op', async () => {
+    // SELECTION → CHANGE_VALUES: the edit's execution should carry
+    // the dataset size at dispatch and the size of the preceding
+    // SELECTION it consumed.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1, 2]],
+      [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 99],
+    ]);
     const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].timestamp).toBeUndefined();
+    const editOp = script.operations.find(
+      (o) => o.method === EnumEditOperations.CHANGE_VALUES
+    )!;
+    expect(editOp.execution?.datasetSize).toBe(20);
+    expect(editOp.execution?.selectionSize).toBe(3);
+    expect(editOp.execution?.mode).toMatch(/^(worker|inline)$/);
+    expect(typeof editOp.execution?.durationMs).toBe('number');
+    expect(editOp.execution?.durationMs).toBeGreaterThanOrEqual(0);
   });
 
-  it('skips non-finite timestamp values during serialize', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
-    rec.history[0].timestamp = NaN;
+  it('round-trips execution.selectionSize for a filter op from the produced selection', async () => {
+    // y = 0..19 above the >= 10 threshold gives 10 indices.
+    const sel = await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { 'Greater than or equal to': 10 },
+    );
+    expect(sel).toHaveLength(10);
     const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].timestamp).toBeUndefined();
+    expect(script.operations[0].execution?.selectionSize).toBe(10);
+  });
+
+  it('omits the execution field when the history entry has no execution data', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    // Replace execution with an empty shell so every field is undefined.
+    rec.history[0].execution = { startedAt: NaN, inFlight: false };
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    // All fields rejected → projectExecution returned undefined → no
+    // `execution` key on the wire.
+    expect(script.operations[0].execution).toBeUndefined();
+  });
+
+  it('skips non-finite execution.startedAt during serialize', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].execution.startedAt = NaN;
+    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(script.operations[0].execution?.startedAt).toBeUndefined();
   });
 
   it('serializes args as an empty array when the history entry has no args', async () => {
@@ -257,55 +286,86 @@ describe('parseScript', () => {
     ).toThrow(/missing string `method`/);
   });
 
-  it('accepts an optional finite-number timestamp on a per-operation entry', () => {
+  it('accepts a per-op `execution` object and round-trips every field verbatim', () => {
+    const exec = {
+      startedAt: 1745597000000,
+      status: 'success' as const,
+      durationMs: 42.5,
+      mode: 'worker' as const,
+      datasetSize: 120,
+      selectionSize: 17,
+    };
     const script = parseScript({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [
-        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], timestamp: 1745597000000 },
+        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], execution: exec },
       ],
     });
-    expect(script.operations[0].timestamp).toBe(1745597000000);
+    expect(script.operations[0].execution).toEqual(exec);
   });
 
-  it('tolerates pre-v1.1 operations without a timestamp (backward-compatible)', () => {
+  it('tolerates pre-execution-field operations (backward-compatible)', () => {
     const script = parseScript({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
     });
-    expect(script.operations[0].timestamp).toBeUndefined();
+    expect(script.operations[0].execution).toBeUndefined();
   });
 
-  it('rejects a non-finite timestamp (NaN, Infinity, wrong type)', () => {
-    const bad = (timestamp: unknown) => () =>
+  it('rejects a non-object `execution` field', () => {
+    const bad = (execution: unknown) => () =>
       parseScript({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
-        operations: [{ method: 'VALUE_THRESHOLD', args: [], timestamp }],
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], execution }],
       });
-    expect(bad('1745597000000')).toThrow(/timestamp.*finite/);
-    expect(bad(NaN)).toThrow(/timestamp.*finite/);
-    expect(bad(Infinity)).toThrow(/timestamp.*finite/);
+    expect(bad(42)).toThrow(/execution.*must be an object/);
+    expect(bad('nope')).toThrow(/execution.*must be an object/);
+    expect(bad(null)).toThrow(/execution.*must be an object/);
   });
 
-  it('round-trips an operation marked status: "failed" through parseScript', () => {
-    // Drives the `o.status === "failed"` branch of parseScript so
-    // the field copies onto the resulting QcScriptOperation. The
-    // serializeHistory equivalent already covers the other half of
-    // the round-trip.
-    const script = parseScript({
-      version: '1',
-      createdAt: '2024-01-01T00:00:00.000Z',
-      window: SAMPLE_WINDOW,
-      operations: [
-        { method: 'VALUE_THRESHOLD', args: [], status: 'failed' },
-      ],
-    });
-    expect(script.operations[0].status).toBe('failed');
+  it('rejects non-finite numeric execution fields', () => {
+    const bad = (field: string, value: unknown) => () =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [
+          { method: 'VALUE_THRESHOLD', args: [], execution: { [field]: value } },
+        ],
+      });
+    expect(bad('startedAt', '1745')).toThrow(/execution\.startedAt.*finite/);
+    expect(bad('durationMs', NaN)).toThrow(/execution\.durationMs.*finite/);
+    expect(bad('datasetSize', Infinity)).toThrow(/execution\.datasetSize.*finite/);
+    expect(bad('selectionSize', null)).toThrow(/execution\.selectionSize.*finite/);
+  });
+
+  it('rejects invalid execution.status / execution.mode enum values', () => {
+    const badStatus = () =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [
+          { method: 'VALUE_THRESHOLD', args: [], execution: { status: 'ok' } },
+        ],
+      });
+    const badMode = () =>
+      parseScript({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [
+          { method: 'VALUE_THRESHOLD', args: [], execution: { mode: 'serverless' } },
+        ],
+      });
+    expect(badStatus).toThrow(/execution\.status.*"success".*"failed"/);
+    expect(badMode).toThrow(/execution\.mode.*"worker".*"inline"/);
   });
 });
 
@@ -465,19 +525,31 @@ describe('applyScript — round-trip', () => {
     expect(fresh.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
   });
 
-  it('replay re-stamps HistoryItem.timestamp with Date.now() and ignores the persisted value', async () => {
-    // Persisted timestamp is intentionally far in the past — if the
-    // loader forwarded it, the replayed entry would carry that
-    // antique stamp. The contract is that it does NOT: dispatch
-    // stamps a fresh `Date.now()` for the new execution, leaving the
-    // saved value untouched in the script for later audit.
-    const PERSISTED = Date.UTC(2020, 0, 1); // 2020-01-01
+  it('replay builds a fresh HistoryExecution and ignores the persisted execution audit data', async () => {
+    // The persisted execution data is intentionally implausible
+    // for a replay run — old timestamp, mode that doesn't match
+    // local calibration, a fake duration. The contract is that
+    // the dispatch site stamps its own execution record for the
+    // new run, leaving the saved one untouched in the script for
+    // later audit.
+    const PERSISTED_STARTED = Date.UTC(2020, 0, 1);
     const script = parseScript({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [
-        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], timestamp: PERSISTED },
+        {
+          method: 'VALUE_THRESHOLD',
+          args: [{ 'Greater than': 5 }],
+          execution: {
+            startedAt: PERSISTED_STARTED,
+            status: 'success',
+            durationMs: 9999,
+            mode: 'worker',
+            datasetSize: 12345,
+            selectionSize: 99,
+          },
+        },
       ],
     });
 
@@ -487,15 +559,23 @@ describe('applyScript — round-trip', () => {
     await applyScript(fresh, script);
     const after = Date.now();
 
-    const ts = fresh.history[0].timestamp;
-    expect(typeof ts).toBe('number');
-    expect(ts).not.toBe(PERSISTED);
-    expect(ts).toBeGreaterThanOrEqual(before);
-    expect(ts).toBeLessThanOrEqual(after);
-    // The original script object is unchanged — the saved value
-    // survives for later audit even though replay overwrote the
-    // in-memory field.
-    expect(script.operations[0].timestamp).toBe(PERSISTED);
+    const exec = fresh.history[0].execution;
+    expect(typeof exec.startedAt).toBe('number');
+    expect(exec.startedAt).not.toBe(PERSISTED_STARTED);
+    expect(exec.startedAt).toBeGreaterThanOrEqual(before);
+    expect(exec.startedAt).toBeLessThanOrEqual(after);
+    // The replay's runtime values reflect the actual execution,
+    // not the persisted audit numbers.
+    expect(exec.durationMs).not.toBe(9999);
+    expect(exec.datasetSize).toBe(20);  // the fresh record's size
+    expect(exec.inFlight).toBe(false);
+    expect(exec.status).toBe('success');
+    // The original script object is unchanged — saved audit data
+    // survives for later inspection even though replay overwrote
+    // the in-memory field.
+    expect(script.operations[0].execution?.startedAt).toBe(PERSISTED_STARTED);
+    expect(script.operations[0].execution?.durationMs).toBe(9999);
+    expect(script.operations[0].execution?.datasetSize).toBe(12345);
   });
 
   it('reports failures via ApplyScriptReport without aborting the rest of the script', async () => {
@@ -527,9 +607,9 @@ describe('applyScript — round-trip', () => {
     expect(report.failed[0].index).toBe(0);
     expect(report.failed[0].method).toBe('VALUE_THRESHOLD');
     expect(report.applied).toBe(2);
-    // The failed entry stays in history with status: "failed" so
-    // the UI can render its badge.
-    const failedEntry = fresh.history.find(h => h.status === 'failed');
+    // The failed entry stays in history with execution.status:
+    // "failed" so the UI can render its badge.
+    const failedEntry = fresh.history.find(h => h.execution.status === 'failed');
     expect(failedEntry).toBeDefined();
     expect(failedEntry?.method).toBe('VALUE_THRESHOLD');
   });

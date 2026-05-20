@@ -223,11 +223,16 @@ last `reload()`. Each `HistoryItem`:
 {
   method: EnumEditOperations | EnumFilterOperations,
   args?: any[],
-  selected?: number[],    // index list this op produced (filters) or consumed (edits)
-  duration?: number,      // wall-clock ms
-  status?: 'success' | 'failed',
-  executionMode?: 'worker' | 'inline',  // set by dispatchAction / dispatchFilter
-  isLoading: boolean,
+  selected?: number[],          // index list this op produced (filters) or consumed (edits)
+  execution: {
+    startedAt: number,          // wall-clock epoch-ms at push time
+    inFlight: boolean,          // true until the handler resolves
+    status?: 'success' | 'failed',
+    durationMs?: number,        // wall-clock ms (set at resolve)
+    mode?: 'worker' | 'inline', // calibration routing decision
+    datasetSize?: number,       // observation count at dispatch time
+    selectionSize?: number,     // indices the op acted on
+  },
 }
 ```
 

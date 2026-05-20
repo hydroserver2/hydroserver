@@ -187,10 +187,28 @@ are captured in the report but do not abort.
 {
   method: EnumEditOperations | EnumFilterOperations,
   args: any[],
-  status?: 'success' | 'failed',       // round-trips author-time failures
-  timestamp?: number,                   // epoch-ms when the op was first dispatched
+  execution?: QcScriptExecution,
 }
 ```
+
+### `interface QcScriptExecution`
+
+```ts
+{
+  startedAt?: number,                  // epoch-ms when the op was first dispatched
+  status?: 'success' | 'failed',
+  durationMs?: number,
+  mode?: 'worker' | 'inline',
+  datasetSize?: number,                // observation count at dispatch time
+  selectionSize?: number,              // indices the op acted on
+}
+```
+
+Every field is optional so pre-v0.1.x scripts (which had no
+`execution` field) still load. The replay path stamps fresh runtime
+values onto `HistoryItem.execution`; the persisted record survives
+verbatim for audit. `parseScript` rejects non-finite numbers and
+unknown enum values on any present field.
 
 ### `interface QcScriptWindow`
 
@@ -313,7 +331,7 @@ formatDuration(ms: number): string     // "1d 2h 3m 4s"
 ### `measureEllapsedTime<T>(fn: () => Promise<T> | T): Promise<{ result: T; duration: number }>`
 
 Wrap any thunk with wall-clock measurement. Used by dispatch to fill
-`HistoryItem.duration`.
+`HistoryItem.execution.durationMs`.
 
 ## Types
 
@@ -322,27 +340,51 @@ Wrap any thunk with wall-clock measurement. Used by dispatch to fill
 ```ts
 {
   method: EnumEditOperations | EnumFilterOperations,
-  isLoading: boolean,
   args?: any[],
-  duration?: number,
   selected?: number[],
-  status?: 'success' | 'failed',
-  executionMode?: 'worker' | 'inline',
-  timestamp?: number,   // wall-clock epoch-ms stamped at push time
+  execution: HistoryExecution,
 }
 ```
 
-`timestamp` is set by `dispatchAction` / `dispatchFilter` when the
-entry is first pushed onto `history`, so it reflects when the
-operation actually ran — including re-stamps from `undo()` / `redo()`
-/ `applyScript` replays. `serializeHistory` persists the value into
-the script's per-operation entry (see `HISTORY_SCRIPT.md`) so the
-saved script preserves the authoring timeline. `applyScript` does
-**not** forward the persisted value to the dispatcher; the new
-in-memory entry stamps a fresh `Date.now()` so the runtime field
-always reflects the current session's execution. Saved scripts hold
-"originally run at …"; the live `HistoryItem.timestamp` holds
-"ran in this session at …".
+`execution` is always present and carries every per-dispatch
+runtime fact. See below for the field-by-field contract.
+
+### `interface HistoryExecution`
+
+```ts
+{
+  startedAt: number,                   // wall-clock epoch-ms stamped at push time
+  inFlight: boolean,                   // true until the dispatch resolves
+  status?: 'success' | 'failed',       // undefined while inFlight
+  durationMs?: number,                 // undefined while inFlight
+  mode?: 'worker' | 'inline',          // routing decision the calibration layer made
+  datasetSize?: number,                // observation count at dispatch time
+  selectionSize?: number,              // indices the op acted on
+}
+```
+
+`execution` populates in two phases:
+
+- **Push time** (synchronous, before the handler runs): `startedAt`,
+  `inFlight: true`, `datasetSize`, and (for selection-consuming
+  edits) `selectionSize`.
+- **Resolve time** (after the handler returns or throws): `status`,
+  `durationMs`, `mode`, `inFlight: false`, and (for filters)
+  `selectionSize` (populated from the produced selection).
+
+The qc-app reads this object to drive the EditHistory UI (per-row
+spinner via `inFlight`, failure badge via `status`, duration text
+via `durationMs`, dev-only worker/inline chip via `mode`).
+
+`startedAt` is re-stamped on every replay (`undo` / `redo` /
+`applyScript`) so the in-memory value always reflects the current
+session's execution. `serializeHistory` persists the runtime
+record into the script's per-op `execution` field for audit;
+`applyScript` does NOT forward the persisted record onto the new
+`HistoryItem.execution` — dispatch builds a fresh one. Saved
+scripts hold "originally ran like this at this size on this mode";
+the live `HistoryItem.execution` holds "ran in this session at
+this size on this mode."
 
 ### `interface GraphSeries`
 

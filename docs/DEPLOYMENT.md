@@ -138,11 +138,12 @@ wherever the consumer's bundler put it.
 
 ## Observability
 
-Library-level. The dispatcher writes a few timings into each
-`HistoryItem` (`duration`, `executionMode`), so the consumer can read
-them for in-process telemetry. There is no built-in remote reporting,
-no Sentry / Datadog integration. The consumer is responsible for any
-RUM-style observability.
+Library-level. The dispatcher writes a per-dispatch `execution`
+record onto each `HistoryItem` (timing, worker/inline mode, dataset
+shape at dispatch, selection size, status), so the consumer can
+read it for in-process telemetry. There is no built-in remote
+reporting, no Sentry / Datadog integration. The consumer is
+responsible for any RUM-style observability.
 
 The recommended hooks for a consumer that wants to observe:
 
@@ -150,7 +151,8 @@ The recommended hooks for a consumer that wants to observe:
 record.dispatch(...)                       // wrap this call
 // after it returns:
 const last = record.history[record.history.length - 1]
-console.log(last.method, last.duration, last.executionMode, last.status)
+const e = last.execution
+console.log(last.method, e.durationMs, e.mode, e.status, e.datasetSize, e.selectionSize)
 ```
 
 `onCalibrationChange(cb)` lets you observe (re-)benchmark events; the

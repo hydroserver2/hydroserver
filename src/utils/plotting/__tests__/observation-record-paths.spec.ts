@@ -140,7 +140,7 @@ describe('ObservationRecord — worker paths', () => {
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
     expect(last.method).toBe(EnumEditOperations.CHANGE_VALUES)
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
   })
 
   it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
@@ -153,7 +153,7 @@ describe('ObservationRecord — worker paths', () => {
       [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 100],
     ])
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('inline')
+    expect(last.execution.mode).toBe('inline')
     expect(rec.dataY[0]).toBe(100)
   })
 
@@ -169,7 +169,7 @@ describe('ObservationRecord — worker paths', () => {
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
   })
 
   it('SHIFT_DATETIMES fans out to workers', async () => {
@@ -180,7 +180,7 @@ describe('ObservationRecord — worker paths', () => {
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
     expect(rec.dataX.length).toBe(originalLen)
   })
 
@@ -192,7 +192,7 @@ describe('ObservationRecord — worker paths', () => {
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
     expect(rec.dataX.length).toBe(originalLen - 3)
   })
 
@@ -205,7 +205,7 @@ describe('ObservationRecord — worker paths', () => {
     await rec.dispatch(EnumEditOperations.ADD_POINTS, pts)
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
     expect(rec.dataX.length).toBe(before + 2)
   })
 
@@ -221,7 +221,7 @@ describe('ObservationRecord — worker paths', () => {
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
     // Interior points should have shifted from their baseline.
     expect(rec.dataY[5]).not.toBe(baseline[5])
   })
@@ -249,7 +249,7 @@ describe('ObservationRecord — worker paths', () => {
     )
     await flushMicrotasks()
     const last = local.history[local.history.length - 1]
-    expect(last.executionMode).toBe('worker')
+    expect(last.execution.mode).toBe('worker')
     expect(local.dataX.length).toBeGreaterThan(before)
   })
 
@@ -258,7 +258,7 @@ describe('ObservationRecord — worker paths', () => {
       EnumFilterOperations.VALUE_THRESHOLD,
       { [FilterOperation.GTE]: 200 }
     )
-    expect(rec.history[rec.history.length - 1].executionMode).toBe('worker')
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
     // dataY = [0, 10, 20, ...], so indexes 20..39 have y >= 200.
     expect(selection[0]).toBe(20)
     expect(selection[selection.length - 1]).toBe(39)
@@ -270,7 +270,7 @@ describe('ObservationRecord — worker paths', () => {
       FilterOperation.GTE,
       10
     )
-    expect(rec.history[rec.history.length - 1].executionMode).toBe('worker')
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
     // Uniform step = 10, so every adjacent Δ matches.
     expect(selection.length).toBe(rec.dataY.length - 1)
   })
@@ -281,7 +281,7 @@ describe('ObservationRecord — worker paths', () => {
       FilterOperation.GT,
       0.5
     )
-    expect(rec.history[rec.history.length - 1].executionMode).toBe('worker')
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
     // (10-0)/0 is Infinity → matches; (20-10)/10 = 1 > 0.5 → matches.
     expect(selection.length).toBeGreaterThan(0)
   })
@@ -305,7 +305,7 @@ describe('ObservationRecord — worker paths', () => {
       30,
       TimeUnit.MINUTE
     )
-    expect(local.history[local.history.length - 1].executionMode).toBe('worker')
+    expect(local.history[local.history.length - 1].execution.mode).toBe('worker')
     expect(selection.sort((a, b) => a - b)).toEqual([1, 2])
   })
 
@@ -320,7 +320,7 @@ describe('ObservationRecord — worker paths', () => {
       EnumFilterOperations.PERSISTENCE,
       20
     )
-    expect(local.history[local.history.length - 1].executionMode).toBe('worker')
+    expect(local.history[local.history.length - 1].execution.mode).toBe('worker')
     expect(selection.length).toBe(60)
   })
 })
@@ -593,6 +593,6 @@ describe('ObservationRecord — internal helpers via dispatch', () => {
     // that the dispatch completed without throwing, which means
     // both groups were processed.
     const last = rec.history[rec.history.length - 1]
-    expect(last.status).not.toBe('failed')
+    expect(last.execution.status).not.toBe('failed')
   })
 })

@@ -135,9 +135,10 @@ is the obvious next step if/when a non-browser consumer appears.
   round-trip with explicit version handling.
 - Calibration is opt-in and degrades gracefully; first-session
   fallback profile is intentionally conservative.
-- Worker / inline routing is observable via `HistoryItem.executionMode`,
-  which is what the qc-app surfaces as a dev-mode badge — concrete,
-  per-call signal.
+- Worker / inline routing (and dataset / selection sizes, timing,
+  status) is observable via the per-entry `HistoryItem.execution`
+  record. The qc-app surfaces the mode as a dev-mode badge —
+  concrete, per-call signal.
 
 ## See also
 

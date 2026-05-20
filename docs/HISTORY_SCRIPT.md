@@ -35,10 +35,9 @@ The on-disk JSON IS the wire format.
    target dataset's full extent matches the author-time extent.
 6. **Keep parameter args, not derived state.** The script captures
    "what the user told the operation to do," not "what the operation
-   produced." Derived data (selection indices, per-entry timing) is
-   recomputed on replay; only inputs, per-op success/failure, and
-   the original authoring `timestamp` (kept verbatim for audit) are
-   persisted.
+   produced." Derived data (selection indices) is recomputed on
+   replay; only inputs and a per-op `execution` audit record (timing,
+   mode, dataset shape — kept verbatim) are persisted.
 
 ## Non-goals
 
@@ -67,13 +66,68 @@ The on-disk JSON IS the wire format.
     "endDate":   "2024-06-30T23:59:59.999Z"
   },
   "operations": [
-    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }], "timestamp": 1745597000000 },
-    { "method": "DELETE_POINTS",   "args": [],                         "timestamp": 1745597015000 },
-    { "method": "FILL_GAPS",       "args": [[15, "m"], [5, "m"], true, -9999], "timestamp": 1745597032000 },
-    { "method": "ADD_POINTS",      "args": [[[1737000000000, 12.4], [1737003600000, 12.5]]], "timestamp": 1745597048000 }
+    {
+      "method": "SELECTION",
+      "args": [[127, 128, 129, 415, 416, 502]],
+      "execution": {
+        "startedAt": 1745597008000,
+        "status": "success",
+        "durationMs": 0.6,
+        "mode": "inline",
+        "datasetSize": 12000,
+        "selectionSize": 6
+      }
+    },
+    {
+      "method": "DELETE_POINTS",
+      "args": [],
+      "execution": {
+        "startedAt": 1745597015000,
+        "status": "success",
+        "durationMs": 4.1,
+        "mode": "inline",
+        "datasetSize": 12000,
+        "selectionSize": 6
+      }
+    },
+    {
+      "method": "FILL_GAPS",
+      "args": [[15, "m"], [5, "m"], true, -9999],
+      "execution": {
+        "startedAt": 1745597032000,
+        "status": "success",
+        "durationMs": 240,
+        "mode": "worker",
+        "datasetSize": 11994
+      }
+    },
+    {
+      "method": "ADD_POINTS",
+      "args": [[[1737000000000, 12.4], [1737003600000, 12.5]]],
+      "execution": {
+        "startedAt": 1745597048000,
+        "status": "success",
+        "durationMs": 6.2,
+        "mode": "inline",
+        "datasetSize": 12012
+      }
+    }
   ]
 }
 ```
+
+`DELETE_POINTS` carries `args: []` because its target indices come
+from the preceding `SELECTION` entry — see the per-method table
+below and the "selection-coupling" note. The pattern is
+intentional: index-typed args don't live on selection-consuming
+edits, they live on the `SELECTION` (or the filter) immediately
+before them so a single source of indices feeds every downstream
+op without duplication. The five other selection-consuming
+edits — `INTERPOLATE`, `SHIFT_DATETIMES`, `DRIFT_CORRECTION`,
+`CHANGE_VALUES`, `ASSIGN_*_BULK` — follow the same contract: any
+script that includes one must place a `SELECTION` (or a non-
+SELECTION filter whose `selected` it should consume) immediately
+before it.
 
 ### Top-level fields
 
@@ -93,32 +147,46 @@ The on-disk JSON IS the wire format.
 |-------------|---------|----------|--------------------------------------------------------------------|
 | `method`    | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
 | `args`      | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
-| `status`    | string  | no       | `"failed"` if the operation threw at author-time, omitted otherwise. Round-tripped on save/load so failed steps stay visibly failed. |
-| `timestamp` | number  | no       | Wall-clock epoch-milliseconds (UTC) when the operation was originally dispatched. Preserved verbatim for audit / display. Omitted in pre-v1.1 scripts and may be absent on hand-written JSON; the loader accepts both shapes. |
+| `execution` | object  | no       | Per-dispatch audit record (timing, mode, dataset shape, status). See below. Omitted in pre-v0.1.x scripts and may be absent on hand-written JSON; the loader accepts both shapes. |
 
 The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 `[method, ...args]`. A loaded script is replayed via
 `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
 
-`timestamp` is **record-keeping, not replay input.** The loader does
-not forward it to the dispatcher: `dispatchAction` / `dispatchFilter`
-stamp fresh `Date.now()` values at replay time so the in-memory
-`HistoryItem.timestamp` reflects when the operation actually ran in
-the current session. The persisted value survives in the saved
-script for later audit (and for any consumer that wants to show
-"originally run at …" alongside the replay time).
+### `execution` sub-fields
+
+| Field           | Type    | Notes                                                                       |
+|-----------------|---------|-----------------------------------------------------------------------------|
+| `startedAt`     | number  | Wall-clock epoch-milliseconds (UTC) when the dispatch site pushed the entry. |
+| `status`        | string  | `"success"` or `"failed"`. Failure surfaces in the qc-app UI as a red badge. |
+| `durationMs`    | number  | Wall-clock duration of the handler. Useful for retrospective perf review.   |
+| `mode`          | string  | `"worker"` or `"inline"` — the calibration layer's routing decision.        |
+| `datasetSize`   | number  | Observation count at dispatch time. Reflects the pre-edit shape.            |
+| `selectionSize` | number  | Indices the op acted on (filter's produced selection, or preceding SELECTION for selection-consuming edits). |
+
+Every sub-field is optional; the loader validates the type of any
+present value (finite number / `"success"` \| `"failed"` /
+`"worker"` \| `"inline"`) and rejects malformed shapes.
+
+`execution` is **record-keeping, not replay input.** The loader does
+not forward it to the dispatcher: `dispatchAction` /
+`dispatchFilter` build a fresh `HistoryExecution` for the new run
+so the in-memory record reflects the current session. The persisted
+record survives in the saved script for later audit (and for any
+consumer that wants to show "originally ran inline on a 50k record
+in 240ms" alongside the replay's numbers).
 
 ---
 
 ## Per-method serialization rules
 
-The runtime `HistoryItem` carries fields the script doesn't need:
-`isLoading`, `duration`, `executionMode`, `selected`. These are
-either ephemeral (loading state, timing) or recomputable on replay
-(`selected`). The script persists `method`, `args`, the optional
-`status` field (used to round-trip author-time failures), and the
-optional `timestamp` (the original push-time stamp, preserved for
-audit even though the replay re-stamps the runtime `HistoryItem`).
+The runtime `HistoryItem` carries `selected` (the indices the op
+produced) and `execution.inFlight` (true until the handler resolves)
+that the script doesn't need: `selected` is recomputed on replay and
+`inFlight` is meaningless for a serialized entry. Everything else on
+`execution` (`startedAt`, `status`, `durationMs`, `mode`,
+`datasetSize`, `selectionSize`) round-trips verbatim into the
+`execution` audit object on the persisted op.
 
 **Every method's `args` serializes verbatim.** No per-method elide
 or re-inject machinery. The save layer is `JSON.stringify`-grade
@@ -175,7 +243,19 @@ trailing range tuple.
 Operations marked **Yes** have no selection-related args of their
 own. They each route through a thin `*FromSelection` dispatch
 wrapper inside qc-utils that reads the target indices off
-`history[length - 2].selected`.
+`history[length - 2].selected`. Concretely:
+
+- A script `[…, SELECTION([3,4,5]), DELETE_POINTS]` deletes
+  indices 3, 4, and 5.
+- A script `[…, VALUE_THRESHOLD({"Greater than": 100}), DELETE_POINTS]`
+  is **also valid** — the filter's own `selected` array is what
+  `DELETE_POINTS` reads.
+- A script that has `DELETE_POINTS` at index 0 (no prior entry),
+  or whose preceding entry is another selection-consuming edit
+  rather than a filter or `SELECTION`, will throw at replay time
+  because `history[-2].selected` is empty / undefined. The
+  loader does not pre-validate this — it surfaces as a per-op
+  failure in `ApplyScriptReport`.
 
 ---
 
@@ -247,9 +327,9 @@ interface ApplyScriptReport {
 - `applyScript` assumes the consumer has already loaded the script's
   data window into the record (see "Load workflow" below). It clears
   history + redo, then dispatches the operations in order. Per-op
-  failures are caught, marked on the resulting `HistoryItem` with
-  `status: "failed"`, and surfaced in the returned report — they
-  never abort the remainder of the replay.
+  failures are caught, marked on the resulting `HistoryItem` as
+  `execution.status === "failed"`, and surfaced in the returned
+  report — they never abort the remainder of the replay.
 
 ### Load workflow
 
@@ -317,15 +397,17 @@ export function useQcScript() {
 ## Failed-operation handling
 
 Operations that throw during dispatch (whether at author time or
-during a script replay) will indicate failure through `HistoryItem.status`
+during a script replay) indicate failure through
+`HistoryItem.execution.status`:
 
 1. In `dispatchAction` and `dispatchFilter`'s `catch` blocks, set
-   `stored.status = "failed"` on the `HistoryItem`.
-2. Round-trip `status` through `serializeHistory` / `parseScript` so
-   a script saved with failed steps loads back with those steps still
-   marked failed (no silent re-success on reload).
+   `stored.execution.status = "failed"` and `inFlight = false`.
+2. Round-trip `execution.status` through `serializeHistory` /
+   `parseScript` so a script saved with failed steps loads back
+   with those steps still marked failed (no silent re-success on
+   reload).
 3. Surface the badge in `EditHistory.vue` — a small red `mdi-alert`
-   chip next to the entry's duration would be enough.
+   chip next to the entry's duration.
 
 `ApplyScriptReport.failed` is the programmatic surface for the same
 information; the UI consumes it for the post-load Snackbar but the

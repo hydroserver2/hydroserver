@@ -426,11 +426,27 @@ export class ObservationRecord {
       // survives the internal re-dispatch.
       if (!this._isReplaying) this.redoStack.length = 0;
 
+      // Selection-consuming edits read the preceding SELECTION's
+      // size at push time so the audit record reflects what the
+      // handler will operate on. `consumesPrecedingSelection` gates
+      // the read so non-selection edits (ADD_POINTS, FILL_GAPS)
+      // don't pick up a stale value.
+      const prevSelLen =
+        consumesPrecedingSelection(action, args) &&
+          this.history[this.history.length - 1]?.method ===
+          EnumFilterOperations.SELECTION
+          ? this.history[this.history.length - 1].selected?.length
+          : undefined;
+
       historyItem = {
         method: action,
         args,
-        isLoading: true,
-        timestamp: Date.now(),
+        execution: {
+          startedAt: Date.now(),
+          inFlight: true,
+          datasetSize: this.dataset.source.x?.length ?? 0,
+          selectionSize: prevSelLen,
+        },
       };
       this.history.push(historyItem);
 
@@ -465,10 +481,13 @@ export class ObservationRecord {
       const newIdx = this.history.indexOf(historyItem);
       const stored = newIdx >= 0 ? this.history[newIdx] : undefined;
       if (stored) {
-        stored.duration = measurement.duration;
-        stored.executionMode = this._pendingExecutionMode;
-        stored.status = "success";
-        stored.isLoading = false;
+        stored.execution = {
+          ...stored.execution,
+          status: "success",
+          durationMs: measurement.duration,
+          mode: this._pendingExecutionMode,
+          inFlight: false,
+        };
       }
     } catch (e) {
       if (import.meta.env.MODE === "development") {
@@ -480,15 +499,18 @@ export class ObservationRecord {
       }
       // Mark the entry as failed so the UI can surface it and
       // script save/load round-trips the failure state. Without
-      // this the spinner would also be stuck on `isLoading: true`.
+      // this the spinner would also be stuck on `inFlight: true`.
       // `historyItem` is null when the failure happened before the
       // entry was pushed (e.g. unknown action method).
       if (historyItem) {
         const failedIdx = this.history.indexOf(historyItem);
         const failed = failedIdx >= 0 ? this.history[failedIdx] : undefined;
         if (failed) {
-          failed.status = "failed";
-          failed.isLoading = false;
+          failed.execution = {
+            ...failed.execution,
+            status: "failed",
+            inFlight: false,
+          };
         }
       }
     }
@@ -571,8 +593,13 @@ export class ObservationRecord {
       historyItem = {
         method: action,
         args: args,
-        isLoading: true,
-        timestamp: Date.now(),
+        execution: {
+          startedAt: Date.now(),
+          inFlight: true,
+          datasetSize: this.dataset.source.x?.length ?? 0,
+          // `selectionSize` fills in at resolve time from the filter's
+          // produced selection — leave it `undefined` here.
+        },
       };
 
       const lastItem = this.history[this.history.length - 1];
@@ -631,11 +658,15 @@ export class ObservationRecord {
       const newIdx = this.history.indexOf(historyItem);
       const stored = newIdx >= 0 ? this.history[newIdx] : undefined;
       if (stored) {
-        stored.duration = measurement.duration;
-        stored.executionMode = this._pendingExecutionMode;
         stored.selected = measurement.response;
-        stored.status = "success";
-        stored.isLoading = false;
+        stored.execution = {
+          ...stored.execution,
+          status: "success",
+          durationMs: measurement.duration,
+          mode: this._pendingExecutionMode,
+          selectionSize: measurement.response?.length,
+          inFlight: false,
+        };
       }
     } catch (e) {
       console.log(
@@ -649,8 +680,11 @@ export class ObservationRecord {
         const failedIdx = this.history.indexOf(historyItem);
         const failed = failedIdx >= 0 ? this.history[failedIdx] : undefined;
         if (failed) {
-          failed.status = "failed";
-          failed.isLoading = false;
+          failed.execution = {
+            ...failed.execution,
+            status: "failed",
+            inFlight: false,
+          };
         }
       }
     }
