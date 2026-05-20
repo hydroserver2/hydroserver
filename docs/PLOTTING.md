@@ -185,4 +185,3 @@ calibration tests, and kernel correctness tests live in `qc-utils`.
 - [PERFORMANCE.md](./PERFORMANCE.md) for viewport windowing and
   scattergl density tradeoffs
 - `src/store/plotly.ts` is the Pinia store this layer reads + writes
-- `qc-utils/docs/ARCHITECTURE.md` covers what happens after `dispatch`

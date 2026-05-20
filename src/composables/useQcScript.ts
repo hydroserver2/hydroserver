@@ -9,8 +9,6 @@
  *   - fetching the script's window into the active datastream's
  *     `ObservationRecord` before replay (qc-utils itself is data-
  *     agnostic; the consumer drives the data fetch)
- *
- * See `qc-utils/docs/HISTORY_SCRIPT.md` for the format spec.
  */
 
 import { storeToRefs } from 'pinia'
