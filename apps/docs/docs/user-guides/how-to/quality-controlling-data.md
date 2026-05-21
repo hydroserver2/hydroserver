@@ -295,7 +295,7 @@ roster of currently plotted datastreams. Each row carries:
 - A drag handle to reorder the list (drag the QC target's row to
   promote / demote it; the line colors track the order).
 - A colored radio dot that picks the **QC target**. The active row is
-  tinted; the other rows render in their reference colour.
+  tinted; the other rows render in their reference color.
 - An **eye** toggle that hides the trace from the plot without
   unplotting it. Hidden rows render with a strikethrough.
 - A **Y-axis** toggle (non-QC rows only) that collapses that
@@ -367,7 +367,7 @@ different and worth knowing about when you're juggling several
 datastreams:
 
 - **X-axis zoom**: drag a horizontal box on the time grid (Zoom
-  tool), or scroll over the plot. Every axis stays time-synchronised.
+  tool), or scroll over the plot. Every axis stays time-synchronized.
 - **X-axis pan**: enable Pan in the toolbar, then drag the plot
   body. The context plot at the bottom is also draggable; it acts
   as an overview thumbnail.
@@ -380,7 +380,7 @@ datastreams:
   default zoom (does not change the begin/end dates in the
   sidebar).
 - **Fit Y/X to visible**: the collapse icons in the toolbar
-  rescales The X or Y axis to the currently visible points. Handy
+  rescale the X or Y axis to the currently visible points. Handy
   after a deep zoom when one trace ends up off-axis.
 - **Undo zoom / Redo zoom**: the curved-arrow icons at the far
   left of the modebar step backward and forward through the
