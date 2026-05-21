@@ -27,7 +27,7 @@ class SensorMixin(SensorThingsUtils):
             sensors = sensors.filter(pk__in=group_by[1])
             sensor_list = list(sensors)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[s.id for s in sensor_list])
+                "__UNGROUPED__": CollectionDTO(entity_ids=[sensor.id for sensor in sensor_list])
             }
         else:
             entity_count = sensors.count() if count else None
@@ -35,7 +35,7 @@ class SensorMixin(SensorThingsUtils):
             collections = {
                 "__UNGROUPED__": CollectionDTO(
                     entity_count=entity_count,
-                    entity_ids=[s.id for s in sensor_list],
+                    entity_ids=[sensor.id for sensor in sensor_list],
                 )
             }
 
