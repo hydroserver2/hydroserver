@@ -15,3 +15,4 @@ In this section, we provide detailed documentation for all HydroServer functiona
 * **[Configuring Python ETL Pipelines](/user-guides/how-to/configuring-python-etl-pipelines.md)**: Learn how to configure Python ETL pipelines to load data into HydroServer.
 * **[Loading Data with the SensorThings API](/user-guides/how-to/loading-data-with-sensorthings.md)**: Learn how to load data into HydroServer through HydroServer's SensorThings API – for Python or other programming languages.
 * **[Retrieving Data with the SensorThings API](/user-guides/how-to/retrieving-data-with-sensorthings.md)**: Learn how to retrieve data from HydroServer using the SensorThings API – for Python or other programming languages.
+* **[Loading Data from an Internet Connected Datalogger](/user-guides/how-to/loading-data-with-datalogger.md)**: Learn how to load data from an Internet connected datalogger with example code.

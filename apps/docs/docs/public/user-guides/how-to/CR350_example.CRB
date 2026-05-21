@@ -1,0 +1,138 @@
+' =============================================================================
+' Title: Example of POSTing data to HydroServer from CSI Datalogger
+' Datalogger: CR350 Series
+' Date: 2026-05-18
+' Program Author: Jeff Horsburgh
+' Description: This program scans the battery voltage and panel temperature
+' on a CR350 datalogger every 1 second and records values to a data table every
+' one minute. The program includes a slow sequence that runs a subroutine to
+' POST data from the most recent record in the data table to HydroServer every
+' one minute. You can modify this code to add additional or different 
+' measurements. To do this, you may need to modify the following:
+'
+' data_string: This string holds a line of values from the data table. If there
+'              there are a lot of columns you may need to make this string bigger.
+' num_datastreams: This is the number of datastreams you want to send to 
+'                  HydroServer. It assumes you are sending all of the columns 
+'                  from the data table.
+' result_string: This array holds the values after splitting the row returned 
+'                from the data table. It needs to have length num_datastreams + 1.
+' datastream_ids: This array needs to have length equal to the number of 
+'                 datastreams you are loading to HydroServer and must contain the
+'                 UUIDs of those datastreams in the same order as the columns in
+'                 the data table.
+' SERVER_ADDRESS: This constant should be the URL to the Observations endpoint on
+'                 the HydroServer you are loading data into.
+' HYDROSERVER_API_KEY: This constant should be a valid API-key for the HydroServer
+'                      workspace you are loading data into.
+' Data table name: The data table in this example is called "Output". If you use
+'                  a different data table name, you need to change it in the 
+'                  get_record() function in the subroutine that POSTs data to 
+'                  HydroServer.
+'
+' IMPORTANT NOTE: HydroServer stores all timestamps in UTC time. If your
+'                 datalogger clock is set to something other than UTC time you
+'                 should localize your timstamps to UTC time before sending them
+'                 to HydroServer. This might best be done using the datalogger's
+'                 UTC Offset setting.
+' =============================================================================
+' Declare Public Variables
+Public PTemp, Batt_volt ' Observation variables
+Public data_string As String * 100 ' String to hold GetRecord results (size as needed)
+Public post_header As String * 300 ' String to hold the header of the HTTP POST request
+Public test_header As String * 300 ' Test variable if you want to see the POST header sent
+Public i ' Loop counter variable
+Public json_string As String * 300 ' String to hold the JOSN payload (size as needed)
+Public http_post_tx
+Public http_response As String * 500 ' String for server response from POST request
+' -----------------------------------------------------------------------------
+' Declare HydroServer public variables
+' -----------------------------------------------------------------------------
+' Set number of datastreams in the output (size as needed)
+Public num_datastreams = 2 
+' String array to hold result of splitting data_string (size to be num_datastreams + 1)
+Public result_string(3) As String * 25 
+' Set the HydroServer UUIDs of the datastreams you will load data to. The order 
+' of datastream UUIDs in the array should match the order of the values in the 
+' output data table
+Public datastream_ids(2) As String * 36 = {"019e3cf5-8ded-7801-9412-6d761f89c387","019e3cf4-48ba-706e-a960-8ceedad9483f"}
+
+' -----------------------------------------------------------------------------
+' Declare HydroServer Constants
+' -----------------------------------------------------------------------------
+Const SERVER_ADDRESS = "https://playground.hydroserver.org/api/sensorthings/v1.1/Observations"
+Const HYDROSERVER_API_KEY = "SbvNvkE10VrRf-BuUCBj_UUfRtPGdJtx5lrqTR6g1bFw-e5MCvtVtzE"
+
+' Define Data Tables.
+DataTable (Output,1,-1) ' Set table size to # of records, or -1 to autoallocate.
+	DataInterval (0,1,Min,10)
+	' Define the Datastreams (columns) to POST to HydroServer in the order to be POSTed
+	' The program retrieves the most recent row from the table and POSTs the data
+	Minimum (1,Batt_volt,FP2,False,False)
+	Average (1,PTemp,FP2,False)
+EndTable
+
+' -----------------------------------------------------------------------------
+' Define subroutine to POST data to HydroServer
+' -----------------------------------------------------------------------------
+Sub post_to_hydroserver()
+  ' Get the latest row from the data table holding values to POST to HydroServ er
+  GetRecord (data_string,Output,1)
+  ' Split the data_string out to separate the results
+  ' One element for the date/time and one element for each data column
+  SplitStr (result_string(1),data_string,",",num_datastreams+1,5)
+  
+  ' Check to make sure there is valid data to POST
+  If result_string(2) = "NaN" Then
+    ' Bail out of the subroutine
+    Exit Sub
+  EndIf
+  
+  ' Loop through the data values and POST them one-by-one to the server
+  For i = 1 To (num_datastreams)
+    
+    ' Construct the main HTTP POST Header Srting
+    ' NOTE: The HTTPPost() function automatically prepends "POST /" onto your request
+    ' NOTE: The HTTPPost() function automatically qppends the Content-Length paramter onto your header
+    post_header = "X-API-Key: " & HYDROSERVER_API_KEY & CHR(13) & CHR(10)
+    post_header &= "Connection: close" & CHR(13) & CHR(10)
+    post_header &= "accept: application/json" & CHR(13) & CHR(10)
+    post_header &= "Content-Type: application/json" & CHR(13) & CHR(10)
+    post_header &= "Cache-Control: no-cache" & CHR(13) & CHR(10)
+    ' Preserve the constructed POST header as a public variable so you can see it
+    ' if you want in the public table. The POST request injects the response from
+    ' the server into the variable you specify to hold the header, so it changes
+    ' in the public table before you can see what is sent
+    test_header = post_header
+
+    ' Construct the JSON payload to POST to HydroServer for the current data values
+    ' The JSON syntax is minified for compactness
+    json_string = "{"    
+    json_string &= CHR(34) & "Datastream" & CHR(34) & ":{" 
+    json_string &= CHR(34) & "@iot.id" & CHR(34) & ":" 
+    json_string &= CHR(34) & datastream_ids(i) & CHR(34) & "},"
+    json_string &= CHR(34) & "phenomenonTime" & CHR(34) & ":" & result_string(1) & ","
+    json_string &= CHR(34) & "result" & CHR(34) & ":" & Replace(result_string(i+1),CHR(13) & CHR(10),"") & "}"
+    
+    ' Send the HTTP POST request
+    http_post_tx = HTTPPost (SERVER_ADDRESS,json_string,http_response,post_header)
+  Next i
+EndSub
+
+' Main Program
+BeginProg
+	Scan (1,Sec,0,0)
+	  ' Measurement instructions
+		PanelTemp (PTemp,60)
+		Battery (Batt_volt)
+		' Call Output Tables
+		CallTable Output
+	NextScan
+	SlowSequence
+	Scan (1,Min,0,0)
+	  ' POST the latest data record from the data table to HydroServer
+	  ' Set this Scan rate to match the recording rate for the data table
+	  Call post_to_hydroserver()
+	NextScan
+EndProg
+
