@@ -68,7 +68,7 @@ Read in this order:
    understand the pattern.
 6. `src/utils/plotting/calibration.ts` and `docs/CALIBRATION.md` — how
    per-call worker / inline routing works.
-7. `src/utils/plotting/script.ts` and `docs/HISTORY_SCRIPT.md` — the
+7. `src/utils/plotting/history.ts` and `docs/QC_HISTORY.md` — the
    save / load format.
 
 ## Day-to-day workflow
@@ -111,8 +111,8 @@ The pattern, learned by reading existing ops:
    - Dispatch + history test in `__tests__/observation-record.spec.ts`.
    - Calibration prediction test in `__tests__/calibration.spec.ts`.
 7. If the op should be saveable, make sure `serializeHistory` and
-   `applyScript` round-trip it. Both already handle every enum, but
-   verify with a test in `__tests__/script.spec.ts`.
+   `applyHistory` round-trip it. Both already handle every enum, but
+   verify with a test in `__tests__/history.spec.ts`.
 8. Update the consumer (qc-app) to expose a panel for the new op.
 
 ## LSP-first navigation
@@ -143,7 +143,7 @@ Use:
 
 - `README.md` is the primary entry point — exhaustive on install, quick-
   start, concepts, and the public API surface.
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md) and
+- [QC_HISTORY.md](./QC_HISTORY.md) and
   [CALIBRATION.md](./CALIBRATION.md) are the two design docs you actually
   reach for. They are long, current, and accurate.
 - Inline comments are heaviest in `calibration.ts` and
@@ -176,5 +176,5 @@ Use:
 - [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [PERFORMANCE.md](./PERFORMANCE.md)
 - [QUALITY.md](./QUALITY.md)
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md)
+- [QC_HISTORY.md](./QC_HISTORY.md)
 - [CALIBRATION.md](./CALIBRATION.md)

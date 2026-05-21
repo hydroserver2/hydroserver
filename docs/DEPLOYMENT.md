@@ -162,16 +162,16 @@ calibration cache fires it on store, refresh, and `clearCalibration`.
 
 ### Of `@uwrl/qc-utils` itself
 
-The library is forward-only — old QC scripts must still replay on newer
+The library is forward-only — old QC histories must still replay on newer
 versions. The contract is:
 
-- **`QC_SCRIPT_VERSION` is bumped** when the wire format changes
-  incompatibly. `parseScript` throws on mismatched versions. Today the
+- **`QC_HISTORY_VERSION` is bumped** when the wire format changes
+  incompatibly. `parseHistory` throws on mismatched versions. Today the
   format is at `"1"`.
-- **Adding a new op** is a minor bump. Old scripts still replay.
-- **Removing an op** is a breaking change. Old scripts that referenced
+- **Adding a new op** is a minor bump. Old QC histories still replay.
+- **Removing an op** is a breaking change. Old QC histories that referenced
   the removed op replay with a per-op failure in
-  `ApplyScriptReport.failed`, not an abort.
+  `ApplyHistoryReport.failed`, not an abort.
 - **Renaming an op** is a breaking change without an alias — also use
   `applied/failed` semantics. Better to add the new name and accept
   the old one as a deprecated alias for one minor cycle.

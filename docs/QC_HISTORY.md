@@ -1,11 +1,11 @@
-# QC History Script — Save / Load Design
+# QC History — Save / Load Design
 
 This document describes the JSON file format for serializing and
 replaying an `ObservationRecord` history, plus the consumer-side
 save/load workflow.
 
 The format is intentionally designed to be the **foundation for the
-HydroServer API** representation of a QC script — what the app saves
+HydroServer API** representation of a QC history — what the app saves
 locally today is what the backend will accept and replay tomorrow.
 The on-disk JSON IS the wire format.
 
@@ -21,19 +21,19 @@ The on-disk JSON IS the wire format.
    Consumer (UI) state and server state both stay out. Anything in the
    file is portable to a different consumer (CLI, Python notebook,
    backend replay worker).
-3. **Stay reusable.** A script doesn't pin itself to a specific
-   datastream id. The same script can be applied to any compatible
+3. **Stay reusable.** A history doesn't pin itself to a specific
+   datastream id. The same history can be applied to any compatible
    datastream — useful for templating QC across stations, or for
    re-running a procedure after the source data is replaced.
 4. **Stay forward-compatible.** A `version` field at the root lets us
    evolve the schema without breaking older files. Loaders refuse
    files they don't understand instead of silently mis-replaying.
 5. **Window-aware.** Real QC happens incrementally as data is
-   gathered. A script records the date window it was authored
+   gathered. A history records the date window it was authored
    against; loading it into a growing dataset means fetching that
-   exact window before replaying — the script does not assume the
+   exact window before replaying — the history does not assume the
    target dataset's full extent matches the author-time extent.
-6. **Keep parameter args, not derived state.** The script captures
+6. **Keep parameter args, not derived state.** The history captures
    "what the user told the operation to do," not "what the operation
    produced." Derived data (selection indices) is recomputed on
    replay; only inputs and a per-op `execution` audit record (timing,
@@ -41,10 +41,10 @@ The on-disk JSON IS the wire format.
 
 ## Non-goals
 
-- **Persisting the underlying observations.** The script applies to
+- **Persisting the underlying observations.** The history applies to
   whatever raw data the consumer hands the `ObservationRecord` at
   load time. If the data changed shape (different point count, gaps
-  appearing/disappearing) the script may not produce the same edited
+  appearing/disappearing) the history may not produce the same edited
   result — that's the consumer's concern, not the format's.
 - **Persisting qualifiers in this version.** Result-qualifier flags
   (the per-index "missing" / "estimated" / etc. codes the Qualifying
@@ -125,7 +125,7 @@ before them so a single source of indices feeds every downstream
 op without duplication. The five other selection-consuming
 edits — `INTERPOLATE`, `SHIFT_DATETIMES`, `DRIFT_CORRECTION`,
 `CHANGE_VALUES`, `ASSIGN_*_BULK` — follow the same contract: any
-script that includes one must place a `SELECTION` (or a non-
+history that includes one must place a `SELECTION` (or a non-
 SELECTION filter whose `selected` it should consume) immediately
 before it.
 
@@ -134,8 +134,8 @@ before it.
 | Field        | Type     | Required | Notes                                                                 |
 |--------------|----------|----------|-----------------------------------------------------------------------|
 | `version`    | string   | yes      | `"1"` for the current schema. Loaders reject unknown versions.        |
-| `createdAt`  | ISO-8601 | yes      | When the script was saved. Used for sorting and audit display.        |
-| `window`     | object   | yes      | The date range the script was authored against. The loader fetches this exact window before replaying. |
+| `createdAt`  | ISO-8601 | yes      | When the history was saved. Used for sorting and audit display.        |
+| `window`     | object   | yes      | The date range the history was authored against. The loader fetches this exact window before replaying. |
 | `window.startDate` | ISO-8601 | yes | Inclusive lower bound of the data window.                          |
 | `window.endDate`   | ISO-8601 | yes | Inclusive upper bound of the data window.                          |
 | `operations` | object[] | yes      | The replayable operation list (see below).                            |
@@ -147,10 +147,10 @@ before it.
 |-------------|---------|----------|--------------------------------------------------------------------|
 | `method`    | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
 | `args`      | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
-| `execution` | object  | no       | Per-dispatch audit record (timing, mode, dataset shape, status). See below. Omitted in pre-v0.1.x scripts and may be absent on hand-written JSON; the loader accepts both shapes. |
+| `execution` | object  | no       | Per-dispatch audit record (timing, mode, dataset shape, status). See below. Omitted in pre-v0.1.x histories and may be absent on hand-written JSON; the loader accepts both shapes. |
 
 The shape mirrors `ObservationRecord.dispatch`'s tuple form:
-`[method, ...args]`. A loaded script is replayed via
+`[method, ...args]`. A loaded history is replayed via
 `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
 
 ### `execution` sub-fields
@@ -172,7 +172,7 @@ present value (finite number / `"success"` \| `"failed"` /
 not forward it to the dispatcher: `dispatchAction` /
 `dispatchFilter` build a fresh `HistoryExecution` for the new run
 so the in-memory record reflects the current session. The persisted
-record survives in the saved script for later audit (and for any
+record survives in the saved history for later audit (and for any
 consumer that wants to show "originally ran inline on a 50k record
 in 240ms" alongside the replay's numbers).
 
@@ -182,7 +182,7 @@ in 240ms" alongside the replay's numbers).
 
 The runtime `HistoryItem` carries `selected` (the indices the op
 produced) and `execution.inFlight` (true until the handler resolves)
-that the script doesn't need: `selected` is recomputed on replay and
+that the history doesn't need: `selected` is recomputed on replay and
 `inFlight` is meaningless for a serialized entry. Everything else on
 `execution` (`startedAt`, `status`, `durationMs`, `mode`,
 `datasetSize`, `selectionSize`) round-trips verbatim into the
@@ -195,7 +195,7 @@ trivial; the load layer is
 
 The methods split along one **runtime** dimension: whether they
 need a preceding SELECTION-producing entry in history at replay
-time. That's a runtime contract — the script preserves the original
+time. That's a runtime contract — the history preserves the original
 ordering, so the replay walks the operation list in sequence and
 the SELECTION is in the right slot when the consuming op fires.
 
@@ -206,7 +206,7 @@ NOT dataset indices, so they survive data growth and are portable
 across datasets. The `SELECTION` entry's `indices[]` is the lone
 index-typed survivor — its indices ARE the operation's purpose, and
 they replay against the same windowed dataset shape that the
-script's `window` field guarantees the loader fetches before
+history's `window` field guarantees the loader fetches before
 replay.
 
 **Trailing optional `[startTs, endTs]?` on filter ops.** Every
@@ -245,23 +245,23 @@ own. They each route through a thin `*FromSelection` dispatch
 wrapper inside qc-utils that reads the target indices off
 `history[length - 2].selected`. Concretely:
 
-- A script `[…, SELECTION([3,4,5]), DELETE_POINTS]` deletes
+- A history `[…, SELECTION([3,4,5]), DELETE_POINTS]` deletes
   indices 3, 4, and 5.
-- A script `[…, VALUE_THRESHOLD({"Greater than": 100}), DELETE_POINTS]`
+- A history `[…, VALUE_THRESHOLD({"Greater than": 100}), DELETE_POINTS]`
   is **also valid** — the filter's own `selected` array is what
   `DELETE_POINTS` reads.
-- A script that has `DELETE_POINTS` at index 0 (no prior entry),
+- A history that has `DELETE_POINTS` at index 0 (no prior entry),
   or whose preceding entry is another selection-consuming edit
   rather than a filter or `SELECTION`, will throw at replay time
   because `history[-2].selected` is empty / undefined. The
   loader does not pre-validate this — it surfaces as a per-op
-  failure in `ApplyScriptReport`.
+  failure in `ApplyHistoryReport`.
 
 ---
 
 ## Replay semantics
 
-Loading a script does:
+Loading a history does:
 
 ```ts
 record.history.length = 0
@@ -283,7 +283,7 @@ selection-coupled ops (`DELETE_POINTS`, `INTERPOLATE`,
 [`observation-record.ts`](../src/utils/plotting/observation-record.ts).
 Replay just walks the operation list in order — when one of these
 ops runs, the preceding SELECTION is already in history because the
-script preserves the original ordering.
+history preserves the original ordering.
 
 ---
 
@@ -295,11 +295,11 @@ script preserves the original ordering.
 function serializeHistory(
   record: ObservationRecord,
   window: { startDate: Date | string; endDate: Date | string }
-): QcScript
+): QcHistory
 ```
 
 - Walks `record.history`, applies the per-method elide rules, returns
-  a `QcScript` object (matches the JSON schema above).
+  a `QcHistory` object (matches the JSON schema above).
 - Window dates are taken from the consumer because qc-utils itself
   has no notion of a "viewed time range" — only the consumer (the
   Vue layer with the date pickers / time-range chips) knows what
@@ -308,23 +308,23 @@ function serializeHistory(
 ### Load
 
 ```ts
-function parseScript(json: unknown): QcScript                       // throws on schema violation
-async function applyScript(
+function parseHistory(json: unknown): QcHistory                       // throws on schema violation
+async function applyHistory(
   record: ObservationRecord,
-  script: QcScript
-): Promise<ApplyScriptReport>
+  history: QcHistory
+): Promise<ApplyHistoryReport>
 
-interface ApplyScriptReport {
+interface ApplyHistoryReport {
   applied: number
   failed: Array<{ index: number; method: string; error: string }>
 }
 ```
 
-- `parseScript` validates `version`, the array shape, and per-method
+- `parseHistory` validates `version`, the array shape, and per-method
   arg arity. It does NOT validate that indices fit the current
   dataset — that's deferred to the dispatch handlers, which already
   bail on out-of-range arguments.
-- `applyScript` assumes the consumer has already loaded the script's
+- `applyHistory` assumes the consumer has already loaded the history's
   data window into the record (see "Load workflow" below). It clears
   history + redo, then dispatches the operations in order. Per-op
   failures are caught, marked on the resulting `HistoryItem` as
@@ -333,23 +333,23 @@ interface ApplyScriptReport {
 
 ### Load workflow
 
-`applyScript` is data-agnostic; the consumer drives the data fetch.
+`applyHistory` is data-agnostic; the consumer drives the data fetch.
 The full Vue-side flow:
 
 ```ts
-async function importScript(file: File) {
+async function importHistory(file: File) {
   const json = JSON.parse(await file.text())
-  const script = parseScript(json)
-  // Fetch the script's window into the active record before replaying.
+  const history = parseHistory(json)
+  // Fetch the history's window into the active record before replaying.
   // The data store call below may differ per consumer (REST, WebSocket,
-  // local file) — keeping it outside qc-utils means the same script
+  // local file) — keeping it outside qc-utils means the same history
   // format works for any of them.
   await observationStore.fetchObservationsInRange({
     datastreamId: qcDatastream.value.id,
-    begin: script.window.startDate,
-    end:   script.window.endDate,
+    begin: history.window.startDate,
+    end:   history.window.endDate,
   })
-  const report = await applyScript(selectedSeries.value.data, script)
+  const report = await applyHistory(selectedSeries.value.data, history)
   if (report.failed.length) {
     Snackbar.warn(
       `${report.applied} operations applied; ${report.failed.length} failed (see history).`
@@ -360,35 +360,35 @@ async function importScript(file: File) {
 
 The consumer is responsible for two things qc-utils can't do:
 
-1. **Targeting** — picking which datastream the script applies to.
+1. **Targeting** — picking which datastream the history applies to.
    No id-matching is enforced; the user (or the calling code) decides.
-2. **Window provisioning** — fetching the `script.window` data range
-   into the `ObservationRecord` before `applyScript`. Operations that
+2. **Window provisioning** — fetching the `history.window` data range
+   into the `ObservationRecord` before `applyHistory`. Operations that
    reference indices are valid only against this window's shape, so
    the fetch is non-negotiable. If the target datastream has fewer
-   points in that window than the script expects, individual ops
-   fail and are reported in `ApplyScriptReport.failed`.
+   points in that window than the history expects, individual ops
+   fail and are reported in `ApplyHistoryReport.failed`.
 
 ### Vue composable surface
 
-`useQcScript` (in `hydroserver-qc-app/src/composables/`) wires the
+`useQcHistory` (in `hydroserver-qc-app/src/composables/`) wires the
 above to file pickers / download links:
 
 ```ts
-export function useQcScript() {
+export function useQcHistory() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { beginDate, endDate } = storeToRefs(useDataVisStore())
   const observationStore = useObservationStore()
 
-  async function exportScript(): Promise<void> {
+  async function exportHistory(): Promise<void> {
     /* serialize with current window → blob → download */
   }
 
-  async function importScript(file: File): Promise<ApplyScriptReport> {
-    /* read → parseScript → fetch window → applyScript → return report */
+  async function importHistory(file: File): Promise<ApplyHistoryReport> {
+    /* read → parseHistory → fetch window → applyHistory → return report */
   }
 
-  return { exportScript, importScript }
+  return { exportHistory, importHistory }
 }
 ```
 
@@ -397,19 +397,19 @@ export function useQcScript() {
 ## Failed-operation handling
 
 Operations that throw during dispatch (whether at author time or
-during a script replay) indicate failure through
+during a history replay) indicate failure through
 `HistoryItem.execution.status`:
 
 1. In `dispatchAction` and `dispatchFilter`'s `catch` blocks, set
    `stored.execution.status = "failed"` and `inFlight = false`.
 2. Round-trip `execution.status` through `serializeHistory` /
-   `parseScript` so a script saved with failed steps loads back
+   `parseHistory` so a history saved with failed steps loads back
    with those steps still marked failed (no silent re-success on
    reload).
 3. Surface the badge in `EditHistory.vue` — a small red `mdi-alert`
    chip next to the entry's duration.
 
-`ApplyScriptReport.failed` is the programmatic surface for the same
+`ApplyHistoryReport.failed` is the programmatic surface for the same
 information; the UI consumes it for the post-load Snackbar but the
 authoritative state lives on the entries themselves.
 
@@ -425,7 +425,7 @@ changes:
   recognize, with a warning.
 - **Breaking** (changed arg shape for an existing method, removed
   field): bump to `"2"`. Loaders for `"1"` and `"2"` co-exist;
-  `parseScript` dispatches on `version` to the right parser.
+  `parseHistory` dispatches on `version` to the right parser.
 
 Don't reuse method names with different arg shapes inside a major
 version. If `FILL_GAPS`'s argument list changes, either accept both

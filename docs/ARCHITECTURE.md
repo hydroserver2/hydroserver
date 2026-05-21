@@ -3,7 +3,7 @@
 This document covers the technology choices in `@uwrl/qc-utils`, why they
 were made, and how the package is structured internally. For the public
 API surface and quick-start, see the [README](../README.md). For the
-history-script wire format, see [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md).
+QC history wire format, see [QC_HISTORY.md](./QC_HISTORY.md).
 For worker dispatch, see [CALIBRATION.md](./CALIBRATION.md).
 
 ## What this package is
@@ -42,9 +42,9 @@ exists in two places at the consumer's discretion:
 1. **The calibration cache** in `localStorage` (key
    `qc-utils:calibration:v1`) — a small DeviceProfile blob, ~200 bytes,
    refreshed once every 30 days. See [CALIBRATION.md](./CALIBRATION.md).
-2. **QC script JSON files** — written and read by the consumer
+2. **QC history JSON files** — written and read by the consumer
    wherever they keep files. The package serializes; the consumer
-   decides where to put the bytes. See [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md).
+   decides where to put the bytes. See [QC_HISTORY.md](./QC_HISTORY.md).
 
 The in-memory data path uses `SharedArrayBuffer`-backed
 `Float64Array` / `Float32Array` when COOP / COEP are present, falling
@@ -74,17 +74,17 @@ cross-origin isolation still get correct (just slower) results.
        ┌─────────────┼─────────────────────────┐
        ▼             ▼                         ▼
  ┌──────────┐  ┌──────────────────────┐  ┌────────────────────┐
- │  Inline  │  │ Worker dispatch      │  │ History / Scripts  │
+ │  Inline  │  │ Worker dispatch      │  │ QC History I/O     │
  │  cores   │  │  - per-op worker     │  │  - serializeHistory│
- │ (single  │  │  - SAB-backed views  │  │  - parseScript     │
- │  thread) │  │  - calibration-routed│  │  - applyScript     │
+ │ (single  │  │  - SAB-backed views  │  │  - parseHistory     │
+ │  thread) │  │  - calibration-routed│  │  - applyHistory     │
  └──────────┘  └──────────────────────┘  └────────────────────┘
 ```
 
 `ObservationRecord.dispatch` is the **only** mutation surface. Every
 filter, edit, and selection produces a `HistoryItem`. The handlers
 themselves are private — operations are driven by enum + args so the
-same call shape works at runtime, on replay from a saved script, and in
+same call shape works at runtime, on replay from a saved QC history, and in
 unit tests.
 
 ## Source layout
@@ -93,7 +93,7 @@ unit tests.
 src/
 ├─ index.ts                       Public barrel — re-exports types, models, utils.
 ├─ types/index.ts                 All enums + types (EnumEditOperations, EnumFilterOperations,
-│                                 Operator, TimeUnit, HistoryItem, QcScript, domain models).
+│                                 Operator, TimeUnit, HistoryItem, QcHistory, domain models).
 ├─ models/                        Plain-data domain models (DataSource, Payload, Settings,
 │                                 Timestamp).
 ├─ utils/
@@ -106,7 +106,7 @@ src/
 │     ├─ observation-record.ts    The state container + dispatch entry points.
 │     ├─ operation-cores.ts       Inline kernels: changeValuesCore, fillGapsCore, etc.
 │     ├─ calibration.ts           shouldUseWorker / ensureCalibration / runBenchmarks.
-│     ├─ script.ts                serializeHistory / parseScript / applyScript.
+│     ├─ history.ts                serializeHistory / parseHistory / applyHistory.
 │     ├─ value-threshold.worker.ts        ┐
 │     ├─ change.worker.ts                 │
 │     ├─ rate-of-change.worker.ts         │  one ?worker&inline file per
@@ -245,7 +245,7 @@ no rollback / inverse-op machinery to maintain. For typical QC sessions
 
 `serializeHistory` writes a JSON-portable `[method, ...args]` per entry
 plus the wall-clock window the session was authored against.
-`applyScript` runs them in order against a fresh `ObservationRecord`;
+`applyHistory` runs them in order against a fresh `ObservationRecord`;
 per-op failures are reported in the return value but do not abort the
 replay.
 
@@ -265,11 +265,11 @@ import {
   timeUnitMultipliers,
 } from '@uwrl/qc-utils'
 
-// QC scripts
+// QC history (save / load)
 import {
-  serializeHistory, parseScript, applyScript,
-  QcScript, QcScriptOperation, QcScriptWindow,
-  QC_SCRIPT_VERSION, ApplyScriptReport,
+  serializeHistory, parseHistory, applyHistory,
+  QcHistory, QcHistoryOperation, QcHistoryWindow,
+  QC_HISTORY_VERSION, ApplyHistoryReport,
 } from '@uwrl/qc-utils'
 
 // Calibration
@@ -293,7 +293,7 @@ The full per-symbol API reference is in
 
 - [README](../README.md)
 - [API_REFERENCE.md](./API_REFERENCE.md) — every exported symbol, signature
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md) — QC script wire format
+- [QC_HISTORY.md](./QC_HISTORY.md) — QC history wire format
 - [CALIBRATION.md](./CALIBRATION.md) — worker / inline dispatch
 - [ONBOARDING.md](./ONBOARDING.md) — developer setup
 - [DEPLOYMENT.md](./DEPLOYMENT.md) — publishing + linked-dev workflow

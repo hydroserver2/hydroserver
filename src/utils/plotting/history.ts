@@ -1,11 +1,11 @@
 /**
- * QC History Script — save / load.
+ * QC History — save / load.
  *
- * See `docs/HISTORY_SCRIPT.md` for the full design rationale. The
+ * See `docs/QC_HISTORY.md` for the full design rationale. The
  * short version:
  *
  *   - **Save:** walk `record.history`, keep `method` and `args`,
- *     project the live `HistoryExecution` into a `QcScriptExecution`
+ *     project the live `HistoryExecution` into a `QcHistoryExecution`
  *     (drop `inFlight` since a serialized entry is always
  *     resolved; keep the rest — `startedAt`, `status`, `durationMs`,
  *     `mode`, `datasetSize`, `selectionSize`). The runtime-only
@@ -17,7 +17,7 @@
  *     then `record.dispatch(operations.map(o => [o.method, ...o.args]))`.
  *     Per-op failures are caught (the dispatch's own `catch` already
  *     marks the entry `status: "failed"`); we tally them in the
- *     returned `ApplyScriptReport` for the consumer to surface.
+ *     returned `ApplyHistoryReport` for the consumer to surface.
  *
  *   - **No per-method serialization rules.** Args round-trip
  *     verbatim. Selection-coupled ops (DELETE_POINTS, INTERPOLATE,
@@ -29,18 +29,18 @@
  */
 
 import {
-  ApplyScriptReport,
+  ApplyHistoryReport,
   EnumEditOperations,
   EnumFilterOperations,
-  QcScript,
-  QcScriptExecution,
-  QcScriptOperation,
-  QcScriptWindow,
+  QcHistory,
+  QcHistoryExecution,
+  QcHistoryOperation,
+  QcHistoryWindow,
 } from "../../types";
 import { ObservationRecord } from "./observation-record";
 
 /** The schema version this loader / serializer understands. */
-export const QC_SCRIPT_VERSION = "1" as const;
+export const QC_HISTORY_VERSION = "1" as const;
 
 const ALL_METHODS = new Set<string>([
   ...Object.values(EnumEditOperations),
@@ -49,17 +49,17 @@ const ALL_METHODS = new Set<string>([
 
 /**
  * Project a runtime `HistoryExecution` into the serialized
- * `QcScriptExecution` shape, dropping `inFlight` (always false in a
+ * `QcHistoryExecution` shape, dropping `inFlight` (always false in a
  * resolved entry) and rejecting non-finite numeric values so a
- * round-tripped script can't poison the schema. Returns `undefined`
+ * round-tripped QC history can't poison the schema. Returns `undefined`
  * when the resulting projection would be empty, so callers can skip
  * the field entirely on the wire instead of emitting `{}`.
  */
 function projectExecution(
   exec: import("../../types").HistoryExecution | undefined,
-): QcScriptExecution | undefined {
+): QcHistoryExecution | undefined {
   if (!exec) return undefined;
-  const out: QcScriptExecution = {};
+  const out: QcHistoryExecution = {};
   const num = (v: unknown): number | undefined =>
     typeof v === "number" && Number.isFinite(v) ? v : undefined;
   const startedAt = num(exec.startedAt);
@@ -80,19 +80,19 @@ function projectExecution(
  * Each field is independently typed-narrowed; malformed values
  * throw a single descriptive error so the caller can surface the
  * exact field that drifted. Returns `undefined` when the field is
- * absent so backward-compatibility with pre-execution scripts is
+ * absent so backward-compatibility with pre-execution histories is
  * preserved.
  */
 function parseExecution(
   raw: unknown,
   index: number,
-): QcScriptExecution | undefined {
+): QcHistoryExecution | undefined {
   if (raw === undefined) return undefined;
   if (!raw || typeof raw !== "object") {
     throw new Error(`Operation ${index} \`execution\` must be an object when present.`);
   }
   const o = raw as Record<string, unknown>;
-  const out: QcScriptExecution = {};
+  const out: QcHistoryExecution = {};
   const assertFiniteNumber = (field: string, value: unknown) => {
     if (typeof value !== "number" || !Number.isFinite(value)) {
       throw new Error(
@@ -136,7 +136,7 @@ function parseExecution(
 }
 
 /**
- * Serialize an `ObservationRecord`'s history into a `QcScript`.
+ * Serialize an `ObservationRecord`'s history into a `QcHistory`.
  *
  * @param record  The record whose `.history` to serialize.
  * @param window  Wall-clock bounds the consumer was working in. The
@@ -145,10 +145,10 @@ function parseExecution(
  */
 export function serializeHistory(
   record: ObservationRecord,
-  window: QcScriptWindow
-): QcScript {
-  const operations: QcScriptOperation[] = record.history.map((h) => {
-    const op: QcScriptOperation = {
+  window: QcHistoryWindow
+): QcHistory {
+  const operations: QcHistoryOperation[] = record.history.map((h) => {
+    const op: QcHistoryOperation = {
       method: h.method,
       args: h.args ? [...h.args] : [],
     };
@@ -158,7 +158,7 @@ export function serializeHistory(
   });
 
   return {
-    version: QC_SCRIPT_VERSION,
+    version: QC_HISTORY_VERSION,
     createdAt: new Date().toISOString(),
     window: {
       startDate: window.startDate,
@@ -169,42 +169,42 @@ export function serializeHistory(
 }
 
 /**
- * Parse and validate a JSON-decoded payload as a `QcScript`. Throws
+ * Parse and validate a JSON-decoded payload as a `QcHistory`. Throws
  * on schema violations — callers should wrap in try/catch and
  * surface the message to the user. Validation is deliberately
  * minimal: structural shape, version, and per-op method recognition.
  * Arg shape per method is the dispatcher's job.
  */
-export function parseScript(json: unknown): QcScript {
+export function parseHistory(json: unknown): QcHistory {
   if (!json || typeof json !== "object") {
-    throw new Error("QC script must be a JSON object.");
+    throw new Error("QC history must be a JSON object.");
   }
   const obj = json as Record<string, unknown>;
 
-  if (obj.version !== QC_SCRIPT_VERSION) {
+  if (obj.version !== QC_HISTORY_VERSION) {
     throw new Error(
-      `Unsupported QC script version: ${String(obj.version)}. ` +
-      `This loader understands version "${QC_SCRIPT_VERSION}".`
+      `Unsupported QC history version: ${String(obj.version)}. ` +
+      `This loader understands version "${QC_HISTORY_VERSION}".`
     );
   }
 
   if (typeof obj.createdAt !== "string") {
-    throw new Error("QC script is missing `createdAt` (ISO-8601 string).");
+    throw new Error("QC history is missing `createdAt` (ISO-8601 string).");
   }
 
   const w = obj.window as Record<string, unknown> | undefined;
   if (!w || typeof w !== "object") {
-    throw new Error("QC script is missing `window`.");
+    throw new Error("QC history is missing `window`.");
   }
   if (typeof w.startDate !== "string" || typeof w.endDate !== "string") {
     throw new Error("`window.startDate` and `window.endDate` must be ISO-8601 strings.");
   }
 
   if (!Array.isArray(obj.operations)) {
-    throw new Error("QC script `operations` must be an array.");
+    throw new Error("QC history `operations` must be an array.");
   }
 
-  const operations: QcScriptOperation[] = obj.operations.map((raw, i) => {
+  const operations: QcHistoryOperation[] = obj.operations.map((raw, i) => {
     if (!raw || typeof raw !== "object") {
       throw new Error(`Operation ${i} must be an object.`);
     }
@@ -218,7 +218,7 @@ export function parseScript(json: unknown): QcScript {
     if (!Array.isArray(o.args)) {
       throw new Error(`Operation ${i} \`args\` must be an array.`);
     }
-    const op: QcScriptOperation = {
+    const op: QcHistoryOperation = {
       method: o.method as EnumEditOperations | EnumFilterOperations,
       args: [...o.args],
     };
@@ -228,7 +228,7 @@ export function parseScript(json: unknown): QcScript {
   });
 
   return {
-    version: QC_SCRIPT_VERSION,
+    version: QC_HISTORY_VERSION,
     createdAt: obj.createdAt,
     window: {
       startDate: w.startDate,
@@ -239,38 +239,38 @@ export function parseScript(json: unknown): QcScript {
 }
 
 /**
- * Apply a parsed `QcScript` to a freshly-prepared `ObservationRecord`.
+ * Apply a parsed `QcHistory` to a freshly-prepared `ObservationRecord`.
  *
  * Caller's responsibility BEFORE this runs:
  *   1. Pick the target datastream (no id matching is enforced — see
  *      the design doc's "Stay reusable" goal).
- *   2. Fetch the script's `window` into the record's raw data.
+ *   2. Fetch the QC history's `window` into the record's raw data.
  *
- * What `applyScript` does:
+ * What `applyHistory` does:
  *   1. Resets `history` + `redoStack` in-place (preserves the array
  *      reference so the consumer's reactive ref stays bound).
  *   2. `await record.reload()` to restore from raw.
  *   3. Dispatches operations one at a time so per-op failures can be
  *      caught and reported. Failures don't abort the remainder.
  *
- * Returns an `ApplyScriptReport` summarising the outcome. Per-op
+ * Returns an `ApplyHistoryReport` summarising the outcome. Per-op
  * `HistoryItem.status` is also written by the dispatch path itself,
  * so the UI can read failures directly off the history entries.
  */
-export async function applyScript(
+export async function applyHistory(
   record: ObservationRecord,
-  script: QcScript
-): Promise<ApplyScriptReport> {
+  history: QcHistory
+): Promise<ApplyHistoryReport> {
   // In-place clear so any consumer-side ref pointing at the array
   // (the qc-app's `editHistory` Pinia ref) stays connected.
   record.history.length = 0;
   record.redoStack.length = 0;
   await record.reload();
 
-  const report: ApplyScriptReport = { applied: 0, failed: [] };
+  const report: ApplyHistoryReport = { applied: 0, failed: [] };
 
-  for (let i = 0; i < script.operations.length; i++) {
-    const op = script.operations[i];
+  for (let i = 0; i < history.operations.length; i++) {
+    const op = history.operations[i];
     try {
       // dispatch handles routing to dispatchAction / dispatchFilter
       // based on whether the method is in EnumFilterOperations.

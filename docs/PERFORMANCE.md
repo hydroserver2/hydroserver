@@ -110,7 +110,7 @@ small-to-medium tier:
 It is **less well-shaped** for:
 
 - **Cluster / distributed QC.** No shared state, no IPC, no
-  serialization protocol beyond `QcScript`. If you need that, build
+  serialization protocol beyond `QcHistory`. If you need that, build
   a coordinator in your own runtime that drives many
   `ObservationRecord` workers.
 - **Real-time streaming QC.** The replay-based undo model is O(history

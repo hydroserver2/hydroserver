@@ -16,11 +16,11 @@ vi.mock('../change-values.worker?worker&inline', () => import('./workerMocks').t
 
 import { ObservationRecord } from '../observation-record';
 import {
-  applyScript,
-  parseScript,
+  applyHistory,
+  parseHistory,
   serializeHistory,
-  QC_SCRIPT_VERSION,
-} from '../script';
+  QC_HISTORY_VERSION,
+} from '../history';
 import {
   EnumEditOperations,
   EnumFilterOperations,
@@ -51,21 +51,21 @@ describe('serializeHistory', () => {
 
   it('produces a v1 envelope with createdAt + window + operations', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
-    expect(script.version).toBe(QC_SCRIPT_VERSION);
-    expect(typeof script.createdAt).toBe('string');
-    expect(new Date(script.createdAt).toString()).not.toBe('Invalid Date');
-    expect(script.window).toEqual(SAMPLE_WINDOW);
-    expect(script.operations).toHaveLength(1);
-    expect(script.operations[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
-    expect(script.operations[0].args).toEqual([{ 'Greater than': 5 }]);
+    expect(history.version).toBe(QC_HISTORY_VERSION);
+    expect(typeof history.createdAt).toBe('string');
+    expect(new Date(history.createdAt).toString()).not.toBe('Invalid Date');
+    expect(history.window).toEqual(SAMPLE_WINDOW);
+    expect(history.operations).toHaveLength(1);
+    expect(history.operations[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
+    expect(history.operations[0].args).toEqual([{ 'Greater than': 5 }]);
   });
 
   it('strips runtime-only fields (isLoading, duration, executionMode, selected, icon)', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    const op = script.operations[0] as Record<string, unknown>;
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    const op = history.operations[0] as Record<string, unknown>;
     expect(op.isLoading).toBeUndefined();
     expect(op.duration).toBeUndefined();
     expect(op.executionMode).toBeUndefined();
@@ -76,8 +76,8 @@ describe('serializeHistory', () => {
   it('round-trips execution.status into the persisted op, omitting it for successful entries', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 0 });
     rec.history[0].execution.status = 'failed';
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].execution?.status).toBe('failed');
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].execution?.status).toBe('failed');
 
     rec.history[0].execution.status = 'success';
     const ok = serializeHistory(rec, SAMPLE_WINDOW);
@@ -88,8 +88,8 @@ describe('serializeHistory', () => {
     const before = Date.now();
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     const after = Date.now();
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    const startedAt = script.operations[0].execution?.startedAt;
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    const startedAt = history.operations[0].execution?.startedAt;
     expect(typeof startedAt).toBe('number');
     // Dispatch stamps Date.now() at push time — must land inside the
     // [before, after] window we captured around the dispatch call.
@@ -105,8 +105,8 @@ describe('serializeHistory', () => {
       [EnumFilterOperations.SELECTION, [0, 1, 2]],
       [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 99],
     ]);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    const editOp = script.operations.find(
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    const editOp = history.operations.find(
       (o) => o.method === EnumEditOperations.CHANGE_VALUES
     )!;
     expect(editOp.execution?.datasetSize).toBe(20);
@@ -123,25 +123,25 @@ describe('serializeHistory', () => {
       { 'Greater than or equal to': 10 },
     );
     expect(sel).toHaveLength(10);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].execution?.selectionSize).toBe(10);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].execution?.selectionSize).toBe(10);
   });
 
   it('omits the execution field when the history entry has no execution data', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     // Replace execution with an empty shell so every field is undefined.
     rec.history[0].execution = { startedAt: NaN, inFlight: false };
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
     // All fields rejected → projectExecution returned undefined → no
     // `execution` key on the wire.
-    expect(script.operations[0].execution).toBeUndefined();
+    expect(history.operations[0].execution).toBeUndefined();
   });
 
   it('skips non-finite execution.startedAt during serialize', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     rec.history[0].execution.startedAt = NaN;
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].execution?.startedAt).toBeUndefined();
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].execution?.startedAt).toBeUndefined();
   });
 
   it('serializes args as an empty array when the history entry has no args', async () => {
@@ -150,13 +150,13 @@ describe('serializeHistory', () => {
     // hand so the dispatch path doesn't auto-fill `args = []`.
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     delete rec.history[0].args;
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
-    expect(script.operations[0].args).toEqual([]);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].args).toEqual([]);
   });
 });
 
-describe('parseScript', () => {
-  it('accepts a well-formed v1 script', () => {
+describe('parseHistory', () => {
+  it('accepts a well-formed v1 history', () => {
     const json = {
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
@@ -165,36 +165,36 @@ describe('parseScript', () => {
         { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }] },
       ],
     };
-    const script = parseScript(json);
-    expect(script.operations).toHaveLength(1);
-    expect(script.window).toEqual(SAMPLE_WINDOW);
+    const history = parseHistory(json);
+    expect(history.operations).toHaveLength(1);
+    expect(history.window).toEqual(SAMPLE_WINDOW);
   });
 
   it('rejects an unknown version', () => {
     expect(() =>
-      parseScript({ version: '2', createdAt: '', window: SAMPLE_WINDOW, operations: [] })
-    ).toThrow(/Unsupported QC script version/);
+      parseHistory({ version: '2', createdAt: '', window: SAMPLE_WINDOW, operations: [] })
+    ).toThrow(/Unsupported QC history version/);
   });
 
   it('rejects a non-object root (null, primitive, undefined)', () => {
-    expect(() => parseScript(null)).toThrow(/QC script must be a JSON object/);
-    expect(() => parseScript(undefined)).toThrow(/QC script must be a JSON object/);
-    expect(() => parseScript('not-a-script')).toThrow(/QC script must be a JSON object/);
-    expect(() => parseScript(42)).toThrow(/QC script must be a JSON object/);
+    expect(() => parseHistory(null)).toThrow(/QC history must be a JSON object/);
+    expect(() => parseHistory(undefined)).toThrow(/QC history must be a JSON object/);
+    expect(() => parseHistory('not-a-history')).toThrow(/QC history must be a JSON object/);
+    expect(() => parseHistory(42)).toThrow(/QC history must be a JSON object/);
   });
 
   it('rejects a missing or non-string `createdAt`', () => {
     expect(() =>
-      parseScript({ version: '1', window: SAMPLE_WINDOW, operations: [] })
+      parseHistory({ version: '1', window: SAMPLE_WINDOW, operations: [] })
     ).toThrow(/missing `createdAt`/);
     expect(() =>
-      parseScript({ version: '1', createdAt: 12345, window: SAMPLE_WINDOW, operations: [] })
+      parseHistory({ version: '1', createdAt: 12345, window: SAMPLE_WINDOW, operations: [] })
     ).toThrow(/missing `createdAt`/);
   });
 
   it('rejects window entries whose start/end dates are not ISO-8601 strings', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: { startDate: 12345, endDate: '2024-01-02T00:00:00.000Z' },
@@ -202,7 +202,7 @@ describe('parseScript', () => {
       })
     ).toThrow(/ISO-8601 strings/);
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: { startDate: '2024-01-01T00:00:00.000Z', endDate: null },
@@ -213,7 +213,7 @@ describe('parseScript', () => {
 
   it('rejects unknown method names', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -224,7 +224,7 @@ describe('parseScript', () => {
 
   it('rejects missing window', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         operations: [],
@@ -234,7 +234,7 @@ describe('parseScript', () => {
 
   it('rejects non-array args', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -245,7 +245,7 @@ describe('parseScript', () => {
 
   it('rejects a top-level `operations` field that is not an array', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -256,7 +256,7 @@ describe('parseScript', () => {
 
   it('rejects per-op entries that are not objects (null, primitive)', () => {
     const bad = (entry: unknown) => () =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -269,7 +269,7 @@ describe('parseScript', () => {
 
   it('rejects per-op entries missing a string `method`', () => {
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -277,7 +277,7 @@ describe('parseScript', () => {
       })
     ).toThrow(/missing string `method`/);
     expect(() =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -295,7 +295,7 @@ describe('parseScript', () => {
       datasetSize: 120,
       selectionSize: 17,
     };
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
@@ -303,22 +303,22 @@ describe('parseScript', () => {
         { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], execution: exec },
       ],
     });
-    expect(script.operations[0].execution).toEqual(exec);
+    expect(history.operations[0].execution).toEqual(exec);
   });
 
   it('tolerates pre-execution-field operations (backward-compatible)', () => {
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
     });
-    expect(script.operations[0].execution).toBeUndefined();
+    expect(history.operations[0].execution).toBeUndefined();
   });
 
   it('rejects a non-object `execution` field', () => {
     const bad = (execution: unknown) => () =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -331,7 +331,7 @@ describe('parseScript', () => {
 
   it('rejects non-finite numeric execution fields', () => {
     const bad = (field: string, value: unknown) => () =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -347,7 +347,7 @@ describe('parseScript', () => {
 
   it('rejects invalid execution.status / execution.mode enum values', () => {
     const badStatus = () =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -356,7 +356,7 @@ describe('parseScript', () => {
         ],
       });
     const badMode = () =>
-      parseScript({
+      parseHistory({
         version: '1',
         createdAt: '2024-01-01T00:00:00.000Z',
         window: SAMPLE_WINDOW,
@@ -369,7 +369,7 @@ describe('parseScript', () => {
   });
 });
 
-describe('applyScript — round-trip', () => {
+describe('applyHistory — round-trip', () => {
   let rec: ObservationRecord;
   beforeEach(async () => {
     rec = makeRecord(20);
@@ -379,11 +379,11 @@ describe('applyScript — round-trip', () => {
   it('round-trips an independent filter (VALUE_THRESHOLD)', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
     const before = rec.history.length;
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.applied).toBe(before);
     expect(report.failed).toEqual([]);
@@ -399,11 +399,11 @@ describe('applyScript — round-trip', () => {
       [EnumEditOperations.DELETE_POINTS],
     ]);
     const lenAfterDelete = rec.dataX.length;
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(fresh.dataX.length).toBe(lenAfterDelete);
@@ -420,11 +420,11 @@ describe('applyScript — round-trip', () => {
       [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
     ]);
     const xAfter = Array.from(rec.dataX);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
@@ -437,11 +437,11 @@ describe('applyScript — round-trip', () => {
       [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 99],
     ]);
     const yAfter = Array.from(rec.dataY);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataY)).toEqual(yAfter);
@@ -455,11 +455,11 @@ describe('applyScript — round-trip', () => {
       [EnumEditOperations.DRIFT_CORRECTION, 5],
     ]);
     const yAfter = Array.from(rec.dataY);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataY)).toEqual(yAfter);
@@ -470,17 +470,17 @@ describe('applyScript — round-trip', () => {
     const ts = rec.dataX[5] + 1; // between two existing points
     await rec.dispatch(EnumEditOperations.ADD_POINTS, [[ts, 999]]);
     const lenAfter = rec.dataX.length;
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(fresh.dataX.length).toBe(lenAfter);
   });
 
-  it('round-trips a multi-step script and matches the source dataset bit-for-bit', async () => {
+  it('round-trips a multi-step history and matches the source dataset bit-for-bit', async () => {
     await rec.dispatch([
       [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 }],
       [EnumFilterOperations.SELECTION, [0, 1, 2]],
@@ -490,11 +490,11 @@ describe('applyScript — round-trip', () => {
     ]);
     const yAfter = Array.from(rec.dataY);
     const xAfter = Array.from(rec.dataX);
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
@@ -503,7 +503,7 @@ describe('applyScript — round-trip', () => {
 
   it('clears history + redoStack before replay (in-place, preserving the array reference)', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
-    const script = serializeHistory(rec, SAMPLE_WINDOW);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
@@ -515,7 +515,7 @@ describe('applyScript — round-trip', () => {
     const historyRef = fresh.history;
     const redoRef = fresh.redoStack;
 
-    await applyScript(fresh, script);
+    await applyHistory(fresh, history);
 
     // Same array references — in-place clear, no re-assignment.
     expect(fresh.history).toBe(historyRef);
@@ -530,10 +530,10 @@ describe('applyScript — round-trip', () => {
     // for a replay run — old timestamp, mode that doesn't match
     // local calibration, a fake duration. The contract is that
     // the dispatch site stamps its own execution record for the
-    // new run, leaving the saved one untouched in the script for
+    // new run, leaving the saved one untouched in the history for
     // later audit.
     const PERSISTED_STARTED = Date.UTC(2020, 0, 1);
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
@@ -556,7 +556,7 @@ describe('applyScript — round-trip', () => {
     const fresh = makeRecord(20);
     await fresh.reload();
     const before = Date.now();
-    await applyScript(fresh, script);
+    await applyHistory(fresh, history);
     const after = Date.now();
 
     const exec = fresh.history[0].execution;
@@ -570,15 +570,15 @@ describe('applyScript — round-trip', () => {
     expect(exec.datasetSize).toBe(20);  // the fresh record's size
     expect(exec.inFlight).toBe(false);
     expect(exec.status).toBe('success');
-    // The original script object is unchanged — saved audit data
+    // The original history object is unchanged — saved audit data
     // survives for later inspection even though replay overwrote
     // the in-memory field.
-    expect(script.operations[0].execution?.startedAt).toBe(PERSISTED_STARTED);
-    expect(script.operations[0].execution?.durationMs).toBe(9999);
-    expect(script.operations[0].execution?.datasetSize).toBe(12345);
+    expect(history.operations[0].execution?.startedAt).toBe(PERSISTED_STARTED);
+    expect(history.operations[0].execution?.durationMs).toBe(9999);
+    expect(history.operations[0].execution?.datasetSize).toBe(12345);
   });
 
-  it('reports failures via ApplyScriptReport without aborting the rest of the script', async () => {
+  it('reports failures via ApplyHistoryReport without aborting the rest of the history', async () => {
     // The failed op sits at index 0; the subsequent ADD_POINTS
     // (edit) breaks the filter chain so the cross-filter-replace
     // rule doesn't eat the failed entry, and a trailing CHANGE
@@ -586,7 +586,7 @@ describe('applyScript — round-trip', () => {
     // not a filter, so neither same-method nor cross-filter replace
     // applies).
     const ts = makeRecord(20).dataX[5] + 1;
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
@@ -601,7 +601,7 @@ describe('applyScript — round-trip', () => {
 
     const fresh = makeRecord(20);
     await fresh.reload();
-    const report = await applyScript(fresh, script);
+    const report = await applyHistory(fresh, history);
 
     expect(report.failed).toHaveLength(1);
     expect(report.failed[0].index).toBe(0);
@@ -616,7 +616,7 @@ describe('applyScript — round-trip', () => {
 
   it('catches Error throws from dispatch and surfaces .message in the report', async () => {
     // Covers the `e instanceof Error ? e.message : ...` true branch
-    // of applyScript's defensive catch.
+    // of applyHistory's defensive catch.
     const stub = {
       history: [],
       redoStack: [],
@@ -624,20 +624,20 @@ describe('applyScript — round-trip', () => {
       dispatch: async () => { throw new Error('boom-with-stack'); },
     } as unknown as ObservationRecord;
 
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
     });
-    const report = await applyScript(stub, script);
+    const report = await applyHistory(stub, history);
     expect(report.failed).toHaveLength(1);
     expect(report.failed[0].error).toBe('boom-with-stack');
   });
 
   it('catches non-Error throws from dispatch and stringifies the value into the report', async () => {
     // `dispatchAction` / `dispatchFilter` normally swallow handler
-    // errors themselves, but the catch in `applyScript` is defensive
+    // errors themselves, but the catch in `applyHistory` is defensive
     // and handles a bare throw too. Stub `record.dispatch` so it
     // throws a plain string — the catch path must stringify it
     // (line 220's `e instanceof Error ? e.message : String(e)`
@@ -650,13 +650,13 @@ describe('applyScript — round-trip', () => {
       dispatch: async () => { throw 'plain-string-failure'; },
     } as unknown as ObservationRecord;
 
-    const script = parseScript({
+    const history = parseHistory({
       version: '1',
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [{ method: 'VALUE_THRESHOLD', args: [] }],
     });
-    const report = await applyScript(stub, script);
+    const report = await applyHistory(stub, history);
     expect(report.applied).toBe(0);
     expect(report.failed).toHaveLength(1);
     expect(report.failed[0].error).toBe('plain-string-failure');

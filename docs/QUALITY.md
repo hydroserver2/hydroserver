@@ -34,7 +34,7 @@ is split:
 | `operation-cores.spec.ts`                       | Every inline kernel, edge cases (empty, single point, NaN).|
 | `workers.spec.ts`                               | Every worker variant via `@vitest/web-worker`.             |
 | `calibration.spec.ts`                           | Benchmark math, fallback profile, decision predictions.    |
-| `script.spec.ts`                                | `serializeHistory` / `parseScript` / `applyScript` round-trip + per-op failures. |
+| `history.spec.ts`                                | `serializeHistory` / `parseHistory` / `applyHistory` round-trip + per-op failures. |
 | `format.spec.ts`, `ellapsed-time.spec.ts`, `observations.spec.ts`, `notifications.spec.ts` | Helpers.                                |
 
 `@vitest/web-worker` runs the worker code in-process, so worker
@@ -131,7 +131,7 @@ is the obvious next step if/when a non-browser consumer appears.
   sneaky escape hatches.
 - The two-flavor kernel pattern is consistent across every op. Reading
   one is enough to understand all of them.
-- `serializeHistory` / `parseScript` / `applyScript` form a clean
+- `serializeHistory` / `parseHistory` / `applyHistory` form a clean
   round-trip with explicit version handling.
 - Calibration is opt-in and degrades gracefully; first-session
   fallback profile is intentionally conservative.
@@ -149,4 +149,4 @@ is the obvious next step if/when a non-browser consumer appears.
 - [ONBOARDING.md](./ONBOARDING.md) — documentation gaps
 - [PERFORMANCE.md](./PERFORMANCE.md)
 - [CALIBRATION.md](./CALIBRATION.md)
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md)
+- [QC_HISTORY.md](./QC_HISTORY.md)

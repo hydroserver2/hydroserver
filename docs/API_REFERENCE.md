@@ -2,8 +2,8 @@
 
 Every public symbol exported from the package, with signatures and the
 shortest useful description. For conceptual context see
-[ARCHITECTURE.md](./ARCHITECTURE.md). For the QC script wire format see
-[HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md). For worker dispatch see
+[ARCHITECTURE.md](./ARCHITECTURE.md). For the QC history wire format see
+[QC_HISTORY.md](./QC_HISTORY.md). For worker dispatch see
 [CALIBRATION.md](./CALIBRATION.md).
 
 ## API design principles
@@ -31,9 +31,9 @@ shortest useful description. For conceptual context see
 ├─ operation enums  EnumEditOperations, EnumFilterOperations, Operator,
 │                   FilterOperation, TimeUnit, timeUnitMultipliers
 ├─ types            HistoryItem, GraphSeries, DataPoint, …
-├─ scripts          serializeHistory, parseScript, applyScript,
-│                   QcScript, QcScriptOperation, QcScriptWindow,
-│                   QC_SCRIPT_VERSION, ApplyScriptReport
+├─ qc history       serializeHistory, parseHistory, applyHistory,
+│                   QcHistory, QcHistoryOperation, QcHistoryWindow,
+│                   QC_HISTORY_VERSION, ApplyHistoryReport
 ├─ calibration      shouldUseWorker, ensureCalibration, runBenchmarks,
 │                   getCalibration, onCalibrationChange,
 │                   clearCalibration, DeviceProfile, DispatchSignals,
@@ -149,49 +149,49 @@ the single-char codes: `s`, `m`, `h`, `D`, `W`, `M`, `Y`.
 
 Multiplier from each `TimeUnit` to milliseconds.
 
-## History script API
+## QC History API
 
-### `function serializeHistory(record, window): QcScript`
+### `function serializeHistory(record, window): QcHistory`
 
 ```ts
-serializeHistory(record: ObservationRecord, window: { startDate: string; endDate: string }): QcScript
+serializeHistory(record: ObservationRecord, window: { startDate: string; endDate: string }): QcHistory
 ```
 
-Convert the current history into a JSON-portable `QcScript`. ISO-8601
+Convert the current history into a JSON-portable `QcHistory`. ISO-8601
 strings round-trip cleanly through `JSON.stringify`.
 
-### `function parseScript(raw: unknown): QcScript`
+### `function parseHistory(raw: unknown): QcHistory`
 
-Validate a parsed JSON object against the script schema. Throws on
+Validate a parsed JSON object against the QC history schema. Throws on
 shape / version mismatch. Use after `JSON.parse`.
 
-### `function applyScript(record, script): Promise<ApplyScriptReport>`
+### `function applyHistory(record, history): Promise<ApplyHistoryReport>`
 
-Replay every op in `script.operations` against `record`. Per-op failures
+Replay every op in `history.operations` against `record`. Per-op failures
 are captured in the report but do not abort.
 
-### `interface QcScript`
+### `interface QcHistory`
 
 ```ts
 {
   version: '1',
   createdAt: string,                   // ISO-8601
   window: { startDate: string; endDate: string },
-  operations: QcScriptOperation[],
+  operations: QcHistoryOperation[],
 }
 ```
 
-### `interface QcScriptOperation`
+### `interface QcHistoryOperation`
 
 ```ts
 {
   method: EnumEditOperations | EnumFilterOperations,
   args: any[],
-  execution?: QcScriptExecution,
+  execution?: QcHistoryExecution,
 }
 ```
 
-### `interface QcScriptExecution`
+### `interface QcHistoryExecution`
 
 ```ts
 {
@@ -204,19 +204,19 @@ are captured in the report but do not abort.
 }
 ```
 
-Every field is optional so pre-v0.1.x scripts (which had no
+Every field is optional so pre-v0.1.x QC histories (which had no
 `execution` field) still load. The replay path stamps fresh runtime
 values onto `HistoryItem.execution`; the persisted record survives
-verbatim for audit. `parseScript` rejects non-finite numbers and
+verbatim for audit. `parseHistory` rejects non-finite numbers and
 unknown enum values on any present field.
 
-### `interface QcScriptWindow`
+### `interface QcHistoryWindow`
 
 ```ts
 { startDate: string; endDate: string }  // ISO-8601
 ```
 
-### `interface ApplyScriptReport`
+### `interface ApplyHistoryReport`
 
 ```ts
 {
@@ -225,12 +225,12 @@ unknown enum values on any present field.
 }
 ```
 
-### `const QC_SCRIPT_VERSION: '1'`
+### `const QC_HISTORY_VERSION: '1'`
 
 The current wire-format version. Bumped on incompatible schema changes;
-`parseScript` rejects mismatches.
+`parseHistory` rejects mismatches.
 
-See [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md) for versioning rules,
+See [QC_HISTORY.md](./QC_HISTORY.md) for versioning rules,
 loader workflow, and per-op arg shape examples.
 
 ## Calibration API
@@ -377,12 +377,12 @@ spinner via `inFlight`, failure badge via `status`, duration text
 via `durationMs`, dev-only worker/inline chip via `mode`).
 
 `startedAt` is re-stamped on every replay (`undo` / `redo` /
-`applyScript`) so the in-memory value always reflects the current
+`applyHistory`) so the in-memory value always reflects the current
 session's execution. `serializeHistory` persists the runtime
-record into the script's per-op `execution` field for audit;
-`applyScript` does NOT forward the persisted record onto the new
+record into the QC history's per-op `execution` field for audit;
+`applyHistory` does NOT forward the persisted record onto the new
 `HistoryItem.execution` — dispatch builds a fresh one. Saved
-scripts hold "originally ran like this at this size on this mode";
+QC histories hold "originally ran like this at this size on this mode";
 the live `HistoryItem.execution` holds "ran in this session at
 this size on this mode."
 
@@ -454,7 +454,7 @@ Snackbar.error('Network error. Please check your connection.')
 
 - [README](../README.md)
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md)
+- [QC_HISTORY.md](./QC_HISTORY.md)
 - [CALIBRATION.md](./CALIBRATION.md)
 - [PERFORMANCE.md](./PERFORMANCE.md)
 - [QUALITY.md](./QUALITY.md)

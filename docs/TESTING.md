@@ -21,7 +21,7 @@ but the suite is split by *what shape of system under test*:
 | `workers.spec.ts`                      | Every `*.worker.ts` handler — wiring smoke + the two inline-only workers. |
 | `observation-record.spec.ts`           | Public dispatch surface, undo / redo / reload, history shape.    |
 | `observation-record-paths.spec.ts`     | Inline vs worker routing decisions; both success and failure paths. |
-| `script.spec.ts`                       | `serializeHistory` / `parseScript` / `applyScript` round-trip, per-op failures, timestamp persistence. |
+| `history.spec.ts`                       | `serializeHistory` / `parseHistory` / `applyHistory` round-trip, per-op failures, timestamp persistence. |
 | `calibration.spec.ts`                  | Benchmark math, fallback profile, decision predictions.          |
 | `calibrated-dispatch.spec.ts`          | Benchmark-driven end-to-end check that every calibrated op routes inline below its predicted crossover and to a worker above it. Runs the benchmark once in `beforeAll`, then binary-searches the crossover per op. |
 | `format.spec.ts`, `ellapsed-time.spec.ts`, `observations.spec.ts`, `notifications.spec.ts` | Standalone helper modules.            |
@@ -46,8 +46,8 @@ npx tsc --noEmit
 npm run lint
 
 # Single file or test
-npx vitest run src/utils/plotting/__tests__/script.spec.ts
-npx vitest run -t "round-trips a multi-step script"
+npx vitest run src/utils/plotting/__tests__/history.spec.ts
+npx vitest run -t "round-trips a multi-step history"
 ```
 
 There is no watch script in `package.json`; if you want one,
@@ -123,7 +123,7 @@ spawning real OS threads.
 ### 2. In-process worker mocks via `vi.mock(...?worker&inline)`
 
 Used in `observation-record.spec.ts`, `observation-record-paths.spec.ts`,
-and `script.spec.ts` — every spec that exercises `ObservationRecord`
+and `history.spec.ts` — every spec that exercises `ObservationRecord`
 end-to-end. Real workers run async (via `postMessage` round-trip);
 mocking them with synchronous shims lets the spec `await
 record.dispatch(...)` and read state immediately.
@@ -238,7 +238,7 @@ follow them.
    `beforeEach`.
 
 4. **Round-trip tests verify state, not just shape.** When testing
-   `applyScript`, compare full arrays:
+   `applyHistory`, compare full arrays:
    ```ts
    expect(Array.from(fresh.dataY)).toEqual(Array.from(rec.dataY))
    ```
@@ -322,11 +322,11 @@ build failure all gate the same job.
      has the right method, args, status, **and timestamp**
      (a finite epoch-ms number).
    - Test undo + redo round-trips correctly.
-4. Add a script round-trip test to `script.spec.ts`:
-   `serializeHistory` → `parseScript` → `applyScript` on a fresh
+4. Add a history round-trip test to `history.spec.ts`:
+   `serializeHistory` → `parseHistory` → `applyHistory` on a fresh
    record, then assert `dataX` / `dataY` match the original.
-5. Add a route to the script-format docs
-   ([HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md)) under "Per-method
+5. Add a route to the QC history docs
+   ([QC_HISTORY.md](./QC_HISTORY.md)) under "Per-method
    serialization rules" — the args row for the new op.
 
 ### A new failure-path test
@@ -359,23 +359,23 @@ When `HistoryItem` or `HistoryExecution` grows a field:
   user-set pin) belongs on `HistoryItem`.
 - Decide whether it should survive `serializeHistory`. If yes
   (like `mode` or `datasetSize`), extend `projectExecution` /
-  `parseExecution` in `script.ts` and add a round-trip test. If
+  `parseExecution` in `history.ts` and add a round-trip test. If
   no (like `inFlight`, which is meaningless for a serialized op),
-  document the elision in `script.ts`.
+  document the elision in `history.ts`.
 - Update the type listings in
   [API_REFERENCE.md](./API_REFERENCE.md) (`interface HistoryItem`
   and `interface HistoryExecution`) and the same blocks in
   [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-When `QcScriptOperation` or `QcScriptExecution` grows a field:
+When `QcHistoryOperation` or `QcHistoryExecution` grows a field:
 - Update `projectExecution` to populate it on serialize and
   `parseExecution` to validate it on load (reject malformed
   shapes — `assertFiniteNumber` and the enum guards are the
   templates).
-- Update [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md): JSON example,
+- Update [QC_HISTORY.md](./QC_HISTORY.md): JSON example,
   per-operation entry table, the `execution` sub-fields table,
   and the per-method-serialization-rules paragraph.
-- Add round-trip tests to `script.spec.ts`.
+- Add round-trip tests to `history.spec.ts`.
 
 When a new Vitest major version lands:
 - Re-pin `@vitest/coverage-v8` and `@vitest/web-worker` to the
@@ -431,7 +431,7 @@ behavior diverges:
 - [QUALITY.md](./QUALITY.md) — what is covered, what isn't, and why
 - [API_REFERENCE.md](./API_REFERENCE.md) — the public surface
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — kernel / worker / dispatch layering
-- [HISTORY_SCRIPT.md](./HISTORY_SCRIPT.md) — the save/load format that
+- [QC_HISTORY.md](./QC_HISTORY.md) — the save/load format that
   the round-trip tests exercise
 - [CALIBRATION.md](./CALIBRATION.md) — what `calibration.spec.ts` is testing
 - [`vite.config.ts`](../vite.config.ts) — source of truth on Vitest

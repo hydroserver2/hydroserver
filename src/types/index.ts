@@ -88,7 +88,7 @@ export enum LogicalOperation {
  * The qc-app reads this object to drive the EditHistory UI
  * (per-row spinner via `inFlight`, failure badge via `status`,
  * duration text via `durationMs`, dev-only worker/inline chip via
- * `mode`). Replays from `undo()` / `redo()` / `applyScript` build
+ * `mode`). Replays from `undo()` / `redo()` / `applyHistory` build
  * a fresh execution record for the new run rather than re-stamping
  * the saved one.
  */
@@ -151,24 +151,24 @@ export type HistoryItem = {
   execution: HistoryExecution;
 };
 
-// --- QC History Script (save / load format) ----------------------
-// See `docs/HISTORY_SCRIPT.md` for the full design rationale.
+// --- QC History (save / load format) -----------------------------
+// See `docs/QC_HISTORY.md` for the full design rationale.
 
-/** The wall-clock window the script was authored against. The
+/** The wall-clock window the QC history was authored against. The
  *  loader is responsible for fetching this exact range of
  *  observations into the target `ObservationRecord` before
  *  replaying. ISO-8601 strings (not `Date`) so the type round-trips
  *  cleanly through `JSON.stringify`/`JSON.parse`. */
-export type QcScriptWindow = {
+export type QcHistoryWindow = {
   startDate: string;
   endDate: string;
 };
 
 /**
- * The execution record persisted alongside a saved script operation.
+ * The execution record persisted alongside a saved history operation.
  * Mirrors `HistoryExecution` minus the runtime-only `inFlight` flag,
  * since a serialized op is always "resolved" by definition. Every
- * field is optional so pre-v1.1 scripts (and any consumer that
+ * field is optional so pre-v1.1 QC histories (and any consumer that
  * hand-writes the JSON) still load.
  *
  * Replays do **not** restore these values onto the new
@@ -176,7 +176,7 @@ export type QcScriptWindow = {
  * data for the current session. Persistence is for audit only:
  * "this op originally ran inline on a 50k record in 240ms."
  */
-export type QcScriptExecution = {
+export type QcHistoryExecution = {
   startedAt?: number;
   status?: "success" | "failed";
   durationMs?: number;
@@ -189,24 +189,24 @@ export type QcScriptExecution = {
  *  `[method, ...args]` tuple shape that
  *  `ObservationRecord.dispatch` accepts. `execution` carries
  *  per-dispatch audit data (timing, mode, dataset shape) round-
- *  tripped verbatim so the saved script preserves the authoring
+ *  tripped verbatim so the saved QC history preserves the authoring
  *  context for review. */
-export type QcScriptOperation = {
+export type QcHistoryOperation = {
   method: EnumEditOperations | EnumFilterOperations;
   args: any[];
-  execution?: QcScriptExecution;
+  execution?: QcHistoryExecution;
 };
 
 /** A serialized QC history. Schema `version: "1"`. */
-export type QcScript = {
+export type QcHistory = {
   version: "1";
   createdAt: string;
-  window: QcScriptWindow;
-  operations: QcScriptOperation[];
+  window: QcHistoryWindow;
+  operations: QcHistoryOperation[];
 };
 
-/** Returned by `applyScript` — per-op success/failure tally. */
-export type ApplyScriptReport = {
+/** Returned by `applyHistory` — per-op success/failure tally. */
+export type ApplyHistoryReport = {
   applied: number;
   failed: Array<{ index: number; method: string; error: string }>;
 };

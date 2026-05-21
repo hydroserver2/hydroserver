@@ -1041,7 +1041,7 @@ export class ObservationRecord {
    *   milliseconds. Both bounds inclusive; snapped to the nearest
    *   enclosed point via binary search. Datetime-addressed (not
    *   index-addressed) so the same call survives data growth and is
-   *   portable across datasets for QC script replay.
+   *   portable across datasets for QC history replay.
    */
   private async _fillGaps(
     gap: [number, TimeUnit],
@@ -2006,7 +2006,7 @@ export class ObservationRecord {
    *   are inclusive and snapped to the nearest enclosed point via
    *   binary search. Datetime-addressed (not index-addressed) so the
    *   same call survives data growth and is portable across datasets
-   *   for QC script replay.
+   *   for QC history replay.
    */
   private async _findGaps(
     value: number,
@@ -2099,7 +2099,7 @@ export class ObservationRecord {
    *   bounds are inclusive and snapped to the nearest enclosed point
    *   via binary search on `dataX`. Datetime-addressed (not index-
    *   addressed) so the same call survives data growth and is
-   *   portable across datasets for QC script replay.
+   *   portable across datasets for QC history replay.
    */
   private async _persistence(
     times: number,
