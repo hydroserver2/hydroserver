@@ -19,6 +19,7 @@ orjson==3.10.15
 uuid6==2024.7.10
 croniter==6.0.0
 python-decouple==3.8
+python-json-logger==4.1.0
 pyyaml==6.0.2
 psycopg==3.2.5
 psycopg-binary==3.2.5
