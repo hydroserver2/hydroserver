@@ -21,7 +21,7 @@
     "link-qc-utils": "npm link @uwrl/qc-utils"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "@hydroserver/client": "^0.4.4",
     "@mdi/js": "^7.4.47",
     "@uwrl/qc-utils": "^0.1.1",
