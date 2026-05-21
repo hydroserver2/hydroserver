@@ -147,6 +147,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/loading-data-with-sensorthings",
               },
               {
+                text: "Loading Data from an Internet Connected Datalogger",
+                link: "/user-guides/how-to/loading-data-with-datalogger",
+              },
+              {
                 text: "Retrieving Data with the SensorThings API",
                 link: "/user-guides/how-to/retrieving-data-with-sensorthings",
               }
