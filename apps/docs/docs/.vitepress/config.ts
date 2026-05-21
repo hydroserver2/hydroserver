@@ -127,6 +127,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/visualizing-data",
               },
               {
+                text: "Quality Controlling Data",
+                link: "/user-guides/how-to/quality-controlling-data",
+              },
+              {
                 text: "Exporting and Downloading Data",
                 link: "/user-guides/how-to/exporting-and-downloading-data",
               },

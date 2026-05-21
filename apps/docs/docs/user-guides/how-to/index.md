@@ -9,6 +9,7 @@ In this section, we provide detailed documentation for all HydroServer functiona
 * **[Managing Datastream Metadata](/user-guides/how-to/managing-datastream-metadata.md)**: Once you have a monitoring site, you can create datastream metadata that describes what has been measured at that site.  
 * **[Loading Data](/user-guides/how-to/loading-data.md)**: Learn how to load data into HydroServer.
 * **[Visualizing Data](/user-guides/how-to/visualizing-data.md)**: Learn how to visualize data in HydroServer.
+* **[Quality Controlling Data](/user-guides/how-to/quality-controlling-data.md)**: Learn how to use the HydroServer Quality Control App to filter, edit, and submit cleaned observations back to HydroServer.
 * **[Exporting and Downloading Data](/user-guides/how-to/exporting-and-downloading-data.md)**: Learn how to export and download data from HydroServer.
 * **[Archiving Data to HydroShare](/user-guides/how-to/archiving-data-to-hydroshare.md)**: Learn how to archive data from HydroServer into HydroShare.
 * **[Using the Python Client](/user-guides/how-to/using-the-python-client.md)**: Learn how to use the HydroServer Python client package – hydroserverpy – to load and retrieve metadata and data.
