@@ -587,5 +587,5 @@ function saveToStorage(detail: DeviceProfile): void {
 // Silence unused-import warning — `changeValuesCore` isn't referenced
 // here today but keeps the bench file's core imports together as we
 // add more primitives without needing to re-touch the top of the file.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line no-unused-vars
 const _keepImport: typeof changeValuesCore = changeValuesCore

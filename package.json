@@ -35,6 +35,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "coverage": "vitest run --coverage",
     "up": "taze major -I",
     "link": "npm link",

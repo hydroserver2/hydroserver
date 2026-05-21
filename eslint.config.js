@@ -49,4 +49,14 @@ export default [
       "no-useless-escape": "warn",
     },
   },
+
+  // Test files: relax the rules that get noisy in fixtures + describe
+  // blocks (intentionally unused destructured fields, `vi.mock` factory
+  // args, etc.). Mirrors the matching block in `hydroserver-qc-app`.
+  {
+    files: ["src/**/__tests__/**/*.{ts,js}"],
+    rules: {
+      "no-unused-vars": "off",
+    },
+  },
 ];
