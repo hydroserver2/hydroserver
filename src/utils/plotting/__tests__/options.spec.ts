@@ -278,6 +278,53 @@ describe('createPlotlyOption', () => {
     const aTrace = opts.traces.find((t: any) => t.id === 'a') as any
     expect(aTrace.mode).toBe('markers')
   })
+
+  it('keeps marker.opacity at 1 for scatter-only series even when density exceeds the fade threshold', () => {
+    // Cadence-bearing series fade their markers past DENSITY_HIDE_MARKERS
+    // because their gap-overlay line is still there to read. A scatter-
+    // only series (`intendedSpacingMs == null`) has no line to fall back
+    // to, so the initial paint must keep its markers fully opaque.
+    const count = 3000 // > DENSITY_HIDE_MARKERS (2000)
+    const x = new Float64Array(count)
+    const y = new Float64Array(count)
+    for (let i = 0; i < count; i++) {
+      x[i] = i
+      y[i] = i
+    }
+    beginDate.value = new Date(0)
+    endDate.value = new Date(count)
+    const scatter = makeSeries({
+      id: 'scatter',
+      intendedSpacingMs: null,
+      data: { dataX: x, dataY: y, history: [] },
+    })
+    const opts = createPlotlyOption([scatter])
+    const trace = opts.traces.find((t: any) => t.id === 'scatter') as any
+    expect(trace.marker.opacity).toBe(1)
+  })
+
+  it('still fades line-backed series markers past the density threshold', () => {
+    // Regression guard for the scatter-only exemption: cadence-bearing
+    // series must keep the existing behaviour.
+    qcDatastream.value = { id: 'qc' }
+    const count = 3000
+    const x = new Float64Array(count)
+    const y = new Float64Array(count)
+    for (let i = 0; i < count; i++) {
+      x[i] = i
+      y[i] = i
+    }
+    beginDate.value = new Date(0)
+    endDate.value = new Date(count)
+    const qc = makeSeries({
+      id: 'qc',
+      intendedSpacingMs: 1.5,
+      data: { dataX: x, dataY: y, history: [] },
+    })
+    const opts = createPlotlyOption([qc])
+    const main = opts.traces.find((t: any) => t.id === 'qc') as any
+    expect(main.marker.opacity).toBe(0)
+  })
 })
 
 describe('findGapIndices', () => {

@@ -458,9 +458,18 @@ export const createPlotlyOption = (
     const axisKey = `yaxis${axisSuffix}`
     const axisRef = `y${axisSuffix}`
 
-    // Pre-seed marker opacity from the current visible density.
+    // Series with a declared cadence get a sibling lines overlay; series
+    // without one render as a pure scatter. Hoisted here so the marker-
+    // opacity seed below can skip the density fade for scatter-only
+    // series — they have no line fallback to read once markers vanish.
+    const spacingMs = s.intendedSpacingMs ?? null
+    const hasLineFallback = !!(spacingMs && spacingMs > 0)
+
+    // Pre-seed marker opacity from the current visible density. Scatter-
+    // only series are exempt: fading their markers would leave nothing
+    // on screen.
     let markerOpacity = 1
-    if (densityRangeValid && xData?.length) {
+    if (hasLineFallback && densityRangeValid && xData?.length) {
       const xs = xData as unknown as number[]
       const count =
         findFirstGreaterOrEqual(xs, densityEnd) -
@@ -568,8 +577,7 @@ export const createPlotlyOption = (
     // an overlay is enough. The overlay carries no `id`, so
     // selection/lookup logic that finds traces by datastream id keeps
     // targeting the main trace and its stable point indices.
-    const spacingMs = s.intendedSpacingMs ?? null
-    if (spacingMs && spacingMs > 0 && xData?.length && yData?.length) {
+    if (hasLineFallback && spacingMs && xData?.length && yData?.length) {
       const gaps = findGapIndices(xData as ArrayLike<number>, spacingMs)
       const broken = insertGapBreaks(
         xData as ArrayLike<number>,

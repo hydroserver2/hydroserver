@@ -265,7 +265,16 @@ const makeStub = (overrides?: {
   xRange?: Array<number | string>
   tickmode?: string
   tickvals?: number[] | null
-  traces?: Array<Partial<{ id: string; x: number[]; marker: { opacity: number }; hoverinfo: string }>>
+  traces?: Array<
+    Partial<{
+      id: string
+      x: number[]
+      marker: { opacity: number }
+      hoverinfo: string
+      _isGapOverlay: boolean
+      _gapOverlayFor: string
+    }>
+  >
 }) => ({
   layout: {
     xaxis: {
@@ -400,13 +409,26 @@ describe('handleRelayout', () => {
     expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1, 1])
   })
 
-  it('still hides QC trace markers when data-points hover is disabled', async () => {
+  it('hides line-backed trace markers when data-points hover is disabled', async () => {
+    // Line-backed series (declared `intendedTimeSpacing` → companion
+    // gap overlay) are the case the toggle was designed for: hide the
+    // dense scatter so the line reads cleanly. Scatter-only series have
+    // their own exemption test below.
     qcDatastream.value = { id: 'qc-target' }
     areTooltipsEnabled.value = false
     const dense = Array.from({ length: 3000 }, (_, i) => i)
     plotlyRef.value = makeStub({
       xRange: [0, 3000],
-      traces: [{ id: 'qc-target', x: dense, marker: { opacity: 1 }, hoverinfo: 'skip' }],
+      traces: [
+        { id: 'qc-target', x: dense, marker: { opacity: 1 }, hoverinfo: 'skip' },
+        {
+          x: dense,
+          marker: { opacity: 1 },
+          hoverinfo: 'skip',
+          _isGapOverlay: true,
+          _gapOverlayFor: 'qc-target',
+        },
+      ],
     })
     await handleRelayout({ evt: 'q' } as any)
     await flush()
@@ -415,7 +437,62 @@ describe('handleRelayout', () => {
       (c) => c[1] && (c[1] as any)['marker.opacity']
     )
     expect(markerOpacityCall).toBeDefined()
-    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([0])
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([0, 0])
+  })
+
+  it('keeps scatter-only series markers visible when the data-points toggle is off', async () => {
+    // A datastream with no `intendedTimeSpacing` ships no gap overlay,
+    // so the main trace is the only thing on screen for that series.
+    // Honouring the points toggle here would leave the series invisible,
+    // so the relayout policy pins its marker opacity at 1.
+    qcDatastream.value = { id: 'qc-target' }
+    areTooltipsEnabled.value = false
+    tooltipsMode.value = 'manual'
+    const dense = Array.from({ length: 3000 }, (_, i) => i)
+    plotlyRef.value = makeStub({
+      xRange: [0, 3000],
+      traces: [
+        // Scatter-only QC trace: id set, no companion overlay.
+        { id: 'qc-target', x: dense, marker: { opacity: 1 }, hoverinfo: 'skip' },
+      ],
+    })
+    await handleRelayout({ evt: 'q' } as any)
+    await flush()
+    const restyleCalls = plotlyMock.restyle.mock.calls
+    const markerOpacityCall = restyleCalls.find(
+      (c) => c[1] && (c[1] as any)['marker.opacity']
+    )
+    // No-op restyle is fine: opacity already at 1 means nothing to
+    // change. What matters is we never push it to 0.
+    if (markerOpacityCall) {
+      expect((markerOpacityCall[1] as any)['marker.opacity']).toEqual([1])
+    }
+  })
+
+  it('keeps scatter-only series markers visible past DENSITY_HIDE_MARKERS in auto mode', async () => {
+    // Auto-mode + visible >> threshold normally trips the density fade.
+    // The scatter-only exemption has to win here too — otherwise a busy
+    // view of a no-cadence series wipes itself out as soon as the user
+    // pans into a dense zoom level.
+    qcDatastream.value = { id: 'qc-target' }
+    areTooltipsEnabled.value = false
+    tooltipsMode.value = 'auto'
+    tooltipsMaxDataPoints.value = 100
+    const dense = Array.from({ length: 3000 }, (_, i) => i)
+    plotlyRef.value = makeStub({
+      xRange: [0, 3000],
+      traces: [
+        { id: 'qc-target', x: dense, marker: { opacity: 0 }, hoverinfo: 'skip' },
+      ],
+    })
+    await handleRelayout({ evt: 'q' } as any)
+    await flush()
+    const restyleCalls = plotlyMock.restyle.mock.calls
+    const markerOpacityCall = restyleCalls.find(
+      (c) => c[1] && (c[1] as any)['marker.opacity']
+    )
+    expect(markerOpacityCall).toBeDefined()
+    expect((markerOpacityCall![1] as any)['marker.opacity']).toEqual([1])
   })
 
   it('skips marker restyle when opacities unchanged', async () => {

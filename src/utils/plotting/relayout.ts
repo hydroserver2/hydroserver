@@ -223,12 +223,25 @@ export const handleRelayout = async (
       // policy (manual override vs. threshold-driven auto), so the
       // threshold isn't checked again here — doing so would make a
       // user's manual "on" silently flip off past the cap.
+      //
+      // Scatter-only series (datastreams without a declared
+      // `intendedTimeSpacing`) ship no gap-overlay line, so fading
+      // their markers would leave nothing on screen. Identify them
+      // by the absence of a companion `_gapOverlayFor` trace and
+      // pin their opacity at 1.
       const tooltipsWillRun = areTooltipsEnabled.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
       const traces = liveTraces
-      const perTraceOpacity = perTraceVisible.map((n) => {
+      const lineBackedIds = new Set<string>()
+      for (const t of traces) {
+        if (t._gapOverlayFor) lineBackedIds.add(t._gapOverlayFor)
+      }
+      const perTraceOpacity = perTraceVisible.map((n, i) => {
         if (tooltipsWillRun) return 1
+        const trace = traces[i] as AppPlotlyTrace | undefined
+        const id = trace?.id
+        if (id && !trace?._isGapOverlay && !lineBackedIds.has(id)) return 1
         if (tooltipsMode.value === 'manual') return 0
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
       })

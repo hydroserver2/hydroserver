@@ -75,7 +75,9 @@ relayout.ts                [post-render reconcile]
    │
    │  handleRelayout:
    │    recompute visible-point count
-   │    drop scattergl marker opacity above DENSITY_HIDE_MARKERS
+   │    drop scattergl marker opacity above DENSITY_HIDE_MARKERS,
+   │      except for scatter-only series (no gap-overlay line) which
+   │      keep markers opaque regardless of the data-points toggle
    │    realign ticks via computeIntendedTickvals when cadence is known
    ▼
 selected.ts                [if the relayout carries selection echo]

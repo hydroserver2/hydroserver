@@ -254,6 +254,12 @@ sooner. The new value applies on **Apply** (or on Enter).
 
 The setting is persisted locally, so it survives reloads.
 
+Datastreams without a declared `intendedTimeSpacing` render as pure
+scatter plots — there is no connecting line under the markers, so
+the toggle has nothing to fall back to. Their markers stay visible
+regardless of toggle state or visible-point count, so a no-cadence
+series can never disappear from view by flipping points off.
+
 ### Share link
 
 The address bar is always a shareable representation of the current
