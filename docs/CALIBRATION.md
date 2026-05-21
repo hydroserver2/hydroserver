@@ -293,7 +293,13 @@ The full checklist, in the order the existing ops were added:
    or `'always-inline'` (for pure bookkeeping / O(log n) ops).
    Reserve `'always-worker'` for kernels that genuinely require
    thread-level parallelism to stay within a frame budget.
-6. Verify the unit tests, then calibrate locally to confirm the
+6. Add a case to `calibrated-dispatch.spec.ts` so the benchmark-
+   driven end-to-end test exercises the new op at both ends of its
+   crossover. The harness binary-searches the crossover from the
+   live `DeviceProfile`, so each `CalibratedCase` only needs to
+   declare which axis (`datasetSize` vs `selectionSize`) drives
+   the prediction and how to dispatch the op at a chosen size.
+7. Verify the unit tests, then calibrate locally to confirm the
    crossover matches expectation.
 
 ### Adjusting weights

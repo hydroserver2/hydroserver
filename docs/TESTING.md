@@ -23,9 +23,10 @@ but the suite is split by *what shape of system under test*:
 | `observation-record-paths.spec.ts`     | Inline vs worker routing decisions; both success and failure paths. |
 | `script.spec.ts`                       | `serializeHistory` / `parseScript` / `applyScript` round-trip, per-op failures, timestamp persistence. |
 | `calibration.spec.ts`                  | Benchmark math, fallback profile, decision predictions.          |
+| `calibrated-dispatch.spec.ts`          | Benchmark-driven end-to-end check that every calibrated op routes inline below its predicted crossover and to a worker above it. Runs the benchmark once in `beforeAll`, then binary-searches the crossover per op. |
 | `format.spec.ts`, `ellapsed-time.spec.ts`, `observations.spec.ts`, `notifications.spec.ts` | Standalone helper modules.            |
 
-10 spec files total, ~200 tests.
+11 spec files total, ~230 tests.
 
 ---
 
