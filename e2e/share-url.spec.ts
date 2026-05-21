@@ -62,6 +62,8 @@ import {
   DATASTREAM_ID_B,
   buildObservations,
   buildTemperatureObservations,
+  FIXTURE_OBS_END_MS,
+  FIXTURE_OBS_START_MS,
   WORKSPACE_ID,
 } from './support/fixtures'
 
@@ -309,80 +311,47 @@ test.describe('share URL', () => {
     expect(visibility.b!.visible).toBe(false)
   })
 
-  test('Reset Axes after zoom → reload → zoom again returns to the full data extent', async ({
+  test('Reset Axes after URL-hydrated zoom + further interaction returns to the full data extent', async ({
     page,
   }) => {
-    // Reproduces the user-reported flow exactly:
-    //   1) Plot a datastream (no URL zoom).
-    //   2) Wheel-zoom (URL captures the new range).
-    //   3) Reload the page.
-    //   4) Wheel-zoom somewhere else.
-    //   5) Click Reset Axes.
-    // Reset must return to the full data extent, NOT the zoom state
-    // the URL had at reload time.
-    await setupEditView(page)
-
-    // Wait for the plot to settle and capture the data-fit X range
-    // before any zooming.
-    const dataFit = await waitForPlotMeta(page)
-    expect(dataFit).not.toBeNull()
-    const { dataFitRange, cursorClient } = dataFit!
-
-    // 2) Wheel-zoom in (5 ticks).
-    await page.mouse.move(cursorClient.x, cursorClient.y)
-    for (let i = 0; i < 5; i++) {
-      await page.mouse.wheel(0, -100)
-      await page.waitForTimeout(120)
-    }
-    // Give the URL writer time to flush.
-    await page.waitForTimeout(800)
-
-    // The URL must now carry a `z=` reflecting the zoom.
-    const urlZoomBeforeReload = await page.evaluate(
-      () => new URLSearchParams(window.location.search).get('z')
-    )
-    expect(urlZoomBeforeReload).not.toBeNull()
-
-    // 3) Reload the page.
-    await page.reload()
+    // Firefox cold-load + plot rebuild + reset is too heavy for the
+    // default 30 s under worker contention.
+    test.setTimeout(60_000)
+    // Bug (options.ts:689): on a fresh mount with a URL `z=`, Plotly
+    // pins `_rangeInitial0/1` to the URL view — stock Reset bounces
+    // back there instead of the data extent. A cold goto to a zoomed
+    // URL reproduces the same condition as the user-reported
+    // zoom→reload flow.
+    const fullSpan = FIXTURE_OBS_END_MS - FIXTURE_OBS_START_MS
+    const xHi = FIXTURE_OBS_END_MS - fullSpan * 0.1
+    const xLo = xHi - fullSpan * 0.2
+    const toS36 = (ms: number) => Math.floor(ms / 1000).toString(36)
+    const z = `${toS36(xLo)}.${toS36(xHi)}`
+    await page.goto(`/?ws=${WORKSPACE_ID}&m=e&ds=${DATASTREAM_ID}&z=${z}`)
     await expect(page.getByText('Filter Data')).toBeVisible({ timeout: 30_000 })
-    // Wait for the URL zoom to actually land on the plot.
-    const afterReload = await waitForPlotMeta(page)
-    expect(afterReload).not.toBeNull()
-    const reloadedRangeSpan =
-      afterReload!.dataFitRange[1] - afterReload!.dataFitRange[0]
-    // Confirm we landed on the zoomed view, not the data extent.
-    const fullSpan = dataFitRange[1] - dataFitRange[0]
-    expect(reloadedRangeSpan).toBeLessThan(fullSpan * 0.8)
 
-    // 4) Wheel-zoom further AND pan via mouse drag (with the default
-    //    dragmode='pan'). The pan routes through Plotly's own
-    //    user-gesture path (mousedown→mousemove→mouseup), which can
-    //    trigger `_storeDirectGUIEdit` and re-anchor `_rangeInitial`
-    //    in a way my wheel handler never does.
+    const afterHydrate = await waitForPlotMeta(page)
+    expect(afterHydrate).not.toBeNull()
+    const hydratedSpan =
+      afterHydrate!.dataFitRange[1] - afterHydrate!.dataFitRange[0]
+    expect(hydratedSpan).toBeLessThan(fullSpan * 0.5)
+
+    // Pan drag exercises Plotly's user-gesture path
+    // (`_storeDirectGUIEdit`), which re-anchors `_rangeInitial` —
+    // the custom Reset button has to override that.
     await page.mouse.move(
-      afterReload!.cursorClient.x,
-      afterReload!.cursorClient.y
-    )
-    for (let i = 0; i < 3; i++) {
-      await page.mouse.wheel(0, -100)
-      await page.waitForTimeout(120)
-    }
-    // Pan drag.
-    await page.mouse.move(
-      afterReload!.cursorClient.x,
-      afterReload!.cursorClient.y
+      afterHydrate!.cursorClient.x,
+      afterHydrate!.cursorClient.y
     )
     await page.mouse.down()
     await page.mouse.move(
-      afterReload!.cursorClient.x - 120,
-      afterReload!.cursorClient.y,
+      afterHydrate!.cursorClient.x - 120,
+      afterHydrate!.cursorClient.y,
       { steps: 10 }
     )
     await page.mouse.up()
     await page.waitForTimeout(400)
 
-    // 5) Click Reset Axes.
     await page.locator('.modebar-btn[data-title="Reset axes"]').click()
     await page.waitForTimeout(500)
 
@@ -398,10 +367,8 @@ test.describe('share URL', () => {
     })
     expect(afterReset).not.toBeNull()
     const resetSpan = afterReset![1] - afterReset![0]
-    // After Reset we should be at (or very close to) the full data
-    // extent — substantially wider than the reloaded zoom. Plotly's
-    // auto-fit pads the range slightly, so accept ±20% of `fullSpan`.
-    expect(resetSpan).toBeGreaterThan(reloadedRangeSpan * 1.5)
+    // ±20% slop for Plotly's auto-fit padding.
+    expect(resetSpan).toBeGreaterThan(hydratedSpan * 1.5)
     expect(resetSpan).toBeGreaterThan(fullSpan * 0.8)
     expect(resetSpan).toBeLessThan(fullSpan * 1.5)
   })

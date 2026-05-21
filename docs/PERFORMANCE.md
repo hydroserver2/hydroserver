@@ -155,15 +155,9 @@ It is **less well-shaped** when:
   a queue of datastreams to process. The app is a single-operator GUI;
   for batch QC, drive `@uwrl/qc-utils` directly from a Node or Python
   (Pyodide) process and bypass the app.
-- **You need an audit log of edits server-side.** The QC script is the
-  client-side record. The backend only sees the final replaced
-  observations.
 - **You're QC'ing >50 million-point datastreams in one go.** Re-window
   to a smaller range; the app caps practical throughput at the browser
   memory budget, not at qc-utils kernel speed.
-- **You need real-time collaboration** (multiple operators on the same
-  QC session). The history is per-tab; merging concurrent edits is out
-  of scope.
 
 ## What to measure
 
