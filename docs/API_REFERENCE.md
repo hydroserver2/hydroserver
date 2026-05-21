@@ -156,60 +156,257 @@ Each store is a `defineStore('id', () => ...)` factory. Import via the
 matching `useXxxStore()` and destructure with `storeToRefs` to keep refs
 reactive.
 
-### `useDataVisStore()`
+Columns in the per-store tables:
 
-Selected datastream, plotted streams, QC datastream, plot time range,
-selected data indices.
+- **Kind**: `state` (a `ref`), `computed` (a `ComputedRef`), or
+  `action` (a method).
+- **Type / signature**: the runtime shape consumers see. Refs list the
+  `T` inside `Ref<T>`; actions list the call signature.
 
-Key exports:
+The "Persistence" line at the top of each store cites the
+`pinia-plugin-persistedstate` config — the storage key and the
+specific slice picked. Stores with no Persistence line are session-only.
 
-| Export                | Type                          | Notes                                              |
-|-----------------------|-------------------------------|----------------------------------------------------|
-| `things`              | `Ref<Thing[]>`                | Sites, fetched once per page load.                 |
-| `datastreams`         | `Ref<Datastream[]>`           | All visible datastreams in the workspace.          |
-| `plottedDatastreams`  | `Ref<Datastream[]>`           | Up to 5 streams currently on the chart.            |
-| `qcDatastream`        | `ComputedRef<Datastream\|null>` | First plotted stream; the QC target.             |
-| `selectedData`        | `Ref<number[]\|null>`         | Index list of the active selection.                |
-| `beginDate` / `endDate` | `Ref<Date>`                 | Active time-range window.                          |
-| `resetState()`        | method                        | Clears filters + plot state for a workspace swap.  |
+### `useDataVisStore()` — `src/store/dataVisualization.ts`
 
-### `usePlotlyStore()`
+Catalog data (sites, datastreams, taxonomy), sidebar filters, plotted
+set + QC target, time-range window. The orchestrator for everything in
+the Select drawer and the rebuild pipeline that owns `rebuildPlot()`.
 
-Owns the Plotly DOM ref, the per-series `ObservationRecord` history,
-and the redraw / restyle plumbing.
+Persistence: `selectedDateBtnId` only (so the user's preset choice
+survives reload); catalogs, filters, and in-flight maps refetch cleanly
+on boot.
 
-| Export             | Notes                                                                  |
-|--------------------|------------------------------------------------------------------------|
-| `selectedSeries`   | The `GraphSeries` whose `data` is the QC target.                       |
-| `editHistory`      | Ref to `selectedSeries.data.history` (in-place — never reassign).      |
-| `isUpdating` / `isSubmitting` | Loading flags surfaced in nav rail + drawers.               |
-| `redraw()`         | Pushes typed-array updates to Plotly + restyles selections / staging. |
+| Name                                | Kind     | Type / signature                                  | Notes |
+|-------------------------------------|----------|---------------------------------------------------|-------|
+| `things`                            | state    | `Thing[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
+| `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
+| `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
+| `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
+| `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |
+| `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
+| `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
+| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections. |
+| `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 5 streams currently on the chart. |
+| `qcDatastreamId`                    | state    | `string \| null`                                  | Storage form of the QC target; survives plotted-list mutations. |
+| `qcDatastream`                      | computed | `Datastream \| null`                              | Live lookup of `qcDatastreamId` in `plottedDatastreams`. |
+| `qualifierSet`                      | state    | `Set<string>`                                     | Qualifier codes seen on the QC target's loaded points. |
+| `selectedQualifier`                 | state    | `string`                                          | Active qualifier in the picker. |
+| `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
+| `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
+| `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
+| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded time-range window (the date pickers' source of truth). |
+| `dateOptions`                       | state    | `Array<{ id, icon, label, title, calculateBeginDate }>` | Preset definitions (1w, 1m, 6m, 1y, YTD, All). |
+| `selectedDateBtnId`                 | state    | `number`                                          | Active preset id; `-1` when the user picked dates manually. |
+| `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
+| `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
+| `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
+| `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
+| `onDateBtnClick`                    | action   | `(id: number) => void`                            | Anchors `endDate` to today, recomputes `beginDate`, applies the preset. |
+| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). |
+| `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
+| `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
+| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
+| `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
+| `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
+| `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
+| `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
+| `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
-### `useObservationStore()`
+### `usePlotlyStore()` — `src/store/plotly.ts`
 
-Fetches + caches observation windows. `fetchObservationsInRange(ds, b, e)`
-extends the cached range minimally — only fetches the segments outside
-the existing window.
+Owns the Plotly DOM ref, the per-series array driving the chart,
+viewport state (tooltips, crosshair, hover, zoom history), and the
+redraw / restyle plumbing.
 
-### `useWorkspaceStore()`
+Persistence: `tooltipsMaxDataPoints`, `tooltipsMode`, and
+`tooltipsManualEnabled` (key `qc.plot.tooltipsMaxDataPoints`) — the
+user's data-points-mode preference. Everything else is ephemeral (DOM
+handles, live chart caches).
 
-`workspaces`, `selectedWorkspace`, `selectWorkspace(id)`. Persisted in
-`localStorage` under the `workspaces` key.
+| Name                       | Kind     | Type / signature                                  | Notes |
+|----------------------------|----------|---------------------------------------------------|-------|
+| `graphSeriesArray`         | state    | `GraphSeries[]`                                   | Per-series state driving traces, colors, and axis chips. |
+| `plotlyOptions`            | state    | `PlotlyChartOptions`                              | Cached `createPlotlyOption` output; seeded empty so consumers can read without null-guards. |
+| `plotlyRef`                | state    | `AppPlotlyHTMLElement \| null`                    | Live Plotly DOM element; populated by `handleNewPlot`. |
+| `mainPlotEpoch`            | state    | `number`                                          | Monotonic counter — bumped per `handleNewPlot` so listeners can re-attach. |
+| `selectedSeriesIndex`      | computed | `number`                                          | Index of the QC target in `graphSeriesArray` (`-1` when none). |
+| `selectedSeries`           | computed | `GraphSeries`                                     | Convenience for `graphSeriesArray[selectedSeriesIndex]`. |
+| `editHistory`              | state    | `HistoryItem[]`                                   | Mirrors `selectedSeries.data.history` (mutated in place — never reassign). |
+| `suppressedEchoSelection`  | state    | `number[] \| null`                                | Sentinel armed by programmatic Plotly writes to suppress the echo SELECTION dispatch. |
+| `isUpdating`               | state    | `boolean`                                         | Surfaced in the nav rail while a redraw runs. |
+| `isSubmitting`             | state    | `boolean`                                         | True during a QC submit POST. |
+| `showLegend`               | state    | `boolean`                                         | Drives Plotly's legend visibility. |
+| `showTooltip`              | state    | `boolean`                                         | Legacy flag; tooltip control routes through the auto/manual mode below. |
+| `tooltipsMaxDataPoints`    | state    | `number`                                          | Auto-mode cutoff (default 10 000); user-tunable from the data-points menu. |
+| `visiblePoints`            | state    | `number`                                          | Live count of points inside the current X range. |
+| `tooltipsMode`             | state    | `'manual' \| 'auto'`                              | Mode toggle: manual = user controls on/off; auto = threshold-driven. |
+| `tooltipsManualEnabled`    | state    | `boolean`                                         | Manual-mode on/off state. |
+| `areTooltipsEnabled`       | computed | `boolean`                                         | Resolved on/off accounting for mode + threshold. |
+| `showCoordinates`          | state    | `boolean`                                         | Hover-coordinates chip visibility. |
+| `hover`                    | state    | `{ x: number; y: number \| string }`              | Latest cursor-under-plot epoch + value. |
+| `crosshair`                | state    | `{ visible, cursorX, cursorY, plotLeft, plotBottom }` | CSS-driven crosshair position. |
+| `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
+| `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
+| `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
+| `axisChips`                | state    | `AxisChip[]`                                      | Horizontal axis title chips (replaces Plotly's rotated titles). |
+| `previewMode`              | state    | `boolean`                                         | Strips select/lasso/etc when the chart is rendered in the Select view's preview slot. |
+| `zoomUndoStack`            | state    | `ZoomState[]`                                     | Captured viewports for the modebar's Undo zoom button. |
+| `zoomRedoStack`            | state    | `ZoomState[]`                                     | Cleared on every new user-initiated zoom. |
+| `suppressZoomHistory`      | state    | `boolean`                                         | Flipped on during programmatic restores so the recorder doesn't double-capture. |
+| `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once on mount then cleared. |
+| `canUndoZoom`              | computed | `boolean`                                         | `zoomUndoStack.length > 1`. |
+| `canRedoZoom`              | computed | `boolean`                                         | `zoomRedoStack.length > 0`. |
+| `currentZoom`              | computed | `ZoomState \| null`                               | Top of the undo stack; what the share URL writer subscribes to. |
+| `updateOptions`            | action   | `() => void`                                      | Rebuild `plotlyOptions` from `graphSeriesArray`. |
+| `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default. |
+| `clearChartState`          | action   | `() => void`                                      | Drop all series + zoom history (used on workspace swap). |
+| `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Build a fresh `GraphSeries` from observations; colour is filled later by `assignSeriesColors`. |
+| `assignSeriesColors`       | action   | `(orderedIds: string[]) => void`                  | Stable per-id colour assignment over the legend order. |
+| `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always black). |
+| `labelColorForDatastream`  | action   | `(id?: string) => string`                         | Darker companion for legend text. |
+| `clearZoomHistory`         | action   | `() => void`                                      | Empty both stacks. |
+| `pushZoomState`            | action   | `(state: ZoomState) => void`                      | Called by the debounced recorder in `utils/plotting/zoom.ts`. |
 
-### `useUIStore()`
+### `useObservationStore()` — `src/store/observations.ts`
 
-Drawer state, current view (`Select` | `Edit`), nav-rail click handler.
-The `editCount` / unsaved-edits guard logic lives in `NavigationRail.vue`
-because it spans drawer state + edit history.
+Fetches + caches observation windows and inflates them into
+`ObservationRecord` instances.
 
-### `useHydroServer()`
+| Name                       | Kind     | Type / signature                                  | Notes |
+|----------------------------|----------|---------------------------------------------------|-------|
+| `observations`             | state    | `Record<string, ObservationRecord>`               | Per-datastream record; reused across rebuilds. |
+| `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
+| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Extends the cached range minimally; only fetches segments outside the existing window. |
 
-Holds the `hs` ref — the `@hydroserver/client` instance. Initialized in
-`main.ts` after settings load.
+### `useWorkspaceStore()` — `src/store/workspaces.ts`
 
-### `useUserStore()`, `useQualifierStore()`, `useUiLayoutStore()`, `useOperationParamsStore()`
+Workspace selection + role-derived edit permission.
 
-Auxiliary stores; see their files for the surface.
+Persistence: `selectedWorkspace` only (key
+`qc:selectedWorkspace:v1`) so the router's `hasWorkspaceGuard` sees a
+restored selection on the first navigation.
+
+| Name                       | Kind     | Type / signature                                  | Notes |
+|----------------------------|----------|---------------------------------------------------|-------|
+| `availableWorkspaces`      | state    | `Workspace[]`                                     | Filled by `loadWorkspaces`. |
+| `selectedWorkspace`        | state    | `Workspace \| null`                               | The currently active workspace (persisted). |
+| `isLoading`                | state    | `boolean`                                         | True while `loadWorkspaces` is in flight. |
+| `selectedWorkspaceId`      | computed | `string \| null`                                  | Shortcut for `selectedWorkspace?.id`. |
+| `hasSelection`             | computed | `boolean`                                         | True iff `selectedWorkspace` is non-null. |
+| `canEditSelected`          | computed | `boolean`                                         | True for workspace owners; for collaborators, true when their role includes an Observation create/edit permission. |
+| `loadWorkspaces`           | action   | `() => Promise<Workspace[]>`                      | Refetch + reconcile against the stored selection (drops the selection if the user lost access). |
+| `selectWorkspace`          | action   | `(id: string \| null) => Workspace \| null`       | Pick by id from `availableWorkspaces`. |
+| `applyWorkspaceById`       | action   | `(id: string) => Workspace \| null`               | Falls back to a placeholder `{ id }` when the list isn't loaded yet — used by URL hydration. |
+| `clearSelection`           | action   | `() => void`                                      | Drop the selection. |
+
+### `useUIStore()` — `src/store/userInterface.ts`
+
+Drawer / view chrome state plus the per-operation form fields read
+by every filter / edit panel. Mostly a flat bag — the panel
+components own the validation; this store just keeps the values
+reactive between mounts.
+
+Persistence: `filterRangeActive` only (key `qc:userInterface:v1`) so
+the user's "filter window" toggle survives reloads; per-operation
+defaults are reseeded from the datastream on each mount.
+
+| Name                              | Kind   | Type / signature                                  | Notes |
+|-----------------------------------|--------|---------------------------------------------------|-------|
+| `selectedDrawer`                  | state  | `DrawerType`                                      | `Edit`, `Select`, or `None` — which left drawer is active. |
+| `isDrawerOpen`                    | state  | `boolean`                                         | Drawer open/collapsed. |
+| `currentView`                     | state  | `'Edit' \| 'Select'`                              | Current main view (drives the nav rail's active state). |
+| `selectedOperation`               | state  | `string \| null`                                  | Open operation panel id; `null` when nothing is open. |
+| `cardHeight` / `tableHeight`      | state  | `number`                                          | Select-view top/bottom split. |
+| `operators`                       | state  | `string[]`                                        | `Object.keys(Operator)` — Change-values operator choices. |
+| `selectedOperator`                | state  | `number`                                          | Index into `operators`. |
+| `operationValue`                  | state  | `number`                                          | Change-values numeric operand. |
+| `interpolateValues`               | state  | `boolean`                                         | Fill-gaps: interpolate vs constant. |
+| `selectedInterpolationMethod`     | state  | `InterpolationMethods`                            | Interpolation algorithm (`LINEAR` only today). |
+| `gapUnits` / `selectedGapUnit` / `gapAmount` | state | `string[]` / `string` / `number`          | Find-gaps threshold (unit + amount). |
+| `fillUnits` / `selectedFillUnit` / `fillAmount` | state | `string[]` / `string` / `number`       | Fill-gaps cadence (unit + amount). |
+| `noDataValue`                     | state  | `number`                                          | Sentinel written into "no-data" filled points; seeds from the QC datastream. |
+| `selectedDriftCorrectionMethod`   | state  | `DriftCorrectionMethods`                          | Drift correction algorithm (`LINEAR` only today). |
+| `driftGapWidth`                   | state  | `number`                                          | Drift correction gap-width input. |
+| `shiftUnits` / `selectedShiftUnit` / `shiftAmount` | state | `string[]` / `string` / `number`     | Shift-datetimes amount + unit. |
+| `logicalComparators`              | state  | `{ value, title }[]`                              | Reusable comparator dropdown items. |
+| `selectedRateOfChangeComparator` / `rateOfChangeValue` | state | shape above / `number`          | Rate-of-change filter inputs. |
+| `selectedChangeComparator` / `changeValue` | state | shape above / `number`                    | Change-threshold filter inputs. |
+| `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
+| `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
+| `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
+
+### `useQualifierStore()` — `src/store/qualifiers.ts`
+
+Workspace-scoped qualifier dictionary plus the per-observation
+applications added via the Qualifying Comments panel.
+
+Persistence: `applied` only — the dictionary is reloaded on every
+workspace change.
+
+| Name                            | Kind     | Type / signature                                  | Notes |
+|---------------------------------|----------|---------------------------------------------------|-------|
+| `qualifiers`                    | state    | `Qualifier[]`                                     | Workspace dictionary. |
+| `applied`                       | state    | `Record<datastreamId, Record<index, QualifierApplication[]>>` | Per-observation applications. |
+| `isLoading`                     | state    | `boolean`                                         | True while `loadQualifiers` is in flight. |
+| `qualifierById`                 | computed | `Record<string, Qualifier>`                       | Lookup map for the chips. |
+| `loadQualifiers`                | action   | `() => Promise<void>`                             | Fetch dictionary for the active workspace; triggers a plot refresh so the qualifier band materialises. |
+| `createQualifier`               | action   | `(code: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
+| `applyQualifiers`               | action   | `(datastreamId, indices, qualifierIds, appliedBy) => void` | Idempotent merge — already-applied (qualifier, index) pairs are skipped. |
+| `removeQualifier`               | action   | `(datastreamId, index, qualifierId) => void`      | Drops a single (qualifier, index) application. |
+| `getApplicationsForDatastream`  | action   | `(datastreamId) => Array<{ index, qualifierId, appliedAt, appliedBy }>` | Flat list suitable for plotting. |
+| `getApplicationsAtIndex`        | action   | `(datastreamId, index) => QualifierApplication[]` | Per-point lookup. |
+
+### `useUiLayoutStore()` — `src/store/uiLayout.ts`
+
+Persisted drawer / splitter geometry. A bag of values keyed by
+strings the calling composable supplies, so new resizable components
+plug in without touching this store.
+
+Persistence: both `sizes` and `flags` (key `qc:uiLayout:v1`).
+
+| Name      | Kind   | Type / signature                                  | Notes |
+|-----------|--------|---------------------------------------------------|-------|
+| `sizes`   | state  | `Record<string, number>`                          | Pixel widths / percentages, written by `useResizable`. |
+| `flags`   | state  | `Record<string, boolean>`                         | Toggle state, written by `usePersistedFlag`. |
+| `getSize` | action | `(key: string) => number \| null`                 | `null` when unset or non-finite. |
+| `setSize` | action | `(key: string, value: number) => void`            | Reassigns the whole object so reactive watchers fire. |
+| `getFlag` | action | `(key: string) => boolean \| null`                | `null` lets callers distinguish "unset" from "explicit false". |
+| `setFlag` | action | `(key: string, value: boolean) => void`           | Same fresh-object pattern. |
+
+### `useOperationParamsStore()` — `src/store/operationParams.ts`
+
+Per-datastream remembered slots for Find Gaps / Fill Gaps
+parameters. `useUIStore` reads these to seed defaults; otherwise
+each panel re-derives from the datastream's intended cadence.
+
+Persistence: `byDatastream` (key `qc:opParams:v1`).
+
+| Name           | Kind   | Type / signature                                          | Notes |
+|----------------|--------|-----------------------------------------------------------|-------|
+| `byDatastream` | state  | `Record<string, PersistedOpParams>`                       | Slots keyed by datastream id. |
+| `load`         | action | `(id?: string \| null) => PersistedOpParams \| null`      | `null` when nothing's stored. |
+| `save`         | action | `(id?: string \| null, patch: PersistedOpParams) => void` | Merges; partial patches don't clobber unrelated fields. |
+
+### `useUserStore()` — `src/store/user.ts`
+
+The signed-in user. Persisted in full.
+
+| Name      | Kind   | Type / signature      | Notes |
+|-----------|--------|-----------------------|-------|
+| `user`    | state  | `User`                | Defaults to a fresh `new User()` until auth resolves. |
+| `setUser` | action | `(u: User) => void`   | Replace wholesale (called by the session resolver in `main.ts`). |
+
+### `useHydroServer()` — `src/store/hydroserver.ts`
+
+Holds the `@hydroserver/client` instance. Initialized in `main.ts`
+after settings load — every other store reaches `hs.value` through
+`storeToRefs(useHydroServer())`. Not persisted (the client carries
+ephemeral connection state).
+
+| Name | Kind  | Type / signature   | Notes |
+|------|-------|--------------------|-------|
+| `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
 
 ## Internal: utilities
 

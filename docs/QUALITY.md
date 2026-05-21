@@ -104,16 +104,7 @@ project has.
 Listed in [ONBOARDING.md "Documentation gaps a new team will hit"](./ONBOARDING.md#documentation-gaps-a-new-team-will-hit).
 Highlights:
 
-- No formal API reference per-Pinia-store before this docs folder existed.
 - No diagram of the auth flow.
-
-### 4. The `apiMethods` re-export in qc-utils
-
-`@uwrl/qc-utils` re-exports a HydroServer REST client (`api`,
-`apiMethods`, interceptors) and a `Snackbar` helper for legacy reasons.
-The QC App uses `@hydroserver/client` for the REST calls and
-`Snackbar` from qc-utils — the qc-utils `api` is not consumed by the
-app. Cleaning this up means a coordinated release of both packages.
 
 ## Dependency management
 
