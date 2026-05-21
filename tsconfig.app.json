@@ -1,9 +1,11 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    // `paths` without `baseUrl` — TS 5+ resolves each pattern relative
+    // to this tsconfig's directory, so `@/*` still maps to `./src/*`.
+    // `baseUrl` itself is deprecated in TS 6 and removed in TS 7.
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
