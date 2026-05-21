@@ -108,6 +108,7 @@ jobs:
           VITE_APP_API_URL=${{ vars.PROXY_BASE_URL }}
           VITE_APP_ROUTE=${{ vars.APP_ROUTE }}
           VITE_APP_VERSION=${{ github.sha }}
+          VITE_APP_API_URL=${{ vars.APP_API_URL }}
           EOF
       - name: Build QC App
         working-directory: ./qc_app
