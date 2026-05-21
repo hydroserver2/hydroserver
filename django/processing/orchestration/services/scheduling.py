@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone as dt_timezone
 from typing import Optional, Literal, Union
 from pydantic import validate_call, ConfigDict
 from croniter import croniter
@@ -186,3 +186,36 @@ class SchedulingService:
         ct = periodic_task.crontab
 
         return f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}"
+
+    @staticmethod
+    def compute_next_run_at(periodic_task: Optional[PeriodicTask]) -> Optional[datetime]:
+        """
+        Return the next scheduled run time for a PeriodicTask, or None if unscheduled/disabled.
+        """
+
+        if not periodic_task or not periodic_task.enabled:
+            return None
+
+        now = timezone.now()
+
+        if periodic_task.crontab:
+            cron_string = SchedulingService.get_crontab_string(periodic_task)
+            base = periodic_task.start_time if periodic_task.start_time and periodic_task.start_time > now else now
+            base_naive = timezone.make_naive(base, dt_timezone.utc)
+            next_dt = croniter(cron_string, base_naive).get_next(datetime)
+            return timezone.make_aware(next_dt, dt_timezone.utc)
+
+        if periodic_task.interval:
+            period_deltas = {
+                "days": timedelta(days=periodic_task.interval.every),
+                "hours": timedelta(hours=periodic_task.interval.every),
+                "minutes": timedelta(minutes=periodic_task.interval.every),
+            }
+            delta = period_deltas.get(periodic_task.interval.period)
+            if not delta:
+                return None
+            if periodic_task.start_time and periodic_task.start_time > now:
+                return periodic_task.start_time
+            return now + delta
+
+        return None

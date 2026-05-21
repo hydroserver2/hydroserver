@@ -1,5 +1,8 @@
 import uuid
 import pytest
+from datetime import datetime, timedelta, timezone as dt_timezone
+from unittest.mock import patch
+
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 from processing.orchestration.services.scheduling import SchedulingService
 
@@ -231,3 +234,104 @@ def test_get_crontab_string_returns_none_for_interval():
         periodic_task=None, interval=1, interval_period="hours", celery_task_name=CELERY_TASK
     )
     assert SchedulingService.get_crontab_string(pt) is None
+
+
+# --- compute_next_run_at ---
+
+FIXED_NOW = datetime(2026, 5, 21, 10, 0, 0, tzinfo=dt_timezone.utc)
+
+
+def test_compute_next_run_at_returns_none_for_no_periodic_task():
+    assert SchedulingService.compute_next_run_at(None) is None
+
+
+def test_compute_next_run_at_returns_none_when_disabled():
+    pt = service.apply_schedule(
+        periodic_task=None,
+        crontab="0 12 * * *",
+        celery_task_name=CELERY_TASK,
+        enabled=False,
+    )
+    assert SchedulingService.compute_next_run_at(pt) is None
+
+
+def test_compute_next_run_at_crontab_returns_next_match():
+    pt = service.apply_schedule(
+        periodic_task=None, crontab="0 12 * * *", celery_task_name=CELERY_TASK
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result is not None
+    assert result.tzinfo is not None
+    assert result > FIXED_NOW
+    assert result.hour == 12
+    assert result.minute == 0
+
+
+def test_compute_next_run_at_crontab_future_start_time():
+    future_start = FIXED_NOW + timedelta(days=3)
+    pt = service.apply_schedule(
+        periodic_task=None,
+        crontab="0 12 * * *",
+        celery_task_name=CELERY_TASK,
+        start_time=future_start,
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result is not None
+    assert result >= future_start
+    assert result.hour == 12
+    assert result.minute == 0
+
+
+def test_compute_next_run_at_interval_minutes():
+    past_start = FIXED_NOW - timedelta(hours=1)
+    pt = service.apply_schedule(
+        periodic_task=None, interval=30, interval_period="minutes",
+        celery_task_name=CELERY_TASK, start_time=past_start,
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result == FIXED_NOW + timedelta(minutes=30)
+
+
+def test_compute_next_run_at_interval_hours():
+    past_start = FIXED_NOW - timedelta(hours=1)
+    pt = service.apply_schedule(
+        periodic_task=None, interval=6, interval_period="hours",
+        celery_task_name=CELERY_TASK, start_time=past_start,
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result == FIXED_NOW + timedelta(hours=6)
+
+
+def test_compute_next_run_at_interval_days():
+    past_start = FIXED_NOW - timedelta(hours=1)
+    pt = service.apply_schedule(
+        periodic_task=None, interval=1, interval_period="days",
+        celery_task_name=CELERY_TASK, start_time=past_start,
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result == FIXED_NOW + timedelta(days=1)
+
+
+def test_compute_next_run_at_interval_future_start_time():
+    future_start = FIXED_NOW + timedelta(hours=2)
+    pt = service.apply_schedule(
+        periodic_task=None,
+        interval=30,
+        interval_period="minutes",
+        celery_task_name=CELERY_TASK,
+        start_time=future_start,
+    )
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result == future_start

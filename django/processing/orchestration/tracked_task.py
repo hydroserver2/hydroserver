@@ -84,3 +84,24 @@ class TrackedTask(Task):
         )
 
         run_id_var.set("-")
+
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        hs_task_id = kwargs.get(self.task_id_kwarg)
+
+        if kwargs.get(self.run_id_kwarg) or not hs_task_id:
+            return
+
+        from processing.orchestration.models import Task
+        from processing.orchestration.services.scheduling import SchedulingService
+
+        try:
+            task = Task.objects.select_related(
+                "periodic_task",
+                "periodic_task__crontab",
+                "periodic_task__interval",
+            ).get(pk=hs_task_id)
+        except Task.DoesNotExist:
+            return
+
+        task.next_run_at = SchedulingService.compute_next_run_at(task.periodic_task)
+        task.save(update_fields=["next_run_at"])
