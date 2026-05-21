@@ -27,7 +27,7 @@ class LocationMixin(SensorThingsUtils):
             locations = locations.filter(pk__in=group_by[1])
             loc_list = list(locations)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[l.id for l in loc_list])
+                "__UNGROUPED__": CollectionDTO(entity_ids=[location.id for location in loc_list])
             }
         elif group_by and group_by[0] == "thing":
             locations = locations.filter(thing_id__in=group_by[1])
@@ -36,7 +36,10 @@ class LocationMixin(SensorThingsUtils):
             for loc in loc_list:
                 groups.setdefault(loc.thing_id, []).append(loc.id)
             collections = {
-                thing_id: CollectionDTO(entity_ids=groups.get(thing_id, []))
+                thing_id: CollectionDTO(
+                    entity_count=(1 if groups.get(thing_id) else 0) if count else None,
+                    entity_ids=groups.get(thing_id, []),
+                )
                 for thing_id in group_by[1]
             }
         else:
@@ -45,7 +48,7 @@ class LocationMixin(SensorThingsUtils):
             collections = {
                 "__UNGROUPED__": CollectionDTO(
                     entity_count=entity_count,
-                    entity_ids=[l.id for l in loc_list],
+                    entity_ids=[location.id for location in loc_list],
                 )
             }
 

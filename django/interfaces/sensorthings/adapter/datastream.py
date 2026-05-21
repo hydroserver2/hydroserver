@@ -1,5 +1,6 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
+from django.db.models import Count
 from sensorthings.types import Absent
 from core.sta.models import Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, DatastreamDTO
@@ -46,17 +47,25 @@ class DatastreamMixin(SensorThingsUtils):
             datastreams = datastreams.filter(pk__in=group_by[1])
             ds_list = list(datastreams)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[ds.id for ds in ds_list])
+                "__UNGROUPED__": CollectionDTO(entity_ids=[datastream.id for datastream in ds_list])
             }
         elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
             datastreams = datastreams.filter(**{f"{group_by[0]}_id__in": group_by[1]})
+            ds_counts = dict(
+                datastreams
+                .values(group_by[0])
+                .annotate(total=Count("id"))
+                .values_list(group_by[0], "total")
+            ) if count else None
             ds_list = list(self.apply_window(datastreams, partition_field, top, skip))
             groups = {}
-            for ds in ds_list:
-                groups.setdefault(getattr(ds, partition_field), []).append(ds.id)
+            for datastream in ds_list:
+                groups.setdefault(getattr(datastream, partition_field), []).append(datastream.id)
             collections = {
-                pid: CollectionDTO(entity_ids=groups.get(pid, []))
-                for pid in group_by[1]
+                pid: CollectionDTO(
+                    entity_count=int(ds_counts.get(pid, 0)) if count else None,
+                    entity_ids=groups.get(pid, [])
+                ) for pid in group_by[1]
             }
         else:
             entity_count = datastreams.count() if count else None
@@ -70,64 +79,64 @@ class DatastreamMixin(SensorThingsUtils):
 
         try:
             entities = {
-                ds.id: DatastreamDTO(
-                    id=self.select_field(select, "id", ds.id),
-                    name=self.select_field(select, "name", str(ds.name)),
-                    description=self.select_field(select, "description", ds.description),
+                datastream.id: DatastreamDTO(
+                    id=self.select_field(select, "id", datastream.id),
+                    name=self.select_field(select, "name", str(datastream.name)),
+                    description=self.select_field(select, "description", datastream.description),
                     observation_type="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement",
-                    observed_area=self.select_field(select, "observed_area", ds.observed_area),
+                    observed_area=self.select_field(select, "observed_area", datastream.observed_area),
                     phenomenon_time=self.select_field(
                         select, "phenomenon_time",
-                        self.iso_time_interval(ds.phenomenon_begin_time, ds.phenomenon_end_time),
+                        self.iso_time_interval(datastream.phenomenon_begin_time, datastream.phenomenon_end_time),
                     ),
                     result_time=self.select_field(
                         select, "result_time",
-                        self.iso_time_interval(ds.result_begin_time, ds.result_end_time),
+                        self.iso_time_interval(datastream.result_begin_time, datastream.result_end_time),
                     ),
                     unit_of_measurement=(
                         {
-                            "name": ds.unit.name,
-                            "symbol": ds.unit.symbol,
-                            "definition": ds.unit.definition.split(";")[0],
+                            "name": datastream.unit.name,
+                            "symbol": datastream.unit.symbol,
+                            "definition": datastream.unit.definition.split(";")[0],
                         }
                         if needs_unit else Absent
                     ),
                     properties=(
                         {
-                            "result_type": ds.result_type,
-                            "status": ds.status,
-                            "sampled_medium": ds.sampled_medium,
-                            "value_count": ds.value_count,
-                            "no_data_value": ds.no_data_value,
-                            "processing_level_code": ds.processing_level.code,
-                            "processing_level_id": ds.processing_level.id,
-                            "unit_id": ds.unit.id,
-                            "intended_time_spacing": ds.intended_time_spacing,
-                            "intended_time_spacing_unit_of_measurement": ds.intended_time_spacing_unit,
-                            "aggregation_statistic": ds.aggregation_statistic,
-                            "time_aggregation_interval": ds.time_aggregation_interval,
-                            "time_aggregation_interval_unit_of_measurement": ds.time_aggregation_interval_unit,
-                            "is_private": ds.is_private,
-                            "is_visible": ds.is_visible,
+                            "result_type": datastream.result_type,
+                            "status": datastream.status,
+                            "sampled_medium": datastream.sampled_medium,
+                            "value_count": datastream.value_count,
+                            "no_data_value": datastream.no_data_value,
+                            "processing_level_code": datastream.processing_level.code,
+                            "processing_level_id": datastream.processing_level.id,
+                            "unit_id": datastream.unit.id,
+                            "intended_time_spacing": datastream.intended_time_spacing,
+                            "intended_time_spacing_unit_of_measurement": datastream.intended_time_spacing_unit,
+                            "aggregation_statistic": datastream.aggregation_statistic,
+                            "time_aggregation_interval": datastream.time_aggregation_interval,
+                            "time_aggregation_interval_unit_of_measurement": datastream.time_aggregation_interval_unit,
+                            "is_private": datastream.is_private,
+                            "is_visible": datastream.is_visible,
                             "workspace": {
-                                "id": ds.thing.workspace.id,
-                                "name": ds.thing.workspace.name,
-                                "link": ds.thing.workspace.link,
-                                "is_private": ds.thing.workspace.is_private,
+                                "id": datastream.thing.workspace.id,
+                                "name": datastream.thing.workspace.name,
+                                "link": datastream.thing.workspace.link,
+                                "is_private": datastream.thing.workspace.is_private,
                             },
-                            "tags": {tag.key: tag.value for tag in ds.datastream_tags.all()},
+                            "tags": {tag.key: tag.value for tag in datastream.datastream_tags.all()},
                             "file_attachments": {
                                 fa.name: fa.link
-                                for fa in ds.datastream_file_attachments.all()
+                                for fa in datastream.datastream_file_attachments.all()
                             },
                         }
                         if needs_properties else Absent
                     ),
-                    thing_id=ds.thing_id,
-                    sensor_id=ds.sensor_id,
-                    observed_property_id=ds.observed_property_id,
+                    thing_id=datastream.thing_id,
+                    sensor_id=datastream.sensor_id,
+                    observed_property_id=datastream.observed_property_id,
                 )
-                for ds in ds_list
+                for datastream in ds_list
             }
         except (DataError, DatabaseError) as e:
             raise HttpError(400, str(e))

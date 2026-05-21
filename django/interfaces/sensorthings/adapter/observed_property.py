@@ -9,7 +9,7 @@ from .utils import SensorThingsUtils
 class ObservedPropertyMixin(SensorThingsUtils):
 
     def get_observed_properties(self, filters=None, orderby=None, group_by=None,
-                                 select=None, top=100, skip=0, count=False, context=None):
+                                select=None, top=100, skip=0, count=False, context=None):
         needs_properties = select is None or "properties" in select
 
         observed_properties = ObservedProperty.objects
@@ -33,7 +33,7 @@ class ObservedPropertyMixin(SensorThingsUtils):
             observed_properties = observed_properties.filter(pk__in=group_by[1])
             op_list = list(observed_properties)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[op.id for op in op_list])
+                "__UNGROUPED__": CollectionDTO(entity_ids=[observed_property.id for observed_property in op_list])
             }
         else:
             entity_count = observed_properties.count() if count else None
@@ -41,35 +41,35 @@ class ObservedPropertyMixin(SensorThingsUtils):
             collections = {
                 "__UNGROUPED__": CollectionDTO(
                     entity_count=entity_count,
-                    entity_ids=[op.id for op in op_list],
+                    entity_ids=[observed_property.id for observed_property in op_list],
                 )
             }
 
         try:
             entities = {
-                op.id: ObservedPropertyDTO(
-                    id=self.select_field(select, "id", op.id),
-                    name=self.select_field(select, "name", op.name),
-                    description=self.select_field(select, "description", op.description),
-                    definition=self.select_field(select, "definition", op.definition),
+                observed_property.id: ObservedPropertyDTO(
+                    id=self.select_field(select, "id", observed_property.id),
+                    name=self.select_field(select, "name", observed_property.name),
+                    description=self.select_field(select, "description", observed_property.description),
+                    definition=self.select_field(select, "definition", observed_property.definition),
                     properties=(
                         {
-                            "variable_code": op.code,
-                            "variable_type": op.observed_property_type,
+                            "variable_code": observed_property.code,
+                            "variable_type": observed_property.observed_property_type,
                             "workspace": (
                                 {
-                                    "id": op.workspace.id,
-                                    "name": op.workspace.name,
-                                    "link": op.workspace.link,
-                                    "is_private": op.workspace.is_private,
+                                    "id": observed_property.workspace.id,
+                                    "name": observed_property.workspace.name,
+                                    "link": observed_property.workspace.link,
+                                    "is_private": observed_property.workspace.is_private,
                                 }
-                                if op.workspace else None
+                                if observed_property.workspace else None
                             ),
                         }
                         if needs_properties else Absent
                     ),
                 )
-                for op in op_list
+                for observed_property in op_list
             }
         except (DataError, DatabaseError) as e:
             raise HttpError(400, str(e))

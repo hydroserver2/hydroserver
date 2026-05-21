@@ -8,7 +8,7 @@ class FeatureOfInterestMixin(SensorThingsUtils):
     def get_features_of_interest(self, filters=None, orderby=None, group_by=None,
                                   select=None, top=100, skip=0, count=False, context=None):
         if group_by:
-            collections = {pid: CollectionDTO(entity_ids=[]) for pid in group_by[1]}
+            collections = {pid: CollectionDTO(entity_count=0 if count else None, entity_ids=[]) for pid in group_by[1]}
         else:
             collections = {"__UNGROUPED__": CollectionDTO(entity_count=0 if count else None, entity_ids=[])}
         return EntityResultSetDTO(collections=collections, entities={})

@@ -1,6 +1,6 @@
 import math
 from ninja.errors import HttpError
-from django.db.models import Min, Max, Count, Q, Value, OuterRef, Subquery
+from django.db.models import Min, Max, Count, Q, Value, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.utils import IntegrityError, DatabaseError, DataError
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -66,16 +66,32 @@ class ObservationMixin(SensorThingsUtils):
             }
         elif group_by and group_by[0] == "datastream":
             observations = observations.filter(datastream_id__in=group_by[1])
+            obs_counts = dict(
+                observations
+                .values(group_by[0])
+                .annotate(total=Count("id"))
+                .values_list(group_by[0], "total")
+            ) if count else None
             obs_list = list(self.apply_window(observations, "datastream_id", top, skip))
             groups = {}
             for obs in obs_list:
                 groups.setdefault(obs.datastream_id, []).append(obs.id)
             collections = {
-                pid: CollectionDTO(entity_ids=groups.get(pid, []))
-                for pid in group_by[1]
+                pid: CollectionDTO(
+                    entity_count=int(obs_counts.get(pid, 0)) if count else None,
+                    entity_ids=groups.get(pid, [])
+                ) for pid in group_by[1]
             }
         else:
-            entity_count = observations.count() if count else None
+            if count and not filters:
+                entity_count = Datastream.objects.visible(
+                    principal=context.principal if context else None
+                ).aggregate(total=Sum("value_count"))["total"] or 0
+            elif count:
+                entity_count = observations.count() if count else None
+            else:
+                entity_count = None
+
             obs_list = list(self.apply_pagination(observations, top, skip))
             collections = {
                 "__UNGROUPED__": CollectionDTO(
