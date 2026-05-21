@@ -66,34 +66,34 @@
         </template>
       </v-tooltip>
 
-      <v-tooltip location="bottom" text="Save QC script">
+      <v-tooltip location="bottom" text="Save QC History">
         <template #activator="{ props: tp }">
           <v-btn
             v-bind="tp"
             data-testid="history-save-btn"
-            aria-label="Save QC script"
+            aria-label="Save QC History"
             size="x-small"
             variant="text"
             density="comfortable"
             icon="mdi-tray-arrow-down"
             :disabled="isUpdating || !editCount"
-            @click.stop="onSaveScript"
+            @click.stop="onSaveHistory"
           />
         </template>
       </v-tooltip>
 
-      <v-tooltip location="bottom" text="Load QC script">
+      <v-tooltip location="bottom" text="Load QC History">
         <template #activator="{ props: tp }">
           <v-btn
             v-bind="tp"
             data-testid="history-load-btn"
-            aria-label="Load QC script"
+            aria-label="Load QC History"
             size="x-small"
             variant="text"
             density="comfortable"
             icon="mdi-tray-arrow-up"
             :disabled="isUpdating"
-            @click.stop="onLoadScriptClick"
+            @click.stop="onLoadHistoryClick"
           />
         </template>
       </v-tooltip>
@@ -106,7 +106,7 @@
         accept="application/json,.json"
         style="display: none"
         @click.stop
-        @change="onLoadScriptFile"
+        @change="onLoadHistoryFile"
       />
 
       <v-tooltip v-if="popOutEnabled" location="bottom" text="Open in window">
@@ -365,7 +365,7 @@ import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
 import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
-import { useQcScript } from '@/composables/useQcScript'
+import { useQcHistory } from '@/composables/useQcHistory'
 import { Snackbar } from '@uwrl/qc-utils'
 
 const props = withDefaults(
@@ -425,7 +425,7 @@ const { editHistory, selectedSeries, isUpdating } =
 const { selectedOperation } = storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
 const { clearSelected, setPlotSelection } = useDataSelection()
-const { exportScript, importScript } = useQcScript()
+const { exportHistory, importHistory } = useQcHistory()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 /** Index of the expanded entry (for the inline arguments drawer). */
@@ -527,13 +527,13 @@ const onReloadHistory = async (index: number) => {
  * try/catch is just defense in depth against an unexpected
  * `selectedSeries` race.
  */
-const onSaveScript = async () => {
+const onSaveHistory = async () => {
   try {
-    await exportScript()
-    Snackbar.success('QC script saved.')
+    await exportHistory()
+    Snackbar.success('QC history saved.')
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    Snackbar.error(`Couldn't save QC script: ${msg}`)
+    Snackbar.error(`Couldn't save QC history: ${msg}`)
   }
 }
 
@@ -542,7 +542,7 @@ const onSaveScript = async () => {
  * doesn't accept a `type="file"` shortcut, so we use a sibling
  * `<input>` and proxy the click.
  */
-const onLoadScriptClick = () => {
+const onLoadHistoryClick = () => {
   fileInputRef.value?.click()
 }
 
@@ -552,7 +552,7 @@ const onLoadScriptClick = () => {
  * and resets the input value so re-picking the same file fires
  * `change` again.
  */
-const onLoadScriptFile = async (e: Event) => {
+const onLoadHistoryFile = async (e: Event) => {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   // Reset early so a thrown apply doesn't leave the picker stuck.
@@ -561,7 +561,7 @@ const onLoadScriptFile = async (e: Event) => {
 
   isUpdating.value = true
   try {
-    const report = await importScript(file)
+    const report = await importHistory(file)
     if (report.failed.length === 0) {
       Snackbar.success(
         `Loaded ${report.applied} operation${report.applied === 1 ? '' : 's'}.`
@@ -575,7 +575,7 @@ const onLoadScriptFile = async (e: Event) => {
     await redraw()
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    Snackbar.error(`Couldn't load QC script: ${msg}`)
+    Snackbar.error(`Couldn't load QC history: ${msg}`)
   } finally {
     isUpdating.value = false
   }

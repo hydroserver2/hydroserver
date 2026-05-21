@@ -9,11 +9,11 @@ utils) and the external HydroServer REST endpoints the app consumes.
 - **No app-specific API.** The QC App is a client of HydroServer; it
   does not expose its own REST surface. Interop happens at three layers:
   the `@hydroserver/client` REST client, the `@uwrl/qc-utils` QC engine,
-  and the QC script JSON file format.
+  and the QC History JSON file format.
 - **JSON over the wire, typed arrays in memory.** The app fetches
   observations in HydroServer's columnar JSON format and inflates them
   to `Float64Array` + `Float32Array` inside `ObservationRecord`.
-- **History is the contract.** The QC script file format is the
+- **History is the contract.** The QC History file format is the
   durable record of edits. It is not pinned to a datastream id, so the
   same script can be replayed against many datastreams.
 - **Auth lives on the backend.** Cookies + Django AllAuth. The app
@@ -113,18 +113,18 @@ await setSelected([0, 1, 2, 5])      // dispatches SELECTION
 await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ```
 
-### `useQcScript()`
+### `useQcHistory()`
 
 ```ts
-const { exportScript, importScript } = useQcScript()
+const { exportHistory, importHistory } = useQcHistory()
 
-await exportScript()             // downloads qc-script-<datastream>-<isoTimestamp>.json
-const report = await importScript(file)
+await exportHistory()             // downloads qc-history-<datastream>-<isoTimestamp>.json
+const report = await importHistory(file)
 // report = { applied: 12, failed: [{ index, method, error }, ...] }
 ```
 
-`exportScript` reads the current wall-clock window from
-`useDataVisStore`. `importScript` fetches the script's authored window
+`exportHistory` reads the current wall-clock window from
+`useDataVisStore`. `importHistory` fetches the script's authored window
 into the active datastream **before** replay (selection-coupled ops
 reference indices against this windowed dataset).
 
@@ -444,7 +444,7 @@ selecting a datastream programmatically, reading the current edit
 history, asserting the plot is ready. These are e2e plumbing, not a
 public surface; treat the names as unstable.
 
-## QC script file format
+## QC History file format
 
 The save / load JSON format is the only durable export the app produces.
 Wire shape:
@@ -473,7 +473,7 @@ UI shell; the engine is independent.
 
 If you want to *automate* the QC App (e.g. drive a regression suite),
 the supported surface is the E2E test hooks (`window.__vbwTestHooks`)
-plus the QC script file as input. Treat anything else as private.
+plus the QC History file as input. Treat anything else as private.
 
 ## See also
 

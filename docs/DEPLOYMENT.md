@@ -161,7 +161,7 @@ The QC App is browser-side software, so the observability story is
   no Datadog RUM, no Google Analytics). The team has consciously kept
   the SPA telemetry-free; adding it is an opt-in deployment decision.
 - **No server-side metrics**, because there is no server-side runtime.
-- **No audit log** of QC edits — the QC script file is the closest
+- **No audit log** of QC edits — the QC History file is the closest
   equivalent (export before submitting to keep a replayable record).
 - **No alerting** beyond what your CDN / object-store provider offers.
 

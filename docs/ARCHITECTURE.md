@@ -62,7 +62,7 @@ always be recovered by a hard refresh.
                 │  │  @uwrl/qc-utils                    │  │
                 │  │    ObservationRecord (SAB)         │  │
                 │  │    Worker pool (per-op kernels)    │  │
-                │  │    History  ·  QC script I/O       │  │
+                │  │    History  ·  QC History I/O       │  │
                 │  └─────────────┬──────────────────────┘  │
                 │                │ REST (JSON)             │
                 └────────────────┼─────────────────────────┘
@@ -101,7 +101,7 @@ src/
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
-│  ├─ useQcScript.ts            Save / load QC scripts (calls qc-utils' serializeHistory / applyScript).
+│  ├─ useQcHistory.ts            Save / load QC Historys (calls qc-utils' serializeHistory / applyHistory).
 │  ├─ useQcSubmission.ts        Submit the QC'd observations back to HydroServer (replace mode).
 │  ├─ useResizable.ts           Generic drag-to-resize hook used by drawers + the plot.
 │  └─ useBufferedNumber.ts      Debounced numeric input wrapper for filter panels.
@@ -156,7 +156,7 @@ current plot ref or fetched observations are not — they belong in memory).
  └──────────────┬───────────────────────┘
                 ▼
  ┌──────────────────────────────────────┐
- │ useFilterDispatch / useQcScript      │
+ │ useFilterDispatch / useQcHistory      │
  │   selectedSeries.data.dispatch(...)  │  ──►  qc-utils ObservationRecord
  └──────────────┬───────────────────────┘            · routes inline vs worker (calibration)
                 │                                    · mutates typed arrays
@@ -174,7 +174,7 @@ Invariants:
 - **The UI never mutates typed arrays directly.** Every change goes through
   `ObservationRecord.dispatch` / `dispatchAction` / `dispatchFilter`. This
   is what makes the history replayable, the worker fast-path correct under
-  SharedArrayBuffer, and the QC script export round-trip safe.
+  SharedArrayBuffer, and the QC History export round-trip safe.
 - **Selection is dispatch-driven.** When the user clicks or lassoes points,
   `useDataSelection` converts the Plotly event into a `SELECTION` dispatch,
   which appends a `HistoryItem`. Selection-consuming edits (Change Values,
@@ -212,7 +212,7 @@ itself has zero Vue / Pinia / Plotly dependencies. The contract:
   is an `ObservationRecord` from qc-utils.
 - All editing happens via `series.data.dispatch(...)`. The app reads
   `dataX` / `dataY` only to hand them to Plotly via `redraw()`.
-- Save / load uses `serializeHistory` / `parseScript` / `applyScript`. The
+- Save / load uses `serializeHistory` / `parseHistory` / `applyHistory`. The
   app supplies the wall-clock window (begin/end of the current Plot range)
   on save and fetches the script's window on load.
 - Performance routing (`shouldUseWorker`) is opt-in. The app calls
@@ -220,7 +220,7 @@ itself has zero Vue / Pinia / Plotly dependencies. The contract:
   decision. The `PerformanceCalibration` nav-rail entry exposes manual
   re-benchmark.
 
-Side-stepping `dispatch` breaks undo / redo, breaks QC script export, and
+Side-stepping `dispatch` breaks undo / redo, breaks QC History export, and
 silently breaks the worker fast-path. Don't.
 
 ## Routing and auth

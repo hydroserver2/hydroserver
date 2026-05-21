@@ -1,37 +1,37 @@
 /**
- * QC History Script — Vue-side save / load wrapper.
+ * QC History — Vue-side save / load wrapper.
  *
- * Wraps qc-utils' `serializeHistory` / `parseScript` / `applyScript`
+ * Wraps qc-utils' `serializeHistory` / `parseHistory` / `applyHistory`
  * with the consumer-specific glue:
  *   - reading the active wall-clock window from the data-vis store
  *     for the save side
  *   - file-picker / blob-download plumbing
- *   - fetching the script's window into the active datastream's
+ *   - fetching the QC history's window into the active datastream's
  *     `ObservationRecord` before replay (qc-utils itself is data-
  *     agnostic; the consumer drives the data fetch)
  */
 
 import { storeToRefs } from 'pinia'
 import {
-  applyScript,
-  parseScript,
+  applyHistory,
+  parseHistory,
   serializeHistory,
-  type ApplyScriptReport,
+  type ApplyHistoryReport,
   type ObservationRecord,
-  type QcScript,
+  type QcHistory,
 } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useObservationStore } from '@/store/observations'
 
-/** Filename for downloaded scripts: `qc-script-<datastream>-<isoTimestamp>.json`. */
+/** Filename for downloaded QC histories: `qc-history-<datastream>-<isoTimestamp>.json`. */
 function defaultFilename(datastreamName?: string): string {
   const safe = (datastreamName ?? 'datastream')
     .replace(/[^a-z0-9-_]+/gi, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60)
   const ts = new Date().toISOString().replace(/[:.]/g, '-')
-  return `qc-script-${safe || 'datastream'}-${ts}.json`
+  return `qc-history-${safe || 'datastream'}-${ts}.json`
 }
 
 /** Trigger a JSON download via a transient `<a download>` click. */
@@ -50,7 +50,7 @@ function downloadJson(payload: unknown, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1_000)
 }
 
-export function useQcScript() {
+export function useQcHistory() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
   const { fetchObservationsInRange } = useObservationStore()
@@ -61,36 +61,36 @@ export function useQcScript() {
    * shouldn't be able to invoke this from the UI in that state, but
    * we guard defensively).
    */
-  async function exportScript(): Promise<void> {
+  async function exportHistory(): Promise<void> {
     const series = selectedSeries.value?.data
     if (!series) throw new Error('No QC series loaded.')
 
     // qc-utils' `ObservationRecord` exposes a deep typed shape; the
     // cast pins the value to that public type so vue-tsc doesn't try
     // to structurally re-derive it from the live worker bindings.
-    const script = serializeHistory(series as ObservationRecord, {
+    const history = serializeHistory(series as ObservationRecord, {
       startDate: beginDate.value.toISOString(),
       endDate: endDate.value.toISOString(),
     })
 
     const datastreamName = qcDatastream.value?.name
-    downloadJson(script, defaultFilename(datastreamName))
+    downloadJson(history, defaultFilename(datastreamName))
   }
 
   /**
-   * Read a JSON file, parse it as a QcScript, fetch the script's
+   * Read a JSON file, parse it as a QcHistory, fetch the QC history's
    * window into the current QC datastream, and replay the
    * operations. Returns the per-op report so the caller can surface
    * a Snackbar / toast summary.
    *
-   * No datastream-id matching is enforced — scripts are reusable
-   * across datastreams (see HISTORY_SCRIPT.md "Stay reusable").
+   * No datastream-id matching is enforced — QC histories are reusable
+   * across datastreams (see qc-utils' QC_HISTORY.md "Stay reusable").
    */
-  async function importScript(file: File): Promise<ApplyScriptReport> {
+  async function importHistory(file: File): Promise<ApplyHistoryReport> {
     const series = selectedSeries.value?.data
     const datastream = qcDatastream.value
     if (!series || !datastream) {
-      throw new Error('Pick a QC datastream before loading a script.')
+      throw new Error('Pick a QC datastream before loading a QC history.')
     }
 
     const text = await file.text()
@@ -103,20 +103,20 @@ export function useQcScript() {
       )
     }
 
-    const script: QcScript = parseScript(json)
+    const history: QcHistory = parseHistory(json)
 
-    // Fetch the script's authored window into the active record
+    // Fetch the QC history's authored window into the active record
     // BEFORE replaying. Selection-coupled ops reference indices
     // against this windowed dataset; loading them against a
     // differently-sized window would mis-target.
     await fetchObservationsInRange(
       datastream,
-      new Date(script.window.startDate),
-      new Date(script.window.endDate)
+      new Date(history.window.startDate),
+      new Date(history.window.endDate)
     )
 
-    return await applyScript(series as ObservationRecord, script)
+    return await applyHistory(series as ObservationRecord, history)
   }
 
-  return { exportScript, importScript }
+  return { exportHistory, importHistory }
 }

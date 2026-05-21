@@ -124,7 +124,7 @@ To balance the debt list:
   with explicit one-way dependencies.
 - **The Plotly integration is decomposed by concern.** Each file is
   short, named, and tested where testable.
-- **The QC script format is versioned**, replayable, and stable on
+- **The QC History format is versioned**, replayable, and stable on
   disk — this is the durability story you want.
 - **CI is fast and gates the right things** (type-check, coverage,
   build).

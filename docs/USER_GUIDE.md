@@ -24,7 +24,7 @@ pipeline. With it you can:
 5. **Edit** the selected points: change values, interpolate, drift-
    correct, shift datetimes, delete, fill gaps, add points, attach
    qualifier flags.
-6. **Save your edits as a QC script** (a JSON file you can replay on
+6. **Save your edits as a QC History** (a JSON file you can replay on
    the same or another datastream later).
 7. **Submit** the cleaned observations back to HydroServer.
 
@@ -43,7 +43,7 @@ history until you press Save.
 | **Context traces** | The other plotted datastreams. Visible but read-only. They exist to give you context for the QC target. |
 | **History** | The ordered list of filters + edits you've applied in the current session. Undo / redo / save / load all operate on this list. |
 | **Selection** | The set of point indices a filter (or your click / lasso) produced. Edits operate on the current selection. |
-| **QC script** | A JSON file holding your history. Reusable across datastreams; the canonical save format. |
+| **QC History** | A JSON file holding your history. Reusable across datastreams; the canonical save format. |
 | **Submit / Save** | POST the cleaned observations back to HydroServer with `mode=replace`. This overwrites the existing observations in the window you have plotted. |
 
 ## First-time setup
@@ -663,8 +663,8 @@ history** in the right sidebar.
 ![Edit history with one applied operation](./images/edit-history.png)
 
 The header carries the count chip and four icon buttons (left to
-right): **undo**, **redo**, **save QC script** (tray-arrow-down),
-**load QC script** (tray-arrow-up), and **open in window** (the
+right): **undo**, **redo**, **save QC History** (tray-arrow-down),
+**load QC History** (tray-arrow-up), and **open in window** (the
 pop-out icon, which reopens the same panel inside a modal). Keyboard
 shortcuts: `Ctrl+Z` to undo, `Ctrl+Y` or `Ctrl+Shift+Z` to redo.
 
@@ -691,9 +691,9 @@ Clicking the chevron at the very top of the panel collapses the whole
 panel; the pop-out icon opens the same panel inside a wider modal so
 you can scan a long history without losing the rest of the sidebar.
 
-## Save / load a QC script
+## Save / load a QC History
 
-The QC script is the canonical save format. It's a JSON file you can
+The QC History is the canonical save format. It's a JSON file you can
 keep, re-apply, share, or version-control.
 
 ### Save
@@ -702,7 +702,7 @@ In the Edit history header, click the tray-arrow-down icon ("Save QC
 script"). The browser downloads a file named like:
 
 ```
-qc-script-<datastream-name>-<isoTimestamp>.json
+qc-history-<datastream-name>-<isoTimestamp>.json
 ```
 
 The file contains:
@@ -710,11 +710,11 @@ The file contains:
 - The wall-clock window of the plotted data.
 - Every operation in the history, in order, with its args.
 
-A Snackbar confirms "QC script saved."
+A Snackbar confirms "QC History saved."
 
 ### Load
 
-Click the tray-arrow-up icon ("Load QC script") and pick a JSON file.
+Click the tray-arrow-up icon ("Load QC History") and pick a JSON file.
 The app will:
 
 1. Fetch the script's authored window into your current QC datastream

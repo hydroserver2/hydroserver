@@ -42,7 +42,7 @@ panel (FindGaps.vue)
    │
    │  validates inputs, sets store state
    ▼
-useFilterDispatch / useQcScript
+useFilterDispatch / useQcHistory
    │
    │  selectedSeries.data.dispatchFilter(FIND_GAPS, args)
    ▼

@@ -17,7 +17,7 @@ The app is the operator's view of HydroServer's QC pipeline:
 1. **Browse** — pick a workspace, filter datastreams by site / observed property / processing level, and plot up to five at once on a synchronized multi-axis chart.
 2. **QC one stream at a time** — the first plotted stream is the QC target. The other plotted traces are read-only context.
 3. **Filter / edit / add** — every operation (Value Threshold, Find Gaps, Persistence, Interpolate, Drift Correction, Fill Gaps, Add Points, etc.) commits a `HistoryItem` to a replayable edit history backed by [`@uwrl/qc-utils`](https://www.npmjs.com/package/@uwrl/qc-utils).
-4. **Save / load a QC script** — export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
+4. **Save / load a QC History** — export the history as a JSON document, replay it on the same datastream a week later, or templatize across stations.
 5. **Submit** — push the quality-controlled observations back to HydroServer in `replace` mode.
 
 The heavy lifting (worker-parallelized typed-array kernels, calibration, history replay, save / load wire format) lives in `@uwrl/qc-utils`. This repo is the Vue / Vuetify / Pinia / Plotly UI plus the orchestration around it.
@@ -60,7 +60,7 @@ src/
 ├─ composables/
 │  ├─ useDataSelection.ts       The bridge between Plotly's selectedpoints and the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → run op → highlight result" sequence.
-│  └─ useQcScript.ts            Wiring around qc-utils' serializeHistory / applyScript.
+│  └─ useQcHistory.ts            Wiring around qc-utils' serializeHistory / applyHistory.
 ├─ store/
 │  ├─ plotly.ts                 Plot ref, edit history, redraw, suppressedEchoSelection sentinel.
 │  ├─ dataVisualization.ts      Selected datastream, plotted streams, selectedData.
@@ -75,7 +75,7 @@ src/
 └─ router/                      vue-router 5 setup with workspace + auth guards.
 ```
 
-The data flow for an edit is always: panel collects args → `useFilterDispatch` / `useQcScript` calls `selectedSeries.data.dispatch(...)` (qc-utils) → qc-utils mutates typed arrays + appends a `HistoryItem` → `redraw()` pushes the new x / y into Plotly. The UI never touches the typed arrays directly.
+The data flow for an edit is always: panel collects args → `useFilterDispatch` / `useQcHistory` calls `selectedSeries.data.dispatch(...)` (qc-utils) → qc-utils mutates typed arrays + appends a `HistoryItem` → `redraw()` pushes the new x / y into Plotly. The UI never touches the typed arrays directly.
 
 ## Working with `@uwrl/qc-utils` locally
 

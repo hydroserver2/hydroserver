@@ -1,9 +1,9 @@
 /**
- * QC History Script — round-trip e2e.
+ * QC History — round-trip e2e.
  *
  * Apply two operations (a value-threshold filter + a delete edit
  * that consumes its selection), use the EditHistory header's
- * Save button to download the script, then load that same script
+ * Save button to download the QC history, then load that same file
  * back via the Load button and assert the history matches.
  *
  * The save side is exercised against a Playwright-wired download
@@ -17,13 +17,13 @@ import { installMocks } from './support/mocks'
 import { openOp, setupEditView } from './support/app'
 import { expectHistoryContains, selectAllPoints } from './support/ops'
 
-test.describe('QC script: save / load round-trip', () => {
+test.describe('QC history: save / load round-trip', () => {
   test.beforeEach(async ({ page }) => {
     await installMocks(page)
     await setupEditView(page)
   })
 
-  test('exports a script and re-applies it through the Load button', async ({
+  test('exports a QC history and re-applies it through the Load button', async ({
     page,
   }) => {
     // --- Author a couple of operations ---------------------------
@@ -61,15 +61,15 @@ test.describe('QC script: save / load round-trip', () => {
     const path = await download.path()
     expect(path).toBeTruthy()
     const buf = await readFile(path!)
-    const scriptText = buf.toString('utf-8')
-    const script = JSON.parse(scriptText)
+    const historyText = buf.toString('utf-8')
+    const history = JSON.parse(historyText)
 
-    expect(script.version).toBe('1')
-    expect(script.window).toBeDefined()
-    expect(typeof script.window.startDate).toBe('string')
-    expect(typeof script.window.endDate).toBe('string')
-    expect(Array.isArray(script.operations)).toBe(true)
-    expect(script.operations.length).toBe(beforeCount)
+    expect(history.version).toBe('1')
+    expect(history.window).toBeDefined()
+    expect(typeof history.window.startDate).toBe('string')
+    expect(typeof history.window.endDate).toBe('string')
+    expect(Array.isArray(history.operations)).toBe(true)
+    expect(history.operations.length).toBe(beforeCount)
 
     // --- Reset history before loading ----------------------------
     // Discard via the Reload button on the baseline row, which
@@ -86,7 +86,7 @@ test.describe('QC script: save / load round-trip', () => {
       page.locator('[data-testid^="history-item-"]')
     ).toHaveCount(0)
 
-    // --- Load: feed the captured script through the hidden input
+    // --- Load: feed the captured QC history through the hidden input
     const fileInput = page.locator('input[type="file"][accept*="json"]')
     await fileInput.setInputFiles({
       name: 'round-trip.json',
