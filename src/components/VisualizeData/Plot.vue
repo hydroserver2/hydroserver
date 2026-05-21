@@ -281,20 +281,34 @@
           </v-card>
         </v-menu>
 
-        <v-select
-          v-model="editorDateBtnId"
-          :items="editorDateOptions"
-          item-title="editorLabel"
-          item-value="id"
-          density="compact"
-          variant="outlined"
-          hide-details
-          prepend-inner-icon="mdi-magnify-scan"
-          title="Zoom to range (does not reload data)"
+        <!-- Zoom-to-range presets. Clicking the active chip
+             re-applies the preset (intentional — a v-select swallows
+             same-value clicks and a user who pan/zoomed away from
+             the preset would otherwise be stuck). The highlight
+             tracks the last preset *clicked*, not the live range,
+             since the live range can diverge after pan/zoom. -->
+        <div
           class="plot-toolbar__range"
-          style="max-width: 12rem"
-          @update:model-value="(id: any) => onEditorDatePreset(id as number)"
-        />
+          title="Zoom to range (does not reload data)"
+        >
+          <v-icon
+            icon="mdi-magnify-scan"
+            size="18"
+            class="plot-toolbar__range-icon"
+          />
+          <v-chip
+            v-for="option in editorDateOptions"
+            :key="option.id"
+            :color="editorDateBtnId === option.id ? 'primary' : undefined"
+            :variant="editorDateBtnId === option.id ? 'tonal' : 'outlined'"
+            size="small"
+            :title="option.editorLabel"
+            class="plot-toolbar__range-chip"
+            @click="onEditorDatePreset(option.id)"
+          >
+            {{ option.label }}
+          </v-chip>
+        </div>
       </div>
     </div>
 
@@ -703,6 +717,9 @@ function onEditorDatePreset(id: number) {
 
   if (!begin || !end) return
   zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
+  // Chip click no longer flows through a v-model; track the last
+  // preset applied so the active chip stays highlighted.
+  editorDateBtnId.value = id
 }
 
 function toggleTooltips() {
@@ -931,11 +948,22 @@ const onTabChange = () => {
   font-variant-numeric: tabular-nums;
 }
 
-.plot-toolbar__range :deep(.v-btn) {
-  min-width: 32px !important;
-  padding: 0 8px !important;
-  font-size: 0.75rem;
-  letter-spacing: 0;
+.plot-toolbar__range {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.plot-toolbar__range-icon {
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  margin-right: 2px;
+}
+
+.plot-toolbar__range-chip {
+  min-width: 0;
+  font-size: 0.75rem !important;
+  height: 26px !important;
+  padding-inline: 8px !important;
 }
 
 /* Floating hover-coordinates chip overlaid on the plot. Absolute

@@ -151,16 +151,33 @@ Three columns, each independently resizable / collapsible:
 
 The chart at the top of the center column has a Plotly toolbar with:
 
-- **Zoom** (drag a horizontal box on the x-axis)
-- **Pan** (hold + drag)
+- **Undo zoom / Redo zoom**: step backward and forward through the
+  current session's zoom-and-pan history.
+- **Zoom** (drag a horizontal box on the x-axis), plus **Zoom in**
+  and **Zoom out** buttons that step the X scale around its center.
+- **Pan** (hold + drag).
 - **Box select / Lasso select**: the primary way to select points for
   an edit.
 - **Reset axes**: back to the full plotted window.
+- **Fit X to visible / Fit Y to visible**: rescales the corresponding
+  axis to the data currently inside the viewport.
+
+See the [Pan and zoom across axes](#pan-and-zoom-across-axes) section
+below for the gestures these buttons map to and the per-axis tricks
+that aren't represented as toolbar icons.
 
 Hover any toolbar icon to see its name. The left side of the toolbar
 flips between **Plot** and **Table** views (see below); the right
 side carries the **data points toggle**, a share-link button, and
 the `?` help menu.
+
+Between the help menu and the right edge is a row of **zoom-range
+chips** (**1w**, **1m**, **6m**, **1y**, **All**). Clicking one
+zooms the X axis to that window — *without* refetching observations,
+unlike the sidebar's identical-looking chips on the Select view. The
+active chip stays highlighted as a reminder of the last preset
+applied; clicking it again re-applies it, which is the easiest way to
+"snap back" after a manual pan or wheel-zoom.
 
 Clicking a single point on the plot selects just that point.
 Clicking the empty plot area clears the selection.
@@ -266,11 +283,6 @@ Defaults are elided to keep URLs short. Sidebar filters
 URL only on the Select view, because they drive the datastreams
 table rather than the plot.
 
-> **Not** shared via URL: edit history (use **Export QC script**
-> for that), the current point selection (it would change the
-> moment the recipient hovered), drawer widths, and other
-> personal-preference layout state.
-
 ### Plotted datastreams list
 
 The right-hand list (visible on both Select and Edit views) is the
@@ -355,17 +367,26 @@ datastreams:
 - **X-axis pan**: enable Pan in the toolbar, then drag the plot
   body. The context plot at the bottom is also draggable; it acts
   as an overview thumbnail.
-- **Per-axis Y zoom**: hover near the ends of any Y axis and drag.
+- **Per-axis zoom**: hover near the ends of any axis and drag.
   Only that axis rescales; sibling axes keep their current view.
   This is how you "compare units": drop the temperature axis to a
   tight window without touching streamflow.
-- **Per-axis Y pan**: hover the middle of a Y axis and drag.
+- **Per-axis pan**: hover the middle of an axis and drag.
 - **Reset**: the home icon on the Plotly toolbar returns to the
   default zoom (does not change the begin/end dates in the
   sidebar).
-- **Fit Y to visible**: the vertical-collapse icon in the toolbar
-  rescales every Y axis to the currently visible X window. Handy
+- **Fit Y/X to visible**: the collapse icons in the toolbar
+  rescales The X or Y axis to the currently visible points. Handy
   after a deep zoom when one trace ends up off-axis.
+- **Undo zoom / Redo zoom**: the curved-arrow icons at the far
+  left of the modebar step backward and forward through the
+  zoom-and-pan history of the current session. Each settled
+  gesture (wheel scroll, box-zoom, pan drag, preset chip, or a
+  hydrated URL zoom) becomes a new entry. These are independent
+  from the Edit-history Undo / Redo (`Ctrl+Z` / `Ctrl+Y`), which
+  operates on filter and edit operations — zooming the chart
+  never adds anything to the edit history, and undoing an edit
+  never moves the camera.
 
 The `?` (help) menu in the plot toolbar carries a "Plot tips" card
 listing the hidden gestures (per-axis pan/zoom, scroll-to-zoom,

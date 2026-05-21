@@ -63,6 +63,9 @@ async function waitForPlotLayoutSettled(page: Page) {
         | (HTMLElement & { _fullLayout?: { width: number } })
         | null
       if (!gd) return true
+      // The plot div stays in the DOM behind the Table tab but its
+      // offsetWidth collapses to 0 — treat that as settled too.
+      if (gd.offsetWidth === 0) return true
       const layout = gd._fullLayout
       if (!layout?.width) return false
       // Allow a few pixels of slop — Plotly rounds.
