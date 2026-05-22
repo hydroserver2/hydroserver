@@ -707,26 +707,9 @@ const onDataConnectionCreated = async () => {
   await refreshDataConnections()
 }
 
-const onTaskCreated = async (createdTask?: TaskExpanded) => {
+const onTaskCreated = async (_createdTask?: TaskExpanded) => {
   closeCreateTaskDialog()
   await fetchAll()
-  const taskToPoll =
-    (createdTask?.latestRun?.id ? createdTask : null) ??
-    workspaceTasks.value.find((task) => task.id === createdTask?.id)
-
-  if (!taskToPoll?.id) {
-    await autoSelectSidebarAndSync()
-    return
-  }
-
-  if (
-    taskToPoll?.latestRun?.id &&
-    activeRunStatuses.has(taskToPoll.latestRun.status)
-  ) {
-    startPollingTaskRun('etl', taskToPoll.id, taskToPoll.latestRun.id)
-  } else if (!taskToPoll?.latestRun) {
-    await runTaskNow('etl', taskToPoll.id)
-  }
   await autoSelectSidebarAndSync()
 }
 
@@ -751,44 +734,12 @@ const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
   openExpressionForm.value = false
   openRatingCurveForm.value = false
   await fetchAll()
-
-  const taskToPoll = dataProductTasks.value.find(
-    (task) => task.id === createdTask?.id
-  )
-
-  if (taskToPoll?.id) {
-    if (
-      taskToPoll.latestRun?.id &&
-      activeRunStatuses.has(taskToPoll.latestRun.status)
-    ) {
-      startPollingTaskRun('dataProduct', taskToPoll.id, taskToPoll.latestRun.id)
-    } else if (!taskToPoll.latestRun) {
-      await runTaskNow('dataProduct', taskToPoll.id)
-    }
-  }
-
   await autoSelectSidebarAndSync()
 }
 
 const onQualityTaskCreated = async (createdTask?: MonitoringTask) => {
   closeQualityForm()
   await fetchAll()
-
-  const taskToPoll = monitoringTasks.value.find(
-    (task) => task.id === createdTask?.id
-  )
-
-  if (taskToPoll?.id) {
-    if (
-      taskToPoll.latestRun?.id &&
-      activeRunStatuses.has(taskToPoll.latestRun.status)
-    ) {
-      startPollingTaskRun('monitoring', taskToPoll.id, taskToPoll.latestRun.id)
-    } else if (!taskToPoll.latestRun) {
-      startPollingForLatestRun('monitoring', taskToPoll.id)
-    }
-  }
-
   await autoSelectSidebarAndSync()
 }
 

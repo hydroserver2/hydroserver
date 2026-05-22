@@ -412,7 +412,9 @@ LOGGING = {
     },
     "formatters": {
         "standard": {
-            "format": "%(asctime)s [%(levelname)s] [run:%(run_id)s] %(name)s: %(message)s",
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
+            "rename_fields": {"levelname": "level"},
         },
     },
     "handlers": {

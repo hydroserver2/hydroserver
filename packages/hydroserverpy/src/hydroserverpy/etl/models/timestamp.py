@@ -190,4 +190,7 @@ class Timestamp(Timezone):
         if self.timestamp_type == "custom":
             return local_dt.strftime(self.timestamp_format)
 
+        if self.timezone_type is None:
+            return local_dt.strftime("%Y-%m-%d %H:%M:%S")
+
         return local_dt.isoformat()
