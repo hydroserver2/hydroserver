@@ -199,8 +199,6 @@
           v-if="tab === 'plot'"
           size="small"
           variant="text"
-          density="compact"
-          class="plot-toolbar__icon-btn"
           icon="mdi-share-variant-outline"
           title="Copy shareable link"
           aria-label="Copy shareable link"
@@ -219,8 +217,6 @@
               v-bind="menuProps"
               variant="text"
               size="small"
-              density="compact"
-              class="plot-toolbar__icon-btn"
               icon="mdi-help-circle-outline"
               title="Plot controls"
               aria-label="Plot controls"
@@ -281,34 +277,35 @@
           </v-card>
         </v-menu>
 
-        <!-- Zoom-to-range presets. Clicking the active chip
-             re-applies the preset (intentional — a v-select swallows
-             same-value clicks and a user who pan/zoomed away from
-             the preset would otherwise be stuck). The highlight
-             tracks the last preset *clicked*, not the live range,
-             since the live range can diverge after pan/zoom. -->
-        <div
-          class="plot-toolbar__range"
-          title="Zoom to range (does not reload data)"
+        <v-speed-dial
+          v-model="rangeDialOpen"
+          location="bottom center"
+          transition="fade-transition"
         >
-          <v-icon
-            icon="mdi-magnify-scan"
-            size="18"
-            class="plot-toolbar__range-icon"
-          />
-          <v-chip
+          <template #activator="{ props: activatorProps }">
+            <v-btn
+              v-bind="activatorProps"
+              size="small"
+              variant="text"
+              icon="mdi-magnify-scan"
+              title="Zoom to range (does not reload data)"
+              aria-label="Zoom to range"
+            />
+          </template>
+
+          <v-btn
             v-for="option in editorDateOptions"
             :key="option.id"
-            :color="editorDateBtnId === option.id ? 'primary' : undefined"
-            :variant="editorDateBtnId === option.id ? 'tonal' : 'outlined'"
+            color="surface"
+            variant="flat"
             size="small"
             :title="option.editorLabel"
-            class="plot-toolbar__range-chip"
-            @click="onEditorDatePreset(option.id)"
+            class="text-none text-caption font-weight-medium border elevation-2"
+            @click="selectRangePreset(option.id)"
           >
             {{ option.label }}
-          </v-chip>
-        </div>
+          </v-btn>
+        </v-speed-dial>
       </div>
     </div>
 
@@ -470,7 +467,6 @@ const { selectedData, hasSelectionShape, qcDatastream, dateOptions } =
 const allPresetId = computed(
   () => dateOptions.value.find((o) => o.label === 'All')?.id ?? null
 )
-const editorDateBtnId = ref<number | null>(allPresetId.value)
 
 /**
  * `tooltipsAutoDisabled` is only meaningful in `auto` mode: it's the
@@ -659,6 +655,13 @@ const editorDateOptions = computed(() =>
     .map((o) => ({ ...o, editorLabel: EDITOR_LABELS[o.label] ?? o.label }))
 )
 
+const rangeDialOpen = ref(false)
+
+function selectRangePreset(id: number) {
+  onEditorDatePreset(id)
+  rangeDialOpen.value = false
+}
+
 /**
  * Editor-mode date presets are a visual x-axis zoom, not a data
  * refetch. The Select-view sidebar's sibling buttons drive
@@ -717,9 +720,6 @@ function onEditorDatePreset(id: number) {
 
   if (!begin || !end) return
   zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
-  // Chip click no longer flows through a v-model; track the last
-  // preset applied so the active chip stays highlighted.
-  editorDateBtnId.value = id
 }
 
 function toggleTooltips() {
@@ -819,8 +819,8 @@ onMounted(async () => {
     // Done after `handleNewPlot` so the Plotly instance is ready
     // to receive the relayout. Skipped in preview mode because the
     // preset control isn't visible there.
-    if (!props.preview && editorDateBtnId.value != null) {
-      onEditorDatePreset(editorDateBtnId.value)
+    if (!props.preview && allPresetId.value != null) {
+      onEditorDatePreset(allPresetId.value)
     }
 
     // URL-supplied zoom is consumed inside `handleNewPlot` itself
@@ -946,24 +946,6 @@ const onTabChange = () => {
 .plot-toolbar__selection {
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
-}
-
-.plot-toolbar__range {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.plot-toolbar__range-icon {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin-right: 2px;
-}
-
-.plot-toolbar__range-chip {
-  min-width: 0;
-  font-size: 0.75rem !important;
-  height: 26px !important;
-  padding-inline: 8px !important;
 }
 
 /* Floating hover-coordinates chip overlaid on the plot. Absolute
@@ -1118,15 +1100,6 @@ const onTabChange = () => {
 }
 .plot-toolbar__tooltips-notice-edit.v-btn :deep(.v-icon) {
   font-size: 12px;
-}
-
-/* Tighten the icon-only tooltip toggle and help button so they sit
-   closer to their neighbours. `density="compact"` on v-btn already
-   trims ~8px of vertical padding; pairing it with a narrower min-width
-   removes the extra horizontal slack Vuetify keeps around icon buttons. */
-.plot-toolbar__icon-btn.v-btn {
-  min-width: 28px;
-  padding-inline: 4px;
 }
 
 /* Combobox-style data-points control. The wrapper owns the chrome
