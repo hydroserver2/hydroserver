@@ -3,7 +3,7 @@
 This guide is for the operator: the hydrologist or technician who picks
 a datastream, marks the bad points, and submits the cleaned series back
 to HydroServer. It walks through every feature on the screen and the
-shortest path to common QC tasks.
+shortest path to common QC tasks in the HydroServer Quality Control App.
 
 If you are looking for developer / deployment docs, start with
 [ARCHITECTURE.md](./ARCHITECTURE.md) instead.
@@ -173,7 +173,7 @@ the `?` help menu.
 
 Between the help menu and the right edge is a row of **zoom-range
 chips** (**1w**, **1m**, **6m**, **1y**, **All**). Clicking one
-zooms the X axis to that window — *without* refetching observations,
+zooms the X axis to that window, *without* refetching observations,
 unlike the sidebar's identical-looking chips on the Select view. The
 active chip stays highlighted as a reminder of the last preset
 applied; clicking it again re-applies it, which is the easiest way to
@@ -182,7 +182,7 @@ applied; clicking it again re-applies it, which is the easiest way to
 Clicking a single point on the plot selects just that point.
 Clicking the empty plot area clears the selection.
 
-### Plot ↔ Table tabs
+### Plot vs Table tabs
 
 The segmented control at the top-left of the plot toolbar (`Plot` /
 `Table`) switches the center column between the Plotly chart and an
@@ -255,8 +255,7 @@ sooner. The new value applies on **Apply** (or on Enter).
 The setting is persisted locally, so it survives reloads.
 
 Datastreams without a declared `intendedTimeSpacing` render as pure
-scatter plots — there is no connecting line under the markers, so
-the toggle has nothing to fall back to. Their markers stay visible
+scatter plots. Their markers stay visible
 regardless of toggle state or visible-point count, so a no-cadence
 series can never disappear from view by flipping points off.
 
@@ -297,7 +296,7 @@ roster of currently plotted datastreams. Each row carries:
 - A drag handle to reorder the list (drag the QC target's row to
   promote / demote it; the line colors track the order).
 - A colored radio dot that picks the **QC target**. The active row is
-  tinted; the other rows render in their reference colour.
+  tinted; the other rows render in their reference color.
 - An **eye** toggle that hides the trace from the plot without
   unplotting it. Hidden rows render with a strikethrough.
 - A **Y-axis** toggle (non-QC rows only) that collapses that
@@ -369,7 +368,7 @@ different and worth knowing about when you're juggling several
 datastreams:
 
 - **X-axis zoom**: drag a horizontal box on the time grid (Zoom
-  tool), or scroll over the plot. Every axis stays time-synchronised.
+  tool), or scroll over the plot. Every axis stays time-synchronized.
 - **X-axis pan**: enable Pan in the toolbar, then drag the plot
   body. The context plot at the bottom is also draggable; it acts
   as an overview thumbnail.
@@ -382,7 +381,7 @@ datastreams:
   default zoom (does not change the begin/end dates in the
   sidebar).
 - **Fit Y/X to visible**: the collapse icons in the toolbar
-  rescales The X or Y axis to the currently visible points. Handy
+  rescale the X or Y axis to the currently visible points. Handy
   after a deep zoom when one trace ends up off-axis.
 - **Undo zoom / Redo zoom**: the curved-arrow icons at the far
   left of the modebar step backward and forward through the
@@ -390,7 +389,7 @@ datastreams:
   gesture (wheel scroll, box-zoom, pan drag, preset chip, or a
   hydrated URL zoom) becomes a new entry. These are independent
   from the Edit-history Undo / Redo (`Ctrl+Z` / `Ctrl+Y`), which
-  operates on filter and edit operations — zooming the chart
+  operates on filter and edit operations. Zooming the chart
   never adds anything to the edit history, and undoing an edit
   never moves the camera.
 
@@ -699,7 +698,7 @@ keep, re-apply, share, or version-control.
 ### Save
 
 In the Edit history header, click the tray-arrow-down icon ("Save QC
-script"). The browser downloads a file named like:
+History"). The browser downloads a file named like:
 
 ```
 qc-history-<datastream-name>-<isoTimestamp>.json
