@@ -4,7 +4,7 @@ import { createPatchObject } from './createPatchObject'
 import pLimit from 'p-limit'
 
 const limit = pLimit(10)
-const DEFAULT_PAGE_SIZE = 1000
+const DEFAULT_PAGE_SIZE = 200
 
 async function interceptedFetch(endpoint: string, options: any) {
   const opts = requestInterceptor(options)
