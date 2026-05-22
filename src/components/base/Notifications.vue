@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-snackbar
     v-model="snack.visible"
     :timeout="snack.timeout"
@@ -6,17 +6,13 @@
     multi-line
     :location="snack.position"
   >
-    <v-row align="center">
-      <v-col cols="auto">
-        <v-icon dark color="white" size="45">{{ snack.icon }}</v-icon>
-      </v-col>
-      <v-col>
-        <div class="text-white">
-          <h6 class="text-h6">{{ snack.title }}</h6>
-          <div>{{ snack.message }}</div>
-        </div>
-      </v-col>
-    </v-row>
+    <div class="d-flex align-center ga-4 text-white">
+      <v-icon color="white" size="45">{{ snack.icon }}</v-icon>
+      <div>
+        <h6 class="text-title-large">{{ snack.title }}</h6>
+        <div>{{ snack.message }}</div>
+      </div>
+    </div>
   </v-snackbar>
 </template>
 

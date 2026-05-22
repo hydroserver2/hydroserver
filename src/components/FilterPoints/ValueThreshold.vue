@@ -1,10 +1,10 @@
-<template>
+﻿<template>
   <v-card>
-    <v-card-title class="text-body-1">Filter by values</v-card-title>
+    <v-card-title class="text-body-large">Filter by values</v-card-title>
 
     <template v-if="Object.keys(appliedFilters).length">
       <v-card-text class="pt-2 pb-0">
-        <div class="text-caption text-medium-emphasis mb-2 d-flex align-center">
+        <div class="text-body-small text-medium-emphasis mb-2 d-flex align-center">
           <span class="flex-grow-1">
             Applied ({{ Object.keys(appliedFilters).length }})
           </span>
@@ -17,7 +17,7 @@
             Clear all
           </v-btn>
         </div>
-        <div class="d-flex flex-wrap gap-1">
+        <div class="d-flex flex-wrap ga-1">
           <v-chip
             v-for="(key, index) of Object.keys(appliedFilters)"
             :key="index"
@@ -34,7 +34,7 @@
     </template>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Select points where the value is
       </div>
       <v-select
@@ -97,9 +97,6 @@ const selectedFilter = ref(filterOperators[2])
 const filterValue = ref(0)
 const appliedFilters: Ref<{ [key: string]: number }> = ref({})
 
-/** Re-run the filter against the current `appliedFilters`. The
- *  `useFilterDispatch` helper handles `isUpdating`, the qc-utils
- *  call, and pushing the resulting selection to the plot. */
 const reapply = () =>
   dispatchFilter(
     EnumFilterOperations.VALUE_THRESHOLD,

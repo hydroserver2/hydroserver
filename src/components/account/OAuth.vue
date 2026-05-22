@@ -39,18 +39,9 @@ import { computed } from 'vue'
 import type { Provider } from '@/models/settings'
 const { hs } = storeToRefs(useHydroServer())
 
-// TODO(oauth): re-enable OAuth sign-in once the qc-app is deployed
-// somewhere the backend's OAuth app has registered as an authorized
-// redirect URI. The provider list and icons are served from the
-// backend's `<script id="app-settings">` (see `@/config/settings`),
-// and the button click hands off to `hs.session.providerRedirect`,
-// which issues a form POST that the backend answers with a 302 to
-// Google. Google then redirects to whatever callback URL the backend's
-// Google OAuth app has registered — that's the deployed playground
-// origin, not `127.0.0.1:1203`. So clicking Google from local dev
-// strands the user at the playground origin with a session cookie
-// we can't read. Hidden until the deployment story makes the callback
-// loop close back to this app.
+// TODO(oauth): re-enable once the qc-app deployment is registered as an
+// authorized OAuth redirect URI. Local dev strands the user at the
+// playground origin with a session cookie we can't read.
 const filteredOAuthProviders = computed<Provider[]>(() => [])
 
 const signupOrLoginWithOAuth = (providerId: string) => {

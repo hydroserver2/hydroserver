@@ -1,6 +1,6 @@
-<template>
-  <div class="range-stager">
-    <div class="text-caption text-medium-emphasis mb-2">Date range</div>
+﻿<template>
+  <div>
+    <div class="text-body-small text-medium-emphasis mb-2">Date range</div>
     <DatePickerField
       placeholder="From"
       :modelValue="fromDate"
@@ -14,7 +14,7 @@
       class="mb-2"
     />
 
-    <div v-if="rangePresets.length" class="d-flex gap-1 flex-wrap mb-2">
+    <div v-if="rangePresets.length" class="d-flex ga-1 flex-wrap mb-2">
       <v-chip
         v-for="preset in rangePresets"
         :key="preset.label"
@@ -28,16 +28,10 @@
       </v-chip>
     </div>
 
-    <div class="text-caption text-medium-emphasis">
+    <div class="text-body-small text-medium-emphasis">
       Drag the blue band on the plot to resize, or edit the dates above.
     </div>
 
-    <!-- When the user switches to zoom / select / lasso we drop the
-         stage shape off the plot so those tools can draw freely over
-         the plot area (see the staging module for why). This hint
-         keeps the hidden-state discoverable — without it the band
-         just disappears and the affordance to drag it back feels
-         lost. -->
     <v-alert
       v-if="!stagePanMode"
       class="mt-3"
@@ -46,7 +40,7 @@
       density="compact"
       icon="mdi-cursor-move"
     >
-      <div class="text-caption">
+      <div class="text-body-small">
         Range overlay hidden while the zoom, box-select, or lasso tool is
         active. Switch back to pan to resize it on the plot.
       </div>
@@ -60,25 +54,12 @@
       density="compact"
       icon="mdi-alert-outline"
     >
-      <div class="text-caption">{{ rangeWarning }}</div>
+      <div class="text-body-small">{{ rangeWarning }}</div>
     </v-alert>
   </div>
 </template>
 
 <script setup lang="ts">
-/**
- * Shared "pick a date range" UI — date pickers, preset chips, the
- * editable blue band on the plot, data-bounds clamping, and a
- * one-line range warning for degenerate windows. Parents read the
- * resulting state via `defineExpose` (`fromTs`, `toTs`,
- * `rangeWarning`, `rangeIndices`) and do whatever they need with
- * it: Find Gaps scans for gaps, Fill Gaps computes a fill preview,
- * Datetime Range selects every point inside.
- *
- * Keeping the range UX in one component means a single fix for
- * edge cases (clamping, invalid windows, drag gestures) lands in
- * every operation that opts into it.
- */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
@@ -101,12 +82,6 @@ import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 
 const { selectedSeries } = storeToRefs(usePlotlyStore())
 
-// Data-driven min/max for the picker + overlay. Read off the live
-// `dataX` Float64Array so the bounds track whatever is actually
-// plotted, not the (sometimes stale) datastream metadata. `null`
-// when the series hasn't loaded yet — callers fall back to
-// unclamped behaviour in that case so the panel stays usable
-// during load.
 const dataBounds = computed<{ min: number; max: number } | null>(() => {
   const dataX = selectedSeries.value?.data.dataX
   if (!dataX?.length) return null
@@ -123,10 +98,7 @@ const clampTs = (ts: number): number => {
   return Math.min(Math.max(ts, b.min), b.max)
 }
 
-// Initialise to placeholders; `onMounted` rewrites these from
-// `dataBounds` so the panel always opens on the full data extent
-// rather than inheriting whatever selection-bound dates were in
-// scope (see the Find→Fill switchover bug for why).
+// Placeholders; onMounted rewrites from dataBounds so the panel always opens on the full extent.
 const fromDate = ref<Date>(new Date())
 const toDate = ref<Date>(new Date())
 
@@ -148,9 +120,6 @@ const onToDateChange = (date: Date) => {
 const fromTs = computed(() => fromDate.value.getTime())
 const toTs = computed(() => toDate.value.getTime())
 
-// Keep the editable range shape on the plot in sync with the
-// picker values. Pushing from here means both the pickers and the
-// drag handle on the plot write through the same local refs.
 watch(
   [fromTs, toTs],
   async ([from, to]) => {
@@ -172,9 +141,6 @@ const rangeWarning = computed<string | null>(() => {
   return null
 })
 
-/** Start / end indices in the QC series corresponding to the
- *  staged `[fromTs, toTs]` window. `null` when the window is
- *  empty or the series hasn't loaded. */
 const rangeIndices = computed<[number, number] | null>(() => {
   const dataX = selectedSeries.value?.data.dataX
   if (!dataX?.length || rangeWarning.value) return null
@@ -278,11 +244,9 @@ const applyPreset = (preset: RangePreset) => {
 let stopDragListener: (() => void) | null = null
 
 onMounted(async () => {
-  // Default the staged window to the full data extent on every
-  // open. We deliberately don't inherit from
-  // `useDataSelection.startDate / endDate` — those collapse to the
-  // live point selection's extent, which can be a near-zero range
-  // right after a filter operation committed.
+  // Default to full data extent. Don't inherit from
+  // useDataSelection.startDate/endDate: those collapse to the live
+  // point selection's extent (near-zero right after a filter commit).
   const b = dataBounds.value
   if (b) {
     fromDate.value = new Date(b.min)

@@ -1,31 +1,31 @@
 <template>
-  <div class="plot-context" ref="rootEl">
-    <div ref="plotEl" class="plot-context__plot"></div>
+  <div class="plot-context position-relative flex-grow-0 flex-shrink-0 user-select-none" ref="rootEl">
+    <div ref="plotEl" class="plot-context__plot position-absolute pointer-events-none"></div>
     <div
       v-show="hasBrush"
-      class="plot-context__overlay"
+      class="plot-context__overlay position-absolute"
       ref="overlayEl"
       @pointerdown="onBackgroundPointerDown"
     >
       <div
-        class="plot-context__shade"
+        class="plot-context__shade position-absolute pointer-events-none"
         :style="{ left: '0px', width: brushPixL + 'px' }"
       />
       <div
-        class="plot-context__shade"
+        class="plot-context__shade position-absolute pointer-events-none"
         :style="{ left: brushPixR + 'px', right: '0px' }"
       />
       <div
-        class="plot-context__brush"
+        class="plot-context__brush position-absolute cursor-grab"
         :style="{ left: brushPixL + 'px', width: brushPixW + 'px' }"
         @pointerdown.stop="onBrushPointerDown"
       >
         <div
-          class="plot-context__handle plot-context__handle--l"
+          class="plot-context__handle plot-context__handle--l position-absolute"
           @pointerdown.stop="(e) => onHandlePointerDown('l', e)"
         />
         <div
-          class="plot-context__handle plot-context__handle--r"
+          class="plot-context__handle plot-context__handle--r position-absolute"
           @pointerdown.stop="(e) => onHandlePointerDown('r', e)"
         />
       </div>
@@ -46,11 +46,9 @@ import type { GraphSeries } from '@/types'
 const TARGET_POINTS = 2000
 const MIN_BRUSH_PX = 8
 
-// Plotly's PlotlyHTMLElement extends EventEmitter at runtime, but the
-// published types only surface `.on` / `.removeAllListeners`. We use the
-// node-style `.removeListener(event, handler)` form to unsubscribe a
-// specific handler — declare the shape here so the call sites don't
-// need scattered `as any` casts.
+// Plotly's PlotlyHTMLElement extends EventEmitter at runtime, but published
+// types only surface `.on` / `.removeAllListeners`; declare the node-style
+// `.removeListener` shape so unsubscribe calls don't need `as any`.
 type PlotlyEventEmitter = {
   removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
 }
@@ -63,9 +61,6 @@ const rootEl = ref<HTMLDivElement>()
 const plotEl = ref<HTMLDivElement>()
 const overlayEl = ref<HTMLDivElement>()
 
-// Pixel-space brush window, computed from the main plot's xaxis range
-// projected onto the context plot area. Updated on main-plot relayout
-// and on resize.
 const brushPixL = ref(0)
 const brushPixW = ref(0)
 const brushPixR = computed(() => brushPixL.value + brushPixW.value)
@@ -79,14 +74,10 @@ let mainRestyleHandler: (() => void) | null = null
 let pendingMainUpdate: number | null = null
 let pendingTargetRange: [number, number] | null = null
 
-// Datastream ids whose trace is hidden in the main plot (via the eye toggle
-// in PlottedDatastreams). Mirrored from `plotlyRef.value.data[*].visible`
-// because that state lives on the live Plotly trace, not in the store.
+// Mirrored from `plotlyRef.value.data[*].visible` since visibility lives on
+// the live Plotly trace, not in the store.
 const hiddenIds = ref<Set<string>>(new Set())
 
-// --- Downsampling -----------------------------------------------------------
-// Stride sample, always preserving the last point so the line reaches the
-// right edge. Lines-only context view: visual fidelity is fine without LTTB.
 function strideSample(
   xs: ArrayLike<number>,
   ys: ArrayLike<number>,
@@ -161,7 +152,6 @@ function buildContextTraces(series: GraphSeries[]): {
   return { traces, extent }
 }
 
-// --- Main-plot live xaxis range read ---------------------------------------
 function readMainXRange(): [number, number] | null {
   const gd = plotlyRef.value as
     | (PlotlyHTMLElement & {
@@ -181,7 +171,6 @@ function readMainXRange(): [number, number] | null {
   return [a, b]
 }
 
-// --- Pixel/data conversion against the context plot ------------------------
 function getCtxPlotMetrics(): {
   offset: number
   length: number
@@ -218,7 +207,6 @@ function pixelToData(px: number): number | null {
   return m.range[0] + ((px - m.offset) / m.length) * (m.range[1] - m.range[0])
 }
 
-// --- Sync brush <- main plot -----------------------------------------------
 function syncBrushFromMain() {
   const range = readMainXRange()
   const m = getCtxPlotMetrics()
@@ -241,7 +229,6 @@ function syncBrushFromMain() {
   hasBrush.value = true
 }
 
-// --- Brush -> main plot (RAF throttled) ------------------------------------
 function scheduleMainUpdate(target: [number, number]) {
   pendingTargetRange = target
   if (pendingMainUpdate != null) return
@@ -271,7 +258,6 @@ function pushBrushPixelsToMain() {
   scheduleMainUpdate([a, b])
 }
 
-// --- Pointer interaction ----------------------------------------------------
 type DragKind = 'move' | 'l' | 'r' | 'create'
 let drag: {
   kind: DragKind
@@ -287,9 +273,7 @@ function clamp(px: number): number {
 }
 
 function pointerXInOverlay(e: PointerEvent): number {
-  // Return pixel x in the same coordinate space as `_offset` / `_length`,
-  // i.e. relative to the gd element. The overlay covers the gd, so we
-  // measure from the plotEl (which IS the gd) bounding rect.
+  // Measure from plotEl (the gd) so x matches Plotly's `_offset` / `_length`.
   const rect = plotEl.value?.getBoundingClientRect()
   if (!rect) return 0
   return e.clientX - rect.left
@@ -319,7 +303,6 @@ function onHandlePointerDown(side: 'l' | 'r', e: PointerEvent) {
 
 function onBackgroundPointerDown(e: PointerEvent) {
   if (e.button !== 0) return
-  // Click on empty area starts a new brush window from that point.
   const x = clamp(pointerXInOverlay(e))
   brushPixL.value = x
   brushPixW.value = 0
@@ -372,7 +355,6 @@ function onPointerUp(e: PointerEvent) {
   ;(e.target as Element | null)?.releasePointerCapture?.(e.pointerId)
 }
 
-// --- Lifecycle / wiring -----------------------------------------------------
 async function buildOrUpdate() {
   const el = plotEl.value
   if (!el) return
@@ -431,9 +413,8 @@ async function buildOrUpdate() {
   syncBrushFromMain()
 }
 
-// Rebuild signature: changes only when series identity / length / color /
-// QC target shifts. Per-cell y-edits don't refresh the context view (cheap
-// and the overall shape barely changes anyway).
+// Refresh only on series identity / length / color / QC target shifts so
+// per-cell y-edits stay cheap; overall shape barely changes anyway.
 const rebuildSignature = computed(() => {
   const qid = qcDatastream.value?.id ?? ''
   const parts = graphSeriesArray.value.map(
@@ -482,16 +463,13 @@ function attachMainListener() {
   }
   mainRestyleHandler = () => syncHiddenFromMain()
   gd.on('plotly_restyle', mainRestyleHandler as never)
-  // Seed initial hidden state too — ensures rebuild picks it up if a trace
-  // was already hidden when the context mounted.
+  // Seed hidden state so rebuild picks up traces already hidden on mount.
   syncHiddenFromMain()
 }
 
-// `plotlyRef` only changes identity on first mount — `handleNewPlot`
-// reuses the same DOM node on every replot. `mainPlotEpoch` bumps on
-// every `Plotly.newPlot` run (which purges externally-attached event
-// listeners), so we watch it too and re-bind the relayout/restyle
-// handlers that drive the context brush.
+// `plotlyRef` only changes identity on first mount; `mainPlotEpoch` bumps
+// on every `Plotly.newPlot` (which purges externally-attached listeners),
+// so re-bind the relayout/restyle handlers driving the context brush.
 watch(
   [plotlyRef, mainPlotEpoch],
   () => {
@@ -520,10 +498,8 @@ onMounted(async () => {
       if (!ctxGd) return
       const anyGd = ctxGd as unknown as { _fullLayout?: unknown }
       if (!anyGd._fullLayout) return
-      // `Plotly.Plots.resize` is typed as returning `void` in
-      // plotly.js-dist's public surface but actually returns a Promise
-      // at runtime. Cast through `unknown` to chain the brush sync
-      // after layout settles.
+      // `Plotly.Plots.resize` is typed as `void` but returns a Promise at
+      // runtime; cast through `unknown` to chain the brush sync.
       void (
         Plotly.Plots.resize(ctxGd as unknown as Plotly.Root) as unknown as Promise<void>
       ).then(() => syncBrushFromMain())
@@ -569,50 +545,38 @@ onBeforeUnmount(() => {
   }
 })
 
-// Expose for tests / external callers if needed
 defineExpose({ syncBrushFromMain })
-// Reference suppress to keep TS quiet about unused.
 void dataExtent
 </script>
 
 <style scoped>
 .plot-context {
-  position: relative;
   height: 64px;
-  flex: 0 0 auto;
   background-color: rgba(var(--v-theme-on-surface), 0.02);
-  user-select: none;
   touch-action: none;
 }
 
 .plot-context__plot {
-  position: absolute;
   inset: 0;
-  pointer-events: none;
 }
 
 .plot-context__overlay {
-  position: absolute;
   inset: 0;
   cursor: crosshair;
 }
 
 .plot-context__shade {
-  position: absolute;
   top: 0;
   bottom: 0;
   background-color: rgba(var(--v-theme-on-surface), 0.18);
-  pointer-events: none;
 }
 
 .plot-context__brush {
-  position: absolute;
   top: 0;
   bottom: 0;
   background-color: rgba(var(--v-theme-primary), 0.08);
   border-left: 1px solid rgba(var(--v-theme-primary), 0.65);
   border-right: 1px solid rgba(var(--v-theme-primary), 0.65);
-  cursor: grab;
 }
 
 .plot-context__brush:active {
@@ -620,7 +584,6 @@ void dataExtent
 }
 
 .plot-context__handle {
-  position: absolute;
   top: 0;
   bottom: 0;
   width: 8px;

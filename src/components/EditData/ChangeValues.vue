@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Change values</v-card-title>
     <v-card-subtitle>
@@ -12,7 +12,7 @@
     </v-card-subtitle>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">Operator</div>
+      <div class="text-body-small text-medium-emphasis mb-2">Operator</div>
       <v-btn-toggle
         v-model="selectedOperator"
         color="primary"
@@ -39,7 +39,7 @@
         </v-btn>
       </v-btn-toggle>
 
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         New value = old <b>{{ operators[selectedOperator] }}</b> input
       </div>
       <v-text-field

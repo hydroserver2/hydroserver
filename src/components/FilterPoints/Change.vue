@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <v-card>
-    <v-card-title class="text-body-1">Filter by change</v-card-title>
+    <v-card-title class="text-body-large">Filter by change</v-card-title>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Select points where the change between consecutive samples is
       </div>
       <v-select

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Delete points</v-card-title>
     <v-card-subtitle>
@@ -16,7 +16,7 @@
         type="warning"
         density="compact"
         variant="tonal"
-        class="text-body-2"
+        class="text-body-medium"
       >
         This removes
         <b>{{ selectedData?.length }}</b>

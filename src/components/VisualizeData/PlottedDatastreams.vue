@@ -41,7 +41,7 @@
         @dragend="onDragEnd"
       >
         <v-icon
-          class="plotted-item__drag"
+          class="plotted-item__drag cursor-grab"
           icon="mdi-drag-vertical"
           size="16"
           :color="plottedDatastreams.length > 1 ? 'grey' : 'grey-lighten-2'"
@@ -51,7 +51,7 @@
         <button
           v-if="!lockQc"
           type="button"
-          class="plotted-item__dot"
+          class="plotted-item__dot cursor-pointer rounded-circle"
           :class="{ 'plotted-item__dot--active': qcDatastream === datastream }"
           :style="{
             color: colorForDatastream(datastream.id),
@@ -68,7 +68,7 @@
 
         <button
           type="button"
-          class="plotted-item__visibility"
+          class="plotted-item__visibility d-inline-flex align-center justify-center cursor-pointer rounded-sm"
           :title="
             visibleDict[datastream.id] === false
               ? 'Show on plot'
@@ -90,12 +90,12 @@
           />
         </button>
 
-        <!-- Y-axis visibility. QC rows sit on the primary left axis
-             (always rendered), so the toggle is non-QC only. -->
+        <!-- QC rows sit on the always-rendered primary left axis, so
+             the Y-axis toggle is only for non-QC rows. -->
         <button
           v-if="qcDatastream !== datastream"
           type="button"
-          class="plotted-item__axis-toggle"
+          class="plotted-item__axis-toggle d-inline-flex align-center justify-center cursor-pointer rounded-sm"
           :title="hiddenAxisIds.has(datastream.id) ? 'Show Y axis' : 'Hide Y axis'"
           :disabled="isUpdating"
           @click="toggleAxisVisibility(datastream.id)"
@@ -112,14 +112,16 @@
         </button>
         <span v-else />
 
-        <!-- Text uses the darker companion of the line colour so the
-           row reads as "tied to this axis" while staying legible; the
-           raw pastel is too washed out at body-text weight. -->
+        <!-- Darker companion of the line colour: ties the row to its
+             axis while staying legible at body-text weight. -->
         <div
           class="plotted-item__text"
           :style="{ color: labelColorForDatastream(datastream.id) }"
         >
-          <div class="plotted-item__title" :title="datastream.name">
+          <div
+            class="plotted-item__title d-flex align-center ga-1"
+            :title="datastream.name"
+          >
             <span>{{ datastream.name }}</span>
             <v-tooltip
               v-if="!loadStatus(datastream.id).loading && loadStatus(datastream.id).count === 0"
@@ -129,7 +131,7 @@
               <template #activator="{ props: tp }">
                 <v-icon
                   v-bind="tp"
-                  class="plotted-item__empty-flag"
+                  class="plotted-item__empty-flag flex-shrink-0"
                   icon="mdi-database-off-outline"
                   size="14"
                   color="warning"
@@ -153,7 +155,7 @@
         <button
           v-if="!(lockQc && qcDatastream === datastream)"
           type="button"
-          class="plotted-item__close"
+          class="plotted-item__close d-inline-flex align-center justify-center cursor-pointer rounded-sm"
           :title="`Remove ${datastream.name} from plot`"
           aria-label="Remove from plot"
           @click="toggleDatastream(datastream)"
@@ -194,10 +196,8 @@ const {
   clearPlottedDatastreams,
 } = useDataVisStore()
 
-// Per-row visibility derived from the store's `hiddenTraceIds`.
-// Template treats `visibleDict[id] === false` as "hidden"; this
-// computed view keeps that contract while moving the source of truth
-// into the store (so the share URL can read it).
+// Template treats `visibleDict[id] === false` as "hidden"; source of
+// truth lives in the store so the share URL can read it.
 const visibleDict = computed<Record<string, boolean>>(() => {
   const out: Record<string, boolean> = {}
   for (const ds of plottedDatastreams.value) {
@@ -214,15 +214,6 @@ const isUpdating = computed(() =>
   Array.from(loadingStates.value.values()).some((isLoading) => isLoading)
 )
 
-/**
- * Per-datastream load state for the row subtitle: how many points
- * are currently loaded in the window, plus whether a fetch is still
- * in flight. Reads directly off `graphSeriesArray` so the count stays
- * accurate after window changes, undo/redo, or fill/delete edits that
- * mutate the series. Returns `loading: true` while the series is
- * still resolving and `count: 0` once observations land outside the
- * window.
- */
 const loadStatus = (id: string) => {
   const series = graphSeriesArray.value.find((s) => s.id === id)
   if (!series) return { loading: true, count: 0 }
@@ -231,10 +222,6 @@ const loadStatus = (id: string) => {
   return { loading, count }
 }
 
-/**
- * Remove every plotted datastream at once. The store action handles
- * clearing graph series, zoom history, and QC in one step.
- */
 async function clearAll() {
   hiddenTraceIds.value = new Set()
   await clearPlottedDatastreams()
@@ -252,17 +239,14 @@ const toggleVisibility = async (datastream: Datastream) => {
     ?.visible
   const nextVisible = !(isVisible === true || isVisible == undefined)
 
-  // Mirror the new visibility into the store-backed set. Mutating
-  // a fresh Set instance (rather than in-place) lets pinia notify
-  // any deep watcher (e.g. the URL share watcher).
+  // Mutate a fresh Set instance so pinia notifies deep watchers (URL share).
   const next = new Set(hiddenTraceIds.value)
   if (nextVisible) next.delete(datastream.id)
   else next.add(datastream.id)
   hiddenTraceIds.value = next
 
-  // Gap overlays carry no `id`, only `_gapOverlayFor`; toggle them
-  // alongside the main trace so hiding a datastream removes both its
-  // markers and its line.
+  // Gap overlays carry only `_gapOverlayFor`; toggle alongside the main
+  // trace so hiding a datastream removes both its line and its markers.
   for (let i = 0; i < traces.length; i++) {
     const t = traces[i] as AppPlotlyTrace
     if (i === mainIndex || t._gapOverlayFor === datastream.id) {
@@ -271,9 +255,7 @@ const toggleVisibility = async (datastream: Datastream) => {
   }
 }
 
-// --- Native HTML5 drag-and-drop reordering ---
-// Keeping this tight instead of pulling in a dependency. Firefox needs
-// `setData` for a drag to actually start, hence the payload.
+// Firefox needs `setData` for a drag to actually start, hence the payload.
 const dragIndex = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 
@@ -308,11 +290,8 @@ function onDragEnd() {
   dropIndex.value = null
 }
 
-/**
- * Move the plotted datastream at `from` to the position `to`. Also
- * reorders the matching entry in `graphSeriesArray` so the plot trace
- * order (and the colour assignments derived from it) stays in sync.
- */
+// Mirrors the reorder onto `graphSeriesArray` so plot trace order (and
+// the colour assignments derived from it) stays in sync.
 function reorder(from: number, to: number) {
   const list = plottedDatastreams.value
   const moved = list.splice(from, 1)[0]
@@ -346,7 +325,6 @@ function reorder(from: number, to: number) {
 
 .plotted-item {
   display: grid;
-  /* drag | qc-dot | eye | axis-toggle | text | close */
   grid-template-columns: 16px 18px 22px 22px 1fr 22px;
   align-items: center;
   gap: 6px;
@@ -357,7 +335,6 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item--locked {
-  /* drag | eye | axis-toggle | text | close */
   grid-template-columns: 16px 22px 22px 1fr 22px;
 }
 
@@ -373,10 +350,6 @@ function reorder(from: number, to: number) {
   background-color: rgba(var(--v-theme-primary), 0.06);
 }
 
-/* When the user hides this series from the plot via the eye button,
-   dim the whole row so its hidden state is clear at a glance. The drag
-   handle and the eye/close/dot controls stay fully interactive — only
-   the visual content (title, subtitle, dot, eye icon) fades. */
 .plotted-item--hidden {
   opacity: 0.45;
 }
@@ -410,7 +383,6 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item__drag {
-  cursor: grab;
   opacity: 0.75;
 }
 
@@ -418,18 +390,14 @@ function reorder(from: number, to: number) {
   cursor: grabbing;
 }
 
-/* Custom compact radio: a 14px circle that's filled when this row is
-   the QC target. `currentColor` picks up the inline `color:` style so
-   each row uses its series colour. v-radio was too tall/wide for the
-   rail. */
+/* Compact QC-target radio. currentColor picks up the inline series
+   colour per row; v-radio was too tall for the rail. */
 .plotted-item__dot {
   width: 14px;
   height: 14px;
   padding: 0;
   border: 2px solid currentColor;
-  border-radius: 50%;
   background: transparent;
-  cursor: pointer;
   transition:
     background-color 120ms ease,
     box-shadow 120ms ease;
@@ -452,16 +420,11 @@ function reorder(from: number, to: number) {
 .plotted-item__visibility,
 .plotted-item__axis-toggle,
 .plotted-item__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 22px;
   height: 22px;
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 .plotted-item__visibility:hover:not(:disabled),
@@ -483,17 +446,9 @@ function reorder(from: number, to: number) {
 }
 
 .plotted-item__title {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   font-weight: 600;
-  /* Wrap long names instead of truncating. */
   word-break: break-word;
   overflow-wrap: anywhere;
-}
-
-.plotted-item__empty-flag {
-  flex-shrink: 0;
 }
 
 .plotted-item__subtitle {

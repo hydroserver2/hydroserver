@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Shift datetimes</v-card-title>
     <v-card-subtitle>
@@ -12,34 +12,36 @@
     </v-card-subtitle>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Shift selected timestamps by
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex ga-2">
         <v-text-field
+          class="flex-grow-1"
+          style="flex-basis: 0"
           label="Amount"
           type="number"
           v-model.number="shiftAmount"
           density="comfortable"
           variant="outlined"
           hide-details
-          style="flex: 1 1 0"
           @keyup.enter="
             !isUpdating && selectedData?.length && onShiftDatetimes()
           "
         />
         <v-select
+          class="flex-grow-1"
+          style="flex-basis: 0"
           label="Unit"
           :items="shiftUnits"
           v-model="selectedShiftUnit"
           density="comfortable"
           variant="outlined"
           hide-details
-          style="flex: 1 1 0"
         />
       </div>
 
-      <div v-if="snapChips.length" class="d-flex gap-1 mt-2 flex-wrap">
+      <div v-if="snapChips.length" class="d-flex ga-1 mt-2 flex-wrap">
         <v-chip
           v-for="chip in snapChips"
           :key="chip.label"
@@ -84,14 +86,6 @@ const { redraw } = usePlotlyStore()
 const { shiftUnits } = useUIStore()
 const { recordPostActionSelection } = useFilterDispatch()
 
-/**
- * Snap chips based on the QC datastream's intended cadence, mirroring
- * the Fill Gaps fill-cadence chips. The most common shift is a single
- * cadence step (users correcting an off-by-one misalignment), with
- * half- and double-cadence for the less frequent cases. Only rendered
- * when the datastream exposes intended-spacing metadata — otherwise
- * there's no anchor to snap against.
- */
 interface SnapChip {
   label: string
   amount: number
@@ -110,7 +104,7 @@ const snapChips = computed<SnapChip[]>(() => {
   return [0.5, 1, 2].map((m) => {
     const amount = n * m
     return {
-      label: `${m}× intended (${amount} ${unitKey.toLowerCase()})`,
+      label: `${m}Ã— intended (${amount} ${unitKey.toLowerCase()})`,
       amount,
       unit: unitKey,
       active:

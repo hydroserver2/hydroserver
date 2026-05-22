@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-menu
     v-model="open"
     :close-on-content-click="false"
@@ -18,24 +18,24 @@
       </v-tooltip>
     </template>
 
-    <v-card max-width="440" class="calibration-card">
-      <v-card-title class="text-subtitle-1 d-flex align-center gap-2">
+    <v-card max-width="440">
+      <v-card-title class="text-title-medium d-flex align-center ga-2">
         <v-icon icon="mdi-speedometer" size="20" />
         Performance calibration
       </v-card-title>
       <v-divider />
 
-      <v-card-text class="text-body-2">
+      <v-card-text class="text-body-medium">
         <p class="text-medium-emphasis mb-3">
           qc-utils decides per-operation whether to spawn web workers or run
-          inline on the main thread. The crossover depends on your device —
+          inline on the main thread. The crossover depends on your device:
           calibration measures it once and caches the result.
         </p>
 
         <div class="d-flex align-center justify-space-between mb-2">
           <div>
             <div class="font-weight-medium">Last calibrated</div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-body-small text-medium-emphasis">
               {{ lastCalibratedLabel }}
             </div>
           </div>
@@ -56,9 +56,9 @@
           type="warning"
           variant="tonal"
           density="compact"
-          class="mt-2 text-caption"
+          class="mt-2 text-body-small"
         >
-          SharedArrayBuffer is unavailable in this context — all operations
+          SharedArrayBuffer is unavailable in this context: all operations
           are forced inline. Enable COOP/COEP headers to restore workers.
         </v-alert>
 
@@ -66,10 +66,10 @@
           <v-divider class="my-3" />
           <v-expansion-panels variant="accordion" flat>
             <v-expansion-panel>
-              <v-expansion-panel-title class="text-caption font-weight-medium">
+              <v-expansion-panel-title class="text-body-small font-weight-medium">
                 Benchmark details
               </v-expansion-panel-title>
-              <v-expansion-panel-text class="text-caption">
+              <v-expansion-panel-text class="text-body-small">
                 <table class="calibration-table">
                   <tbody>
                     <tr>
@@ -118,20 +118,20 @@
             </v-expansion-panel>
 
             <v-expansion-panel>
-              <v-expansion-panel-title class="text-caption font-weight-medium">
+              <v-expansion-panel-title class="text-body-small font-weight-medium">
                 Operation table
               </v-expansion-panel-title>
-              <v-expansion-panel-text class="text-caption">
+              <v-expansion-panel-text class="text-body-small">
                 <p class="text-medium-emphasis mb-2">
                   Weight is the operation's relative per-element cost
                   against the reference
                   <code>VALUE_THRESHOLD</code> scan (weight 1.0). It
-                  describes the algorithm, not the machine — so it's
+                  describes the algorithm, not the machine, so it's
                   shipped with qc-utils, not measured at runtime.
                   Recalibration only re-measures the three device
                   primitives above; weights stay fixed. The dispatch
                   formula is
-                  <code>weight × N / throughput</code>, so one
+                  <code>weight Ã— N / throughput</code>, so one
                   universal weight per op plus your per-device
                   throughputs covers the full operation catalog.
                 </p>
@@ -180,13 +180,6 @@ import {
   type DeviceProfile,
 } from '@uwrl/qc-utils'
 
-/**
- * Dev popover that surfaces the current qc-utils calibration, exposes
- * a "Recalibrate" button, and — in dev mode only — shows the three
- * measured primitives plus the per-operation weight/mode table. Sits
- * in the nav rail next to Switch workspace / Log out.
- */
-
 const isDev = import.meta.env.DEV
 const open = ref(false)
 const running = ref(false)
@@ -197,7 +190,7 @@ const sabAvailable = typeof SharedArrayBuffer !== 'undefined'
 const opTable = computed(() => getOperationTable())
 
 const lastCalibratedLabel = computed(() => {
-  if (!profile.value.measuredAt) return 'Never — using defaults'
+  if (!profile.value.measuredAt) return 'Never (using defaults)'
   const diffMs = Date.now() - profile.value.measuredAt
   if (diffMs < 60_000) return 'Just now'
   const minutes = Math.round(diffMs / 60_000)
@@ -244,10 +237,6 @@ function fmtSamples(arr: number[] | undefined): string {
 </script>
 
 <style scoped>
-.calibration-card {
-  font-size: 0.875rem;
-}
-
 .calibration-table {
   width: 100%;
   border-collapse: collapse;

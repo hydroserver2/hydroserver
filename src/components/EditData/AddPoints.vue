@@ -15,11 +15,11 @@
       </v-card-title>
 
       <v-card-text>
-        <div class="add-points__list d-flex flex-column gap-3">
+        <div class="d-flex flex-column ga-3">
           <div
             v-for="(point, index) of dataPoints"
             :key="index"
-            class="add-points__row"
+            class="add-points__row pa-2 rounded border"
           >
             <div class="d-flex align-center mb-1">
               <v-chip size="x-small" color="primary" variant="tonal" label>
@@ -102,18 +102,8 @@ interface NewPoint {
 
 const dataPoints: Ref<NewPoint[]> = ref([])
 
-/** Default value for a new row — datastream's `noDataValue`. */
 const defaultValue = () => Number(noDataValue.value) || 0
 
-/**
- * Pick the seed datetime for the first row:
- *   - last selected point + intendedTimeSpacing, when there's a selection
- *   - last datapoint in the QC series + intendedTimeSpacing, otherwise
- *   - `now` if neither is available (shouldn't happen with a loaded series)
- *
- * `intendedTimeSpacing` is the datastream's declared cadence; falls back
- * to 0 (so the seed equals the anchor) when the metadata is missing.
- */
 const pickFirstDatetime = (): Date => {
   const dt = intendedSpacingMs() ?? 0
   const dataX = selectedSeries.value?.data.dataX
@@ -131,9 +121,6 @@ const pickFirstDatetime = (): Date => {
 }
 
 const addRow = () => {
-  // Each new row sits exactly one cadence step past the previous row,
-  // so a user adding several points in a row gets a sensible auto-
-  // incremented timeline rather than typing each datetime by hand.
   const dt = intendedSpacingMs() ?? 0
   const last = dataPoints.value[dataPoints.value.length - 1]
   const nextDt = last ? new Date(last.dt.getTime() + dt) : pickFirstDatetime()
@@ -171,7 +158,6 @@ const onAddDataPoints = async () => {
 }
 
 onMounted(() => {
-  // Seed the autopopulated first row.
   dataPoints.value = [{ dt: pickFirstDatetime(), value: defaultValue() }]
   form.value?.validate()
 })
@@ -179,9 +165,6 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .add-points__row {
-  padding: 8px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 4px;
   background: rgba(var(--v-theme-primary), 0.02);
 }
 </style>

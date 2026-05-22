@@ -1,5 +1,5 @@
-<template>
-  <div class="d-flex align-center gap-1" v-bind="$attrs">
+﻿<template>
+  <div class="d-flex align-center ga-1" v-bind="$attrs">
     <v-text-field
       ref="dateField"
       :model-value="dateInput"
@@ -26,7 +26,7 @@
   <v-dialog v-model="showDateDialog" max-width="20rem">
     <v-card class="date-picker-card">
       <div class="d-flex align-center px-4 py-2">
-        <span class="text-subtitle-1 font-weight-medium">
+        <span class="text-title-medium font-weight-medium">
           Select {{ placeholder }}
         </span>
         <v-spacer />
@@ -63,11 +63,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
-// --- Mask shape -------------------------------------------------------------
-// Each input is a fixed-width string. Separator positions hold the literal
-// `/` or `:`; digit positions hold `0`-`9` or `_` for "not yet typed". Tight
-// in-house mask logic — replaces maska, whose eager-mode reformat passes
-// fought the segment-aware caret behaviour we want.
+// Custom mask: maska's eager reformat fights segment-aware caret behaviour.
 type Segment = readonly [number, number]
 
 interface MaskShape {
@@ -107,7 +103,6 @@ const TIME_WITH_SECONDS: MaskShape = {
 
 const timeShape = (): MaskShape => (props.seconds ? TIME_WITH_SECONDS : TIME)
 
-// --- Format helpers ---------------------------------------------------------
 const formatDateStr = (date: Date) => {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
@@ -128,7 +123,6 @@ const toMidnight = (date: Date) => {
   return d
 }
 
-// --- v-model bridge ---------------------------------------------------------
 const showDateDialog = ref(false)
 
 const dateInput = ref(formatDateStr(props.modelValue))
@@ -198,8 +192,6 @@ const handleTimeBlur = () => {
   timeInput.value = formatTimeStr(props.modelValue)
 }
 
-// --- Mask engine ------------------------------------------------------------
-// Pure helpers. Each takes a value + position, returns a new value + caret.
 const segmentAt = (segments: readonly Segment[], pos: number): number => {
   for (let i = 0; i < segments.length; i++) {
     if (pos >= segments[i]![0] && pos <= segments[i]![1]) return i
@@ -244,7 +236,6 @@ const blankRange = (
   return chars.join('')
 }
 
-// --- Per-input controller ---------------------------------------------------
 type InputCtl = {
   inputRef: { value: { $el: HTMLElement } | null }
   modelRef: { value: string }
@@ -306,7 +297,7 @@ const makeController = (ctl: InputCtl) => {
 
     if (e.inputType === 'insertText') {
       const data = e.data ?? ''
-      // Only digits make it through — anything else is rejected.
+      // Only digits make it through; anything else is rejected.
       if (!/^\d$/.test(data)) {
         e.preventDefault()
         return
@@ -349,7 +340,7 @@ const makeController = (ctl: InputCtl) => {
     ) {
       e.preventDefault()
       if (end > start) {
-        // Range delete — blank the digits in the range, leave caret at start.
+        // Range delete: blank the digits in the range, leave caret at start.
         const next = blankRange(value, start, end, ctl.shape)
         void setValueAndSelection(next, [start, start])
         return
@@ -370,9 +361,7 @@ const makeController = (ctl: InputCtl) => {
       return
     }
 
-    // Anything else (paste, drag-drop, IME composition) — block.
-    // Pasting a full date could be wired up later; for now keep the
-    // rule "only digit keys mutate the value".
+    // Block paste, drag-drop, IME composition: only digit keys mutate.
     e.preventDefault()
   }
 
@@ -394,7 +383,6 @@ const makeController = (ctl: InputCtl) => {
   return { onFocus, onClick, onBeforeInput, onKeydown }
 }
 
-// --- Wiring -----------------------------------------------------------------
 const dateField = ref<{ $el: HTMLElement } | null>(null)
 const timeField = ref<{ $el: HTMLElement } | null>(null)
 

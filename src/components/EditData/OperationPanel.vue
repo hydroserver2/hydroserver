@@ -1,16 +1,10 @@
-<template>
+﻿<template>
   <div
     v-if="op"
-    class="operation-panel d-flex flex-column bg-surface"
+    class="operation-panel d-flex flex-column overflow-hidden bg-surface"
     :data-testid="`operation-panel-${op.id}`"
   >
-    <!-- Header mirrors the edit-history header so the two panels read as
-         siblings in the sidebar. Close button dismisses the panel; the
-         operation itself decides when to auto-close on a successful
-         action via its own `close` emit. -->
-    <div
-      class="operation-panel__header px-3 py-2 d-flex align-center gap-2"
-    >
+    <div class="operation-panel__header px-3 py-2 d-flex align-center ga-2">
       <v-avatar
         :color="op.requiresSelection ? 'warning' : 'primary'"
         variant="flat"
@@ -19,10 +13,10 @@
         <v-icon :icon="op.icon" color="white" size="14" />
       </v-avatar>
       <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
-        <span class="text-body-2 font-weight-bold text-truncate">
+        <span class="text-body-medium font-weight-bold text-truncate">
           {{ op.title }}
         </span>
-        <span class="text-caption text-medium-emphasis text-truncate">
+        <span class="text-body-small text-medium-emphasis text-truncate">
           {{ op.description }}
         </span>
       </div>
@@ -42,12 +36,9 @@
 
     <v-divider />
 
-    <!-- Selection-required guard. Shown inline rather than replacing the
-         body so the user keeps the panel open while they go back to the
-         plot and brush a range. -->
     <div
       v-if="op.requiresSelection && !selectedData?.length"
-      class="operation-panel__empty px-3 py-4 d-flex flex-column align-center text-center"
+      class="px-3 py-4 d-flex flex-column align-center text-center"
     >
       <v-icon
         icon="mdi-selection-ellipse-arrow-inside"
@@ -55,26 +46,21 @@
         color="warning"
         class="mb-2"
       />
-      <div class="text-caption text-medium-emphasis">
+      <div class="text-body-small text-medium-emphasis">
         Select points on the plot to continue.
       </div>
     </div>
 
-    <!-- Dynamic body. Each operation renders its own v-card; scoped
-         overrides below flatten the nested card so it looks native to
-         the panel instead of a dialog-in-a-sidebar. Sections are
-         visually separated with their own padding + bottom border. -->
     <div
       v-else
-      class="operation-panel__body flex-grow-1 overflow-y-auto"
-      :class="{ 'operation-panel__body--multi': filterRangeToggleVisible }"
+      class="operation-panel__body flex-grow-1 overflow-y-auto pa-2"
     >
       <section
         v-if="filterRangeToggleVisible"
-        class="operation-panel__section"
+        class="operation-panel__section rounded border bg-surface overflow-hidden"
       >
-        <div class="operation-panel__section-head">
-          <h3 class="operation-panel__section-title">Date range mask</h3>
+        <div class="operation-panel__section-head d-flex align-center ga-1">
+          <h3 class="operation-panel__section-title flex-grow-1">Date range mask</h3>
           <v-tooltip
             v-if="filterRangeActive"
             location="start"
@@ -94,8 +80,8 @@
           </v-tooltip>
         </div>
         <FilterRangePanel v-if="filterRangeActive" />
-        <div v-else class="operation-panel__section-empty px-3 pb-3">
-          <p class="text-caption text-medium-emphasis mb-2">
+        <div v-else class="d-flex flex-column align-start ga-1 px-3 pb-3">
+          <p class="text-body-small text-medium-emphasis mb-2">
             Run this operation against the full datastream, or apply a
             date range mask to restrict it to a datetime window.
           </p>
@@ -110,7 +96,7 @@
           </v-btn>
         </div>
       </section>
-      <section class="operation-panel__section operation-panel__section--op">
+      <section class="operation-panel__section operation-panel__section--op rounded border bg-surface overflow-hidden">
         <component :is="op.component" @close="close" />
       </section>
     </div>
@@ -132,7 +118,7 @@ const op = computed(() =>
   selectedOperation.value ? operationsById[selectedOperation.value] : null
 )
 
-// `datetimeRange` brings its own picker — would duplicate the shared range UI.
+// datetimeRange has its own picker that would duplicate the shared range UI.
 const OPS_WITH_OWN_RANGE = new Set(['datetimeRange'])
 
 const filterRangeToggleVisible = computed(
@@ -149,7 +135,6 @@ function close() {
 .operation-panel {
   min-height: 0;
   max-height: 100%;
-  overflow: hidden;
 }
 
 .operation-panel__header {
@@ -159,24 +144,13 @@ function close() {
 
 .operation-panel__body {
   min-height: 0;
-  padding: 8px;
 }
 
 .operation-panel__section + .operation-panel__section {
   margin-top: 12px;
 }
 
-.operation-panel__section {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 6px;
-  background-color: rgb(var(--v-theme-surface));
-  overflow: hidden;
-}
-
 .operation-panel__section-head {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   padding: 4px 4px 0 0;
 }
 
@@ -188,20 +162,10 @@ function close() {
   color: rgba(var(--v-theme-on-surface), 0.7);
   padding: 8px 12px 4px;
   margin: 0;
-  flex-grow: 1;
 }
 
-.operation-panel__section-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-/* Normalize the embedded v-card so it doesn't look like a dialog:
-   no elevation, no rounded corners, no min-width. The individual
-   operation components all wrap their contents in a v-card, and we
-   want that card to be visually flush with the surrounding section. */
+/* Flatten the embedded v-card so the operation reads as part of the
+   section instead of a dialog-in-a-sidebar. */
 .operation-panel__section :deep(> .v-card),
 .operation-panel__section :deep(> .v-form > .v-card) {
   box-shadow: none !important;
@@ -233,17 +197,14 @@ function close() {
   min-height: 0 !important;
 }
 
-/* The operation components redundantly repeat their titles in
-   v-card-title. The panel header already names the operation, so
-   hide the internal one. */
+/* The panel header already names the operation: hide the embedded
+   v-card-title (and the divider that followed it) to avoid duplication. */
 .operation-panel__section--op :deep(> .v-card > .v-card-title:first-child),
 .operation-panel__section--op
   :deep(> .v-form > .v-card > .v-card-title:first-child) {
   display: none !important;
 }
 
-/* Hide the leading divider that separated the now-hidden title from
-   the body, if present. */
 .operation-panel__section--op
   :deep(> .v-card > .v-card-title:first-child + .v-divider),
 .operation-panel__section--op

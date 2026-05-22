@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Qualifying comments</v-card-title>
     <v-card-subtitle>
@@ -12,7 +12,7 @@
     </v-card-subtitle>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Pick one or more qualifier flags to apply.
       </div>
 
@@ -42,10 +42,10 @@
       </div>
 
       <div v-if="existingAtSelection.length">
-        <div class="text-caption font-weight-medium mb-1">
+        <div class="text-body-small font-weight-medium mb-1">
           Already applied
         </div>
-        <div class="d-flex flex-wrap gap-1">
+        <div class="d-flex flex-wrap ga-1">
           <v-chip
             v-for="code in existingAtSelection"
             :key="code"
@@ -133,7 +133,7 @@ const newDescription = ref('')
 const qualifierItems = computed(() =>
   qualifiers.value.map((q) => ({
     id: q.id,
-    label: q.description ? `${q.code} — ${q.description}` : q.code,
+    label: q.description ? `${q.code} - ${q.description}` : q.code,
   }))
 )
 
@@ -172,9 +172,6 @@ function closeNewQualifier() {
 async function onCreateQualifier() {
   const code = newCode.value.trim()
   if (!code) return
-  // `createQualifier` is now async — it POSTs to
-  // `hs.resultQualifiers` so the code persists on the server for the
-  // active workspace.
   const q = await qualifierStore.createQualifier(code, newDescription.value)
   if (!selectedQualifierIds.value.includes(q.id)) {
     selectedQualifierIds.value = [...selectedQualifierIds.value, q.id]
@@ -194,7 +191,6 @@ async function onApply() {
 
   selectedQualifierIds.value = []
   await clearSelected()
-  // Rebuild the plot so newly-added qualifier band traces are drawn.
   updateOptions()
   if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
   emit('close')

@@ -1,13 +1,8 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Fill gaps</v-card-title>
 
     <v-card-text>
-      <!-- Top half: shared "find gaps" UX. `GapFinder` owns date
-           pickers, presets, threshold, snap chips, overlay band,
-           red gap bands, and the range warning; we read its exposed
-           state via `gapFinder` below to drive the fill preview +
-           commit. -->
       <GapFinder
         ref="gapFinder"
         auto-select-endpoints
@@ -15,33 +10,33 @@
         computing-hint="Rebuilding fill preview…"
       />
 
-      <!-- Fill-only controls start here. -->
-
-      <div class="text-caption text-medium-emphasis mt-4 mb-2">
+      <div class="text-body-small text-medium-emphasis mt-4 mb-2">
         Fill with a value every
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex ga-2">
         <v-text-field
+          class="flex-grow-1"
+          style="flex-basis: 0"
           label="Amount"
           type="number"
           v-model.number="fillAmount"
           density="comfortable"
           variant="outlined"
           hide-details
-          style="flex: 1 1 0"
         />
         <v-select
+          class="flex-grow-1"
+          style="flex-basis: 0"
           label="Unit"
           :items="fillUnits"
           v-model="selectedFillUnit"
           density="comfortable"
           variant="outlined"
           hide-details
-          style="flex: 1 1 0"
         />
       </div>
 
-      <div class="d-flex gap-1 mt-2 flex-wrap">
+      <div class="d-flex ga-1 mt-2 flex-wrap">
         <v-chip
           v-if="hasIntendedCadence"
           size="x-small"
@@ -99,7 +94,7 @@
         density="compact"
         :icon="cadenceWarning.icon"
       >
-        <div class="text-caption">{{ cadenceWarning.text }}</div>
+        <div class="text-body-small">{{ cadenceWarning.text }}</div>
       </v-alert>
 
       <v-alert
@@ -113,7 +108,7 @@
         variant="tonal"
         density="compact"
       >
-        <div class="d-flex align-center gap-2">
+        <div class="d-flex align-center ga-2">
           <v-progress-circular
             v-if="isComputing"
             size="14"
@@ -121,14 +116,14 @@
             indeterminate
             color="primary"
           />
-          <div class="text-caption">
+          <div class="text-body-small">
             <template v-if="isComputing"> Rebuilding fill preview… </template>
             <template v-else-if="!thresholdMs || !fillDeltaMs">
               Pick a gap threshold and fill cadence to preview the edit.
             </template>
             <template v-else-if="plannedInsertions > 0">
               <b>{{ gapCount }}</b> gap{{ gapCount === 1 ? '' : 's' }}
-              →
+              â†’
               <b>{{ plannedInsertions }}</b>
               point{{ plannedInsertions === 1 ? '' : 's' }} to insert.
             </template>
@@ -141,11 +136,6 @@
     </v-card-text>
 
     <v-card-actions>
-      <!-- Same "lost my selection" escape hatch as Find Gaps. Box-
-           select / lasso gestures on the plot replace the gap
-           endpoint selection and there's no built-in way to restore
-           it; this button reapplies the currently-detected gap
-           endpoints without having to retune anything. -->
       <v-btn
         variant="tonal"
         color="primary"
@@ -216,10 +206,6 @@ const { qcDatastream } = storeToRefs(useDataVisStore())
 const { clearSelected, setPlotSelection } = useDataSelection()
 const { recordPostActionSelection } = useFilterDispatch()
 
-// Template ref into the shared GapFinder. We expose its reactive
-// refs via `defineExpose` over there; here we unwrap them with
-// computed() so the fill-specific logic below (ghost markers,
-// insertion counter, commit range) stays reactive.
 const gapFinder = useTemplateRef<InstanceType<typeof GapFinder>>('gapFinder')
 
 const gapPlans = computed<GapPlan[]>(() => gapFinder.value?.gapPlans ?? [])
@@ -233,15 +219,12 @@ const rangeIndices = computed<[number, number] | null>(
   () => gapFinder.value?.rangeIndices ?? null
 )
 // Wall-clock bounds of the staged window (epoch ms). Used as the
-// `range` arg for `FILL_GAPS` instead of the index-based
-// `rangeIndices` so the operation is portable across datasets / data
-// growth — qc-utils' `_fillGaps` snaps these timestamps back to
+// `range` arg for FILL_GAPS so the operation is portable across
+// datasets and data growth; qc-utils snaps timestamps back to
 // indices internally.
 const fromTs = computed<number | null>(() => gapFinder.value?.fromTs ?? null)
 const toTs = computed<number | null>(() => gapFinder.value?.toTs ?? null)
 const gapCount = computed(() => gapPlans.value.length)
-
-// --- Fill cadence helpers -------------------------------------------
 
 const fillDeltaMs = computed(() => {
   const amount = Number(fillAmount.value)
@@ -252,10 +235,6 @@ const fillDeltaMs = computed(() => {
   return mult ? amount * mult * 1000 : null
 })
 
-// Intended cadence from the QC datastream, translated into both our
-// TimeUnit key space (for the Match button) and milliseconds (for
-// the mismatch warning). Returns `null` when the datastream lacks
-// the intended-spacing metadata.
 const intendedCadence = computed<{
   amount: number
   unit: string
@@ -292,21 +271,14 @@ const applyIntendedCadence = () => {
   selectedFillUnit.value = i.unit
 }
 
-// --- Insertion planning + ghost preview -----------------------------
-
 interface FillFanout {
   xs: number[]
   ys: number[]
   count: number
 }
 
-/**
- * Expand each `GapPlan` into its synthesised fill positions so the
- * insertion counter, the ghost-marker preview, and the commit share
- * a single source of truth. Mirrors the count/fill loop in
- * `_fillGaps` byte-for-byte so what the user sees is exactly what
- * `dispatchAction` will write.
- */
+// Mirrors the count/fill loop in qc-utils' _fillGaps so the preview
+// matches exactly what the dispatch will write.
 const fillFanout = computed<FillFanout>(() => {
   const delta = fillDeltaMs.value
   if (!delta || !gapPlans.value.length) return { xs: [], ys: [], count: 0 }
@@ -327,9 +299,6 @@ const fillFanout = computed<FillFanout>(() => {
 
 const plannedInsertions = computed(() => fillFanout.value.count)
 
-// Local computing flag for the ghost-marker push. Union'd with the
-// GapFinder's own `isComputing` so the alert + button report a
-// single "busy" state across both panels.
 const ghostComputing = ref(false)
 const isComputing = computed(
   () => ghostComputing.value || (gapFinder.value?.isComputing ?? false)
@@ -348,8 +317,6 @@ watch(
   { immediate: true, flush: 'post' }
 )
 
-// --- Warnings -------------------------------------------------------
-
 interface CadenceWarning {
   icon: string
   text: string
@@ -361,7 +328,7 @@ const cadenceWarning = computed<CadenceWarning | null>(() => {
   if (t && d && d > t) {
     return {
       icon: 'mdi-alert-outline',
-      text: 'Fill cadence is larger than the gap threshold — gaps just above the threshold will get no fill points. Choose a finer cadence if that matters.',
+      text: 'Fill cadence is larger than the gap threshold: gaps just above the threshold will get no fill points. Choose a finer cadence if that matters.',
     }
   }
   const i = intendedCadence.value
@@ -378,8 +345,6 @@ const cadenceWarning = computed<CadenceWarning | null>(() => {
   return null
 })
 
-// --- Fill cadence snap chips ---------------------------------------
-
 interface SnapChip {
   label: string
   amount: number
@@ -390,13 +355,10 @@ interface SnapChip {
 const fillSnapChips = computed<SnapChip[]>(() => {
   const i = intendedCadence.value
   if (!i) return []
-  // Fractional chips for finer-than-intended fill cadence, matching
-  // the common case where users want to refill at the same grid but
-  // also densify when data is missing.
   return [0.5, 1, 2].map((m) => {
     const amount = i.amount * m
     return {
-      label: `${m}× intended (${amount} ${i.unit.toLowerCase()})`,
+      label: `${m}Ã— intended (${amount} ${i.unit.toLowerCase()})`,
       amount,
       unit: i.unit,
       active:
@@ -411,23 +373,14 @@ const applyFillSnap = (chip: SnapChip) => {
   selectedFillUnit.value = chip.unit
 }
 
-// --- Re-select gaps -------------------------------------------------
-
-/**
- * Re-apply the current gap endpoint selection on the plot. Clears
- * whatever is selected first — including box-select / lasso
- * rectangles, which `setPlotSelection` alone can't wipe because
- * its underlying `setSelectedPoints` puts `selections: []` into the
- * data update instead of the layout update. Mirrors the same
- * escape hatch Find Gaps exposes.
- */
+// Clear before reselecting because setPlotSelection alone can't wipe
+// box-select / lasso rectangles: setSelectedPoints puts selections:[]
+// into the data update instead of the layout update.
 const reselectGaps = async () => {
   await clearSelected({ recordHistory: false })
   const indices = gapFinder.value?.endpointIndices ?? []
   await setPlotSelection(indices)
 }
-
-// --- Commit ---------------------------------------------------------
 
 const emit = defineEmits(['close'])
 const onFillGaps = async () => {
@@ -438,11 +391,8 @@ const onFillGaps = async () => {
       isUpdating.value = false
       return
     }
-    // Datetime-addressed range — qc-utils converts to indices via
-    // binary search internally. Only pass when the staged window is
-    // valid (rangeIndices being non-null is the canonical "user has
-    // a usable window" signal). Otherwise omit and `_fillGaps` runs
-    // over the full extent.
+    // Pass a datetime range only when the staged window is valid;
+    // otherwise omit and _fillGaps runs over the full extent.
     const dateRange: [number, number] | undefined =
       rangeIndices.value != null && fromTs.value != null && toTs.value != null
         ? [fromTs.value, toTs.value]
@@ -475,50 +425,26 @@ const onFillGaps = async () => {
   })
 }
 
-// On open: switch the plot into pan mode so the staging band is
-// visible + interactive (we hide it in zoom/select/lasso), then
-// wipe any existing selection — including box-select / lasso
-// rectangles — so a stale prior selection doesn't linger visually
-// while the user is staging the fill. The explicit re-dispatch
-// afterwards mirrors the fix in Find Gaps: GapFinder's
-// `autoSelectEndpoints` watcher runs in the post-flush queue on
-// mount and can interleave with `clearSelected`, so we apply the
-// endpoints again here to make the end state deterministic.
+// Pan mode keeps the staging band visible (hidden in zoom/select/lasso).
+// Re-dispatch endpoints after clearSelected because GapFinder's
+// autoSelectEndpoints watcher runs in the post-flush queue and can
+// interleave with the clear.
 onMounted(async () => {
   await enterPanMode()
-  // Drop the previously visible selection from history — the panel's
-  // internal Find Gaps step will immediately display a new selection
-  // from the gaps it detects, so the prior selection-producing entry
-  // (a user-click SELECTION or a selection-driving filter) is no
-  // longer relevant context. `_selection`'s empty-case logic does
-  // the pop: the dispatched empty SELECTION pops itself and (when
-  // applicable) the preceding filter that was driving the cleared
-  // selection.
   await clearSelected()
   const indices = gapFinder.value?.endpointIndices ?? []
   if (indices.length) {
     await setPlotSelection(indices)
   }
-  // Explicitly seed the ghost-marker preview. The post-flush watcher
-  // on `fillFanout` would normally handle this, but its
-  // `immediate: true` fire happens during setup when `gapFinder.value`
-  // is still null — so the watched value is empty and the initial
-  // `setGhostFills([], [])` is a no-op. By the time we reach this
-  // point in the parent's `onMounted`, RangeStager (a grandchild)
-  // has run its own mount hook and seeded the date bounds, so
-  // `fillFanout.value` reflects real gap data; pushing it now means
-  // the preview is visible from the user's first frame instead of
-  // waiting for whatever next reactivity tick happens to fire the
-  // watcher.
+  // Seed the ghost-marker preview manually: the immediate fire of the
+  // post-flush watcher on fillFanout runs while gapFinder.value is
+  // still null, so its initial setGhostFills is a no-op.
   const { xs, ys } = fillFanout.value
   if (xs.length) {
     await setGhostFills(xs, ys)
   }
 })
 
-// Ghost-marker trace is owned by this panel (GapFinder handles the
-// red bands + stage shape). Tear it down when the panel closes so
-// the plot is clean if the user dismisses without committing.
 onBeforeUnmount(async () => {
   await clearGhostFills()
 })

@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <div class="data-table d-flex flex-column fill-height">
     <div class="data-table__toolbar px-4 py-2 d-flex align-center flex-wrap">
       <div class="d-flex align-center flex-shrink-0">
         <v-icon icon="mdi-table-edit" class="mr-2" color="primary" size="20" />
         <div class="d-flex flex-column">
-          <span class="text-subtitle-2 font-weight-bold lh-1">
+          <span class="text-title-small font-weight-bold lh-1">
             Observations
           </span>
-          <span class="text-caption text-medium-emphasis lh-1 mt-1">
+          <span class="text-body-small text-medium-emphasis lh-1 mt-1">
             Click <b>Datetime</b> or <b>Value</b> cells to edit
           </span>
         </div>
@@ -16,7 +16,7 @@
       <v-divider vertical class="mx-8"></v-divider>
 
       <div
-        class="d-flex align-center justify-space-between gap-1 flex-wrap flex-grow-1"
+        class="d-flex align-center justify-space-between ga-1 flex-wrap flex-grow-1"
       >
         <v-chip
           v-if="rowCount"
@@ -67,7 +67,7 @@
 
     <v-divider />
 
-    <div ref="bodyEl" class="data-table__body flex-grow-1">
+    <div ref="bodyEl" class="data-table__body flex-grow-1 position-relative">
       <v-data-table-virtual
         :headers="headers"
         :items="virtualData"
@@ -126,7 +126,7 @@
         </template>
 
         <template #item.qualifiers="{ index }">
-          <div v-if="qualifierApplicationsAt(index).length" class="d-flex gap-1 flex-wrap">
+          <div v-if="qualifierApplicationsAt(index).length" class="d-flex ga-1 flex-wrap">
             <v-chip
               v-for="a in qualifierApplicationsAt(index)"
               :key="a.qualifierId"
@@ -169,15 +169,10 @@ const { qualifierById, applied } = storeToRefs(qualifierStore)
 
 const isSaving = ref(false)
 
-/**
- * `v-data-table-virtual` only virtualizes rows when it gets a concrete
- * pixel `height`. A percentage or `auto` makes it render every row in the
- * DOM, which — with a million-row dataset — turns typing a single cell
- * into a seconds-long reflow. We measure the container element and feed
- * its pixel height into the `:height` prop. `item-height` is likewise
- * required so the virtualizer can compute the visible slice from scroll
- * position without measuring each row.
- */
+// v-data-table-virtual only virtualizes when it gets a concrete pixel
+// height; auto or % renders every row. Measure the container and feed
+// pixels into :height. item-height lets the virtualizer compute the
+// visible slice without measuring each row.
 const ROW_HEIGHT = 40
 const bodyEl = ref<HTMLDivElement | null>(null)
 const bodyHeight = ref(400)
@@ -198,8 +193,7 @@ onBeforeUnmount(() => {
   resizeObserver = null
 })
 
-// Keyed by data-row index. Value edits store the new numeric y-value;
-// datetime edits store the new epoch-milliseconds.
+// Keyed by row index. Values are y-numbers / epoch-ms.
 const valueEdits = reactive(new Map<number, number>())
 const datetimeEdits = reactive(new Map<number, number>())
 
@@ -210,12 +204,6 @@ const headers = [
   { title: 'Qualifiers', align: 'start' as const, key: 'qualifiers' },
 ]
 
-/**
- * Qualifier applications for the current QC datastream, indexed by row.
- * Read `applied` as a ref so the table re-renders as qualifiers are
- * added/removed; `qcDatastream.id` is the lookup key since qualifiers
- * are scoped to the series under active QC.
- */
 const qualifierApplicationsAt = (index: number) => {
   const id = qcDatastream.value?.id
   if (!id) return []
@@ -232,7 +220,7 @@ const qualifierTooltip = (a: {
 }) => {
   const q = qualifierById.value[a.qualifierId]
   if (!q) return ''
-  const who = a.appliedBy ? ` — ${a.appliedBy}` : ''
+  const who = a.appliedBy ? ` (${a.appliedBy})` : ''
   return `${q.code}: ${q.description}${who}`
 }
 
@@ -270,10 +258,7 @@ function formatNumber(num: unknown): string {
   return String(parseFloat((num as number).toFixed(4)))
 }
 
-/**
- * Format an epoch-ms timestamp for an <input type="datetime-local"> field:
- * `YYYY-MM-DDTHH:mm:ss` in the browser's local time zone.
- */
+// YYYY-MM-DDTHH:mm:ss in local time for <input type="datetime-local">.
 function formatDatetimeLocal(epoch: number | undefined): string {
   if (epoch == null || Number.isNaN(epoch)) return ''
   const d = new Date(epoch)
@@ -325,12 +310,6 @@ function discardEdits() {
   datetimeEdits.clear()
 }
 
-/**
- * Groups pending edits by their target (for value edits) or time delta
- * (for datetime edits) and dispatches one batched operation per group:
- *  - CHANGE_VALUES with Operator.ASSIGN for each distinct new value
- *  - SHIFT_DATETIMES with a per-group second-resolution delta
- */
 async function onSaveChanges() {
   const rec = selectedSeries.value?.data
   if (!rec || pendingEditCount.value === 0) return
@@ -339,8 +318,8 @@ async function onSaveChanges() {
   isUpdating.value = true
 
   try {
-    // --- Value edits: log SELECTION (indices), then ASSIGN_VALUES_BULK
-    //     (values only; indices come from the prior history entry).
+    // Log SELECTION (indices) then ASSIGN_*_BULK (values only;
+    // indices are picked up from the prior history entry).
     if (valueEdits.size) {
       const valueIndices: number[] = []
       const valueValues: number[] = []
@@ -354,7 +333,6 @@ async function onSaveChanges() {
       ])
     }
 
-    // --- Datetime edits: same pattern. One delete + one add under the hood.
     if (datetimeEdits.size) {
       const dtIndices: number[] = []
       const dtValues: number[] = []
@@ -374,9 +352,7 @@ async function onSaveChanges() {
 
     valueEdits.clear()
     datetimeEdits.clear()
-    // We just explicitly logged SELECTION + ASSIGN_*_BULK; pass
-    // `recordHistory: false` so this visual clear doesn't push an
-    // empty SELECTION on top.
+    // recordHistory: false because we already logged SELECTION above.
     await clearSelected({ recordHistory: false })
     await redraw(true)
   } finally {
@@ -392,17 +368,8 @@ async function onSaveChanges() {
   min-height: 56px;
 }
 
-.data-table__hint {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-}
-
 .data-table__body {
   min-height: 0;
-  /* Anchor for the ResizeObserver — the v-data-table-virtual inside
-     takes an explicit pixel `height` so the internal virtualizer
-     actually virtualizes. Don't force child height via CSS: it fights
-     the virtualizer. */
-  position: relative;
 }
 
 :deep(tr.row--selected > td) {

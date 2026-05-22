@@ -1,15 +1,19 @@
 <template>
   <div
-    class="editable-cell"
+    class="editable-cell d-flex align-center w-100 ga-1"
     :class="{
       'editable-cell--edited': edited,
-      'editable-cell--end': align === 'end',
+      'justify-end': align === 'end',
     }"
   >
-    <div v-if="isEditing" class="editable-cell__edit" @mousedown.stop>
+    <div
+      v-if="isEditing"
+      class="editable-cell__edit d-inline-flex align-center w-100"
+      @mousedown.stop
+    >
       <input
         ref="inputEl"
-        class="editable-cell__input"
+        class="editable-cell__input flex-fill rounded-sm"
         :type="inputType"
         :value="draft"
         :step="inputType === 'number' ? 'any' : undefined"
@@ -20,7 +24,7 @@
       />
       <button
         type="button"
-        class="editable-cell__btn editable-cell__btn--confirm"
+        class="editable-cell__btn editable-cell__btn--confirm d-inline-flex align-center justify-center cursor-pointer flex-grow-0 flex-shrink-0 rounded-sm"
         title="Confirm (Enter)"
         aria-label="Confirm edit"
         @mousedown.prevent
@@ -30,7 +34,7 @@
       </button>
       <button
         type="button"
-        class="editable-cell__btn editable-cell__btn--cancel"
+        class="editable-cell__btn editable-cell__btn--cancel d-inline-flex align-center justify-center cursor-pointer flex-grow-0 flex-shrink-0 rounded-sm"
         title="Cancel (Esc)"
         aria-label="Cancel edit"
         @mousedown.prevent
@@ -42,11 +46,14 @@
     <template v-else>
       <button
         type="button"
-        class="editable-cell__display"
+        class="editable-cell__display d-inline-flex align-center cursor-text rounded-sm"
         :title="edited ? `Was: ${originalDisplay}. Click to edit again.` : 'Click to edit'"
         @click="startEditing"
       >
-        <span v-if="edited" class="editable-cell__original">
+        <span
+          v-if="edited"
+          class="editable-cell__original text-decoration-line-through opacity-60"
+        >
           {{ originalDisplay }}
         </span>
         <span class="editable-cell__current">
@@ -56,7 +63,7 @@
       <button
         v-if="edited"
         type="button"
-        class="editable-cell__btn editable-cell__btn--revert"
+        class="editable-cell__btn editable-cell__btn--revert d-inline-flex align-center justify-center cursor-pointer flex-grow-0 flex-shrink-0 rounded-sm"
         title="Revert staged edit"
         aria-label="Revert staged edit"
         @click.stop="$emit('clear')"
@@ -110,29 +117,17 @@ function cancel() {
 
 <style scoped>
 .editable-cell {
-  display: flex;
-  width: 100%;
   min-height: 28px;
-  align-items: center;
-  gap: 4px;
-}
-
-.editable-cell--end {
-  justify-content: flex-end;
 }
 
 .editable-cell__display {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
-  background: transparent;
   border: 1px dashed transparent;
-  border-radius: 4px;
   padding: 2px 6px;
-  cursor: text;
   font: inherit;
   color: inherit;
   max-width: 100%;
+  background: transparent;
 }
 
 .editable-cell__display:hover {
@@ -146,8 +141,6 @@ function cancel() {
 }
 
 .editable-cell__original {
-  text-decoration: line-through;
-  opacity: 0.55;
   font-size: 0.75rem;
 }
 
@@ -160,18 +153,13 @@ function cancel() {
 }
 
 .editable-cell__edit {
-  display: inline-flex;
-  align-items: center;
   gap: 2px;
-  width: 100%;
 }
 
 .editable-cell__input {
-  flex: 1 1 auto;
   min-width: 0;
   padding: 4px 6px;
   border: 1px solid rgb(var(--v-theme-primary));
-  border-radius: 4px;
   outline: none;
   background-color: white;
   font: inherit;
@@ -182,19 +170,13 @@ function cancel() {
 }
 
 .editable-cell__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 22px;
   height: 22px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 4px;
   background: transparent;
   color: inherit;
-  cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-  flex: 0 0 auto;
 }
 
 .editable-cell__btn:hover {

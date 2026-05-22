@@ -1,20 +1,20 @@
-<template>
-  <div class="gap-finder">
+﻿<template>
+  <div>
     <div
       v-if="filterRangeActive"
-      class="text-caption text-medium-emphasis mb-2"
+      class="text-body-small text-medium-emphasis mb-2"
     >
       Scan window: shared filter range (above).
     </div>
-    <div v-else class="text-caption text-medium-emphasis mb-2">
+    <div v-else class="text-body-small text-medium-emphasis mb-2">
       Scanning the full datastream.
       Toggle <b>Filter range</b> in the plot toolbar to restrict.
     </div>
 
-    <div class="text-caption text-medium-emphasis mt-2 mb-2">
+    <div class="text-body-small text-medium-emphasis mt-2 mb-2">
       Find gaps of at least
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex ga-2">
       <v-text-field
         label="Amount"
         type="number"
@@ -22,7 +22,7 @@
         density="comfortable"
         variant="outlined"
         hide-details
-        style="flex: 1 1 0"
+        class="flex-1-1-0"
       />
       <v-select
         label="Unit"
@@ -31,11 +31,11 @@
         density="comfortable"
         variant="outlined"
         hide-details
-        style="flex: 1 1 0"
+        class="flex-1-1-0"
       />
     </div>
 
-    <div v-if="snapChips.length" class="d-flex gap-1 mt-2 flex-wrap">
+    <div v-if="snapChips.length" class="d-flex ga-1 mt-2 flex-wrap">
       <v-chip
         v-for="chip in snapChips"
         :key="chip.label"
@@ -56,7 +56,7 @@
       variant="tonal"
       density="compact"
     >
-      <div class="d-flex align-center gap-2">
+      <div class="d-flex align-center ga-2">
         <v-progress-circular
           v-if="isComputing"
           size="14"
@@ -64,7 +64,7 @@
           indeterminate
           color="primary"
         />
-        <div class="text-caption">
+        <div class="text-body-small">
           <template v-if="isComputing">
             {{ props.computingHint ?? 'Updating gap preview…' }}
           </template>
@@ -88,19 +88,6 @@
 </template>
 
 <script setup lang="ts">
-/**
- * Shared "find gaps" UI — used standalone by the Find Gaps
- * operation panel, and as the top half of the Fill Gaps panel. The
- * scan window is read from the shared "Filter range" toggle (plot
- * toolbar + sidebar `FilterRangePanel`); when off, the scan covers
- * the full datastream.
- *
- * When mounted with `autoSelectEndpoints`, each detection also
- * dispatches a point selection to the plot (Find Gaps' live-commit
- * behaviour). Without the prop the overlay bands render but the
- * plot's existing selection stays untouched (Fill Gaps' behaviour —
- * it owns the selection lifecycle through `dispatchAction`).
- */
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -128,25 +115,8 @@ export interface GapPlan {
 
 const props = withDefaults(
   defineProps<{
-    /** Visually highlight the gap endpoints on the plot every time
-     *  the local gap-detection re-runs. Find Gaps opts in (the
-     *  detected gaps ARE its result); Fill Gaps opts in so the user
-     *  can see what's about to be filled. */
     autoSelectEndpoints?: boolean
-    /** When `autoSelectEndpoints` is true, also commit a `FIND_GAPS`
-     *  entry to the ObservationRecord history (with `[amount, unit,
-     *  range?]`) on every detection. Defaults to `true` so Find Gaps
-     *  records its operation reproducibly. Fill Gaps disables this
-     *  because the panel's commit dispatches `FILL_GAPS` directly —
-     *  recording an extra `FIND_GAPS` before it (and another one
-     *  after, when the post-fill data triggers a re-detection)
-     *  produces three entries for what the user sees as one fill
-     *  operation. */
     recordHistory?: boolean
-    /** Override the "Updating gap preview…" line shown in the alert
-     *  while the async Plotly writes settle. Handy when a parent
-     *  bundles its own async work (ghost markers) under the same
-     *  spinner window. */
     computingHint?: string
   }>(),
   {
@@ -165,16 +135,13 @@ const { getActiveFilterRange } = useFilterDispatch()
 const thresholdMs = computed(() => {
   const amount = Number(gapAmount.value)
   if (!Number.isFinite(amount) || amount <= 0) return null
-  // @ts-ignore — selectedGapUnit is the enum key ("MINUTE");
-  // TimeUnit maps it to the short code used by timeUnitMultipliers.
+  // @ts-ignore
   const unitCode = TimeUnit[selectedGapUnit.value as keyof typeof TimeUnit]
   const mult = timeUnitMultipliers[unitCode]
   if (!mult) return null
   return amount * mult * 1000
 })
 
-/** Resolve the scan window's [startIdx, endIdx] inclusive index pair.
- *  Returns `null` when there's no data. */
 const rangeIndices = computed<[number, number] | null>(() => {
   const dataX = selectedSeries.value?.data.dataX
   if (!dataX?.length) return null
@@ -186,9 +153,6 @@ const rangeIndices = computed<[number, number] | null>(() => {
   return endIdx >= startIdx ? [startIdx, endIdx] : null
 })
 
-// Client-side gap detection over the resolved window. Mirrors
-// `findGapsCore` in qc-utils (not re-exported) but skips the worker
-// path — the in-panel scan is small enough to run inline.
 const gapPlans = computed<GapPlan[]>(() => {
   const threshold = thresholdMs.value
   const series = selectedSeries.value?.data
@@ -227,7 +191,6 @@ const gapPlans = computed<GapPlan[]>(() => {
 
 const gapCount = computed(() => gapPlans.value.length)
 
-/** Flat, sorted, de-duplicated list of every gap-endpoint index. */
 const endpointIndices = computed<number[]>(() => {
   const out = new Set<number>()
   for (const p of gapPlans.value) {
@@ -257,9 +220,6 @@ watch(
         !!unitCode
 
       if (canRecord) {
-        // Pull the active filter range straight from the helper so
-        // the history entry's `range` argument matches what the user
-        // sees on the plot. `undefined` when the toggle is off.
         const dateRange = getActiveFilterRange()
         const indices = await series!.dispatchFilter(
           EnumFilterOperations.FIND_GAPS,
@@ -277,8 +237,6 @@ watch(
   },
   { immediate: true, flush: 'post' }
 )
-
-// --- Snap chips -----------------------------------------------------
 
 interface SnapChip {
   label: string
@@ -298,7 +256,7 @@ const snapChips = computed<SnapChip[]>(() => {
   return multipliers.map((m) => {
     const amount = n * m
     return {
-      label: `${m}× intended (${amount} ${unitKey.toLowerCase()})`,
+      label: `${m}Ã— intended (${amount} ${unitKey.toLowerCase()})`,
       amount,
       unit: unitKey,
       active:
@@ -313,8 +271,6 @@ const applySnap = (chip: SnapChip) => {
   selectedGapUnit.value = chip.unit
 }
 
-// Persist threshold per datastream so reopening either operation
-// restores the last-used value without the user retyping.
 const opParamsStore = useOperationParamsStore()
 watch(
   [gapAmount, selectedGapUnit, qcDatastream],
@@ -327,12 +283,6 @@ watch(
   { flush: 'post' }
 )
 
-// Re-exposed for parents (e.g. FillGaps) that need the wall-clock
-// bounds of the active scan window. When the shared filter range is
-// off these collapse to the full data extent so downstream consumers
-// can use the same plumbing in either mode. `rangeWarning` stays
-// null in both states because the shared panel maintains its own
-// valid bounds.
 const fromTs = computed<number | null>(() => {
   const range = getActiveFilterRange()
   if (range) return range[0]

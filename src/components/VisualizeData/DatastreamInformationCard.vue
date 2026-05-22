@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card class="datastream-info-card" rounded="lg">
     <v-toolbar flat color="primary" density="comfortable">
       <v-icon icon="mdi-database-outline" class="ms-4 me-2" />
@@ -19,12 +19,12 @@
     </v-toolbar>
 
     <div v-if="datastream.name || datastream.description" class="pa-4 bg-grey-lighten-5">
-      <div v-if="datastream.name" class="text-h6 text-grey-darken-3">
+      <div v-if="datastream.name" class="text-title-large text-grey-darken-3">
         {{ datastream.name }}
       </div>
       <div
         v-if="datastream.description"
-        class="text-body-2 text-medium-emphasis mt-1"
+        class="text-body-medium text-medium-emphasis mt-1"
       >
         {{ datastream.description }}
       </div>
@@ -246,9 +246,7 @@ const expandedPanels = ref<string[]>(['general'])
 function filterBySite() {
   const thing = props.datastream.thing
   if (!thing) return
-  // Resolve to the existing Thing reference in the catalog store so
-  // equality checks in DatastreamFilters' v-checkbox work correctly
-  // (filter state stores the actual Thing object, not a copy).
+  // Reuse the catalog reference so DatastreamFilters' v-checkbox equality works.
   const resolved = things.value.find((t) => t.id === thing.id) ?? thing
   selectedThings.value = [resolved]
   emit('close')
@@ -268,8 +266,6 @@ function filterByProcessingLevel() {
   emit('close')
 }
 
-// Small inline component for rendering a metadata row with a slot for custom
-// value rendering (used by the tags chip group in the General panel).
 const MetadataList = (props: { items: { label: string; value: any }[] }, { slots }: any) =>
   h(
     'dl',
@@ -403,7 +399,7 @@ const processingLevelItems = computed(() => {
 })
 
 onMounted(async () => {
-  // Tags are not returned by expand_related, so fetch them separately.
+  // Tags are not returned by expand_related; fetch separately.
   const existing = (d.value as any).tags
   if (Array.isArray(existing)) {
     tags.value = existing

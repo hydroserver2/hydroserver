@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-navigation-drawer permanent rail class="bg-navbar">
     <v-list-item
       class="pa-2 d-flex justify-center"
@@ -32,7 +32,7 @@
           />
         </template>
         <span v-if="item.title === 'Edit' && !qcDatastream">
-          Edit — select a datastream for quality control before navigating here.
+          Edit: select a datastream for quality control before navigating here.
         </span>
         <span v-else>{{ item.title }}</span>
       </v-tooltip>
@@ -75,24 +75,24 @@
 
   <v-dialog v-model="showExitConfirm" max-width="520" persistent>
     <v-card rounded="lg">
-      <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+      <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
         <v-avatar color="warning" variant="tonal" size="40">
           <v-icon icon="mdi-alert-outline" size="22" />
         </v-avatar>
         <div class="d-flex flex-column">
-          <div class="text-h6 font-weight-bold">Unsaved edits</div>
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-title-large font-weight-bold">Unsaved edits</div>
+          <div class="text-body-small text-medium-emphasis">
             {{ editCount }} pending change{{ editCount === 1 ? '' : 's' }} in
             the editor
           </div>
         </div>
       </div>
-      <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+      <v-card-text class="text-body-medium pt-2 pb-4 px-6">
         Save your edits before leaving, or discard them to continue. Discarded
         edits cannot be recovered.
       </v-card-text>
       <v-divider />
-      <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+      <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
         <v-btn variant="text" :disabled="isBusy" @click="cancelExit">
           Cancel
         </v-btn>
@@ -197,8 +197,7 @@ async function discardAndContinue() {
   exitAction.value = 'discard'
   isUpdating.value = true
   try {
-    // In-place clear so the `editHistory` ref keeps tracking the
-    // same array (reassigning `history = []` detaches it).
+    // In-place clear: reassigning `history = []` detaches the editHistory ref.
     if (selectedSeries.value) selectedSeries.value.data.history.length = 0
     await refreshGraphSeriesArray()
     await selectedSeries.value?.data.reload()
@@ -235,27 +234,15 @@ const items = ref([
 
 async function onLogout() {
   await hs.value.session.logout()
-  // Drop the cached workspace selection; another user on the same
-  // browser shouldn't land in the previous session's workspace.
   workspaceStore.clearSelection()
   await router.push({ name: 'Login' })
   Snackbar.info('You have logged out')
 }
 
 async function onSwitchWorkspace() {
-  // Navigate FIRST, then reset state. VisualizeData.vue has a deep
-  // watcher that syncs its Home-page filters to `router.replace({ query })`
-  // whenever `plottedDatastreams`, `qcDatastream`, `currentView`, etc.
-  // change. If we mutated those refs first, that watcher would fire
-  // in parallel with our `router.push` and win the race — the user
-  // would stay on Home and the nav-rail button would appear to do
-  // nothing. Pushing first unmounts VisualizeData (its onUnmounted
-  // already calls `resetState`), so the post-navigation mutations
-  // below are free of observers.
-  //
-  // `switch=1` tells the Workspaces page / picker guard not to
-  // auto-redirect the user straight back when a selection already
-  // exists, so they actually get to see the picker.
+  // Navigate BEFORE mutating refs: VisualizeData's deep watcher syncs
+  // filters to router.replace, racing our push and stranding the user.
+  // `switch=1` prevents the Workspaces picker from auto-redirecting back.
   await router.push({ name: 'Workspaces', query: { switch: '1' } })
   qcDatastreamId.value = null
   currentView.value = DrawerType.Select

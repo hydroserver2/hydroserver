@@ -1,10 +1,10 @@
-<template>
+﻿<template>
   <v-container class="py-8" style="max-width: 720px">
     <div class="d-flex align-center mb-6">
       <v-icon icon="mdi-view-grid-outline" color="primary" size="28" class="mr-3" />
       <div>
-        <h1 class="text-h5 mb-1">Select a workspace</h1>
-        <p class="text-body-2 text-medium-emphasis mb-0">
+        <h1 class="text-headline-medium mb-1">Select a workspace</h1>
+        <p class="text-body-medium text-medium-emphasis mb-0">
           Pick the workspace you'd like to work in. Only workspaces you
           own or have been given a role on are listed.
         </p>
@@ -13,7 +13,7 @@
 
     <v-card v-if="isLoading" class="pa-6 text-center">
       <v-progress-circular indeterminate color="primary" size="32" />
-      <div class="text-caption text-medium-emphasis mt-3">
+      <div class="text-body-small text-medium-emphasis mt-3">
         Loading workspaces…
       </div>
     </v-card>
@@ -23,7 +23,7 @@
       class="pa-6 text-center"
     >
       <v-icon icon="mdi-alert-outline" color="warning" size="32" class="mb-2" />
-      <div class="text-body-2">
+      <div class="text-body-medium">
         You don't have access to any workspaces yet. Ask a workspace
         owner to add you as a collaborator, then reload this page.
       </div>
@@ -47,14 +47,14 @@
           </template>
 
           <template #subtitle>
-            <span class="text-caption">
+            <span class="text-body-small">
               {{ roleLabel(ws) }}
               <span v-if="ws.owner?.name"> · {{ ws.owner.name }}</span>
             </span>
           </template>
 
           <template #append>
-            <div class="d-flex align-center gap-3">
+            <div class="d-flex align-center ga-3">
               <v-tooltip
                 location="top"
                 :text="datastreamCountTooltip(ws.id)"
@@ -133,14 +133,8 @@ const store = useWorkspaceStore()
 const { availableWorkspaces, selectedWorkspace, isLoading } = storeToRefs(store)
 const { hs } = storeToRefs(useHydroServer())
 
-/**
- * Datastream count per workspace id. Populated by a single
- * `hs.datastreams.list({ fetch_all: true })` call — the server's
- * RBAC filters to only datastreams the signed-in user can see
- * (which spans every workspace in `availableWorkspaces`), so one
- * listing bucketed by `workspaceId` is cheaper than N scoped
- * listings.
- */
+// One unscoped listing bucketed by workspaceId is cheaper than N
+// scoped listings: server RBAC already filters to visible datastreams.
 const datastreamCounts = ref<Record<string, number>>({})
 const datastreamCountsLoading = ref(true)
 
@@ -153,11 +147,6 @@ const datastreamCountTooltip = (workspaceId: string) => {
   return `${n.toLocaleString()} datastream${n === 1 ? '' : 's'} in this workspace`
 }
 
-/**
- * ResultQualifier count per workspace id — same bucket-by-`workspaceId`
- * pattern as the datastream count. Useful for answering "which
- * workspace has qualifiers already defined?" at a glance in the picker.
- */
 const qualifierCounts = ref<Record<string, number>>({})
 const qualifierCountsLoading = ref(true)
 
@@ -215,11 +204,10 @@ async function loadDatastreamCounts() {
 }
 
 onMounted(async () => {
-  // Always refresh when we land here — role changes on the server side
-  // (added/removed from a workspace) should show up without a hard
-  // reload. The "skip picker when a selection already exists" redirect
-  // lives in `router/guards.ts` so it fires before the component
-  // mounts (otherwise the picker flashes briefly on a reload).
+  // Always refresh: server-side role changes should show up without a
+  // hard reload. The "skip picker when a selection exists" redirect
+  // lives in `router/guards.ts` so it fires before mount (otherwise
+  // the picker flashes briefly on reload).
   await store.loadWorkspaces()
 
   void loadDatastreamCounts()
@@ -234,18 +222,15 @@ function onPick(id: string) {
 }
 
 function roleLabel(ws: Workspace): string {
-  // Owners have `collaboratorRole === null` — the role table only
-  // applies to invited collaborators.
+  // Owners have `collaboratorRole === null`.
   if (!ws.collaboratorRole) return 'Owner'
   return ws.collaboratorRole.name || 'Collaborator'
 }
 </script>
 
 <style scoped>
-/* Vuetify's default `:active` state on v-list-item is a barely-visible
-   tint — easy to miss on a list of ten workspaces. Strengthen it with
-   a primary-tinted background plus a left accent bar so the currently
-   selected workspace is obvious at a glance. */
+/* Vuetify's default `:active` v-list-item tint is too subtle on a long
+   list. Strengthen with a primary-tinted background and left accent bar. */
 .workspace-picker__item--current {
   background-color: rgba(var(--v-theme-primary), 0.1);
   position: relative;

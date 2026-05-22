@@ -1,6 +1,4 @@
-<template>
-  <!-- Loading: skeleton/spinner over the full plot area instead of the
-       instructional empty state. -->
+﻿<template>
   <div
     v-if="isUpdating"
     class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
@@ -13,23 +11,20 @@
       indeterminate
       class="mb-4"
     />
-    <div class="text-subtitle-1 font-weight-bold mb-1">
+    <div class="text-title-medium font-weight-bold mb-1">
       Loading observations…
     </div>
-    <div class="text-caption text-medium-emphasis">
+    <div class="text-body-small text-medium-emphasis">
       Fetching data for
       {{ plottedDatastreams.length }}
       datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
     </div>
   </div>
 
-  <!-- Plot: render when data is ready. -->
   <div v-else-if="isDataAvailable" class="fill-height">
     <Plot class="fill-height" :preview="preview" />
   </div>
 
-  <!-- No data available for selected range (something is plotted but
-       the query came back empty). Keep this concise and actionable. -->
   <div
     v-else-if="plottedDatastreams.length"
     class="data-vis-state fill-height d-flex flex-column align-center justify-center pa-6 text-center"
@@ -40,25 +35,23 @@
       color="warning"
       class="mb-3"
     />
-    <div class="text-subtitle-1 font-weight-bold mb-1">
+    <div class="text-title-medium font-weight-bold mb-1">
       No observations in this range
     </div>
-    <div class="text-body-2 text-medium-emphasis" style="max-width: 360px">
+    <div class="text-body-medium text-medium-emphasis" style="max-width: 360px">
       The selected datastream{{ plottedDatastreams.length === 1 ? '' : 's' }}
       returned no data for the current time window. Try a different range from
       the drawer on the left.
     </div>
   </div>
 
-  <!-- Empty state (no datastream selected yet). A short headline above
-       the three "how to" cards reminds the user what to do. -->
   <div
     v-else
-    class="data-vis-state data-vis-state--empty fill-height d-flex flex-column justify-center align-center pa-6"
+    class="data-vis-state fill-height d-flex flex-column justify-center align-center pa-6"
   >
     <div class="data-vis-state__steps">
       <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num">1</div>
+        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">1</div>
         <v-icon
           icon="mdi-filter-variant"
           size="24"
@@ -66,8 +59,8 @@
           class="data-vis-state__step-icon"
         />
         <div class="data-vis-state__step-body">
-          <div class="text-subtitle-2 font-weight-bold">Find a datastream</div>
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-title-small font-weight-bold">Find a datastream</div>
+          <div class="text-body-small text-medium-emphasis">
             Use the filters on the left drawer and the search bar at the top of
             the table to narrow the list.
           </div>
@@ -75,7 +68,7 @@
       </div>
 
       <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num">2</div>
+        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">2</div>
         <v-icon
           icon="mdi-radiobox-marked"
           size="24"
@@ -83,8 +76,8 @@
           class="data-vis-state__step-icon"
         />
         <div class="data-vis-state__step-body">
-          <div class="text-subtitle-2 font-weight-bold">Pick the QC target</div>
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-title-small font-weight-bold">Pick the QC target</div>
+          <div class="text-body-small text-medium-emphasis">
             Click the <b>Plot</b> checkbox on a row. The first one becomes the
             quality-control target, shown in primary blue.
           </div>
@@ -92,7 +85,7 @@
       </div>
 
       <div class="data-vis-state__step">
-        <div class="data-vis-state__step-num">3</div>
+        <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">3</div>
         <v-icon
           icon="mdi-calendar-range"
           size="24"
@@ -100,8 +93,8 @@
           class="data-vis-state__step-icon"
         />
         <div class="data-vis-state__step-body">
-          <div class="text-subtitle-2 font-weight-bold">Set the time range</div>
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-title-small font-weight-bold">Set the time range</div>
+          <div class="text-body-small text-medium-emphasis">
             Adjust <b>Time filters</b> from the left drawer to cover the period
             you want to inspect.
           </div>
@@ -180,14 +173,9 @@ const isDataAvailable = computed(() => {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   background-color: rgb(var(--v-theme-primary));
-  color: white;
   font-size: 0.7rem;
   font-weight: 700;
-  border-radius: 999px;
   line-height: 1;
 }
 

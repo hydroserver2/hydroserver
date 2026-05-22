@@ -1,9 +1,8 @@
-<template>
+﻿<template>
   <div class="ds-filters">
-    <!-- Inline strip with count + clear, collapsed to a single row. -->
     <div
       v-if="appliedCount"
-      class="d-flex align-center justify-space-between text-caption text-medium-emphasis mb-1"
+      class="d-flex align-center justify-space-between text-body-small text-medium-emphasis mb-1"
     >
       <span>
         {{ appliedCount }} filter{{ appliedCount === 1 ? '' : 's' }} applied
@@ -19,12 +18,7 @@
       </v-btn>
     </div>
 
-    <v-expansion-panels
-      v-model="panels"
-      multiple
-      variant="accordion"
-      class="ds-filters__panels"
-    >
+    <v-expansion-panels v-model="panels" multiple variant="accordion">
       <FilterPanel
         icon="mdi-map-marker-outline"
         label="Sites"
@@ -139,8 +133,6 @@ const searchThing = ref('')
 const searchObservedProperty = ref('')
 const searchProcessingLevel = ref('')
 
-// Only show list items that are referenced by at least one datastream
-// Then mutually filter the lists by selected filters.
 const sortedProcessingLevelNames = computed(() => {
   const filteredPLs = processingLevels.value.filter(
     (pl) =>
@@ -192,7 +184,6 @@ const sortedObservedPropertyNames = computed(() => {
   return [...new Set(names)].sort()
 })
 
-// Watchers to handle deselection of hidden items
 watch(sortedThings, (newVal, oldVal) => {
   if (newVal.length < oldVal.length) {
     selectedThings.value = selectedThings.value.filter((selectedThing) =>
@@ -281,7 +272,7 @@ const panels = computed<number[]>({
   padding: 4px 2px 8px;
 }
 
-/* Tight checkbox rows so the 180 px virtual viewport fits more items. */
+/* Tight rows so the 180px virtual viewport fits more items. */
 .ds-filters__checkbox {
   min-height: 24px;
 }

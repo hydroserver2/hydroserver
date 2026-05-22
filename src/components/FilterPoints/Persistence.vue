@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <v-card>
-    <v-card-title class="text-body-1">Find persistent values</v-card-title>
+    <v-card-title class="text-body-large">Find persistent values</v-card-title>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Flag runs of identical values that repeat at least
       </div>
       <v-text-field

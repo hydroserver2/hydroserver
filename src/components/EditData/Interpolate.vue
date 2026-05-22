@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Interpolate</v-card-title>
     <v-card-subtitle>
@@ -12,7 +12,7 @@
     </v-card-subtitle>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">Method</div>
+      <div class="text-body-small text-medium-emphasis mb-2">Method</div>
       <v-radio-group
         hide-details
         color="primary"

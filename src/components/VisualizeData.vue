@@ -1,26 +1,23 @@
-<template>
+﻿<template>
   <div
     v-if="currentView === DrawerType.Select"
     class="select-view fill-height d-flex flex-column pa-4"
   >
-    <!-- Single unified card: one header carries the QC title, the
-         "Start editing" CTA, and the Plotted toggle. Below that, a split
-         body: plot on the left, plotted-list on the right. -->
     <v-card class="select-view__card d-flex flex-column mb-3">
       <div
-        class="select-view__header d-flex align-center flex-wrap gap-3 px-4 py-3"
+        class="d-flex align-center flex-wrap ga-3 px-4 py-3"
       >
         <v-icon icon="mdi-chart-line" color="primary" size="24" class="mr-1" />
-        <div class="d-flex flex-column" style="min-width: 0; flex: 1 1 auto">
-          <span v-if="qcDatastream" class="text-subtitle-1 font-weight-bold">
+        <div class="d-flex flex-column flex-1-1-auto" style="min-width: 0">
+          <span v-if="qcDatastream" class="text-title-medium font-weight-bold">
             {{ qcDatastream.name }}
           </span>
-          <span v-else class="text-subtitle-1 font-weight-bold">
+          <span v-else class="text-title-medium font-weight-bold">
             No datastream plotted
           </span>
-          <span class="text-caption text-medium-emphasis">
+          <span class="text-body-small text-medium-emphasis">
             <template v-if="qcDatastream">
-              Quality-control target — preview ready
+              Quality-control target: preview ready
             </template>
             <template v-else>
               Select one from the table below to preview its data here
@@ -70,7 +67,7 @@
         <template v-if="plottedDatastreams.length">
           <v-divider vertical class="select-view__divider-vertical" />
           <v-divider class="select-view__divider-horizontal" />
-          <div class="select-view__plotted d-flex flex-column">
+          <div class="select-view__plotted d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden">
             <div class="select-view__plotted-body flex-grow-1 overflow-y-auto">
               <PlottedDatastreams />
             </div>
@@ -79,9 +76,7 @@
       </div>
     </v-card>
 
-    <!-- Datastreams table: always visible, flex-basis sets its proportional
-         share so it doesn't crowd the plot on small screens. -->
-    <v-card class="select-view__table d-flex flex-column">
+    <v-card class="select-view__table d-flex flex-column flex-1-1-0 overflow-hidden">
       <DataVisDatasetsTable class="fill-height" />
     </v-card>
   </div>
@@ -90,12 +85,8 @@
     v-else-if="currentView === DrawerType.Edit"
     class="edit-view d-flex bg-background"
   >
-    <!-- Left sidebar. Width is driven by the persisted
-         `drawerWidth`; the handle to the right of the aside drags
-         it. Collapsed state swaps in a narrow rail whose only
-         affordance is the expand toggle. -->
     <aside
-      class="edit-view__col edit-view__col--drawer d-flex flex-column bg-surface border-e"
+      class="edit-view__col edit-view__col--drawer d-flex flex-column flex-grow-0 flex-shrink-0 bg-surface border-e"
       :class="{ 'edit-view__col--collapsed': drawerCollapsed }"
       :style="drawerCollapsed ? undefined : { width: drawerWidth + 'px' }"
     >
@@ -105,7 +96,7 @@
       >
         <span
           v-if="!drawerCollapsed"
-          class="text-caption text-medium-emphasis pl-2"
+          class="text-body-small text-medium-emphasis pl-2"
         >
           Operations
         </span>
@@ -124,8 +115,6 @@
       </div>
     </aside>
 
-    <!-- Resize grip between drawer and plot. Hidden while the
-         drawer is collapsed (no width to change). -->
     <div
       v-if="!drawerCollapsed"
       class="edit-view__grip edit-view__grip--vertical"
@@ -135,7 +124,7 @@
     />
 
     <div
-      class="edit-view__col edit-view__col--plot d-flex flex-column pa-3 overflow-hidden"
+      class="edit-view__col edit-view__col--plot d-flex flex-column flex-fill pa-3 overflow-hidden"
     >
       <v-card class="fill-height d-flex flex-column" elevation="1">
         <div class="flex-grow-1 pa-2" style="min-height: 0">
@@ -144,7 +133,6 @@
       </v-card>
     </div>
 
-    <!-- Resize grip between plot and aux. -->
     <div
       v-if="!auxCollapsed"
       class="edit-view__grip edit-view__grip--vertical"
@@ -154,11 +142,10 @@
     />
 
     <aside
-      class="edit-view__col edit-view__col--aux d-flex flex-column overflow-hidden bg-surface border-s"
+      class="edit-view__col edit-view__col--aux d-flex flex-column flex-grow-0 flex-shrink-0 overflow-hidden bg-surface border-s"
       :class="{ 'edit-view__col--collapsed': auxCollapsed }"
       :style="auxCollapsed ? undefined : { width: auxWidth + 'px' }"
     >
-      <!-- Collapsed rail: single expand toggle, nothing else. -->
       <template v-if="auxCollapsed">
         <div
           class="edit-view__sidebar-bar d-flex justify-center align-center py-1"
@@ -176,7 +163,7 @@
 
       <template v-else>
         <div
-          class="edit-view__exit-bar d-flex align-center flex-wrap px-3 py-2 border-b"
+          class="d-flex align-center flex-wrap px-3 py-2 border-b"
         >
           <v-btn
             size="x-small"
@@ -225,12 +212,9 @@
           </v-btn>
         </div>
 
-        <!-- Plotted Datastreams: collapsible by itself so the user
-             can reclaim vertical room for history / operation
-             details without losing the sidebar. -->
         <section class="bg-surface">
           <div
-            class="edit-view__section-header d-flex align-center gap-1 px-3 py-1"
+            class="edit-view__section-header d-flex align-center ga-1 px-3 py-1"
             role="button"
             tabindex="0"
             @click="plottedCollapsed = !plottedCollapsed"
@@ -243,25 +227,17 @@
                 plottedCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'
               "
             />
-            <!-- Matches the Edit History header treatment (small
-                 primary-tinted section icon between the chevron and
-                 the title) so both collapsible panels read as the
-                 same family of controls. -->
             <v-icon icon="mdi-chart-line" color="primary" size="16" />
-            <span class="text-caption font-weight-medium">
+            <span class="text-body-small font-weight-medium">
               Plotted Datastreams
             </span>
           </div>
-          <!-- Body height is a persisted `plottedHeight` ref driven
-               by the grip below. `overflow-y: auto` means long
-               plotted lists scroll inside their allocation rather
-               than pushing the edit history off-screen. -->
           <div
             v-show="!plottedCollapsed"
-            class="edit-view__plotted-body"
+            class="edit-view__plotted-body pa-2 overflow-y-auto"
             :style="{ height: plottedHeight + 'px' }"
           >
-            <div class="edit-view__section-card">
+            <div class="rounded border bg-surface overflow-hidden">
               <PlottedDatastreams lock-qc />
             </div>
           </div>
@@ -280,7 +256,7 @@
 
         <section
           ref="auxBodyEl"
-          class="edit-view__aux-body flex-grow-1 d-flex flex-column bg-surface"
+          class="edit-view__aux-body flex-grow-1 d-flex flex-column overflow-y-auto bg-surface"
         >
           <!-- History + OperationPanel split. When an operation is
                staged we give the user a drag grip to rebalance the
@@ -288,7 +264,7 @@
                uses a flex-basis in percent so the grip location
                tracks the slider. -->
           <div
-            class="edit-view__history d-flex flex-column"
+            class="edit-view__history d-flex flex-column overflow-hidden"
             :style="historyPaneStyle"
           >
             <EditHistory
@@ -311,7 +287,7 @@
 
           <div
             v-if="selectedOperation"
-            class="edit-view__op-panel d-flex flex-column flex-grow-1 border-t"
+            class="edit-view__op-panel d-flex flex-column flex-grow-1 overflow-hidden border-t"
           >
             <OperationPanel />
           </div>
@@ -332,24 +308,24 @@
 
     <v-dialog v-model="showSaveConfirm" max-width="520">
       <v-card rounded="lg">
-        <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+        <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="primary" variant="tonal" size="40">
             <v-icon icon="mdi-cloud-upload-outline" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
-            <div class="text-h6 font-weight-bold">Submit QC observations?</div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-title-large font-weight-bold">Submit QC observations?</div>
+            <div class="text-body-small text-medium-emphasis">
               {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} pending
             </div>
           </div>
         </div>
-        <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+        <v-card-text class="text-body-medium pt-2 pb-4 px-6">
           This will
           <strong>overwrite existing server observations</strong> in the
           submitted time range (replace mode). This action cannot be undone.
         </v-card-text>
         <v-divider />
-        <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+        <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
           <v-btn variant="text" @click="showSaveConfirm = false">Cancel</v-btn>
           <v-spacer />
           <v-btn
@@ -367,23 +343,23 @@
 
     <v-dialog v-model="showCloseConfirm" max-width="520">
       <v-card rounded="lg">
-        <div class="d-flex align-center gap-3 px-6 pt-5 pb-2">
+        <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="error" variant="tonal" size="40">
             <v-icon icon="mdi-alert-outline" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
-            <div class="text-h6 font-weight-bold">Discard unsaved edits?</div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
+            <div class="text-body-small text-medium-emphasis">
               {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} will be lost
             </div>
           </div>
         </div>
-        <v-card-text class="text-body-2 pt-2 pb-4 px-6">
+        <v-card-text class="text-body-medium pt-2 pb-4 px-6">
           Closing will leave the editor without submitting your changes.
           Discarded edits cannot be recovered.
         </v-card-text>
         <v-divider />
-        <v-card-actions class="d-flex align-center gap-2 px-4 py-3">
+        <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
           <v-btn variant="text" @click="showCloseConfirm = false">Cancel</v-btn>
           <v-spacer />
           <v-btn
@@ -487,7 +463,7 @@ const {
   initial: 360,
   min: 280,
   max: 720,
-  // Right sidebar — the drag grip is on its LEFT (plot-facing)
+  // Right sidebar: the drag grip is on its LEFT (plot-facing)
   // edge, so dragging the grip LEFT should grow the sidebar. That
   // means the x-delta needs to be inverted.
   invert: true,
@@ -647,7 +623,7 @@ const hydrateFromUrl = () => {
     if (state.endMs != null) endDate.value = new Date(state.endMs)
   }
 
-  // Visibility — translate the boolean lists back into the store's
+  // Visibility: translate the boolean lists back into the store's
   // hidden-id sets so the eye / axis toggles match the sender's view.
   if (state.traceVisibility) {
     hiddenTraceIds.value = new Set(
@@ -836,8 +812,6 @@ function goToEdit() {
 
 .select-view__plotted {
   width: 280px;
-  flex: 0 0 auto;
-  overflow: hidden;
 }
 
 .select-view__plotted-body {
@@ -845,12 +819,10 @@ function goToEdit() {
 }
 
 .select-view__table {
-  flex: 1 1 0;
   min-height: 260px;
-  overflow: hidden;
 }
 
-/* Stack vertically on narrower viewports — plot gets full width, plotted
+/* Stack vertically on narrower viewports: plot gets full width, plotted
    section folds under it with a horizontal divider instead of a vertical
    one. */
 @media (max-width: 960px) {
@@ -887,20 +859,6 @@ function goToEdit() {
   max-height: 100%;
 }
 
-.edit-view__col--drawer {
-  /* Width is driven inline via `drawerWidth`; flex settings here
-     just prevent the sidebar from growing past its set width. */
-  flex: 0 0 auto;
-}
-
-.edit-view__col--plot {
-  flex: 1 1 auto;
-}
-
-.edit-view__col--aux {
-  flex: 0 0 auto;
-}
-
 .edit-view__col--collapsed {
   flex: 0 0 36px !important;
   width: 36px !important;
@@ -915,8 +873,7 @@ function goToEdit() {
 /* Column resize grip. Renders as a 4px hit target with a subtle
    center rule so it's discoverable but not heavy. `--active` keeps
    the primary tint on throughout a drag even when the cursor leaves
-   the grip element — important because the drag listeners live on
-   the window. */
+   the grip element (drag listeners live on the window). */
 .edit-view__grip {
   flex: 0 0 auto;
   position: relative;
@@ -973,36 +930,11 @@ function goToEdit() {
   background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
-.edit-view__plotted-body {
-  overflow-y: auto;
-  min-height: 0;
-  padding: 8px;
-}
-
-/* Bordered card wrapper for section bodies. Matches the
-   `.operation-panel__section` treatment so plotted-datastreams,
-   edit-history, and operation-panel content all read as the same
-   family of contained groups. */
-.edit-view__section-card {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 6px;
-  background-color: rgb(var(--v-theme-surface));
-  overflow: hidden;
-}
-
-.edit-view__aux-body {
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.edit-view__history {
-  min-height: 0;
-  overflow: hidden;
-}
-
+.edit-view__plotted-body,
+.edit-view__aux-body,
+.edit-view__history,
 .edit-view__op-panel {
   min-height: 0;
-  overflow: hidden;
 }
 
 @media (max-width: 960px) {

@@ -60,6 +60,10 @@ export default createVuetify({
     VBtnAdd: VBtn,
   },
   defaults: {
+    // Vuetify 4 / md3 blueprint defaults v-icon to 28px; v3 default
+    // was 24px. Use 'small' (20px) to match the icon weight used
+    // explicitly elsewhere in the app.
+    VIcon: { size: 'small' },
     VTextField: textFieldAttrs,
     VAutocomplete: textFieldAttrs,
     VTextarea: textFieldAttrs,

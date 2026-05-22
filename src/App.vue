@@ -21,11 +21,8 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import { storeToRefs } from 'pinia'
 import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 
-// Session init + user/workspace rehydration now lives in `src/main.ts`
-// (mirrors the data-management-app boot flow) and runs before the
-// router is installed, so the auth guard can already see
-// `hs.session.isAuthenticated` on the first navigation. This component
-// only drives the workspace-scoped catalog load.
+// Session init runs in `src/main.ts` before the router installs so the
+// auth guard sees `hs.session.isAuthenticated` on first navigation.
 const isLoading = ref(false)
 
 const { things, processingLevels, observedProperties, datastreams } =
@@ -34,13 +31,6 @@ const { things, processingLevels, observedProperties, datastreams } =
 const { hs } = storeToRefs(useHydroServer())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 
-/**
- * Fetch workspace-scoped catalogs (things / datastreams / processing
- * levels / observed properties) for the given workspace. Everything
- * downstream — filters, the datastream picker, QC edits — works
- * against what we load here, so re-running this is how we "switch
- * workspaces" without a full page reload.
- */
 async function loadWorkspaceCatalog(workspaceId: string) {
   const [
     thingsResponse,
@@ -64,9 +54,8 @@ async function loadWorkspaceCatalog(workspaceId: string) {
   observedProperties.value = observedPropertiesResponse.data
 }
 
-// Reload the catalog whenever the user commits to a different
-// workspace. Clearing the selection wipes the catalogs so stale data
-// from the old workspace can't leak into the picker transition.
+// Clearing the selection wipes catalogs so stale data from the old
+// workspace can't leak into the picker transition.
 watch(selectedWorkspaceId, async (id, prev) => {
   if (id === prev) return
   if (!id) {
@@ -86,14 +75,10 @@ watch(selectedWorkspaceId, async (id, prev) => {
 })
 
 onMounted(async () => {
-  // Seed the catalog on the first mount when we already know which
-  // workspace the user is in. We used to gate this on
-  // `hs.session.isAuthenticated`, but the session endpoint returns
-  // 401 for anonymous callers on cross-origin dev setups even when
-  // the actual resource endpoints accept the request — the gate left
-  // the Select view's datastream table empty after every page
-  // refresh. Just attempt the fetches: if they fail we log and keep
-  // empty arrays; no worse than the gated behaviour.
+  // Don't gate on `hs.session.isAuthenticated`: the session endpoint
+  // returns 401 for anonymous callers on cross-origin dev setups even
+  // when resource endpoints accept the request, which would leave the
+  // Select view empty after every refresh.
   if (!hs.value) return
   if (!selectedWorkspaceId.value) return
   isLoading.value = true

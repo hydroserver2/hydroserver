@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <v-card>
-    <v-card-title class="text-body-1">Filter by rate of change</v-card-title>
+    <v-card-title class="text-body-large">Filter by rate of change</v-card-title>
 
     <v-card-text>
-      <div class="text-caption text-medium-emphasis mb-2">
+      <div class="text-body-small text-medium-emphasis mb-2">
         Select points where the rate of change is
       </div>
       <v-select

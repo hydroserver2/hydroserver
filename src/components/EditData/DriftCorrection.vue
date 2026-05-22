@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card>
     <v-card-title>Drift correction</v-card-title>
     <v-card-subtitle v-if="selectedGroups.length">
@@ -14,37 +14,37 @@
         type="warning"
         density="compact"
         variant="tonal"
-        class="text-body-2 mb-3"
+        class="text-body-medium mb-3"
       >
         Select two or more consecutive points on the plot. Multiple groups are
-        allowed — each will be corrected independently.
+        allowed: each will be corrected independently.
       </v-alert>
       <v-alert
         v-else-if="selectedGroups.length > 1"
         type="info"
         density="compact"
         variant="tonal"
-        class="text-body-2 mb-3"
+        class="text-body-medium mb-3"
       >
         Drift correction will be applied to each group individually.
       </v-alert>
 
       <div v-if="selectedGroups.length" class="mb-3">
-        <div class="text-caption text-medium-emphasis mb-1">Groups</div>
-        <div class="drift-groups d-flex flex-column">
+        <div class="text-body-small text-medium-emphasis mb-1">Groups</div>
+        <div class="drift-groups d-flex flex-column rounded border px-2 py-1 overflow-y-auto">
           <div
             v-for="(group, i) of selectedGroups"
             :key="i"
             class="drift-groups__row d-flex align-center py-1"
           >
             <v-avatar size="20" color="primary" variant="tonal" class="mr-2">
-              <span class="text-caption">{{ i + 1 }}</span>
+              <span class="text-body-small">{{ i + 1 }}</span>
             </v-avatar>
             <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
-              <span class="text-body-2 font-weight-medium">
+              <span class="text-body-medium font-weight-medium">
                 {{ group.length }} points
               </span>
-              <span class="text-caption text-medium-emphasis text-truncate">
+              <span class="text-body-small text-medium-emphasis text-truncate">
                 starts {{ getGroupStart(group) }}
               </span>
             </div>
@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div class="text-caption text-medium-emphasis mb-1">Drift amount</div>
+      <div class="text-body-small text-medium-emphasis mb-1">Drift amount</div>
       <v-text-field
         v-model="driftGapWidth"
         type="number"
@@ -66,7 +66,7 @@
         "
       />
 
-      <div class="text-caption text-medium-emphasis mb-1">Method</div>
+      <div class="text-body-small text-medium-emphasis mb-1">Method</div>
       <v-radio-group
         hide-details
         color="primary"
@@ -164,10 +164,6 @@ const getGroupStart = (group: number[]) => {
 <style scoped>
 .drift-groups {
   max-height: 10rem;
-  overflow-y: auto;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 4px;
-  padding: 4px 8px;
 }
 
 .drift-groups__row + .drift-groups__row {

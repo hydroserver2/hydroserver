@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div class="datasets-table d-flex flex-column">
     <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
-      <div class="d-flex align-center gap-2" style="min-width: 0">
+      <div class="d-flex align-center ga-2" style="min-width: 0">
         <v-icon icon="mdi-database" color="primary" size="18" />
-        <span class="text-body-2 font-weight-bold">Datastreams</span>
+        <span class="text-body-medium font-weight-bold">Datastreams</span>
         <v-chip
           size="x-small"
           :color="plottedDatastreams.length ? 'primary' : undefined"
@@ -15,7 +15,7 @@
       </div>
 
       <v-text-field
-        class="datasets-table__search mx-3 flex-grow-1"
+        class="mx-3 flex-grow-1"
         clearable
         v-model="search"
         prepend-inner-icon="mdi-magnify"
@@ -81,7 +81,7 @@
           <v-divider />
 
           <div class="pa-3">
-            <div class="text-caption text-medium-emphasis mb-1">
+            <div class="text-body-small text-medium-emphasis mb-1">
               Visible columns
             </div>
             <v-checkbox
@@ -100,15 +100,12 @@
 
     <v-divider />
 
-    <!-- One-shot tip surfaced while nothing is plotted yet. The QC-target
-         rule lives only in the right pane's empty state otherwise; users
-         coming from filters into the table never see it. -->
     <div
       v-if="!plottedDatastreams.length"
       class="datasets-table__hint d-flex align-center px-3 py-1"
     >
       <v-icon icon="mdi-information-outline" size="14" class="mr-2" />
-      <span class="text-caption">
+      <span class="text-body-small">
         First plotted datastream becomes the
         <b>QC target</b>. Click a row to see its details.
       </span>
@@ -122,7 +119,7 @@
         :sort-by="sortBy"
         :search="search"
         style="height: 0"
-        class="datasets-table__table flex-grow-1"
+        class="flex-grow-1"
         fixed-header
         color="secondary"
         density="compact"
@@ -145,15 +142,15 @@
             location="top"
             :text="
               isQc(item)
-                ? 'QC target — first plotted datastream'
-                : 'Maximum of 5 datastreams plotted — remove one to add another'
+                ? 'QC target: first plotted datastream'
+                : 'Maximum of 5 datastreams plotted; remove one to add another'
             "
           >
             <template #activator="{ props: tooltipProps }">
               <div class="d-flex align-center" v-bind="tooltipProps">
                 <button
                   type="button"
-                  class="plot-check"
+                  class="plot-check d-inline-flex align-center justify-center cursor-pointer rounded-sm"
                   :class="{
                     'plot-check--checked': isChecked(item),
                     'plot-check--disabled': isAtCap(item),
@@ -175,15 +172,20 @@
                     size="20"
                   />
                 </button>
-                <span v-if="isQc(item)" class="qc-pill ml-1">QC</span>
+                <span
+                  v-if="isQc(item)"
+                  class="qc-pill ml-1 d-inline-flex align-center justify-center text-white"
+                >
+                  QC
+                </span>
               </div>
             </template>
           </v-tooltip>
         </template>
 
         <template #item.siteCodeName="{ item }">
-          <div class="site-cell">
-            <div class="site-cell__code">{{ item.siteCodeName || '—' }}</div>
+          <div class="site-cell d-flex flex-column">
+            <div class="site-cell__code">{{ item.siteCodeName || '-' }}</div>
             <div
               v-if="item.siteName"
               class="site-cell__name"
@@ -205,17 +207,17 @@
         </template>
 
         <template #no-data>
-          <div v-if="search" class="datasets-table__empty">
+          <div v-if="search" class="datasets-table__empty d-flex flex-column align-center justify-center text-center">
             <v-icon icon="mdi-magnify-close" size="32" class="mb-2" />
-            <div class="text-body-2 mb-1">No matches for "{{ search }}"</div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-body-medium mb-1">No matches for "{{ search }}"</div>
+            <div class="text-body-small text-medium-emphasis">
               Try a shorter search term or clear it to see all datastreams.
             </div>
           </div>
-          <div v-else class="datasets-table__empty">
+          <div v-else class="datasets-table__empty d-flex flex-column align-center justify-center text-center">
             <v-icon icon="mdi-database-search-outline" size="32" class="mb-2" />
-            <div class="text-body-2 mb-1">No datastreams to show</div>
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-body-medium mb-1">No datastreams to show</div>
+            <div class="text-body-small text-medium-emphasis">
               Adjust the filters in the left drawer or clear the search.
             </div>
           </div>
@@ -281,9 +283,8 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const displayDatastreams = computed(() => {
-  // Guard against `filteredDatastreams` being momentarily undefined
-  // (workspace-switch transition, store-reset race) — `.map` on
-  // undefined throws during render.
+  // filteredDatastreams can be momentarily undefined during
+  // workspace-switch / store-reset; .map on undefined would throw.
   const rows = filteredDatastreams.value ?? []
   if (showOnlySelected.value) {
     return rows.filter((ds) =>
@@ -294,14 +295,9 @@ const displayDatastreams = computed(() => {
 })
 
 const tableItems = computed(() => {
-  // Defensive optional-chaining: these nested fields come from
-  // `expand_related: true` on the datastream fetch. During a catalog
-  // refresh (workspace switch, re-fetch after plot changes) the store
-  // can briefly hold rows whose related objects haven't landed yet —
-  // dereferencing `ds.thing.samplingFeatureCode` then threw, which
-  // surfaced as an error during table render and tore the whole
-  // `v-data-table-virtual` out of the DOM. Falling back to an empty
-  // string keeps the row visible (and sort-stable).
+  // Optional-chain related fields: during catalog refresh the store
+  // can briefly hold rows whose related objects haven't landed.
+  // Empty-string fallback keeps the row visible and sort-stable.
   return displayDatastreams.value.map((ds) => {
     return {
       ...ds,
@@ -317,7 +313,7 @@ const tableItems = computed(() => {
 const NUMBER_FORMATTER = new Intl.NumberFormat()
 const formatCount = (n: unknown): string => {
   const v = Number(n)
-  return Number.isFinite(v) ? NUMBER_FORMATTER.format(v) : '—'
+  return Number.isFinite(v) ? NUMBER_FORMATTER.format(v) : '-'
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -328,9 +324,9 @@ const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 })
 const formatTableDate = (raw: unknown): string => {
-  if (!raw) return '—'
+  if (!raw) return '-'
   const d = new Date(raw as string)
-  return Number.isNaN(d.getTime()) ? '—' : DATE_FORMATTER.format(d)
+  return Number.isNaN(d.getTime()) ? '-' : DATE_FORMATTER.format(d)
 }
 
 const clearSelected = () => {
@@ -341,14 +337,8 @@ const clearSelected = () => {
 const isChecked = (item: Datastream) =>
   plottedDatastreams.value.some((sds) => sds.id === item.id)
 
-/** First-plotted datastream — the QC target. */
 const isQc = (item: Datastream) => qcDatastream.value?.id === item.id
 
-/**
- * True when the plot is at its 5-stream cap and this row is not already
- * one of the plotted streams — so its checkbox should read as disabled
- * and the whole row should dim.
- */
 const isAtCap = (item: Datastream) =>
   plottedDatastreams.value.length >= 5 && !isChecked(item)
 
@@ -401,7 +391,7 @@ const selectableHeaders = computed(() =>
 // Single-sort default. Multi-sort was previously enabled but the
 // priority badges Vuetify renders next to the sort caret crowded the
 // header even when only one column was sorted, and the multi-column
-// default (site → property → level) confused users on first paint.
+// default (site â†’ property â†’ level) confused users on first paint.
 const DEFAULT_SORT: Array<{ key: string; order?: 'asc' | 'desc' }> = [
   { key: 'siteCodeName', order: 'asc' },
 ]
@@ -440,9 +430,8 @@ const resetSort = () => {
   background: #f7f7f7;
 }
 
-/* Plotted/QC row treatments — tint and a primary leading bar so a
-   plotted row reads at a glance even when the checkbox column has
-   scrolled out of view. The QC row gets a more saturated bar. */
+/* Tint + primary leading bar so a plotted row reads even when the
+   checkbox column is scrolled away. QC row gets a saturated bar. */
 :deep(tbody tr.datasets-table__row--plotted > td) {
   background-color: rgba(var(--v-theme-primary), 0.05);
 }
@@ -464,10 +453,8 @@ const resetSort = () => {
   cursor: pointer;
 }
 
-/* When the 5/5 plot cap is hit, make rows whose checkbox is disabled
-   read as clearly unavailable — dim all row content and switch the
-   cursor away from the row-level click affordance. The checkbox's own
-   styling is amplified below. */
+/* Disabled-at-cap rows: dim content and disable the row click cursor.
+   Checkbox styling is amplified below. */
 :deep(tbody tr.datasets-table__row--at-cap > td) {
   opacity: 0.45;
   cursor: not-allowed;
@@ -522,26 +509,16 @@ const resetSort = () => {
 }
 
 .datasets-table__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   padding: 32px 16px;
   color: rgba(var(--v-theme-on-surface), 0.7);
-  text-align: center;
 }
 
 .plot-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 28px;
   height: 28px;
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
   color: rgba(var(--v-theme-on-surface), 0.6);
   transition:
     background-color 120ms ease,
@@ -560,21 +537,17 @@ const resetSort = () => {
 .plot-check--disabled:hover {
   color: rgba(var(--v-theme-on-surface), 0.25);
   background-color: transparent;
-  cursor: not-allowed;
+  cursor: not-allowed !important;
 }
 
 /* Compact "QC" pill rendered next to the plot checkbox on the QC row.
    Marks the quality-control target without occupying its own column. */
 .qc-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   height: 18px;
   padding: 0 6px;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #fff;
   background-color: rgb(var(--v-theme-primary));
   border-radius: 4px;
 }

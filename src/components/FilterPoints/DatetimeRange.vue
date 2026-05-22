@@ -1,10 +1,8 @@
-<template>
+﻿<template>
   <v-card>
-    <v-card-title class="text-body-1">Filter by datetime range</v-card-title>
+    <v-card-title class="text-body-large">Filter by datetime range</v-card-title>
 
     <v-card-text>
-      <!-- Shared range picker owns the date pickers, presets, plot
-           overlay, data-bounds clamping, and range warning. -->
       <RangeStager ref="stager" />
 
       <v-alert
@@ -19,7 +17,7 @@
         variant="tonal"
         density="compact"
       >
-        <div class="d-flex align-center gap-2">
+        <div class="d-flex align-center ga-2">
           <v-progress-circular
             v-if="isComputing"
             size="14"
@@ -27,7 +25,7 @@
             indeterminate
             color="primary"
           />
-          <div class="text-caption">
+          <div class="text-body-small">
             <template v-if="isComputing">Updating selection…</template>
             <template v-else-if="selectedCount > 0">
               <b>{{ selectedCount }}</b>
@@ -42,14 +40,6 @@
 </template>
 
 <script setup lang="ts">
-/**
- * Filter-by-datetime-range panel. Uses the shared `RangeStager`
- * for the range-picking UI (pickers, presets, plot overlay,
- * bounds clamping) and dispatches a live point selection every
- * time the range changes. The commit button is gone — the result
- * of the operation is the visible selection on the plot, exactly
- * like Find Gaps' live-commit behaviour.
- */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { EnumFilterOperations } from '@uwrl/qc-utils'
@@ -73,11 +63,7 @@ const selectedCount = computed(() => {
   return r ? r[1] - r[0] + 1 : 0
 })
 
-// Live "commit" — expand the index bounds into a flat selection
-// list and push it to the plot. `flush: 'post'` keeps the Plotly
-// restyle behind Vue's DOM reconciliation; `immediate: true` seeds
-// the initial selection on open without waiting for the first
-// interaction.
+// flush 'post' keeps the Plotly restyle behind Vue's DOM reconciliation.
 const isComputing = ref(false)
 watch(
   rangeIndices,
