@@ -35,7 +35,7 @@ Everything runs in your web browser. The backend never sees your edit history un
 | **History** | The ordered list of filters + selections + edits you've applied in the current edit session. Undo / redo / save / load all operate on this list. |
 | **Selection** | The set of point indices a filter (or your click / lasso) produced. Edits operate on the current selection. |
 | **QC history** | A JSON file holding your editing history for a datastream. This is the canonical save format. |
-| **Submit / Save** | POST the cleaned observations back to HydroServer to either overwrite the existing observations in the window you have plotted or to be saved as a new datastream, depending on your versinging scheme. |
+| **Submit / Save** | POST the cleaned observations back to HydroServer to either overwrite the existing observations in the window you have plotted or to be saved as a new datastream, depending on your versioning scheme. |
 
 ## First-time setup
 
@@ -93,7 +93,7 @@ The filter drawer has two collapsible sections:
 
 - **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
-The main are to the right of the window is split top/bottom:
+The main area to the right of the window is split top/bottom:
 
 - **Top card** carries the preview plot, the current QC target's name (or "No datastream plotted"), and the **Start editing** button that jumps to the Edit view. The right pane of the card lists currently plotted datastreams.
 - **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row is a datastream and has a plot toggle (check box); the first datastream you toggle on becomes the QC target (radio button column in the Plotted Datastreams List).
@@ -478,7 +478,7 @@ Clicking Save (or Save & Close) opens a confirmation dialog so a misclick won't 
 
 Once you confirm:
 
-1. The app POSTs the cleaned observations to HydroServer, which either overwrites the existing observations in the plotted window or saves the cleaned observations to a different datastream, depending on your data versioningin scheme.
+1. The app POSTs the cleaned observations to HydroServer, which either overwrites the existing observations in the plotted window or saves the cleaned observations to a different datastream, depending on your data versioning scheme.
 2. On success, the Snackbar shows "Quality-controlled observations submitted" and the local history is cleared.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
 
