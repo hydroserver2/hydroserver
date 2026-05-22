@@ -139,7 +139,7 @@ def migrate_tasks_forward(apps, schema_editor):
 
         dc.source_url = extractor_settings.get("sourceUri", "")
         dc.timestamp_key = timestamp.get("key", "")
-        dc.timestamp_format = timestamp.get("format")
+        dc.timestamp_format = timestamp.get("customFormat") if timestamp.get("format") == "custom" else None
         dc.timezone = timestamp.get("timezone")
         dc.timezone_type = TIMEZONE_MODE_MAP.get(timestamp.get("timezoneMode", ""))
         dc.save(update_fields=["source_url", "timestamp_key", "timestamp_format", "timezone", "timezone_type"])
@@ -152,10 +152,17 @@ def migrate_tasks_forward(apps, schema_editor):
                     f"Migration aborted: unsupported placeholder variable type '{raw_type}' "
                     f"on DataConnection {dc.id}. Supported types: {list(PLACEHOLDER_VARIABLE_TYPE_MAP)}."
                 )
+            pv_timestamp = pv.get("timestamp") or {}
+            pv_timestamp_format = (
+                pv_timestamp.get("customFormat")
+                if pv_timestamp.get("format") == "custom"
+                else None
+            )
             PlaceholderVariable.objects.create(
                 data_connection=dc,
                 name=pv.get("name", ""),
                 variable_type=variable_type,
+                timestamp_format=pv_timestamp_format,
             )
 
         transformer_type = (dc.transformer_type or "").upper()
@@ -313,16 +320,23 @@ def migrate_tasks_reverse(apps, schema_editor):
         timezone_mode = REVERSE_TIMEZONE_MODE_MAP.get(dc.timezone_type or "", "")
         timestamp = {"key": dc.timestamp_key or ""}
         if dc.timestamp_format:
-            timestamp["format"] = dc.timestamp_format
+            timestamp["format"] = "custom"
+            timestamp["customFormat"] = dc.timestamp_format
         if timezone_mode:
             timestamp["timezoneMode"] = timezone_mode
         if dc.timezone:
             timestamp["timezone"] = dc.timezone
 
-        placeholder_variables = [
-            {"name": pv.name, "type": REVERSE_PLACEHOLDER_VARIABLE_TYPE_MAP.get(pv.variable_type, pv.variable_type), "runTimeValue": ""}
-            for pv in dc.placeholder_variables.all()
-        ]
+        placeholder_variables = []
+        for pv in dc.placeholder_variables.all():
+            pv_dict = {
+                "name": pv.name,
+                "type": REVERSE_PLACEHOLDER_VARIABLE_TYPE_MAP.get(pv.variable_type, pv.variable_type),
+                "runTimeValue": "",
+            }
+            if pv.timestamp_format:
+                pv_dict["timestamp"] = {"format": "custom", "customFormat": pv.timestamp_format}
+            placeholder_variables.append(pv_dict)
         extractor_settings = {"sourceUri": dc.source_url or ""}
         if placeholder_variables:
             extractor_settings["placeholderVariables"] = placeholder_variables
