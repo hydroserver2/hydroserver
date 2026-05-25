@@ -801,11 +801,6 @@ function goToEdit() {
   min-width: 0;
 }
 
-.select-view__plot-header,
-.select-view__plotted-header {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-}
-
 .select-view__divider-horizontal {
   display: none;
 }

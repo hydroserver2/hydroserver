@@ -56,7 +56,7 @@
         >
           {{ originalDisplay }}
         </span>
-        <span class="editable-cell__current">
+        <span class="editable-cell__current font-weight-medium">
           {{ edited ? editedDisplay : display }}
         </span>
       </button>
@@ -142,10 +142,6 @@ function cancel() {
 
 .editable-cell__original {
   font-size: 0.75rem;
-}
-
-.editable-cell__current {
-  font-weight: 500;
 }
 
 .editable-cell--edited .editable-cell__current {

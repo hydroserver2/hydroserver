@@ -481,8 +481,6 @@ const resetSort = () => {
 
 /* Two-line site cell: code on top, name below in muted tone. */
 .site-cell {
-  display: flex;
-  flex-direction: column;
   line-height: 1.15;
 }
 
