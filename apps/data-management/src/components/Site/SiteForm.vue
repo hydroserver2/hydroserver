@@ -241,7 +241,7 @@ watch(
 )
 
 async function populateThing() {
-  Object.assign(thing, storedThing.value)
+  Object.assign(thing, JSON.parse(JSON.stringify(storedThing.value)))
   if (thing.location.latitude && thing.location.longitude) loaded.value = true
 }
 
