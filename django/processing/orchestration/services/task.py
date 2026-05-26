@@ -91,8 +91,7 @@ class TaskService(SchedulingService, Generic[T]):
             periodic_task_name=str(task.id),
         )
 
-        if crontab is not Unset or interval is not Unset:
-            task.next_run_at = SchedulingService.compute_next_run_at(task.periodic_task)
+        task.next_run_at = SchedulingService.compute_next_run_at(task.periodic_task)
 
         task.save()
 

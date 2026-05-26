@@ -98,12 +98,13 @@ def test_get_run_collection_empty_page():
 # --- apply_schedule (TaskService wrapper) ---
 
 def test_task_apply_schedule_sets_crontab():
-    task = etl_task_service.apply_schedule(task=TASK_ID, crontab=CRONTAB_DAILY)
+    task = etl_task_service.apply_schedule(task=TASK_ID, crontab=CRONTAB_DAILY, enabled=True)
 
     assert task.periodic_task is not None
     assert task.periodic_task.crontab is not None
     assert task.periodic_task.crontab.hour == "8"
-    assert task.next_run_at is None
+    assert task.next_run_at is not None
+    assert task.next_run_at > timezone.now()
 
 
 def test_task_apply_schedule_clears_schedule():
@@ -114,11 +115,20 @@ def test_task_apply_schedule_clears_schedule():
     assert task.periodic_task is None
 
 
-def test_task_apply_schedule_clears_next_run_at():
+def test_task_apply_schedule_clears_next_run_at_when_schedule_removed():
     etl_task = EtlTask.objects.get(pk=TASK_ID)
     etl_task.next_run_at = timezone.now()
     etl_task.save()
 
-    task = etl_task_service.apply_schedule(task=TASK_ID, crontab=CRONTAB_DAILY)
+    task = etl_task_service.apply_schedule(task=TASK_ID, crontab=None)
 
     assert task.next_run_at is None
+
+
+def test_task_apply_schedule_sets_next_run_at_when_enabled():
+    task = etl_task_service.apply_schedule(task=TASK_ID, crontab=CRONTAB_DAILY, enabled=False)
+    assert task.next_run_at is None
+
+    task = etl_task_service.apply_schedule(task=TASK_ID, enabled=True)
+    assert task.next_run_at is not None
+    assert task.next_run_at > timezone.now()

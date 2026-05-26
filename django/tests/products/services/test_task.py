@@ -160,6 +160,28 @@ def test_create_data_product_task_nonexistent_thing(get_principal):
     assert "does not exist" in _err(exc_info)
 
 
+def test_update_data_product_task_clears_schedule(get_principal):
+    task = task_service.create(
+        principal=get_principal("owner"),
+        thing=uuid.UUID(PRIVATE_THING),
+        name="Scheduled Task",
+        interval=6,
+        interval_period="hours",
+        enabled=True,
+    )
+    assert task.periodic_task is not None
+    assert task.next_run_at is not None
+
+    result = task_service.update(
+        task=task.pk,
+        principal=get_principal("owner"),
+        crontab=None,
+        interval=None,
+    )
+    assert result.periodic_task is None
+    assert result.next_run_at is None
+
+
 def test_create_data_product_task_with_crontab_schedule(get_principal):
     result = task_service.create(
         principal=get_principal("owner"),

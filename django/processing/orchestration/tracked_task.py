@@ -88,7 +88,7 @@ class TrackedTask(Task):
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         hs_task_id = kwargs.get(self.task_id_kwarg)
 
-        if kwargs.get(self.run_id_kwarg) or not hs_task_id:
+        if not hs_task_id:
             return
 
         from processing.orchestration.models import Task
