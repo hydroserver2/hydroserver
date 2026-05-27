@@ -56,7 +56,6 @@ class DataConnectionQuerySet(models.QuerySet):
 
 
 class TimezoneType(models.TextChoices):
-    UTC = "utc"
     OFFSET = "offset"
     IANA = "iana"
 
@@ -79,8 +78,6 @@ class DataConnection(models.Model, PermissionChecker):
     source_url = models.TextField()
     auth_header_name = models.CharField(max_length=255, null=True, blank=True)
     auth_header_value = models.TextField(null=True, blank=True)
-    timestamp_key = models.CharField(max_length=255)
-    timestamp_format = models.CharField(max_length=255, blank=True, null=True)
     timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
     timezone = models.CharField(max_length=255, blank=True, null=True)
 
@@ -158,6 +155,10 @@ class Payload(models.Model):
 
     # JSON fields
     jmespath = models.TextField(null=True, blank=True)
+
+    # Timestamp fields
+    timestamp_key = models.CharField(max_length=255)
+    timestamp_format = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         app_label = "etl"

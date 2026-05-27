@@ -173,6 +173,28 @@ def test_create_monitoring_task_deduplicates_recipients(get_principal):
     assert result.recipients.count() == 1
 
 
+def test_update_monitoring_task_clears_schedule(get_principal):
+    task = monitoring_task_service.create(
+        principal=get_principal("owner"),
+        thing=uuid.UUID(PRIVATE_WS_THING),
+        name="Scheduled Task",
+        interval=1,
+        interval_period="hours",
+        enabled=True,
+    )
+    assert task.periodic_task is not None
+    assert task.next_run_at is not None
+
+    result = monitoring_task_service.update(
+        task=task.pk,
+        principal=get_principal("owner"),
+        crontab=None,
+        interval=None,
+    )
+    assert result.periodic_task is None
+    assert result.next_run_at is None
+
+
 def test_create_monitoring_task_with_schedule(get_principal):
     result = monitoring_task_service.create(
         principal=get_principal("owner"),

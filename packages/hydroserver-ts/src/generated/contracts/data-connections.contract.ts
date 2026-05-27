@@ -10,7 +10,7 @@ export namespace DataConnectionContract {
   export type PostBody        = Data.components['schemas']['DataConnectionPostBody']
   export type PatchBody       = Data.components['schemas']['DataConnectionPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["authHeaderName","authHeaderValue","description","name","notification","payload","placeholderVariables","sourceUrl","timestamp"] as const
+  export const writableKeys = ["authHeaderName","authHeaderValue","description","name","notification","payload","placeholderVariables","sourceUrl","timezone","timezoneType"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

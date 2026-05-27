@@ -157,6 +157,28 @@ def test_create_etl_task_creates_mappings(get_principal):
     assert mapping.target_datastream_id == uuid.UUID(DS_PRIVATE_WS_2)
 
 
+def test_update_etl_task_clears_schedule(get_principal):
+    task = etl_task_service.create(
+        principal=get_principal("owner"),
+        name="Scheduled Task",
+        data_connection=uuid.UUID(DC1),
+        interval=1,
+        interval_period="days",
+        enabled=True,
+    )
+    assert task.periodic_task is not None
+    assert task.next_run_at is not None
+
+    result = etl_task_service.update(
+        task=task.pk,
+        principal=get_principal("owner"),
+        crontab=None,
+        interval=None,
+    )
+    assert result.periodic_task is None
+    assert result.next_run_at is None
+
+
 def test_create_etl_task_with_schedule(get_principal):
     result = etl_task_service.create(
         principal=get_principal("owner"),

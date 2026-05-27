@@ -76,8 +76,11 @@ import { useRouter } from 'vue-router'
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
 import hs from '@hydroserver/client'
+import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const { user } = storeToRefs(useUserStore())
 const verifying = ref(false)
 const verified = ref(false)
 const verificationError = ref(false)
@@ -99,7 +102,18 @@ const verifyCode = async () => {
 
   try {
     verifying.value = true
-    await hs.user.verifyEmailWithCode(verificationCode.value)
+    const verifyResponse = await hs.user.verifyEmailWithCode(
+      verificationCode.value
+    )
+    if (!verifyResponse.ok) {
+      throw new Error(verifyResponse.message)
+    }
+
+    const userResponse = await hs.user.get()
+    if (userResponse.ok && userResponse.status !== 401) {
+      user.value = userResponse.data
+    }
+
     verified.value = true
     Snackbar.success('Your email has been verified.')
     await router.push({ name: 'Sites' })

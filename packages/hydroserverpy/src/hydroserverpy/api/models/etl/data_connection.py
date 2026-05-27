@@ -9,17 +9,10 @@ if TYPE_CHECKING:
     from hydroserverpy import HydroServer
 
 
-class TimestampConfig(BaseModel):
-    key: str
-    format: Optional[str] = None
-    timezone_type: Optional[Literal["utc", "offset", "iana"]] = None
-    timezone: Optional[str] = None
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
 class CSVPayload(BaseModel):
     payload_type: Literal["CSV"] = Field(..., alias="type")
+    timestamp_key: str
+    timestamp_format: Optional[str] = None
     header_row: Optional[int] = None
     data_start_row: Optional[int] = None
     delimiter: Optional[str] = None
@@ -29,6 +22,8 @@ class CSVPayload(BaseModel):
 
 class JSONPayload(BaseModel):
     payload_type: Literal["JSON"] = Field(..., alias="type")
+    timestamp_key: str
+    timestamp_format: Optional[str] = None
     jmespath: Optional[str] = None
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
@@ -66,7 +61,10 @@ class DataConnection(HydroServerBaseModel):
     source_url: str
     workspace_id: uuid.UUID = Field(..., validation_alias=AliasPath("workspace", "id"))
     workspace_name: str = Field(..., validation_alias=AliasPath("workspace", "name"))
-    timestamp: TimestampConfig
+    timezone_type: Optional[Literal["offset", "iana"]] = None
+    timezone: Optional[str] = None
+    auth_header_name: Optional[str] = None
+    auth_header_value: Optional[str] = None
     payload: Union[CSVPayload, JSONPayload]
     placeholder_variables: List[PlaceholderVariable] = []
     notification: Optional[Notification] = None
@@ -89,12 +87,12 @@ class DataConnection(HydroServerBaseModel):
             self.uid,
             name=self.name,
             source_url=self.source_url,
-            timestamp_key=self.timestamp.key,
             payload_type=self.payload.payload_type,
             description=self.description,
-            timestamp_format=self.timestamp.format,
-            timezone_type=self.timestamp.timezone_type,
-            timezone=self.timestamp.timezone,
+            timestamp_key=getattr(self.payload, "timestamp_key"),
+            timestamp_format=getattr(self.payload, "timestamp_format", None),
+            timezone_type=self.timezone_type,
+            timezone=self.timezone,
             header_row=getattr(self.payload, "header_row", None),
             data_start_row=getattr(self.payload, "data_start_row", None),
             delimiter=getattr(self.payload, "delimiter", None),

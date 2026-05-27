@@ -2143,6 +2143,10 @@ export interface components {
             delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
             /** Headerrow */
             headerRow?: number | null;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /** Timestampkey */
+            timestampKey: string;
             /**
              * Type
              * @constant
@@ -2158,6 +2162,10 @@ export interface components {
             delimiter?: ("," | "|" | "\t" | ";" | " ") | null;
             /** Headerrow */
             headerRow?: number | null;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /** Timestampkey */
+            timestampKey: string;
             /**
              * Type
              * @constant
@@ -2310,8 +2318,10 @@ export interface components {
             placeholderVariables?: components["schemas"]["PlaceholderVariablePatchBody"][];
             /** Sourceurl */
             sourceUrl?: string;
-            /** Timestamp */
-            timestamp?: components["schemas"]["TimestampPatchBody"];
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
         };
         /** DataConnectionPostBody */
         DataConnectionPostBody: {
@@ -2335,7 +2345,10 @@ export interface components {
             placeholderVariables: components["schemas"]["PlaceholderVariablePostBody"][];
             /** Sourceurl */
             sourceUrl: string;
-            timestamp: components["schemas"]["TimestampPostBody"];
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
             /**
              * Workspaceid
              * Format: uuid
@@ -2397,7 +2410,10 @@ export interface components {
             placeholderVariables: components["schemas"]["PlaceholderVariableResponse"][];
             /** Sourceurl */
             sourceUrl: string;
-            timestamp: components["schemas"]["TimestampResponse"];
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
         };
         /**
@@ -3272,6 +3288,10 @@ export interface components {
         JSONPayloadPostBody: {
             /** Jmespath */
             jmespath?: string | null;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /** Timestampkey */
+            timestampKey: string;
             /**
              * Type
              * @constant
@@ -3283,6 +3303,10 @@ export interface components {
         JSONPayloadResponse: {
             /** Jmespath */
             jmespath?: string | null;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /** Timestampkey */
+            timestampKey: string;
             /**
              * Type
              * @constant
@@ -3865,6 +3889,10 @@ export interface components {
             headerRow?: number | null;
             /** Jmespath */
             jmespath?: string | null;
+            /** Timestampformat */
+            timestampFormat?: string | null;
+            /** Timestampkey */
+            timestampKey?: string | null;
             /** Type */
             type?: ("CSV" | "JSON") | null;
         };
@@ -4916,39 +4944,6 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
-        };
-        /** TimestampPatchBody */
-        TimestampPatchBody: {
-            /** Format */
-            format?: string | null;
-            /** Key */
-            key?: string;
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
-        };
-        /** TimestampPostBody */
-        TimestampPostBody: {
-            /** Format */
-            format?: string | null;
-            /** Key */
-            key: string;
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
-        };
-        /** TimestampResponse */
-        TimestampResponse: {
-            /** Format */
-            format?: string | null;
-            /** Key */
-            key: string;
-            /** Timezone */
-            timezone?: string | null;
-            /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
         };
         /** TransformationInputPostBody */
         TransformationInputPostBody: {

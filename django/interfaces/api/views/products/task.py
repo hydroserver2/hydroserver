@@ -154,7 +154,13 @@ def update_data_product_task(
             task=task_id,
             principal=request.principal,
             **data.model_dump(exclude_unset=True, exclude={"schedule"}),
-            **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
+            **(
+                data.schedule.model_dump(exclude_unset=True)
+                if "schedule" in data.model_fields_set and data.schedule
+                else {"crontab": None, "interval": None}
+                if "schedule" in data.model_fields_set
+                else {}
+            ),
         )
 
     return 200, task

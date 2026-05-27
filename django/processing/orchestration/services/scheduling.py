@@ -29,6 +29,8 @@ class SchedulingService:
         Update or create a PeriodicTask with a crontab or interval schedule.
         """
 
+        now = timezone.now()
+
         if crontab not in (None, Unset) and interval not in (None, Unset):
             raise ValueError("Only one of crontab or interval can be set on a schedule.")
 
@@ -119,13 +121,13 @@ class SchedulingService:
             elif crontab is not Unset or interval is not Unset:
                 periodic_task.crontab = crontab_schedule
                 periodic_task.interval = interval_schedule
-                periodic_task.date_changed = timezone.now()
+                periodic_task.date_changed = now
 
             if periodic_task is not None:
                 periodic_task.enabled = enabled if enabled is not Unset else periodic_task.enabled
 
                 if start_time is not Unset:
-                    periodic_task.start_time = start_time or timezone.now()
+                    periodic_task.start_time = start_time or now
 
                 if periodic_task_name not in (None, Unset):
                     periodic_task.name = periodic_task_name
@@ -142,15 +144,37 @@ class SchedulingService:
                 if not celery_task_name:
                     raise ValueError("celery_task_name is required when creating a new schedule.")
 
+                effective_start = (
+                    start_time if start_time not in (None, Unset) else now
+                )
+
+                if interval_schedule and effective_start <= now:
+                    period_deltas = {
+                        "days": timedelta(days=interval_schedule.every),
+                        "hours": timedelta(hours=interval_schedule.every),
+                        "minutes": timedelta(minutes=interval_schedule.every),
+                    }
+                    delta = period_deltas.get(interval_schedule.period)
+                    if delta:
+                        n = int((now - effective_start).total_seconds() / delta.total_seconds())
+                        initial_last_run_at = effective_start + n * delta
+                    else:
+                        initial_last_run_at = None
+                elif crontab_schedule and effective_start <= now:
+                    initial_last_run_at = now
+                else:
+                    initial_last_run_at = None
+
                 periodic_task = PeriodicTask.objects.create(
                     name=periodic_task_name if periodic_task_name not in (None, Unset) else "",
                     task=celery_task_name,
                     kwargs=json.dumps(celery_task_kwargs if celery_task_kwargs not in (None, Unset) else {}),
                     enabled=enabled if enabled is not Unset else True,
-                    date_changed=timezone.now(),
+                    date_changed=now,
                     crontab=crontab_schedule,
                     interval=interval_schedule,
-                    start_time=start_time if start_time not in (None, Unset) else timezone.now(),
+                    start_time=effective_start,
+                    last_run_at=initial_last_run_at,
                     expire_seconds=3600,
                 )
 
@@ -216,6 +240,10 @@ class SchedulingService:
                 return None
             if periodic_task.start_time and periodic_task.start_time > now:
                 return periodic_task.start_time
+            if periodic_task.last_run_at:
+                next_run = periodic_task.last_run_at + delta
+                if next_run > now:
+                    return next_run
             return now + delta
 
         return None

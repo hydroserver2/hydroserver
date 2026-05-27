@@ -169,8 +169,13 @@ def update_etl_task(
                 if "mappings" in data.model_fields_set else Unset
             ),
             **data.model_dump(exclude_unset=True, exclude={"schedule", "mappings"}),
-            **(data.schedule.model_dump(exclude_unset=True)
-               if "schedule" in data.model_fields_set and data.schedule else {}),
+            **(
+                data.schedule.model_dump(exclude_unset=True)
+                if "schedule" in data.model_fields_set and data.schedule
+                else {"crontab": None, "interval": None}
+                if "schedule" in data.model_fields_set
+                else {}
+            )
         )
 
     return 200, etl_task

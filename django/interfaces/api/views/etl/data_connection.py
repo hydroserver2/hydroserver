@@ -81,9 +81,8 @@ def create_data_connection(
             principal=request.principal,
             workspace=data.workspace_id,
             **data.model_dump(exclude_unset=True,
-                              exclude={"workspace_id", "timestamp", "payload", "placeholder_variables",
+                              exclude={"workspace_id", "payload", "placeholder_variables",
                                        "notification"}),
-            **data.timestamp.model_dump(exclude_unset=True),
             **data.payload.model_dump(exclude_unset=True),
             placeholder_variables=[
                 pv.model_dump(exclude_unset=True)
@@ -151,9 +150,8 @@ def update_data_connection(
         data_connection = data_connection_service.update(
             data_connection=data_connection_id,
             principal=request.principal,
-            **data.model_dump(exclude_unset=True, exclude={"timestamp", "payload", "placeholder_variables",
+            **data.model_dump(exclude_unset=True, exclude={"payload", "placeholder_variables",
                                                            "notification"}),
-            **(data.timestamp.model_dump(exclude_unset=True) if "timestamp" in data.model_fields_set else {}),
             **(data.payload.model_dump(exclude_unset=True) if "payload" in data.model_fields_set else {}),
             **({
                    "placeholder_variables": [

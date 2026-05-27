@@ -25,8 +25,8 @@
         tabindex="0"
         role="button"
         @click="selectMode('interval')"
-        @keydown.enter.prevent="selectMode('interval')"
-        @keydown.space.prevent="selectMode('interval')"
+        @keydown.enter.self.prevent="selectMode('interval')"
+        @keydown.space.self.prevent="selectMode('interval')"
       >
         <div class="schedule-option__header">
           <span
@@ -80,8 +80,8 @@
         tabindex="0"
         role="button"
         @click="selectMode('crontab')"
-        @keydown.enter.prevent="selectMode('crontab')"
-        @keydown.space.prevent="selectMode('crontab')"
+        @keydown.enter.self.prevent="selectMode('crontab')"
+        @keydown.space.self.prevent="selectMode('crontab')"
       >
         <div class="schedule-option__header">
           <span

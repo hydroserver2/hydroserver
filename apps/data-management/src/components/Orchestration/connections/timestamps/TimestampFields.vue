@@ -7,7 +7,7 @@
     <v-row>
       <v-col>
         <v-text-field
-          v-model="dataConnection.timestamp.key"
+          v-model="dataConnection.payload.timestampKey"
           placeholder="timestamp"
           :label="timestampKeyLabel"
           density="compact"
@@ -30,20 +30,18 @@
           item-value="value"
           label="Timestamp format *"
           hide-details
-        />
-      </v-col>
-    </v-row>
-
-    <v-row v-if="formatChoice === 'custom'">
-      <v-col>
-        <v-text-field
-          v-model="dataConnection.timestamp.format"
-          label="Custom timestamp format *"
-          hint="Enter a strftime format string (e.g. %Y-%m-%d %H:%M:%S)"
-          :rules="rules.required"
         >
-          <template #append-inner>
+          <template #append>
             <v-btn
+              v-if="formatChoice === 'iso8601'"
+              size="small"
+              variant="text"
+              color="grey"
+              :icon="mdiHelpCircle"
+              @click="openIso8601Help"
+            />
+            <v-btn
+              v-else-if="formatChoice === 'custom'"
               size="small"
               variant="text"
               color="grey"
@@ -51,47 +49,16 @@
               @click="openStrftimeHelp"
             />
           </template>
-        </v-text-field>
+        </v-select>
       </v-col>
     </v-row>
 
-    <v-row v-if="formatChoice !== 'iso8601'">
+    <v-row v-if="formatChoice === 'custom'">
       <v-col>
-        <label class="v-label">Timezone</label>
-        <v-btn-toggle
-          class="ml-4"
-          v-model="dataConnection.timestamp.timezoneType"
-          mandatory
-          variant="outlined"
-          density="compact"
-          color="green-darken-4"
-        >
-          <v-btn value="utc">UTC</v-btn>
-          <v-btn value="offset">Fixed offset</v-btn>
-          <v-btn value="iana">Daylight savings aware</v-btn>
-        </v-btn-toggle>
-      </v-col>
-    </v-row>
-
-    <v-row v-if="dataConnection.timestamp.timezoneType === 'offset'">
-      <v-col>
-        <v-autocomplete
-          v-model="dataConnection.timestamp.timezone"
-          label="Fixed timezone offset *"
-          hint="Select the fixed UTC offset for this data."
-          :items="FIXED_OFFSET_TIMEZONES"
-          :rules="rules.required"
-        />
-      </v-col>
-    </v-row>
-
-    <v-row v-if="dataConnection.timestamp.timezoneType === 'iana'">
-      <v-col>
-        <v-autocomplete
-          v-model="dataConnection.timestamp.timezone"
-          label="Daylight savings aware timezone *"
-          hint="Select an IANA timezone for this data."
-          :items="DST_AWARE_TIMEZONES"
+        <v-text-field
+          v-model="dataConnection.payload.timestampFormat"
+          label="Custom timestamp format *"
+          hint="Enter a strftime format string (e.g. %Y-%m-%d %H:%M:%S)"
           :rules="rules.required"
         />
       </v-col>
@@ -100,11 +67,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataConnectionStore } from '@/store/dataConnection'
 import { rules } from '@/utils/rules'
-import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { mdiTableColumnWidth, mdiHelpCircle } from '@mdi/js'
 import { IdentifierType } from '@hydroserver/client'
 
@@ -115,34 +81,29 @@ const props = defineProps<{
 const { dataConnection } = storeToRefs(useDataConnectionStore())
 
 const FORMAT_OPTIONS = [
-  { title: 'Full ISO 8601 (YYYY-MM-DD hh:mm:ss:ssss+hh:mm)', value: 'iso8601' },
-  { title: 'Naive ISO 8601 (no timezone in string)', value: 'naive' },
+  { title: 'ISO 8601', value: 'iso8601' },
   { title: 'Custom format', value: 'custom' },
 ] as const
 
-const formatChoice = computed({
-  get(): 'iso8601' | 'naive' | 'custom' {
-    const fmt = dataConnection.value.timestamp.format
-    const tzType = dataConnection.value.timestamp.timezoneType
-    if (!fmt && !tzType) return 'iso8601'
-    if (!fmt && tzType) return 'naive'
-    return 'custom'
-  },
-  set(choice: 'iso8601' | 'naive' | 'custom') {
-    const ts = dataConnection.value.timestamp
-    if (choice === 'iso8601') {
-      ts.format = null
-      ts.timezoneType = null
-      ts.timezone = null
-    } else if (choice === 'naive') {
-      ts.format = null
-      ts.timezoneType = ts.timezoneType ?? 'utc'
-    } else {
-      ts.format = ts.format || ''
-      ts.timezoneType = ts.timezoneType ?? 'utc'
-    }
-  },
+// Track format choice independently so that selecting 'custom' before typing
+// a format string doesn't snap back to 'iso8601' (empty string is falsy).
+const formatChoice = ref<'iso8601' | 'custom'>(
+  dataConnection.value.payload.timestampFormat ? 'custom' : 'iso8601'
+)
+
+watch(formatChoice, (choice) => {
+  if (choice === 'iso8601') {
+    dataConnection.value.payload.timestampFormat = null
+  }
 })
+
+// Re-sync when the store's dataConnection is replaced.
+watch(
+  () => dataConnection.value,
+  (dc) => {
+    formatChoice.value = dc.payload.timestampFormat ? 'custom' : 'iso8601'
+  }
+)
 
 const timestampKeyLabel = computed(() => {
   if (props.identifierType === IdentifierType.Name) {
@@ -164,20 +125,17 @@ const timestampKeyRules = computed(() => {
     : rules.requiredAndMaxLength150
 })
 
-watch(
-  () => dataConnection.value.timestamp.timezoneType,
-  (newType) => {
-    const ts = dataConnection.value.timestamp
-    if (!newType || newType === 'utc') {
-      ts.timezone = null
-    } else if (newType === 'offset' && !ts.timezone) {
-      ts.timezone = '-0700'
-    } else if (newType === 'iana' && !ts.timezone) {
-      ts.timezone = 'America/Denver'
-    }
-  }
-)
-
 const openStrftimeHelp = () =>
-  window.open('https://devhints.io/strftime', '_blank', 'noreferrer')
+  window.open(
+    'https://devhints.io/strftime',
+    '_blank',
+    'noreferrer'
+  )
+
+const openIso8601Help = () =>
+  window.open(
+    'https://www.iso.org/iso-8601-date-and-time-format.html',
+    '_blank',
+    'noreferrer'
+  )
 </script>

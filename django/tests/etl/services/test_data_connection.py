@@ -162,6 +162,66 @@ def test_create_data_connection(get_principal, principal, workspace, error, erro
         assert result.workspace_id == uuid.UUID(workspace)
 
 
+def test_create_data_connection_stores_timestamp_fields_on_payload(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+    )
+    assert result.payload.timestamp_key == "timestamp"
+    assert result.payload.timestamp_format is None
+    assert not hasattr(result, "timestamp_key")
+
+
+def test_create_data_connection_with_timestamp_format(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **{**_create_params(), "timestamp_format": "%Y-%m-%d %H:%M:%S"},
+    )
+    assert result.payload.timestamp_key == "timestamp"
+    assert result.payload.timestamp_format == "%Y-%m-%d %H:%M:%S"
+
+
+def test_create_data_connection_stores_timezone_on_data_connection(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **{**_create_params(), "timezone_type": "iana", "timezone": "America/Denver"},
+    )
+    assert result.timezone_type == "iana"
+    assert result.timezone == "America/Denver"
+
+
+def test_update_data_connection_timestamp_key(get_principal):
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        timestamp_key="new_timestamp",
+    )
+    assert result.payload.timestamp_key == "new_timestamp"
+
+
+def test_update_data_connection_timestamp_format(get_principal):
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        timestamp_format="%m/%d/%Y",
+    )
+    assert result.payload.timestamp_format == "%m/%d/%Y"
+
+
+def test_update_data_connection_timezone(get_principal):
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        timezone_type="offset",
+        timezone="+05:30",
+    )
+    assert result.timezone_type == "offset"
+    assert result.timezone == "+05:30"
+
+
 @pytest.mark.parametrize(
     "auth_header_name, auth_header_value, error",
     [

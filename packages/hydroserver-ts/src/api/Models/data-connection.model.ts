@@ -6,18 +6,13 @@ export type PlaceholderVariableType =
   | 'run_time'
   | 'latest_observation_timestamp'
   | 'per_task'
-export type TimezoneType = 'utc' | 'offset' | 'iana'
+export type TimezoneType = 'offset' | 'iana'
 export type CSVDelimiterType = ',' | '\t' | ';' | '|' | ' '
-
-export interface TimestampConfig {
-  key: string
-  format?: string | null
-  timezoneType?: TimezoneType | null
-  timezone?: string | null
-}
 
 export interface CSVPayload {
   type: 'CSV'
+  timestampKey: string
+  timestampFormat?: string | null
   headerRow?: number | null
   dataStartRow?: number | null
   delimiter?: CSVDelimiterType | null
@@ -25,6 +20,8 @@ export interface CSVPayload {
 
 export interface JSONPayload {
   type: 'JSON'
+  timestampKey: string
+  timestampFormat?: string | null
   jmespath?: string | null
 }
 
@@ -59,7 +56,8 @@ export class DataConnection {
   authHeaderName: string | null = null
   authHeaderValue: string | null = null
   workspace: Workspace | null = null
-  timestamp: TimestampConfig = { key: '' }
+  timezoneType: TimezoneType | null = null
+  timezone: string | null = null
   payload: Payload = { type: 'CSV' }
   placeholderVariables: PlaceholderVariable[] = []
   notification: Notification | null = null

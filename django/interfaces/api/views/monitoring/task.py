@@ -148,7 +148,11 @@ def update_monitoring_task(
     extra = {}
 
     if "schedule" in data.model_fields_set:
-        extra.update(data.schedule.model_dump(exclude_unset=True) if data.schedule else {})
+        extra.update(
+            data.schedule.model_dump(exclude_unset=True)
+            if data.schedule
+            else {"crontab": None, "interval": None}
+        )
 
     with raise_http_errors():
         task = monitoring_task_service.update(
