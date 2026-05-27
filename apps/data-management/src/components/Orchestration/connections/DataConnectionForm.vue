@@ -29,6 +29,7 @@
 
         <ExtractorForm ref="extractorRef" />
         <TransformerForm ref="transformerRef" />
+        <TimezoneForm ref="timezoneRef" />
 
         <div class="ma-2">
           <v-switch
@@ -132,6 +133,7 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { useWorkspaceStore } from '@/store/workspaces'
 import ExtractorForm from './extractors/ExtractorForm.vue'
 import TransformerForm from './transformers/TransformerForm.vue'
+import TimezoneForm from '@/components/Orchestration/connections/timestamps/TimezoneForm.vue'
 import hs, { DataConnection } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { ensureNotificationSchedule } from '@/utils/orchestration/dataConnectionNotifications'
@@ -154,6 +156,7 @@ const myForm = ref<VForm>()
 
 const extractorRef = ref<any>(null)
 const transformerRef = ref<any>(null)
+const timezoneRef = ref<any>(null)
 
 const loaded = ref(false)
 const isSubmitting = ref(false)
@@ -298,7 +301,8 @@ watch(advancedFeaturesEnabled, (enabled) => {
 async function validate() {
   const validExtractor = await extractorRef.value.validate()
   const validTransformer = await transformerRef.value.validate()
-  return validExtractor && validTransformer
+  const validTimezone = await timezoneRef.value?.validate()
+  return validExtractor && validTransformer && (validTimezone ?? true)
 }
 
 async function onSubmit() {

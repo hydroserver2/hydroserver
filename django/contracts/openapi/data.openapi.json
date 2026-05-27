@@ -949,6 +949,21 @@
             ],
             "title": "Headerrow"
           },
+          "timestampFormat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampformat"
+          },
+          "timestampKey": {
+            "title": "Timestampkey",
+            "type": "string"
+          },
           "type": {
             "const": "CSV",
             "enum": [
@@ -959,7 +974,8 @@
           }
         },
         "required": [
-          "type"
+          "type",
+          "timestampKey"
         ],
         "title": "CSVPayloadPostBody",
         "type": "object"
@@ -1007,6 +1023,21 @@
             ],
             "title": "Headerrow"
           },
+          "timestampFormat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampformat"
+          },
+          "timestampKey": {
+            "title": "Timestampkey",
+            "type": "string"
+          },
           "type": {
             "const": "CSV",
             "enum": [
@@ -1017,7 +1048,8 @@
           }
         },
         "required": [
-          "type"
+          "type",
+          "timestampKey"
         ],
         "title": "CSVPayloadResponse",
         "type": "object"
@@ -1429,13 +1461,31 @@
             "title": "Sourceurl",
             "type": "string"
           },
-          "timestamp": {
-            "allOf": [
+          "timezone": {
+            "anyOf": [
               {
-                "$ref": "#/components/schemas/TimestampPatchBody"
+                "type": "string"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Timestamp"
+            "title": "Timezone"
+          },
+          "timezoneType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "offset",
+                  "iana"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezonetype"
           }
         },
         "title": "DataConnectionPatchBody",
@@ -1517,8 +1567,31 @@
             "title": "Sourceurl",
             "type": "string"
           },
-          "timestamp": {
-            "$ref": "#/components/schemas/TimestampPostBody"
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "timezoneType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "offset",
+                  "iana"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezonetype"
           },
           "workspaceId": {
             "format": "uuid",
@@ -1530,7 +1603,6 @@
           "name",
           "sourceUrl",
           "workspaceId",
-          "timestamp",
           "payload",
           "placeholderVariables"
         ],
@@ -1695,8 +1767,31 @@
             "title": "Sourceurl",
             "type": "string"
           },
-          "timestamp": {
-            "$ref": "#/components/schemas/TimestampResponse"
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "timezoneType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "offset",
+                  "iana"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezonetype"
           },
           "workspace": {
             "$ref": "#/components/schemas/WorkspaceSummaryResponse"
@@ -1707,7 +1802,6 @@
           "name",
           "sourceUrl",
           "workspace",
-          "timestamp",
           "payload",
           "placeholderVariables"
         ],
@@ -4074,6 +4168,21 @@
             ],
             "title": "Jmespath"
           },
+          "timestampFormat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampformat"
+          },
+          "timestampKey": {
+            "title": "Timestampkey",
+            "type": "string"
+          },
           "type": {
             "const": "JSON",
             "enum": [
@@ -4084,7 +4193,8 @@
           }
         },
         "required": [
-          "type"
+          "type",
+          "timestampKey"
         ],
         "title": "JSONPayloadPostBody",
         "type": "object"
@@ -4102,6 +4212,21 @@
             ],
             "title": "Jmespath"
           },
+          "timestampFormat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampformat"
+          },
+          "timestampKey": {
+            "title": "Timestampkey",
+            "type": "string"
+          },
           "type": {
             "const": "JSON",
             "enum": [
@@ -4112,7 +4237,8 @@
           }
         },
         "required": [
-          "type"
+          "type",
+          "timestampKey"
         ],
         "title": "JSONPayloadResponse",
         "type": "object"
@@ -5964,6 +6090,28 @@
               }
             ],
             "title": "Jmespath"
+          },
+          "timestampFormat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampformat"
+          },
+          "timestampKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestampkey"
           },
           "type": {
             "anyOf": [
@@ -9060,156 +9208,6 @@
           "fileAttachments"
         ],
         "title": "ThingSummaryResponse",
-        "type": "object"
-      },
-      "TimestampPatchBody": {
-        "properties": {
-          "format": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Format"
-          },
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "timezone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezone"
-          },
-          "timezoneType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "utc",
-                  "offset",
-                  "iana"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezonetype"
-          }
-        },
-        "title": "TimestampPatchBody",
-        "type": "object"
-      },
-      "TimestampPostBody": {
-        "properties": {
-          "format": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Format"
-          },
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "timezone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezone"
-          },
-          "timezoneType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "utc",
-                  "offset",
-                  "iana"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezonetype"
-          }
-        },
-        "required": [
-          "key"
-        ],
-        "title": "TimestampPostBody",
-        "type": "object"
-      },
-      "TimestampResponse": {
-        "properties": {
-          "format": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Format"
-          },
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "timezone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezone"
-          },
-          "timezoneType": {
-            "anyOf": [
-              {
-                "enum": [
-                  "utc",
-                  "offset",
-                  "iana"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timezonetype"
-          }
-        },
-        "required": [
-          "key"
-        ],
-        "title": "TimestampResponse",
         "type": "object"
       },
       "TransformationInputPostBody": {

@@ -2,7 +2,7 @@
   <v-form ref="localForm" v-model="isValid" validate-on="input">
     <v-card class="mt-4" color="green-darken-4" variant="outlined" rounded="lg">
       <v-toolbar color="green">
-        <v-card-title>Payload &amp; Timestamp</v-card-title>
+        <v-card-title>Payload</v-card-title>
         <v-spacer />
         <v-select
           class="mx-4"

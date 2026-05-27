@@ -1,6 +1,5 @@
 from .data_connection import (
     DataConnection,
-    TimestampConfig,
     CSVPayload,
     JSONPayload,
     PlaceholderVariable,
@@ -13,7 +12,6 @@ from .run import TaskRun
 
 __all__ = [
     "DataConnection",
-    "TimestampConfig",
     "CSVPayload",
     "JSONPayload",
     "PlaceholderVariable",

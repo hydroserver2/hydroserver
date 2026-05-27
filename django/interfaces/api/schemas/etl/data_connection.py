@@ -18,8 +18,8 @@ from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, Sche
 class DataConnectionOrderBy(OrderByField):
     id = ("id", "id")
     name = ("name", "name")
-    timestamp_key = ("timestampKey", "timestamp_key")
-    timestamp_format = ("timestampFormat", "timestamp_format")
+    timestamp_key = ("timestampKey", "payload__timestamp_key")
+    timestamp_format = ("timestampFormat", "payload__timestamp_format")
     timezone_type = ("timezoneType", "timezone_type")
     timezone = ("timezone", "timezone")
     workspace_id = ("workspaceId", "workspace_id")
@@ -38,23 +38,10 @@ class DataConnectionQueryParameters(CollectionQueryParameters):
     )
 
 
-class TimestampResponse(BaseGetResponse):
-    timestamp_key: str = Field(alias="key")
-    timestamp_format: Optional[str] = Field(None, alias="format")
-    timezone_type: Optional[Literal["utc", "offset", "iana"]] = None
-    timezone: Optional[str] = None
-
-
-class TimestampPostBody(BasePostBody, TimestampResponse):
-    ...
-
-
-class TimestampPatchBody(BasePatchBody, TimestampResponse):
-    ...
-
-
 class CSVPayloadResponse(BaseGetResponse):
     payload_type: Literal["CSV"] = Field(alias="type")
+    timestamp_key: str
+    timestamp_format: Optional[str] = None
     header_row: Optional[int] = None
     data_start_row: Optional[int] = None
     delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
@@ -70,6 +57,8 @@ class CSVPayloadPatchBody(BasePatchBody, CSVPayloadResponse):
 
 class JSONPayloadResponse(BaseGetResponse):
     payload_type: Literal["JSON"] = Field(alias="type")
+    timestamp_key: str
+    timestamp_format: Optional[str] = None
     jmespath: Optional[str] = None
 
 
@@ -83,6 +72,8 @@ class JSONPayloadPatchBody(BasePatchBody, JSONPayloadResponse):
 
 class PayloadPatchBody(BasePatchBody):
     payload_type: Optional[Literal["CSV", "JSON"]] = Field(None, alias="type")
+    timestamp_key: Optional[str] = None
+    timestamp_format: Optional[str] = None
     header_row: Optional[int] = None
     data_start_row: Optional[int] = None
     delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
@@ -144,20 +135,12 @@ class DataConnectionResponse(BaseGetResponse):
     source_url: str
     auth_header_name: Optional[str] = None
     auth_header_value: Optional[str] = None
+    timezone_type: Optional[Literal["offset", "iana"]] = None
+    timezone: Optional[str] = None
     workspace: WorkspaceSummaryResponse
-    timestamp: TimestampResponse
     payload: Union[CSVPayloadResponse, JSONPayloadResponse]
     placeholder_variables: list[PlaceholderVariableResponse]
     notification: Optional[NotificationResponse] = None
-
-    @staticmethod
-    def resolve_timestamp(obj):
-        return {
-            "timestamp_key": obj.timestamp_key,
-            "timestamp_format": obj.timestamp_format,
-            "timezone_type": obj.timezone_type,
-            "timezone": obj.timezone,
-        }
 
     @staticmethod
     def resolve_notification(obj):
@@ -175,7 +158,8 @@ class DataConnectionPostBody(BasePostBody):
     auth_header_name: Optional[str] = None
     auth_header_value: Optional[str] = None
     workspace_id: uuid.UUID
-    timestamp: TimestampPostBody
+    timezone_type: Optional[Literal["offset", "iana"]] = None
+    timezone: Optional[str] = None
     payload: Union[CSVPayloadPostBody, JSONPayloadPostBody]
     placeholder_variables: list[PlaceholderVariablePostBody]
     notification: NotificationPostBody | None = None
@@ -187,7 +171,8 @@ class DataConnectionPatchBody(BasePatchBody):
     source_url: str
     auth_header_name: Optional[str] = None
     auth_header_value: Optional[str] = None
-    timestamp: TimestampPatchBody
+    timezone_type: Optional[Literal["offset", "iana"]] = None
+    timezone: Optional[str] = None
     payload: PayloadPatchBody
     placeholder_variables: list[PlaceholderVariablePatchBody]
     notification: NotificationPatchBody | None | Unset = Unset

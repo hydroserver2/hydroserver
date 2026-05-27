@@ -110,8 +110,8 @@ watch(
     csvPayload.value.dataStartRow = 2
     csvPayload.value.delimiter = DEFAULT_DELIMITER
 
-    if (!dataConnection.value.timestamp.key) {
-      dataConnection.value.timestamp.key = 'timestamp'
+    if (!csvPayload.value.timestampKey) {
+      csvPayload.value.timestampKey = 'timestamp'
     }
   },
   { immediate: true }
@@ -137,10 +137,10 @@ watch(
         headerRow + 1
       )
       if (
-        !dataConnection.value.timestamp.key ||
-        dataConnection.value.timestamp.key === '1'
+        !csvPayload.value.timestampKey ||
+        csvPayload.value.timestampKey === '1'
       ) {
-        dataConnection.value.timestamp.key = 'timestamp'
+        csvPayload.value.timestampKey = 'timestamp'
       }
       return
     }
@@ -151,10 +151,10 @@ watch(
       1
     )
     if (
-      !dataConnection.value.timestamp.key ||
-      dataConnection.value.timestamp.key === 'timestamp'
+      !csvPayload.value.timestampKey ||
+      csvPayload.value.timestampKey === 'timestamp'
     ) {
-      dataConnection.value.timestamp.key = '1'
+      csvPayload.value.timestampKey = '1'
     }
   }
 )

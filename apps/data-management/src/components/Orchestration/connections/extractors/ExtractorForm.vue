@@ -175,7 +175,7 @@ function setPlaceholderMode(
 function getPlaceholderTimestamp(variable: PlaceholderVariableForm): Timestamp {
   if (!variable.timestamp) {
     variable.timestamp = {
-      format: variable.timestampFormat ? 'custom' : 'naive',
+      format: variable.timestampFormat ? 'custom' : 'ISO8601',
       customFormat: variable.timestampFormat ?? undefined,
       timezoneMode: 'utc',
       timezone: undefined,

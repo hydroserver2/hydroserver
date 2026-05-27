@@ -42,8 +42,10 @@ class DataConnectionService(HydroServerBaseService):
         payload_type: Literal["CSV", "JSON"],
         description: Optional[str] = None,
         timestamp_format: Optional[str] = None,
-        timezone_type: Optional[Literal["utc", "offset", "iana"]] = None,
+        timezone_type: Optional[Literal["offset", "iana"]] = None,
         timezone: Optional[str] = None,
+        auth_header_name: Optional[str] = None,
+        auth_header_value: Optional[str] = None,
         header_row: Optional[int] = None,
         data_start_row: Optional[int] = None,
         delimiter: Optional[str] = None,
@@ -54,7 +56,11 @@ class DataConnectionService(HydroServerBaseService):
     ) -> DataConnection:
         """Create a new ETL data connection."""
 
-        payload: dict = {"type": payload_type}
+        payload: dict = {
+            "type": payload_type,
+            "timestampKey": timestamp_key,
+            "timestampFormat": timestamp_format,
+        }
         if payload_type == "CSV":
             if header_row is not None:
                 payload["headerRow"] = header_row
@@ -71,12 +77,10 @@ class DataConnectionService(HydroServerBaseService):
             "description": description,
             "sourceUrl": source_url,
             "workspaceId": normalize_uuid(workspace),
-            "timestamp": {
-                "key": timestamp_key,
-                "format": timestamp_format,
-                "timezoneType": timezone_type,
-                "timezone": timezone,
-            },
+            "timezoneType": timezone_type,
+            "timezone": timezone,
+            "authHeaderName": auth_header_name,
+            "authHeaderValue": auth_header_value,
             "payload": payload,
             "placeholderVariables": self._serialize_placeholder_variables(
                 placeholder_variables or []
@@ -100,8 +104,10 @@ class DataConnectionService(HydroServerBaseService):
         payload_type: Literal["CSV", "JSON"],
         description: Optional[str] = None,
         timestamp_format: Optional[str] = None,
-        timezone_type: Optional[Literal["utc", "offset", "iana"]] = None,
+        timezone_type: Optional[Literal["offset", "iana"]] = None,
         timezone: Optional[str] = None,
+        auth_header_name: Optional[str] = None,
+        auth_header_value: Optional[str] = None,
         header_row: Optional[int] = None,
         data_start_row: Optional[int] = None,
         delimiter: Optional[str] = None,
@@ -111,7 +117,11 @@ class DataConnectionService(HydroServerBaseService):
     ) -> DataConnection:
         """Update an ETL data connection."""
 
-        payload: dict = {"type": payload_type}
+        payload: dict = {
+            "type": payload_type,
+            "timestampKey": timestamp_key,
+            "timestampFormat": timestamp_format,
+        }
         if payload_type == "CSV":
             if header_row is not None:
                 payload["headerRow"] = header_row
@@ -127,12 +137,10 @@ class DataConnectionService(HydroServerBaseService):
             "name": name,
             "description": description,
             "sourceUrl": source_url,
-            "timestamp": {
-                "key": timestamp_key,
-                "format": timestamp_format,
-                "timezoneType": timezone_type,
-                "timezone": timezone,
-            },
+            "timezoneType": timezone_type,
+            "timezone": timezone,
+            "authHeaderName": auth_header_name,
+            "authHeaderValue": auth_header_value,
             "payload": payload,
             "placeholderVariables": self._serialize_placeholder_variables(
                 placeholder_variables or []

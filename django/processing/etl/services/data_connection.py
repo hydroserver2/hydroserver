@@ -28,8 +28,8 @@ ETL_NOTIFICATION_CELERY_TASK = "processing.etl.tasks.send_etl_notification_email
 
 class DataConnectionService(SchedulingService, ServiceUtils):
 
-    order_by_fields = {"id", "name", "timestamp_key", "timestamp_format", "timezone_type", "timezone", "workspace_id",
-                       "workspace__name"}
+    order_by_fields = {"id", "name", "payload__timestamp_key", "payload__timestamp_format", "timezone_type", "timezone",
+                       "workspace_id", "workspace__name"}
 
     @staticmethod
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -78,7 +78,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if search_term is not Unset:
             search_vector = SearchVector(
-                "name", "description", "workspace__name", "source_url", "timestamp_key", "timestamp_format",
+                "name", "description", "workspace__name", "source_url",
                 "timezone_type", "timezone"
             )
             queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
@@ -120,7 +120,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         auth_header_name: str | None = None,
         auth_header_value: str | None = None,
         timestamp_format: str | None = None,
-        timezone_type: Literal["utc", "offset", "iana"] | None = None,
+        timezone_type: Literal["offset", "iana"] | None = None,
         timezone: str | None = None,
         header_row: int | None | Unset = Field(Unset, gt=0),
         data_start_row: int | Unset = Field(Unset, gt=0),
@@ -164,8 +164,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 source_url=source_url,
                 auth_header_name=auth_header_name,
                 auth_header_value=auth_header_value,
-                timestamp_key=timestamp_key,
-                timestamp_format=timestamp.timestamp_format,
                 timezone_type=timestamp.timezone_type,
                 timezone=timestamp.timezone
             )
@@ -175,6 +173,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         self.apply_payload(
             data_connection=data_connection,
             payload_type=payload_type,
+            timestamp_key=timestamp_key,
+            timestamp_format=timestamp.timestamp_format,
             header_row=header_row,
             data_start_row=data_start_row,
             delimiter=delimiter,
@@ -213,7 +213,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         timestamp_key: str | Unset = Unset,
         description: str | None | Unset = Unset,
         timestamp_format: str | None | Unset = Unset,
-        timezone_type: Literal["utc", "offset", "iana"] | None | Unset = Unset,
+        timezone_type: Literal["offset", "iana"] | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
         header_row: int | None | Unset = Field(Unset, gt=0),
         data_start_row: int | Unset = Field(Unset, gt=0),
@@ -249,13 +249,13 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             timestamp_type: Literal["iso", "custom"] = (
                 "iso" if timestamp_format is None
                 else "custom" if timestamp_format is not Unset
-                else "custom" if data_connection.timestamp_format is not None
+                else "custom" if data_connection.payload.timestamp_format is not None
                 else "iso"
             )
             timestamp = Timestamp(
                 timestamp_type=timestamp_type,
                 timestamp_format=(
-                    timestamp_format if timestamp_format is not Unset else data_connection.timestamp_format
+                    timestamp_format if timestamp_format is not Unset else data_connection.payload.timestamp_format
                 ),
                 timezone_type=(
                     timezone_type if timezone_type is not Unset else data_connection.timezone_type
@@ -264,15 +264,17 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                     timezone if timezone is not Unset else data_connection.timezone
                 ),
             )
-            data_connection.timestamp_format = timestamp.timestamp_format
             data_connection.timezone_type = timestamp.timezone_type
             data_connection.timezone = timestamp.timezone
 
-        if any(field is not Unset for field in [payload_type, header_row, data_start_row, delimiter, jmespath]):
+        if any(field is not Unset for field in [payload_type, timestamp_key, timestamp_format,
+                                                 header_row, data_start_row, delimiter, jmespath]):
             resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
             self.apply_payload(
                 data_connection=data_connection,
                 payload_type=resolved_payload_type,
+                timestamp_key=timestamp_key,
+                timestamp_format=timestamp_format,
                 header_row=header_row,
                 data_start_row=data_start_row,
                 delimiter=delimiter,
@@ -297,7 +299,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             )
 
         editable_fields = {
-            "name": name, "source_url": source_url, "description": description, "timestamp_key": timestamp_key,
+            "name": name, "source_url": source_url, "description": description,
             "auth_header_name": auth_header_name, "auth_header_value": auth_header_value,
         }
 
@@ -333,6 +335,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         self,
         data_connection: uuid.UUID | DataConnection,
         payload_type: Literal["CSV", "JSON"],
+        timestamp_key: str | Unset = Unset,
+        timestamp_format: str | None | Unset = Unset,
         header_row: Annotated[int | None, Field(gt=0)] | Unset = Unset,
         data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
@@ -354,6 +358,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             current_payload = None
 
         if not current_payload:
+            if timestamp_key is Unset:
+                raise ValueError("timestamp_key is required when creating a payload.")
             if payload_type == "CSV" and any(field is Unset for field in [header_row, data_start_row, delimiter]):
                 raise ValueError("header_row, data_start_row, and delimiter are required when creating a CSV payload.")
             if payload_type == "JSON" and jmespath is Unset:
@@ -362,6 +368,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         if payload_type == "CSV":
             fields = {
                 "payload_type": payload_type,
+                "timestamp_key": timestamp_key,
+                "timestamp_format": timestamp_format,
                 "header_row": header_row,
                 "data_start_row": data_start_row,
                 "delimiter": delimiter,
@@ -370,6 +378,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         elif payload_type == "JSON":
             fields = {
                 "payload_type": payload_type,
+                "timestamp_key": timestamp_key,
+                "timestamp_format": timestamp_format,
                 "header_row": None,
                 "data_start_row": None,
                 "delimiter": None,
