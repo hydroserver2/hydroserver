@@ -6,6 +6,12 @@ from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, Th
 from .utils import SensorThingsUtils
 
 
+_GROUP_BY_PARTITION = {
+    "location": "locations__id",
+    "locations": "locations__id",
+}
+
+
 class ThingMixin(SensorThingsUtils):
 
     def get_things(self, filters=None, orderby=None, group_by=None, select=None,
@@ -33,8 +39,8 @@ class ThingMixin(SensorThingsUtils):
             collections = {
                 "__UNGROUPED__": CollectionDTO(entity_ids=[thing.id for thing in thing_list])
             }
-        elif group_by and group_by[0] == "location":
-            things = things.filter(locations__id__in=group_by[1])
+        elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
+            things = things.filter(**{f"{partition_field}__in": group_by[1]})
             thing_list = list(things)
             thing_ids = {thing.id for thing in thing_list}
             loc_to_thing = dict(
