@@ -58,7 +58,7 @@ export class DataConnection {
   workspace: Workspace | null = null
   timezoneType: TimezoneType | null = null
   timezone: string | null = null
-  payload: Payload = { type: 'CSV' }
+  payload: Payload = { type: 'CSV', timestampKey: '' }
   placeholderVariables: PlaceholderVariable[] = []
   notification: Notification | null = null
 
