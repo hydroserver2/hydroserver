@@ -47,9 +47,9 @@ const payloadType = computed({
   get: () => dataConnection.value.payload.type,
   set: (newType: 'CSV' | 'JSON') => {
     if (newType === 'CSV') {
-      dataConnection.value.payload = { type: 'CSV' }
+      dataConnection.value.payload = { type: 'CSV', timestampKey: '' }
     } else {
-      dataConnection.value.payload = { type: 'JSON' }
+      dataConnection.value.payload = { type: 'JSON', timestampKey: '' }
     }
   },
 })
