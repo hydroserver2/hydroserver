@@ -68,7 +68,7 @@ class BaseGetResponse(Schema):
 class BasePostBody(Schema):
     @field_validator("*", mode="before")
     def empty_str_to_none(cls, value):
-        if isinstance(value, str) and value.strip() == "":
+        if isinstance(value, str) and value == "":
             return None
         return value
 
@@ -116,7 +116,7 @@ class PartialMetaclass(type(Schema)):
 class BasePatchBody(Schema, metaclass=PartialMetaclass):
     @field_validator("*", mode="before")
     def empty_str_to_none(cls, value):
-        if isinstance(value, str) and value.strip() == "":
+        if isinstance(value, str) and value == "":
             return None
         return value
 
