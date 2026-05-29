@@ -312,16 +312,9 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         timestamp = Timestamp(
             timestamp_type="custom" if data_connection.payload.timestamp_format is not None else "iso",
             timestamp_format=data_connection.payload.timestamp_format,
-            timezone_type=data_connection.timezone_type,  # noqa
+            timezone_type=data_connection.timezone_type or "utc",  # noqa
             timezone=data_connection.timezone,
         )
-
-        transformer_timestamp_settings = {
-            "timestamp_key": data_connection.payload.timestamp_key,
-            "timestamp_format": data_connection.payload.timestamp_format,
-            "timezone_type": data_connection.timezone_type,
-            "timezone": data_connection.timezone,
-        }
 
         if data_connection.payload.payload_type == "CSV":
             transformer = CSVTransformer(
@@ -334,7 +327,8 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         elif data_connection.payload.payload_type == "JSON":
             transformer = JSONTransformer(
-                **transformer_timestamp_settings,
+                **timestamp.model_dump(),
+                timestamp_key=data_connection.payload.timestamp_key,
                 jmespath=data_connection.payload.jmespath
             )
 
