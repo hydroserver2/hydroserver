@@ -130,7 +130,7 @@ See the [Pan and zoom across axes](#pan-and-zoom-across-axes) section below for 
 
 Hover any toolbar icon to see its name. The left side of the toolbar flips between **Plot** and **Table** views (see below); the right side carries the **data points toggle**, a share-link button, and the `?` help menu.
 
-Between the help menu and the right edge is a drop down box with pre-selected zoom levels (**All Data**, **Last Week of Data**, **Last Month of Data**, **Last 6 months of data**, **Last Year of Data**). Clicking one of these options zooms the X axis to that window, *without* refetching observations, unlike the sidebar's identical-looking chips on the Select view. The active chip stays highlighted as a reminder of the last preset applied; clicking it again re-applies it, which is the easiest way to "snap back" after a manual pan or wheel-zoom.
+Between the help menu and the right edge is a drop down box with pre-selected zoom levels (**All Data**, **Last Week of Data**, **Last Month of Data**, **Last 6 months of data**, **Last Year of Data**). Clicking one of these options zooms the X axis to that window, *without* refetching observations, unlike the sidebar's identical-looking chips on the Select view. The active chip stays highlighted as a reminder of the last preset applied; clicking it again re-applies it, which is the easiest way to "snap back" after a manual pan or wheel-zoom. Selecting a preset also scrolls the **Table** view so the first row is the first observation in the chosen window, keeping the two tabs in sync.
 
 Clicking a single point on the plot selects just that point. Clicking the empty plot area clears the selection.
 
@@ -150,6 +150,7 @@ What you can do here:
 - **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type).
 - **Inspect qualifiers.** The `Qualifiers` column shows the qualifier codes attached to each observation (set via the
   Qualifying comments panel). Hover a chip for its description.
+- **Jump to a range.** Picking a zoom-to-range preset from the toolbar drop down scrolls the table to the first observation in that window, so you land on the same data the plot just zoomed to.
 
 The table is the fastest path for a small number of targeted edits. For anything wider (a hundred points, a window of bad values, a drift correction) the plot's box-select gestures + Edit drawer are faster.
 

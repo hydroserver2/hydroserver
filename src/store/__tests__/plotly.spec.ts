@@ -483,3 +483,32 @@ describe('usePlotlyStore — data-points (tooltips) mode', () => {
     expect(store.areTooltipsEnabled).toBe(true)
   })
 })
+
+describe('usePlotlyStore.requestTableScroll', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    qcId.value = null
+  })
+
+  it('starts with no pending scroll request', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    expect(store.tableScrollRequest).toBeNull()
+  })
+
+  it('records the requested time and starts the sequence at 1', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.requestTableScroll(1234)
+    expect(store.tableScrollRequest).toEqual({ time: 1234, seq: 1 })
+  })
+
+  it('bumps seq on every request so the same time re-triggers a scroll', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    store.requestTableScroll(500)
+    store.requestTableScroll(500)
+    expect(store.tableScrollRequest).toEqual({ time: 500, seq: 2 })
+  })
+})

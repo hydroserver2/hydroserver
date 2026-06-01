@@ -69,6 +69,7 @@
 
     <div ref="bodyEl" class="data-table__body flex-grow-1 position-relative">
       <v-data-table-virtual
+        ref="tableRef"
         :headers="headers"
         :items="virtualData"
         :height="bodyHeight"
@@ -145,7 +146,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
@@ -159,7 +168,9 @@ import { useDataSelection } from '@/composables/useDataSelection'
 import { useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
 
-const { isUpdating, selectedSeries } = storeToRefs(usePlotlyStore())
+const { isUpdating, selectedSeries, tableScrollRequest } = storeToRefs(
+  usePlotlyStore()
+)
 const { redraw } = usePlotlyStore()
 const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { clearSelected } = useDataSelection()
@@ -178,6 +189,10 @@ const bodyEl = ref<HTMLDivElement | null>(null)
 const bodyHeight = ref(400)
 let resizeObserver: ResizeObserver | null = null
 
+// v-data-table-virtual exposes scrollToIndex (offset-aware, top-aligns
+// the row, and defers if the virtualizer hasn't measured yet).
+const tableRef = ref<{ scrollToIndex?: (index: number) => void } | null>(null)
+
 onMounted(() => {
   if (!bodyEl.value) return
   bodyHeight.value = bodyEl.value.clientHeight || 400
@@ -186,12 +201,44 @@ onMounted(() => {
     if (h && h !== bodyHeight.value) bodyHeight.value = h
   })
   resizeObserver.observe(bodyEl.value)
+  // Honor a zoom-to-range scroll requested while the table was unmounted
+  // (e.g. the preset was picked on the plot tab before switching here).
+  if (tableScrollRequest.value) scrollToTime(tableScrollRequest.value.time)
 })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
 })
+
+// First index whose timestamp is at or after `time`. dataX is ascending,
+// so a binary search keeps this cheap on large series.
+function firstIndexAtOrAfter(time: number): number {
+  const xs = selectedSeries.value?.data.dataX
+  if (!xs?.length) return 0
+  let lo = 0
+  let hi = xs.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if ((xs[mid] as number) < time) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+// Scroll the virtual list so the first in-range row sits at the top.
+async function scrollToTime(time: number) {
+  await nextTick()
+  tableRef.value?.scrollToIndex?.(firstIndexAtOrAfter(time))
+}
+
+watch(
+  () => tableScrollRequest.value?.seq,
+  () => {
+    const req = tableScrollRequest.value
+    if (req) scrollToTime(req.time)
+  }
+)
 
 // Keyed by row index. Values are y-numbers / epoch-ms.
 const valueEdits = reactive(new Map<number, number>())

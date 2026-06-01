@@ -419,7 +419,7 @@ const props = defineProps<{
 }>()
 
 const { setPlotSelection, clearSelected } = useDataSelection()
-const { updateOptions } = usePlotlyStore()
+const { updateOptions, requestTableScroll } = usePlotlyStore()
 const plot = ref<HTMLDivElement>()
 const {
   isUpdating,
@@ -652,6 +652,8 @@ function onEditorDatePreset(id: number) {
 
   if (!begin || !end) return
   zoomXaxisTo(plotlyRef.value, begin.getTime(), end.getTime())
+  // Keep the table in sync: scroll it so the range's first row is on top.
+  requestTableScroll(begin.getTime())
 }
 
 function toggleTooltips() {

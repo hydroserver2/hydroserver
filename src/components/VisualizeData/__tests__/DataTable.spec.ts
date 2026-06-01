@@ -21,6 +21,7 @@ const selectedSeries = ref<any>({
   },
 })
 const redraw = vi.fn().mockResolvedValue(undefined)
+const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
 
 const selectedData = ref<number[] | null>(null)
 const qcDatastream = ref<any>({ id: 'ds-1' })
@@ -29,7 +30,12 @@ const qualifierById = ref<Record<string, any>>({})
 const applied = ref<Record<string, any>>({})
 
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({ isUpdating, selectedSeries, redraw }),
+  usePlotlyStore: () => ({
+    isUpdating,
+    selectedSeries,
+    redraw,
+    tableScrollRequest,
+  }),
 }))
 
 vi.mock('@/store/dataVisualization', () => ({
@@ -162,6 +168,7 @@ describe('DataTable.vue', () => {
     qcDatastream.value = { id: 'ds-1' }
     qualifierById.value = {}
     applied.value = {}
+    tableScrollRequest.value = null
     vi.clearAllMocks()
   })
 
@@ -874,5 +881,111 @@ describe('DataTable.vue onSaveChanges', () => {
     await saveBtn.trigger('click')
     await flushPromises()
     expect(isUpdating.value).toBe(false)
+  })
+})
+
+// Drives the "zoom to range" scroll: a request on the plotly store should
+// scroll the virtual list so the first in-range row lands on top. The stub
+// exposes v-data-table-virtual's `scrollToIndex` so we can capture the index
+// the component asks to scroll to.
+describe('DataTable.vue zoom-to-range scroll', () => {
+  let scrollToIndexCalls: number[]
+
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    qualifierById.value = {}
+    applied.value = {}
+    tableScrollRequest.value = null
+    selectedSeries.value = {
+      data: {
+        // 5 rows at t=1000..5000.
+        dataX: [1000, 2000, 3000, 4000, 5000],
+        dataY: [1, 2, 3, 4, 5],
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    scrollToIndexCalls = []
+    vi.clearAllMocks()
+  })
+
+  function mountWithScrollStub() {
+    const calls = scrollToIndexCalls
+    const w = mount(DataTable, {
+      global: {
+        plugins: [createTestPinia(), createTestVuetify()],
+        stubs: {
+          'v-data-table-virtual': {
+            methods: {
+              scrollToIndex(index: number) {
+                calls.push(index)
+              },
+            },
+            template: '<div class="vdtv-scroll-stub" />',
+          },
+        },
+      },
+    })
+    openWrappers.push(w)
+    return w
+  }
+
+  function requestScroll(time: number) {
+    tableScrollRequest.value = {
+      time,
+      seq: (tableScrollRequest.value?.seq ?? 0) + 1,
+    }
+  }
+
+  it('scrolls to the first row at/after the range start', async () => {
+    mountWithScrollStub()
+    await flushPromises()
+    requestScroll(3000)
+    await flushPromises()
+    expect(scrollToIndexCalls.at(-1)).toBe(2)
+  })
+
+  it('scrolls to the top when the range starts at or before the first row', async () => {
+    mountWithScrollStub()
+    await flushPromises()
+    requestScroll(500)
+    await flushPromises()
+    expect(scrollToIndexCalls.at(-1)).toBe(0)
+  })
+
+  it('lands on the row whose timestamp is exactly the boundary', async () => {
+    mountWithScrollStub()
+    await flushPromises()
+    requestScroll(2000)
+    await flushPromises()
+    expect(scrollToIndexCalls.at(-1)).toBe(1)
+  })
+
+  it('re-triggers a scroll when the same range is requested again', async () => {
+    mountWithScrollStub()
+    await flushPromises()
+    requestScroll(3000)
+    await flushPromises()
+    const before = scrollToIndexCalls.length
+    requestScroll(3000)
+    await flushPromises()
+    expect(scrollToIndexCalls.length).toBe(before + 1)
+  })
+
+  it('applies a pending request made before the table mounted', async () => {
+    requestScroll(4000)
+    mountWithScrollStub()
+    await flushPromises()
+    expect(scrollToIndexCalls.at(-1)).toBe(3)
+  })
+
+  it('does not throw and targets index 0 when there is no series data', async () => {
+    selectedSeries.value = { data: { dataX: [], dataY: [], dispatch: vi.fn() } }
+    mountWithScrollStub()
+    await flushPromises()
+    requestScroll(3000)
+    await flushPromises()
+    expect(scrollToIndexCalls.at(-1)).toBe(0)
   })
 })

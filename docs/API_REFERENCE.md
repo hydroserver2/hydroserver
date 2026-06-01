@@ -249,6 +249,8 @@ handles, live chart caches).
 | `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
 | `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
 | `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
+| `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Signal from the "zoom to range" presets; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
+| `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
 | `axisChips`                | state    | `AxisChip[]`                                      | Horizontal axis title chips (replaces Plotly's rotated titles). |
 | `previewMode`              | state    | `boolean`                                         | Strips select/lasso/etc when the chart is rendered in the Select view's preview slot. |
 | `zoomUndoStack`            | state    | `ZoomState[]`                                     | Captured viewports for the modebar's Undo zoom button. |

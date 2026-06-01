@@ -118,6 +118,21 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const activeTab = ref<'plot' | 'table'>('plot')
 
   /**
+   * Cross-component signal for the "zoom to range" presets. Plot.vue
+   * sets `time` to the epoch-ms start of the chosen range; DataTable.vue
+   * watches `seq` and scrolls its virtual list so the first in-range row
+   * sits at the top. `seq` is bumped on every request so re-selecting the
+   * same preset still re-triggers the scroll.
+   */
+  const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
+  function requestTableScroll(time: number) {
+    tableScrollRequest.value = {
+      time,
+      seq: (tableScrollRequest.value?.seq ?? 0) + 1,
+    }
+  }
+
+  /**
    * Horizontal title chips rendered above each non-QC right-side axis
    * (see `.plot-axis-chip` in Plot.vue). Replaces Plotly's rotated
    * vertical axis titles — horizontal text is much easier to scan
@@ -527,6 +542,8 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     hiddenAxisIds,
     hiddenTraceIds,
     activeTab,
+    tableScrollRequest,
+    requestTableScroll,
     axisChips,
     previewMode,
     // Zoom history
