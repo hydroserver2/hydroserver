@@ -96,12 +96,18 @@
           v-if="qcDatastream !== datastream"
           type="button"
           class="plotted-item__axis-toggle d-inline-flex align-center justify-center cursor-pointer rounded-sm"
-          :title="hiddenAxisIds.has(datastream.id) ? 'Show Y axis' : 'Hide Y axis'"
+          :title="
+            hiddenAxisIds.has(datastream.id) ? 'Show Y axis' : 'Hide Y axis'
+          "
           :disabled="isUpdating"
           @click="toggleAxisVisibility(datastream.id)"
         >
           <v-icon
-            :icon="hiddenAxisIds.has(datastream.id) ? 'mdi-toggle-switch-off-outline' : 'mdi-toggle-switch'"
+            :icon="
+              hiddenAxisIds.has(datastream.id)
+                ? 'mdi-toggle-switch-off-outline'
+                : 'mdi-toggle-switch'
+            "
             size="16"
             :color="
               hiddenAxisIds.has(datastream.id)
@@ -124,7 +130,10 @@
           >
             <span>{{ datastream.name }}</span>
             <v-tooltip
-              v-if="!loadStatus(datastream.id).loading && loadStatus(datastream.id).count === 0"
+              v-if="
+                !loadStatus(datastream.id).loading &&
+                loadStatus(datastream.id).count === 0
+              "
               location="top"
               text="No observations in the current time window"
             >
@@ -147,7 +156,8 @@
             <template v-else>
               {{ loadStatus(datastream.id).count.toLocaleString() }} pt{{
                 loadStatus(datastream.id).count === 1 ? '' : 's'
-              }} loaded
+              }}
+              loaded
             </template>
           </div>
         </div>
@@ -183,8 +193,13 @@ import type { GraphSeries } from '@/types'
 import { usePlotlyStore } from '@/store/plotly'
 const { updateOptions, colorForDatastream, labelColorForDatastream } =
   usePlotlyStore()
-const { plotlyRef, graphSeriesArray, hiddenAxisIds, hiddenTraceIds } =
-  storeToRefs(usePlotlyStore())
+const {
+  plotlyRef,
+  graphSeriesArray,
+  hiddenAxisIds,
+  hiddenTraceIds,
+  plotlyOptions,
+} = storeToRefs(usePlotlyStore())
 import { ref, computed } from 'vue'
 import { Datastream } from '@hydroserver/client'
 
@@ -214,13 +229,29 @@ const isUpdating = computed(() =>
   Array.from(loadingStates.value.values()).some((isLoading) => isLoading)
 )
 
-const loadStatus = (id: string) => {
-  const series = graphSeriesArray.value.find((s) => s.id === id)
-  if (!series) return { loading: true, count: 0 }
-  const loading = series.data.isLoading
-  const count = series.data.dataX?.length ?? 0
-  return { loading, count }
-}
+const loadStatusById = computed<
+  Record<string, { loading: boolean; count: number }>
+>(() => {
+  const countById = new Map<string, number>()
+  for (const t of plotlyOptions.value?.traces ?? []) {
+    const trace = t as AppPlotlyTrace
+    if (trace.id != null) {
+      const x = trace.x as ArrayLike<unknown> | undefined
+      countById.set(trace.id, x?.length ?? 0)
+    }
+  }
+  const out: Record<string, { loading: boolean; count: number }> = {}
+  for (const series of graphSeriesArray.value) {
+    out[series.id] = {
+      loading: series.data.isLoading,
+      count: countById.get(series.id) ?? 0,
+    }
+  }
+  return out
+})
+
+const loadStatus = (id: string) =>
+  loadStatusById.value[id] ?? { loading: true, count: 0 }
 
 async function clearAll() {
   hiddenTraceIds.value = new Set()
@@ -235,8 +266,9 @@ const toggleVisibility = async (datastream: Datastream) => {
   if (mainIndex < 0) return
 
   const mainTrace = traces[mainIndex] as AppPlotlyTrace | undefined
-  const isVisible = (mainTrace as { visible?: boolean | 'legendonly' } | undefined)
-    ?.visible
+  const isVisible = (
+    mainTrace as { visible?: boolean | 'legendonly' } | undefined
+  )?.visible
   const nextVisible = !(isVisible === true || isVisible == undefined)
 
   // Mutate a fresh Set instance so pinia notifies deep watchers (URL share).

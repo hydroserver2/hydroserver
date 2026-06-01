@@ -19,6 +19,7 @@ const qcDatastream = ref<any>(null)
 const loadingStates = ref(new Map<string, boolean>())
 const graphSeriesArray = ref<any[]>([])
 const plotlyRef = ref<any>(null)
+const plotlyOptions = ref<any>({ traces: [] })
 const hiddenAxisIds = ref<Set<string>>(new Set())
 const hiddenTraceIds = ref<Set<string>>(new Set())
 
@@ -44,6 +45,7 @@ vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     plotlyRef,
     graphSeriesArray,
+    plotlyOptions,
     hiddenAxisIds,
     hiddenTraceIds,
     updateOptions,
@@ -68,14 +70,27 @@ function mountIt() {
   })
 }
 
-function seedSeries(entries: { id: string; loaded: number; loading?: boolean }[]) {
+// `loaded` is the windowed point count surfaced to the plot trace; `cached`
+// is the series' full accumulated cache (defaults to `loaded`). The row
+// must report `loaded`, not `cached`.
+function seedSeries(
+  entries: {
+    id: string
+    loaded: number
+    loading?: boolean
+    cached?: number
+  }[]
+) {
   graphSeriesArray.value = entries.map((e) => ({
     id: e.id,
     data: {
       isLoading: e.loading ?? false,
-      dataX: new Array(e.loaded),
+      dataX: new Array(e.cached ?? e.loaded),
     },
   }))
+  plotlyOptions.value = {
+    traces: entries.map((e) => ({ id: e.id, x: new Array(e.loaded) })),
+  }
 }
 
 describe('PlottedDatastreams.vue — load status', () => {
@@ -83,6 +98,7 @@ describe('PlottedDatastreams.vue — load status', () => {
     plottedDatastreams.value = [datastreamA]
     qcDatastream.value = datastreamA
     graphSeriesArray.value = []
+    plotlyOptions.value = { traces: [] }
     hiddenAxisIds.value = new Set()
   })
 
@@ -168,5 +184,35 @@ describe('PlottedDatastreams.vue — load status', () => {
     seedSeries([{ id: datastreamA.id, loaded: 12345 }])
     const wrapper = mountIt()
     expect(wrapper.find('.plotted-item__subtitle').text()).toContain('12,345')
+  })
+
+  // Regression: the series cache keeps every point ever fetched, so after
+  // an "All" load then a narrower window the subtitle must report the
+  // windowed plot trace, not the full cached history.
+  it('counts the windowed plot trace, not the full accumulated cache', () => {
+    seedSeries([{ id: datastreamA.id, loaded: 4, cached: 10 }])
+    const wrapper = mountIt()
+    expect(wrapper.find('.plotted-item__subtitle').text()).toBe('4 pts loaded')
+  })
+
+  it('flags an empty window even when the cache still holds points', () => {
+    seedSeries([{ id: datastreamA.id, loaded: 0, cached: 10 }])
+    const wrapper = mountIt()
+    expect(wrapper.find('.plotted-item__subtitle').text()).toBe('0 pts loaded')
+    expect(wrapper.find('.plotted-item__empty-flag').exists()).toBe(true)
+  })
+
+  it('ignores the id-less gap-overlay trace when counting', () => {
+    graphSeriesArray.value = [
+      { id: datastreamA.id, data: { isLoading: false, dataX: new Array(20) } },
+    ]
+    plotlyOptions.value = {
+      traces: [
+        { id: datastreamA.id, x: new Array(6) },
+        { _isGapOverlay: true, _gapOverlayFor: datastreamA.id, x: new Array(50) },
+      ],
+    }
+    const wrapper = mountIt()
+    expect(wrapper.find('.plotted-item__subtitle').text()).toBe('6 pts loaded')
   })
 })
