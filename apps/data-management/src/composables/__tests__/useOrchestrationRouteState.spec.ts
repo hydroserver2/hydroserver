@@ -33,6 +33,7 @@ vi.mock('@/router/router', () => ({
 
 describe('useOrchestrationRouteState', () => {
   beforeEach(() => {
+    localStorage.clear()
     setActivePinia(createPinia())
     routeMock.meta = {}
     routeMock.params = {}
@@ -132,6 +133,68 @@ describe('useOrchestrationRouteState', () => {
       query: {
         workspace_id: 'workspace-store',
         site_id: 'site-2',
+      },
+    })
+  })
+
+  it('keeps the route workspace over the selected workspace when not overridden', async () => {
+    routeMock.query = {
+      workspace_id: 'workspace-old',
+      data_connection_id: 'connection-1',
+    }
+    useWorkspaceStore().selectedWorkspace = { id: 'workspace-new' } as any
+
+    const state = useOrchestrationRouteState()
+    await state.replaceSelectedGroup('ingestion', 'connection-2')
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      name: ORCHESTRATION_VIEW_ROUTE_NAME,
+      params: { view: 'ingestion' },
+      query: {
+        workspace_id: 'workspace-old',
+        data_connection_id: 'connection-2',
+      },
+    })
+  })
+
+  it('forces the overridden workspace into the route when the selection changes', async () => {
+    routeMock.query = {
+      workspace_id: 'workspace-old',
+      data_connection_id: 'connection-1',
+    }
+
+    const state = useOrchestrationRouteState()
+    await state.replaceSelectedGroup(
+      'ingestion',
+      'connection-2',
+      'workspace-new'
+    )
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      name: ORCHESTRATION_VIEW_ROUTE_NAME,
+      params: { view: 'ingestion' },
+      query: {
+        workspace_id: 'workspace-new',
+        data_connection_id: 'connection-2',
+      },
+    })
+  })
+
+  it('updates only the workspace query on the workspaces view when overridden', async () => {
+    routeMock.query = {
+      workspace_id: 'workspace-old',
+      data_connection_id: 'connection-1',
+      site_id: 'site-1',
+    }
+
+    const state = useOrchestrationRouteState()
+    await state.replaceView('workspaces', null, 'workspace-new')
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      name: ORCHESTRATION_VIEW_ROUTE_NAME,
+      params: { view: 'workspaces' },
+      query: {
+        workspace_id: 'workspace-new',
       },
     })
   })

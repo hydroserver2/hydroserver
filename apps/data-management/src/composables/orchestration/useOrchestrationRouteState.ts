@@ -182,10 +182,14 @@ export function useOrchestrationRouteState() {
 
   const queryForSelectedGroup = (
     nextView: OrchestrationView,
-    selectedGroupId?: string | null
+    selectedGroupId?: string | null,
+    // The workspace in the URL takes priority; pass this to force a new
+    // workspace into the URL when the selection itself has changed.
+    overrideWorkspaceId?: string
   ) => {
     const nextQuery = withoutSelectedGroup(withoutTaskDetails(route.query))
-    const nextWorkspaceId = workspaceId.value ?? selectedWorkspace.value?.id
+    const nextWorkspaceId =
+      overrideWorkspaceId ?? workspaceId.value ?? selectedWorkspace.value?.id
     if (nextWorkspaceId) nextQuery.workspace_id = nextWorkspaceId
 
     if (selectedGroupId && nextView === 'ingestion') {
@@ -202,25 +206,35 @@ export function useOrchestrationRouteState() {
 
   const replaceView = async (
     nextView: OrchestrationView,
-    selectedGroupId?: string | null
+    selectedGroupId?: string | null,
+    overrideWorkspaceId?: string
   ) => {
     await router.replace({
       name: ORCHESTRATION_VIEW_ROUTE_NAME,
       params: { view: nextView },
-      query: queryForSelectedGroup(nextView, selectedGroupId),
+      query: queryForSelectedGroup(
+        nextView,
+        selectedGroupId,
+        overrideWorkspaceId
+      ),
     })
   }
 
   const replaceSelectedGroup = async (
     nextView: OrchestrationView,
-    selectedGroupId?: string | null
+    selectedGroupId?: string | null,
+    overrideWorkspaceId?: string
   ) => {
     if (taskDetailType.value) return
 
     await router.replace({
       name: ORCHESTRATION_VIEW_ROUTE_NAME,
       params: { view: nextView },
-      query: queryForSelectedGroup(nextView, selectedGroupId),
+      query: queryForSelectedGroup(
+        nextView,
+        selectedGroupId,
+        overrideWorkspaceId
+      ),
     })
   }
 
