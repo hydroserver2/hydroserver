@@ -4,6 +4,7 @@ import django.db.models.deletion
 import uuid6
 import json
 from django.db import migrations, models
+from django_celery_beat.models import PeriodicTasks
 
 
 PLACEHOLDER_VARIABLE_TYPE_MAPPING = {
@@ -202,6 +203,8 @@ def migrate_json_forward(apps, schema_editor):
                         source_identifier=old_mapping.source_identifier,
                         target_datastream_id=target_datastream.id,
                     )
+
+    PeriodicTasks.update_changed()
 
 
 def migrate_json_reverse(apps, schema_editor):
