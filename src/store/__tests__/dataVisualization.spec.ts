@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { createApp, ref } from 'vue'
 
 // Shared mutable stub state so each test can reset between runs.
 const mockPlotlyRef = ref<any>(null)
@@ -468,6 +469,89 @@ describe('useDataVisStore.resetState', () => {
     const store = useDataVisStore()
     store.selectedDateBtnId = 0 // "1w" preset
     store.resetState()
+    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
+    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
+  })
+})
+
+describe('useDataVisStore.syncRangeToPreset', () => {
+  it('derives the "All" window (epoch 0) from the persisted preset', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.selectedDateBtnId = 5 // "All"
+    store.syncRangeToPreset()
+    expect(store.beginDate.getTime()).toBe(0)
+  })
+
+  it('derives a relative window (1w) from the persisted preset', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.selectedDateBtnId = 0 // "1w"
+    store.syncRangeToPreset()
+    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
+    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
+  })
+
+  it('falls back to a 1-week window when the id matches no preset (custom)', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.selectedDateBtnId = -1 // custom: no preset
+    store.syncRangeToPreset()
+    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
+    expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
+  })
+})
+
+// Regression: the persisted preset must actually drive the loaded window
+// on first load. Only `selectedDateBtnId` is persisted, so without the
+// afterHydrate sync the highlighted preset (e.g. "All") wouldn't take
+// effect until the chip was clicked a second time. The persistence plugin
+// only activates once the pinia is installed on an app, so these tests go
+// through `app.use(pinia)` rather than a bare `createPinia()`.
+describe('useDataVisStore persisted-preset hydration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  function hydrateWith(persisted: Record<string, unknown>) {
+    localStorage.setItem('dataVisualization', JSON.stringify(persisted))
+    const pinia = createPinia()
+    pinia.use(piniaPluginPersistedstate)
+    // app.use(pinia) runs the plugin install that activates persistence
+    // and sets the active pinia.
+    createApp({ render: () => null }).use(pinia)
+  }
+
+  it('applies a persisted "All" preset to beginDate on hydration', async () => {
+    hydrateWith({ selectedDateBtnId: 5 })
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    expect(store.selectedDateBtnId).toBe(5)
+    // "All" → epoch 0, proving afterHydrate recomputed the window.
+    expect(store.beginDate.getTime()).toBe(0)
+  })
+
+  it('applies a persisted relative preset (6m) to the loaded window', async () => {
+    hydrateWith({ selectedDateBtnId: 2 })
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    expect(store.selectedDateBtnId).toBe(2)
+    // 6 months back is well beyond the default 1-week window.
+    const spanMs = store.endDate.getTime() - store.beginDate.getTime()
+    expect(spanMs).toBeGreaterThan(7 * 24 * 60 * 60 * 1000)
+  })
+
+  it('leaves the default 1-week window when nothing is persisted', async () => {
+    const pinia = createPinia()
+    pinia.use(piniaPluginPersistedstate)
+    createApp({ render: () => null }).use(pinia)
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    expect(store.selectedDateBtnId).toBe(0)
     const spanMs = store.endDate.getTime() - store.beginDate.getTime()
     expect(spanMs).toBe(7 * 24 * 60 * 60 * 1000)
   })

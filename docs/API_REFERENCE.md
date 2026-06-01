@@ -203,6 +203,7 @@ on boot.
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
 | `onDateBtnClick`                    | action   | `(id: number) => void`                            | Anchors `endDate` to today, recomputes `beginDate`, applies the preset. |
+| `syncRangeToPreset`                 | action   | `() => void`                                      | Re-derives `beginDate`/`endDate` from `selectedDateBtnId`. Run on `afterHydrate` so the restored preset's window applies to the first load. |
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). |
 | `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |

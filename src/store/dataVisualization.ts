@@ -77,6 +77,21 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const beginDate = ref<Date>(new Date(endDate.value.getTime() - oneWeek))
   const selectedDateBtnId = ref(0)
 
+  // Re-derive the loaded window [beginDate, endDate] from the active
+  // preset. Only `selectedDateBtnId` is persisted; beginDate/endDate keep
+  // their fixed 1-week defaults until this runs. Without it, a restored
+  // preset (e.g. "All") is highlighted but the first datastream load
+  // fetches the stale default window until the chip is clicked again.
+  function syncRangeToPreset() {
+    endDate.value = new Date()
+    const option = dateOptions.value.find(
+      (o) => o.id === selectedDateBtnId.value
+    )
+    beginDate.value = option
+      ? option.calculateBeginDate()
+      : new Date(endDate.value.getTime() - oneWeek)
+  }
+
   function resetState() {
     selectedThings.value = []
     plottedDatastreams.value = []
@@ -87,11 +102,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     // workspace switches. selectedDateBtnId is intentionally NOT reset here —
     // it's a user preference, not workspace-specific state, and resetting it
     // would overwrite the persisted localStorage value.
-    endDate.value = new Date()
-    const option = dateOptions.value.find((o) => o.id === selectedDateBtnId.value)
-    beginDate.value = option
-      ? option.calculateBeginDate()
-      : new Date(endDate.value.getTime() - oneWeek)
+    syncRangeToPreset()
     // Old watcher used to call clearChartState when plottedDatastreams
     // emptied; with the watcher gone, do it here explicitly.
     clearChartState()
@@ -561,6 +572,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     matchesSelectedThing,
     setDateRange,
     onDateBtnClick,
+    syncRangeToPreset,
     refreshGraphSeriesArray,
     resetState,
     toggleDatastream,
@@ -581,5 +593,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // functions (`calculateBeginDate`).
   persist: {
     pick: ['selectedDateBtnId'],
+    // Only the preset id is persisted, so the loaded window must be
+    // recomputed from it after hydration — otherwise beginDate/endDate
+    // keep their fixed 1-week defaults and the first datastream load
+    // ignores the restored preset until the chip is clicked again.
+    afterHydrate: (ctx) => {
+      ;(ctx.store as unknown as { syncRangeToPreset: () => void }).syncRangeToPreset()
+    },
   },
 })
