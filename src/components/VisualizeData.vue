@@ -31,7 +31,7 @@
           text="Pick a datastream below (radio button) to enable editing"
         >
           <template #activator="{ props: tooltipProps }">
-            <div v-bind="tooltipProps">
+            <div v-bind="tooltipProps" class="ml-auto">
               <v-btn
                 color="primary"
                 variant="flat"
@@ -47,6 +47,7 @@
 
         <v-btn
           v-else
+          class="ml-auto"
           color="primary"
           variant="flat"
           prepend-icon="mdi-pencil"
@@ -214,7 +215,7 @@
 
         <section class="bg-surface">
           <div
-            class="edit-view__section-header d-flex align-center ga-1 px-3 py-1"
+            class="edit-view__section-header d-flex align-center ga-2 px-3 py-1"
             role="button"
             tabindex="0"
             @click="plottedCollapsed = !plottedCollapsed"
