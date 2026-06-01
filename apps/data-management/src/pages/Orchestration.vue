@@ -8,7 +8,10 @@
       />
     </div>
 
-    <div v-if="!!selectedWorkspace" class="orchestration-page-body">
+    <div
+      v-if="!!selectedWorkspace && !routeWorkspaceDenied"
+      class="orchestration-page-body"
+    >
       <div class="orchestration-shell">
         <OrchestrationNavRail
           :tabs="tabs"
@@ -285,6 +288,24 @@ const applyRouteWorkspace = () => {
 
 watch([routeWorkspaceId, workspaces], applyRouteWorkspace, { immediate: true })
 
+// The workspaces list is the user's accessible (associated) workspaces, loaded
+// before the app mounts. A workspace_id in the URL that isn't in that list is
+// one the user has no permission to view, so surface an explicit error rather
+// than silently falling back to a different workspace.
+const routeWorkspaceDenied = computed(
+  () =>
+    !!routeWorkspaceId.value &&
+    !workspaces.value.some((ws) => ws.id === routeWorkspaceId.value)
+)
+
+watch(
+  routeWorkspaceDenied,
+  (denied) => {
+    if (denied) router.replace({ name: 'AccessDenied' })
+  },
+  { immediate: true }
+)
+
 watch(
   routeView,
   (view) => {
@@ -330,19 +351,15 @@ const {
   currentWorkspaceId: () => selectedWorkspaceId.value!,
 })
 
-const {
-  etlTaskRows,
-  dataProductTaskRows,
-  monitoringTaskRows,
-  activeTaskRows,
-} = useOrchestrationTaskRows({
-  activeTab,
-  workspaceTasks,
-  dataProductTasks,
-  monitoringTasks,
-  datastreamThingByDatastreamId,
-  runNowTriggeredByTaskId,
-})
+const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
+  useOrchestrationTaskRows({
+    activeTab,
+    workspaceTasks,
+    dataProductTasks,
+    monitoringTasks,
+    datastreamThingByDatastreamId,
+    runNowTriggeredByTaskId,
+  })
 
 const canEditOrchestration = computed(() => {
   const ws = selectedWorkspace.value
@@ -560,11 +577,18 @@ const autoSelectSidebar = () => {
 const selectedGroupIdForTab = (tab: TabId) =>
   tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
 
-const syncSelectedGroupToRoute = async () => {
-  if (activeView.value === 'workspaces' || hasTaskDetails.value) return
+const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
+  if (hasTaskDetails.value) return
+  if (activeView.value === 'workspaces') {
+    if (overrideWorkspaceId !== undefined) {
+      await replaceView('workspaces', null, overrideWorkspaceId)
+    }
+    return
+  }
   await replaceSelectedGroup(
     activeTab.value,
-    selectedGroupIdForTab(activeTab.value)
+    selectedGroupIdForTab(activeTab.value),
+    overrideWorkspaceId
   )
 }
 
@@ -628,9 +652,13 @@ const closeWorkspaceScopedUi = () => {
 watch(
   selectedWorkspaceId,
   async (newId, oldId) => {
-    if (newId == null) return
+    if (newId == null || routeWorkspaceDenied.value) return
     const workspaceChanged = oldId != null && oldId !== newId
     const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
+    // The URL workspace wins; only push the new selection into the URL when
+    // the URL has none or the selected workspace actually changed.
+    const overrideWorkspaceId =
+      !routeWorkspaceId.value || workspaceChanged ? newId : undefined
     stopAll()
     closeWorkspaceScopedUi()
     selectedConnectionId.value = null
@@ -641,33 +669,30 @@ watch(
     if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
       autoSelectSidebar()
     }
-    await syncSelectedGroupToRoute()
+    await syncSelectedGroupToRoute(overrideWorkspaceId)
   },
   { immediate: true }
 )
 
-watch(
-  [routeDataConnectionId, routeSiteId, routeView],
-  async () => {
-    if (
-      loading.value ||
-      activeView.value === 'workspaces' ||
-      hasTaskDetails.value
-    ) {
-      return
-    }
-
-    if (selectSidebarFromRouteGroup()) return
-
-    const hasRouteSelection =
-      activeTab.value === 'ingestion'
-        ? !!routeDataConnectionId.value
-        : !!routeSiteId.value
-    if (!hasRouteSelection) return
-
-    await autoSelectSidebarAndSync()
+watch([routeDataConnectionId, routeSiteId, routeView], async () => {
+  if (
+    loading.value ||
+    activeView.value === 'workspaces' ||
+    hasTaskDetails.value
+  ) {
+    return
   }
-)
+
+  if (selectSidebarFromRouteGroup()) return
+
+  const hasRouteSelection =
+    activeTab.value === 'ingestion'
+      ? !!routeDataConnectionId.value
+      : !!routeSiteId.value
+  if (!hasRouteSelection) return
+
+  await autoSelectSidebarAndSync()
+})
 
 const openCreateDialog = () => {
   if (!canEditOrchestration.value) return
