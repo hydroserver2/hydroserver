@@ -13,4 +13,4 @@ from .monitoring.task import MonitoringTaskService
 from .monitoring.rule import MonitoringRuleService
 from .products.rating_curve import RatingCurveService
 from .products.task import DataProductTaskService
-from .products.transformation import TransformationService
+from .products.transformation import DataProductTransformationService

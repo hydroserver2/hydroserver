@@ -61,7 +61,7 @@ class MonitoringTask(HydroServerBaseModel):
     }
 
     def __init__(self, client: "HydroServer", **data):
-        super().__init__(client=client, service=client.monitoring_tasks, **data)
+        super().__init__(client=client, service=client.monitoringtasks, **data)
 
     @classmethod
     def get_route(cls):
@@ -71,12 +71,12 @@ class MonitoringTask(HydroServerBaseModel):
     def rules(self):
         """All monitoring rules for this task."""
 
-        return self.client.monitoring_rules.list(task_id=self.uid, fetch_all=True).items
+        return self.client.monitoringrules.list(task_id=self.uid, fetch_all=True).items
 
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this monitoring task."""
 
-        return self.client.monitoring_tasks.trigger(uid=self.uid)
+        return self.client.monitoringtasks.trigger(uid=self.uid)
 
     def list_runs(
         self,
@@ -91,7 +91,7 @@ class MonitoringTask(HydroServerBaseModel):
     ) -> List[TaskRun]:
         """Get a collection of task runs for this monitoring task."""
 
-        return self.client.monitoring_tasks.list_runs(
+        return self.client.monitoringtasks.list_runs(
             uid=self.uid,
             page=page,
             page_size=page_size,
@@ -106,4 +106,4 @@ class MonitoringTask(HydroServerBaseModel):
     def get_run(self, run_id: uuid.UUID) -> TaskRun:
         """Get a single task run for this monitoring task."""
 
-        return self.client.monitoring_tasks.get_run(uid=self.uid, run_id=run_id)
+        return self.client.monitoringtasks.get_run(uid=self.uid, run_id=run_id)

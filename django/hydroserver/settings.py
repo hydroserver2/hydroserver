@@ -84,6 +84,15 @@ CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+CELERY_BROKER_HEARTBEAT = 10
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_keepalive": True,
+    "retry_on_timeout": True,
+}
+
 DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
 
 CELERY_BEAT_SCHEDULE = {
@@ -402,6 +411,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Logging
 
+LOGGING_FORMATTERS = {}
+if DEPLOYMENT_BACKEND == "gcp":
+    LOGGING_FORMATTERS["standard"] = {
+        "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+        "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
+        "rename_fields": {"levelname": "level"},
+    }
+else:
+    LOGGING_FORMATTERS["standard"] = {
+        "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -410,13 +431,7 @@ LOGGING = {
             "()": "processing.orchestration.logging.RunIdFilter",
         },
     },
-    "formatters": {
-        "standard": {
-            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
-            "rename_fields": {"levelname": "level"},
-        },
-    },
+    "formatters": LOGGING_FORMATTERS,
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
