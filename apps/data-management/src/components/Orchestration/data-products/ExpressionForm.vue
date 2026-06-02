@@ -87,6 +87,42 @@
           class="mb-2"
         />
 
+        <!-- Formula -->
+        <div
+          class="text-caption text-medium-emphasis font-weight-bold text-uppercase mb-2"
+        >
+          Formula
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex flex-wrap align-center gap-1 mb-1">
+            <span class="text-caption text-medium-emphasis mr-1">Variable:</span>
+            <v-chip
+              size="x-small"
+              :color="DATA_PRODUCT_ACCENT"
+              variant="tonal"
+              class="font-weight-mono"
+            >
+              x
+            </v-chip>
+          </div>
+          <div class="d-flex flex-wrap align-center gap-1">
+            <span class="text-caption text-medium-emphasis mr-1"
+              >Functions:</span
+            >
+            <v-chip
+              v-for="fn in ALLOWED_FUNCTIONS"
+              :key="fn"
+              size="x-small"
+              variant="outlined"
+              color="grey-darken-1"
+              class="font-weight-mono"
+            >
+              {{ fn }}
+            </v-chip>
+          </div>
+        </div>
+
         <v-text-field
           v-model="formula"
           label="Output = *"
@@ -98,6 +134,7 @@
             exprBalancedParens,
           ]"
           :disabled="loadingExisting"
+          font-family="monospace"
         />
       </v-card-text>
 
@@ -175,6 +212,24 @@ const formula = ref('')
 const selectedThingId = computed(() => props.initialThingId ?? null)
 const existingTransformationId = ref<string | null>(null)
 const ALLOWED_OPS = ['+', '-', '*', '/', '**', '(', ')']
+const ALLOWED_FUNCTIONS = [
+  'abs',
+  'min',
+  'max',
+  'sqrt',
+  'log',
+  'log10',
+  'log2',
+  'exp',
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'floor',
+  'ceil',
+]
 
 const siteDatastreams = computed(() => {
   const thingId = selectedThingId.value
@@ -374,8 +429,15 @@ const exprAllowedTokens: Rule = (v) => {
       i++
       continue
     }
-    if (s[i] === 'x') {
-      i++
+    // Identifier: the input variable 'x' or an allowed function name.
+    if (/[a-zA-Z_]/.test(ch)) {
+      let j = i
+      while (j < s.length && /[a-zA-Z0-9_]/.test(s[j])) j++
+      const name = s.slice(i, j)
+      if (name !== 'x' && !ALLOWED_FUNCTIONS.includes(name)) {
+        return `Unknown name '${name}'. Use 'x' or an allowed function.`
+      }
+      i = j
       continue
     }
     if (/\d/.test(ch)) {
@@ -387,7 +449,7 @@ const exprAllowedTokens: Rule = (v) => {
       }
       continue
     }
-    if (ch === '(' || ch === ')') {
+    if (ch === '(' || ch === ')' || ch === ',') {
       i++
       continue
     }
@@ -399,7 +461,7 @@ const exprAllowedTokens: Rule = (v) => {
       i++
       continue
     }
-    return "Only numbers, spaces, 'x', and + - * / ** ( ) are allowed."
+    return "Only numbers, 'x', allowed functions, and + - * / ** ( ) , are allowed."
   }
   return true
 }
@@ -421,3 +483,9 @@ const exprBalancedParens: Rule = (v) => {
     : `Missing ${depth} closing ')'${depth > 1 ? 's' : ''}.`
 }
 </script>
+
+<style scoped>
+.font-weight-mono {
+  font-family: monospace;
+}
+</style>
