@@ -239,7 +239,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiMagnify, mdiPencil, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
-import type { DataConnection, Thing } from '@hydroserver/client'
+import type { DataConnection, ThingTaskSummary } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { READ_ONLY_TOOLTIP, TAB_META } from './orchestrationTabs'
 
@@ -249,7 +249,7 @@ const { activeTab, selectedConnectionId, selectedThingId, sidebarSearch: search 
 const props = withDefaults(
   defineProps<{
     connections: DataConnection[]
-    sites: Thing[]
+    sites: ThingTaskSummary[]
     canEdit: boolean
     taskCountForConnection: (id: string) => number
     issueCountForConnection: (id: string) => number

@@ -411,33 +411,31 @@ class ThingService(ServiceUtils):
             .values("status")[:1]
         )
 
-        product_task_attention_count = Coalesce(
-            Subquery(
-                DataProductTask.objects
-                .filter(thing_id=OuterRef("pk"))
-                .annotate(latest_run_status=latest_run_status_subquery)
-                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
-                .values("thing_id")
-                .annotate(count=Count("pk"))
-                .values("count"),
-                output_field=IntegerField()
-            ),
-            0
-        )
+        def task_count(task_model, attention_only=False):
+            """Correlated per-thing count subquery.
 
-        monitoring_task_attention_count = Coalesce(
-            Subquery(
-                MonitoringTask.objects
-                .filter(thing_id=OuterRef("pk"))
-                .annotate(latest_run_status=latest_run_status_subquery)
-                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
-                .values("thing_id")
-                .annotate(count=Count("pk"))
-                .values("count"),
-                output_field=IntegerField()
-            ),
-            0
-        )
+            Using a subquery (rather than joining the relation into the outer
+            query and using Count(distinct=True)) avoids a cartesian product
+            between the data_product_tasks and monitoring_tasks relations, which
+            would otherwise make this query explode on things with many tasks.
+            """
+            tasks = task_model.objects.filter(thing_id=OuterRef("pk"))
+            if attention_only:
+                tasks = (
+                    tasks
+                    .annotate(latest_run_status=latest_run_status_subquery)
+                    .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                )
+            return Coalesce(
+                Subquery(
+                    tasks
+                    .values("thing_id")
+                    .annotate(count=Count("pk"))
+                    .values("count"),
+                    output_field=IntegerField(),
+                ),
+                0,
+            )
 
         queryset = Thing.objects.visible(principal=principal)
 
@@ -447,10 +445,10 @@ class ThingService(ServiceUtils):
             queryset = queryset.filter(site_type__in=site_type)
 
         return queryset.annotate(
-            product_task_count=Count("data_product_tasks", distinct=True),
-            product_task_attention_count=product_task_attention_count,
-            monitoring_task_count=Count("monitoring_tasks", distinct=True),
-            monitoring_task_attention_count=monitoring_task_attention_count,
+            product_task_count=task_count(DataProductTask),
+            product_task_attention_count=task_count(DataProductTask, attention_only=True),
+            monitoring_task_count=task_count(MonitoringTask),
+            monitoring_task_attention_count=task_count(MonitoringTask, attention_only=True),
         ).order_by("name")
 
     def list(

@@ -87,7 +87,7 @@
             <TaskListPanel
               v-else
               :can-edit="canEditOrchestration"
-              :loading="loading"
+              :loading="listLoading"
               :has-selection="hasSelection"
               :detail-title="detailTitle"
               :detail-type-badge="detailTypeBadge"
@@ -210,6 +210,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { sumBy } from 'lodash-es'
 import hs, {
   DataConnection,
   type DataProductTask,
@@ -217,6 +218,7 @@ import hs, {
   PermissionAction,
   PermissionResource,
   type TaskExpanded,
+  type ThingTaskSummary,
 } from '@hydroserver/client'
 
 import router from '@/router/router'
@@ -245,8 +247,10 @@ import QualityManagementForm from '@/components/Orchestration/monitoring/Quality
 import {
   TAB_META,
   countTaskIssues,
-  taskHasIssue,
   worstDotColor,
+  DOT_PALETTE,
+  DOT_EMPTY,
+  DOT_DEFAULT_OK,
   type TabDefinition,
   type TabId,
   type TaskRow,
@@ -269,14 +273,17 @@ const {
 
 const {
   loading,
+  taskLoading,
   workspaceTasks,
   dataConnections,
   things,
   datastreamThingByDatastreamId,
   dataProductTasks,
   monitoringTasks,
+  loadedTaskGroup,
   fetchAll,
   refreshDataConnections,
+  fetchTasksForGroup,
 } = useOrchestrationData()
 
 const orchestrationStore = useOrchestrationStore()
@@ -395,12 +402,18 @@ const canEditOrchestration = computed(() => {
 })
 
 const tabs = computed<TabDefinition[]>(() => [
-  { ...TAB_META.ingestion, issues: countTaskIssues(etlTaskRows.value) },
+  {
+    ...TAB_META.ingestion,
+    issues: sumBy(dataConnections.value, taskAttentionCount),
+  },
   {
     ...TAB_META.aggregation,
-    issues: countTaskIssues(dataProductTaskRows.value),
+    issues: sumBy(things.value, productTaskAttentionCount),
   },
-  { ...TAB_META.quality, issues: countTaskIssues(monitoringTaskRows.value) },
+  {
+    ...TAB_META.quality,
+    issues: sumBy(things.value, monitoringTaskAttentionCount),
+  },
 ])
 
 const filterByName = <T extends { name: string }>(items: T[], term: string) => {
@@ -423,20 +436,73 @@ const thingsById = computed(
   () => new Map(things.value.map((th) => [th.id, th]))
 )
 
+const listLoading = computed(() => loading.value || taskLoading.value)
+
+const taskAttentionCount = (connection: DataConnection) =>
+  connection.taskAttentionCount
+
+const productTaskAttentionCount = (thing: ThingTaskSummary) =>
+  thing.productTaskAttentionCount
+
+const monitoringTaskAttentionCount = (thing: ThingTaskSummary) =>
+  thing.monitoringTaskAttentionCount
+
+const summaryDotColor = (total: number, issues: number) => {
+  if (total === 0) return DOT_EMPTY
+  if (issues > 0) return DOT_PALETTE['Needs attention']
+  return DOT_DEFAULT_OK
+}
+
+const taskCountForConnectionSummary = (dcId: string) =>
+  connectionsById.value.get(dcId)?.taskCount ?? 0
+
+const issueCountForConnectionSummary = (dcId: string) =>
+  connectionsById.value.get(dcId)?.taskAttentionCount ?? 0
+
+const loadedGroupMatches = (tab: TabId, groupId: string) =>
+  loadedTaskGroup.value?.tab === tab && loadedTaskGroup.value.groupId === groupId
+
+const selectedConnectionRows = (dcId: string) =>
+  etlTaskRows.value.filter((t) => t.dataConnectionId === dcId)
+
+const selectedSiteRows = (thingId: string) =>
+  activeTaskRows.value.filter((t) => t.thingId === thingId)
+
 const taskCountForConnection = (dcId: string) =>
-  etlTaskRows.value.filter((t) => t.dataConnectionId === dcId).length
+  loadedGroupMatches('ingestion', dcId)
+    ? selectedConnectionRows(dcId).length
+    : taskCountForConnectionSummary(dcId)
 
 const issueCountForConnection = (dcId: string) =>
-  etlTaskRows.value.filter(
-    (t) => t.dataConnectionId === dcId && taskHasIssue(t)
-  ).length
+  loadedGroupMatches('ingestion', dcId)
+    ? countTaskIssues(selectedConnectionRows(dcId))
+    : issueCountForConnectionSummary(dcId)
+
+const taskCountForSiteSummary = (thingId: string) => {
+  const thing = thingsById.value.get(thingId)
+  if (!thing) return 0
+  return activeTab.value === 'aggregation'
+    ? thing.productTaskCount
+    : thing.monitoringTaskCount
+}
+
+const issueCountForSiteSummary = (thingId: string) => {
+  const thing = thingsById.value.get(thingId)
+  if (!thing) return 0
+  return activeTab.value === 'aggregation'
+    ? thing.productTaskAttentionCount
+    : thing.monitoringTaskAttentionCount
+}
 
 const taskCountForSite = (thingId: string) =>
-  activeTaskRows.value.filter((t) => t.thingId === thingId).length
+  loadedGroupMatches(activeTab.value, thingId)
+    ? selectedSiteRows(thingId).length
+    : taskCountForSiteSummary(thingId)
 
 const issueCountForSite = (thingId: string) =>
-  activeTaskRows.value.filter((t) => t.thingId === thingId && taskHasIssue(t))
-    .length
+  loadedGroupMatches(activeTab.value, thingId)
+    ? countTaskIssues(selectedSiteRows(thingId))
+    : issueCountForSiteSummary(thingId)
 
 const violationCountForSite = (thingId: string) =>
   monitoringTaskRows.value
@@ -444,10 +510,20 @@ const violationCountForSite = (thingId: string) =>
     .reduce((sum, task) => sum + (task.monitoringRulesViolated ?? 0), 0)
 
 const dotColorForConnection = (dcId: string) =>
-  worstDotColor(etlTaskRows.value.filter((t) => t.dataConnectionId === dcId))
+  loadedGroupMatches('ingestion', dcId)
+    ? worstDotColor(selectedConnectionRows(dcId))
+    : summaryDotColor(
+        taskCountForConnectionSummary(dcId),
+        issueCountForConnectionSummary(dcId)
+      )
 
 const dotColorForSite = (thingId: string) =>
-  worstDotColor(activeTaskRows.value.filter((t) => t.thingId === thingId))
+  loadedGroupMatches(activeTab.value, thingId)
+    ? worstDotColor(selectedSiteRows(thingId))
+    : summaryDotColor(
+        taskCountForSiteSummary(thingId),
+        issueCountForSiteSummary(thingId)
+      )
 
 const selectedConnection = computed<DataConnection | null>(() =>
   selectedConnectionId.value
@@ -602,6 +678,23 @@ const autoSelectSidebar = () => {
 const selectedGroupIdForTab = (tab: TabId) =>
   tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
 
+const fetchVisibleTasks = async (force = false) => {
+  if (
+    !selectedWorkspaceId.value ||
+    activeView.value === 'workspaces' ||
+    hasTaskDetails.value
+  ) {
+    return
+  }
+
+  await fetchTasksForGroup(
+    activeTab.value,
+    selectedGroupIdForTab(activeTab.value),
+    selectedWorkspaceId.value,
+    force
+  )
+}
+
 const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
   if (hasTaskDetails.value) return
   if (activeView.value === 'workspaces') {
@@ -619,11 +712,13 @@ const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
 
 const autoSelectSidebarAndSync = async () => {
   autoSelectSidebar()
+  await fetchVisibleTasks()
   await syncSelectedGroupToRoute()
 }
 
 const closeTaskDetailsAndSync = async () => {
   await closeTaskDetails()
+  await fetchVisibleTasks()
   await syncSelectedGroupToRoute()
 }
 
@@ -631,6 +726,7 @@ const setActiveTab = async (tab: TabId) => {
   sidebarSearch.value = ''
   await replaceView(tab, selectedGroupIdForTab(tab))
   autoSelectSidebar()
+  await fetchVisibleTasks()
   await syncSelectedGroupToRoute()
 }
 
@@ -644,11 +740,13 @@ const goToHydroLoader = async () => {
 
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
+  await fetchVisibleTasks()
   await replaceView('ingestion', id)
 }
 
 const selectSite = async (id: string) => {
   selectedThingId.value = id
+  await fetchVisibleTasks()
   await replaceView(activeTab.value, id)
 }
 
@@ -694,6 +792,7 @@ watch(
     if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
       autoSelectSidebar()
     }
+    await fetchVisibleTasks(true)
     await syncSelectedGroupToRoute(overrideWorkspaceId)
   },
   { immediate: true }
@@ -708,7 +807,10 @@ watch([routeDataConnectionId, routeSiteId, routeView], async () => {
     return
   }
 
-  if (selectSidebarFromRouteGroup()) return
+  if (selectSidebarFromRouteGroup()) {
+    await fetchVisibleTasks()
+    return
+  }
 
   const hasRouteSelection =
     activeTab.value === 'ingestion'

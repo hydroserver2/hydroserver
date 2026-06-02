@@ -60,6 +60,7 @@ vi.mock('@hydroserver/client', () => ({
     },
     things: {
       listAllItems: vi.fn(),
+      listTaskSummaries: vi.fn(),
     },
   },
   DataConnection: class {},
