@@ -11,7 +11,6 @@ from typing import Optional, Union, Literal
 from pydantic import Field, ConfigDict, validate_call
 from ninja.errors import HttpError
 from django.db import transaction
-from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.utils import timezone
@@ -82,13 +81,17 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         latest_run_status: list[str] | Unset = Unset,
         datastream: list[uuid.UUID] | Unset = Unset,
         rule_type: list[str] | Unset = Unset,
-    ) -> tuple[int, QuerySet[MonitoringTask]]:
+    ) -> tuple[int, list[MonitoringTask]]:
         """
         Return a collection of monitoring tasks.
         """
 
         queryset = self.task_model.objects
-        queryset = self.annotate_latest_run(queryset)
+
+        if latest_run_status is not Unset or any(
+            term.lstrip("-") in self.latest_run_filter_fields for term in order_by
+        ):
+            queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
         if search_term is not Unset:
             search_vector = SearchVector("name", "description", "thing__name")
@@ -120,9 +123,9 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         count = queryset.count()
         offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
+        tasks = self.attach_latest_runs(list(queryset[offset:offset + page_size]))
 
-        return count, queryset
+        return count, tasks
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic

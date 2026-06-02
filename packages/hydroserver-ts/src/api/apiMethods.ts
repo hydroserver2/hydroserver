@@ -116,13 +116,17 @@ export const apiMethods = {
       return res // unknown shape, don’t attempt to paginate
     }
 
-    // Fetch remaining pages and merge
-    for (let p = 2; p <= totalPages; p++) {
-      url.searchParams.set('page', String(p))
-      const page = await limit(() =>
-        interceptedFetch(url.toString(), { method: 'GET' })
-      )
+    // Fetch remaining pages concurrently (bounded by the shared `limit`) and merge in page order.
+    // Each page gets its own URL so the requests don't share mutable searchParams state.
+    const remainingPages = await Promise.all(
+      Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) => {
+        const pageUrl = new URL(url)
+        pageUrl.searchParams.set('page', String(index + 2))
+        return limit(() => interceptedFetch(pageUrl.toString(), { method: 'GET' }))
+      })
+    )
 
+    for (const page of remainingPages) {
       if (mode === 'array') {
         if (Array.isArray(page.data)) {
           allArray.push(...(page.data as T[]))

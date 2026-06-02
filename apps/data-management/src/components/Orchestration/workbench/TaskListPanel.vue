@@ -251,7 +251,7 @@
         <p>Clear search, status, or task type filters to see all tasks.</p>
       </div>
 
-      <v-data-table
+      <v-data-table-virtual
         v-else
         :headers="tableHeaders"
         :items="sortedVisibleTasks"
@@ -260,8 +260,6 @@
         multi-sort
         fixed-header
         hover
-        hide-default-footer
-        :items-per-page="-1"
         class="tasks-table"
         density="compact"
       >
@@ -523,7 +521,7 @@
             </v-btn>
           </div>
         </template>
-      </v-data-table>
+      </v-data-table-virtual>
     </div>
   </section>
 </template>
@@ -773,6 +771,12 @@ const pauseTooltipText = (item: TaskRow) => {
 }
 .tasks-table {
   font-size: 13px;
+  height: 100%;
+}
+/* Bound the virtual scroller's viewport so v-data-table-virtual only mounts the
+   visible rows instead of all of them (avoids a multi-second render with many tasks). */
+.tasks-table :deep(.v-table__wrapper) {
+  max-height: 100%;
 }
 .tasks-table :deep(thead tr) {
   border-bottom: 2px solid #ebebeb;
