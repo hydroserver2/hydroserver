@@ -996,32 +996,19 @@ data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000
 ### Example: Create Data Connection
 
 ```python
-# Create a new data connection in HydroServer
+# Create a new CSV data connection in HydroServer
 new_data_connection = hs_api.dataconnections.create(
     name='Example Data Connection',
-    data_connection_type='ETL',
     workspace='00000000-0000-0000-0000-000000000000',
-    extractor_type='HTTP',
-    extractor_settings={
-        'sourceUri': 'https://www.example.com/data.csv?site={site_code}',
-        'placeholderVariables': [
-            {'name': 'site_code', 'type': 'perTask'},
-        ],
-    },
-    transformer_type='CSV',
-    transformer_settings={
-        'headerRow': 1,
-        'dataStartRow': 2,
-        'delimiter': ',',
-        'identifierType': 'name',
-        'timestamp': {
-            'key': 'TIMESTAMP',
-            'format': 'ISO8601',
-            'timezoneMode': 'embeddedOffset',
-        },
-    },
-    loader_type='HydroServer',
-    loader_settings={}
+    source_url='https://www.example.com/data.csv?site={site_code}',
+    payload_type='CSV',
+    timestamp_key='TIMESTAMP',
+    header_row=1,
+    data_start_row=2,
+    delimiter=',',
+    placeholder_variables=[
+        {'name': 'site_code', 'variable_type': 'per_task'},
+    ],
 )
 ```
 
@@ -1031,62 +1018,35 @@ new_data_connection = hs_api.dataconnections.create(
 # Create a new HTTP + JSON data connection in HydroServer
 new_json_data_connection = hs_api.dataconnections.create(
     name='USGS Instantaneous Values',
-    data_connection_type='ETL',
     workspace='00000000-0000-0000-0000-000000000000',
-    extractor_type='HTTP',
-    extractor_settings={
-        'sourceUri': (
-            'https://waterservices.usgs.gov/nwis/iv/'
-            '?format=json'
-            '&sites={site_code}'
-            '&parameterCd={param_code}'
-            '&startDT={start_date}'
-            '&endDT={end_date}'
-        ),
-        'placeholderVariables': [
-            {'name': 'site_code', 'type': 'perTask'},
-            {'name': 'param_code', 'type': 'perTask'},
-            {
-                'name': 'start_date',
-                'type': 'runTime',
-                'runTimeValue': 'latestObservationTimestamp',
-                'timestamp': {
-                    'format': 'ISO8601',
-                    'timezoneMode': 'daylightSavings',
-                    'timezone': 'America/Denver',
-                },
-            },
-            {
-                'name': 'end_date',
-                'type': 'runTime',
-                'runTimeValue': 'jobExecutionTime',
-                'timestamp': {
-                    'format': 'ISO8601',
-                    'timezoneMode': 'daylightSavings',
-                    'timezone': 'America/Denver',
-                },
-            },
-        ],
-    },
-    transformer_type='JSON',
-    transformer_settings={
-        'JMESPath': 'value.timeSeries[].values[].value[]',
-        'timestamp': {
-            'key': 'dateTime',
-            'format': 'ISO8601',
-            'timezoneMode': 'embeddedOffset',
-        },
-    },
-    loader_type='HydroServer',
-    loader_settings={}
+    source_url=(
+        'https://waterservices.usgs.gov/nwis/iv/'
+        '?format=json'
+        '&sites={site_code}'
+        '&parameterCd={param_code}'
+        '&startDT={start_date}'
+        '&endDT={end_date}'
+    ),
+    payload_type='JSON',
+    timestamp_key='dateTime',
+    jmespath='value.timeSeries[].values[].value[]',
+    timezone_type='iana',
+    timezone='America/Denver',
+    placeholder_variables=[
+        {'name': 'site_code', 'variable_type': 'per_task'},
+        {'name': 'param_code', 'variable_type': 'per_task'},
+        {'name': 'start_date', 'variable_type': 'latest_observation_timestamp'},
+        {'name': 'end_date', 'variable_type': 'run_time'},
+    ],
 )
 ```
 
-`extractor_settings`, `transformer_settings`, and `loader_settings` should use the same nested JSON shape used by the Data Management app and TypeScript client. For example, HTTP extractors use `sourceUri` and `placeholderVariables` in camelCase.
+Placeholder variable types are:
+- `per_task` — a value set individually on each ETL task (e.g. a site code)
+- `latest_observation_timestamp` — automatically set to the timestamp of the most recent observation loaded for the task's mapped datastreams
+- `run_time` — automatically set to the time the task run executes
 
-The USGS Instantaneous Values service accepts ISO-8601 datetimes and assumes site-local time when no offset is provided. This example uses a daylight-savings aware local timezone (`America/Denver`). If your sites are in a different timezone, replace that value with the appropriate IANA timezone for your tasks.
-
-The JSON transformer timestamp configuration also stays on `ISO8601` with `timezoneMode: 'embeddedOffset'` because USGS response `dateTime` values include their timezone offset. In HydroServer, ISO timestamps with embedded offsets are parsed directly; fixed-offset or daylight-savings transformer timezone settings are for sources whose timestamps do not already include timezone information.
+The `timezone_type` and `timezone` fields control how run-time and latest-observation timestamps are formatted when substituted into the URL. Use `timezone_type='iana'` with an IANA timezone name (e.g. `'America/Denver'`) for daylight-savings-aware formatting, or `timezone_type='offset'` with a fixed offset (e.g. `'+0000'`). If the source timestamps already include a UTC offset and no conversion is needed, omit both fields.
 
 Each of the methods above will return one or more DataConnection objects. The examples below show the main properties and methods available to a DataConnection object.
 
@@ -1148,7 +1108,6 @@ task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 # Create a new ETL task in HydroServer
 new_task = hs_api.etltasks.create(
     name='Example Task',
-    workspace='00000000-0000-0000-0000-000000000000',
     data_connection='00000000-0000-0000-0000-000000000000',
     interval=1,
     interval_period='days',
