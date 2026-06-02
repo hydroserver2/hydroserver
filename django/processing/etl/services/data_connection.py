@@ -35,6 +35,17 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     @staticmethod
     def annotate_task_counts(queryset: QuerySet) -> QuerySet:
         now = django_tz.now()
+        task_count_subquery = Coalesce(
+            Subquery(
+                EtlTask.objects
+                .filter(data_connection_id=OuterRef("pk"))
+                .values("data_connection_id")
+                .annotate(count=Count("pk"))
+                .values("count"),
+                output_field=IntegerField()
+            ),
+            0
+        )
         attention_count_subquery = Coalesce(
             Subquery(
                 EtlTask.objects
@@ -55,8 +66,12 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             ),
             0
         )
+        # NOTE: task_count uses a scalar subquery rather than Count("etl_tasks", distinct=True).
+        # The aggregate form joins every related EtlTask row and adds a GROUP BY, which causes
+        # the correlated attention subquery to be evaluated once per joined task row instead of
+        # once per data connection (turning ~5 evaluations into thousands).
         return queryset.annotate(
-            task_count=Count("etl_tasks", distinct=True),
+            task_count=task_count_subquery,
             task_attention_count=attention_count_subquery,
         )
 
@@ -129,11 +144,13 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
         queryset = queryset.visible(principal=principal).distinct()
-        queryset = self.annotate_task_counts(queryset)
 
+        # Count before adding the task-count annotations so the COUNT(*) query does not have to
+        # evaluate the per-connection task subqueries (they do not affect the row count).
         count = queryset.count()
         offset = (page - 1) * page_size
 
+        queryset = self.annotate_task_counts(queryset)
         queryset = queryset[offset:offset + page_size]
 
         return count, queryset
