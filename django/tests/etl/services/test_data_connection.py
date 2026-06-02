@@ -1,9 +1,13 @@
 import uuid
 import pytest
 from collections import Counter
+from datetime import timedelta
+from django.utils import timezone
+from django_celery_beat.models import IntervalSchedule, PeriodicTask
 from ninja.errors import HttpError
 from processing.etl.services.data_connection import DataConnectionService
 from processing.etl.models import DataConnection
+from processing.orchestration.models import TaskRun
 
 data_connection_service = DataConnectionService()
 
@@ -18,6 +22,75 @@ def _err(exc_info):
     """Return a consistent error message string from any exception type."""
     val = exc_info.value
     return val.message if isinstance(val, HttpError) else str(val)
+
+
+def _make_schedule(enabled):
+    interval, _ = IntervalSchedule.objects.get_or_create(
+        every=1, period=IntervalSchedule.DAYS
+    )
+    return PeriodicTask.objects.create(
+        name=f"attention-test-{uuid.uuid4()}",
+        task="processing.etl.tasks.run_etl_task",
+        interval=interval,
+        enabled=enabled,
+    )
+
+
+def _make_task(dc, *, last_status=None, schedule_enabled=None, next_run_at=None):
+    from processing.etl.models import EtlTask
+
+    periodic_task = (
+        _make_schedule(schedule_enabled) if schedule_enabled is not None else None
+    )
+    task = EtlTask.objects.create(
+        name="attention task",
+        data_connection=dc,
+        periodic_task=periodic_task,
+        next_run_at=next_run_at,
+    )
+    if last_status is not None:
+        TaskRun.objects.create(task=task, status=last_status, message="")
+    return task
+
+
+def test_attention_count_matches_frontend_status_buckets(get_principal):
+    """task_attention_count should equal the number of tasks the frontend shows
+    as "Needs attention" or "Behind schedule" — and nothing else.
+
+    The frontend marks a task "Behind schedule" only when it has an *enabled*
+    schedule, a *successful* latest run, and a next run in the past. Paused,
+    running (STARTED/PENDING), and never-run tasks are NOT issues even when
+    overdue, so they must be excluded from the count.
+    """
+    past = timezone.now() - timedelta(hours=1)
+    future = timezone.now() + timedelta(hours=1)
+
+    dc = DataConnection.objects.create(
+        name="Attention Count DC",
+        workspace_id=uuid.UUID(PRIVATE_WORKSPACE),
+        source_url="https://example.com/test.csv",
+    )
+
+    # Counted: latest run failed (Needs attention) — schedule state irrelevant.
+    _make_task(dc, last_status="FAILURE", schedule_enabled=True, next_run_at=future)
+    # Counted: enabled schedule, succeeded, overdue (Behind schedule).
+    _make_task(dc, last_status="SUCCESS", schedule_enabled=True, next_run_at=past)
+
+    # Not counted: succeeded and next run still in the future (OK).
+    _make_task(dc, last_status="SUCCESS", schedule_enabled=True, next_run_at=future)
+    # Not counted: overdue but schedule disabled / paused (Loading paused).
+    _make_task(dc, last_status="SUCCESS", schedule_enabled=False, next_run_at=past)
+    # Not counted: overdue but currently running (Pending).
+    _make_task(dc, last_status="STARTED", schedule_enabled=True, next_run_at=past)
+    # Not counted: overdue but has never run (Pending).
+    _make_task(dc, last_status=None, schedule_enabled=True, next_run_at=past)
+
+    annotated = DataConnectionService.annotate_task_counts(
+        DataConnection.objects.filter(pk=dc.pk)
+    ).get()
+
+    assert annotated.task_count == 6
+    assert annotated.task_attention_count == 2
 
 
 @pytest.mark.parametrize(

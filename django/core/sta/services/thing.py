@@ -36,7 +36,7 @@ from interfaces.api.schemas import (
     FileAttachmentDeleteBody,
 )
 from interfaces.api.schemas.sta.thing import ThingFields, LocationFields, ThingOrderByFields
-from processing.orchestration.models import TaskRun
+from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.products.models import DataProductTask
 from processing.monitoring.models import MonitoringTask
 
@@ -404,13 +404,6 @@ class ThingService(ServiceUtils):
 
         now = timezone.now()
 
-        latest_run_status_subquery = Subquery(
-            TaskRun.objects
-            .filter(task_id=OuterRef("pk"))
-            .order_by("-started_at", "-id")
-            .values("status")[:1]
-        )
-
         def task_count(task_model, attention_only=False):
             """Correlated per-thing count subquery.
 
@@ -423,8 +416,8 @@ class ThingService(ServiceUtils):
             if attention_only:
                 tasks = (
                     tasks
-                    .annotate(latest_run_status=latest_run_status_subquery)
-                    .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                    .annotate(latest_run_status=latest_run_status_subquery())
+                    .filter(attention_filter(now))
                 )
             return Coalesce(
                 Subquery(

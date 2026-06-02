@@ -13,7 +13,12 @@
           </span>
         </div>
         <div class="detail-subtitle">
-          <HealthPills :tasks="visibleTasks" />
+          <HealthPills
+            :tasks="visibleTasks"
+            interactive
+            :active-statuses="statusFilter"
+            @toggle-status="toggleStatusFilter"
+          />
         </div>
       </div>
       <div class="detail-actions">
@@ -651,6 +656,16 @@ const removeStatusFilter = (index: number) => {
   const next = [...statusFilter.value]
   next.splice(index, 1)
   statusFilter.value = next
+}
+
+const toggleStatusFilter = (status: string) => {
+  const next = new Set(statusFilter.value)
+  if (next.has(status)) {
+    next.delete(status)
+  } else {
+    next.add(status)
+  }
+  statusFilter.value = Array.from(next)
 }
 
 const removeTaskTypeFilter = (index: number) => {

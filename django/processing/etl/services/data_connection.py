@@ -5,7 +5,7 @@ from typing import Optional, Literal, Union, Annotated
 
 from pydantic import Field, ConfigDict, validate_call
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q, Subquery, OuterRef, IntegerField
+from django.db.models import Count, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Coalesce
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
@@ -17,7 +17,7 @@ from hydroserverpy.etl.models import Timestamp
 from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
-from processing.orchestration.models import TaskRun
+from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.orchestration.services import SchedulingService
 from processing.etl.models import (
     DataConnection, EtlTask, Payload, PlaceholderVariable,
@@ -50,15 +50,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             Subquery(
                 EtlTask.objects
                 .filter(data_connection_id=OuterRef("pk"))
-                .annotate(
-                    latest_run_status=Subquery(
-                        TaskRun.objects
-                        .filter(task_id=OuterRef("pk"))
-                        .order_by("-started_at", "-id")
-                        .values("status")[:1]
-                    )
-                )
-                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                .annotate(latest_run_status=latest_run_status_subquery())
+                .filter(attention_filter(now))
                 .values("data_connection_id")
                 .annotate(count=Count("pk"))
                 .values("count"),

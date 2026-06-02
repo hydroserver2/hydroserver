@@ -3,15 +3,25 @@
     <span class="count">
       {{ tasks.length }} task{{ tasks.length === 1 ? '' : 's' }}
     </span>
-    <span
+    <component
+      :is="interactive ? 'button' : 'span'"
       v-for="entry in pills"
       :key="entry.status"
       class="pill"
+      :class="{
+        'pill--interactive': interactive,
+        'pill--active': interactive && activeStatuses.includes(entry.status),
+      }"
+      :type="interactive ? 'button' : undefined"
+      :aria-pressed="
+        interactive ? activeStatuses.includes(entry.status) : undefined
+      "
       :style="{ color: entry.color }"
+      @click="interactive && $emit('toggle-status', entry.status)"
     >
       <span class="dot" :style="{ background: entry.color }" />
       {{ entry.count }} {{ entry.status.toLowerCase() }}
-    </span>
+    </component>
   </div>
 </template>
 
@@ -20,8 +30,17 @@ import { computed } from 'vue'
 
 interface Props {
   tasks: Array<{ statusSort?: string | null }>
+  interactive?: boolean
+  activeStatuses?: string[]
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  interactive: false,
+  activeStatuses: () => [],
+})
+
+defineEmits<{
+  (e: 'toggle-status', status: string): void
+}>()
 
 const STATUS_COLORS: Record<string, string> = {
   OK: '#2E7D32',
@@ -63,6 +82,22 @@ const pills = computed(() => {
   gap: 4px;
   font-size: 11px;
   font-weight: 500;
+}
+.pill--interactive {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.pill--interactive:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.pill--active {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 14%, transparent);
 }
 .dot {
   width: 6px;
