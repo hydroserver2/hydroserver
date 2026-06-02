@@ -2,8 +2,11 @@ import uuid
 from typing import Optional, Literal, Union
 from ninja import Field, Query
 from pydantic import EmailStr
+from django.db.models import Q, Subquery, OuterRef
+from django.utils import timezone
 
 from core.types import Unset
+from processing.orchestration.models import TaskRun
 from interfaces.api.schemas import (
     OrderByField,
     BaseGetResponse,
@@ -141,6 +144,8 @@ class DataConnectionResponse(BaseGetResponse):
     payload: Union[CSVPayloadResponse, JSONPayloadResponse]
     placeholder_variables: list[PlaceholderVariableResponse]
     notification: Optional[NotificationResponse] = None
+    task_count: int = 0
+    task_attention_count: int = 0
 
     @staticmethod
     def resolve_notification(obj):
@@ -148,6 +153,26 @@ class DataConnectionResponse(BaseGetResponse):
             return obj.notification
         except AttributeError:
             return None
+
+    @staticmethod
+    def resolve_task_count(obj):
+        return getattr(obj, "task_count", None) or 0
+
+    @staticmethod
+    def resolve_task_attention_count(obj):
+        if hasattr(obj, "task_attention_count"):
+            return obj.task_attention_count or 0
+
+        now = timezone.now()
+
+        return obj.etl_tasks.annotate(
+            latest_run_status=Subquery(
+                TaskRun.objects
+                .filter(task_id=OuterRef("pk"))
+                .order_by("-started_at", "-id")
+                .values("status")[:1]
+            )
+        ).filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now)).count()
 
 
 class DataConnectionPostBody(BasePostBody):

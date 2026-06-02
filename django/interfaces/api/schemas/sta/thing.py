@@ -164,6 +164,23 @@ class ThingSiteSummaryQueryParameters(BaseQueryParameters):
     site_type: list[str] = Query([], description="Filter site summaries by site type.")
 
 
+class ThingTaskSummaryQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Filter task summaries by workspace ID."
+    )
+    site_type: list[str] = Query([], description="Filter task summaries by site type.")
+
+
+class ThingTaskSummaryResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str
+    site_type: str
+    product_task_count: int = 0
+    product_task_attention_count: int = 0
+    monitoring_task_count: int = 0
+    monitoring_task_attention_count: int = 0
+
+
 class ThingSiteSummaryResponse(BaseGetResponse):
     id: uuid.UUID
     workspace_id: uuid.UUID

@@ -68,6 +68,8 @@ class DataConnection(HydroServerBaseModel):
     payload: Union[CSVPayload, JSONPayload]
     placeholder_variables: List[PlaceholderVariable] = []
     notification: Optional[Notification] = None
+    task_count: int = 0
+    task_attention_count: int = 0
 
     _editable_fields: ClassVar[set[str]] = set()
 

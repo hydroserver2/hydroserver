@@ -32,6 +32,8 @@ from interfaces.api.schemas.sta.thing import (
     ThingMarkerQueryParameters,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
+    ThingTaskSummaryResponse,
+    ThingTaskSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,

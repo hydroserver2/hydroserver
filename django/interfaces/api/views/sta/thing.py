@@ -12,6 +12,8 @@ from interfaces.api.schemas import (
     ThingMarkerQueryParameters,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
+    ThingTaskSummaryResponse,
+    ThingTaskSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -103,6 +105,30 @@ def get_thing_site_summaries(
     return 200, thing_service.list_site_summaries(
         principal=request.principal,
         filtering=query.dict(exclude_unset=True),
+    )
+
+
+@thing_router.get(
+    "/task-summaries",
+    auth=[session_auth, bearer_auth, apikey_auth],
+    response={
+        200: list[ThingTaskSummaryResponse],
+        401: str,
+    },
+    by_alias=True,
+)
+def get_thing_task_summaries(
+    request: HydroServerHttpRequest,
+    query: Query[ThingTaskSummaryQueryParameters],
+):
+    """
+    Get task count summaries for Things associated with the authenticated user.
+    """
+
+    return 200, thing_service.list_task_summaries(
+        principal=request.principal,
+        workspace_id=query.workspace_id or None,
+        site_type=query.site_type or None,
     )
 
 

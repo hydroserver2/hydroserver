@@ -5,18 +5,22 @@ from typing import Optional, Literal, Union, Annotated
 
 from pydantic import Field, ConfigDict, validate_call
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Q, Subquery, OuterRef, IntegerField
+from django.db.models.functions import Coalesce
 from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.utils import timezone as django_tz
 
 from hydroserverpy.etl.models import Timestamp
 
 from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
+from processing.orchestration.models import TaskRun
 from processing.orchestration.services import SchedulingService
 from processing.etl.models import (
-    DataConnection, Payload, PlaceholderVariable,
+    DataConnection, EtlTask, Payload, PlaceholderVariable,
     DataConnectionNotification, DataConnectionNotificationRecipient,
 )
 
@@ -27,6 +31,34 @@ ETL_NOTIFICATION_CELERY_TASK = "processing.etl.tasks.send_etl_notification_email
 
 
 class DataConnectionService(SchedulingService, ServiceUtils):
+
+    @staticmethod
+    def annotate_task_counts(queryset: QuerySet) -> QuerySet:
+        now = django_tz.now()
+        attention_count_subquery = Coalesce(
+            Subquery(
+                EtlTask.objects
+                .filter(data_connection_id=OuterRef("pk"))
+                .annotate(
+                    latest_run_status=Subquery(
+                        TaskRun.objects
+                        .filter(task_id=OuterRef("pk"))
+                        .order_by("-started_at", "-id")
+                        .values("status")[:1]
+                    )
+                )
+                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                .values("data_connection_id")
+                .annotate(count=Count("pk"))
+                .values("count"),
+                output_field=IntegerField()
+            ),
+            0
+        )
+        return queryset.annotate(
+            task_count=Count("etl_tasks", distinct=True),
+            task_attention_count=attention_count_subquery,
+        )
 
     order_by_fields = {"id", "name", "payload__timestamp_key", "payload__timestamp_format", "timezone_type", "timezone",
                        "workspace_id", "workspace__name"}
@@ -97,6 +129,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
         queryset = queryset.visible(principal=principal).distinct()
+        queryset = self.annotate_task_counts(queryset)
 
         count = queryset.count()
         offset = (page - 1) * page_size
