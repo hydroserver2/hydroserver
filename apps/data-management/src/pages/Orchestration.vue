@@ -8,10 +8,7 @@
       />
     </div>
 
-    <div
-      v-if="!!selectedWorkspace && !routeWorkspaceDenied"
-      class="orchestration-page-body"
-    >
+    <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
       <div class="orchestration-shell">
         <OrchestrationNavRail
           :tabs="tabs"
@@ -22,6 +19,33 @@
 
         <section v-if="activeView === 'workspaces'" class="workspace-detail">
           <OrchestrationWorkspaceManager table-height="calc(100vh - 230px)" />
+        </section>
+
+        <section
+          v-else-if="!selectedWorkspace"
+          class="no-workspace-state"
+          data-testid="no-selected-workspace"
+        >
+          <div class="no-workspace-state-content">
+            <p class="no-workspace-eyebrow">No selected workspace</p>
+            <h2>Select or create a workspace to manage jobs</h2>
+            <p>
+              Job orchestration is scoped to a workspace. Create a new workspace
+              from the Workspaces view, or ask a workspace owner or
+              administrator for edit permissions on the workspace whose jobs you
+              need to manage.
+            </p>
+            <div class="no-workspace-actions">
+              <v-btn
+                color="primary-darken-2"
+                variant="flat"
+                rounded="xl"
+                @click="openWorkspaceManager"
+              >
+                Open workspaces
+              </v-btn>
+            </div>
+          </div>
         </section>
 
         <template v-else>
@@ -318,6 +342,7 @@ watch(
   },
   { immediate: true }
 )
+
 const activeRunStatuses = new Set(['PENDING', 'STARTED'])
 
 const selectedDataConnection = ref<DataConnection | null>(null)
@@ -860,6 +885,46 @@ const goToTask = async (row: TaskRow) => {
   overflow: auto;
   background: white;
   padding: 16px 22px;
+}
+
+.no-workspace-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: auto;
+  background: white;
+  padding: 32px;
+}
+
+.no-workspace-state-content {
+  max-width: 560px;
+  color: #3c4043;
+}
+
+.no-workspace-eyebrow {
+  margin: 0 0 8px;
+  color: #5f6368;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.no-workspace-state h2 {
+  margin: 0 0 12px;
+  color: #202124;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.no-workspace-state p {
+  line-height: 1.55;
+}
+
+.no-workspace-actions {
+  margin-top: 22px;
 }
 
 .detail {

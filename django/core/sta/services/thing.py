@@ -6,9 +6,11 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import IntegrityError
-from django.db.models import QuerySet, F, Q, FloatField
-from django.db.models.functions import Cast
+from django.db.models import Count, QuerySet, F, Q, FloatField, Subquery, OuterRef, IntegerField
+from django.db.models.functions import Cast, Coalesce
+from django.utils import timezone
 from core.iam.models import APIKey
+from core.service import ServiceUtils
 from core.sta.cache import (
     get_public_thing_markers_cache,
     set_public_thing_markers_cache,
@@ -34,7 +36,9 @@ from interfaces.api.schemas import (
     FileAttachmentDeleteBody,
 )
 from interfaces.api.schemas.sta.thing import ThingFields, LocationFields, ThingOrderByFields
-from core.service import ServiceUtils
+from processing.orchestration.models import TaskRun
+from processing.products.models import DataProductTask
+from processing.monitoring.models import MonitoringTask
 
 User = get_user_model()
 
@@ -390,6 +394,64 @@ class ThingService(ServiceUtils):
             thing_ids=[site["thing_id"] for site in site_rows],
         )
         return self.serialize_site_summary_rows(site_rows, tags_by_thing_id)
+
+    @staticmethod
+    def list_task_summaries(
+        principal: Optional[User | APIKey],
+        workspace_id: Optional[list] = None,
+        site_type: Optional[list] = None,
+    ) -> QuerySet:
+
+        now = timezone.now()
+
+        latest_run_status_subquery = Subquery(
+            TaskRun.objects
+            .filter(task_id=OuterRef("pk"))
+            .order_by("-started_at", "-id")
+            .values("status")[:1]
+        )
+
+        product_task_attention_count = Coalesce(
+            Subquery(
+                DataProductTask.objects
+                .filter(thing_id=OuterRef("pk"))
+                .annotate(latest_run_status=latest_run_status_subquery)
+                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                .values("thing_id")
+                .annotate(count=Count("pk"))
+                .values("count"),
+                output_field=IntegerField()
+            ),
+            0
+        )
+
+        monitoring_task_attention_count = Coalesce(
+            Subquery(
+                MonitoringTask.objects
+                .filter(thing_id=OuterRef("pk"))
+                .annotate(latest_run_status=latest_run_status_subquery)
+                .filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now))
+                .values("thing_id")
+                .annotate(count=Count("pk"))
+                .values("count"),
+                output_field=IntegerField()
+            ),
+            0
+        )
+
+        queryset = Thing.objects.visible(principal=principal)
+
+        if workspace_id:
+            queryset = queryset.filter(workspace_id__in=workspace_id)
+        if site_type:
+            queryset = queryset.filter(site_type__in=site_type)
+
+        return queryset.annotate(
+            product_task_count=Count("data_product_tasks", distinct=True),
+            product_task_attention_count=product_task_attention_count,
+            monitoring_task_count=Count("monitoring_tasks", distinct=True),
+            monitoring_task_attention_count=monitoring_task_attention_count,
+        ).order_by("name")
 
     def list(
         self,

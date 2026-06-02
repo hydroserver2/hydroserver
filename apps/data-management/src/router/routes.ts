@@ -1,5 +1,6 @@
 import { RouteRecordRaw } from 'vue-router'
 import { enableHomePage } from '@/config/homeConfig'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const disableAccountCreation =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
@@ -99,7 +100,10 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/orchestration',
     name: 'Orchestration',
-    redirect: '/orchestration/ingestion',
+    redirect: () =>
+      useWorkspaceStore().selectedWorkspace
+        ? '/orchestration/ingestion'
+        : '/orchestration/workspaces',
   },
   {
     path: '/orchestration/:view',

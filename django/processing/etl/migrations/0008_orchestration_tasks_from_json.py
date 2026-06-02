@@ -28,6 +28,8 @@ def migrate_json_forward(apps, schema_editor):
     DataConnection = apps.get_model("etl", "DataConnection")
     Datastream = apps.get_model("sta", "Datastream")
 
+    PeriodicTask = apps.get_model("django_celery_beat", "PeriodicTask")
+
     EtlTask = apps.get_model("etl", "EtlTask")
     EtlMapping = apps.get_model("etl", "EtlMapping")
     BaseTask = apps.get_model("orchestration", "Task")
@@ -173,6 +175,11 @@ def migrate_json_forward(apps, schema_editor):
                 result=old_run.result,
             )
             BaseTaskRun.objects.filter(id=new_run.id).update(started_at=old_run.started_at)
+
+        if periodic_task:
+            PeriodicTask.objects.filter(pk=periodic_task.id).update(
+                task="processing.etl.tasks.run_etl_task",
+            )
 
         if old_task.task_type == "ETL":
             task_variables = {
