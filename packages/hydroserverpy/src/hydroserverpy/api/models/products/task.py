@@ -38,7 +38,7 @@ class DataProductTask(HydroServerBaseModel):
     _editable_fields: ClassVar[set[str]] = {"name", "description"}
 
     def __init__(self, client: "HydroServer", **data):
-        super().__init__(client=client, service=client.data_product_tasks, **data)
+        super().__init__(client=client, service=client.dataproducttasks, **data)
 
     @classmethod
     def get_route(cls):
@@ -47,7 +47,7 @@ class DataProductTask(HydroServerBaseModel):
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this data product task."""
 
-        return self.client.data_product_tasks.trigger(uid=self.uid)
+        return self.client.dataproducttasks.trigger(uid=self.uid)
 
     def list_runs(
         self,
@@ -62,7 +62,7 @@ class DataProductTask(HydroServerBaseModel):
     ) -> List[TaskRun]:
         """Get a collection of task runs for this data product task."""
 
-        return self.client.data_product_tasks.list_runs(
+        return self.client.dataproducttasks.list_runs(
             uid=self.uid,
             page=page,
             page_size=page_size,
@@ -77,4 +77,4 @@ class DataProductTask(HydroServerBaseModel):
     def get_run(self, run_id: Union[uuid.UUID, str]) -> TaskRun:
         """Get a single task run for this data product task."""
 
-        return self.client.data_product_tasks.get_run(uid=self.uid, run_id=run_id)
+        return self.client.dataproducttasks.get_run(uid=self.uid, run_id=run_id)

@@ -18,7 +18,7 @@ class RatingCurve(HydroServerBaseModel):
     _editable_fields: ClassVar[set[str]] = set()
 
     def __init__(self, client: "HydroServer", **data):
-        super().__init__(client=client, service=client.rating_curves, **data)
+        super().__init__(client=client, service=client.ratingcurves, **data)
 
     def save(self):
         """Saves changes to this resource to HydroServer."""

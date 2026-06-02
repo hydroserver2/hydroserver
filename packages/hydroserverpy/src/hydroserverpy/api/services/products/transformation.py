@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from hydroserverpy import HydroServer
 
 
-class TransformationService:
+class DataProductTransformationService:
     def __init__(self, client: "HydroServer"):
         self.client = client
 

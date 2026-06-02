@@ -27,7 +27,7 @@ class MonitoringRule(HydroServerBaseModel):
     }
 
     def __init__(self, client: "HydroServer", task_id: uuid.UUID, **data):
-        super().__init__(client=client, service=client.monitoring_rules, task_id=task_id, **data)
+        super().__init__(client=client, service=client.monitoringrules, task_id=task_id, **data)
 
     @classmethod
     def get_route(cls):
@@ -37,7 +37,7 @@ class MonitoringRule(HydroServerBaseModel):
         """Save changes to this rule to HydroServer."""
 
         if self.unsaved_changes:
-            saved = self.client.monitoring_rules.update(
+            saved = self.client.monitoringrules.update(
                 task_id=self.task_id, uid=self.uid, **self.unsaved_changes
             )
             self._server_data = saved.dict(by_alias=False).copy()
@@ -46,5 +46,5 @@ class MonitoringRule(HydroServerBaseModel):
     def delete(self):
         """Delete this rule from HydroServer."""
 
-        self.client.monitoring_rules.delete(task_id=self.task_id, uid=self.uid)
+        self.client.monitoringrules.delete(task_id=self.task_id, uid=self.uid)
         self.uid = None

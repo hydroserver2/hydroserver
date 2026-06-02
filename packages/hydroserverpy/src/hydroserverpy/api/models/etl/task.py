@@ -30,7 +30,7 @@ class EtlTask(HydroServerBaseModel):
     _editable_fields: ClassVar[set[str]] = set()
 
     def __init__(self, client: "HydroServer", **data):
-        super().__init__(client=client, service=client.tasks, **data)
+        super().__init__(client=client, service=client.etltasks, **data)
 
     def save(self):
         """Saves changes to this resource to HydroServer."""
@@ -72,7 +72,7 @@ class EtlTask(HydroServerBaseModel):
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this ETL task."""
 
-        return self.client.tasks.trigger(uid=self.uid)
+        return self.client.etltasks.trigger(uid=self.uid)
 
     def list_runs(
         self,
@@ -87,7 +87,7 @@ class EtlTask(HydroServerBaseModel):
     ) -> List[TaskRun]:
         """Get a collection of task runs for this ETL task."""
 
-        return self.client.tasks.list_runs(
+        return self.client.etltasks.list_runs(
             uid=self.uid,
             page=page,
             page_size=page_size,
@@ -102,4 +102,4 @@ class EtlTask(HydroServerBaseModel):
     def get_run(self, run_id: Union[uuid.UUID, str]) -> TaskRun:
         """Get a single task run for this ETL task."""
 
-        return self.client.tasks.get_run(uid=self.uid, run_id=run_id)
+        return self.client.etltasks.get_run(uid=self.uid, run_id=run_id)

@@ -31,9 +31,13 @@ The hydroserverpy connection instance exposes the following types of core data a
 - processinglevels
 - observedproperties
 - resultqualifiers
-- orchestrationsystems
 - dataconnections
-- tasks
+- etltasks
+- monitoringtasks
+- monitoringrules
+- ratingcurves
+- dataproducttasks
+- dataproducttransformations
 
 ## Collections
 
@@ -1119,54 +1123,49 @@ data_connection = hs_api.dataconnections.get(uid='00000000-0000-0000-0000-000000
 data_connection.delete()
 ```
 
-## Tasks
+## ETL Tasks
 
-Tasks contain specific configuration settings that an orchestration system can use to perform ETL. Tasks can be scheduled to run at specific intervals or setup to be run manually.
+ETL tasks contain specific configuration settings that an orchestration system can use to perform ETL. Tasks can be scheduled to run at specific intervals or set up to be run manually.
 
 ---
 
-### Example: Get Tasks
+### Example: Get ETL Tasks
 
 ```python
-# Get all tasks
-tasks = hs_api.tasks.list()
+# Get all ETL tasks
+tasks = hs_api.etltasks.list()
 
-# Get tasks belonging to a workspace
-workspace_tasks = hs_api.tasks.list(workspace="00000000-0000-0000-0000-000000000000")
+# Get ETL tasks belonging to a workspace
+workspace_tasks = hs_api.etltasks.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get task with a given ID
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get ETL task with a given ID
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
-### Example: Create Task
+### Example: Create ETL Task
 
 ```python
-# Create a new task in HydroServer
-new_task = hs_api.tasks.create(
+# Create a new ETL task in HydroServer
+new_task = hs_api.etltasks.create(
     name='Example Task',
-    extractor_variables={},
-    transformer_variables={},
-    loader_variables={},
     workspace='00000000-0000-0000-0000-000000000000',
     data_connection='00000000-0000-0000-0000-000000000000',
     interval=1,
     interval_period='days',
     mappings=[{
-        'sourceIdentifier': 'temperature',
-        'paths': [{
-            'targetIdentifier': '00000000-0000-0000-0000-000000000000'
-        }]
+        'source_identifier': 'temperature',
+        'target_datastream_id': '00000000-0000-0000-0000-000000000000'
     }]
 )
 ```
 
-Each of the methods above will return one or more Task objects. The examples below show the main properties and methods available to a Task object.
+Each of the methods above will return one or more EtlTask objects. The examples below show the main properties and methods available to an EtlTask object.
 
-### Example: Modify a Task
+### Example: Modify an ETL Task
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get an ETL task
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Update one or more properties of the task.
 task.name = 'Updated Task'
@@ -1175,97 +1174,472 @@ task.name = 'Updated Task'
 task.save()
 ```
 
-### Example: Refresh Task data from HydroServer
+### Example: Refresh ETL Task data from HydroServer
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get an ETL task
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Refresh task data from HydroServer
 task.refresh()
 ```
 
-### Example: Trigger HydroServer to run an internal Task
+### Example: Trigger an ETL Task
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get an ETL task
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Trigger a task run.
-task.run()
+# Trigger an immediate run of the task
+task_run = task.trigger()
 ```
 
-### Example: Delete Task from HydroServer
+### Example: Get ETL Task Runs
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get an ETL task
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# List task runs
+task_runs = task.list_runs()
+
+# Get a specific task run by ID
+task_run = task.get_run(run_id='00000000-0000-0000-0000-000000000000')
+```
+
+### Example: Delete ETL Task from HydroServer
+
+```python
+# Get an ETL task
+task = hs_api.etltasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Delete the task from HydroServer
 task.delete()
 ```
 
-## Task Runs
+## Monitoring Tasks
 
-HydroServer can store data about specific task runs. Task run information can also be uploaded to HydroServer from external orchestration systems to be reported on the orchestration dashboard.
+Monitoring tasks define scheduled checks on datastreams and alert recipients when rules are triggered. They can be scheduled to run at specific intervals or run manually.
 
 ---
 
-### Example: Get Task Runs
+### Example: Get Monitoring Tasks
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get all monitoring tasks
+monitoring_tasks = hs_api.monitoringtasks.list()
 
-# Get all task runs
-task_runs = task.get_task_runs()
+# Get monitoring tasks belonging to a workspace
+workspace_monitoring_tasks = hs_api.monitoringtasks.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get task run with a given ID
-task_run = task.get_task_run(uid='00000000-0000-0000-0000-000000000000')
+# Get monitoring tasks for a specific thing
+thing_monitoring_tasks = hs_api.monitoringtasks.list(thing="00000000-0000-0000-0000-000000000000")
+
+# Get monitoring task with a given ID
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
-### Example: Create Task Run
+### Example: Create Monitoring Task
 
 ```python
-from datetime import datetime, timezone
-
-...
-
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
-
-# Create a new task run in HydroServer
-new_task_run = task.create_task_run(
-    status="SUCCESS",
-    started_at=datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc),
-    finished_at=datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc),
-    result={
-        "message": "Task executed successfully."
-    }
+# Create a new monitoring task in HydroServer
+new_monitoring_task = hs_api.monitoringtasks.create(
+    name='Example Monitoring Task',
+    thing='00000000-0000-0000-0000-000000000000',
+    description='Monitors datastreams for out-of-range values.',
+    recipients=['user@example.com'],
+    interval=1,
+    interval_period='hours',
+    enabled=True
 )
 ```
 
-Each of the methods above will return one or more TaskRun objects. The examples below show the main properties and methods available to a TaskRun object.
+Each of the methods above will return one or more MonitoringTask objects. The examples below show the main properties and methods available to a MonitoringTask object.
 
-### Example: Modify a Task Run
+### Example: Modify a Monitoring Task
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a monitoring task
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get task run with a given ID
-task_run = task.update_task_run(
-    uid='00000000-0000-0000-0000-000000000000',
-    status='SUCCESS'
+# Update one or more properties of the monitoring task.
+monitoring_task.name = 'Updated Monitoring Task'
+monitoring_task.recipients = ['user@example.com', 'other@example.com']
+
+# Save the changes back to HydroServer.
+monitoring_task.save()
+```
+
+### Example: Trigger a Monitoring Task
+
+```python
+# Get a monitoring task
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Trigger an immediate run of the monitoring task
+task_run = monitoring_task.trigger()
+```
+
+### Example: Get Monitoring Task Runs
+
+```python
+# Get a monitoring task
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# List task runs
+task_runs = monitoring_task.list_runs()
+
+# Get a specific task run by ID
+task_run = monitoring_task.get_run(run_id='00000000-0000-0000-0000-000000000000')
+```
+
+### Example: Get Monitoring Rules for a Task
+
+```python
+# Get a monitoring task
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Get all rules for the task (cached)
+rules = monitoring_task.rules
+```
+
+### Example: Delete Monitoring Task from HydroServer
+
+```python
+# Get a monitoring task
+monitoring_task = hs_api.monitoringtasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Delete the monitoring task from HydroServer
+monitoring_task.delete()
+```
+
+## Monitoring Rules
+
+Monitoring rules define the conditions checked by a monitoring task on a specific datastream. Each rule is scoped to a task.
+
+---
+
+### Example: Get Monitoring Rules
+
+```python
+# Get all rules for a monitoring task
+rules = hs_api.monitoringrules.list(task_id='00000000-0000-0000-0000-000000000000')
+
+# Filter rules by datastream
+datastream_rules = hs_api.monitoringrules.list(
+    task_id='00000000-0000-0000-0000-000000000000',
+    datastream='00000000-0000-0000-0000-000000000000'
+)
+
+# Get a specific monitoring rule by ID
+rule = hs_api.monitoringrules.get(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid='00000000-0000-0000-0000-000000000000'
 )
 ```
 
-### Example: Delete Task Run from HydroServer
+### Example: Create Monitoring Rule
 
 ```python
-# Get a task
-task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
+# Create a range rule on a monitoring task
+new_rule = hs_api.monitoringrules.create(
+    task_id='00000000-0000-0000-0000-000000000000',
+    datastream='00000000-0000-0000-0000-000000000000',
+    rule_type='range',
+    min_value=0.0,
+    max_value=100.0
+)
 
-# Delete task run with a given ID
-task.delete_task_run(uid='00000000-0000-0000-0000-000000000000')
+# Create a missing data rule
+missing_rule = hs_api.monitoringrules.create(
+    task_id='00000000-0000-0000-0000-000000000000',
+    datastream='00000000-0000-0000-0000-000000000000',
+    rule_type='missing_data',
+    window_interval=24,
+    window_interval_units='hours'
+)
+```
+
+Each of the methods above will return one or more MonitoringRule objects. The examples below show the main properties and methods available to a MonitoringRule object.
+
+### Example: Modify a Monitoring Rule
+
+```python
+# Get a monitoring rule
+rule = hs_api.monitoringrules.get(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid='00000000-0000-0000-0000-000000000000'
+)
+
+# Update the rule's thresholds
+rule.min_value = -10.0
+rule.max_value = 150.0
+
+# Save the changes back to HydroServer.
+rule.save()
+```
+
+### Example: Delete Monitoring Rule from HydroServer
+
+```python
+# Get a monitoring rule
+rule = hs_api.monitoringrules.get(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid='00000000-0000-0000-0000-000000000000'
+)
+
+# Delete the rule from HydroServer
+rule.delete()
+```
+
+## Rating Curves
+
+Rating curves define a relationship between two variables (e.g., stage and discharge) associated with a thing. They can be used as transformations in data product tasks.
+
+---
+
+### Example: Get Rating Curves
+
+```python
+# Get all rating curves
+rating_curves = hs_api.ratingcurves.list()
+
+# Get rating curves belonging to a workspace
+workspace_rating_curves = hs_api.ratingcurves.list(workspace="00000000-0000-0000-0000-000000000000")
+
+# Get rating curves for a specific thing
+thing_rating_curves = hs_api.ratingcurves.list(thing="00000000-0000-0000-0000-000000000000")
+
+# Get rating curve with a given ID
+rating_curve = hs_api.ratingcurves.get(uid='00000000-0000-0000-0000-000000000000')
+```
+
+### Example: Create Rating Curve
+
+```python
+# Create a new rating curve in HydroServer
+new_rating_curve = hs_api.ratingcurves.create(
+    name='Stage-Discharge Curve',
+    thing='00000000-0000-0000-0000-000000000000',
+    fitting_method='power_law',
+    description='Stage to discharge rating curve.',
+    points=[(0.1, 0.5), (0.5, 5.0), (1.0, 15.0), (2.0, 50.0)]
+)
+```
+
+Each of the methods above will return one or more RatingCurve objects. The examples below show the main properties and methods available to a RatingCurve object.
+
+### Example: Modify a Rating Curve
+
+```python
+# Get a rating curve
+rating_curve = hs_api.ratingcurves.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Update one or more properties of the rating curve.
+rating_curve.name = 'Updated Rating Curve'
+rating_curve.points = [(0.1, 0.4), (0.5, 4.8), (1.0, 14.5), (2.0, 49.0)]
+
+# Save the changes back to HydroServer.
+rating_curve.save()
+```
+
+### Example: Delete Rating Curve from HydroServer
+
+```python
+# Get a rating curve
+rating_curve = hs_api.ratingcurves.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Delete the rating curve from HydroServer
+rating_curve.delete()
+```
+
+## Data Product Tasks
+
+Data product tasks define scheduled computations that produce derived datastream observations from source datastreams using one or more transformations.
+
+---
+
+### Example: Get Data Product Tasks
+
+```python
+# Get all data product tasks
+data_product_tasks = hs_api.dataproducttasks.list()
+
+# Get data product tasks belonging to a workspace
+workspace_data_product_tasks = hs_api.dataproducttasks.list(workspace="00000000-0000-0000-0000-000000000000")
+
+# Get data product tasks for a specific thing
+thing_data_product_tasks = hs_api.dataproducttasks.list(thing="00000000-0000-0000-0000-000000000000")
+
+# Get data product task with a given ID
+data_product_task = hs_api.dataproducttasks.get(uid='00000000-0000-0000-0000-000000000000')
+```
+
+### Example: Create Data Product Task
+
+```python
+# Create a new data product task in HydroServer
+new_data_product_task = hs_api.dataproducttasks.create(
+    name='Example Data Product Task',
+    thing='00000000-0000-0000-0000-000000000000',
+    description='Produces a derived datastream from source observations.',
+    interval=1,
+    interval_period='hours',
+    enabled=True
+)
+```
+
+Each of the methods above will return one or more DataProductTask objects. The examples below show the main properties and methods available to a DataProductTask object.
+
+### Example: Modify a Data Product Task
+
+```python
+# Get a data product task
+data_product_task = hs_api.dataproducttasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Update one or more properties of the task.
+data_product_task.name = 'Updated Data Product Task'
+
+# Save the changes back to HydroServer.
+data_product_task.save()
+```
+
+### Example: Trigger a Data Product Task
+
+```python
+# Get a data product task
+data_product_task = hs_api.dataproducttasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Trigger an immediate run of the data product task
+task_run = data_product_task.trigger()
+```
+
+### Example: Get Data Product Task Runs
+
+```python
+# Get a data product task
+data_product_task = hs_api.dataproducttasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# List task runs
+task_runs = data_product_task.list_runs()
+
+# Get a specific task run by ID
+task_run = data_product_task.get_run(run_id='00000000-0000-0000-0000-000000000000')
+```
+
+### Example: Delete Data Product Task from HydroServer
+
+```python
+# Get a data product task
+data_product_task = hs_api.dataproducttasks.get(uid='00000000-0000-0000-0000-000000000000')
+
+# Delete the data product task from HydroServer
+data_product_task.delete()
+```
+
+## Data Product Transformations
+
+Data product transformations define how source datastream observations are converted into output observations within a data product task. Four transformation types are supported: rating curve, expression, composite expression, and aggregation.
+
+---
+
+### Example: Manage Rating Curve Transformations
+
+```python
+# List rating curve transformations for a task
+rating_curve_transformations = hs_api.dataproducttransformations.list_rating_curve(
+    task_id='00000000-0000-0000-0000-000000000000'
+)
+
+# Create a rating curve transformation
+new_rating_curve_transformation = hs_api.dataproducttransformations.create_rating_curve(
+    task_id='00000000-0000-0000-0000-000000000000',
+    output_datastream='00000000-0000-0000-0000-000000000000',
+    input_datastream='11111111-1111-1111-1111-111111111111',
+    rating_curve='22222222-2222-2222-2222-222222222222'
+)
+
+# Update a rating curve transformation
+updated_rating_curve_transformation = hs_api.dataproducttransformations.update_rating_curve(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid=new_rating_curve_transformation.uid,
+    input_datastream='33333333-3333-3333-3333-333333333333',
+    rating_curve='22222222-2222-2222-2222-222222222222'
+)
+
+# Delete a rating curve transformation
+hs_api.dataproducttransformations.delete_rating_curve(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid=new_rating_curve_transformation.uid
+)
+```
+
+### Example: Manage Expression Transformations
+
+```python
+# List expression transformations for a task
+expression_transformations = hs_api.dataproducttransformations.list_expression(
+    task_id='00000000-0000-0000-0000-000000000000'
+)
+
+# Create an expression transformation
+new_expression_transformation = hs_api.dataproducttransformations.create_expression(
+    task_id='00000000-0000-0000-0000-000000000000',
+    output_datastream='00000000-0000-0000-0000-000000000000',
+    input_datastream='11111111-1111-1111-1111-111111111111',
+    formula='x * 0.3048',  # feet to meters
+    variable_name='x'
+)
+
+# Delete an expression transformation
+hs_api.dataproducttransformations.delete_expression(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid=new_expression_transformation.uid
+)
+```
+
+### Example: Manage Composite Expression Transformations
+
+```python
+# Create a composite expression transformation combining multiple input datastreams
+new_composite_expression_transformation = hs_api.dataproducttransformations.create_composite_expression(
+    task_id='00000000-0000-0000-0000-000000000000',
+    output_datastream='00000000-0000-0000-0000-000000000000',
+    input_datastreams=[
+        {'datastream_id': '11111111-1111-1111-1111-111111111111', 'variable_name': 'a'},
+        {'datastream_id': '22222222-2222-2222-2222-222222222222', 'variable_name': 'b'},
+    ],
+    formula='(a + b) / 2',
+    output_interval=1,
+    output_interval_units='hours'
+)
+
+# Delete a composite expression transformation
+hs_api.dataproducttransformations.delete_composite_expression(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid=new_composite_expression_transformation.uid
+)
+```
+
+### Example: Manage Aggregation Transformations
+
+```python
+# Create an aggregation transformation
+new_aggregation_transformation = hs_api.dataproducttransformations.create_aggregation(
+    task_id='00000000-0000-0000-0000-000000000000',
+    output_datastream='00000000-0000-0000-0000-000000000000',
+    input_datastream='11111111-1111-1111-1111-111111111111',
+    aggregation_method='mean',
+    output_interval=1,
+    output_interval_units='hours',
+    timezone_type='iana',
+    timezone='America/Denver',
+    min_values=3
+)
+
+# Delete an aggregation transformation
+hs_api.dataproducttransformations.delete_aggregation(
+    task_id='00000000-0000-0000-0000-000000000000',
+    uid=new_aggregation_transformation.uid
+)
 ```
