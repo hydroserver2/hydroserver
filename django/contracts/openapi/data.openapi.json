@@ -1767,6 +1767,16 @@
             "title": "Sourceurl",
             "type": "string"
           },
+          "taskAttentionCount": {
+            "default": 0,
+            "title": "Taskattentioncount",
+            "type": "integer"
+          },
+          "taskCount": {
+            "default": 0,
+            "title": "Taskcount",
+            "type": "integer"
+          },
           "timezone": {
             "anyOf": [
               {
@@ -9208,6 +9218,75 @@
           "fileAttachments"
         ],
         "title": "ThingSummaryResponse",
+        "type": "object"
+      },
+      "ThingTaskSummaryQueryParameters": {
+        "properties": {
+          "site_type": {
+            "default": [],
+            "description": "Filter task summaries by site type.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Site Type",
+            "type": "array"
+          },
+          "workspace_id": {
+            "default": [],
+            "description": "Filter task summaries by workspace ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Workspace Id",
+            "type": "array"
+          }
+        },
+        "title": "ThingTaskSummaryQueryParameters",
+        "type": "object"
+      },
+      "ThingTaskSummaryResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "monitoringTaskAttentionCount": {
+            "default": 0,
+            "title": "Monitoringtaskattentioncount",
+            "type": "integer"
+          },
+          "monitoringTaskCount": {
+            "default": 0,
+            "title": "Monitoringtaskcount",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "productTaskAttentionCount": {
+            "default": 0,
+            "title": "Producttaskattentioncount",
+            "type": "integer"
+          },
+          "productTaskCount": {
+            "default": 0,
+            "title": "Producttaskcount",
+            "type": "integer"
+          },
+          "siteType": {
+            "title": "Sitetype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "siteType"
+        ],
+        "title": "ThingTaskSummaryResponse",
         "type": "object"
       },
       "TransformationInputPostBody": {
@@ -24062,6 +24141,87 @@
           }
         ],
         "summary": "Get Thing Tag Keys",
+        "tags": [
+          "Things"
+        ]
+      }
+    },
+    "/api/data/things/task-summaries": {
+      "get": {
+        "description": "Get task count summaries for Things associated with the authenticated user.",
+        "operationId": "interfaces_api_views_sta_thing_get_thing_task_summaries",
+        "parameters": [
+          {
+            "description": "Filter task summaries by workspace ID.",
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter task summaries by workspace ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspace Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter task summaries by site type.",
+            "in": "query",
+            "name": "site_type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter task summaries by site type.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Site Type",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ThingTaskSummaryResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ],
+        "summary": "Get Thing Task Summaries",
         "tags": [
           "Things"
         ]
