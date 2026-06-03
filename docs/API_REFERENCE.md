@@ -73,9 +73,11 @@ call `reload()` once construction is done to initialize.
 
 | Name        | Type                            | Notes                                                             |
 |-------------|---------------------------------|-------------------------------------------------------------------|
-| `dataX`     | `Float64Array`                  | Timestamps, ms epoch.                                             |
-| `dataY`     | `Float32Array`                  | Values.                                                           |
-| `history`   | `HistoryItem[]`                 | Append-only log since the last `reload()`.                        |
+| `dataX`     | `Float64Array`                  | Timestamps (ms epoch) of the **current window** (see `applyWindow`). |
+| `dataY`     | `Float32Array`                  | Values of the current window.                                    |
+| `rawData`   | `{ datetimes, dataValues }`     | The full series (source of truth); `dataX`/`dataY` are its windowed slice. |
+| `windowBegin` / `windowEnd` | `number`          | Inclusive epoch-ms bounds materialized into `dataX`/`dataY`. `±Infinity` = full series. |
+| `history`   | `HistoryItem[]`                 | Append-only log since the last `reload()` / window change.        |
 | `redoStack` | `HistoryItem[]`                 | Items popped by `undo()`, available to `redo()`.                  |
 
 **Methods**
@@ -87,7 +89,8 @@ call `reload()` once construction is done to initialize.
 | `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<void>` | Run one filter op. Produces a selection.                                             |
 | `undo()`                                     | `Promise<void>`  | Pop the last history entry; replay the rest from a fresh `reload()`.                       |
 | `redo()`                                     | `Promise<void>`  | Replay the most recently undone entry.                                                     |
-| `reload()`                                   | `Promise<void>`  | Re-initialize the typed arrays from the original constructor inputs; clear history.        |
+| `applyWindow(begin, end)`                    | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. Clears history on a real change; no-op when the window is unchanged. |
+| `reload()`                                   | `Promise<void>`  | Re-initialize the typed arrays from `rawData`, sliced to the current window; clear history. |
 | `reloadHistory()`                            | `Promise<void>`  | Replay current history against a fresh `reload()`.                                         |
 | `removeHistoryItem(index: number)`           | `Promise<void>`  | Drop a specific entry; replay the rest.                                                    |
 

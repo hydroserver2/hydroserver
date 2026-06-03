@@ -87,6 +87,13 @@ themselves are private — operations are driven by enum + args so the
 same call shape works at runtime, on replay from a saved QC history, and in
 unit tests.
 
+The record holds the full series in `rawData`, but `dataX` / `dataY` (the
+operation surface) carry only the active **window**. `applyWindow(begin,
+end)` slices `rawData` into `dataX` / `dataY`; `reload()` restores that
+windowed baseline. A window change clears history — operations only ever see
+data inside the current window, so a new window starts from a fresh QC
+baseline.
+
 ## Source layout
 
 ```

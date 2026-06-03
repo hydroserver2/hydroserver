@@ -201,6 +201,16 @@ export class ObservationRecord {
     dataValues: Float32Array<ArrayBuffer> | number[];
   };
 
+  /**
+   * Inclusive epoch-ms window currently materialized into `dataset.source`.
+   * `rawData` is the full series (source of truth); `dataset.source`
+   * (`dataX` / `dataY`) holds only the slice within `[windowBegin,
+   * windowEnd]`. Defaults to the full range, so a record with no window
+   * applied behaves exactly as before. Set via `applyWindow`.
+   */
+  windowBegin: number = -Infinity;
+  windowEnd: number = Infinity;
+
   constructor(dataArrays: {
     datetimes: Float64Array<ArrayBuffer> | number[];
     dataValues: Float32Array<ArrayBuffer> | number[];
@@ -230,6 +240,44 @@ export class ObservationRecord {
 
     this.history.length = 0;
     this.isLoading = false;
+  }
+
+  /**
+   * Materialize the inclusive epoch-ms window `[begin, end]` of `rawData`
+   * into `dataset.source`. A real window change clears history — the new
+   * window is a fresh QC baseline. An unchanged window is a no-op so an
+   * unrelated reload doesn't discard in-flight edits.
+   */
+  async applyWindow(begin: number, end: number) {
+    if (begin === this.windowBegin && end === this.windowEnd) return;
+    this.windowBegin = begin;
+    this.windowEnd = end;
+    await this.loadData(this._windowedRaw());
+  }
+
+  /**
+   * The slice of `rawData` within `[windowBegin, windowEnd]`, or the full
+   * `rawData` when no window is set. `rawData` is ascending, so the bounds
+   * are a pair of binary searches.
+   */
+  private _windowedRaw() {
+    if (this.windowBegin === -Infinity && this.windowEnd === Infinity) {
+      return this.rawData;
+    }
+    const times = this.rawData.datetimes;
+    const start = findFirstGreaterOrEqual(times, this.windowBegin);
+    const stop = findLastLessOrEqual(times, this.windowEnd) + 1;
+    if (stop <= start) {
+      return { datetimes: [] as number[], dataValues: [] as number[] };
+    }
+    const datetimes = Array.isArray(times)
+      ? times.slice(start, stop)
+      : times.subarray(start, stop);
+    const values = this.rawData.dataValues;
+    const dataValues = Array.isArray(values)
+      ? values.slice(start, stop)
+      : values.subarray(start, stop);
+    return { datetimes, dataValues };
   }
 
   get dataX() {
@@ -311,7 +359,7 @@ export class ObservationRecord {
     this.loadingTime = null;
     this.isLoading = true;
     this.history.length = 0;
-    await this.loadData(this.rawData);
+    await this.loadData(this._windowedRaw());
   }
 
   /**

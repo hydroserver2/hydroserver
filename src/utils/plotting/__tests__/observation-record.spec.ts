@@ -114,6 +114,69 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('applyWindow', () => {
+    const grid = buildUniformData(10); // 10 points, ascending
+    const t = (i: number) => grid.datetimes[i]!;
+    const makeRec = () =>
+      new ObservationRecord({
+        datetimes: grid.datetimes,
+        dataValues: grid.dataValues,
+      });
+
+    it('materializes only the window into dataset.source; rawData stays full', async () => {
+      const rec = makeRec();
+      await rec.reload();
+      await rec.applyWindow(t(3), t(6)); // inclusive → points 3..6
+      expect(rec.dataX.length).toBe(4);
+      expect(rec.dataX[0]).toBe(t(3));
+      expect(rec.dataX[rec.dataX.length - 1]).toBe(t(6));
+      expect(rec.rawData.datetimes.length).toBe(10);
+    });
+
+    it('re-widens back to the full range from rawData', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(3), t(6));
+      expect(rec.dataX.length).toBe(4);
+      await rec.applyWindow(t(0), t(9));
+      expect(rec.dataX.length).toBe(10);
+    });
+
+    it('clears history on a window change', async () => {
+      const rec = makeRec();
+      await rec.reload();
+      await rec.dispatch(EnumEditOperations.ADD_POINTS, [[t(1) + 1, 5]]);
+      expect(rec.history.length).toBe(1);
+      await rec.applyWindow(t(2), t(8));
+      expect(rec.history).toEqual([]);
+    });
+
+    it('is a no-op when the window is unchanged (keeps edits + history)', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(2), t(8));
+      await rec.dispatch(EnumEditOperations.ADD_POINTS, [[t(3) + 1, 5]]);
+      const lenAfterEdit = rec.dataX.length;
+      const histLen = rec.history.length;
+      await rec.applyWindow(t(2), t(8)); // same window
+      expect(rec.dataX.length).toBe(lenAfterEdit);
+      expect(rec.history.length).toBe(histLen);
+    });
+
+    it('reload() restores the windowed baseline, not the full series', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(4), t(7)); // 4 points
+      await rec.dispatch(EnumEditOperations.ADD_POINTS, [[t(5) + 1, 5]]);
+      expect(rec.dataX.length).toBe(5);
+      await rec.reload();
+      expect(rec.dataX.length).toBe(4);
+    });
+
+    it('yields an empty dataset when no points fall in the window', async () => {
+      const rec = makeRec();
+      await rec.applyWindow(t(9) + 1, t(9) + 1000);
+      expect(rec.dataX.length).toBe(0);
+    });
+  });
+
   describe('edit operations', () => {
     let rec: ObservationRecord;
     beforeEach(async () => {
