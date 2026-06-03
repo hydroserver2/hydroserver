@@ -101,10 +101,7 @@ const resolveDataProductTaskType = (
 
 const hasEtlMapping = (mapping: TaskMapping) => {
   const anyMapping = mapping as any
-  if (anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId) {
-    return true
-  }
-  return Array.isArray(anyMapping.paths) && anyMapping.paths.length > 0
+  return !!(anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId)
 }
 
 const getEtlNoWorkWarning = (task: TaskExpanded): TaskNoWorkWarning =>

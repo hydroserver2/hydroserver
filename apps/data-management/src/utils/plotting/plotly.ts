@@ -98,7 +98,7 @@ const supportsWebgl = () => {
   return cachedWebglSupport
 }
 
-export function createYAxisConfigurations(
+function createYAxisConfigurations(
   data: GraphSeries[]
 ): YAxisConfigurationMap {
   const yAxisConfigurations: YAxisConfigurationMap = new Map()
@@ -202,7 +202,7 @@ const getExportConfig = (gd: any) => {
   }
 }
 
-export const downloadPlotlyImage = async (
+const downloadPlotlyImage = async (
   gd: any,
   {
     filename,

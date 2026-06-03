@@ -4,10 +4,8 @@ import { DataConnection } from '@hydroserver/client'
 
 export const useDataConnectionStore = defineStore('dataConnection', () => {
   const dataConnection = ref(new DataConnection())
-  const openDataConnectionTableDialog = ref(false)
 
   return {
     dataConnection,
-    openDataConnectionTableDialog,
   }
 })

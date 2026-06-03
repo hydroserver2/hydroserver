@@ -1170,27 +1170,6 @@ function taskUsesRatingCurve(task: any, ratingCurveId: string) {
   ) {
     return true
   }
-
-  const mappings = Array.isArray(task?.mappings) ? task.mappings : []
-  for (const mapping of mappings) {
-    const paths = Array.isArray(mapping?.paths) ? mapping.paths : []
-    for (const path of paths) {
-      const transformations = Array.isArray(path?.dataTransformations)
-        ? path.dataTransformations
-        : []
-      for (const transformation of transformations) {
-        if (
-          String(
-            transformation?.ratingCurveId ??
-              transformation?.ratingCurve?.id ??
-              ''
-          ) === String(ratingCurveId)
-        ) {
-          return true
-        }
-      }
-    }
-  }
   return false
 }
 

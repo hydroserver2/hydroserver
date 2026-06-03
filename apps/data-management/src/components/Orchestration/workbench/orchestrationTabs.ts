@@ -101,9 +101,9 @@ export const TAB_TO_KIND: Record<TabId, TaskKind> = {
 }
 
 export const INGESTION_ACCENT = '#1565C0'
-export const INGESTION_ACCENT_LIGHT = '#E3F2FD'
-export const AGGREGATION_ACCENT = '#6A1B9A'
-export const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
+const INGESTION_ACCENT_LIGHT = '#E3F2FD'
+const AGGREGATION_ACCENT = '#6A1B9A'
+const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
 export const QUALITY_ACCENT = '#00695C'
 export const QUALITY_ACCENT_LIGHT = '#E0F2F1'
 export const WORKSPACE_ACCENT = '#2E7D32'

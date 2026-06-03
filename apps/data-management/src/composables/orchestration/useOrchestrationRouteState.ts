@@ -59,7 +59,7 @@ const DETAIL_VIEW: Record<OrchestrationTaskDetailType, OrchestrationView> = {
   quality: 'quality',
 }
 
-export const DETAIL_KIND: Record<OrchestrationTaskDetailType, TaskKind> = {
+const DETAIL_KIND: Record<OrchestrationTaskDetailType, TaskKind> = {
   ingestion: 'etl',
   aggregation: 'dataProduct',
   expression: 'dataProduct',

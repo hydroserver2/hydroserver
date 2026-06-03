@@ -2,7 +2,7 @@ export const required = [
   (value: string) => !!value || 'This field is required.',
 ]
 
-export const requiredNumber = [
+const requiredNumber = [
   (value: number | string) => {
     if (typeof value === 'number' && !isNaN(value)) return true
     if (
@@ -14,50 +14,50 @@ export const requiredNumber = [
   },
 ]
 
-export const minLength = (length: number) => [
+const minLength = (length: number) => [
   (value: string | number) =>
     (value && `${value}`.length >= length) ||
     `This field must be at least ${length} characters long.`,
 ]
 
-export const maxLength = (max: number) => [
+const maxLength = (max: number) => [
   (value: string | number) =>
     !value || `${value}`.length <= max || `Maximum ${max} characters allowed.`,
 ]
 
-export const lessThan = (max: number, name?: string) => [
+const lessThan = (max: number, name?: string) => [
   (value: number) =>
     value == null ||
     value < max ||
     `Value must be less than ${name ? name : max}`,
 ]
 
-export const lessThanOrEqualTo = (max: number, name?: string) => [
+const lessThanOrEqualTo = (max: number, name?: string) => [
   (value: number) =>
     value == null ||
     value <= max ||
     `Value must be less than or equal to ${name ? name : max}`,
 ]
 
-export const greaterThan = (min: number, name?: string) => [
+const greaterThan = (min: number, name?: string) => [
   (value: number) =>
     value == null ||
     value > min ||
     `Value must be greater than ${name ? name : min}`,
 ]
 
-export const greaterThanOrEqualTo = (min: number, name?: string) => [
+const greaterThanOrEqualTo = (min: number, name?: string) => [
   (value: number) =>
     value == null ||
     value >= min ||
     `Value must be greater than or equal to ${name ? name : min}`,
 ]
 
-export const emailFormat = [
+const emailFormat = [
   (value: string) => /.+@.+\..+/.test(value) || 'Email must be valid.',
 ]
 
-export const phoneNumber = [
+const phoneNumber = [
   (value: string) => {
     if (!value) return true
     const numericValue = value.replace(/\D/g, '')
@@ -71,39 +71,39 @@ export const phoneNumber = [
   },
 ]
 
-export const alphanumeric = [
+const alphanumeric = [
   (value: string) =>
     !value ||
     /^[a-z0-9]+$/i.test(value) ||
     'Only alphanumeric characters are allowed.',
 ]
 
-export const nameRules = [
+const nameRules = [
   (value: string) =>
     !value ||
     /^[a-z0-9 ._'-]*$/i.test(value) ||
     'Only alphanumeric characters and spaces are allowed.',
 ]
 
-export const nonNumericCharacter = [
+const nonNumericCharacter = [
   (value: string) =>
     !value ||
     /\D/.test(value) ||
     'Must contain at least one non-numeric character.',
 ]
 
-export const passwordMatch = (password: string) => [
+const passwordMatch = (password: string) => [
   (value: string) => {
     return password === value || 'Passwords must match.'
   },
 ]
 
-export const noSpaces = [
+const noSpaces = [
   (value: string) =>
     !value || !/\s/.test(value) || 'This field cannot contain spaces.',
 ]
 
-export const urlFormat = [
+const urlFormat = [
   (value: string) => {
     const pattern = new RegExp(
       '^(https?:\\/\\/)?' + // protocol

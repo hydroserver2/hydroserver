@@ -24,20 +24,6 @@ export enum SnackIcon {
   None = 'none',
 }
 
-import {
-  mdiCheckCircle,
-  mdiAlert,
-  mdiAlertCircle,
-  mdiInformation,
-} from '@mdi/js'
-
-export const SnackIconPath = {
-  Success: mdiCheckCircle,
-  Warning: mdiAlert,
-  Error: mdiAlertCircle,
-  Info: mdiInformation,
-} as const
-
 export enum SnackTitle {
   Warning = 'Warning',
   Success = 'Success',
@@ -47,10 +33,7 @@ export enum SnackTitle {
 
 export enum Position {
   Center = 'center',
-  Left = 'left',
-  Right = 'right',
   Bottom = 'bottom',
-  Top = 'top',
 }
 
 export class Snack {

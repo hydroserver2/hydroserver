@@ -51,7 +51,7 @@ export const fetchObservations = async (
   return toObservationRows(res.data as Record<string, unknown>)
 }
 
-export function toDataPointArray(dataArray: DataArray | ObservationArray) {
+function toDataPointArray(dataArray: DataArray | ObservationArray) {
   return (dataArray as ObservationArray).map(([dateValue, value]) => ({
     date: new Date(dateValue),
     value,

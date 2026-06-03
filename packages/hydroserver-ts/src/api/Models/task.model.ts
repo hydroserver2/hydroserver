@@ -1,4 +1,3 @@
-import type { Workspace } from '../../types'
 import type { DataConnection } from './data-connection.model'
 
 export class Task {
@@ -58,41 +57,7 @@ export interface EtlMappingPostBody {
   targetDatastreamId: string
 }
 
-export type TaskMapping = EtlMapping | Mapping | EtlMappingPostBody
-
-// ---------------------------------------------------------------------------
-// Legacy stubs — mapping/transformation form components still use these types.
-// They need to be rewritten for the new flat EtlMapping structure.
-// ---------------------------------------------------------------------------
-
-export interface ExpressionDataTransformation { type: 'expression'; expression: string }
-export interface RatingCurveDataTransformation {
-  ratingCurveId: string
-  ratingCurveUrl?: string
-  type: 'rating_curve'
-}
-export interface AggregationDataTransformation {
-  type: 'aggregation'
-  aggregationStatistic: 'simple_mean' | 'time_weighted_daily_mean' | 'last_value_of_day'
-  timezoneMode: 'fixedOffset' | 'daylightSavings'
-  timezone: string
-}
-export type DataTransformation =
-  | ExpressionDataTransformation
-  | RatingCurveDataTransformation
-  | AggregationDataTransformation
-
-export interface MappingPath {
-  targetIdentifier: string | number
-  dataTransformations: DataTransformation[]
-}
-
-export interface Mapping {
-  sourceIdentifier: string | number
-  paths: MappingPath[]
-}
-
-export type TaskType = 'ETL' | 'Aggregation'
+export type TaskMapping = EtlMapping | EtlMappingPostBody
 
 export const TASK_STATUS_OPTIONS = [
   { color: 'green', title: 'OK' },

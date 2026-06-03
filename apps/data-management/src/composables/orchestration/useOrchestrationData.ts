@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref } from 'vue'
 import hs, {
   DataConnection,
   DataProductTaskExpanded,
@@ -177,10 +177,3 @@ export function useOrchestrationData() {
     fetchTasksForGroup,
   }
 }
-
-export type OrchestrationData = ReturnType<typeof useOrchestrationData>
-
-export type TaskListRef =
-  | Ref<TaskExpanded[]>
-  | Ref<DataProductTaskExpanded[]>
-  | Ref<MonitoringTaskExpanded[]>

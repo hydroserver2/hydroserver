@@ -3,7 +3,6 @@ import hs, {
   Datastream,
   DatastreamExtended,
   TaskExpanded,
-  TaskMapping,
   Thing,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
@@ -38,12 +37,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   let workspaceDatastreamRequestId = 0
   let workspaceThingsRequestId = 0
 
-  const targetDatastreamId = (mapping: TaskMapping) =>
-    'targetDatastream' in mapping ? mapping.targetDatastream?.id : null
-
-  const pathTargetIds = (mapping: TaskMapping) =>
-    'paths' in mapping ? mapping.paths.map((path) => path.targetIdentifier) : []
-
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
     workspaceDatastreams.value = []
@@ -64,15 +57,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     const ids = new Set<string>()
 
     for (const task of workspaceTasks.value) {
-      for (const id of (task as any).targetIdentifiers ?? []) {
-        if (id) ids.add(String(id))
-      }
       for (const mapping of task.mappings ?? []) {
-        const id = targetDatastreamId(mapping)
+        const id =
+          'targetDatastream' in mapping ? mapping.targetDatastream?.id : null
         if (id) ids.add(String(id))
-        for (const pathId of pathTargetIds(mapping)) {
-          if (pathId) ids.add(String(pathId))
-        }
       }
     }
 
