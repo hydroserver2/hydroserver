@@ -6,7 +6,6 @@ from typing import Optional, Union, Literal
 from pydantic import Field, ConfigDict, validate_call
 from pydantic.alias_generators import to_camel
 from django.db import transaction
-from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
@@ -74,13 +73,21 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         latest_run_started_at_max: datetime | Unset = Unset,
         latest_run_finished_at_min: datetime | Unset = Unset,
         latest_run_finished_at_max: datetime | Unset = Unset,
-    ) -> tuple[int, QuerySet[EtlTask]]:
+    ) -> tuple[int, list[EtlTask]]:
         """
         Return a collection of ETL tasks.
         """
 
         queryset = self.task_model.objects
-        queryset = self.annotate_latest_run(queryset)
+
+        latest_run_filtered = any(value is not Unset for value in [
+            latest_run_status, latest_run_started_at_min, latest_run_started_at_max,
+            latest_run_finished_at_min, latest_run_finished_at_max,
+        ])
+        if latest_run_filtered or any(
+            term.lstrip("-") in self.latest_run_filter_fields for term in order_by
+        ):
+            queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
         if search_term is not Unset:
             search_vector = SearchVector("name", "description", "data_connection__name")
@@ -116,16 +123,58 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related(
-            "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
+            "periodic_task__crontab", "periodic_task__interval"
         ).prefetch_related("etl_mappings")
         queryset = queryset.visible(principal=principal).distinct()  # noqa
 
         count = queryset.count()
         offset = (page - 1) * page_size
 
-        queryset = queryset[offset:offset + page_size]
+        tasks = self.attach_latest_runs(list(queryset[offset:offset + page_size]))
+        self._attach_data_connections(tasks)
 
-        return count, queryset
+        return count, tasks
+
+    @staticmethod
+    def _attach_data_connections(tasks: list[EtlTask]) -> list[EtlTask]:
+        """
+        Attach fully-resolved data connections to a page of tasks.
+
+        Every ``EtlTaskResponse`` embeds a ``DataConnectionResponse`` whose resolvers (task
+        counts, notification, schedule, recipients) would otherwise issue several queries *per
+        task*. Because a task list is typically scoped to one data connection, we load the few
+        distinct connections once -- with task counts annotated and notification data prefetched --
+        and share them across the tasks, turning ~4 queries per row into a small constant.
+        """
+
+        from processing.etl.services.data_connection import DataConnectionService
+
+        connection_ids = {task.data_connection_id for task in tasks if task.data_connection_id}
+        if not connection_ids:
+            return tasks
+
+        connections = DataConnectionService.annotate_task_counts(
+            DataConnection.objects
+            .filter(pk__in=connection_ids)
+            .select_related(
+                "workspace",
+                "notification__periodic_task__crontab",
+                "notification__periodic_task__interval",
+            )
+            .prefetch_related(
+                "placeholder_variables",
+                "payload",
+                "notification__recipients",
+            )
+        )
+        connections_by_id = {connection.pk: connection for connection in connections}
+
+        for task in tasks:
+            connection = connections_by_id.get(task.data_connection_id)
+            if connection is not None:
+                task.data_connection = connection
+
+        return tasks
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     @transaction.atomic

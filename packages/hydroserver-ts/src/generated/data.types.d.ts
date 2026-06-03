@@ -1500,6 +1500,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/things/task-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Thing Task Summaries
+         * @description Get task count summaries for Things associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_thing_get_thing_task_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/data/things/{thing_id}": {
         parameters: {
             query?: never;
@@ -2410,6 +2430,16 @@ export interface components {
             placeholderVariables: components["schemas"]["PlaceholderVariableResponse"][];
             /** Sourceurl */
             sourceUrl: string;
+            /**
+             * Taskattentioncount
+             * @default 0
+             */
+            taskAttentionCount: number;
+            /**
+             * Taskcount
+             * @default 0
+             */
+            taskCount: number;
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
@@ -4944,6 +4974,53 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+        };
+        /** ThingTaskSummaryQueryParameters */
+        ThingTaskSummaryQueryParameters: {
+            /**
+             * Site Type
+             * @description Filter task summaries by site type.
+             * @default []
+             */
+            site_type: string[];
+            /**
+             * Workspace Id
+             * @description Filter task summaries by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** ThingTaskSummaryResponse */
+        ThingTaskSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Monitoringtaskattentioncount
+             * @default 0
+             */
+            monitoringTaskAttentionCount: number;
+            /**
+             * Monitoringtaskcount
+             * @default 0
+             */
+            monitoringTaskCount: number;
+            /** Name */
+            name: string;
+            /**
+             * Producttaskattentioncount
+             * @default 0
+             */
+            productTaskAttentionCount: number;
+            /**
+             * Producttaskcount
+             * @default 0
+             */
+            productTaskCount: number;
+            /** Sitetype */
+            siteType: string;
         };
         /** TransformationInputPostBody */
         TransformationInputPostBody: {
@@ -11410,6 +11487,40 @@ export interface operations {
                     "application/json": {
                         [key: string]: string[];
                     };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_thing_get_thing_task_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter task summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter task summaries by site type. */
+                site_type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThingTaskSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */

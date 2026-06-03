@@ -47,6 +47,11 @@ class MonitoringRuleService:
 
         response = self.client.request("get", self._task_route(task_id), params=params)
 
+        items = [
+            MonitoringRule(client=self.client, task_id=task_id, **entity)
+            for entity in response.json()
+        ]
+
         collection = HydroServerCollection(
             model=self.model,
             client=self.client,
@@ -54,6 +59,7 @@ class MonitoringRuleService:
             response=response,
             order_by=params.get("order_by"),
             filters={"task_id": task_id},
+            items=items,
         )
 
         if fetch_all:

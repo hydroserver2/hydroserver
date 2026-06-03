@@ -8,6 +8,7 @@ import {
   HydroShareArchive,
   ThingMarker,
   ThingSiteSummary,
+  ThingTaskSummary,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
@@ -27,6 +28,15 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   listSiteSummaries(workspaceId: string): Promise<ApiResponse<ThingSiteSummary[]>> {
     return apiMethods.fetch(
       this.withQuery(`${this._route}/site-summaries`, { workspace_id: workspaceId })
+    )
+  }
+
+  listTaskSummaries(params: {
+    workspace_id?: string | string[]
+    site_type?: string | string[]
+  }): Promise<ApiResponse<ThingTaskSummary[]>> {
+    return apiMethods.fetch(
+      this.withQuery(`${this._route}/task-summaries`, params)
     )
   }
 

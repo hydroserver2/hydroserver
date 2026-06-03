@@ -60,6 +60,36 @@ describe('TaskService', () => {
     expect(response.data[0].result).toEqual(rawResult)
   })
 
+  it('merges paginated results in page order when fetched concurrently', async () => {
+    const pageData: Record<string, Array<{ id: string }>> = {
+      '1': [{ id: 'a' }, { id: 'b' }],
+      '2': [{ id: 'c' }, { id: 'd' }],
+      '3': [{ id: 'e' }, { id: 'f' }],
+    }
+
+    const fetchMock = vi.fn((input: any) => {
+      const page = new URL(String(input)).searchParams.get('page') ?? '1'
+      return Promise.resolve(
+        jsonResponse(pageData[page], { 'X-Total-Pages': '3' })
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    const items = await client.tasks.listAllItems()
+
+    expect(items.map((item: any) => item.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+    ])
+    // first page + two remaining pages
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
   it('adds and removes mapping targets', () => {
     const client = new HydroServer({ host: 'https://hydro.example.com' })
     const task = new Task({

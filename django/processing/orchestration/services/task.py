@@ -169,20 +169,67 @@ class TaskService(SchedulingService, Generic[T]):
 
         return count, queryset
 
-    @staticmethod
-    def annotate_latest_run(queryset: QuerySet) -> QuerySet:
+    #: Latest-run fields that can be used to filter or order a task collection. These are the
+    #: only annotations that have to be computed in the database before pagination.
+    latest_run_filter_fields = {"latest_run_status", "latest_run_started_at", "latest_run_finished_at"}
+
+    #: Mapping of latest-run annotation name -> TaskRun field it pulls from.
+    latest_run_field_map = {
+        "latest_run_id": "id",
+        "latest_run_status": "status",
+        "latest_run_started_at": "started_at",
+        "latest_run_finished_at": "finished_at",
+        "latest_run_message": "message",
+        "latest_run_result": "result",
+    }
+
+    @classmethod
+    def annotate_latest_run(cls, queryset: QuerySet, fields: set[str] | None = None) -> QuerySet:
         """
         Annotate a task queryset with fields from the latest run.
+
+        Each annotation is a correlated subquery evaluated per row, so callers that only need a
+        subset (e.g. for filtering or ordering) should pass ``fields`` to avoid computing the
+        rest. See ``attach_latest_runs`` for resolving full latest-run data on a page of results
+        without the per-row subqueries.
         """
 
         latest = TaskRun.objects.filter(task_id=OuterRef("pk")).order_by("-started_at", "-id")
+        selected = cls.latest_run_field_map if fields is None else {
+            name: source for name, source in cls.latest_run_field_map.items() if name in fields
+        }
         annotations = {
-            "latest_run_id": Subquery(latest.values("id")[:1]),
-            "latest_run_status": Subquery(latest.values("status")[:1]),
-            "latest_run_started_at": Subquery(latest.values("started_at")[:1]),
-            "latest_run_finished_at": Subquery(latest.values("finished_at")[:1]),
-            "latest_run_message": Subquery(latest.values("message")[:1]),
-            "latest_run_result": Subquery(latest.values("result")[:1]),
+            name: Subquery(latest.values(source)[:1]) for name, source in selected.items()
         }
 
         return queryset.annotate(**annotations)
+
+    @classmethod
+    def attach_latest_runs(cls, tasks: list[T]) -> list[T]:
+        """
+        Populate ``latest_run_*`` attributes on a page of tasks using a single query.
+
+        Resolves the most recent run per task with one ``DISTINCT ON`` query instead of the six
+        correlated subqueries ``annotate_latest_run`` would add to the (un-paginated) collection
+        query. This keeps the collection scan free of latest-run subqueries unless they are needed
+        for filtering or ordering.
+        """
+
+        task_ids = [task.pk for task in tasks]
+        if task_ids:
+            latest_runs = {
+                run.task_id: run
+                for run in TaskRun.objects
+                .filter(task_id__in=task_ids)
+                .order_by("task_id", "-started_at", "-id")
+                .distinct("task_id")
+            }
+        else:
+            latest_runs = {}
+
+        for task in tasks:
+            run = latest_runs.get(task.pk)
+            for name, source in cls.latest_run_field_map.items():
+                setattr(task, name, getattr(run, source) if run is not None else None)
+
+        return tasks

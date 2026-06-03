@@ -57,12 +57,14 @@ class MonitoringTaskService(HydroServerBaseService):
         """Create a new monitoring task."""
 
         body = {
-            "id": normalize_uuid(uid),
             "name": name,
             "thingId": normalize_uuid(thing),
             "description": description,
             "recipients": recipients or [],
         }
+
+        if uid is not None:
+            body["id"] = normalize_uuid(uid)
 
         if crontab or interval:
             body["schedule"] = {

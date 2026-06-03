@@ -456,6 +456,16 @@ export interface ThingSiteSummary extends ThingMarker {
   tags: Tag[]
 }
 
+export interface ThingTaskSummary {
+  id: string
+  name: string
+  siteType: string
+  productTaskCount: number
+  productTaskAttentionCount: number
+  monitoringTaskCount: number
+  monitoringTaskAttentionCount: number
+}
+
 export class Collaborator {
   user: UserInfo
   role: CollaboratorRole

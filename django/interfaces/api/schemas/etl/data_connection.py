@@ -2,11 +2,10 @@ import uuid
 from typing import Optional, Literal, Union
 from ninja import Field, Query
 from pydantic import EmailStr
-from django.db.models import Q, Subquery, OuterRef
 from django.utils import timezone
 
 from core.types import Unset
-from processing.orchestration.models import TaskRun
+from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from interfaces.api.schemas import (
     OrderByField,
     BaseGetResponse,
@@ -166,13 +165,8 @@ class DataConnectionResponse(BaseGetResponse):
         now = timezone.now()
 
         return obj.etl_tasks.annotate(
-            latest_run_status=Subquery(
-                TaskRun.objects
-                .filter(task_id=OuterRef("pk"))
-                .order_by("-started_at", "-id")
-                .values("status")[:1]
-            )
-        ).filter(Q(latest_run_status="FAILURE") | Q(next_run_at__lt=now)).count()
+            latest_run_status=latest_run_status_subquery()
+        ).filter(attention_filter(now)).count()
 
 
 class DataConnectionPostBody(BasePostBody):

@@ -1,4 +1,4 @@
-# Creating Your First Datastream
+# Part 2: Creating Your First Datastream
 
 Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, navigate to it by going to the 'Your sites' page and clicking the name of your site in the site table.
 

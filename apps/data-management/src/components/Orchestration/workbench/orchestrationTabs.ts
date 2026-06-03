@@ -164,8 +164,8 @@ const DOT_PRIORITY: readonly string[] = [
   'OK',
 ]
 
-const DOT_EMPTY = '#CAC4D0'
-const DOT_DEFAULT_OK = '#2E7D32'
+export const DOT_EMPTY = '#CAC4D0'
+export const DOT_DEFAULT_OK = '#2E7D32'
 const ISSUE_STATUSES = new Set(['Needs attention', 'Behind schedule'])
 
 export const taskHasIssue = (row: TaskRow): boolean =>

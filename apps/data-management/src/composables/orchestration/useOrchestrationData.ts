@@ -4,11 +4,18 @@ import hs, {
   DataProductTaskExpanded,
   MonitoringTaskExpanded,
   TaskExpanded,
-  Thing,
+  ThingTaskSummary,
 } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
+import type { TabId } from '@/components/Orchestration/workbench/orchestrationTabs'
+
+type LoadedTaskGroup = {
+  workspaceId: string
+  tab: TabId
+  groupId: string
+} | null
 
 export function useOrchestrationData() {
   const { workspaceTasks } = storeToRefs(useOrchestrationStore())
@@ -16,64 +23,58 @@ export function useOrchestrationData() {
   const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
   const loading = ref(false)
+  const taskLoading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
-  const things = ref<Thing[]>([])
+  const things = ref<ThingTaskSummary[]>([])
   const datastreamThingByDatastreamId = ref<Record<string, string>>({})
   const dataProductTasks = ref<DataProductTaskExpanded[]>([])
   const monitoringTasks = ref<MonitoringTaskExpanded[]>([])
+  const loadedTaskGroup = ref<LoadedTaskGroup>(null)
 
   let fetchRequestId = 0
+  let taskRequestId = 0
+
+  const clearTaskLists = () => {
+    workspaceTasks.value = []
+    dataProductTasks.value = []
+    monitoringTasks.value = []
+    datastreamThingByDatastreamId.value = {}
+    loadedTaskGroup.value = null
+  }
+
+  const clearTaskListForTab = (tab: TabId) => {
+    if (tab === 'ingestion') workspaceTasks.value = []
+    else if (tab === 'aggregation') dataProductTasks.value = []
+    else monitoringTasks.value = []
+  }
 
   const fetchAll = async (requestedWorkspaceId = selectedWorkspaceId.value) => {
     const requestId = ++fetchRequestId
     if (!requestedWorkspaceId) {
       loading.value = false
       dataConnections.value = []
-      workspaceTasks.value = []
-      dataProductTasks.value = []
-      monitoringTasks.value = []
+      clearTaskLists()
       things.value = []
-      datastreamThingByDatastreamId.value = {}
       return
     }
 
     loading.value = true
     try {
-      const [dcItems, etlItems, dpItems, monItems, thingItems, dsItems] =
-        await Promise.all([
-          hs.dataConnections.listAllItems({
-            workspace_id: requestedWorkspaceId,
-            order_by: 'name',
-          } as any),
-          hs.tasks.listAllItems({ workspace_id: requestedWorkspaceId } as any),
-          hs.dataProductTasks.listAllItems({
-            workspace_id: [requestedWorkspaceId],
-          } as any),
-          hs.monitoringTasks.listAllItems({
-            workspace_id: [requestedWorkspaceId],
-          } as any),
-          hs.things.listAllItems({
-            workspace_id: [requestedWorkspaceId],
-            order_by: ['name'],
-          } as any),
-          hs.datastreams.listAllItems({
-            workspace_id: [requestedWorkspaceId],
-          } as any),
-        ])
+      const [dcItems, taskSummaryResponse] = await Promise.all([
+        hs.dataConnections.listAllItems({
+          workspace_id: requestedWorkspaceId,
+          order_by: 'name',
+        } as any),
+        hs.things.listTaskSummaries({
+          workspace_id: [requestedWorkspaceId],
+        }),
+      ])
 
       if (requestId !== fetchRequestId) return
 
       dataConnections.value = dcItems
-      workspaceTasks.value = etlItems as any
-      dataProductTasks.value = dpItems as any
-      monitoringTasks.value = monItems as any
-      things.value = thingItems as any
-
-      const map: Record<string, string> = {}
-      for (const ds of dsItems ?? []) {
-        if (ds?.id && ds?.thingId) map[ds.id] = ds.thingId
-      }
-      datastreamThingByDatastreamId.value = map
+      things.value = taskSummaryResponse.ok ? taskSummaryResponse.data ?? [] : []
+      clearTaskLists()
     } catch (error) {
       if (requestId !== fetchRequestId) return
       console.error('Error fetching orchestration data', error)
@@ -95,16 +96,85 @@ export function useOrchestrationData() {
     } as any)
   }
 
+  const fetchTasksForGroup = async (
+    tab: TabId,
+    groupId: string | null | undefined,
+    requestedWorkspaceId = selectedWorkspaceId.value,
+    force = false
+  ) => {
+    if (!requestedWorkspaceId || !groupId) {
+      clearTaskListForTab(tab)
+      loadedTaskGroup.value = null
+      return
+    }
+
+    const current = loadedTaskGroup.value
+    if (
+      !force &&
+      current?.workspaceId === requestedWorkspaceId &&
+      current.tab === tab &&
+      current.groupId === groupId
+    ) {
+      return
+    }
+
+    const requestId = ++taskRequestId
+    taskLoading.value = true
+    clearTaskListForTab(tab)
+
+    try {
+      if (tab === 'ingestion') {
+        const items = await hs.tasks.listAllItems({
+          workspace_id: [requestedWorkspaceId],
+          data_connection_id: [groupId],
+          order_by: ['name'],
+        } as any)
+        if (requestId !== taskRequestId) return
+        workspaceTasks.value = items as any
+      } else if (tab === 'aggregation') {
+        const items = await hs.dataProductTasks.listAllItems({
+          workspace_id: [requestedWorkspaceId],
+          thing_id: [groupId],
+          order_by: ['name'],
+        } as any)
+        if (requestId !== taskRequestId) return
+        dataProductTasks.value = items as any
+      } else {
+        const items = await hs.monitoringTasks.listAllItems({
+          workspace_id: [requestedWorkspaceId],
+          thing_id: [groupId],
+          order_by: ['name'],
+        } as any)
+        if (requestId !== taskRequestId) return
+        monitoringTasks.value = items as any
+      }
+
+      loadedTaskGroup.value = {
+        workspaceId: requestedWorkspaceId,
+        tab,
+        groupId,
+      }
+    } catch (error) {
+      if (requestId !== taskRequestId) return
+      console.error('Error fetching orchestration tasks', error)
+    } finally {
+      if (requestId === taskRequestId) taskLoading.value = false
+    }
+  }
+
   return {
     loading,
+    taskLoading,
     workspaceTasks,
     dataConnections,
     things,
     datastreamThingByDatastreamId,
     dataProductTasks,
     monitoringTasks,
+    loadedTaskGroup,
     fetchAll,
     refreshDataConnections,
+    fetchTasksForGroup,
   }
 }
 

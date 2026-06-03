@@ -61,6 +61,8 @@ export class DataConnection {
   payload: Payload = { type: 'CSV', timestampKey: '' }
   placeholderVariables: PlaceholderVariable[] = []
   notification: Notification | null = null
+  taskCount = 0
+  taskAttentionCount = 0
 
   constructor(init?: Partial<DataConnection>) {
     Object.assign(this, init)
