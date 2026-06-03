@@ -12,7 +12,6 @@ import {
   ObservedProperty,
   ProcessingLevel,
 } from '../../types'
-import JSZip from 'jszip'
 import { normalizeAttachmentCollection } from './attachment-link'
 
 interface VisualizationBootstrapPayload {
@@ -47,8 +46,6 @@ export interface VisualizationBootstrap {
   processingLevels: ProcessingLevel[]
 }
 
-type WithId = { id: string }
-
 type TagPostBody = Data.components['schemas']['TagPostBody']
 type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
 
@@ -77,7 +74,7 @@ type ObservationPostBody = {
 /**
  * Transport layer for /datastreams routes.
  * Inherits CRUD + handle helpers from HydroServerBaseService and adds:
- * - CSV download helpers (single + zip)
+ * - CSV export primitive
  * - Enumeration endpoints (/statuses, /aggregation-statistics, /sampled-mediums)
  * - Observation sub-resource endpoints under /datastreams/{id}/observations
  */
@@ -143,43 +140,12 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   /* ============================== CSV =============================== */
 
-  /** Fetch CSV as a Blob for a datastream (no auto-download). */
+  /** Fetch CSV as a Blob for a single datastream. */
   async fetchCsvBlob(id: string): Promise<ApiResponse<Blob>> {
     const url = `${this._route}/${encodeURIComponent(id)}/csv`
     return apiMethods.fetch(url, {
       headers: { Accept: 'text/csv' },
     }) as Promise<ApiResponse<Blob>>
-  }
-
-  /** Trigger a browser download for a single datastream CSV. */
-  async downloadCsv(id: string, filename?: string): Promise<void> {
-    const res = await this.fetchCsvBlob(id)
-    const blob =
-      res.data instanceof Blob
-        ? res.data
-        : new Blob([res.data as any], { type: 'text/csv' })
-    triggerDownload(blob, filename ?? `datastream_${id}.csv`)
-  }
-
-  /** Download many datastream CSVs as a single ZIP. */
-  async downloadCsvBatchZip(
-    datastreams: Array<string | WithId>,
-    zipName = 'datastreams.zip'
-  ): Promise<void> {
-    const zip = new JSZip()
-
-    for (const ds of datastreams) {
-      const id = typeof ds === 'string' ? ds : ds.id
-      const res = await this.fetchCsvBlob(id)
-      const blob =
-        res.data instanceof Blob
-          ? res.data
-          : new Blob([res.data as any], { type: 'text/csv' })
-      zip.file(`datastream_${id}.csv`, blob)
-    }
-
-    const archive = await zip.generateAsync({ type: 'blob' })
-    triggerDownload(archive, zipName)
   }
 
   /* ======================= Observation APIs ======================== */
@@ -239,10 +205,10 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   getSampledMediums = () =>
     apiMethods.paginatedFetch(`${this._route}/sampled-mediums`)
 
-  async getVisualizationBootstrap(): Promise<ApiResponse<VisualizationBootstrap>> {
-    const res = await apiMethods.fetch(
-      `${this._route}/visualization-bootstrap`
-    )
+  async getVisualizationBootstrap(): Promise<
+    ApiResponse<VisualizationBootstrap>
+  > {
+    const res = await apiMethods.fetch(`${this._route}/visualization-bootstrap`)
     if (!res.ok) return res as unknown as ApiResponse<VisualizationBootstrap>
 
     const payload = res.data as VisualizationBootstrapPayload
@@ -268,16 +234,4 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
       data: { things, datastreams, observedProperties, processingLevels },
     }
   }
-}
-
-/* ---------------------------- local helpers ---------------------------- */
-export function triggerDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }

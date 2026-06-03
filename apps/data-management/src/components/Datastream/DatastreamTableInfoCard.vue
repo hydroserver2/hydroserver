@@ -25,7 +25,7 @@
 import { Datastream, Thing } from '@hydroserver/client'
 import { ref } from 'vue'
 import DatastreamInformationPanels from '@/components/Datastream/DatastreamInformationPanels.vue'
-import hs from '@hydroserver/client'
+import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { mdiDownload } from '@mdi/js'
 
 defineProps({
@@ -40,7 +40,7 @@ const downloading = ref(false)
 const downloadDatastream = async (id: string) => {
   downloading.value = true
   try {
-    await hs.datastreams.downloadCsv(id)
+    await downloadDatastreamCsv(id)
   } catch (error) {
     console.error('Error downloading datastream', error)
   }

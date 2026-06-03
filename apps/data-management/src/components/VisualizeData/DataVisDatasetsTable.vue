@@ -238,7 +238,8 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import hs, { Datastream, Thing } from '@hydroserver/client'
+import { Datastream, Thing } from '@hydroserver/client'
+import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -264,7 +265,7 @@ const isMobile = computed(() => smAndDown.value)
 const downloadSelected = async (plottedDatastreams: Datastream[]) => {
   downloading.value = true
   try {
-    await hs.datastreams.downloadCsvBatchZip(plottedDatastreams)
+    await downloadDatastreamsCsvZip(plottedDatastreams)
   } catch (error) {
     console.error('Error downloading selected datastreams', error)
   }

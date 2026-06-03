@@ -43,7 +43,6 @@
   },
   "license": "BSD-3-Clause",
   "dependencies": {
-    "jszip": "^3.10.1",
     "p-limit": "^6.2.0"
   },
   "devDependencies": {

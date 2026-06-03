@@ -690,6 +690,7 @@ import { Datastream, Workspace } from '@hydroserver/client'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
+import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
@@ -882,7 +883,7 @@ const onDownload = async (datastreamId: string) => {
   downloading[datastreamId] = true
 
   try {
-    await hs.datastreams.downloadCsv(datastreamId)
+    await downloadDatastreamCsv(datastreamId)
   } catch (err: any) {
     console.error('Error downloading datastream CSV', err)
     Snackbar.error(err.message)
