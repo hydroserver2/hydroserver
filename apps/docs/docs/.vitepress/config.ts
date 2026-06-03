@@ -150,6 +150,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/visualizing-data",
               },
               {
+                text: "Quality Controlling Data",
+                link: "/user-guides/how-to/quality-controlling-data",
+              },
+              {
                 text: "Exporting and Downloading Data",
                 link: "/user-guides/how-to/exporting-and-downloading-data",
               },
@@ -168,6 +172,10 @@ export default defineConfig({
               {
                 text: "Loading Data with the SensorThings API",
                 link: "/user-guides/how-to/loading-data-with-sensorthings",
+              },
+              {
+                text: "Loading Data from an Internet Connected Datalogger",
+                link: "/user-guides/how-to/loading-data-with-datalogger",
               },
               {
                 text: "Retrieving Data with the SensorThings API",

@@ -4,7 +4,9 @@ You can use several different methods to get data into HydroServer. Which option
 
 ## Direct Streaming through HydroServer's API
 
-Internet-connected dataloggers can be programmed to make HTTP POST requests to insert data directly into HydroServer's database through HydroServer's SensorThings API. For more information about this option, consult [Loading Data with the SensorThings API](/user-guides/how-to/loading-data-with-sensorthings.md).
+Internet-connected dataloggers can be programmed to make HTTP POST requests to insert data directly into HydroServer's database through HydroServer's SensorThings API. For more information about this option, consult the following guides:
+* [Loading Data with the SensorThings API](/user-guides/how-to/loading-data-with-sensorthings.md): This is a generic article about how to use the SensorThings API to load data.
+* [Loading Data from an Internet connected datalogger](/user-guides/how-to/loading-data-with-datalogger.md): Learn how to send data to HydroServer directly from an Internet connected datalogger, including example code.
 
 ## Load Data Via HydroServer's Job Orchestration System
 
