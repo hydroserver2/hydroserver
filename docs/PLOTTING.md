@@ -105,7 +105,7 @@ events.ts wires it to selected.ts#handleSelected (no fromRelayout flag)
    ▼
 selected.ts
    │  read trace.selectedpoints
-   │  offset by _windowStartIdx (the windowed-trace start)
+   │  offset by _windowStartIdx (0; the record is already windowed)
    │  write to dataVis.selectedData (Pinia)
    │  dispatch SELECTION filter to qc-utils
    ▼
@@ -117,12 +117,17 @@ buttons; the SELECTION HistoryItem is what gets serialised in the QC
 script.
 ```
 
-The `_windowStartIdx` offset is the part most new readers miss. The
-trace's `x` / `y` arrays carry only the visible window. When the user
-zooms in on a 10M-point datastream, Plotly receives ~100k points, not
-10M. Selection indices come back relative to that windowed slice. The
-offset on `AppPlotlyTrace` records where the window started, so the
-store gets indices into the full ObservationRecord.
+The time-range window is applied in the **data layer**: `ObservationRecord`
+keeps the full series in `rawData` but materializes only the selected
+`[begin, end]` slice into `dataset.source` (`dataX` / `dataY`) via
+`applyWindow(begin, end)` (qc-utils). The observations store calls it as the
+window changes; a window change clears history (the new window is a fresh QC
+baseline). So the record, the plot trace, the observation table and the
+"pts loaded" count all reflect the same window. `createPlotlyOption` draws
+the record's data directly (no slicing of its own), and selection indices
+come back already aligned with the record, so `_windowStartIdx` is `0`. The
+offset on `AppPlotlyTrace` is kept as a generic hook (`selected.ts` reads it,
+defaulting to `0`) should a trace ever carry a sub-slice again.
 
 ## The suppressed-echo sentinel
 

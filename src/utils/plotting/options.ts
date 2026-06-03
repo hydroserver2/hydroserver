@@ -426,24 +426,12 @@ export const createPlotlyOption = (
   let nonQcAxisCount = 0
   let visibleNonQcCount = 0
 
-  const windowStartMs = beginDate?.value?.getTime() ?? -Infinity
-  const windowEndMs = endDate?.value?.getTime() ?? Infinity
-
   seriesArray.forEach((s) => {
     const color = s.color ?? COLORS[1]
-    const rawX = s.data?.dataX
-    const rawY = s.data?.dataY
-
-    // Slice to [beginDate, endDate].
-    let xData = rawX
-    let yData = rawY
-    if (rawX?.length && rawY?.length &&
-      Number.isFinite(windowStartMs) && Number.isFinite(windowEndMs)) {
-      const startIdx = findFirstGreaterOrEqual(rawX as unknown as number[], windowStartMs)
-      const endIdx = findFirstGreaterOrEqual(rawX as unknown as number[], windowEndMs + 1)
-      xData = rawX.subarray(startIdx, endIdx)
-      yData = rawY.subarray(startIdx, endIdx)
-    }
+    // The ObservationRecord is already sliced to [beginDate, endDate] by
+    // the observations store (`applyWindow`), so the trace draws it directly.
+    const xData = s.data?.dataX
+    const yData = s.data?.dataY
 
     if (xData?.length) {
       const xDataStart = xData[0] as number
@@ -500,9 +488,9 @@ export const createPlotlyOption = (
       trace.marker = { ...(trace.marker ?? {}), color: COLORS[0] }
       trace.selected = { marker: { color: 'red', opacity: 1 } }
 
-      trace._windowStartIdx = (rawX?.length && Number.isFinite(windowStartMs))
-        ? findFirstGreaterOrEqual(rawX as unknown as number[], windowStartMs)
-        : 0
+      // Data is pre-windowed in the record, so plot indices already align
+      // with it — no offset needed.
+      trace._windowStartIdx = 0
 
       // Title omitted on purpose — the horizontal QC chip (rendered as
       // an HTML overlay in Plot.vue) replaces Plotly's vertical title.

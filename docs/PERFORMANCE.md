@@ -107,7 +107,11 @@ Key fetch optimizations already in place:
 
 - **Cache-aware ranging.** `useObservationStore.fetchObservationsInRange`
   only requests segments outside the existing cached window (strict
-  `<` / `>` comparison, see comments around `observations.ts:62`).
+  `<` / `>` comparison, see comments around `observations.ts:62`). The full
+  fetched history stays in `observationsRaw`; the `ObservationRecord` keeps it
+  in `rawData` and slices it to the selected `[begin, end]` range via
+  `applyWindow`, so the plot, table and counts only ever touch the current
+  window.
 - **Loading state per datastream.** The UI shows a per-stream spinner so
   one slow fetch doesn't block the others.
 

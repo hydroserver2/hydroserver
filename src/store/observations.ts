@@ -141,10 +141,11 @@ export const useObservationStore = defineStore(
       }
 
       const obsRecord = observations.value[id] as ObservationRecord
-      if (beginData.dataValues.length || endData.dataValues.length) {
-        obsRecord.loadData(observationsRaw.value[id])
-        obsRecord.rawData = observationsRaw.value[id]
-      }
+      // `rawData` is the full accumulated cache; the record slices it to the
+      // selected window (`applyWindow` no-ops when the window is unchanged,
+      // so unrelated replots keep their edits/history).
+      obsRecord.rawData = observationsRaw.value[id]
+      await obsRecord.applyWindow(beginTime.getTime(), endTime.getTime())
 
       return obsRecord
     }
