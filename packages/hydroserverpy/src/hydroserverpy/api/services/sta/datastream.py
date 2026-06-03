@@ -113,6 +113,7 @@ class DatastreamService(HydroServerBaseService):
         result_end_time: Optional[datetime] = None,
         is_private: bool = False,
         is_visible: bool = True,
+        tags: Optional[Dict[str, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "Datastream":
         """Create a new datastream."""
@@ -143,6 +144,7 @@ class DatastreamService(HydroServerBaseService):
             "resultEndTime": result_end_time,
             "isPrivate": is_private,
             "isVisible": is_visible,
+            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
         }
 
         return super().create(**body)

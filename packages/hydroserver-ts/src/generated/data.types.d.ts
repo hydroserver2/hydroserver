@@ -2794,6 +2794,11 @@ export interface components {
             /** Status */
             status?: string | null;
             /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagPostBody"][];
+            /**
              * Thingid
              * Format: uuid
              */
@@ -4819,6 +4824,11 @@ export interface components {
             samplingFeatureType: string;
             /** Sitetype */
             siteType: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagPostBody"][];
             /**
              * Workspaceid
              * Format: uuid

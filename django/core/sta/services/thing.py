@@ -563,6 +563,15 @@ class ThingService(ServiceUtils):
             **data.location.dict(include=set(LocationFields.model_fields.keys())),
         )
 
+        if data.tags:
+            keys = [tag.key for tag in data.tags]
+            if len(keys) != len(set(keys)):
+                raise HttpError(400, "Duplicate tag keys are not allowed")
+            ThingTag.objects.bulk_create([
+                ThingTag(thing=thing, key=tag.key, value=tag.value)
+                for tag in data.tags
+            ])
+
         return self.get(
             principal=principal, uid=thing.id, expand_related=expand_related
         )
