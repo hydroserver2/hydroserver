@@ -2873,3 +2873,56 @@ def test_remove_tag(get_principal, principal, datastream, tag, message, error_co
         )
 
         assert datastream_tag_delete.endswith("tag(s) deleted")
+
+
+def test_create_datastream_with_tags(get_principal):
+    datastream_data = DatastreamPostBody(
+        thing_id=uuid.UUID("3b7818af-eff7-4149-8517-e5cad9dc22e1"),
+        observed_property_id=uuid.UUID("49a245bd-4517-4dea-b3ba-25c919bf2cf5"),
+        processing_level_id=uuid.UUID("1cb782af-6097-4a3f-9988-5fcbfcb5a327"),
+        sensor_id=uuid.UUID("a947c551-8e21-4848-a89b-3048aec69574"),
+        unit_id=uuid.UUID("2ca850fa-ce19-4d8a-9dfd-8d54a261778d"),
+        name="Tagged Datastream",
+        description="A datastream created with tags",
+        observation_type="Observation",
+        sampled_medium="Air",
+        no_data_value=-9999,
+        aggregation_statistic="Average",
+        time_aggregation_interval=15,
+        time_aggregation_interval_unit="minutes",
+        result_type="Time Series",
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Network", value="Test"),
+        ],
+    )
+    datastream = datastream_service.create(principal=get_principal("owner"), data=datastream_data)
+    tag_dict = {t.key: t.value for t in datastream.datastream_tags}
+    assert tag_dict == {"Region": "A", "Network": "Test"}
+
+
+def test_create_datastream_with_duplicate_tag_keys(get_principal):
+    datastream_data = DatastreamPostBody(
+        thing_id=uuid.UUID("3b7818af-eff7-4149-8517-e5cad9dc22e1"),
+        observed_property_id=uuid.UUID("49a245bd-4517-4dea-b3ba-25c919bf2cf5"),
+        processing_level_id=uuid.UUID("1cb782af-6097-4a3f-9988-5fcbfcb5a327"),
+        sensor_id=uuid.UUID("a947c551-8e21-4848-a89b-3048aec69574"),
+        unit_id=uuid.UUID("2ca850fa-ce19-4d8a-9dfd-8d54a261778d"),
+        name="Duplicate Tag Datastream",
+        description="A datastream with duplicate tag keys",
+        observation_type="Observation",
+        sampled_medium="Air",
+        no_data_value=-9999,
+        aggregation_statistic="Average",
+        time_aggregation_interval=15,
+        time_aggregation_interval_unit="minutes",
+        result_type="Time Series",
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Region", value="B"),
+        ],
+    )
+    with pytest.raises(HttpError) as exc_info:
+        datastream_service.create(principal=get_principal("owner"), data=datastream_data)
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.message.startswith("Duplicate tag keys are not allowed")

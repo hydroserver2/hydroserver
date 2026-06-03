@@ -1548,3 +1548,44 @@ def test_remove_thing_tag(get_principal, principal, thing, tag, message, error_c
         )
 
         assert thing_tag_delete.endswith("tag(s) deleted")
+
+
+def test_create_thing_with_tags(get_principal):
+    thing_data = ThingPostBody(
+        name="Tagged Thing",
+        description="A thing created with tags",
+        sampling_feature_type="Site",
+        sampling_feature_code="TAGGED",
+        site_type="Site",
+        location=LocationPostBody(latitude=0, longitude=0),
+        is_private=False,
+        workspace_id=uuid.UUID("6e0deaf2-a92b-421b-9ece-86783265596f"),
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Network", value="Test"),
+        ],
+    )
+    thing = thing_service.create(principal=get_principal("owner"), data=thing_data)
+    tag_dict = {t.key: t.value for t in thing.thing_tags}
+    assert tag_dict == {"Region": "A", "Network": "Test"}
+
+
+def test_create_thing_with_duplicate_tag_keys(get_principal):
+    thing_data = ThingPostBody(
+        name="Duplicate Tag Thing",
+        description="A thing with duplicate tag keys",
+        sampling_feature_type="Site",
+        sampling_feature_code="DUPTAG",
+        site_type="Site",
+        location=LocationPostBody(latitude=0, longitude=0),
+        is_private=False,
+        workspace_id=uuid.UUID("6e0deaf2-a92b-421b-9ece-86783265596f"),
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Region", value="B"),
+        ],
+    )
+    with pytest.raises(HttpError) as exc_info:
+        thing_service.create(principal=get_principal("owner"), data=thing_data)
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.message.startswith("Duplicate tag keys are not allowed")

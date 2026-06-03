@@ -10,7 +10,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -244,6 +244,7 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):
     id: Optional[uuid.UUID] = None
+    tags: list[TagPostBody] = []
 
 
 class DatastreamPatchBody(BasePatchBody, DatastreamFields, DatastreamRelatedFields):

@@ -2832,6 +2832,14 @@
             ],
             "title": "Status"
           },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagPostBody"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
           "thingId": {
             "format": "uuid",
             "title": "Thingid",
@@ -8856,6 +8864,14 @@
             "maxLength": 200,
             "title": "Sitetype",
             "type": "string"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagPostBody"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "workspaceId": {
             "format": "uuid",

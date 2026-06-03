@@ -391,10 +391,19 @@ class DatastreamService(ServiceUtils):
         try:
             datastream = Datastream.objects.create(
                 pk=data.id,
-                **data.dict(include=set(DatastreamPostBody.model_fields.keys()))
+                **data.dict(include=set(DatastreamPostBody.model_fields.keys()) - {"tags"})
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
+
+        if data.tags:
+            keys = [tag.key for tag in data.tags]
+            if len(keys) != len(set(keys)):
+                raise HttpError(400, "Duplicate tag keys are not allowed")
+            DatastreamTag.objects.bulk_create([
+                DatastreamTag(datastream=datastream, key=tag.key, value=tag.value)
+                for tag in data.tags
+            ])
 
         return self.get(
             principal=principal, uid=datastream.id, expand_related=expand_related

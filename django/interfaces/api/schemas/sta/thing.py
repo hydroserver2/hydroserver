@@ -10,7 +10,7 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -217,6 +217,7 @@ class ThingPostBody(BasePostBody, ThingFields):
     id: Optional[uuid.UUID] = None
     workspace_id: uuid.UUID
     location: LocationPostBody
+    tags: list[TagPostBody] = []
 
 
 class ThingPatchBody(BasePatchBody, ThingFields):
