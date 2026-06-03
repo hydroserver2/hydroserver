@@ -41,9 +41,8 @@
     "url": "git+https://github.com/hydroserver2/hydroserver.git",
     "directory": "packages/hydroserver-ts"
   },
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "dependencies": {
-    "cross-fetch": "^4.1.0",
     "jszip": "^3.10.1",
     "p-limit": "^6.2.0"
   },
