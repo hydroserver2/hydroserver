@@ -179,7 +179,7 @@ class Workspace(HydroServerBaseModel):
         """The ETL tasks associated with this workspace."""
 
         if self._tasks is None:
-            self._tasks = self.client.tasks.list(workspace=self.uid, fetch_all=True).items
+            self._tasks = self.client.etltasks.list(workspace=self.uid, fetch_all=True).items
 
         return self._tasks
 

@@ -1,0 +1,154 @@
+# ============================================================
+# Tasks
+# ============================================================
+
+# Task in Private Workspace (Private Thing)
+- model: orchestration.task
+  pk: 019c0003-0000-7000-8000-000000000001
+  fields:
+    name: Test Task
+    description: null
+    periodic_task: null
+    next_run_at: null
+
+- model: products.dataproducttask
+  pk: 019c0003-0000-7000-8000-000000000001
+  fields:
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+# Task in Public Workspace (Public Thing)
+- model: orchestration.task
+  pk: 019c0003-0000-7000-8000-000000000002
+  fields:
+    name: Test Public Task
+    description: null
+    periodic_task: null
+    next_run_at: null
+
+- model: products.dataproducttask
+  pk: 019c0003-0000-7000-8000-000000000002
+  fields:
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+
+# Task Run for Task 1
+- model: orchestration.taskrun
+  pk: 019c0003-0000-7000-8000-000000000030
+  fields:
+    task: 019c0003-0000-7000-8000-000000000001
+    status: SUCCESS
+    message: "Task completed successfully."
+    started_at: 2025-01-01 01:00:00.000 -0700
+    result: null
+    finished_at: 2025-01-01 02:00:00.000 -0700
+
+
+# ============================================================
+# Rating Curves
+# ============================================================
+
+# RC1 — Private Workspace (Private Thing) — linear: (1.0→2.0), (2.0→4.0)
+- model: products.ratingcurve
+  pk: 019c0002-0000-7000-8000-000000000001
+  fields:
+    name: Test Rating Curve
+    description: null
+    fitting_method: linear
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+- model: products.ratingcurvepoint
+  pk: 019c0002-0000-7000-8000-000000000010
+  fields:
+    rating_curve: 019c0002-0000-7000-8000-000000000001
+    input_value: 1.0
+    output_value: 2.0
+
+- model: products.ratingcurvepoint
+  pk: 019c0002-0000-7000-8000-000000000011
+  fields:
+    rating_curve: 019c0002-0000-7000-8000-000000000001
+    input_value: 2.0
+    output_value: 4.0
+
+# RC2 — Public Workspace (Public Thing) — linear, no points
+- model: products.ratingcurve
+  pk: 019c0002-0000-7000-8000-000000000002
+  fields:
+    name: Test Public Rating Curve
+    description: null
+    fitting_method: linear
+    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+
+# RC3 — Private Workspace — disposable (no transformations reference this)
+- model: products.ratingcurve
+  pk: 019c0002-0000-7000-8000-000000000003
+  fields:
+    name: Test Disposable Rating Curve
+    description: null
+    fitting_method: linear
+    thing: 76dadda5-224b-4e1f-8570-e385bd482b2d
+
+
+# ============================================================
+# Transformations (all under Task 1)
+# Use existing datastreams from test_datastreams.yaml to avoid
+# adding sta.* models here, which would break sta service tests.
+#
+# Existing private-workspace datastreams (from test_datastreams.yaml):
+#   42e08eea — public DS, Private Thing, Private Workspace
+#   9f96957b — private DS, Private Thing, Private Workspace
+#   dd1f9293 — public DS, Public Thing Private Workspace
+#   1c9a797e — private DS, Public Thing Private Workspace
+#
+# T_RC  output → 42e08eea  input ← 9f96957b
+# T_EXP output → 9f96957b  input ← 42e08eea
+# ============================================================
+
+# T_RC — Rating Curve transformation
+- model: products.dataproducttransformation
+  pk: 019c0005-0000-7000-8000-000000000001
+  fields:
+    task: 019c0003-0000-7000-8000-000000000001
+    output_datastream: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    transformation_type: rating_curve
+    rating_curve: 019c0002-0000-7000-8000-000000000001
+    formula: null
+    output_interval_units: null
+    output_interval: null
+    timezone_type: null
+    timezone: null
+    aggregation_method: null
+    max_gap_interval_units: null
+    max_gap_interval: null
+    min_values: null
+
+- model: products.dataproducttransformationinput
+  pk: 019c0006-0000-7000-8000-000000000001
+  fields:
+    transformation: 019c0005-0000-7000-8000-000000000001
+    datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    variable_name: null
+
+# T_EXP — Expression transformation
+- model: products.dataproducttransformation
+  pk: 019c0005-0000-7000-8000-000000000002
+  fields:
+    task: 019c0003-0000-7000-8000-000000000001
+    output_datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    transformation_type: expression
+    rating_curve: null
+    formula: "x * 2.0"
+    output_interval_units: null
+    output_interval: null
+    timezone_type: null
+    timezone: null
+    aggregation_method: null
+    max_gap_interval_units: null
+    max_gap_interval: null
+    min_values: null
+
+- model: products.dataproducttransformationinput
+  pk: 019c0006-0000-7000-8000-000000000002
+  fields:
+    transformation: 019c0005-0000-7000-8000-000000000002
+    datastream: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    variable_name: x

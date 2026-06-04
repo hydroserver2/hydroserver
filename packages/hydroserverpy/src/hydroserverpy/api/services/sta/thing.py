@@ -68,6 +68,7 @@ class ThingService(HydroServerBaseService):
         admin_area_2: Optional[str] = None,
         country: Optional[str] = None,
         data_disclaimer: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "Thing":
         """Create a new thing."""
@@ -90,7 +91,8 @@ class ThingService(HydroServerBaseService):
                 "adminArea1": admin_area_1,
                 "adminArea2": admin_area_2,
                 "country": country,
-            }
+            },
+            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
         }
 
         return super().create(**body)

@@ -4,8 +4,10 @@ type TaskStatusLike = {
   latestRun?: TaskRun | null
   schedule?: {
     paused?: boolean | null
+    enabled?: boolean | null
     nextRunAt?: string | null
     startTime?: string | null
+    crontab?: string | null
     interval?: number | null
     intervalPeriod?: string | null
   } | null
@@ -13,24 +15,14 @@ type TaskStatusLike = {
 
 type TaskRunResultLike = Record<string, unknown>
 
-export type TaskRunDetailEntry = {
-  timestamp?: string
-  level?: string
-  message: string
-  stage?: string
+export type MonitoringRunViolation = {
+  ruleId: string | null
+  datastreamId: string | null
+  ruleType: string | null
+  violationCount: number
+  firstViolationAt: string | null
+  lastViolationAt: string | null
 }
-
-export type TaskRunDetailSection =
-  | {
-      title: string
-      type: 'lines'
-      entries: TaskRunDetailEntry[]
-    }
-  | {
-      title: string
-      type: 'text'
-      text: string
-    }
 
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -63,6 +55,119 @@ const parseDate = (value?: string | null) => {
   return Number.isNaN(date.valueOf()) ? null : date
 }
 
+function parseCronField(
+  field: string,
+  min: number,
+  max: number
+): Set<number> | null {
+  const values = new Set<number>()
+  const parts = field.split(',').map((part) => part.trim())
+  if (!parts.length || parts.some((part) => !part)) return null
+
+  for (const part of parts) {
+    const [rangePart, stepPart] = part.split('/')
+    const step = stepPart ? Number(stepPart) : 1
+    if (!Number.isInteger(step) || step < 1) return null
+
+    let start = min
+    let end = max
+    if (rangePart !== '*') {
+      if (rangePart.includes('-')) {
+        const [rawStart, rawEnd] = rangePart.split('-').map(Number)
+        start = rawStart
+        end = rawEnd
+      } else {
+        start = Number(rangePart)
+        end = start
+      }
+    }
+
+    if (
+      !Number.isInteger(start) ||
+      !Number.isInteger(end) ||
+      start < min ||
+      end > max ||
+      start > end
+    ) {
+      return null
+    }
+
+    for (let value = start; value <= end; value += step) values.add(value)
+  }
+
+  return values
+}
+
+function parseCronDayOfWeek(field: string) {
+  const values = parseCronField(field, 0, 7)
+  if (!values) return null
+  if (values.has(7)) {
+    values.add(0)
+    values.delete(7)
+  }
+  return values
+}
+
+const matchesCron = (
+  date: Date,
+  fields: {
+    minutes: Set<number>
+    hours: Set<number>
+    daysOfMonth: Set<number>
+    months: Set<number>
+    daysOfWeek: Set<number>
+  }
+) =>
+  fields.minutes.has(date.getMinutes()) &&
+  fields.hours.has(date.getHours()) &&
+  fields.daysOfMonth.has(date.getDate()) &&
+  fields.months.has(date.getMonth() + 1) &&
+  fields.daysOfWeek.has(date.getDay())
+
+const inferCrontabNextRunAt = (task?: TaskStatusLike | null) => {
+  const schedule = task?.schedule
+  if (!schedule?.crontab) return null
+
+  const parts = schedule.crontab.trim().split(/\s+/)
+  if (parts.length !== 5) return null
+
+  const minutes = parseCronField(parts[0], 0, 59)
+  const hours = parseCronField(parts[1], 0, 23)
+  const daysOfMonth = parseCronField(parts[2], 1, 31)
+  const months = parseCronField(parts[3], 1, 12)
+  const daysOfWeek = parseCronDayOfWeek(parts[4])
+
+  if (!minutes || !hours || !daysOfMonth || !months || !daysOfWeek) return null
+
+  const startDate = parseDate(schedule.startTime)
+  const now = new Date()
+  const base =
+    startDate && startDate.getTime() > now.getTime() ? startDate : now
+  const candidate = new Date(base)
+  candidate.setSeconds(0, 0)
+  if (candidate.getTime() < base.getTime()) {
+    candidate.setMinutes(candidate.getMinutes() + 1)
+  }
+
+  const maxMinutesToSearch = 366 * 24 * 60
+  for (let offset = 0; offset <= maxMinutesToSearch; offset += 1) {
+    if (
+      matchesCron(candidate, {
+        minutes,
+        hours,
+        daysOfMonth,
+        months,
+        daysOfWeek,
+      })
+    ) {
+      return candidate
+    }
+    candidate.setMinutes(candidate.getMinutes() + 1)
+  }
+
+  return null
+}
+
 const inferIntervalNextRunAt = (task?: TaskStatusLike | null) => {
   const schedule = task?.schedule
   if (!schedule?.interval || !schedule.intervalPeriod) return null
@@ -85,13 +190,10 @@ const inferIntervalNextRunAt = (task?: TaskStatusLike | null) => {
   return new Date(baseDate.getTime() + schedule.interval * unitMs)
 }
 
-export const prettyJson = (value: unknown) => {
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return String(value)
-  }
-}
+export const getTaskNextRunAt = (task?: TaskStatusLike | null) =>
+  parseDate(task?.schedule?.nextRunAt) ??
+  inferIntervalNextRunAt(task) ??
+  inferCrontabNextRunAt(task)
 
 export const getTaskRunResult = (run?: TaskRun | null): TaskRunResultLike =>
   (asObject(run?.result) ?? {}) as TaskRunResultLike
@@ -113,11 +215,13 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
     ) ??
     (run.status === 'SUCCESS'
       ? 'Run completed successfully.'
-      : run.status === 'RUNNING'
-        ? 'Run in progress.'
-        : run.status === 'FAILURE' || run.status === 'INCOMPLETE'
-          ? 'Run failed.'
-          : '–')
+      : run.status === 'PENDING'
+      ? 'Run queued.'
+      : run.status === 'STARTED' || run.status === 'RUNNING'
+      ? 'Run in progress.'
+      : run.status === 'FAILURE'
+      ? 'Run failed.'
+      : '–')
   )
 }
 
@@ -127,23 +231,60 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
 
   return (
     firstString(
+      extractorRuntime?.sourceUri,
+      extractorRuntime?.source_uri,
       result.runtimeSourceUri,
       result.runtime_source_uri,
       result.runtimeUrl,
-      result.runtime_url,
-      extractorRuntime?.sourceUri,
-      extractorRuntime?.source_uri
+      result.runtime_url
     ) ?? null
   )
 }
 
+export const getMonitoringRulesViolated = (run?: TaskRun | null) => {
+  const result = getTaskRunResult(run)
+  const count = firstNumber(result.rulesViolated, result.rules_violated)
+  if (count !== undefined) return count
+
+  const violations = result.violations
+  return Array.isArray(violations) ? violations.length : 0
+}
+
+export const getMonitoringRunViolations = (
+  run?: TaskRun | null
+): MonitoringRunViolation[] => {
+  const result = getTaskRunResult(run)
+  const violations = Array.isArray(result.violations) ? result.violations : []
+
+  return violations
+    .map((entry) => asObject(entry))
+    .filter((entry): entry is Record<string, unknown> => !!entry)
+    .map((entry) => ({
+      ruleId: firstString(entry.ruleId, entry.rule_id),
+      datastreamId: firstString(entry.datastreamId, entry.datastream_id),
+      ruleType: firstString(entry.ruleType, entry.rule_type),
+      violationCount:
+        firstNumber(entry.violationCount, entry.violation_count) ?? 0,
+      firstViolationAt: firstString(
+        entry.firstViolationAt,
+        entry.first_violation_at
+      ),
+      lastViolationAt: firstString(
+        entry.lastViolationAt,
+        entry.last_violation_at
+      ),
+    }))
+}
+
 export const taskRunHasFailures = (run?: TaskRun | null) => {
   if (!run) return false
-  if (run.status === 'FAILURE' || run.status === 'INCOMPLETE') return true
+  if (run.status === 'FAILURE') return true
 
   const result = getTaskRunResult(run)
+  if (getMonitoringRulesViolated(run) > 0) return true
+
   const failureCount = firstNumber(
-    run.failureCount,
+    (run as any).failureCount,
     result.failureCount,
     result.failure_count
   )
@@ -162,7 +303,7 @@ export const getTaskRunStatusText = (run?: TaskRun | null): StatusType => {
   if (!run) return 'Unknown'
   if (taskRunHasFailures(run)) return 'Needs attention'
   if (run.status === 'SUCCESS') return 'OK'
-  if (run.status === 'RUNNING') return 'Pending'
+  if (run.status === 'PENDING' || run.status === 'STARTED') return 'Pending'
   return 'Unknown'
 }
 
@@ -172,14 +313,19 @@ export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType => {
   const { latestRun, schedule } = task
   if (!schedule) {
     if (!latestRun) return 'Pending'
+    if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
+      return 'Pending'
+    }
     return taskRunHasFailures(latestRun) ? 'Needs attention' : 'OK'
   }
 
   if (!latestRun) return 'Pending'
   if (taskRunHasFailures(latestRun)) return 'Needs attention'
-  if (latestRun.status === 'RUNNING') return 'Pending'
+  if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
+    return 'Pending'
+  }
 
-  const next = parseDate(schedule.nextRunAt) ?? inferIntervalNextRunAt(task)
+  const next = getTaskNextRunAt(task)
   if (next) {
     return next.getTime() < Date.now() ? 'Behind schedule' : 'OK'
   }
@@ -191,294 +337,10 @@ export const getDisplayedTaskStatus = (
   task?: TaskStatusLike | null
 ): StatusType => {
   const status = getTaskStatusText(task)
-  if (task?.schedule?.paused && status !== 'Needs attention') {
+  const isPaused =
+    task?.schedule?.paused === true || task?.schedule?.enabled === false
+  if (isPaused && status !== 'Needs attention') {
     return 'Loading paused'
   }
   return status
-}
-
-const normalizeLogEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] => {
-  const logEntries = result.logEntries ?? result.log_entries
-  if (Array.isArray(logEntries)) {
-    return logEntries.map((entry) => {
-      const record = asObject(entry)
-      if (!record) return { message: String(entry) }
-
-      return {
-        timestamp: firstString(record.timestamp, record.time) ?? '',
-        level: firstString(record.level, record.levelname) ?? '',
-        stage: firstString(record.stage) ?? '',
-        message:
-          firstString(record.message, record.msg) ?? prettyJson(record),
-      }
-    })
-  }
-
-  if (typeof result.logs === 'string') {
-    return result.logs
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const match = line.match(/^(\S+)\s+([A-Z]+)\s+(.*)$/)
-        if (match) {
-          return {
-            timestamp: match[1],
-            level: match[2],
-            message: match[3],
-          }
-        }
-        return { message: line }
-      })
-  }
-
-  return []
-}
-
-const stageFromMessage = (message: string) => {
-  const lower = message.toLowerCase()
-  if (lower.startsWith('etl task')) return 'EXTRACT'
-  if (lower.startsWith('transformer timestamp')) return 'EXTRACT'
-  if (lower.startsWith('runtime variables resolved')) return 'EXTRACT'
-  if (lower.startsWith('task variables resolved')) return 'EXTRACT'
-  if (lower.startsWith('resolved runtime source uri')) return 'EXTRACT'
-  if (lower.startsWith('extractor returned payload')) return 'EXTRACT'
-  if (lower.includes('starting extract')) return 'EXTRACT'
-  if (lower.includes('starting transform')) return 'TRANSFORM'
-  if (lower.includes('starting load')) return 'LOAD'
-  if (lower.includes('resolving runtime var')) return 'EXTRACT'
-  if (lower.includes('requesting data from')) return 'EXTRACT'
-  if (lower.includes('standardized dataframe')) return 'TRANSFORM'
-  if (lower.includes('uploading')) return 'LOAD'
-  return null
-}
-
-const normalizeStage = (stage?: string | null) => {
-  const normalized = `${stage || ''}`.trim().toUpperCase()
-  if (normalized === 'SETUP') return 'EXTRACT'
-  if (normalized === 'EXTRACT') return 'EXTRACT'
-  if (normalized === 'TRANSFORM') return 'TRANSFORM'
-  if (normalized === 'LOAD') return 'LOAD'
-  return null
-}
-
-const sectionTitleFromStage = (stage?: string | null) => {
-  const normalized = normalizeStage(stage)
-  if (normalized === 'EXTRACT') return 'Extract'
-  if (normalized === 'TRANSFORM') return 'Transform'
-  if (normalized === 'LOAD') return 'Load'
-  return null
-}
-
-const buildEtlLogSections = (
-  logEntries: TaskRunDetailEntry[]
-): TaskRunDetailSection[] => {
-  const entriesByStage: Record<'EXTRACT' | 'TRANSFORM' | 'LOAD', TaskRunDetailEntry[]> = {
-    EXTRACT: [],
-    TRANSFORM: [],
-    LOAD: [],
-  }
-  let currentStage: 'EXTRACT' | 'TRANSFORM' | 'LOAD' | null = null
-  let foundStage = false
-
-  logEntries.forEach((entry) => {
-    const explicitStage = normalizeStage(entry.stage)
-    const inferredStage = normalizeStage(stageFromMessage(entry.message || ''))
-    const nextStage =
-      explicitStage ??
-      inferredStage ??
-      currentStage ??
-      (foundStage ? null : 'EXTRACT')
-
-    if (!nextStage) return
-
-    currentStage = nextStage as 'EXTRACT' | 'TRANSFORM' | 'LOAD'
-    foundStage = true
-    entriesByStage[currentStage].push({
-      ...entry,
-      stage: currentStage,
-    })
-  })
-
-  if (!foundStage) return []
-
-  return (['EXTRACT', 'TRANSFORM', 'LOAD'] as const)
-    .filter((stage) => entriesByStage[stage].length > 0)
-    .map((stage) => ({
-      title: sectionTitleFromStage(stage) || 'Logs',
-      type: 'lines' as const,
-      entries: entriesByStage[stage],
-    }))
-}
-
-const buildSummaryEntries = (result: TaskRunResultLike): TaskRunDetailEntry[] => {
-  const rows = [
-    ['Values loaded', firstNumber(result.valuesLoadedTotal, result.values_loaded_total)],
-    ['Successful targets', firstNumber(result.successCount, result.success_count)],
-    ['Failed targets', firstNumber(result.failureCount, result.failure_count)],
-    ['Skipped targets', firstNumber(result.skippedCount, result.skipped_count)],
-    [
-      'Earliest timestamp',
-      firstString(result.earliestTimestamp, result.earliest_timestamp),
-    ],
-    ['Latest timestamp', firstString(result.latestTimestamp, result.latest_timestamp)],
-  ]
-
-  return rows
-    .filter(([, value]) => value !== undefined && value !== null && value !== '')
-    .map(([label, value]) => ({
-      level:
-        label === 'Failed targets' && Number(value) > 0 ? 'FAILED' : undefined,
-      message: `${label}: ${value}`,
-    }))
-}
-
-const buildTargetResultEntries = (
-  result: TaskRunResultLike
-): TaskRunDetailEntry[] => {
-  const targetResults = getTargetResults(result)
-  if (!targetResults) return []
-
-  return Object.entries(targetResults).map(([targetId, target]) => {
-    const targetRecord = asObject(target) ?? {}
-    const status = firstString(targetRecord.status)?.toUpperCase() ?? 'UNKNOWN'
-    const valuesLoaded = firstNumber(
-      targetRecord.valuesLoaded,
-      targetRecord.values_loaded
-    )
-    const error = firstString(targetRecord.error)
-    const earliest = firstString(
-      targetRecord.earliestTimestamp,
-      targetRecord.earliest_timestamp
-    )
-    const latest = firstString(
-      targetRecord.latestTimestamp,
-      targetRecord.latest_timestamp
-    )
-
-    const details = [
-      `Target ${targetId}`,
-      typeof valuesLoaded === 'number' ? `${valuesLoaded} loaded` : null,
-      earliest ? `first ${earliest}` : null,
-      latest ? `last ${latest}` : null,
-      error,
-    ].filter(Boolean)
-
-    return {
-      level: status,
-      message: details.join(' | '),
-    }
-  })
-}
-
-export const buildTaskRunDetailSections = (
-  run?: TaskRun | null
-): TaskRunDetailSection[] => {
-  if (!run) return [{ title: 'Logs', type: 'text', text: '–' }]
-
-  const result = getTaskRunResult(run)
-  const sections: TaskRunDetailSection[] = []
-
-  const logEntries = normalizeLogEntries(result)
-  const etlLogSections = buildEtlLogSections(logEntries)
-  if (etlLogSections.length) {
-    return etlLogSections
-  }
-
-  if (logEntries.length) {
-    sections.push({
-      title: 'Logs',
-      type: 'lines',
-      entries: logEntries,
-    })
-  }
-
-  const summaryEntries = buildSummaryEntries(result)
-  if (summaryEntries.length) {
-    sections.push({
-      title: 'Summary',
-      type: 'lines',
-      entries: summaryEntries,
-    })
-  }
-
-  const errorText = firstString(result.error)
-  if (errorText) {
-    sections.push({
-      title: 'Error',
-      type: 'text',
-      text: errorText,
-    })
-  }
-
-  const runtimeVariables = getRuntimeVariables(result)
-  if (runtimeVariables && Object.keys(runtimeVariables).length) {
-    sections.push({
-      title: 'Runtime context',
-      type: 'text',
-      text: prettyJson(runtimeVariables),
-    })
-  }
-
-  const targetResultEntries = buildTargetResultEntries(result)
-  if (targetResultEntries.length) {
-    sections.push({
-      title: 'Target results',
-      type: 'lines',
-      entries: targetResultEntries,
-    })
-  }
-
-  if (result.traceback) {
-    sections.push({
-      title: 'Traceback',
-      type: 'text',
-      text: String(result.traceback),
-    })
-  }
-
-  const detail = { ...result }
-  delete detail.logs
-  delete detail.logEntries
-  delete detail.log_entries
-  delete detail.runtimeVariables
-  delete detail.runtime_variables
-  delete detail.targetResults
-  delete detail.target_results
-  delete detail.traceback
-  delete detail.error
-  delete detail.message
-  delete detail.summary
-  delete detail.statusMessage
-  delete detail.status_message
-  delete detail.failureReason
-  delete detail.failure_reason
-  delete detail.runtimeSourceUri
-  delete detail.runtime_source_uri
-  delete detail.runtimeUrl
-  delete detail.runtime_url
-  delete detail.successCount
-  delete detail.success_count
-  delete detail.failureCount
-  delete detail.failure_count
-  delete detail.skippedCount
-  delete detail.skipped_count
-  delete detail.valuesLoadedTotal
-  delete detail.values_loaded_total
-  delete detail.earliestTimestamp
-  delete detail.earliest_timestamp
-  delete detail.latestTimestamp
-  delete detail.latest_timestamp
-
-  if (Object.keys(detail).length) {
-    sections.push({
-      title: 'Details',
-      type: 'text',
-      text: prettyJson(detail),
-    })
-  }
-
-  return sections.length
-    ? sections
-    : [{ title: 'Logs', type: 'text', text: '–' }]
 }

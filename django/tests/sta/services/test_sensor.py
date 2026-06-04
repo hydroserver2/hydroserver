@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.services import SensorService
+from core.sta.services import SensorService
 from interfaces.api.schemas import SensorPostBody, SensorPatchBody, SensorSummaryResponse
 
 sensor_service = SensorService()

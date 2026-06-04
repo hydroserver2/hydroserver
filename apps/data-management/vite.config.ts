@@ -6,10 +6,10 @@ import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL === '1'
+  const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
-    env.VITE_HYDROSERVER_CLIENT_PATH || '../hydroserver-ts/src'
+    env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
@@ -58,6 +58,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environmentMatchGlobs: [['src/components/**', 'jsdom']],
+      setupFiles: ['src/test/setup.ts'],
       server: {
         deps: {
           inline: ['vuetify'],
@@ -73,6 +74,8 @@ export default defineConfig(({ mode }) => {
           '**/src/composables/useMetadata.ts',
           '**/src/composables/useVocabulary.ts',
           '**/src/composables/useSystemTableLogic.ts',
+          '**/src/composables/orchestration/useSimpleTaskDetails.ts',
+          '**/src/composables/orchestration/useTaskRunNowPolling.ts',
           '**/src/services/getCSRFToken.ts',
           '**/src/models/**',
           '**/src/plugins/**',

@@ -3,7 +3,7 @@ from django.templatetags.static import static
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
 from django.conf import settings
-from domains.web.models import InstanceConfiguration, MapLayer, ContactInformation
+from core.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
 
 @cache_page(60 * 10)

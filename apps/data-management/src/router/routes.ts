@@ -1,8 +1,30 @@
 import { RouteRecordRaw } from 'vue-router'
 import { enableHomePage } from '@/config/homeConfig'
+import { useWorkspaceStore } from '@/store/workspaces'
 
 const disableAccountCreation =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
+
+const validOrchestrationViews = new Set([
+  'ingestion',
+  'aggregation',
+  'quality',
+  'workspaces',
+])
+
+const orchestrationComponent = () => import('@/pages/Orchestration.vue')
+const ingestionTaskDetailsComponent = () =>
+  import('@/components/Orchestration/ingestion/IngestionTaskDetails.vue')
+const aggregationTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/AggregationTaskDetails.vue')
+const expressionTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/ExpressionTaskDetails.vue')
+const derivationTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/DerivationTaskDetails.vue')
+const ratingCurveTaskDetailsComponent = () =>
+  import('@/components/Orchestration/data-products/RatingCurveTaskDetails.vue')
+const qualityTaskDetailsComponent = () =>
+  import('@/components/Orchestration/monitoring/QualityTaskDetails.vue')
 
 export const routes: RouteRecordRaw[] = [
   enableHomePage
@@ -78,8 +100,80 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/orchestration',
     name: 'Orchestration',
-    component: () => import('@/pages/Orchestration.vue'),
+    redirect: () =>
+      useWorkspaceStore().selectedWorkspace
+        ? '/orchestration/ingestion'
+        : '/orchestration/workspaces',
+  },
+  {
+    path: '/orchestration/:view',
+    name: 'OrchestrationView',
+    component: orchestrationComponent,
     meta: { requiresAuth: true, hideFooter: true },
+    beforeEnter: (to) => {
+      const view = Array.isArray(to.params.view)
+        ? to.params.view[0]
+        : to.params.view
+      if (!validOrchestrationViews.has(`${view}`)) {
+        return '/orchestration/ingestion'
+      }
+    },
+    children: [
+      {
+        path: 'details/ingestion',
+        name: 'OrchestrationIngestionDetails',
+        component: ingestionTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'ingestion',
+          orchestrationTaskDetail: 'ingestion',
+        },
+      },
+      {
+        path: 'details/aggregation',
+        name: 'OrchestrationAggregationDetails',
+        component: aggregationTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'aggregation',
+        },
+      },
+      {
+        path: 'details/expression',
+        name: 'OrchestrationExpressionDetails',
+        component: expressionTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'expression',
+        },
+      },
+      {
+        path: 'details/derivation',
+        name: 'OrchestrationDerivationDetails',
+        component: derivationTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'derivation',
+        },
+      },
+      {
+        path: 'details/rating-curve',
+        name: 'OrchestrationRatingCurveDetails',
+        component: ratingCurveTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'aggregation',
+          orchestrationTaskDetail: 'rating-curve',
+        },
+      },
+      {
+        path: 'details/quality',
+        name: 'OrchestrationQualityDetails',
+        component: qualityTaskDetailsComponent,
+        meta: {
+          orchestrationView: 'quality',
+          orchestrationTaskDetail: 'quality',
+        },
+      },
+    ],
   },
   {
     path: '/hydroloader/download',

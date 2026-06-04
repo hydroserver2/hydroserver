@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.services import ObservedPropertyService
+from core.sta.services import ObservedPropertyService
 from interfaces.api.schemas import (
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,

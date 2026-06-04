@@ -1,5 +1,10 @@
 <template>
-  <v-app-bar app elevation="2" density="default">
+  <v-app-bar
+    app
+    :elevation="route.name === 'Orchestration' ? 0 : 2"
+    :class="route.name === 'Orchestration' ? 'navbar-flat' : ''"
+    density="default"
+  >
     <template
       v-slot:prepend
       v-if="route.meta.hasSidebar && route.name !== 'VisualizeData'"
@@ -252,3 +257,11 @@ async function onLogout() {
   Snackbar.info('You have logged out')
 }
 </script>
+
+<style scoped>
+.v-app-bar.navbar-flat,
+:deep(.v-app-bar.navbar-flat) {
+  border-bottom: 1px solid #e8e8e8 !important;
+}
+</style>
+

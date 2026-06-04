@@ -5,7 +5,7 @@ from interfaces.api.schemas import BasePostBody
 from interfaces.auth.schemas.account import UserFields
 
 if TYPE_CHECKING:
-    from interfaces.api.schemas import OrganizationPostBody
+    from interfaces.auth.schemas import OrganizationPostBody
 
 
 class ProviderRedirectPostForm(Schema):

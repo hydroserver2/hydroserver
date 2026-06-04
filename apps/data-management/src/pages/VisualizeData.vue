@@ -35,7 +35,7 @@ import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { getVisualizationBootstrap } from '@/api/visualizationBootstrap'
+import hs from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useSidebarStore } from '@/store/useSidebar'
 import { storeToRefs } from 'pinia'
@@ -373,11 +373,13 @@ onMounted(async () => {
       observedProperties.value.length > 0
 
     if (!hasBootstrapData) {
-      const bootstrap = await getVisualizationBootstrap()
-      things.value = bootstrap.things
-      datastreams.value = bootstrap.datastreams
-      processingLevels.value = bootstrap.processingLevels
-      observedProperties.value = bootstrap.observedProperties
+      const res = await hs.datastreams.getVisualizationBootstrap()
+      if (res.ok) {
+        things.value = res.data.things
+        datastreams.value = res.data.datastreams
+        processingLevels.value = res.data.processingLevels
+        observedProperties.value = res.data.observedProperties
+      }
     }
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')

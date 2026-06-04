@@ -3,11 +3,11 @@ from typing import Literal
 from django.http import HttpResponse
 from allauth.headless.account.views import SignupView
 from allauth.headless.constants import Client
-from interfaces.http.auth import bearer_auth, session_auth
-from interfaces.http.request import HydroServerHttpRequest
-from interfaces.api.schemas import VocabularyQueryParameters
+from interfaces.auth.security import bearer_auth, session_auth
 from interfaces.auth.schemas import AccountDetailResponse, AccountPostBody, AccountPatchBody
-from domains.iam.services import AccountService
+from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.schemas import VocabularyQueryParameters
+from core.iam.services import AccountService
 
 account_router = Router(tags=["Account"])
 account_service = AccountService()

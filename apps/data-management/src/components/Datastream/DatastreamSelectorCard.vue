@@ -197,7 +197,7 @@ const headers = [
   { title: 'No-data value', key: 'noDataValue' },
   { title: 'Aggregation statistic', key: 'aggregationStatistic' },
   { title: 'Unit', key: 'unitName' },
-  { title: 'Sensor', key: 'sensorName' },
+  { title: 'Method', key: 'sensorName' },
 
   { title: 'Phenomenon begin', key: 'phenomenonBeginTime', class: 'one-line' },
   { title: 'Phenomenon end', key: 'phenomenonEndTime' },

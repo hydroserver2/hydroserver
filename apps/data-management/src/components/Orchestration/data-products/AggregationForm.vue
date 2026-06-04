@@ -1,0 +1,553 @@
+<template>
+  <v-card>
+    <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
+      <v-card-title>{{
+        isEditMode ? 'Edit aggregation task' : 'Create aggregation task'
+      }}</v-card-title>
+      <v-btn
+        :icon="mdiInformationOutline"
+        variant="text"
+        aria-label="Toggle task info"
+        @click="showInfo = !showInfo"
+      />
+    </v-toolbar>
+    <v-divider />
+
+    <v-progress-linear
+      v-if="loadingExisting"
+      indeterminate
+      :color="DATA_PRODUCT_ACCENT"
+    />
+
+    <v-form
+      ref="formRef"
+      v-model="valid"
+      validate-on="input"
+      @submit.prevent="onSubmit"
+    >
+      <v-card-text>
+        <v-alert
+          v-if="showInfo"
+          :color="DATA_PRODUCT_ACCENT"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-5"
+        >
+          Aggregate observations from an input datastream into fixed-length time
+          buckets and write the results to an output datastream.
+        </v-alert>
+
+        <v-text-field
+          v-model="taskName"
+          label="Task name *"
+          :rules="rules.requiredAndMaxLength255"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <ScheduleFields
+          v-model="schedule"
+          :disabled="loadingExisting"
+          :color="DATA_PRODUCT_ACCENT"
+        />
+
+        <v-divider class="mb-4" />
+
+        <DatastreamCardSelector
+          v-model="inputDatastreamId"
+          :datastreams="siteDatastreams"
+          label="Input datastream *"
+          :loading="loadingDatastreams"
+          :disabled="!selectedThingId || loadingExisting"
+          :rules="rules.required"
+          class="mb-2"
+        />
+
+        <DatastreamCardSelector
+          v-model="outputDatastreamId"
+          :datastreams="siteDatastreams"
+          label="Output datastream *"
+          :disabled="!selectedThingId || loadingExisting"
+          :loading="loadingDatastreams"
+          :rules="rules.required"
+          class="mb-2"
+        />
+
+        <v-divider class="mb-4" />
+
+        <div
+          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+        >
+          Aggregation settings
+        </div>
+
+        <v-select
+          v-model="aggregationMethod"
+          :items="aggregationMethodOptions"
+          item-title="title"
+          item-value="value"
+          label="Aggregation method *"
+          :rules="rules.required"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <div class="d-flex gap-3 mb-2">
+          <v-text-field
+            v-model.number="outputInterval"
+            label="Output interval *"
+            type="number"
+            min="1"
+            :rules="[...rules.required, positiveInteger]"
+            :disabled="loadingExisting"
+            class="shrink"
+            style="max-width: 160px"
+          />
+          <v-select
+            v-model="outputIntervalUnits"
+            :items="intervalUnitOptions"
+            item-title="title"
+            item-value="value"
+            label="Unit *"
+            :rules="rules.required"
+            :disabled="loadingExisting"
+            class="grow"
+          />
+        </div>
+
+        <v-text-field
+          v-model.number="minValues"
+          label="Minimum values per bucket"
+          type="number"
+          min="1"
+          hint="Buckets with fewer than this many values will be skipped."
+          persistent-hint
+          :rules="
+            minValues !== null && minValues !== undefined
+              ? [positiveInteger]
+              : []
+          "
+          :disabled="loadingExisting"
+          clearable
+          class="mb-2"
+          @click:clear="minValues = null"
+        />
+
+        <v-divider class="mb-4 mt-2" />
+
+        <div
+          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+        >
+          Timezone
+        </div>
+
+        <v-select
+          v-model="timezoneMode"
+          :items="timezoneOptions"
+          item-title="title"
+          item-value="value"
+          label="Timezone type"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <v-autocomplete
+          v-if="timezoneMode === 'fixedOffset'"
+          v-model="timezone"
+          label="Fixed UTC offset *"
+          hint="Select the fixed UTC offset for this data."
+          :items="FIXED_OFFSET_TIMEZONES"
+          :rules="rules.required"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <v-autocomplete
+          v-if="timezoneMode === 'iana'"
+          v-model="timezone"
+          label="IANA timezone *"
+          hint="Select an IANA timezone for this data."
+          :items="DST_AWARE_TIMEZONES"
+          :rules="rules.required"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+      </v-card-text>
+
+      <v-divider />
+
+      <v-card-actions>
+        <v-spacer />
+        <v-btn-cancel :disabled="saving" @click="$emit('close')"
+          >Cancel</v-btn-cancel
+        >
+
+        <v-btn-primary
+          type="submit"
+          :color="DATA_PRODUCT_ACCENT"
+          :loading="saving"
+          :disabled="deleting"
+        >
+          {{ isEditMode ? 'Save changes' : 'Create aggregation task' }}
+        </v-btn-primary>
+      </v-card-actions>
+    </v-form>
+  </v-card>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import type { VForm } from 'vuetify/components'
+import { mdiInformationOutline } from '@mdi/js'
+import { storeToRefs } from 'pinia'
+import hs, {
+  type Datastream,
+  type DataProductTask,
+  type AggregationMethod,
+  type AggregationTransformationValues,
+  type IntervalUnit,
+  type TaskSchedule,
+} from '@hydroserver/client'
+import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
+import { rules } from '@/utils/rules'
+import { Snackbar } from '@/utils/notifications'
+import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import {
+  DATA_PRODUCT_ACCENT,
+  DATA_PRODUCT_TOOLBAR_STYLE,
+} from '@/utils/orchestration/dataProductTheme'
+import DatastreamCardSelector from '../shared/DatastreamCardSelector.vue'
+import ScheduleFields from '../shared/ScheduleFields.vue'
+import { useWorkspaceStore } from '@/store/workspaces'
+
+const props = defineProps<{
+  initialThingId?: string | null
+  editTaskId?: string | null
+}>()
+
+const emit = defineEmits<{
+  (e: 'created', task: DataProductTask): void
+  (e: 'updated', task: DataProductTask): void
+  (e: 'deleted'): void
+  (e: 'close'): void
+}>()
+
+const isEditMode = computed(() => !!props.editTaskId)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+const formRef = ref<VForm>()
+const valid = ref<boolean | null>(null)
+const showInfo = ref(false)
+const loadingDatastreams = ref(false)
+const loadingExisting = ref(false)
+const saving = ref(false)
+const deleting = ref(false)
+const datastreams = ref<Datastream[]>([])
+
+const existingTransformationId = ref<string | null>(null)
+const originalTransformation = ref<AggregationTransformationValues | null>(null)
+
+const taskName = ref('')
+const schedule = ref<TaskSchedule | null>(null)
+const inputDatastreamId = ref<string | null>(null)
+const outputDatastreamId = ref<string | null>(null)
+const aggregationMethod = ref<AggregationMethod>('mean')
+const outputInterval = ref<number | null>(1)
+const outputIntervalUnits = ref<IntervalUnit>('hours')
+const minValues = ref<number | null>(null)
+const timezoneType = ref<'offset' | 'iana' | null>(null)
+const timezone = ref<string | null>(null)
+
+const selectedThingId = computed(() => props.initialThingId ?? null)
+
+const aggregationMethodOptions = [
+  { title: 'Mean', value: 'mean' },
+  { title: 'Sum', value: 'sum' },
+  { title: 'Min', value: 'min' },
+  { title: 'Max', value: 'max' },
+  { title: 'First', value: 'first' },
+  { title: 'Last', value: 'last' },
+]
+
+const intervalUnitOptions = [
+  { title: 'Minutes', value: 'minutes' },
+  { title: 'Hours', value: 'hours' },
+  { title: 'Days', value: 'days' },
+  { title: 'Weeks', value: 'weeks' },
+  { title: 'Months', value: 'months' },
+]
+
+const timezoneOptions = [
+  { title: 'UTC (Default)', value: 'utc' },
+  { title: 'Fixed UTC Offset', value: 'fixedOffset' },
+  { title: 'IANA Timezone', value: 'iana' },
+] as const
+
+const timezoneMode = computed({
+  get(): 'utc' | 'fixedOffset' | 'iana' {
+    if (timezoneType.value === 'offset') return 'fixedOffset'
+    if (timezoneType.value === 'iana') return 'iana'
+    return 'utc'
+  },
+  set(mode: 'utc' | 'fixedOffset' | 'iana') {
+    if (mode === 'utc') {
+      timezoneType.value = null
+      timezone.value = null
+    } else if (mode === 'fixedOffset') {
+      timezoneType.value = 'offset'
+      timezone.value = '-0700'
+    } else {
+      timezoneType.value = 'iana'
+      timezone.value = 'America/Denver'
+    }
+  },
+})
+
+const siteDatastreams = computed(() => {
+  const thingId = selectedThingId.value
+  return datastreamsForThing(datastreams.value, thingId)
+})
+
+type Rule = (v: any) => true | string
+
+const positiveInteger: Rule = (v) => {
+  const n = Number(v)
+  return (Number.isInteger(n) && n >= 1) || 'Must be a positive whole number.'
+}
+
+function normalizeOptionalInteger(value: unknown) {
+  if (value === null || value === undefined || value === '') return null
+  return Number(value)
+}
+
+function currentTransformationValues(): AggregationTransformationValues {
+  return {
+    inputDatastreamId: inputDatastreamId.value,
+    outputDatastreamId: outputDatastreamId.value,
+    aggregationMethod: aggregationMethod.value,
+    outputInterval: normalizeOptionalInteger(outputInterval.value),
+    outputIntervalUnits: outputIntervalUnits.value,
+    minValues: normalizeOptionalInteger(minValues.value),
+    timezoneType: timezoneType.value,
+    timezone: timezone.value,
+  }
+}
+
+function transformationHasChanges() {
+  const original = originalTransformation.value
+  if (!original) return true
+
+  const current = currentTransformationValues()
+  return (
+    current.inputDatastreamId !== original.inputDatastreamId ||
+    current.outputDatastreamId !== original.outputDatastreamId ||
+    current.aggregationMethod !== original.aggregationMethod ||
+    current.outputInterval !== original.outputInterval ||
+    current.outputIntervalUnits !== original.outputIntervalUnits ||
+    current.minValues !== original.minValues ||
+    current.timezoneType !== original.timezoneType ||
+    current.timezone !== original.timezone
+  )
+}
+
+async function loadDatastreams() {
+  const workspaceId = selectedWorkspaceId.value
+  if (!workspaceId) {
+    datastreams.value = []
+    return
+  }
+
+  loadingDatastreams.value = true
+  try {
+    const items = await hs.datastreams.listAllItems({
+      workspace_id: [workspaceId],
+      order_by: ['name'],
+      expand_related: true,
+    } as any)
+    datastreams.value = items as Datastream[]
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to load datastreams.')
+  } finally {
+    loadingDatastreams.value = false
+  }
+}
+
+async function loadExistingTask() {
+  if (!props.editTaskId) return
+  loadingExisting.value = true
+  try {
+    const [taskRes, transformRes] = await Promise.all([
+      hs.dataProductTasks.get(props.editTaskId),
+      hs.dataProductTasks.listAggregationTransformations(props.editTaskId),
+    ])
+
+    if (taskRes.ok && taskRes.data?.name) {
+      taskName.value = taskRes.data.name
+      schedule.value = taskRes.data.schedule ?? null
+    }
+
+    if (transformRes.ok && transformRes.data?.length) {
+      const t = transformRes.data[0]
+      existingTransformationId.value = t.id
+      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+      aggregationMethod.value = t.aggregationMethod
+      outputInterval.value = t.outputInterval
+      outputIntervalUnits.value = t.outputIntervalUnits
+      minValues.value = t.minValues ?? null
+      timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
+      timezone.value = t.timezone ?? null
+      originalTransformation.value = currentTransformationValues()
+    }
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to load existing task.')
+  } finally {
+    loadingExisting.value = false
+  }
+}
+
+async function onSubmit() {
+  await formRef.value?.validate()
+  if (!valid.value) return
+  if (!inputDatastreamId.value || !outputDatastreamId.value) return
+  if (!outputInterval.value) return
+
+  saving.value = true
+  try {
+    if (isEditMode.value) {
+      await onUpdate()
+    } else {
+      await onCreate()
+    }
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to save aggregation task.')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function onCreate() {
+  const thingId = selectedThingId.value
+  if (!thingId) {
+    Snackbar.error('Select a site before creating an aggregation task.')
+    return
+  }
+
+  const taskRes = await hs.dataProductTasks.create({
+    id: '',
+    name: taskName.value.trim(),
+    thingId,
+    description: null,
+    schedule: schedule.value,
+  })
+
+  if (!taskRes.ok || !taskRes.data?.id) {
+    Snackbar.error(taskRes.message || 'Unable to create aggregation task.')
+    return
+  }
+
+  const transformRes =
+    await hs.dataProductTasks.createAggregationTransformation(taskRes.data.id, {
+      inputDatastreamId: inputDatastreamId.value!,
+      outputDatastreamId: outputDatastreamId.value!,
+      aggregationMethod: aggregationMethod.value,
+      outputInterval: outputInterval.value!,
+      outputIntervalUnits: outputIntervalUnits.value,
+      minValues: minValues.value ?? null,
+      timezoneType: timezoneType.value ?? null,
+      timezone: timezone.value ?? null,
+    })
+
+  if (!transformRes.ok) {
+    Snackbar.error(
+      transformRes.message || 'Unable to create aggregation transformation.'
+    )
+    return
+  }
+
+  emit('created', taskRes.data)
+  emit('close')
+}
+
+async function onUpdate() {
+  const taskId = props.editTaskId!
+
+  const taskRes = await hs.dataProductTasks.update({
+    id: taskId,
+    name: taskName.value.trim(),
+    schedule: schedule.value,
+  })
+
+  if (!taskRes.ok) {
+    Snackbar.error(taskRes.message || 'Unable to update task name.')
+    return
+  }
+
+  if (existingTransformationId.value && transformationHasChanges()) {
+    const transformRes =
+      await hs.dataProductTasks.updateAggregationTransformation(
+        taskId,
+        existingTransformationId.value,
+        {
+          inputDatastreamId: inputDatastreamId.value!,
+          outputDatastreamId: outputDatastreamId.value!,
+          aggregationMethod: aggregationMethod.value,
+          outputInterval: outputInterval.value!,
+          outputIntervalUnits: outputIntervalUnits.value,
+          minValues: minValues.value ?? null,
+          timezoneType: timezoneType.value ?? null,
+          timezone: timezone.value ?? null,
+        }
+      )
+
+    if (!transformRes.ok) {
+      Snackbar.error(
+        transformRes.message || 'Unable to update aggregation transformation.'
+      )
+      return
+    }
+
+    originalTransformation.value = currentTransformationValues()
+  }
+
+  Snackbar.success('Aggregation task updated.')
+  emit('updated', taskRes.data!)
+  emit('close')
+}
+
+async function onDelete() {
+  if (!props.editTaskId) return
+  deleting.value = true
+  try {
+    const res = await hs.dataProductTasks.delete(props.editTaskId)
+    if (!res.ok) {
+      Snackbar.error(res.message || 'Unable to delete aggregation task.')
+      return
+    }
+    Snackbar.success('Aggregation task deleted.')
+    emit('deleted')
+    emit('close')
+  } catch (error: any) {
+    Snackbar.error(error?.message || 'Unable to delete aggregation task.')
+  } finally {
+    deleting.value = false
+  }
+}
+
+watch(
+  () => props.initialThingId,
+  () => {
+    if (!isEditMode.value) {
+      inputDatastreamId.value = null
+      outputDatastreamId.value = null
+    }
+  }
+)
+
+onMounted(async () => {
+  await loadDatastreams()
+  if (isEditMode.value) await loadExistingTask()
+})
+</script>

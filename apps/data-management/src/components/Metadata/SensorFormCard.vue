@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
-      <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} Sensor </v-card-title>
+      <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} Method </v-card-title>
     </v-toolbar>
     <v-divider />
 

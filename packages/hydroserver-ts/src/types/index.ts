@@ -441,6 +441,31 @@ export interface UserInfo {
   organizationName: string
 }
 
+export interface ThingMarker {
+  id: string
+  workspaceId: string
+  name: string
+  siteType: string
+  isPrivate: boolean
+  latitude: number
+  longitude: number
+}
+
+export interface ThingSiteSummary extends ThingMarker {
+  samplingFeatureCode: string
+  tags: Tag[]
+}
+
+export interface ThingTaskSummary {
+  id: string
+  name: string
+  siteType: string
+  productTaskCount: number
+  productTaskAttentionCount: number
+  monitoringTaskCount: number
+  monitoringTaskAttentionCount: number
+}
+
 export class Collaborator {
   user: UserInfo
   role: CollaboratorRole

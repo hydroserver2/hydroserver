@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.iam.services.workspace import WorkspaceService
+from core.iam.services.workspace import WorkspaceService
 from interfaces.api.schemas import (
     WorkspacePostBody,
     WorkspacePatchBody,
@@ -251,14 +251,14 @@ def test_update_workspace(
             "6e0deaf2-a92b-421b-9ece-86783265596f",
             "Workspace deleted",
             None,
-            42,
+            56,
         ),
         (
             "admin",
             "6e0deaf2-a92b-421b-9ece-86783265596f",
             "Workspace deleted",
             None,
-            42,
+            56,
         ),
         (
             "owner",

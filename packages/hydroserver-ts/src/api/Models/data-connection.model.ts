@@ -1,35 +1,74 @@
-import { Timestamp } from '../../types/timestamp'
-import type { Datastream, Workspace } from '../../types'
+import type { Workspace } from '../../types'
+import type { IntervalPeriod } from './task.model'
+
+export type PayloadType = 'CSV' | 'JSON'
+export type PlaceholderVariableType =
+  | 'run_time'
+  | 'latest_observation_timestamp'
+  | 'per_task'
+export type TimezoneType = 'offset' | 'iana'
+export type CSVDelimiterType = ',' | '\t' | ';' | '|' | ' '
+
+export interface CSVPayload {
+  type: 'CSV'
+  timestampKey: string
+  timestampFormat?: string | null
+  headerRow?: number | null
+  dataStartRow?: number | null
+  delimiter?: CSVDelimiterType | null
+}
+
+export interface JSONPayload {
+  type: 'JSON'
+  timestampKey: string
+  timestampFormat?: string | null
+  jmespath?: string | null
+}
+
+export type Payload = CSVPayload | JSONPayload
+
+export interface PlaceholderVariable {
+  id?: string
+  name: string
+  type: PlaceholderVariableType
+  timestampFormat?: string | null
+}
+
+export interface NotificationSchedule {
+  enabled: boolean
+  startTime?: string | null
+  crontab?: string | null
+  interval?: number | null
+  intervalPeriod?: IntervalPeriod | null
+  nextRunAt?: string | null
+}
+
+export interface Notification {
+  schedule?: NotificationSchedule | null
+  recipientEmails: string[]
+}
 
 export class DataConnection {
-  name = ''
   id = ''
-  type = 'ETL'
-  notificationRecipientEmails: string[] = []
+  name = ''
+  description: string | null = null
+  sourceUrl = ''
+  authHeaderName: string | null = null
+  authHeaderValue: string | null = null
   workspace: Workspace | null = null
-  extractor: ExtractorConfig = JSON.parse(
-    JSON.stringify(extractorDefaults['local'])
-  )
-  transformer: TransformerConfig = JSON.parse(
-    JSON.stringify(transformerDefaults['CSV'])
-  )
-  loader: LoaderConfig = JSON.parse(
-    JSON.stringify(loaderDefaults['HydroServer'])
-  )
+  timezoneType: TimezoneType | null = null
+  timezone: string | null = null
+  payload: Payload = { type: 'CSV', timestampKey: '' }
+  placeholderVariables: PlaceholderVariable[] = []
+  notification: Notification | null = null
+  taskCount = 0
+  taskAttentionCount = 0
 
   constructor(init?: Partial<DataConnection>) {
     Object.assign(this, init)
     this.id ||= crypto.randomUUID()
   }
 }
-
-export const WORKFLOW_TYPES = [
-  { title: 'ETL', value: 'ETL' },
-  { title: 'HydroServer aggregation', value: 'Aggregation' },
-  { title: 'HydroServer virtual datastream', value: 'Virtual' },
-  { title: 'Streaming Data Loader', value: 'SDL' },
-] as const
-export type WorkflowType = (typeof WORKFLOW_TYPES)[number]['value']
 
 export const CSV_DELIMITER_OPTIONS = [
   { value: ',', title: 'Comma' },
@@ -38,151 +77,6 @@ export const CSV_DELIMITER_OPTIONS = [
   { value: ';', title: 'Semicolon' },
   { value: ' ', title: 'Space' },
 ] as const
-export type CSVDelimiterType = (typeof CSV_DELIMITER_OPTIONS)[number]['value']
-
-export interface PerTaskPlaceholder {
-  name: string
-  type: 'perTask'
-}
-
-export interface RunTimePlaceholder {
-  name: string
-  type: 'runTime'
-  runTimeValue: 'startTime' | 'now'
-  timestamp: Timestamp
-}
-
-export type PlaceholderVariable = PerTaskPlaceholder | RunTimePlaceholder
-
-export const EXTRACTOR_OPTIONS = ['HTTP', 'local'] as const
-export type ExtractorType = (typeof EXTRACTOR_OPTIONS)[number]
-
-interface BaseExtractor {
-  type: ExtractorType
-  settings: {}
-}
-
-export interface HTTPExtractor extends BaseExtractor {
-  type: 'HTTP'
-}
-
-export interface LocalFileExtractor extends BaseExtractor {
-  type: 'local'
-}
-
-export type ExtractorConfig = HTTPExtractor | LocalFileExtractor
-
-export const extractorDefaults: Record<ExtractorType, ExtractorConfig> = {
-  HTTP: {
-    type: 'HTTP',
-    settings: {
-      sourceUri: '',
-      placeholderVariables: [],
-    },
-  } as HTTPExtractor,
-  local: {
-    type: 'local',
-    settings: {
-      sourceUri: '',
-      placeholderVariables: [],
-    },
-  } as LocalFileExtractor,
-}
-
-export const TRANSFORMER_OPTIONS = ['JSON', 'CSV'] as const
-export type TransformerType = (typeof TRANSFORMER_OPTIONS)[number]
-export enum IdentifierType {
-  Name = 'name',
-  Index = 'index',
-}
-
-interface BaseTransformer {
-  type: TransformerType
-  settings: {}
-}
-
-export interface JSONtransformer extends BaseTransformer {
-  type: 'JSON'
-  settings: {
-    JMESPath: string
-  }
-}
-
-export interface CSVTransformer extends BaseTransformer {
-  type: 'CSV'
-  settings: {
-    headerRow: number | null
-    dataStartRow: number
-    delimiter: CSVDelimiterType
-    identifierType: IdentifierType
-  }
-}
-
-export type TransformerConfig = JSONtransformer | CSVTransformer
-
-export const transformerDefaults: Record<TransformerType, TransformerConfig> = {
-  JSON: {
-    type: 'JSON',
-    settings: {
-      timestamp: {
-        key: '',
-        format: 'ISO8601',
-        timezoneMode: 'embeddedOffset',
-      },
-      JMESPath: '',
-    },
-  } as JSONtransformer,
-  CSV: {
-    type: 'CSV',
-    settings: {
-      timestamp: {
-        key: '',
-        format: 'ISO8601',
-        timezoneMode: 'embeddedOffset',
-      },
-      headerRow: 1,
-      dataStartRow: 2,
-      delimiter: ',' as CSVDelimiterType,
-      identifierType: IdentifierType.Name,
-    },
-  } as CSVTransformer,
-}
-
-export const LOADER_OPTIONS = ['HydroServer'] as const
-export type LoaderType = (typeof LOADER_OPTIONS)[number]
-
-interface BaseLoaderConfig {
-  type: LoaderType
-  settings: {}
-}
-
-interface HydroServerLoaderConfig extends BaseLoaderConfig {
-  type: 'HydroServer'
-}
-
-export type LoaderConfig = HydroServerLoaderConfig
-
-export const loaderDefaults: Record<LoaderType, LoaderConfig> = {
-  HydroServer: {
-    type: 'HydroServer',
-    settings: {},
-  },
-}
-
-export type PartialDatastream = Pick<
-  Datastream,
-  | 'name'
-  | 'description'
-  | 'noDataValue'
-  | 'valueCount'
-  | 'phenomenonBeginTime'
-  | 'phenomenonEndTime'
-  | 'aggregationStatistic'
-  | 'timeAggregationInterval'
-  | 'timeAggregationIntervalUnit'
-  | 'intendedTimeSpacing'
-  | 'intendedTimeSpacingUnit'
->
 
 export const INTERVAL_UNIT_OPTIONS = [
   { value: 'minutes', title: 'Minutes' },
@@ -191,25 +85,50 @@ export const INTERVAL_UNIT_OPTIONS = [
 ]
 export type IntervalUnitType = (typeof INTERVAL_UNIT_OPTIONS)[number]['value']
 
-export interface Schedule {
-  interval: number
-  intervalUnits?: IntervalUnitType
-  crontab?: string
-  startTime?: string
-  endTime?: string
-}
+// ---------------------------------------------------------------------------
+// Legacy stubs — form components referencing the old extractor/transformer/loader
+// API structure still import these. They need to be rewritten for the new API.
+// ---------------------------------------------------------------------------
 
-export function switchExtractor(ds: DataConnection, newType: ExtractorType) {
+export const EXTRACTOR_OPTIONS = ['HTTP', 'local'] as const
+export type ExtractorType = (typeof EXTRACTOR_OPTIONS)[number]
+
+export interface HTTPExtractor { type: 'HTTP'; settings: Record<string, any> }
+export interface LocalFileExtractor { type: 'local'; settings: Record<string, any> }
+export type ExtractorConfig = HTTPExtractor | LocalFileExtractor
+
+export const extractorDefaults: Record<ExtractorType, ExtractorConfig> = {
+  HTTP: { type: 'HTTP', settings: { sourceUri: '', placeholderVariables: [] } },
+  local: { type: 'local', settings: { sourceUri: '', placeholderVariables: [] } },
+}
+export function switchExtractor(ds: any, newType: ExtractorType) {
   ds.extractor = JSON.parse(JSON.stringify(extractorDefaults[newType]))
 }
 
-export function switchTransformer(
-  ds: DataConnection,
-  newType: TransformerType
-) {
-  ds.transformer = JSON.parse(JSON.stringify(transformerDefaults[newType]))
+export const TRANSFORMER_OPTIONS = ['JSON', 'CSV'] as const
+export type TransformerType = (typeof TRANSFORMER_OPTIONS)[number]
+
+export enum IdentifierType { Name = 'name', Index = 'index' }
+
+export interface JSONtransformer { type: 'JSON'; settings: Record<string, any> }
+export interface CSVTransformer { type: 'CSV'; settings: Record<string, any> }
+export type TransformerConfig = JSONtransformer | CSVTransformer
+
+export function switchTransformer(ds: any, newType: TransformerType) {
+  ds.transformer = { type: newType, settings: {} }
 }
 
-export function switchLoader(ds: DataConnection, newType: LoaderType) {
-  ds.loader = JSON.parse(JSON.stringify(loaderDefaults[newType]))
+export const LOADER_OPTIONS = ['HydroServer'] as const
+export type LoaderType = (typeof LOADER_OPTIONS)[number]
+export type LoaderConfig = { type: LoaderType; settings: Record<string, any> }
+export function switchLoader(ds: any, newType: LoaderType) {
+  ds.loader = { type: newType, settings: {} }
+}
+
+export interface PerTaskPlaceholder { name: string; type: 'perTask' }
+export interface RunTimePlaceholder {
+  name: string
+  type: 'runTime'
+  runTimeValue: 'startTime' | 'now'
+  timestamp?: any
 }

@@ -1,0 +1,272 @@
+import { onBeforeUnmount, reactive, type Ref } from 'vue'
+import type {
+  DataProductTaskExpanded,
+  MonitoringTaskExpanded,
+  TaskExpanded,
+  TaskRun,
+} from '@hydroserver/client'
+import { serviceForKind, type TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
+
+const POLL_INTERVAL_MS = 3000
+const POLL_DURATION_MS = 21_000
+const TERMINAL_STATUSES = ['SUCCESS', 'FAILURE']
+const ACTIVE_RUN_STATUSES = new Set(['PENDING', 'STARTED'])
+
+type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
+
+type Lists = {
+  etl: Ref<TaskExpanded[]>
+  dataProduct: Ref<DataProductTaskExpanded[]>
+  monitoring: Ref<MonitoringTaskExpanded[]>
+}
+
+type Options = {
+  lists: Lists
+  currentWorkspaceId: () => string
+}
+
+export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
+  const runNowTriggeredByTaskId = reactive<Record<string, boolean>>({})
+  const taskPollTimeouts = new Map<string, number>()
+  const runNowStartedAt = new Map<string, number>()
+
+  const listFor = (kind: TaskKind) => {
+    if (kind === 'etl') return lists.etl
+    if (kind === 'dataProduct') return lists.dataProduct
+    return lists.monitoring
+  }
+
+  const upsertTask = (kind: TaskKind, task: AnyTask | null) => {
+    if (!task) return
+    const target = listFor(kind)
+    const next = [...target.value]
+    const index = next.findIndex((p) => p.id === task.id)
+    if (index !== -1) next[index] = task as any
+    else next.push(task as any)
+    target.value = next as any
+  }
+
+  const findTask = (kind: TaskKind, taskId: string): AnyTask | null =>
+    (listFor(kind).value as AnyTask[]).find((t) => t.id === taskId) ?? null
+
+  const syncLatestRun = (kind: TaskKind, taskId: string, run: TaskRun) => {
+    const existing = findTask(kind, taskId)
+    if (!existing) return
+    upsertTask(kind, { ...(existing as any), latestRun: run })
+  }
+
+  const stopPollingFor = (taskId: string) => {
+    const timeoutId = taskPollTimeouts.get(taskId)
+    if (timeoutId) window.clearTimeout(timeoutId)
+    taskPollTimeouts.delete(taskId)
+    runNowStartedAt.delete(taskId)
+  }
+
+  const stopAll = () => {
+    taskPollTimeouts.forEach((id) => window.clearTimeout(id))
+    taskPollTimeouts.clear()
+    runNowStartedAt.clear()
+    for (const id of Object.keys(runNowTriggeredByTaskId)) {
+      delete runNowTriggeredByTaskId[id]
+    }
+  }
+
+  const refreshAfterCompletion = async (kind: TaskKind, taskId: string) => {
+    try {
+      const svc = serviceForKind(kind)
+      const updated = (await svc.getItem(taskId, {
+        expand_related: true,
+      })) as any
+      if (updated) upsertTask(kind, updated)
+    } catch (error) {
+      console.error('Error refreshing task after run completion', error)
+    }
+  }
+
+  const schedulePoll = (
+    kind: TaskKind,
+    taskId: string,
+    requestedRunId: string,
+    startedAt: number,
+    workspaceId = currentWorkspaceId()
+  ) => {
+    stopPollingFor(taskId)
+
+    if (Date.now() - startedAt >= POLL_DURATION_MS) {
+      runNowTriggeredByTaskId[taskId] = false
+      return
+    }
+
+    const svc = serviceForKind(kind)
+
+    const timeoutId = window.setTimeout(async () => {
+      if (workspaceId !== currentWorkspaceId()) {
+        runNowTriggeredByTaskId[taskId] = false
+        stopPollingFor(taskId)
+        return
+      }
+
+      if (Date.now() - startedAt >= POLL_DURATION_MS) {
+        runNowTriggeredByTaskId[taskId] = false
+        stopPollingFor(taskId)
+        return
+      }
+
+      try {
+        const runResponse = await svc.getTaskRun(taskId, requestedRunId)
+        const updatedRun = runResponse.ok ? (runResponse.data as TaskRun) ?? null : null
+
+        if (workspaceId !== currentWorkspaceId()) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopPollingFor(taskId)
+          return
+        }
+
+        if (updatedRun?.id) {
+          syncLatestRun(kind, taskId, updatedRun)
+          const status = updatedRun.status ?? null
+          if (!status || !ACTIVE_RUN_STATUSES.has(status)) {
+            runNowTriggeredByTaskId[taskId] = false
+            stopPollingFor(taskId)
+            if (status && TERMINAL_STATUSES.includes(status)) {
+              await refreshAfterCompletion(kind, taskId)
+            }
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error polling task status', error)
+      }
+
+      schedulePoll(kind, taskId, requestedRunId, startedAt, workspaceId)
+    }, POLL_INTERVAL_MS)
+
+    taskPollTimeouts.set(taskId, timeoutId)
+  }
+
+  const startPollingTaskRun = (
+    kind: TaskKind,
+    taskId: string,
+    runId: string,
+    startedAt = Date.now()
+  ) => {
+    runNowTriggeredByTaskId[taskId] = true
+    runNowStartedAt.set(taskId, startedAt)
+    schedulePoll(kind, taskId, runId, startedAt, currentWorkspaceId())
+  }
+
+  const startPollingForLatestRun = (
+    kind: TaskKind,
+    taskId: string,
+    startedAt = Date.now(),
+    workspaceId = currentWorkspaceId()
+  ) => {
+    stopPollingFor(taskId)
+    runNowTriggeredByTaskId[taskId] = true
+    runNowStartedAt.set(taskId, startedAt)
+
+    if (Date.now() - startedAt >= POLL_DURATION_MS) {
+      runNowTriggeredByTaskId[taskId] = false
+      return
+    }
+
+    const svc = serviceForKind(kind)
+    const timeoutId = window.setTimeout(async () => {
+      if (workspaceId !== currentWorkspaceId()) {
+        runNowTriggeredByTaskId[taskId] = false
+        stopPollingFor(taskId)
+        return
+      }
+
+      try {
+        const updated = (await svc.getItem(taskId, {
+          expand_related: true,
+        })) as AnyTask | null
+
+        if (workspaceId !== currentWorkspaceId()) {
+          runNowTriggeredByTaskId[taskId] = false
+          stopPollingFor(taskId)
+          return
+        }
+
+        if (updated) {
+          upsertTask(kind, updated)
+          const latestRun = (updated as any).latestRun as
+            | TaskRun
+            | null
+            | undefined
+
+          if (latestRun?.id) {
+            if (ACTIVE_RUN_STATUSES.has(latestRun.status)) {
+              startPollingTaskRun(kind, taskId, latestRun.id, startedAt)
+            } else {
+              runNowTriggeredByTaskId[taskId] = false
+              stopPollingFor(taskId)
+            }
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error polling task for latest run', error)
+      }
+
+      startPollingForLatestRun(kind, taskId, startedAt, workspaceId)
+    }, POLL_INTERVAL_MS)
+
+    taskPollTimeouts.set(taskId, timeoutId)
+  }
+
+  const runTaskNow = async (kind: TaskKind, taskId: string) => {
+    runNowTriggeredByTaskId[taskId] = true
+    const startedAt = Date.now()
+    runNowStartedAt.set(taskId, startedAt)
+    try {
+      const svc = serviceForKind(kind)
+      const response = await svc.runTask(taskId)
+      if (!response.ok) {
+        throw new Error(response.message || 'Unable to run task now.')
+      }
+      const requestedRun = response.ok ? (response.data as TaskRun) ?? null : null
+      if (requestedRun?.id) {
+        syncLatestRun(kind, taskId, requestedRun)
+        startPollingTaskRun(kind, taskId, requestedRun.id, startedAt)
+      } else {
+        runNowTriggeredByTaskId[taskId] = false
+        runNowStartedAt.delete(taskId)
+      }
+    } catch (error) {
+      runNowTriggeredByTaskId[taskId] = false
+      runNowStartedAt.delete(taskId)
+      console.error('Error running task now', error)
+    }
+  }
+
+  const toggleSchedulePaused = async (
+    kind: TaskKind,
+    taskId: string,
+    schedule: NonNullable<AnyTask['schedule']>
+  ) => {
+    const previousEnabled = !!schedule.enabled
+    schedule.enabled = !previousEnabled
+    try {
+      const svc = serviceForKind(kind)
+      await svc.update({ id: taskId, schedule } as any)
+      const updated = (await svc.getItem(taskId)) as any
+      if (updated) upsertTask(kind, updated)
+    } catch (error) {
+      schedule.enabled = previousEnabled
+      console.error('Error toggling task paused state', error)
+    }
+  }
+
+  onBeforeUnmount(() => stopAll())
+
+  return {
+    runNowTriggeredByTaskId,
+    stopAll,
+    runTaskNow,
+    startPollingTaskRun,
+    startPollingForLatestRun,
+    toggleSchedulePaused,
+  }
+}

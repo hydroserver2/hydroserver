@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime, timedelta, timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
-from domains.sta.models import Datastream
+from core.sta.models import Datastream
 from interfaces.actions.management.utils import generate_test_timeseries
 
 

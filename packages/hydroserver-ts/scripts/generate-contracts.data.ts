@@ -18,10 +18,24 @@ const resources = [
   'observations',
 
   // ETL
-  'etl-data-connections',
-  'etl-tasks',
+  'data-connections',
+  'tasks',
   'runs',
-  'etl-orchestration-systems',
+
+  // Monitoring
+  {
+    resource: 'monitoring-tasks',
+    pathSuffix: '/monitoring/tasks',
+    route: 'tasks',
+  },
+
+  // Products
+  {
+    resource: 'data-product-tasks',
+    pathSuffix: '/products/tasks',
+    route: 'tasks',
+  },
+  'rating-curves',
 ]
 
 generateContracts({

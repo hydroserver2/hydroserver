@@ -4,7 +4,7 @@ import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
 
 async function createWorkspace(page: Page, name: string) {
-  await page.getByRole('button', { name: 'Manage workspaces' }).click()
+  await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
   await page.getByRole('button', { name: 'Add workspace' }).click()
   await page.getByLabel('Name *').fill(name)
   await page.getByRole('button', { name: 'Save' }).click()
@@ -47,7 +47,7 @@ test.describe('workspace transfers', () => {
     page,
   }) => {
     await authenticateSession(page, users.unaffiliated.email, users.unaffiliated.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await page.goto('/orchestration')
 
     await expect(
       page.getByRole('button', { name: 'Pending workspace transfer' })
@@ -73,7 +73,7 @@ test.describe('workspace transfers', () => {
     const workspaceName = `E2E Transfer Cancel ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
     await createWorkspace(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
@@ -85,7 +85,7 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
     const pendingRow = targetPage.getByRole('row', {
@@ -96,7 +96,7 @@ test.describe('workspace transfers', () => {
     await expect(pendingRow).toHaveCount(0)
 
     await page.reload()
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await deleteWorkspace(page, workspaceName)
 
     await targetContext.close()
@@ -109,7 +109,7 @@ test.describe('workspace transfers', () => {
     const workspaceName = `E2E Transfer Accept ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
     await createWorkspace(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
@@ -121,7 +121,7 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto(`/orchestration?workspaceId=${fixtures.workspaces.transfer.id}`)
+    await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
     const pendingRow = targetPage.getByRole('row', {
@@ -131,13 +131,13 @@ test.describe('workspace transfers', () => {
     await pendingRow.getByRole('button', { name: 'Accept transfer' }).click()
     await expect(pendingRow).toHaveCount(0)
 
-    await targetPage.getByRole('button', { name: 'Manage workspaces' }).click()
+    await targetPage.getByRole('button', { name: 'Workspaces', exact: true }).click()
     const ownedRow = targetPage.getByRole('row', { name: new RegExp(workspaceName) })
     await expect(ownedRow).toBeVisible()
     await expect(ownedRow).toContainText('Owner')
 
     await page.reload()
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await expect(page.getByRole('cell', { name: workspaceName, exact: true })).toHaveCount(0)
 
     await deleteWorkspace(targetPage, workspaceName)

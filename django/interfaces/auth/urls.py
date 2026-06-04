@@ -4,7 +4,7 @@ from django.urls import path
 from django.views.decorators.csrf import ensure_csrf_cookie
 from decouple import config
 from hydroserver import __version__
-from interfaces.api.renderer import ORJSONRenderer
+from interfaces.api.http.renderer import ORJSONRenderer
 from interfaces.auth.views import (
     account_router,
     session_router,

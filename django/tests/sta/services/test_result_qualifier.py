@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.services import ResultQualifierService
+from core.sta.services import ResultQualifierService
 from interfaces.api.schemas import (
     ResultQualifierPostBody,
     ResultQualifierPatchBody,

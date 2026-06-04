@@ -1,24 +1,13 @@
 import type { Workspace } from '../../types'
-import type { OrchestrationSystem } from '../services'
 import type { DataConnection } from './data-connection.model'
-
-export type TaskType = 'ETL' | 'Aggregation'
 
 export class Task {
   id = ''
   name = ''
-  type: TaskType = 'ETL'
-  paused = true
-  nextRunAt: string | null = null
-  latestRun?: TaskRun = undefined
-  extractorVariables = {}
-  transformerVariables = {}
-  loaderVariables = {}
-  targetIdentifiers: string[] = []
-  mappings: Mapping[] = []
-  workspaceId = ''
-  dataConnectionId: string | null = ''
-  orchestrationSystemId = ''
+  description: string | null = null
+  taskVariables: Record<string, any> = {}
+  dataConnectionId = ''
+  mappings: TaskMapping[] = []
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<Task>) {
@@ -29,17 +18,11 @@ export class Task {
 export interface TaskExpanded {
   id: string
   name: string
-  type: TaskType
-  paused: boolean
-  extractorVariables: Record<string, any>
-  transformerVariables: Record<string, any>
-  loaderVariables: Record<string, any>
-  targetIdentifiers?: string[]
-  mappings: Mapping[]
-  latestRun?: TaskRun
-  workspace: Workspace
-  dataConnection: DataConnection | null
-  orchestrationSystem: OrchestrationSystem
+  description?: string | null
+  taskVariables: Record<string, any>
+  dataConnection: DataConnection
+  mappings: TaskMapping[]
+  latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }
 
@@ -50,7 +33,6 @@ export type TaskRunResult = Record<string, unknown>
 export type TaskRun = {
   status: string
   message?: string | null
-  failureCount?: number | null
   result: TaskRunResult | null
   startedAt?: string
   finishedAt?: string
@@ -58,7 +40,7 @@ export type TaskRun = {
 }
 
 export type TaskSchedule = {
-  paused: boolean
+  enabled: boolean
   startTime: string | null
   nextRunAt: string | null
   crontab: string | null
@@ -66,26 +48,35 @@ export type TaskSchedule = {
   intervalPeriod: IntervalPeriod | null
 }
 
-export interface ExpressionDataTransformation {
-  type: 'expression'
-  expression: string
+export interface EtlMapping {
+  sourceIdentifier: string
+  targetDatastream: { id: string; name: string; [key: string]: any }
 }
 
+export interface EtlMappingPostBody {
+  sourceIdentifier: string
+  targetDatastreamId: string
+}
+
+export type TaskMapping = EtlMapping | Mapping | EtlMappingPostBody
+
+// ---------------------------------------------------------------------------
+// Legacy stubs — mapping/transformation form components still use these types.
+// They need to be rewritten for the new flat EtlMapping structure.
+// ---------------------------------------------------------------------------
+
+export interface ExpressionDataTransformation { type: 'expression'; expression: string }
 export interface RatingCurveDataTransformation {
-  ratingCurveUrl: string
+  ratingCurveId: string
+  ratingCurveUrl?: string
   type: 'rating_curve'
 }
-
 export interface AggregationDataTransformation {
   type: 'aggregation'
-  aggregationStatistic:
-    | 'simple_mean'
-    | 'time_weighted_daily_mean'
-    | 'last_value_of_day'
+  aggregationStatistic: 'simple_mean' | 'time_weighted_daily_mean' | 'last_value_of_day'
   timezoneMode: 'fixedOffset' | 'daylightSavings'
   timezone: string
 }
-
 export type DataTransformation =
   | ExpressionDataTransformation
   | RatingCurveDataTransformation
@@ -100,6 +91,8 @@ export interface Mapping {
   sourceIdentifier: string | number
   paths: MappingPath[]
 }
+
+export type TaskType = 'ETL' | 'Aggregation'
 
 export const TASK_STATUS_OPTIONS = [
   { color: 'green', title: 'OK' },
@@ -116,5 +109,5 @@ export interface Status {
   lastRunMessage?: string
   lastRun?: string
   nextRun?: string
-  paused: boolean
+  enabled: boolean
 }

@@ -1,27 +1,17 @@
-from typing import List
-from pydantic import BaseModel, Field, ConfigDict
+import uuid
+from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 
-class TaskMappingPath(BaseModel):
-    target_identifier: str
-    data_transformations: list = Field(default_factory=list)
+class EtlDatastreamSummary(BaseModel):
+    id: uuid.UUID
+    name: str
 
-    model_config = ConfigDict(
-        validate_assignment=True,
-        populate_by_name=True,
-        str_strip_whitespace=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(populate_by_name=True)
 
 
-class TaskMapping(BaseModel):
+class EtlMapping(BaseModel):
     source_identifier: str
-    paths: List[TaskMappingPath]
+    target_datastream: EtlDatastreamSummary
 
-    model_config = ConfigDict(
-        validate_assignment=True,
-        populate_by_name=True,
-        str_strip_whitespace=True,
-        alias_generator=to_camel,
-    )
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)

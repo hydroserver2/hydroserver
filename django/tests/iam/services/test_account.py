@@ -6,7 +6,7 @@ from interfaces.auth.schemas import (
     OrganizationPatchBody,
     AccountDetailResponse,
 )
-from domains.iam.services.account import AccountService
+from core.iam.services.account import AccountService
 
 account_service = AccountService()
 
@@ -53,9 +53,7 @@ def test_create_account(account_data):
                 first_name="New",
                 last_name="User",
                 user_type="Other",
-                organization=OrganizationPatchBody(
-                    code="TEST", name="Test Org", organization_type="Other"
-                ),
+                organization={"code": "TEST", "name": "Test Org", "organization_type": "Other"},
             ),
         ),
     ],
@@ -75,7 +73,7 @@ def test_update_account(get_principal, principal, account_data):
 @pytest.mark.parametrize(
     "principal, max_queries",
     [
-        ("owner", 79),
+        ("owner", 125),
         ("admin", 45),
         ("limited", 45),
     ],

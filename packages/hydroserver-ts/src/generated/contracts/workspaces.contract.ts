@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace WorkspaceContract {
   export const route = 'workspaces' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_workspace_get_workspaces']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_workspace_get_workspaces']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_iam_workspace_get_workspaces']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_iam_workspace_get_workspaces']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['WorkspaceSummaryResponse']
   export type DetailResponse  = Data.components['schemas']['WorkspaceDetailResponse']
   export type PostBody        = Data.components['schemas']['WorkspacePostBody']

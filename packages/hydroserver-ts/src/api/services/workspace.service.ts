@@ -7,7 +7,7 @@ import { ApiResponse } from '../responseInterceptor'
 
 type RoleQueryParameters =
   NonNullable<
-    Data.operations['interfaces_api_views_role_get_roles']['parameters']['query']
+    Data.operations['interfaces_api_views_iam_role_get_roles']['parameters']['query']
   >
 
 /**

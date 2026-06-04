@@ -276,6 +276,7 @@ export interface components {
             link?: string | null;
             /** Middlename */
             middleName?: string | null;
+            /** Organization */
             organization?: components["schemas"]["OrganizationPatchBody"] | null;
             /** Phone */
             phone?: string | null;
@@ -368,9 +369,9 @@ export interface components {
              */
             email: string;
             /** Firstname */
-            firstName?: string;
+            firstName: string;
             /** Lastname */
-            lastName?: string;
+            lastName: string;
             /** Link */
             link?: string | null;
             /** Middlename */
@@ -379,7 +380,7 @@ export interface components {
             /** Phone */
             phone?: string | null;
             /** Type */
-            type?: string;
+            type: string;
         };
         /** RequestResetPasswordPostBody */
         RequestResetPasswordPostBody: {
@@ -430,13 +431,15 @@ export interface components {
             /**
              * Page
              * @description Page number (1-based).
+             * @default 1
              */
-            page?: number | null;
+            page: number | null;
             /**
              * Page Size
              * @description The number of items per page.
+             * @default 100
              */
-            page_size?: number | null;
+            page_size: number | null;
         };
     };
     responses: never;

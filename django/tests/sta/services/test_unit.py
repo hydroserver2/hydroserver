@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.services import UnitService
+from core.sta.services import UnitService
 from interfaces.api.schemas import UnitPostBody, UnitPatchBody, UnitSummaryResponse
 
 unit_service = UnitService()

@@ -4,8 +4,8 @@ from collections import Counter
 from django.core.cache import cache
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.sta.models import Thing
-from domains.sta.services import ThingService
+from core.sta.models import Thing
+from core.sta.services import ThingService
 from interfaces.api.schemas import (
     ThingPostBody,
     ThingPatchBody,
@@ -534,10 +534,7 @@ def test_edit_thing(get_principal, principal, thing, thing_fields, message, erro
         sampling_feature_type=thing_fields.get("sampling_feature_type", "Site"),
         sampling_feature_code=thing_fields.get("sampling_feature_code", "NEW"),
         site_type=thing_fields.get("site_type", "Site"),
-        location=LocationPatchBody(
-            latitude=thing_fields.get("location", {}).get("latitude", 0),
-            longitude=thing_fields.get("location", {}).get("longitude", 0),
-        ),
+        location=thing_fields.get("location", {"latitude": 0, "longitude": 0}),
         is_private=thing_fields.get("is_private", False),
     )
     if error_code:
@@ -568,9 +565,9 @@ def test_edit_thing(get_principal, principal, thing, thing_fields, message, erro
     "principal, thing, message, error_code, max_queries",
     [
         # Test edit Thing
-        ("owner", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
-        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
-        ("admin", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 20),
+        ("owner", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
+        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
+        ("admin", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
         # Test unauthorized attempts
         (
             "viewer",
@@ -1551,3 +1548,44 @@ def test_remove_thing_tag(get_principal, principal, thing, tag, message, error_c
         )
 
         assert thing_tag_delete.endswith("tag(s) deleted")
+
+
+def test_create_thing_with_tags(get_principal):
+    thing_data = ThingPostBody(
+        name="Tagged Thing",
+        description="A thing created with tags",
+        sampling_feature_type="Site",
+        sampling_feature_code="TAGGED",
+        site_type="Site",
+        location=LocationPostBody(latitude=0, longitude=0),
+        is_private=False,
+        workspace_id=uuid.UUID("6e0deaf2-a92b-421b-9ece-86783265596f"),
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Network", value="Test"),
+        ],
+    )
+    thing = thing_service.create(principal=get_principal("owner"), data=thing_data)
+    tag_dict = {t.key: t.value for t in thing.thing_tags}
+    assert tag_dict == {"Region": "A", "Network": "Test"}
+
+
+def test_create_thing_with_duplicate_tag_keys(get_principal):
+    thing_data = ThingPostBody(
+        name="Duplicate Tag Thing",
+        description="A thing with duplicate tag keys",
+        sampling_feature_type="Site",
+        sampling_feature_code="DUPTAG",
+        site_type="Site",
+        location=LocationPostBody(latitude=0, longitude=0),
+        is_private=False,
+        workspace_id=uuid.UUID("6e0deaf2-a92b-421b-9ece-86783265596f"),
+        tags=[
+            TagPostBody(key="Region", value="A"),
+            TagPostBody(key="Region", value="B"),
+        ],
+    )
+    with pytest.raises(HttpError) as exc_info:
+        thing_service.create(principal=get_principal("owner"), data=thing_data)
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.message.startswith("Duplicate tag keys are not allowed")

@@ -3,7 +3,7 @@ import uuid
 from collections import Counter
 from ninja.errors import HttpError
 from django.http import HttpResponse
-from domains.iam.services.collaborator import CollaboratorService
+from core.iam.services.collaborator import CollaboratorService
 from interfaces.api.schemas import (
     CollaboratorPostBody,
     CollaboratorDeleteBody,

@@ -8,7 +8,7 @@ We maintain the right to modify these Terms of Use and may do so by posting modi
 
 ## Conduct Using Provided Services
 
-The services provided are intended to support collection, management, and sharing of time series data collected by or derived from in situ environmental sensors. You are responsible at all times for using the provided services in a manner that is legal, ethical, and not to the detriment of others. In using these services, you agree that you will NOT:
+The services provided are intended to support collection, management, and sharing of time series data collected by or derived from in situ environmental monitoring methods. You are responsible at all times for using the provided services in a manner that is legal, ethical, and not to the detriment of others. In using these services, you agree that you will NOT:
 
 - Violate any applicable law, commit a criminal offense, or perform actions that might encourage others to commit a criminal offense or give rise to a civil liability;
 - Post or transmit any unlawful, threatening, libelous, harassing, defamatory, vulgar, obscene, pornographic, profane, or otherwise objectionable content;

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
+import { selectWorkspace } from '../support/ui'
 
 test.describe('workspace management', () => {
   test('owner can create, validate, update, privatize, and delete a workspace', async ({
@@ -12,8 +13,9 @@ test.describe('workspace management', () => {
     const renamedWorkspaceName = `${workspaceName} Renamed`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await page.getByRole('button', { name: 'Add workspace' }).click()
 
     await page.getByLabel('Name *').fill(workspaceName)
@@ -64,8 +66,9 @@ test.describe('workspace management', () => {
     const workspaceName = `E2E Collaborators ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
-    await page.getByRole('button', { name: 'Manage workspaces' }).click()
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
     await page.getByRole('button', { name: 'Add workspace' }).click()
 
     await page.getByLabel('Name *').fill(workspaceName)

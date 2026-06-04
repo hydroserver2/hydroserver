@@ -10,13 +10,15 @@ test.describe('orchestration', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
-    await expect(page.getByText(fixtures.orchestration.systemName)).toBeVisible()
-    await page
-      .getByRole('button', { name: new RegExp(fixtures.orchestration.systemName) })
-      .click()
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.dataConnectionName,
+      })
+    ).toBeVisible()
     await expect(
       page.getByText(fixtures.orchestration.taskName)
     ).toBeVisible()
@@ -27,7 +29,8 @@ test.describe('orchestration', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
 
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
     await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
 
@@ -37,15 +40,10 @@ test.describe('orchestration', () => {
     await statusFilter.click()
     await chooseOverlayOption(page, 'OK')
     await expect(
-      page.getByRole('heading', { name: 'No tasks match your search/filter.' })
+      page.getByRole('heading', { name: 'No tasks match your filter' })
     ).toBeVisible()
 
     await page.getByRole('button', { name: 'Clear Status filters' }).click()
-    await page
-      .getByRole('button', {
-        name: new RegExp(fixtures.orchestration.systemName),
-      })
-      .click()
     await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
 
     await statusFilter.click()
@@ -57,17 +55,23 @@ test.describe('orchestration', () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/orchestration?workspaceId=${fixtures.workspaces.private.id}`)
+    await page.goto('/orchestration')
+    await selectWorkspace(page, fixtures.workspaces.private.name)
 
-    await expect(page.getByText(fixtures.orchestration.systemName)).toBeVisible()
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.dataConnectionName,
+      })
+    ).toBeVisible()
     await selectWorkspace(page, fixtures.workspaces.public.name)
 
-    await expect(page).toHaveURL(
-      new RegExp(`workspaceId=${fixtures.workspaces.public.id}`)
-    )
-    await expect(page.getByText(fixtures.orchestration.systemName)).toHaveCount(0)
+    await expect(page.getByText(fixtures.orchestration.dataConnectionName)).toHaveCount(0)
 
     await selectWorkspace(page, fixtures.workspaces.private.name)
-    await expect(page.getByText(fixtures.orchestration.systemName)).toBeVisible()
+    await expect(
+      page.getByRole('heading', {
+        name: fixtures.orchestration.dataConnectionName,
+      })
+    ).toBeVisible()
   })
 })

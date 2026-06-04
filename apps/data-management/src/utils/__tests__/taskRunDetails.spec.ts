@@ -1,41 +1,35 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TaskRun } from '@hydroserver/client'
 import {
-  buildTaskRunDetailSections,
   getDisplayedTaskStatus,
+  getMonitoringRunViolations,
+  getMonitoringRulesViolated,
+  getTaskNextRunAt,
   getTaskRunMessage,
   getTaskRunResult,
   getTaskRunRuntimeUrl,
   getTaskRunStatusText,
   getTaskStatusText,
-  prettyJson,
   taskRunHasFailures,
 } from '../orchestration/taskRunDetails'
 
 describe('task run detail helpers', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
   it('returns safe defaults for empty inputs', () => {
-    expect(prettyJson(undefined)).toBe(undefined)
     expect(getTaskRunResult()).toEqual({})
     expect(getTaskRunMessage()).toBe('–')
     expect(getTaskRunRuntimeUrl()).toBeNull()
+    expect(getMonitoringRunViolations()).toEqual([])
+    expect(getMonitoringRulesViolated()).toBe(0)
     expect(taskRunHasFailures()).toBe(false)
     expect(getTaskRunStatusText()).toBe('Unknown')
     expect(getTaskStatusText()).toBe('Unknown')
     expect(getDisplayedTaskStatus()).toBe('Unknown')
-    expect(buildTaskRunDetailSections()).toEqual([
-      { title: 'Logs', type: 'text', text: '–' },
-    ])
-  })
-
-  it('falls back when json stringification fails', () => {
-    const circular: Record<string, unknown> = {}
-    circular.self = circular
-
-    expect(prettyJson(circular)).toBe('[object Object]')
+    expect(getTaskNextRunAt()).toBeNull()
   })
 
   it('prefers message aliases and runtime url aliases from raw ETL payloads', () => {
@@ -79,10 +73,18 @@ describe('task run detail helpers', () => {
     expect(
       getTaskRunMessage({
         id: 'run-2',
-        status: 'RUNNING',
+        status: 'STARTED',
         result: null,
       })
     ).toBe('Run in progress.')
+
+    expect(
+      getTaskRunMessage({
+        id: 'run-3',
+        status: 'PENDING',
+        result: null,
+      })
+    ).toBe('Run queued.')
   })
 
   it('reads the runtime source URI from nested runtime variables', () => {
@@ -103,7 +105,28 @@ describe('task run detail helpers', () => {
     expect(getTaskRunRuntimeUrl(run)).toBe('https://example.com/runtime.csv')
   })
 
-  it('treats failure and incomplete statuses as failed', () => {
+  it('prefers rendered extractor runtime URI over configured template aliases', () => {
+    const run: TaskRun = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      startedAt: '2026-03-12T12:00:00Z',
+      finishedAt: '2026-03-12T12:05:00Z',
+      result: {
+        runtime_source_uri: 'https://example.com/{site}/template.csv',
+        runtime_variables: {
+          extractor: {
+            source_uri: 'https://example.com/site-1/runtime.csv',
+          },
+        },
+      },
+    }
+
+    expect(getTaskRunRuntimeUrl(run)).toBe(
+      'https://example.com/site-1/runtime.csv'
+    )
+  })
+
+  it('treats failure status as failed', () => {
     expect(
       taskRunHasFailures({
         id: 'run-1',
@@ -111,23 +134,15 @@ describe('task run detail helpers', () => {
         result: null,
       })
     ).toBe(true)
-
-    expect(
-      taskRunHasFailures({
-        id: 'run-2',
-        status: 'INCOMPLETE',
-        result: null,
-      } as TaskRun)
-    ).toBe(true)
   })
 
   it('uses failure counts and target status to detect failed runs', () => {
-    const leanFailure: TaskRun = {
+    const leanFailure = {
       id: 'run-0',
       status: 'SUCCESS',
       failureCount: 2,
       result: null,
-    }
+    } as any as TaskRun
 
     const countedFailure: TaskRun = {
       id: 'run-1',
@@ -174,6 +189,56 @@ describe('task run detail helpers', () => {
     expect(taskRunHasFailures(success)).toBe(false)
   })
 
+  it('uses monitoring rule violations to detect attention states', () => {
+    const run: TaskRun = {
+      id: 'run-monitoring',
+      status: 'SUCCESS',
+      result: {
+        rules_violated: 2,
+        violations: [
+          {
+            rule_id: 'rule-1',
+            datastream_id: 'datastream-1',
+            rule_type: 'range',
+            violation_count: 3,
+            first_violation_at: '2026-03-12T12:00:00Z',
+            last_violation_at: '2026-03-12T14:00:00Z',
+          },
+          {
+            ruleId: 'rule-2',
+            datastreamId: 'datastream-2',
+            ruleType: 'missing_data',
+            violationCount: 1,
+            firstViolationAt: '2026-03-13T12:00:00Z',
+            lastViolationAt: null,
+          },
+        ],
+      },
+    }
+
+    expect(getMonitoringRulesViolated(run)).toBe(2)
+    expect(getMonitoringRunViolations(run)).toEqual([
+      {
+        ruleId: 'rule-1',
+        datastreamId: 'datastream-1',
+        ruleType: 'range',
+        violationCount: 3,
+        firstViolationAt: '2026-03-12T12:00:00Z',
+        lastViolationAt: '2026-03-12T14:00:00Z',
+      },
+      {
+        ruleId: 'rule-2',
+        datastreamId: 'datastream-2',
+        ruleType: 'missing_data',
+        violationCount: 1,
+        firstViolationAt: '2026-03-13T12:00:00Z',
+        lastViolationAt: null,
+      },
+    ])
+    expect(taskRunHasFailures(run)).toBe(true)
+    expect(getTaskRunStatusText(run)).toBe('Needs attention')
+  })
+
   it('maps task run statuses for UI display', () => {
     expect(
       getTaskRunStatusText({
@@ -188,7 +253,15 @@ describe('task run detail helpers', () => {
     expect(
       getTaskRunStatusText({
         id: 'run-2',
-        status: 'RUNNING',
+        status: 'STARTED',
+        result: {},
+      })
+    ).toBe('Pending')
+
+    expect(
+      getTaskRunStatusText({
+        id: 'run-2b',
+        status: 'PENDING',
         result: {},
       })
     ).toBe('Pending')
@@ -227,8 +300,23 @@ describe('task run detail helpers', () => {
     expect(getTaskStatusText({})).toBe('Pending')
     expect(getTaskStatusText({ latestRun: okRun })).toBe('OK')
     expect(
+      getTaskStatusText({
+        latestRun: {
+          id: 'run-pending',
+          status: 'PENDING',
+          result: null,
+        },
+      })
+    ).toBe('Pending')
+    expect(
       getDisplayedTaskStatus({
         schedule: { paused: true, nextRunAt: '2026-03-13T13:00:00Z' },
+        latestRun: okRun,
+      })
+    ).toBe('Loading paused')
+    expect(
+      getDisplayedTaskStatus({
+        schedule: { enabled: false, nextRunAt: '2026-03-13T13:00:00Z' },
         latestRun: okRun,
       })
     ).toBe('Loading paused')
@@ -285,7 +373,7 @@ describe('task run detail helpers', () => {
         },
         latestRun: {
           id: 'run-4',
-          status: 'RUNNING',
+          status: 'STARTED',
           result: null,
         },
       })
@@ -294,180 +382,57 @@ describe('task run detail helpers', () => {
     vi.useRealTimers()
   })
 
-  it('parses structured log entries and groups them by pipeline stage', () => {
-    const run: TaskRun = {
-      id: 'run-1',
-      status: 'SUCCESS',
-      startedAt: '2026-03-12T12:00:00Z',
-      finishedAt: '2026-03-12T12:05:00Z',
-      result: {
-        logEntries: [
-          {
-            time: '2026-03-12T12:00:00Z',
-            levelname: 'INFO',
-            stage: 'EXTRACT',
-            msg: 'Starting extract',
-          },
-          {
-            timestamp: '2026-03-12T12:01:00Z',
-            level: 'INFO',
-            stage: 'TRANSFORM',
-            message: 'Starting transform',
-          },
-          {
-            timestamp: '2026-03-12T12:02:00Z',
-            level: 'INFO',
-            stage: 'LOAD',
-            message: 'Starting load',
-          },
-        ],
-        error: 'Top-level error',
-        traceback: 'Traceback body',
-        extra_context: 'retained',
+  it('infers an interval next run when the cached schedule value is empty', () => {
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: null,
+        interval: 2,
+        intervalPeriod: 'hours',
       },
-    }
+      latestRun: {
+        id: 'run-interval',
+        status: 'SUCCESS',
+        startedAt: '2026-03-13T10:00:00Z',
+        result: { failureCount: 0 },
+      },
+    })
 
-    const sections = buildTaskRunDetailSections(run)
-
-    expect(sections.map((section) => section.title)).toEqual([
-      'Extract',
-      'Transform',
-      'Load',
-    ])
-
-    const extractSection = sections[0]
-    expect(extractSection?.type).toBe('lines')
-    if (extractSection?.type === 'lines') {
-      expect(extractSection.entries[0]).toEqual({
-        timestamp: '2026-03-12T12:00:00Z',
-        level: 'INFO',
-        stage: 'EXTRACT',
-        message: 'Starting extract',
-      })
-    }
+    expect(next?.toISOString()).toBe('2026-03-13T12:00:00.000Z')
   })
 
-  it('prefers staged ETL sections over summary when structured logs exist', () => {
-    const run: TaskRun = {
-      id: 'run-1',
-      status: 'SUCCESS',
-      startedAt: '2026-03-12T12:00:00Z',
-      finishedAt: '2026-03-12T12:05:00Z',
-      result: {
-        log_entries: [
-          {
-            timestamp: '2026-03-12T12:00:00Z',
-            level: 'INFO',
-            stage: 'EXTRACT',
-            message: 'Starting extract',
-          },
-          {
-            timestamp: '2026-03-12T12:00:10Z',
-            level: 'INFO',
-            stage: 'EXTRACT',
-            message: 'Requesting data from source URI',
-          },
-          {
-            timestamp: '2026-03-12T12:01:00Z',
-            level: 'INFO',
-            stage: 'TRANSFORM',
-            message: 'Starting transform',
-          },
-          {
-            timestamp: '2026-03-12T12:02:00Z',
-            level: 'WARNING',
-            stage: 'LOAD',
-            message: 'No new observations for target-1 after filtering; skipping.',
-          },
-        ],
-        success_count: 1,
-        failure_count: 1,
-        skipped_count: 0,
-        values_loaded_total: 12,
-        earliest_timestamp: '2026-03-01T00:00:00Z',
-        latest_timestamp: '2026-03-12T00:00:00Z',
-        runtime_variables: {
-          extractor: {
-            source_uri: 'https://example.com/runtime.csv',
-          },
-        },
-        target_results: {
-          'target-1': {
-            status: 'failed',
-            error: 'Unable to load target-1',
-            earliest_timestamp: '2026-03-01T00:00:00Z',
-            latest_timestamp: '2026-03-12T00:00:00Z',
-          },
-          'target-2': {
-            status: 'success',
-            values_loaded: 12,
-          },
-        },
+  it('prefers the backend cached next run when present', () => {
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: '2026-03-14T08:30:00Z',
+        interval: 2,
+        intervalPeriod: 'hours',
       },
-    }
+      latestRun: {
+        id: 'run-interval',
+        status: 'SUCCESS',
+        startedAt: '2026-03-13T10:00:00Z',
+        result: { failureCount: 0 },
+      },
+    })
 
-    const sections = buildTaskRunDetailSections(run)
+    expect(next?.toISOString()).toBe('2026-03-14T08:30:00.000Z')
+  })
 
-    expect(sections.map((section) => section.title)).toEqual(
-      expect.arrayContaining([
-        'Extract',
-        'Transform',
-        'Load',
-      ])
+  it('infers a crontab next run when the cached schedule value is empty', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-13T12:00:00Z'))
+
+    const next = getTaskNextRunAt({
+      schedule: {
+        nextRunAt: null,
+        startTime: '2026-03-13T10:00:00Z',
+        crontab: '30 14 * * *',
+      },
+      latestRun: null,
+    })
+
+    expect(next?.toISOString()).toBe(
+      new Date(2026, 2, 13, 14, 30).toISOString()
     )
-    expect(sections.map((section) => section.title)).toEqual([
-      'Extract',
-      'Transform',
-      'Load',
-    ])
-
-    const summarySection = sections.find((section) => section.title === 'Summary')
-    expect(summarySection).toBeUndefined()
-    expect(
-      sections.find((section) => section.title === 'Target results')
-    ).toBeUndefined()
-    expect(
-      sections.find((section) => section.title === 'Runtime context')
-    ).toBeUndefined()
-  })
-
-  it('shows summary only when no staged ETL logs exist', () => {
-    const run: TaskRun = {
-      id: 'run-1',
-      status: 'SUCCESS',
-      result: {
-        success_count: 1,
-        failure_count: 1,
-        skipped_count: 0,
-        values_loaded_total: 12,
-      },
-    }
-
-    const sections = buildTaskRunDetailSections(run)
-
-    expect(sections).toEqual([
-      {
-        title: 'Summary',
-        type: 'lines',
-        entries: expect.arrayContaining([
-          { level: undefined, message: 'Values loaded: 12' },
-          { level: undefined, message: 'Successful targets: 1' },
-          { level: 'FAILED', message: 'Failed targets: 1' },
-          { level: undefined, message: 'Skipped targets: 0' },
-        ]),
-      },
-    ])
-  })
-
-  it('returns the default logs section when no displayable details exist', () => {
-    const run: TaskRun = {
-      id: 'run-1',
-      status: 'SUCCESS',
-      result: {},
-    }
-
-    expect(buildTaskRunDetailSections(run)).toEqual([
-      { title: 'Logs', type: 'text', text: '–' },
-    ])
   })
 })

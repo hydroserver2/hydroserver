@@ -2,6 +2,21 @@ import { describe, it, expect } from 'vitest'
 import { responseInterceptor } from '../responseInterceptor'
 
 describe('responseInterceptor', () => {
+  async function readBlobText(blob: Blob) {
+    if (typeof blob.text === 'function') return blob.text()
+
+    if (typeof blob.arrayBuffer === 'function') {
+      return new TextDecoder().decode(await blob.arrayBuffer())
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(reader.error)
+      reader.readAsText(blob)
+    })
+  }
+
   it('processes a 200 status code response correctly', async () => {
     const mockJsonResponse = { data: 'Some data' }
     const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
@@ -46,7 +61,7 @@ describe('responseInterceptor', () => {
     })
 
     const result = await responseInterceptor(mockResponse)
-    const textContent = await (result.data as Blob).text()
+    const textContent = await readBlobText(result.data as Blob)
     expect(textContent).toBe(csvData)
   })
 

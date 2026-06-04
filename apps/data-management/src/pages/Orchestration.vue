@@ -1,297 +1,1044 @@
 <template>
   <div class="orchestration-page">
-    <div class="mx-auto flex w-full flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-      <WorkspaceToolbar layout="orchestration" title="Job orchestration">
-        <template #actions>
-          <div class="d-flex flex-wrap ga-2 justify-end">
-            <v-btn
-              :append-icon="mdiChevronRight"
-              color="blue-grey-darken-4"
-              :to="{ name: 'HydroLoader' }"
-              density="comfortable"
-              variant="tonal"
-            >
-              Download Streaming Data Loader
-            </v-btn>
-          </div>
-        </template>
-      </WorkspaceToolbar>
-
-      <v-expand-transition>
-        <div v-if="!!selectedWorkspace && openDataConnectionTableDialog">
-          <DataConnectionTable :workspace-id="selectedWorkspace.id" />
-        </div>
-      </v-expand-transition>
-
-      <template v-if="!!selectedWorkspace">
-        <OrchestrationTable :workspace-id="selectedWorkspace.id" />
-      </template>
+    <div class="orchestration-page-toolbar">
+      <WorkspaceToolbar
+        layout="orchestration"
+        title="Job orchestration"
+        hide-workspace-management
+      />
     </div>
 
-    <!-- Slide-over task details. Kept under the Orchestration route so page state persists.
-       Implemented without v-dialog so the global Navbar remains visible. -->
-    <transition name="taskdetails-slide" @after-leave="afterDetailsLeave">
-      <div
-        v-if="overlayOpen"
-        ref="overlayRef"
-        class="taskdetails-overlay"
-        tabindex="-1"
-        @keydown.esc.prevent="closeDetails"
-      >
-        <div class="taskdetails-scrim" @click="closeDetails" />
-        <div class="taskdetails-panel" role="dialog" aria-modal="true">
-          <div class="taskdetails-panel-inner">
-            <TaskDetails
-              v-if="selectedTaskId"
-              :task-id="selectedTaskId"
-              :run-id="selectedRunId"
-              embedded
-              @close="closeDetails"
-            />
+    <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
+      <div class="orchestration-shell">
+        <OrchestrationNavRail
+          :tabs="tabs"
+          @select-tab="setActiveTab"
+          @open-workspaces="openWorkspaceManager"
+          @open-hydro-loader="goToHydroLoader"
+        />
+
+        <section v-if="activeView === 'workspaces'" class="workspace-detail">
+          <OrchestrationWorkspaceManager table-height="calc(100vh - 230px)" />
+        </section>
+
+        <section
+          v-else-if="!selectedWorkspace"
+          class="no-workspace-state"
+          data-testid="no-selected-workspace"
+        >
+          <div class="no-workspace-state-content">
+            <p class="no-workspace-eyebrow">No selected workspace</p>
+            <h2>Select or create a workspace to manage jobs</h2>
+            <p>
+              Job orchestration is scoped to a workspace. Create a new workspace
+              from the Workspaces view, or ask a workspace owner or
+              administrator for edit permissions on the workspace whose jobs you
+              need to manage.
+            </p>
+            <div class="no-workspace-actions">
+              <v-btn
+                color="primary-darken-2"
+                variant="flat"
+                rounded="xl"
+                @click="openWorkspaceManager"
+              >
+                Open workspaces
+              </v-btn>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <template v-else>
+          <OrchestrationContextSidebar
+            :connections="filteredConnections"
+            :sites="filteredSites"
+            :can-edit="canEditOrchestration"
+            :task-count-for-connection="taskCountForConnection"
+            :issue-count-for-connection="issueCountForConnection"
+            :task-count-for-site="taskCountForSite"
+            :issue-count-for-site="issueCountForSite"
+            :violation-count-for-site="violationCountForSite"
+            :dot-color-for-connection="dotColorForConnection"
+            :dot-color-for-site="dotColorForSite"
+            @select-connection="selectConnection"
+            @select-site="selectSite"
+            @edit-connection="openEditDialog"
+            @delete-connection="openDeleteDialog"
+            @create="openCreateDialog"
+          />
+
+          <RouterView v-slot="{ Component }">
+            <section
+              v-if="hasTaskDetails && Component"
+              class="detail detail--task"
+            >
+              <component
+                :is="Component"
+                :task-id="selectedTaskId"
+                :run-id="selectedRunId"
+                :initial-task="selectedTask"
+                embedded
+                @close="closeTaskDetailsAndSync"
+                @deleted="onTaskDeleted"
+                @updated="onTaskDetailsChanged"
+              />
+            </section>
+
+            <TaskListPanel
+              v-else
+              :can-edit="canEditOrchestration"
+              :loading="listLoading"
+              :has-selection="hasSelection"
+              :detail-title="detailTitle"
+              :detail-type-badge="detailTypeBadge"
+              :selected-connection="selectedConnection"
+              :visible-tasks="visibleTasks"
+              :sorted-visible-tasks="sortedVisibleTasks"
+              :empty-heading="emptyHeading"
+              :empty-message="emptyMessage"
+              :empty-tasks-message="emptyTasksMessage"
+              @toggle-paused="onTogglePaused"
+              @run-now="onRunNow"
+              @open-task="goToTask"
+              @add-task="openCreateTaskDialog(selectedConnection!)"
+              @add-aggregation="openAggregationForm = true"
+              @add-expression="openExpressionForm = true"
+              @add-derivation="openDerivationForm = true"
+              @add-rating-curve="openRatingCurveForm = true"
+              @add-quality="openQualityForm = true"
+            />
+          </RouterView>
+        </template>
+
+        <v-dialog v-model="openCreateDataConnection" width="60rem">
+          <DataConnectionForm
+            @close="openCreateDataConnection = false"
+            @created="onDataConnectionCreated"
+          />
+        </v-dialog>
+
+        <v-dialog
+          v-if="selectedTaskDataConnection"
+          v-model="openCreateTask"
+          width="80rem"
+        >
+          <IngestionTaskForm
+            :data-connection="selectedTaskDataConnection"
+            @close="closeCreateTaskDialog"
+            @created="onTaskCreated"
+          />
+        </v-dialog>
+
+        <v-dialog
+          v-if="selectedDataConnection"
+          v-model="openEditDataConnection"
+          width="80rem"
+        >
+          <DataConnectionForm
+            :dataConnection="selectedDataConnection"
+            @close="openEditDataConnection = false"
+            @updated="onDataConnectionUpdated"
+          />
+        </v-dialog>
+
+        <v-dialog
+          v-if="selectedDataConnection"
+          v-model="openDeleteDataConnection"
+          width="40rem"
+        >
+          <DeleteDataConnectionCard
+            :itemName="selectedDataConnection.name"
+            @close="openDeleteDataConnection = false"
+            @delete="onDataConnectionDeleted"
+          />
+        </v-dialog>
+
+        <v-dialog v-model="openAggregationForm" width="60rem">
+          <AggregationForm
+            :initial-thing-id="selectedThingId"
+            :edit-task-id="editingAggregationTaskId"
+            @close="closeAggregationForm"
+            @created="onDataProductTaskCreated"
+            @updated="onTaskDetailsChanged"
+            @deleted="onTaskDetailsChanged"
+          />
+        </v-dialog>
+
+        <v-dialog v-model="openExpressionForm" width="60rem">
+          <ExpressionForm
+            :initial-thing-id="selectedThingId"
+            @close="openExpressionForm = false"
+            @created="onDataProductTaskCreated"
+          />
+        </v-dialog>
+
+        <v-dialog v-model="openDerivationForm" width="60rem">
+          <DerivationForm
+            :initial-thing-id="selectedThingId"
+            :edit-task-id="editingDerivationTaskId"
+            @close="closeDerivationForm"
+            @created="onDataProductTaskCreated"
+            @updated="onTaskDetailsChanged"
+            @deleted="onTaskDetailsChanged"
+          />
+        </v-dialog>
+
+        <v-dialog v-model="openRatingCurveForm" width="60rem">
+          <RatingCurveForm
+            :initial-thing-id="selectedThingId"
+            @close="openRatingCurveForm = false"
+            @created="onDataProductTaskCreated"
+          />
+        </v-dialog>
+
+        <v-dialog v-model="openQualityForm" width="64rem">
+          <QualityManagementForm
+            :initial-thing-id="selectedThingId"
+            :edit-task-id="editingQualityTaskId"
+            @close="closeQualityForm"
+            @created="onQualityTaskCreated"
+            @updated="onQualityTaskChanged"
+            @deleted="onQualityTaskChanged"
+          />
+        </v-dialog>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  defineAsyncComponent,
-  nextTick,
-  onMounted,
-  ref,
-  watch,
-} from 'vue'
-import OrchestrationTable from '@/components/Orchestration/OrchestrationTable.vue'
-import { useWorkspaceStore } from '@/store/workspaces'
+import { computed, ref, watch } from 'vue'
+import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import hs from '@hydroserver/client'
-import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
-import DataConnectionTable from '@/components/Orchestration/DataConnectionTable.vue'
-import { useDataConnectionStore } from '@/store/dataConnection'
-import { mdiChevronRight } from '@mdi/js'
-import { useRoute } from 'vue-router'
+import { sumBy } from 'lodash-es'
+import hs, {
+  DataConnection,
+  type DataProductTask,
+  type MonitoringTask,
+  PermissionAction,
+  PermissionResource,
+  type TaskExpanded,
+  type ThingTaskSummary,
+} from '@hydroserver/client'
+
 import router from '@/router/router'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { useWorkspaceStore } from '@/store/workspaces'
+import { useOrchestrationStore } from '@/store/orchestration'
+import { useOrchestrationData } from '@/composables/orchestration/useOrchestrationData'
+import { useOrchestrationTaskRows } from '@/composables/orchestration/useOrchestrationTaskRows'
+import { useTaskRunNowPolling } from '@/composables/orchestration/useTaskRunNowPolling'
+import { useOrchestrationRouteState } from '@/composables/orchestration/useOrchestrationRouteState'
 
-const TaskDetails = defineAsyncComponent(() => import('@/pages/TaskDetails.vue'))
+import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
+import OrchestrationNavRail from '@/components/Orchestration/workbench/OrchestrationNavRail.vue'
+import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
+import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
+import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
+import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationWorkspaceManager.vue'
+import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
+import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
+import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
+import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
+import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
+import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
+import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
 
+import {
+  TAB_META,
+  countTaskIssues,
+  worstDotColor,
+  DOT_PALETTE,
+  DOT_EMPTY,
+  DOT_DEFAULT_OK,
+  type TabDefinition,
+  type TabId,
+  type TaskRow,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
+
+const {
+  view: routeView,
+  taskKind: selectedTaskKind,
+  taskId: selectedTaskId,
+  runId: selectedRunId,
+  workspaceId: routeWorkspaceId,
+  dataConnectionId: routeDataConnectionId,
+  siteId: routeSiteId,
+  hasTaskDetails,
+  replaceView,
+  replaceSelectedGroup,
+  closeTaskDetails,
+  pushTaskDetails,
+} = useOrchestrationRouteState()
+
+const {
+  loading,
+  taskLoading,
+  workspaceTasks,
+  dataConnections,
+  things,
+  datastreamThingByDatastreamId,
+  dataProductTasks,
+  monitoringTasks,
+  loadedTaskGroup,
+  fetchAll,
+  refreshDataConnections,
+  fetchTasksForGroup,
+} = useOrchestrationData()
+
+const orchestrationStore = useOrchestrationStore()
 const workspaceStore = useWorkspaceStore()
+const {
+  orchestrationSearch,
+  orchestrationStatusFilter,
+  orchestrationTaskTypeFilter,
+  activeTab,
+  activeView,
+  selectedConnectionId,
+  selectedThingId,
+  sidebarSearch,
+  draftDatastreams,
+} = storeToRefs(orchestrationStore)
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
-const { setWorkspaces, setSelectedWorkspaceById } = workspaceStore
+const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
+const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
-const { openDataConnectionTableDialog } = storeToRefs(useDataConnectionStore())
-
-const route = useRoute()
-
-const selectedWorkspaceIdFromQuery = computed(() => {
-  const value = route.query.workspaceId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
-const selectedTaskId = computed(() => {
-  const value = route.query.taskId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-
-const selectedRunId = computed(() => {
-  const value = route.query.runId
-  return typeof value === 'string' && value.trim() ? value : null
-})
-const workspaceFetchCompleted = ref(false)
-
-const routeToAccessDenied = async () => {
-  await router.replace({
-    name: 'AccessDenied',
-    query: {
-      from: route.fullPath,
-    },
-  })
-}
-
-const applyWorkspaceFromQuery = async () => {
-  const workspaceId = selectedWorkspaceIdFromQuery.value
-  if (!workspaceId) return true
-  if (!workspaces.value.length && !workspaceFetchCompleted.value) return true
-
-  const workspace = workspaces.value.find((ws) => ws.id === workspaceId)
-  if (!workspace) {
-    await routeToAccessDenied()
+const applyRouteWorkspace = () => {
+  const targetWorkspaceId = routeWorkspaceId.value
+  if (!targetWorkspaceId || selectedWorkspace.value?.id === targetWorkspaceId) {
     return false
   }
-
-  if (selectedWorkspace.value?.id !== workspace.id) {
-    setSelectedWorkspaceById(workspace.id)
+  if (
+    !workspaces.value.some((workspace) => workspace.id === targetWorkspaceId)
+  ) {
+    return false
   }
+  workspaceStore.setSelectedWorkspaceById(targetWorkspaceId)
   return true
 }
 
-// Local visibility state so we can animate out before mutating the URL.
-const overlayOpen = ref<boolean>(!!selectedTaskId.value)
-type CloseMode = 'back' | 'replace' | null
-const pendingCloseMode = ref<CloseMode>(null)
+watch([routeWorkspaceId, workspaces], applyRouteWorkspace, { immediate: true })
 
-const overlayRef = ref<HTMLElement | null>(null)
-watch(
-  overlayOpen,
-  async (open) => {
-    if (!open) return
-    await nextTick()
-    overlayRef.value?.focus()
-  },
-  { immediate: false }
+// The workspaces list is the user's accessible (associated) workspaces, loaded
+// before the app mounts. A workspace_id in the URL that isn't in that list is
+// one the user has no permission to view, so surface an explicit error rather
+// than silently falling back to a different workspace.
+const routeWorkspaceDenied = computed(
+  () =>
+    !!routeWorkspaceId.value &&
+    !workspaces.value.some((ws) => ws.id === routeWorkspaceId.value)
 )
 
-const closeDetails = () => {
-  const back = (router.options.history.state as any)?.back
-  // Prefer going "back" when the user opened the drawer from within the app.
-  if (typeof back === 'string' && back.includes('/orchestration')) {
-    pendingCloseMode.value = 'back'
-  } else {
-    pendingCloseMode.value = 'replace'
-  }
-  overlayOpen.value = false
+watch(
+  routeWorkspaceDenied,
+  (denied) => {
+    if (denied) router.replace({ name: 'AccessDenied' })
+  },
+  { immediate: true }
+)
+
+watch(
+  routeView,
+  (view) => {
+    if (view === 'workspaces') {
+      activeView.value = 'workspaces'
+    } else {
+      activeView.value = 'tasks'
+      activeTab.value = view
+    }
+  },
+  { immediate: true }
+)
+
+const activeRunStatuses = new Set(['PENDING', 'STARTED'])
+
+const selectedDataConnection = ref<DataConnection | null>(null)
+const selectedTaskDataConnection = ref<DataConnection | null>(null)
+const openCreateDataConnection = ref(false)
+const openCreateTask = ref(false)
+const openEditDataConnection = ref(false)
+const openDeleteDataConnection = ref(false)
+const openAggregationForm = ref(false)
+const editingAggregationTaskId = ref<string | null>(null)
+const openExpressionForm = ref(false)
+const openDerivationForm = ref(false)
+const editingDerivationTaskId = ref<string | null>(null)
+const openRatingCurveForm = ref(false)
+const openQualityForm = ref(false)
+const editingQualityTaskId = ref<string | null>(null)
+
+const {
+  runNowTriggeredByTaskId,
+  stopAll,
+  runTaskNow,
+  startPollingTaskRun,
+  startPollingForLatestRun,
+  toggleSchedulePaused,
+} = useTaskRunNowPolling({
+  lists: {
+    etl: workspaceTasks,
+    dataProduct: dataProductTasks,
+    monitoring: monitoringTasks,
+  },
+  currentWorkspaceId: () => selectedWorkspaceId.value!,
+})
+
+const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
+  useOrchestrationTaskRows({
+    activeTab,
+    workspaceTasks,
+    dataProductTasks,
+    monitoringTasks,
+    datastreamThingByDatastreamId,
+    runNowTriggeredByTaskId,
+  })
+
+const canEditOrchestration = computed(() => {
+  const ws = selectedWorkspace.value
+  if (!ws) return false
+  const roleName = `${ws.collaboratorRole?.name ?? ''}`.toLowerCase()
+  if (isAdmin() || isOwner(ws) || roleName === 'editor') return true
+  return hasPermission(PermissionResource.Workspace, PermissionAction.Edit, ws)
+})
+
+const tabs = computed<TabDefinition[]>(() => [
+  {
+    ...TAB_META.ingestion,
+    issues: sumBy(dataConnections.value, taskAttentionCount),
+  },
+  {
+    ...TAB_META.aggregation,
+    issues: sumBy(things.value, productTaskAttentionCount),
+  },
+  {
+    ...TAB_META.quality,
+    issues: sumBy(things.value, monitoringTaskAttentionCount),
+  },
+])
+
+const filterByName = <T extends { name: string }>(items: T[], term: string) => {
+  const q = term.trim().toLowerCase()
+  if (!q) return items
+  return items.filter((x) => x.name.toLowerCase().includes(q))
 }
 
-watch(
-  selectedTaskId,
-  (value) => {
-    // Opening: query param set -> show overlay.
-    if (value) {
-      overlayOpen.value = true
-      return
+const filteredConnections = computed(() =>
+  filterByName(dataConnections.value, sidebarSearch.value)
+)
+const filteredSites = computed(() =>
+  filterByName(things.value, sidebarSearch.value)
+)
+
+const connectionsById = computed(
+  () => new Map(dataConnections.value.map((dc) => [dc.id, dc]))
+)
+const thingsById = computed(
+  () => new Map(things.value.map((th) => [th.id, th]))
+)
+
+const listLoading = computed(() => loading.value || taskLoading.value)
+
+const taskAttentionCount = (connection: DataConnection) =>
+  connection.taskAttentionCount
+
+const productTaskAttentionCount = (thing: ThingTaskSummary) =>
+  thing.productTaskAttentionCount
+
+const monitoringTaskAttentionCount = (thing: ThingTaskSummary) =>
+  thing.monitoringTaskAttentionCount
+
+const summaryDotColor = (total: number, issues: number) => {
+  if (total === 0) return DOT_EMPTY
+  if (issues > 0) return DOT_PALETTE['Needs attention']
+  return DOT_DEFAULT_OK
+}
+
+const taskCountForConnectionSummary = (dcId: string) =>
+  connectionsById.value.get(dcId)?.taskCount ?? 0
+
+const issueCountForConnectionSummary = (dcId: string) =>
+  connectionsById.value.get(dcId)?.taskAttentionCount ?? 0
+
+const loadedGroupMatches = (tab: TabId, groupId: string) =>
+  loadedTaskGroup.value?.tab === tab && loadedTaskGroup.value.groupId === groupId
+
+const selectedConnectionRows = (dcId: string) =>
+  etlTaskRows.value.filter((t) => t.dataConnectionId === dcId)
+
+const selectedSiteRows = (thingId: string) =>
+  activeTaskRows.value.filter((t) => t.thingId === thingId)
+
+const taskCountForConnection = (dcId: string) =>
+  loadedGroupMatches('ingestion', dcId)
+    ? selectedConnectionRows(dcId).length
+    : taskCountForConnectionSummary(dcId)
+
+const issueCountForConnection = (dcId: string) =>
+  loadedGroupMatches('ingestion', dcId)
+    ? countTaskIssues(selectedConnectionRows(dcId))
+    : issueCountForConnectionSummary(dcId)
+
+const taskCountForSiteSummary = (thingId: string) => {
+  const thing = thingsById.value.get(thingId)
+  if (!thing) return 0
+  return activeTab.value === 'aggregation'
+    ? thing.productTaskCount
+    : thing.monitoringTaskCount
+}
+
+const issueCountForSiteSummary = (thingId: string) => {
+  const thing = thingsById.value.get(thingId)
+  if (!thing) return 0
+  return activeTab.value === 'aggregation'
+    ? thing.productTaskAttentionCount
+    : thing.monitoringTaskAttentionCount
+}
+
+const taskCountForSite = (thingId: string) =>
+  loadedGroupMatches(activeTab.value, thingId)
+    ? selectedSiteRows(thingId).length
+    : taskCountForSiteSummary(thingId)
+
+const issueCountForSite = (thingId: string) =>
+  loadedGroupMatches(activeTab.value, thingId)
+    ? countTaskIssues(selectedSiteRows(thingId))
+    : issueCountForSiteSummary(thingId)
+
+const violationCountForSite = (thingId: string) =>
+  monitoringTaskRows.value
+    .filter((t) => t.thingId === thingId)
+    .reduce((sum, task) => sum + (task.monitoringRulesViolated ?? 0), 0)
+
+const dotColorForConnection = (dcId: string) =>
+  loadedGroupMatches('ingestion', dcId)
+    ? worstDotColor(selectedConnectionRows(dcId))
+    : summaryDotColor(
+        taskCountForConnectionSummary(dcId),
+        issueCountForConnectionSummary(dcId)
+      )
+
+const dotColorForSite = (thingId: string) =>
+  loadedGroupMatches(activeTab.value, thingId)
+    ? worstDotColor(selectedSiteRows(thingId))
+    : summaryDotColor(
+        taskCountForSiteSummary(thingId),
+        issueCountForSiteSummary(thingId)
+      )
+
+const selectedConnection = computed<DataConnection | null>(() =>
+  selectedConnectionId.value
+    ? connectionsById.value.get(selectedConnectionId.value) ?? null
+    : null
+)
+
+const selectedSite = computed(() =>
+  selectedThingId.value
+    ? thingsById.value.get(selectedThingId.value) ?? null
+    : null
+)
+
+const visibleTasks = computed<TaskRow[]>(() => {
+  if (activeTab.value === 'ingestion') {
+    if (!selectedConnectionId.value) return []
+    return etlTaskRows.value.filter(
+      (t) => t.dataConnectionId === selectedConnectionId.value
+    )
+  }
+  if (!selectedThingId.value) return []
+  return activeTaskRows.value.filter((t) => t.thingId === selectedThingId.value)
+})
+
+const searchedVisibleTasks = computed<TaskRow[]>(() => {
+  const term = orchestrationSearch.value.trim().toLowerCase()
+  const filters = new Set(orchestrationStatusFilter.value)
+  const taskTypeFilters = new Set(orchestrationTaskTypeFilter.value)
+  return visibleTasks.value.filter((t) => {
+    if (filters.size > 0) {
+      const bucket = t.statusSort ?? 'Unknown'
+      if (!filters.has(bucket)) return false
     }
-    // Closing via browser back/forward or manual URL edit -> animate out.
-    overlayOpen.value = false
-  },
-  { immediate: true }
-)
-
-watch(
-  selectedWorkspaceIdFromQuery,
-  async () => {
-    await applyWorkspaceFromQuery()
-  },
-  { immediate: true }
-)
-
-watch(selectedWorkspace, async (workspace) => {
-  if (!workspace?.id) return
-  if (selectedWorkspaceIdFromQuery.value === workspace.id) return
-
-  await router.replace({
-    name: 'Orchestration',
-    query: { ...route.query, workspaceId: workspace.id },
+    if (activeTab.value === 'aggregation' && taskTypeFilters.size > 0) {
+      if (!t.taskType || !taskTypeFilters.has(t.taskType)) return false
+    }
+    if (!term) return true
+    const haystack = [
+      t.name,
+      t.statusName,
+      t.statusSort,
+      t.lastRun,
+      t.nextRun,
+      t.taskType,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(term)
   })
 })
 
-const afterDetailsLeave = () => {
-  const mode = pendingCloseMode.value
-  pendingCloseMode.value = null
+const sortedVisibleTasks = computed<TaskRow[]>(() => searchedVisibleTasks.value)
 
-  // If the URL is already cleared (e.g., user used the browser back button), do nothing.
-  if (!selectedTaskId.value) return
+const hasSelection = computed(() =>
+  activeTab.value === 'ingestion'
+    ? !!selectedConnectionId.value
+    : !!selectedThingId.value
+)
 
-  if (mode === 'back') {
-    router.back()
-    return
+const detailTitle = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    return selectedConnection.value?.name ?? 'Select a data connection'
   }
+  return selectedSite.value?.name ?? 'Select a site'
+})
 
-  // If the user landed directly on a deep link, don't navigate them out of the app.
-  const nextQuery = { ...route.query, taskId: undefined, runId: undefined }
-  router.replace({ name: 'Orchestration', query: nextQuery })
+const detailTypeBadge = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    return selectedConnection.value?.payload?.type ?? ''
+  }
+  return selectedSite.value?.siteType ?? ''
+})
+
+const emptyHeading = computed(() =>
+  activeTab.value === 'ingestion'
+    ? dataConnections.value.length === 0
+      ? 'No data connections have been registered yet.'
+      : 'Select a data connection'
+    : things.value.length === 0
+    ? 'No sites registered in this workspace.'
+    : 'Select a site'
+)
+
+const emptyMessage = computed(() => {
+  if (activeTab.value === 'ingestion') {
+    if (dataConnections.value.length === 0) {
+      return "Click 'Add data connection' to get started."
+    }
+    return 'Pick a connection from the list to view its tasks.'
+  }
+  if (things.value.length === 0) {
+    return 'Create a site in your workspace to assign tasks to it.'
+  }
+  return 'Pick a site to view the tasks writing data to it.'
+})
+
+const emptyTasksMessage = computed(() =>
+  activeTab.value === 'ingestion'
+    ? 'No tasks registered for this data connection.'
+    : 'No tasks are writing data to this site yet.'
+)
+
+const selectedTask = computed(() => {
+  const taskId = selectedTaskId.value
+  const kind = selectedTaskKind.value
+  if (!taskId || !kind) return null
+  if (kind === 'etl')
+    return workspaceTasks.value.find((t) => t.id === taskId) ?? null
+  if (kind === 'dataProduct')
+    return dataProductTasks.value.find((t) => t.id === taskId) ?? null
+  return monitoringTasks.value.find((t) => t.id === taskId) ?? null
+})
+
+const selectSidebarFromTaskDetails = () => {
+  const task = selectedTask.value as any
+  if (!hasTaskDetails.value || !task) return false
+  if (selectedTaskKind.value === 'etl') {
+    selectedConnectionId.value = task.dataConnection?.id ?? null
+    return !!selectedConnectionId.value
+  }
+  selectedThingId.value = task.thing?.id ?? null
+  return !!selectedThingId.value
 }
 
-onMounted(async () => {
-  if (workspaces.value.length) {
-    workspaceFetchCompleted.value = true
-    await applyWorkspaceFromQuery()
+const selectSidebarFromRouteGroup = () => {
+  if (activeTab.value === 'ingestion') {
+    const id = routeDataConnectionId.value
+    if (!id || !connectionsById.value.has(id)) return false
+    selectedConnectionId.value = id
+    return true
+  }
+
+  const id = routeSiteId.value
+  if (!id || !thingsById.value.has(id)) return false
+  selectedThingId.value = id
+  return true
+}
+
+const autoSelectSidebar = () => {
+  if (activeTab.value === 'ingestion') {
+    const current = selectedConnectionId.value
+    if (current && connectionsById.value.has(current)) return
+    selectedConnectionId.value = dataConnections.value[0]?.id ?? null
+  } else {
+    const current = selectedThingId.value
+    if (current && thingsById.value.has(current)) return
+    selectedThingId.value = things.value[0]?.id ?? null
+  }
+}
+
+const selectedGroupIdForTab = (tab: TabId) =>
+  tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
+
+const fetchVisibleTasks = async (force = false) => {
+  if (
+    !selectedWorkspaceId.value ||
+    activeView.value === 'workspaces' ||
+    hasTaskDetails.value
+  ) {
     return
   }
 
-  if (!(await applyWorkspaceFromQuery())) return
+  await fetchTasksForGroup(
+    activeTab.value,
+    selectedGroupIdForTab(activeTab.value),
+    selectedWorkspaceId.value,
+    force
+  )
+}
 
-  try {
-    const workspacesResponse = await hs.workspaces.listAllItems({
-      is_associated: true,
-      expand_related: true,
-    })
-    workspaceFetchCompleted.value = true
-    setWorkspaces(workspacesResponse)
-  } catch (error) {
-    console.error('Error fetching workspaces', error)
-  } finally {
-    await applyWorkspaceFromQuery()
+const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
+  if (hasTaskDetails.value) return
+  if (activeView.value === 'workspaces') {
+    if (overrideWorkspaceId !== undefined) {
+      await replaceView('workspaces', null, overrideWorkspaceId)
+    }
+    return
   }
+  await replaceSelectedGroup(
+    activeTab.value,
+    selectedGroupIdForTab(activeTab.value),
+    overrideWorkspaceId
+  )
+}
+
+const autoSelectSidebarAndSync = async () => {
+  autoSelectSidebar()
+  await fetchVisibleTasks()
+  await syncSelectedGroupToRoute()
+}
+
+const closeTaskDetailsAndSync = async () => {
+  await closeTaskDetails()
+  await fetchVisibleTasks()
+  await syncSelectedGroupToRoute()
+}
+
+const setActiveTab = async (tab: TabId) => {
+  sidebarSearch.value = ''
+  await replaceView(tab, selectedGroupIdForTab(tab))
+  autoSelectSidebar()
+  await fetchVisibleTasks()
+  await syncSelectedGroupToRoute()
+}
+
+const openWorkspaceManager = async () => {
+  await replaceView('workspaces')
+}
+
+const goToHydroLoader = async () => {
+  await router.push({ name: 'HydroLoader' })
+}
+
+const selectConnection = async (id: string) => {
+  selectedConnectionId.value = id
+  await fetchVisibleTasks()
+  await replaceView('ingestion', id)
+}
+
+const selectSite = async (id: string) => {
+  selectedThingId.value = id
+  await fetchVisibleTasks()
+  await replaceView(activeTab.value, id)
+}
+
+const closeWorkspaceScopedUi = () => {
+  openCreateDataConnection.value = false
+  openCreateTask.value = false
+  openEditDataConnection.value = false
+  openDeleteDataConnection.value = false
+  openAggregationForm.value = false
+  openExpressionForm.value = false
+  openDerivationForm.value = false
+  openRatingCurveForm.value = false
+  openQualityForm.value = false
+  selectedDataConnection.value = null
+  selectedTaskDataConnection.value = null
+  editingAggregationTaskId.value = null
+  editingDerivationTaskId.value = null
+  editingQualityTaskId.value = null
+  sidebarSearch.value = ''
+  orchestrationSearch.value = ''
+  orchestrationStatusFilter.value = []
+  orchestrationTaskTypeFilter.value = []
+  draftDatastreams.value = []
+}
+
+watch(
+  selectedWorkspaceId,
+  async (newId, oldId) => {
+    if (newId == null || routeWorkspaceDenied.value) return
+    const workspaceChanged = oldId != null && oldId !== newId
+    const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
+    // The URL workspace wins; only push the new selection into the URL when
+    // the URL has none or the selected workspace actually changed.
+    const overrideWorkspaceId =
+      !routeWorkspaceId.value || workspaceChanged ? newId : undefined
+    stopAll()
+    closeWorkspaceScopedUi()
+    selectedConnectionId.value = null
+    selectedThingId.value = null
+    if (workspaceChanged && !routeSelectedThisWorkspace)
+      await closeTaskDetails()
+    await fetchAll(newId)
+    if (!selectSidebarFromTaskDetails() && !selectSidebarFromRouteGroup()) {
+      autoSelectSidebar()
+    }
+    await fetchVisibleTasks(true)
+    await syncSelectedGroupToRoute(overrideWorkspaceId)
+  },
+  { immediate: true }
+)
+
+watch([routeDataConnectionId, routeSiteId, routeView], async () => {
+  if (
+    loading.value ||
+    activeView.value === 'workspaces' ||
+    hasTaskDetails.value
+  ) {
+    return
+  }
+
+  if (selectSidebarFromRouteGroup()) {
+    await fetchVisibleTasks()
+    return
+  }
+
+  const hasRouteSelection =
+    activeTab.value === 'ingestion'
+      ? !!routeDataConnectionId.value
+      : !!routeSiteId.value
+  if (!hasRouteSelection) return
+
+  await autoSelectSidebarAndSync()
 })
+
+const openCreateDialog = () => {
+  if (!canEditOrchestration.value) return
+  openCreateDataConnection.value = true
+}
+
+const openCreateTaskDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedTaskDataConnection.value = dc
+  openCreateTask.value = true
+}
+
+const resetDraftDatastreams = () => {
+  draftDatastreams.value = []
+}
+
+const closeCreateTaskDialog = () => {
+  resetDraftDatastreams()
+  openCreateTask.value = false
+  selectedTaskDataConnection.value = null
+}
+
+const openEditDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedDataConnection.value = dc
+  openEditDataConnection.value = true
+}
+
+const openDeleteDialog = (dc: DataConnection) => {
+  if (!canEditOrchestration.value) return
+  selectedDataConnection.value = dc
+  openDeleteDataConnection.value = true
+}
+
+const onDataConnectionCreated = async () => {
+  openCreateDataConnection.value = false
+  await refreshDataConnections()
+}
+
+const onTaskCreated = async (_createdTask?: TaskExpanded) => {
+  closeCreateTaskDialog()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const closeAggregationForm = () => {
+  openAggregationForm.value = false
+  editingAggregationTaskId.value = null
+}
+
+const closeDerivationForm = () => {
+  openDerivationForm.value = false
+  editingDerivationTaskId.value = null
+}
+
+const closeQualityForm = () => {
+  openQualityForm.value = false
+  editingQualityTaskId.value = null
+}
+
+const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
+  openAggregationForm.value = false
+  openDerivationForm.value = false
+  openExpressionForm.value = false
+  openRatingCurveForm.value = false
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const onQualityTaskCreated = async (createdTask?: MonitoringTask) => {
+  closeQualityForm()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const onQualityTaskChanged = async () => {
+  closeQualityForm()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const onTaskDetailsChanged = async () => {
+  resetDraftDatastreams()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const onTaskDeleted = async () => {
+  resetDraftDatastreams()
+  await fetchAll()
+  await autoSelectSidebarAndSync()
+}
+
+const onDataConnectionUpdated = (updated: DataConnection) => {
+  openEditDataConnection.value = false
+  const idx = dataConnections.value.findIndex((dc) => dc.id === updated.id)
+  if (idx !== -1) dataConnections.value[idx] = updated
+}
+
+const onDataConnectionDeleted = async () => {
+  if (!selectedDataConnection.value) return
+  const id = selectedDataConnection.value.id
+  try {
+    await hs.dataConnections.delete(id)
+    resetDraftDatastreams()
+    await fetchAll()
+    if (selectedConnectionId.value === id) {
+      selectedConnectionId.value = dataConnections.value[0]?.id ?? null
+    }
+    await autoSelectSidebarAndSync()
+    openDeleteDataConnection.value = false
+  } catch (error) {
+    console.error('Error deleting data connection', error)
+  }
+}
+
+const onRunNow = async (row: TaskRow) => {
+  if (!canEditOrchestration.value) return
+  await runTaskNow(row.kind, row.id)
+}
+
+const onTogglePaused = async (row: TaskRow) => {
+  if (!canEditOrchestration.value) return
+  if (!row.schedule) return
+  await toggleSchedulePaused(row.kind, row.id, row.schedule)
+}
+
+const goToTask = async (row: TaskRow) => {
+  await pushTaskDetails(row)
+}
 </script>
 
 <style scoped>
 .orchestration-page {
-  background-color: #eef2f6;
-  min-height: calc(
-    100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
-  );
-}
-
-.taskdetails-overlay {
-  /* Keep the app navigation visible by starting below the Vuetify app-bar layout offset. */
-  position: fixed;
-  top: var(--v-layout-top, 0px);
-  left: var(--v-layout-left, 0px);
-  right: var(--v-layout-right, 0px);
-  bottom: 0;
-  /* Ensure the app bar elevation shadow isn't clipped/covered by the slide-over. */
-  z-index: 1000;
+  background-color: #ffffff;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
+  min-height: 0;
   overflow: hidden;
-  outline: none;
 }
 
-.taskdetails-scrim {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(2px);
+.orchestration-page-toolbar {
+  flex-shrink: 0;
 }
 
-.taskdetails-panel {
-  position: relative;
-  height: 100%;
-  width: 100%;
+.orchestration-page-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.orchestration-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   background: #ffffff;
-  border-left: 1px solid #e2e8f0;
-  box-shadow: -12px 0 32px rgba(2, 6, 23, 0.18);
-}
-
-.taskdetails-panel-inner {
-  height: 100%;
   overflow: hidden;
 }
 
-.taskdetails-slide-enter-active,
-.taskdetails-slide-leave-active {
-  /* Keep the overlay fixed; animate the panel itself for a true slide-in-from-right feel. */
+.workspace-detail {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: white;
+  padding: 16px 22px;
 }
 
-.taskdetails-slide-enter-active .taskdetails-panel,
-.taskdetails-slide-leave-active .taskdetails-panel {
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
+.no-workspace-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: auto;
+  background: white;
+  padding: 32px;
 }
 
-.taskdetails-slide-enter-from .taskdetails-panel,
-.taskdetails-slide-leave-to .taskdetails-panel {
-  transform: translateX(100%);
+.no-workspace-state-content {
+  max-width: 560px;
+  color: #3c4043;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .taskdetails-slide-enter-active .taskdetails-panel,
-  .taskdetails-slide-leave-active .taskdetails-panel {
-    transition: none;
-  }
+.no-workspace-eyebrow {
+  margin: 0 0 8px;
+  color: #5f6368;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.no-workspace-state h2 {
+  margin: 0 0 12px;
+  color: #202124;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.no-workspace-state p {
+  line-height: 1.55;
+}
+
+.no-workspace-actions {
+  margin-top: 22px;
+}
+
+.detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: white;
+  min-width: 0;
+}
+
+.detail--task {
+  padding: 0;
 }
 </style>

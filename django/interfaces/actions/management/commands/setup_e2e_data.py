@@ -8,7 +8,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from django.db import connection, transaction
-from domains.iam.models import Organization
+from core.iam.models import Organization
 
 
 User = get_user_model()
@@ -54,19 +54,18 @@ EXTRA_E2E_USERS = {
 }
 
 DEFAULT_FIXTURES = [
-    "domains/iam/fixtures/default_user_types.yaml",
-    "domains/iam/fixtures/default_organization_types.yaml",
-    "domains/iam/fixtures/default_roles.yaml",
-    "domains/sta/fixtures/default_datastream_aggregations.yaml",
-    "domains/sta/fixtures/default_datastream_statuses.yaml",
-    "domains/sta/fixtures/default_file_attachment_types.yaml",
-    "domains/sta/fixtures/default_method_types.yaml",
-    "domains/sta/fixtures/default_processing_levels.yaml",
-    "domains/sta/fixtures/default_sampled_mediums.yaml",
-    "domains/sta/fixtures/default_site_types.yaml",
-    "domains/sta/fixtures/default_units.yaml",
-    "domains/sta/fixtures/default_variable_types.yaml",
-    "domains/etl/fixtures/default_orchestration_systems.yaml",
+    "core/iam/fixtures/default_user_types.yaml",
+    "core/iam/fixtures/default_organization_types.yaml",
+    "core/iam/fixtures/default_roles.yaml",
+    "core/sta/fixtures/default_datastream_aggregations.yaml",
+    "core/sta/fixtures/default_datastream_statuses.yaml",
+    "core/sta/fixtures/default_file_attachment_types.yaml",
+    "core/sta/fixtures/default_method_types.yaml",
+    "core/sta/fixtures/default_processing_levels.yaml",
+    "core/sta/fixtures/default_sampled_mediums.yaml",
+    "core/sta/fixtures/default_site_types.yaml",
+    "core/sta/fixtures/default_units.yaml",
+    "core/sta/fixtures/default_variable_types.yaml",
 ]
 
 

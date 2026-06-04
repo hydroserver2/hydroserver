@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Task Status Notification: {{ notification_name }}</title>
+    <style>
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Hello,</p>
+
+    <p>Here is a summary of tasks for the <strong>{{ notification_name }}</strong> notification:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Run Count</th>
+          <th>Failure Count</th>
+          <th>Last Run Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in task_summaries %}
+        <tr>
+          <td>{{ task.name }}</td>
+          <td>{{ task.run_count }}</td>
+          <td>{{ task.failure_count }}</td>
+          <td>{{ task.last_run_message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p>This is an automated message. Do not reply to this email.</p>
+  </body>
+</html>

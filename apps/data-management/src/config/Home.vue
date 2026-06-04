@@ -48,10 +48,10 @@
           </div>
           <div>
             <p class="text-body-1 font-weight-bold mb-2">
-              Sensor Data Streaming
+              Data Streaming
             </p>
             <p class="text-body-2 text-medium-emphasis mb-2">
-              Stream sensor data directly from your Internet connected
+              Stream data directly from your Internet connected
               datalogger or load data using our Streaming ETL System software.
             </p>
           </div>
@@ -85,7 +85,7 @@
               Easy Web Configuration
             </p>
             <p class="text-body-2 text-medium-emphasis mb-2">
-              Create new monitoring locations, observed variables, sensors, and
+              Create new monitoring locations, observed variables, methods, and
               data streams through our web user interface.
             </p>
           </div>

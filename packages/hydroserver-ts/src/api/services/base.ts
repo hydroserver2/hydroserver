@@ -135,7 +135,14 @@ export abstract class HydroServerBaseService<
   }
 
   protected serialize(body: M): unknown {
-    return body ?? {}
+    if (!body || typeof body !== 'object') return body ?? {}
+
+    const serialized = { ...(body as Record<string, unknown>) }
+    if (serialized.id === '' || serialized.id == null) {
+      delete serialized.id
+    }
+
+    return serialized
   }
 
   protected deserialize(model: M): M {

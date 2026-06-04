@@ -22,8 +22,8 @@
 
 <style scoped>
 .sticky-form-card {
-  max-height: 90vh;
-  height: 90vh;
+  max-height: 94vh;
+  height: 94vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -37,8 +37,8 @@
 }
 
 .sticky-header-content {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .scroll-body {
@@ -52,5 +52,10 @@
   bottom: 0;
   z-index: 3;
   background: white;
+}
+
+:deep(.sticky-actions .v-card-actions) {
+  padding: 6px 12px;
+  min-height: 0;
 }
 </style>

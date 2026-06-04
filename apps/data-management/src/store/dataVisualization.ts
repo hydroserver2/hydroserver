@@ -38,6 +38,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const loadingStates = ref(new Map<string, boolean>()) // State to track loading status of individual datasets
   const prevIds = ref<string[]>([])
   const requestCounters = ref<Record<string, number>>({})
+  const refreshCounter = ref(0)
+  const activeRefreshKey = ref('')
 
   const cardHeight = ref(40)
   const tableHeight = ref(30)
@@ -143,8 +145,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       datastream.observedPropertyId
     )?.name
     return (
-      OPName !== undefined &&
-      selectedObservedPropertyNameSet.value.has(OPName)
+      OPName !== undefined && selectedObservedPropertyNameSet.value.has(OPName)
     )
   }
 
@@ -155,8 +156,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       datastream.processingLevelId
     )?.definition
     return (
-      PLName !== undefined &&
-      selectedProcessingLevelNameSet.value.has(PLName)
+      PLName !== undefined && selectedProcessingLevelNameSet.value.has(PLName)
     )
   }
 
@@ -170,7 +170,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   function matchesSelectedWorkspace(datastream: Datastream) {
     if (selectedWorkspaceIds.value.size === 0) return true
 
-    const thingWorkspaceId = thingById.value.get(datastream.thingId)?.workspaceId
+    const thingWorkspaceId = thingById.value.get(
+      datastream.thingId
+    )?.workspaceId
 
     if (!thingWorkspaceId) return false
 
@@ -252,7 +254,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     custom?: boolean
   }
 
-  const setDateRange = ({
+  const setDateRange = async ({
     begin,
     end,
     update = true,
@@ -272,7 +274,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       endDate.value &&
       plottedDatastreams.value.length
     ) {
-      refreshGraphSeriesArray(plottedDatastreams.value)
+      await refreshGraphSeriesArray(plottedDatastreams.value)
     }
   }
 
@@ -321,14 +323,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const updateOrFetchGraphSeries = async (
     datastream: Datastream,
     start: string,
-    end: string
-  ) => {
+    end: string,
+    refreshId: number,
+    refreshKey: string
+  ): Promise<boolean> => {
     const requestId = (requestCounters.value[datastream.id] ?? 0) + 1
     requestCounters.value[datastream.id] = requestId
     loadingStates.value.set(datastream.id, true)
 
-    const isLatest = () =>
-      requestCounters.value[datastream.id] === requestId
+    const isLatest = () => requestCounters.value[datastream.id] === requestId
+    const isCurrentRefresh = () =>
+      refreshCounter.value === refreshId &&
+      activeRefreshKey.value === refreshKey
     const isStillSelected = () =>
       plottedDatastreams.value.some((ds) => ds.id === datastream.id)
 
@@ -340,22 +346,37 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       if (seriesIndex >= 0) {
         // Update the existing graph series with new data
         const data = await fetchGraphSeriesData(datastream, start, end)
-        if (!data || !isLatest() || !isStillSelected()) return
-        graphSeriesArray.value[seriesIndex].data = data
+        if (!data || !isLatest() || !isCurrentRefresh() || !isStillSelected()) {
+          return false
+        }
+        const currentIndex = graphSeriesArray.value.findIndex(
+          (series) => series.id === datastream.id
+        )
+        if (currentIndex >= 0) graphSeriesArray.value[currentIndex].data = data
       } else {
         // Add new graph series
         const newSeries = await fetchGraphSeries(datastream, start, end)
-        if (!newSeries || !isLatest() || !isStillSelected()) return
-        graphSeriesArray.value.push(newSeries)
+        if (
+          !newSeries ||
+          !isLatest() ||
+          !isCurrentRefresh() ||
+          !isStillSelected()
+        ) {
+          return false
+        }
+        const alreadyPresent = graphSeriesArray.value.some(
+          (series) => series.id === datastream.id
+        )
+        if (!alreadyPresent) graphSeriesArray.value.push(newSeries)
       }
 
-      if (!isLatest() || !isStillSelected()) return
-      updateVisualization()
+      return isLatest() && isCurrentRefresh() && isStillSelected()
     } catch (error) {
       console.error(
         `Failed to fetch or update dataset for ${datastream.id}:`,
         error
       )
+      return false
     } finally {
       if (isLatest()) {
         loadingStates.value.set(datastream.id, false)
@@ -365,16 +386,41 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   /** Refreshes the graphSeriesArray based on the current selection of datastreams */
   const refreshGraphSeriesArray = async (datastreams: Datastream[]) => {
+    const begin = beginDate.value.toISOString()
+    const end = endDate.value.toISOString()
+    const ids = datastreams
+      .map((ds) => ds.id)
+      .sort()
+      .join('|')
+    const refreshId = refreshCounter.value + 1
+    const refreshKey = `${begin}|${end}|${ids}`
+    refreshCounter.value = refreshId
+    activeRefreshKey.value = refreshKey
+
     // Remove graphSeries that are no longer selected
     const currentIds = new Set(datastreams.map((ds) => ds.id))
     graphSeriesArray.value = graphSeriesArray.value.filter((s) =>
       currentIds.has(s.id)
     )
-    const begin = beginDate.value.toISOString()
-    const end = endDate.value.toISOString()
-    datastreams.forEach((ds) => {
-      updateOrFetchGraphSeries(ds, begin, end)
-    })
+
+    await Promise.all(
+      datastreams.map((ds) =>
+        updateOrFetchGraphSeries(ds, begin, end, refreshId, refreshKey)
+      )
+    )
+
+    if (
+      refreshCounter.value !== refreshId ||
+      activeRefreshKey.value !== refreshKey
+    ) {
+      return
+    }
+
+    const orderById = new Map(datastreams.map((ds, index) => [ds.id, index]))
+    graphSeriesArray.value.sort(
+      (a, b) => (orderById.get(a.id) ?? 0) - (orderById.get(b.id) ?? 0)
+    )
+    updateVisualization()
   }
 
   // If currently selected datastreams are no longer in filteredDatastreams, deselect them
@@ -446,7 +492,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
           beginDate.value = new Date(endDate.value.getTime() - timeDifference)
         }
 
-        refreshGraphSeriesArray(newDs)
+        void refreshGraphSeriesArray(newDs)
       }
       prevDatastreamIds = newDatastreamIds
     },

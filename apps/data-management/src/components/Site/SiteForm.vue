@@ -196,7 +196,7 @@ import { rules } from '@/utils/rules'
 import { storeToRefs } from 'pinia'
 import SitePhotoManager from '@/components/Site/SitePhotoManager.vue'
 import SiteTagManager from '@/components/Site/SiteTagManager.vue'
-import RatingCurveTable from '@/components/Orchestration/RatingCurveTable.vue'
+import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import { usePhotosStore } from '@/store/photos'
 import { useRatingCurveStore } from '@/store/ratingCurves'
 import { useTagStore } from '@/store/tags'
@@ -241,7 +241,7 @@ watch(
 )
 
 async function populateThing() {
-  Object.assign(thing, storedThing.value)
+  Object.assign(thing, JSON.parse(JSON.stringify(storedThing.value)))
   if (thing.location.latitude && thing.location.longitude) loaded.value = true
 }
 

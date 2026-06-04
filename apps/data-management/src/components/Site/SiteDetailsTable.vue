@@ -156,7 +156,7 @@ import { useThingStore } from '@/store/thing'
 import { materialColors } from '@/utils/materialColors'
 import { useTagStore } from '@/store/tags'
 import { Snackbar } from '@/utils/notifications'
-import RatingCurveTable from '@/components/Orchestration/RatingCurveTable.vue'
+import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import {
   mdiBarcode,

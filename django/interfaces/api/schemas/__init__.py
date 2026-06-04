@@ -1,6 +1,6 @@
 from .base import (BaseGetResponse, BasePostBody, BasePatchBody, BaseQueryParameters, CollectionQueryParameters,
-                   VocabularyQueryParameters)
-from .workspace import (
+                   VocabularyQueryParameters, OrderByField)
+from interfaces.api.schemas.iam.workspace import (
     WorkspaceSummaryResponse,
     WorkspaceDetailResponse,
     WorkspaceQueryParameters,
@@ -9,13 +9,13 @@ from .workspace import (
     WorkspaceTransferBody,
     AccountContactDetailResponse
 )
-from .collaborator import (
+from interfaces.api.schemas.iam.collaborator import (
     CollaboratorDetailResponse,
     CollaboratorQueryParameters,
     CollaboratorPostBody,
     CollaboratorDeleteBody,
 )
-from .api_key import (
+from interfaces.api.schemas.iam.api_key import (
     APIKeySummaryResponse,
     APIKeyDetailResponse,
     APIKeyQueryParameters,
@@ -24,13 +24,16 @@ from .api_key import (
     APIKeySummaryPostResponse,
     APIKeyDetailPostResponse,
 )
-from .role import RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters
+from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters,
+                                             RoleOrderByFields)
 
-from .thing import (
+from interfaces.api.schemas.sta.thing import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
+    ThingTaskSummaryResponse,
+    ThingTaskSummaryQueryParameters,
     ThingSummaryResponse,
     ThingDetailResponse,
     ThingPostBody,
@@ -41,42 +44,42 @@ from .thing import (
     TagGetResponse,
     FileAttachmentGetResponse,
 )
-from .observed_property import (
+from interfaces.api.schemas.sta.observed_property import (
     ObservedPropertySummaryResponse,
     ObservedPropertyDetailResponse,
     ObservedPropertyQueryParameters,
     ObservedPropertyPostBody,
     ObservedPropertyPatchBody,
 )
-from .processing_level import (
+from interfaces.api.schemas.sta.processing_level import (
     ProcessingLevelSummaryResponse,
     ProcessingLevelDetailResponse,
     ProcessingLevelQueryParameters,
     ProcessingLevelPostBody,
     ProcessingLevelPatchBody,
 )
-from .result_qualifier import (
+from interfaces.api.schemas.sta.result_qualifier import (
     ResultQualifierSummaryResponse,
     ResultQualifierDetailResponse,
     ResultQualifierQueryParameters,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
 )
-from .sensor import (
+from interfaces.api.schemas.sta.sensor import (
     SensorSummaryResponse,
     SensorDetailResponse,
     SensorQueryParameters,
     SensorPostBody,
     SensorPatchBody,
 )
-from .unit import (
+from interfaces.api.schemas.sta.unit import (
     UnitSummaryResponse,
     UnitDetailResponse,
     UnitQueryParameters,
     UnitPostBody,
     UnitPatchBody,
 )
-from .datastream import (
+from interfaces.api.schemas.sta.datastream import (
     DatastreamVisualizationBootstrapQueryParameters,
     DatastreamVisualizationBootstrapResponse,
     DatastreamSummaryResponse,
@@ -85,7 +88,7 @@ from .datastream import (
     DatastreamPostBody,
     DatastreamPatchBody,
 )
-from .observation import (
+from interfaces.api.schemas.sta.observation import (
     ObservationSummaryResponse,
     ObservationDetailResponse,
     ObservationQueryParameters,
@@ -96,7 +99,7 @@ from .observation import (
     ObservationBulkPostBody,
     ObservationBulkDeleteBody,
 )
-from .attachment import (
+from interfaces.api.schemas.sta.attachment import (
     FileAttachmentQueryParameters,
     TagGetResponse,
     TagPostBody,
@@ -105,20 +108,12 @@ from .attachment import (
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
-
-from .data_connection import (DataConnectionSummaryResponse, DataConnectionDetailResponse, DataConnectionPostBody,
-                              DataConnectionPatchBody, DataConnectionFields, DataConnectionOrderByFields,
-                              DataConnectionQueryParameters)
-from .orchestration_system import (OrchestrationSystemSummaryResponse, OrchestrationSystemDetailResponse,
-                                   OrchestrationSystemPostBody, OrchestrationSystemPatchBody,
-                                   OrchestrationSystemFields, OrchestrationSystemOrderByFields,
-                                   OrchestrationSystemQueryParameters)
-from .task import (TaskSummaryResponse, TaskDetailResponse, TaskPostBody, TaskPatchBody, TaskRunResponse, TaskFields,
-                   TaskQueryParameters, TaskOrderByFields, TaskScheduleFields, TaskSchedulePostBody,
-                   TaskMappingPostBody, TaskMappingPathPostBody)
-from .run import (TaskRunFields, TaskRunResponse, TaskRunPostBody, TaskRunPatchBody, TaskRunQueryParameters,
-                  TaskRunOrderByFields)
-
+from interfaces.api.schemas.etl.data_connection import (
+    DataConnectionResponse,
+    DataConnectionQueryParameters,
+    DataConnectionPostBody,
+    DataConnectionPatchBody,
+)
 
 WorkspaceDetailResponse.model_rebuild()
 RoleDetailResponse.model_rebuild()

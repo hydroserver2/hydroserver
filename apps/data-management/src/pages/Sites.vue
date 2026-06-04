@@ -141,10 +141,10 @@ import WorkspaceToolbar from '@/components/Workspace/WorkspaceToolbar.vue'
 import hs, {
   PermissionResource,
   PermissionAction,
+  type ThingSiteSummary,
 } from '@hydroserver/client'
-import { listThingSiteSummaries } from '@/api/thingSiteSummaries'
 import { addColorToMarkers } from '@/utils/maps/markers'
-import { ThingSiteSummary, ThingSiteSummaryWithColor } from '@/types'
+import { ThingSiteSummaryWithColor } from '@/types'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -254,7 +254,8 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const loadThings = async () => {
-  workspaceThings.value = await listThingSiteSummaries(selectedWorkspace.value!.id)
+  const res = await hs.things.listSiteSummaries(selectedWorkspace.value!.id)
+  workspaceThings.value = res.data ?? []
 }
 
 onMounted(async () => {
@@ -264,12 +265,12 @@ onMounted(async () => {
     ])
     setWorkspaces(workspaceRes)
   } else {
-    const [things, workspaceRes] = await Promise.all([
-      listThingSiteSummaries(selectedWorkspace.value.id),
+    const [thingsRes, workspaceRes] = await Promise.all([
+      hs.things.listSiteSummaries(selectedWorkspace.value.id),
       hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
     ])
     setWorkspaces(workspaceRes)
-    workspaceThings.value = things
+    workspaceThings.value = thingsRes.data ?? []
   }
   isPageLoaded.value = true
 })

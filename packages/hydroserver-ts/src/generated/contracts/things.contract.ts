@@ -4,7 +4,7 @@ import type * as Data from '../data.types'
 
 export namespace ThingContract {
   export const route = 'things' as const
-  export type QueryParameters = ([Data.operations['interfaces_api_views_thing_get_things']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_thing_get_things']['parameters']['query']>)
+  export type QueryParameters = ([Data.operations['interfaces_api_views_sta_thing_get_things']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_thing_get_things']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['ThingSummaryResponse']
   export type DetailResponse  = Data.components['schemas']['ThingDetailResponse']
   export type PostBody        = Data.components['schemas']['ThingPostBody']

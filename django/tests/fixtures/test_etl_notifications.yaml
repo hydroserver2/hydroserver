@@ -1,0 +1,41 @@
+# ETL Notification Crontab Schedule
+- model: django_celery_beat.crontabschedule
+  pk: 1000001
+  fields:
+    minute: "0"
+    hour: "8"
+    day_of_week: "*"
+    day_of_month: "*"
+    month_of_year: "*"
+    timezone: UTC
+
+# ETL Notification Periodic Task
+- model: django_celery_beat.periodictask
+  pk: 1000001
+  fields:
+    name: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+    task: processing.etl.tasks.send_etl_notification_email
+    args: []
+    kwargs: {"data_connection_id": "019adb5c-da8b-7970-877d-c3b4ca37cc60"}
+    enabled: True
+    total_run_count: 0
+    date_changed: 2025-01-01 01:00:00.000 -0700
+    description: ""
+    crontab_id: 1000001
+    one_off: False
+    start_time: 2025-01-01 01:00:00.000 -0700
+    headers: {}
+    expire_seconds: 3600
+
+# ETL Data Connection Notification
+- model: etl.dataconnectionnotification
+  pk: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+  fields:
+    periodic_task: 1000001
+
+# ETL Notification Recipient
+- model: etl.dataconnectionnotificationrecipient
+  pk: 019adbc5-0001-7000-0000-000000000002
+  fields:
+    notification: 019adb5c-da8b-7970-877d-c3b4ca37cc60
+    email: recipient@example.com

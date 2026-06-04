@@ -28,7 +28,13 @@ jobs:
         with:
           node-version: 22.x
           cache: npm
-          cache-dependency-path: apps/data-management/package-lock.json
+          cache-dependency-path: |
+            apps/data-management/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
 
       - name: Install dependencies
         working-directory: apps/data-management

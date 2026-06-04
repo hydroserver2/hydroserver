@@ -1,11 +1,11 @@
 import random
 from uuid import UUID
 from django.core.management.base import CommandError
-from domains.sta.models import Observation, Datastream
+from core.sta.models import Observation, Datastream
 
 
 def generate_test_timeseries(datastream_id: UUID):
-    """Populates a datastream with test timeseries domains."""
+    """Populates a datastream with test timeseries data."""
 
     try:
         datastream = Datastream.objects.get(pk=datastream_id)

@@ -1,24 +1,6 @@
-import { Thing } from '@hydroserver/client'
+import { Thing, ThingMarker, ThingSiteSummary } from '@hydroserver/client'
 
-export interface ThingTag {
-  key: string
-  value: string
-}
-
-export interface ThingMarker {
-  id: string
-  workspaceId: string
-  name: string
-  siteType: string
-  isPrivate: boolean
-  latitude: number
-  longitude: number
-}
-
-export interface ThingSiteSummary extends ThingMarker {
-  samplingFeatureCode: string
-  tags: ThingTag[]
-}
+export type { ThingMarker, ThingSiteSummary }
 
 export type MapThing = Thing | ThingMarker | ThingSiteSummary
 

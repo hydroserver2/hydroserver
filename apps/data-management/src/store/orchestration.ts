@@ -3,9 +3,16 @@ import hs, {
   Datastream,
   DatastreamExtended,
   TaskExpanded,
+  TaskMapping,
+  Thing,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
+import type {
+  ActiveView,
+  DataProductTaskType,
+  TabId,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 
 export const useOrchestrationStore = defineStore('orchestration', () => {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
@@ -14,10 +21,28 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceDatastreams = ref<Datastream[]>([])
   const draftDatastreams = ref<DatastreamExtended[]>([])
   const workspaceTasks = ref<TaskExpanded[]>([])
+  const workspaceThings = ref<Thing[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
+  const orchestrationTaskTypeFilter = ref<NonNullable<DataProductTaskType>[]>(
+    []
+  )
+
+  const activeTab = ref<TabId>('ingestion')
+  const activeView = ref<ActiveView>('tasks')
+  const selectedConnectionId = ref<string | null>(null)
+  const selectedThingId = ref<string | null>(null)
+  const sidebarSearch = ref('')
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
+  const loadedWorkspaceThingsId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
+  let workspaceThingsRequestId = 0
+
+  const targetDatastreamId = (mapping: TaskMapping) =>
+    'targetDatastream' in mapping ? mapping.targetDatastream?.id : null
+
+  const pathTargetIds = (mapping: TaskMapping) =>
+    'paths' in mapping ? mapping.paths.map((path) => path.targetIdentifier) : []
 
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
@@ -25,22 +50,29 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     loadedWorkspaceDatastreamId.value = null
   }
 
+  const resetWorkspaceThings = () => {
+    workspaceThingsRequestId += 1
+    workspaceThings.value = []
+    loadedWorkspaceThingsId.value = null
+  }
+
+  const resetDraftDatastreams = () => {
+    draftDatastreams.value = []
+  }
+
   const linkedDatastreamIds = computed(() => {
     const ids = new Set<string>()
 
     for (const task of workspaceTasks.value) {
-      const targetIdentifiers =
-        task.targetIdentifiers?.length
-          ? task.targetIdentifiers
-          : (task.mappings ?? []).flatMap((mapping) =>
-              (mapping.paths ?? []).map((path) => path.targetIdentifier)
-            )
-
-      for (const targetIdentifier of targetIdentifiers) {
-        if (targetIdentifier === undefined || targetIdentifier === null) continue
-        const normalized = String(targetIdentifier)
-        if (!normalized) continue
-        ids.add(normalized)
+      for (const id of (task as any).targetIdentifiers ?? []) {
+        if (id) ids.add(String(id))
+      }
+      for (const mapping of task.mappings ?? []) {
+        const id = targetDatastreamId(mapping)
+        if (id) ids.add(String(id))
+        for (const pathId of pathTargetIds(mapping)) {
+          if (pathId) ids.add(String(pathId))
+        }
       }
     }
 
@@ -78,15 +110,48 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     return workspaceDatastreams.value
   }
 
+  const ensureWorkspaceThings = async (
+    requestedWorkspaceId = workspaceId.value,
+    force = false
+  ) => {
+    if (!requestedWorkspaceId) {
+      resetWorkspaceThings()
+      return []
+    }
+
+    if (!force && loadedWorkspaceThingsId.value === requestedWorkspaceId) {
+      return workspaceThings.value
+    }
+
+    const requestId = ++workspaceThingsRequestId
+    const list = await hs.things.listAllItems({
+      workspace_id: [requestedWorkspaceId],
+      order_by: ['name'],
+    } as any)
+    if (requestId !== workspaceThingsRequestId) {
+      return workspaceThings.value
+    }
+    workspaceThings.value = (list ?? []) as Thing[]
+    loadedWorkspaceThingsId.value = requestedWorkspaceId
+    return workspaceThings.value
+  }
+
   watch(
     workspaceId,
     (wsId) => {
       if (!wsId) {
         resetWorkspaceDatastreams()
+        resetWorkspaceThings()
+        resetDraftDatastreams()
         return
       }
-      if (loadedWorkspaceDatastreamId.value === wsId) return
-      resetWorkspaceDatastreams()
+      if (loadedWorkspaceDatastreamId.value !== wsId) {
+        resetWorkspaceDatastreams()
+        resetDraftDatastreams()
+      }
+      if (loadedWorkspaceThingsId.value !== wsId) {
+        resetWorkspaceThings()
+      }
     },
     { immediate: true }
   )
@@ -97,9 +162,19 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     linkedDatastreams,
     draftDatastreams,
     workspaceDatastreams,
+    workspaceThings,
     orchestrationSearch,
     orchestrationStatusFilter,
+    orchestrationTaskTypeFilter,
+    activeTab,
+    activeView,
+    selectedConnectionId,
+    selectedThingId,
+    sidebarSearch,
     ensureWorkspaceDatastreams,
+    ensureWorkspaceThings,
     resetWorkspaceDatastreams,
+    resetWorkspaceThings,
+    resetDraftDatastreams,
   }
 })

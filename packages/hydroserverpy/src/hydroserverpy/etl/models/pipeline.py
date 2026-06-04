@@ -21,12 +21,19 @@ class ETLStatus(Enum):
     FAILED = "FAILED"
     INCOMPLETE = "INCOMPLETE"
 
+    def __str__(self):
+        return self.value
+
 
 class ETLStage(Enum):
     SETUP = "SETUP"
     EXTRACT = "EXTRACT"
     TRANSFORM = "TRANSFORM"
     LOAD = "LOAD"
+    CLEANUP = "CLEANUP"
+
+    def __str__(self):
+        return self.value
 
 
 class ETLContext(BaseModel):
@@ -266,6 +273,8 @@ class ETLPipeline(BaseModel):
                     raise coerced from e
                 context.mark_failed(coerced)
                 return context
+
+            context.stage = ETLStage.CLEANUP
 
             if context.results.failure_count == 0:
                 context.status = ETLStatus.SUCCESS

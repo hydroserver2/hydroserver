@@ -81,19 +81,28 @@ CORS_EXPOSE_HEADERS = [
 
 CELERY_ENABLED = config("CELERY_ENABLED", default=True, cast=bool)
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = "django-db"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+CELERY_BROKER_HEARTBEAT = 10
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_keepalive": True,
+    "retry_on_timeout": True,
+}
 
 DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_task_runs": {
-        "task": "domains.etl.tasks.cleanup_etl_task_runs",
+        "task": "processing.orchestration.tasks.cleanup_task_runs",
         "schedule": crontab(hour=3, minute=0),
         "args": (7,),
     },
     "send_orchestration_notifications": {
-        "task": "domains.etl.tasks.send_orchestration_notifications",
+        "task": "processing.etl.tasks.send_orchestration_notifications",
         "schedule": crontab(
             minute=DATA_CONNECTION_NOTIFICATION_CRONTAB[0],
             hour=DATA_CONNECTION_NOTIFICATION_CRONTAB[1],
@@ -125,21 +134,24 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.orcid",
     "allauth.socialaccount.providers.openid_connect",
-    "domains.iam.auth.providers.hydroshare",
-    "domains.iam.auth.providers.orcidsandbox",
+    "core.iam.auth.providers.hydroshare",
+    "core.iam.auth.providers.orcidsandbox",
     "corsheaders",
     "easyaudit",
-    "sensorthings",
+    "sensorthings.versions.v1_1",
+    "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
-    "django_celery_results",
     "django_celery_beat",
     "interfaces.api.apps.ApiConfig",
     "interfaces.web.apps.WebConfig",
     "interfaces.actions.apps.ActionsConfig",
-    "domains.iam.apps.IamConfig",
-    "domains.sta.apps.StaConfig",
-    "domains.etl.apps.EtlConfig",
-    "domains.web.apps.WebConfig",
+    "core.iam.apps.IamConfig",
+    "core.sta.apps.StaConfig",
+    "core.web.apps.WebConfig",
+    "processing.orchestration.apps.OrchestrationConfig",
+    "processing.etl.apps.EtlConfig",
+    "processing.products.apps.ProductsConfig",
+    "processing.monitoring.apps.MonitoringConfig",
     "django.contrib.admin",
 ]
 
@@ -155,7 +167,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
-    "sensorthings.middleware.SensorThingsMiddleware",
 ]
 
 ROOT_URLCONF = "hydroserver.urls"
@@ -230,10 +241,10 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_SIGNUP_FORM_CLASS = "domains.iam.auth.forms.UserSignupForm"
+ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
 
-ACCOUNT_ADAPTER = "domains.iam.auth.adapters.AccountAdapter"
+ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
 HEADLESS_ONLY = True
@@ -398,8 +409,61 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# Logging
+
+LOGGING_FORMATTERS = {}
+if DEPLOYMENT_BACKEND == "gcp":
+    LOGGING_FORMATTERS["standard"] = {
+        "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+        "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
+        "rename_fields": {"levelname": "level"},
+    }
+else:
+    LOGGING_FORMATTERS["standard"] = {
+        "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
+    }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "run_id": {
+            "()": "processing.orchestration.logging.RunIdFilter",
+        },
+    },
+    "formatters": LOGGING_FORMATTERS,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["run_id"],
+            "formatter": "standard",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
+
+
 # SensorThings Configuration
 
-ST_API_PREFIX = "api/sensorthings"
-ST_API_ID_QUALIFIER = "'"
-ST_API_ID_TYPE = UUID
+SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
+SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
+SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
+    "interfaces.auth.security.session_auth",
+    "interfaces.auth.security.bearer_auth",
+    "interfaces.auth.security.apikey_auth",
+    "interfaces.auth.security.anonymous_auth",
+]
+SENSORTHINGS_V1_1_ID_TYPE = UUID
+SENSORTHINGS_V1_1_ID_DELIMITER = "'"
+SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
+    "Things": "interfaces.sensorthings.schemas.ThingProperties",
+    "Datastreams": "interfaces.sensorthings.schemas.DatastreamProperties",
+    "Locations": "interfaces.sensorthings.schemas.LocationProperties",
+    "ObservedProperties": "interfaces.sensorthings.schemas.ObservedPropertyProperties",
+    "Sensors": "interfaces.sensorthings.schemas.SensorProperties",
+}
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_SCHEMA = "interfaces.sensorthings.schemas.SensorMetadata"
+SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_VALUE_LITERAL = "interfaces.sensorthings.schemas.sensorEncodingTypes"

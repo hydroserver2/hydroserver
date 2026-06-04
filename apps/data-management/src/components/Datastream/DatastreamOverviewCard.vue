@@ -19,11 +19,11 @@
 
       <v-divider class="my-3" />
 
-      <!-- Sensor and Sampled Medium (Less important) -->
+      <!-- Method and Sampled Medium (Less important) -->
       <div class="grid gap-y-2">
         <div class="flex items-center opacity-80">
           <span class="text-body-2 font-weight-medium text-grey-darken-2 mr-2"
-            >Sensor:</span
+            >Method:</span
           >
           <span class="text-body-2">
             {{ datastream.sensor.name }}
