@@ -24,7 +24,7 @@ After the workspace is successfully created, you'll see a new table named 'Your 
 
 <img src="/hydroserver-101/fresh-workspace.png" alt="Newly created workspace" class="img-white-bg">
 
-Clicking the 'Register a new site' button will open the Register/Edit a site modal window. Click anywhere on the map and it will create a new map marker and automatically populate the location form fields. You can also type values into the 'Site Location' fields if you know them already. Fill out the rest of form with the metadata for your site and click save.
+Clicking the 'Register a new site' button will open the Register/Edit a site modal window. Click anywhere on the map and it will create a new map marker and automatically populate the location form fields. You can also type values into the 'Site Location' fields if you know them already. Fill out the rest of the form with the metadata for your site and click save.
 
 <img src="/hydroserver-101/site-form.png" alt="Site form" class="img-white-bg">
 
