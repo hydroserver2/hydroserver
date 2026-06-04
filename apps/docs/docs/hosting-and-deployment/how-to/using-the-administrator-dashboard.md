@@ -91,8 +91,3 @@ added through the admin dashboard by populating the following models:
 - **Measurement Data** → **Site Types**
 - **Measurement Data** → **Unit Types**
 - **Measurement Data** → **Variable Types**
-
-## HydroServer Orchestration Configuration
-
-If you have set up a HydroServer Celery scheduler and worker, you must load the default HydroServer orchestration 
-system. To do so, navigate to **Orchestration Systems** and click **Load Internal Orchestration System**.
