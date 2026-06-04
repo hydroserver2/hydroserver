@@ -133,6 +133,46 @@
           class="mb-2"
           @click:clear="minValues = null"
         />
+
+        <v-divider class="mb-4 mt-2" />
+
+        <div
+          class="text-caption text-medium-emphasis mb-3 font-weight-bold text-uppercase"
+        >
+          Timezone
+        </div>
+
+        <v-select
+          v-model="timezoneMode"
+          :items="timezoneOptions"
+          item-title="title"
+          item-value="value"
+          label="Timezone type"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <v-autocomplete
+          v-if="timezoneMode === 'fixedOffset'"
+          v-model="timezone"
+          label="Fixed UTC offset *"
+          hint="Select the fixed UTC offset for this data."
+          :items="FIXED_OFFSET_TIMEZONES"
+          :rules="rules.required"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
+
+        <v-autocomplete
+          v-if="timezoneMode === 'iana'"
+          v-model="timezone"
+          label="IANA timezone *"
+          hint="Select an IANA timezone for this data."
+          :items="DST_AWARE_TIMEZONES"
+          :rules="rules.required"
+          :disabled="loadingExisting"
+          class="mb-2"
+        />
       </v-card-text>
 
       <v-divider />
@@ -169,6 +209,7 @@ import hs, {
   type IntervalUnit,
   type TaskSchedule,
 } from '@hydroserver/client'
+import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { datastreamsForThing } from '@/utils/orchestration/datastreams'
@@ -216,6 +257,8 @@ const aggregationMethod = ref<AggregationMethod>('mean')
 const outputInterval = ref<number | null>(1)
 const outputIntervalUnits = ref<IntervalUnit>('hours')
 const minValues = ref<number | null>(null)
+const timezoneType = ref<'offset' | 'iana' | null>(null)
+const timezone = ref<string | null>(null)
 
 const selectedThingId = computed(() => props.initialThingId ?? null)
 
@@ -235,6 +278,32 @@ const intervalUnitOptions = [
   { title: 'Weeks', value: 'weeks' },
   { title: 'Months', value: 'months' },
 ]
+
+const timezoneOptions = [
+  { title: 'UTC (Default)', value: 'utc' },
+  { title: 'Fixed UTC Offset', value: 'fixedOffset' },
+  { title: 'IANA Timezone', value: 'iana' },
+] as const
+
+const timezoneMode = computed({
+  get(): 'utc' | 'fixedOffset' | 'iana' {
+    if (timezoneType.value === 'offset') return 'fixedOffset'
+    if (timezoneType.value === 'iana') return 'iana'
+    return 'utc'
+  },
+  set(mode: 'utc' | 'fixedOffset' | 'iana') {
+    if (mode === 'utc') {
+      timezoneType.value = null
+      timezone.value = null
+    } else if (mode === 'fixedOffset') {
+      timezoneType.value = 'offset'
+      timezone.value = '-0700'
+    } else {
+      timezoneType.value = 'iana'
+      timezone.value = 'America/Denver'
+    }
+  },
+})
 
 const siteDatastreams = computed(() => {
   const thingId = selectedThingId.value
@@ -261,6 +330,8 @@ function currentTransformationValues(): AggregationTransformationValues {
     outputInterval: normalizeOptionalInteger(outputInterval.value),
     outputIntervalUnits: outputIntervalUnits.value,
     minValues: normalizeOptionalInteger(minValues.value),
+    timezoneType: timezoneType.value,
+    timezone: timezone.value,
   }
 }
 
@@ -275,7 +346,9 @@ function transformationHasChanges() {
     current.aggregationMethod !== original.aggregationMethod ||
     current.outputInterval !== original.outputInterval ||
     current.outputIntervalUnits !== original.outputIntervalUnits ||
-    current.minValues !== original.minValues
+    current.minValues !== original.minValues ||
+    current.timezoneType !== original.timezoneType ||
+    current.timezone !== original.timezone
   )
 }
 
@@ -324,6 +397,8 @@ async function loadExistingTask() {
       outputInterval.value = t.outputInterval
       outputIntervalUnits.value = t.outputIntervalUnits
       minValues.value = t.minValues ?? null
+      timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
+      timezone.value = t.timezone ?? null
       originalTransformation.value = currentTransformationValues()
     }
   } catch (error: any) {
@@ -381,6 +456,8 @@ async function onCreate() {
       outputInterval: outputInterval.value!,
       outputIntervalUnits: outputIntervalUnits.value,
       minValues: minValues.value ?? null,
+      timezoneType: timezoneType.value ?? null,
+      timezone: timezone.value ?? null,
     })
 
   if (!transformRes.ok) {
@@ -420,6 +497,8 @@ async function onUpdate() {
           outputInterval: outputInterval.value!,
           outputIntervalUnits: outputIntervalUnits.value,
           minValues: minValues.value ?? null,
+          timezoneType: timezoneType.value ?? null,
+          timezone: timezone.value ?? null,
         }
       )
 

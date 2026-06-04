@@ -707,7 +707,6 @@
             "anyOf": [
               {
                 "enum": [
-                  "utc",
                   "offset",
                   "iana"
                 ],
@@ -793,7 +792,6 @@
             "anyOf": [
               {
                 "enum": [
-                  "utc",
                   "offset",
                   "iana"
                 ],
@@ -882,7 +880,6 @@
             "anyOf": [
               {
                 "enum": [
-                  "utc",
                   "offset",
                   "iana"
                 ],
