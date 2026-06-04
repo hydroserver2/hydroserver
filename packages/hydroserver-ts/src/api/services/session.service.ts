@@ -214,8 +214,7 @@ export class SessionService {
       `${this._client.providerBase}/signup`,
       user
     )
-    console.log('provider signup', res)
-    this._setSession(res.data)
+    this._setSession(res)
     return res
   }
 
