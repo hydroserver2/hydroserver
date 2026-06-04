@@ -25,8 +25,14 @@ export default defineConfig({
         collapsed: true,
         link: "/introduction/",
         items: [
-          { text: "HydroServer Overview", link: "/introduction/hydroserver-overview" },
-          { text: "Background & Motivation", link: "/introduction/background-and-motivation" },
+          {
+            text: "HydroServer Overview",
+            link: "/introduction/hydroserver-overview",
+          },
+          {
+            text: "Background & Motivation",
+            link: "/introduction/background-and-motivation",
+          },
           { text: "Getting Started", link: "/introduction/getting-started" },
           {
             text: "Key Concepts",
@@ -37,7 +43,10 @@ export default defineConfig({
                 text: "Workspaces and Access Control",
                 link: "/introduction/key-concepts/workspaces-and-access-control",
               },
-              { text: "Monitoring Sites", link: "/introduction/key-concepts/monitoring-sites" },
+              {
+                text: "Monitoring Sites",
+                link: "/introduction/key-concepts/monitoring-sites",
+              },
               {
                 text: "Datastreams",
                 link: "/introduction/key-concepts/datastreams",
@@ -78,14 +87,14 @@ export default defineConfig({
                     link: "/user-guides/tutorials/hydroserver-101/part-2-creating-your-first-datastream",
                   },
                   {
-                    text: "Part 3: Creating Your First Orchestration System",
-                    link: "/user-guides/tutorials/hydroserver-101/part-3-creating-your-first-orchestration-system",
+                    text: "Part 3: Setting Up the Data Loader",
+                    link: "/user-guides/tutorials/hydroserver-101/part-3-sdl-setup",
                   },
                   {
-                    text: "Part 4: Loading Observations into a Datastream",
-                    link: "/user-guides/tutorials/hydroserver-101/part-4-loading-observations-into-a-datastream",
-                  }
-                ]
+                    text: "Part 4: Loading Data",
+                    link: "/user-guides/tutorials/hydroserver-101/part-4-loading-data",
+                  },
+                ],
               },
               {
                 text: "Getting Started with hydroserverpy",
@@ -112,9 +121,9 @@ export default defineConfig({
                     text: "Part 5: Setting Up Monitoring",
                     link: "/user-guides/tutorials/getting-started-with-hydroserverpy/part-5-setting-up-monitoring",
                   },
-                ]
-              }
-            ]
+                ],
+              },
+            ],
           },
           {
             text: "How-to",
@@ -180,10 +189,10 @@ export default defineConfig({
               {
                 text: "Retrieving Data with the SensorThings API",
                 link: "/user-guides/how-to/retrieving-data-with-sensorthings",
-              }
-            ]
-          }
-        ]
+              },
+            ],
+          },
+        ],
       },
       {
         text: "Developing & Contributing",
@@ -198,8 +207,8 @@ export default defineConfig({
               {
                 text: "Building Your First App",
                 link: "/developing-and-contributing/tutorials/building-your-first-app",
-              }
-            ]
+              },
+            ],
           },
           {
             text: "How-to",
@@ -214,9 +223,9 @@ export default defineConfig({
                 text: "Using the TypeScript Client",
                 link: "/developing-and-contributing/how-to/using-the-typescript-client",
               },
-            ]
-          }
-        ]
+            ],
+          },
+        ],
       },
       {
         text: "Hosting & Deployment",
@@ -240,7 +249,7 @@ export default defineConfig({
                 text: "Deploying with Docker Compose",
                 link: "/hosting-and-deployment/tutorials/deploying-with-docker-compose",
               },
-            ]
+            ],
           },
           {
             text: "How-to",
@@ -255,9 +264,9 @@ export default defineConfig({
                 text: "Using the Administrator Dashboard",
                 link: "/hosting-and-deployment/how-to/using-the-administrator-dashboard",
               },
-            ]
-          }
-        ]
+            ],
+          },
+        ],
       },
       {
         text: "References",
