@@ -2,7 +2,7 @@
 
 Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, navigate to it by going to the 'Your sites' page and clicking the name of your site in the site table.
 
-Near the bottom of the site details page, there will be an empty datastreams table which will work the same as the sites table you saw before. Click the  'Add new datastream' to open the datastream creation modal.
+Near the bottom of the site details page, there will be an empty datastreams table which will work the same as the sites table you saw before. Click 'Add new datastream' to open the datastream creation modal.
 
 <img src="/hydroserver-101/datastream-table.png" alt="datastream table" class="img-white-bg">
 
@@ -52,7 +52,7 @@ For the rest of the fields, we'll do the following:
 - Time Aggregation Interval: 1 day
 - Intended Time Spacing: 1 day
 
-After filling out all fields except the name and description, click the two 'auto fill from form' buttons to generate a name and description from the other fields in the form. Then, click 'Create Datastream'.
+After filling out all fields except the name and description, click the two 'auto-fill from form' buttons to generate a name and description from the other fields in the form. Then, click 'Create Datastream'.
 
 <img src="/hydroserver-101/new-datastream.png" alt="new datastream" class="img-white-bg">
 

@@ -16,10 +16,10 @@ timestamp,max_temp_c,min_temp_c
 ...
 ```
 
-Download this CSV file and put in somewhere convenient in your local file system. Since I'm on Mac, I'll put mine in `/Users/Shared/hydroserver-101/`. The trick is to pick a directory that Loggernet has permissions to write to and the Streaming Data Loader has permissions to read from. A couple of good spots:
+Download this CSV file and put it somewhere convenient in your local file system. Since I'm on Mac, I'll put mine in `/Users/Shared/hydroserver-101/`. The trick is to pick a directory that LoggerNet has permissions to write to and the Streaming Data Loader has permissions to read from. A couple of good spots:
 
-- **Windows:** `C:\CampbellSci\Loggernet\` (where Loggernet usually writes already), or a fresh folder like `C:\ProgramData\sdl\data\`
-- **macOS:** `/Users/Shared/Loggernet/`
+- **Windows:** `C:\CampbellSci\LoggerNet\` (where LoggerNet usually writes already), or a fresh folder like `C:\ProgramData\sdl\data\`
+- **macOS:** `/Users/Shared/LoggerNet/`
 - **Linux:** `/var/loggernet/`
 
 ::: warning Where _not_ to put them
@@ -61,6 +61,6 @@ Congrats! You've completed this tutorial! To visualize your newly pushed data, c
 We recommend solidifying your knowledge by trying out some data loading workflows on your own. To start, you might:
 
 - Create a second datastream for the min_temp_c column we ignored earlier in the tutorial and update your data source in the Streaming Data Loader to load both min and max temp.
-- Try loading data from a real data Logger file
+- Try loading data from a real data logger file
 
 Once you're comfortable with these concepts, head over to the [Getting Started With hydroserverpy](../getting-started-with-hydroserverpy/index.md) tutorial to see how you can manage large amounts of data with Python scripts.
