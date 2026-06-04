@@ -2089,7 +2089,7 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
+            timezoneType?: ("offset" | "iana") | null;
         };
         /** AggregationTransformationPostBody */
         AggregationTransformationPostBody: {
@@ -2125,7 +2125,7 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
+            timezoneType?: ("offset" | "iana") | null;
         };
         /** AggregationTransformationResponse */
         AggregationTransformationResponse: {
@@ -2153,7 +2153,7 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
-            timezoneType?: ("utc" | "offset" | "iana") | null;
+            timezoneType?: ("offset" | "iana") | null;
         };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {

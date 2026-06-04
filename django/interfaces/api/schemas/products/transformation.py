@@ -17,7 +17,7 @@ from interfaces.api.schemas.products.rating_curve import RatingCurveSummaryRespo
 
 AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
-TimezoneType = Literal["utc", "offset", "iana"]
+TimezoneType = Literal["offset", "iana"]
 
 
 class DataProductTransformationOrderBy(OrderByField):
@@ -181,6 +181,6 @@ class AggregationTransformationPatchBody(BasePatchBody):
     aggregation_method: AggregationMethod
     output_interval_units: Period
     output_interval: int
-    timezone_type: Optional[TimezoneType]
-    timezone: Optional[str]
-    min_values: Optional[int]
+    timezone_type: Optional[TimezoneType] = None
+    timezone: Optional[str] = None
+    min_values: Optional[int] = None
