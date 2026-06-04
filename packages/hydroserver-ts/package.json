@@ -42,6 +42,9 @@
     "directory": "packages/hydroserver-ts"
   },
   "license": "BSD-3-Clause",
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@vitest/coverage-v8": "^4.1.0",
