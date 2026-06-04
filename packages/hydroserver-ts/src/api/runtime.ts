@@ -18,7 +18,7 @@ function deferredError(name: PropertyKey) {
   return () => {
     throw new Error(
       `HydroServer not initialized before calling ${String(name)}(). ` +
-        `Call initHS({ host }) once at app startup.`
+        `Call createHydroServer({ host }) once at app startup.`
     )
   }
 }
@@ -86,7 +86,8 @@ export const hs = new Proxy({} as unknown as HydroServer, {
     return deferredError(prop)
   },
   set(_t, prop, value) {
-    if (!_hs) throw new Error('initHS({ host }) must be called before mutation')
+    if (!_hs)
+      throw new Error('createHydroServer({ host }) must be called before mutation')
     ;(_hs as any)[prop] = value
     return true
   },
