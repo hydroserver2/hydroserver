@@ -283,3 +283,27 @@ gunicorn hydroserver.wsgi:application --bind 0.0.0.0:8000 --workers 3
   intended for a HydroServer instance running on a single core.
 
 After the server is running, visit your configured domain in a browser to access HydroServer.
+
+### Updating to a New Version
+
+To update an existing HydroServer deployment to a new version:
+
+1. **Read the release notes** for every version between your current version and the target version. Some releases include required manual steps, database migration prerequisites, or breaking changes that must be addressed before or after upgrading. Release notes are published on the [HydroServer GitHub releases page](https://github.com/hydroserver2/hydroserver/releases).
+
+2. **Back up your database.** Always take a snapshot of your PostgreSQL database before applying an upgrade, especially for releases that include database migrations.
+
+3. **Pull the new image.** Update your deployment configuration to reference the new container image version and redeploy.
+
+4. **Run post-deployment management commands.** After the new container is running, execute the following:
+
+   ```bash
+   python manage.py collectstatic
+   ```
+   Collects any new or updated static files included in the release.
+
+   ```bash
+   python manage.py migrate
+   ```
+   Applies any database schema changes included in the release.
+
+5. **Restart Celery workers** (if applicable). If your deployment uses Celery for background task scheduling, restart your worker and beat containers after the upgrade to pick up any changes.
