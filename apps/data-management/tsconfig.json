@@ -19,7 +19,7 @@
     "noEmit": true,
 
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["./src/*"],
       "@hydroserver/client": ["../../packages/hydroserver-ts/src/index.ts"],
       "@hydroserver/client/*": ["../../packages/hydroserver-ts/src/*"]
     }
