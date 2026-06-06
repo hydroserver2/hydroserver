@@ -163,24 +163,21 @@ def migrate_json_forward(apps, schema_editor):
             next_run_at=old_task.next_run_at,
             periodic_task_id=periodic_task.id if periodic_task else None,
         )
-
-        # Migrate task runs, preserving original started_at via update() to bypass
-        # auto_now_add on the new model.
-        for old_run in OldTaskRun.objects.filter(task_id=old_task.id):
-            status = old_run.status if old_run.status in VALID_RUN_STATUSES else "SUCCESS"
-            new_run = BaseTaskRun.objects.create(
+        old_runs = list(OldTaskRun.objects.filter(task_id=old_task.id))
+        BaseTaskRun.objects.bulk_create([
+            BaseTaskRun(
                 task_id=base_task.id,
-                status=status,
+                status=old_run.status if old_run.status in VALID_RUN_STATUSES else "SUCCESS",
+                started_at=old_run.started_at,
                 finished_at=old_run.finished_at,
                 result=old_run.result,
             )
-            BaseTaskRun.objects.filter(id=new_run.id).update(started_at=old_run.started_at)
-
+            for old_run in old_runs
+        ])
         if periodic_task:
             PeriodicTask.objects.filter(pk=periodic_task.id).update(
                 task="processing.etl.tasks.run_etl_task",
             )
-
         if old_task.task_type == "ETL":
             task_variables = {
                 **(old_task.extractor_variables or {}),
@@ -199,17 +196,26 @@ def migrate_json_forward(apps, schema_editor):
 
             # Flatten TaskMapping + TaskMappingPath into EtlMapping.
             # data_transformations are intentionally not migrated.
-            for old_mapping in OldTaskMapping.objects.filter(task_id=old_task.id):
-                for old_path in OldTaskMappingPath.objects.filter(task_mapping_id=old_mapping.id):
-                    try:
-                        target_datastream = Datastream.objects.get(id=old_path.target_identifier)
-                    except Datastream.DoesNotExist:
+            mappings_to_create = []
+            old_mappings = list(OldTaskMapping.objects.filter(task_id=old_task.id))
+            if old_mappings:
+                mapping_by_id = {m.id: m for m in old_mappings}
+                paths = list(OldTaskMappingPath.objects.filter(task_mapping_id__in=mapping_by_id))
+                valid_ds_ids = set(map(
+                    str, Datastream.objects
+                    .filter(id__in=[p.target_identifier for p in paths])
+                    .values_list("id", flat=True)
+                ))
+                for path in paths:
+                    if str(path.target_identifier) not in valid_ds_ids:
                         continue
-                    EtlMapping.objects.create(
+                    mappings_to_create.append(EtlMapping(
                         etl_task_id=etl_task.pk,
-                        source_identifier=old_mapping.source_identifier,
-                        target_datastream_id=target_datastream.id,
-                    )
+                        source_identifier=mapping_by_id[path.task_mapping_id].source_identifier,
+                        target_datastream_id=path.target_identifier,
+                    ))
+            if mappings_to_create:
+                EtlMapping.objects.bulk_create(mappings_to_create)
 
     PeriodicTasks.update_changed()
 
@@ -260,31 +266,33 @@ def migrate_json_reverse(apps, schema_editor):
             periodic_task_id=periodic_task_id,
         )
 
-        # Restore task runs; use update() to preserve started_at past auto_now_add.
-        for base_run in BaseTaskRun.objects.filter(task_id=base_task.id):
-            new_old_run = OldTaskRun.objects.create(
+        base_runs = list(BaseTaskRun.objects.filter(task_id=base_task.id))
+        OldTaskRun.objects.bulk_create([
+            OldTaskRun(
                 task_id=old_task.id,
-                status=base_run.status,
-                finished_at=base_run.finished_at,
-                result=base_run.result,
+                status=run.status,
+                started_at=run.started_at,
+                finished_at=run.finished_at,
+                result=run.result,
             )
-            OldTaskRun.objects.filter(pk=new_old_run.pk).update(started_at=base_run.started_at)
+            for run in base_runs
+        ])
 
         # Restore TaskMapping + TaskMappingPath from EtlMapping, re-grouping by source_identifier.
-        mapping_by_source = {}
-        for etl_mapping in EtlMapping.objects.filter(etl_task_id=etl_task.pk):
-            if etl_mapping.source_identifier not in mapping_by_source:
-                old_mapping = OldTaskMapping.objects.create(
-                    task_id=old_task.id,
-                    source_identifier=etl_mapping.source_identifier,
-                )
-                mapping_by_source[etl_mapping.source_identifier] = old_mapping
-            else:
-                old_mapping = mapping_by_source[etl_mapping.source_identifier]
-            OldTaskMappingPath.objects.create(
-                task_mapping=old_mapping,
-                target_identifier=str(etl_mapping.target_datastream_id),
+        etl_mappings = list(EtlMapping.objects.filter(etl_task_id=etl_task.pk))
+        unique_source_identifiers = list(dict.fromkeys(mapping.source_identifier for mapping in etl_mappings))
+        old_mappings = OldTaskMapping.objects.bulk_create([
+            OldTaskMapping(task_id=old_task.id, source_identifier=sid)
+            for sid in unique_source_identifiers
+        ])
+        mapping_by_source = {mapping.source_identifier: mapping for mapping in old_mappings}
+        OldTaskMappingPath.objects.bulk_create([
+            OldTaskMappingPath(
+                task_mapping=mapping_by_source[mapping.source_identifier],
+                target_identifier=str(mapping.target_datastream_id),
             )
+            for mapping in etl_mappings
+        ])
 
         migrated_base_task_ids.append(str(base_task.pk))
 

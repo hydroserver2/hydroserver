@@ -36,12 +36,17 @@ class Command(BaseCommand):
         ).distinct()
 
         for task in tasks:
-            most_recent_run = TaskRun.objects.filter(task=task).order_by("-started_at").first()
+            most_recent_pk = (
+                TaskRun.objects.filter(task=task)
+                .order_by("-started_at")
+                .values_list("pk", flat=True)
+                .first()
+            )
 
             deleted, _ = TaskRun.objects.filter(
                 task=task,
                 started_at__lt=cutoff
-            ).exclude(pk=most_recent_run.pk).delete()
+            ).exclude(pk=most_recent_pk).delete()
 
             total_deleted += deleted
 
