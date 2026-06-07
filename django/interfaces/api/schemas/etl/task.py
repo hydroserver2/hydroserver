@@ -54,6 +54,7 @@ class EtlTaskQueryParameters(CollectionQueryParameters):
     latest_run_finished_at_max: ISODatetime | None = Query(
         None, description="Filter tasks whose latest run finished on or before this datetime."
     )
+    expand_related: Optional[bool] = None
 
 
 class EtlDataMappingResponse(BaseGetResponse):
@@ -71,7 +72,69 @@ class EtlDataMappingPatchBody(BasePatchBody):
     target_datastream_id: uuid.UUID
 
 
-class EtlTaskResponse(BaseGetResponse):
+def _resolve_schedule(obj):
+    if not hasattr(obj, "periodic_task"):
+        return getattr(obj, "schedule", None)
+
+    pt = obj.periodic_task
+    if not pt:
+        return None
+
+    ct = pt.crontab
+
+    return {
+        "enabled": pt.enabled,
+        "start_time": pt.start_time,
+        "crontab": f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}" if ct else None,
+        "interval": pt.interval.every if pt.interval else None,
+        "interval_period": pt.interval.period if pt.interval else None,
+        "next_run_at": obj.next_run_at,
+    }
+
+
+def _resolve_latest_run(obj):
+    if not hasattr(obj, "latest_run_id"):
+        return getattr(obj, "latest_run", None)
+
+    if not getattr(obj, "latest_run_id", None):
+        return None
+
+    return {
+        "id": obj.latest_run_id,
+        "status": obj.latest_run_status,
+        "started_at": obj.latest_run_started_at,
+        "finished_at": obj.latest_run_finished_at,
+        "message": obj.latest_run_message,
+        "result": obj.latest_run_result,
+    }
+
+
+class EtlTaskSummaryResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    workspace_id: uuid.UUID
+    data_connection_id: uuid.UUID
+    task_variables: dict[str, Any]
+    schedule: ScheduleResponse | None = None
+    latest_run: TaskRunResponse | None = None
+
+    @staticmethod
+    def resolve_workspace_id(obj):
+        if not hasattr(obj, "data_connection") or not hasattr(obj.data_connection, "workspace_id"):
+            return getattr(obj, "workspace_id", None)
+        return obj.data_connection.workspace_id
+
+    @staticmethod
+    def resolve_schedule(obj):
+        return _resolve_schedule(obj)
+
+    @staticmethod
+    def resolve_latest_run(obj):
+        return _resolve_latest_run(obj)
+
+
+class EtlTaskDetailResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
@@ -83,34 +146,16 @@ class EtlTaskResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_schedule(obj):
-        pt = obj.periodic_task
-        if not pt:
-            return None
-        ct = pt.crontab
-        return {
-            "enabled": pt.enabled,
-            "start_time": pt.start_time,
-            "crontab": f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}" if ct else None,
-            "interval": pt.interval.every if pt.interval else None,
-            "interval_period": pt.interval.period if pt.interval else None,
-            "next_run_at": obj.next_run_at,
-        }
+        return _resolve_schedule(obj)
 
     @staticmethod
     def resolve_latest_run(obj):
-        if not getattr(obj, "latest_run_id", None):
-            return None
-        return {
-            "id": obj.latest_run_id,
-            "status": obj.latest_run_status,
-            "started_at": obj.latest_run_started_at,
-            "finished_at": obj.latest_run_finished_at,
-            "message": obj.latest_run_message,
-            "result": obj.latest_run_result,
-        }
+        return _resolve_latest_run(obj)
 
     @staticmethod
     def resolve_mappings(obj):
+        if not hasattr(obj, "etl_mappings"):
+            return getattr(obj, "mappings", [])
         return obj.etl_mappings.all()
 
 

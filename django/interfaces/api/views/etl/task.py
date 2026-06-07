@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from ninja import Router, Path, Query
 from django.http import HttpResponse
@@ -13,7 +14,8 @@ from processing.etl.services.task import EtlTaskService
 from processing.etl.tasks import run_etl_task
 from interfaces.api.schemas.etl.task import (
     EtlTaskQueryParameters,
-    EtlTaskResponse,
+    EtlTaskSummaryResponse,
+    EtlTaskDetailResponse,
     EtlTaskPostBody,
     EtlTaskPatchBody,
 )
@@ -27,7 +29,7 @@ etl_task_service = EtlTaskService()
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: list[EtlTaskResponse],
+        200: list[EtlTaskSummaryResponse] | list[EtlTaskDetailResponse],
         401: str,
     },
     by_alias=True,
@@ -63,6 +65,8 @@ def get_etl_tasks(
                if query.latest_run_finished_at_max is not None else {}),
         )
 
+    schema = EtlTaskDetailResponse if query.expand_related else EtlTaskSummaryResponse
+
     apply_response_pagination_headers(
         response=response,
         count=count,
@@ -70,14 +74,14 @@ def get_etl_tasks(
         page_size=query.page_size,
     )
 
-    return 200, etl_tasks
+    return 200, [schema.model_validate(task) for task in etl_tasks]
 
 
 @etl_task_router.post(
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        201: EtlTaskResponse,
+        201: EtlTaskSummaryResponse,
         400: str,
         401: str,
         403: str,
@@ -113,7 +117,7 @@ def create_etl_task(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: EtlTaskResponse,
+        200: EtlTaskSummaryResponse | EtlTaskDetailResponse,
         401: str,
         403: str,
         404: str,
@@ -123,6 +127,7 @@ def create_etl_task(
 def get_etl_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
+    expand_related: Optional[bool] = None,
 ):
     """
     Get an ETL Task.
@@ -132,16 +137,19 @@ def get_etl_task(
         etl_task = etl_task_service.get(
             task=task_id,
             principal=request.principal,
+            expand_related=expand_related,
         )
 
-    return 200, etl_task
+    schema = EtlTaskDetailResponse if expand_related else EtlTaskSummaryResponse
+    
+    return 200, schema.model_validate(etl_task)
 
 
 @etl_task_router.patch(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: EtlTaskResponse,
+        200: EtlTaskSummaryResponse,
         400: str,
         401: str,
         403: str,

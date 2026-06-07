@@ -12,16 +12,16 @@ from processing.products.services.transformation import (DataProductTransformati
                                                          TransformationInputPatch)
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
-    RatingCurveTransformationResponse,
+    RatingCurveTransformationSummaryResponse,
     RatingCurveTransformationPostBody,
     RatingCurveTransformationPatchBody,
-    ExpressionTransformationResponse,
+    ExpressionTransformationSummaryResponse,
     ExpressionTransformationPostBody,
     ExpressionTransformationPatchBody,
-    CompositeExpressionTransformationResponse,
+    CompositeExpressionTransformationSummaryResponse,
     CompositeExpressionTransformationPostBody,
     CompositeExpressionTransformationPatchBody,
-    AggregationTransformationResponse,
+    AggregationTransformationSummaryResponse,
     AggregationTransformationPostBody,
     AggregationTransformationPatchBody,
 )
@@ -40,7 +40,7 @@ rating_curve_transformation_router = Router(tags=["Rating Curve Transformations"
 @rating_curve_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[RatingCurveTransformationResponse], 401: str, 403: str, 404: str},
+    response={200: list[RatingCurveTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_rating_curve_transformations(
@@ -70,7 +70,7 @@ def get_rating_curve_transformations(
 @rating_curve_transformation_router.post(
     "",
     auth=_auth,
-    response={201: RatingCurveTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: RatingCurveTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def create_rating_curve_transformation(
@@ -100,7 +100,7 @@ def create_rating_curve_transformation(
 @rating_curve_transformation_router.get(
     "/{transformation_id}",
     auth=_auth,
-    response={200: RatingCurveTransformationResponse, 401: str, 403: str, 404: str},
+    response={200: RatingCurveTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_rating_curve_transformation(
@@ -121,7 +121,7 @@ def get_rating_curve_transformation(
 @rating_curve_transformation_router.patch(
     "/{transformation_id}",
     auth=_auth,
-    response={200: RatingCurveTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={200: RatingCurveTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def update_rating_curve_transformation(
@@ -174,7 +174,7 @@ expression_transformation_router = Router(tags=["Expression Transformations"])
 @expression_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[ExpressionTransformationResponse], 401: str, 403: str, 404: str},
+    response={200: list[ExpressionTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_expression_transformations(
@@ -204,7 +204,7 @@ def get_expression_transformations(
 @expression_transformation_router.post(
     "",
     auth=_auth,
-    response={201: ExpressionTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: ExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def create_expression_transformation(
@@ -239,7 +239,7 @@ def create_expression_transformation(
 @expression_transformation_router.get(
     "/{transformation_id}",
     auth=_auth,
-    response={200: ExpressionTransformationResponse, 401: str, 403: str, 404: str},
+    response={200: ExpressionTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_expression_transformation(
@@ -260,7 +260,7 @@ def get_expression_transformation(
 @expression_transformation_router.patch(
     "/{transformation_id}",
     auth=_auth,
-    response={200: ExpressionTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={200: ExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def update_expression_transformation(
@@ -318,7 +318,7 @@ composite_expression_transformation_router = Router(tags=["Composite Expression 
 @composite_expression_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[CompositeExpressionTransformationResponse], 401: str, 403: str, 404: str},
+    response={200: list[CompositeExpressionTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_composite_expression_transformations(
@@ -348,7 +348,7 @@ def get_composite_expression_transformations(
 @composite_expression_transformation_router.post(
     "",
     auth=_auth,
-    response={201: CompositeExpressionTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def create_composite_expression_transformation(
@@ -378,7 +378,7 @@ def create_composite_expression_transformation(
 @composite_expression_transformation_router.get(
     "/{transformation_id}",
     auth=_auth,
-    response={200: CompositeExpressionTransformationResponse, 401: str, 403: str, 404: str},
+    response={200: CompositeExpressionTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_composite_expression_transformation(
@@ -399,7 +399,7 @@ def get_composite_expression_transformation(
 @composite_expression_transformation_router.patch(
     "/{transformation_id}",
     auth=_auth,
-    response={200: CompositeExpressionTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={200: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def update_composite_expression_transformation(
@@ -452,7 +452,7 @@ aggregation_transformation_router = Router(tags=["Aggregation Transformations"])
 @aggregation_transformation_router.get(
     "",
     auth=_auth,
-    response={200: list[AggregationTransformationResponse], 401: str, 403: str, 404: str},
+    response={200: list[AggregationTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_aggregation_transformations(
@@ -482,7 +482,7 @@ def get_aggregation_transformations(
 @aggregation_transformation_router.post(
     "",
     auth=_auth,
-    response={201: AggregationTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={201: AggregationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def create_aggregation_transformation(
@@ -512,7 +512,7 @@ def create_aggregation_transformation(
 @aggregation_transformation_router.get(
     "/{transformation_id}",
     auth=_auth,
-    response={200: AggregationTransformationResponse, 401: str, 403: str, 404: str},
+    response={200: AggregationTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def get_aggregation_transformation(
@@ -533,7 +533,7 @@ def get_aggregation_transformation(
 @aggregation_transformation_router.patch(
     "/{transformation_id}",
     auth=_auth,
-    response={200: AggregationTransformationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    response={200: AggregationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
 def update_aggregation_transformation(

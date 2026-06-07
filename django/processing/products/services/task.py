@@ -2,7 +2,7 @@ import uuid
 import uuid6
 import logging
 from datetime import datetime
-from typing import Union, Literal
+from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, validate_call
 from django.db import transaction
@@ -43,24 +43,27 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         task: Union[uuid.UUID, DataProductTask],
         principal: User | APIKey | None | Unset = Unset,
         action: Literal["view", "edit", "delete"] = "view",
+        expand_related: Optional[bool] = None,
     ) -> DataProductTask:
         """Get a data product task."""
 
         task = super().get(task=task, action=action, principal=principal)
 
-        if isinstance(task.pk, uuid.UUID):
-            task = (
-                self.annotate_latest_run(self.task_model.objects)
-                .select_related("thing__workspace", "periodic_task__crontab", "periodic_task__interval")
-                .prefetch_related(
-                    "transformations__input_datastreams__datastream",
-                    "transformations__output_datastream",
-                    "transformations__rating_curve",
-                )
-                .get(pk=task.pk)
-            )
+        queryset = (
+            self.annotate_latest_run(self.task_model.objects)
+            .select_related("thing", "periodic_task__crontab", "periodic_task__interval")
+        )
 
-        return task
+        if expand_related:
+            queryset = queryset.select_related("thing__workspace").prefetch_related(
+                "transformations__input_datastreams__datastream",
+                "transformations__output_datastream",
+                "transformations__rating_curve",
+            )
+        else:
+            queryset = queryset.prefetch_related("transformations__input_datastreams")
+
+        return queryset.get(pk=task.pk)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
@@ -77,6 +80,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         output_datastream: list[uuid.UUID] | Unset = Unset,
         input_datastream: list[uuid.UUID] | Unset = Unset,
         rating_curve: list[uuid.UUID] | Unset = Unset,
+        expand_related: Optional[bool] = None,
     ) -> tuple[int, list[DataProductTask]]:
         """Return a collection of data product tasks."""
 
@@ -116,13 +120,20 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             raise ValueError(f"Invalid order_by field(s): {order_by}")
 
         queryset = queryset.order_by(*order_by, "-id")
-        queryset = queryset.select_related(
-            "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
-        ).prefetch_related(
-            "transformations__input_datastreams__datastream",
-            "transformations__output_datastream",
-            "transformations__rating_curve",
-        )
+
+        if expand_related:
+            queryset = queryset.select_related(
+                "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related(
+                "transformations__input_datastreams__datastream",
+                "transformations__output_datastream",
+                "transformations__rating_curve",
+            )
+        else:
+            queryset = queryset.select_related(
+                "thing", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related("transformations__input_datastreams")
+
         queryset = queryset.visible(principal=principal).distinct()  # noqa
 
         count = queryset.count()

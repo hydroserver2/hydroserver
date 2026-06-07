@@ -62,6 +62,11 @@ class MonitoringRuleDetailResponse(BaseGetResponse):
     window_interval_units: Optional[WindowIntervalUnits] = None
 
 
+class MonitoredDatastreamSummaryResponse(BaseGetResponse):
+    datastream_id: uuid.UUID
+    rules: list[MonitoringRuleDetailResponse]
+
+
 class MonitoredDatastreamResponse(BaseGetResponse):
     datastream: DatastreamSummaryResponse
     rules: list[MonitoringRuleDetailResponse]

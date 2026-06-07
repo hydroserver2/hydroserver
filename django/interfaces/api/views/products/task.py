@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from ninja import Router, Path, Query
 from django.http import HttpResponse
@@ -12,7 +13,8 @@ from processing.orchestration.models import TaskRun
 from processing.products.services.task import DataProductTaskService
 from processing.products.tasks import run_data_product_task
 from interfaces.api.schemas.products.task import (
-    DataProductTaskResponse,
+    DataProductTaskSummaryResponse,
+    DataProductTaskDetailResponse,
     DataProductTaskPostBody,
     DataProductTaskPatchBody,
     DataProductTaskQueryParameters,
@@ -27,7 +29,7 @@ data_product_task_service = DataProductTaskService()
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: list[DataProductTaskResponse],
+        200: list[DataProductTaskSummaryResponse] | list[DataProductTaskDetailResponse],
         401: str,
     },
     by_alias=True,
@@ -56,6 +58,8 @@ def get_data_product_tasks(
             **({"rating_curve": query.rating_curve} if "rating_curve" in query.model_fields_set else {}),
         )
 
+    schema = DataProductTaskDetailResponse if query.expand_related else DataProductTaskSummaryResponse
+
     apply_response_pagination_headers(
         response=response,
         count=count,
@@ -63,14 +67,14 @@ def get_data_product_tasks(
         page_size=query.page_size,
     )
 
-    return 200, tasks
+    return 200, [schema.model_validate(task) for task in tasks]
 
 
 @data_product_task_router.post(
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        201: DataProductTaskResponse,
+        201: DataProductTaskSummaryResponse,
         400: str,
         401: str,
         403: str,
@@ -103,7 +107,7 @@ def create_data_product_task(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: DataProductTaskResponse,
+        200: DataProductTaskSummaryResponse | DataProductTaskDetailResponse,
         401: str,
         403: str,
         404: str,
@@ -113,6 +117,7 @@ def create_data_product_task(
 def get_data_product_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
+    expand_related: Optional[bool] = None,
 ):
     """
     Get a data product task.
@@ -122,16 +127,19 @@ def get_data_product_task(
         task = data_product_task_service.get(
             task=task_id,
             principal=request.principal,
+            expand_related=expand_related,
         )
 
-    return 200, task
+    schema = DataProductTaskDetailResponse if expand_related else DataProductTaskSummaryResponse
+
+    return 200, schema.model_validate(task)
 
 
 @data_product_task_router.patch(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: DataProductTaskResponse,
+        200: DataProductTaskSummaryResponse,
         400: str,
         401: str,
         403: str,

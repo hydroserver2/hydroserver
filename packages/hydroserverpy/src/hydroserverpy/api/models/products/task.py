@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 class DataProductTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID = Field(..., validation_alias=AliasPath("thing", "id"))
-    thing_name: str = Field(..., validation_alias=AliasPath("thing", "name"))
+    thing_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))

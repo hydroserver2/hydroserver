@@ -15,7 +15,7 @@ from .sta.unit import Unit
 from .etl.data_connection import DataConnection
 from .etl.run import TaskRun
 from .etl.task import EtlTask
-from .etl.mapping import EtlMapping, EtlDatastreamSummary
+from .etl.mapping import EtlMapping
 from .orchestration.run import TaskRun as OrchestrationTaskRun
 from .monitoring.task import MonitoringTask
 from .monitoring.rule import MonitoringRule
