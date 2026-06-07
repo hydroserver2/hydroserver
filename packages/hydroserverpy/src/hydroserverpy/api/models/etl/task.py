@@ -15,7 +15,7 @@ class EtlTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     task_variables: Dict[str, Any] = Field(default_factory=dict)
-    data_connection_id: uuid.UUID = Field(..., validation_alias=AliasPath("dataConnection", "id"))
+    data_connection_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))
@@ -47,7 +47,7 @@ class EtlTask(HydroServerBaseModel):
             description=self.description,
             task_variables=self.task_variables,
             mappings=[
-                {"source_identifier": m.source_identifier, "target_datastream_id": str(m.target_datastream.id)}
+                {"source_identifier": m.source_identifier, "target_datastream_id": str(m.target_datastream_id)}
                 for m in self.mappings
             ],
             crontab=self.crontab,

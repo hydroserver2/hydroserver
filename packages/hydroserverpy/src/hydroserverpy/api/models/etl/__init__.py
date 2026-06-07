@@ -7,7 +7,7 @@ from .data_connection import (
     Notification,
 )
 from .task import EtlTask
-from .mapping import EtlMapping, EtlDatastreamSummary
+from .mapping import EtlMapping
 from .run import TaskRun
 
 __all__ = [
@@ -19,6 +19,5 @@ __all__ = [
     "Notification",
     "EtlTask",
     "EtlMapping",
-    "EtlDatastreamSummary",
     "TaskRun",
 ]

@@ -903,6 +903,99 @@
         "title": "AggregationTransformationResponse",
         "type": "object"
       },
+      "AggregationTransformationSummaryResponse": {
+        "properties": {
+          "aggregationMethod": {
+            "enum": [
+              "mean",
+              "sum",
+              "min",
+              "max",
+              "first",
+              "last"
+            ],
+            "title": "Aggregationmethod",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreamId": {
+            "format": "uuid",
+            "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "minValues": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minvalues"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "outputInterval": {
+            "title": "Outputinterval",
+            "type": "integer"
+          },
+          "outputIntervalUnits": {
+            "enum": [
+              "minutes",
+              "hours",
+              "days",
+              "weeks",
+              "months"
+            ],
+            "title": "Outputintervalunits",
+            "type": "string"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "timezoneType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "offset",
+                  "iana"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezonetype"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastreamId",
+          "inputDatastreamId",
+          "aggregationMethod",
+          "outputIntervalUnits",
+          "outputInterval"
+        ],
+        "title": "AggregationTransformationSummaryResponse",
+        "type": "object"
+      },
       "CSVPayloadPostBody": {
         "properties": {
           "dataStartRow": {
@@ -1367,6 +1460,86 @@
         "title": "CompositeExpressionTransformationResponse",
         "type": "object"
       },
+      "CompositeExpressionTransformationSummaryResponse": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreamIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Inputdatastreamids",
+            "type": "array"
+          },
+          "maxGapInterval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxgapinterval"
+          },
+          "maxGapIntervalUnits": {
+            "anyOf": [
+              {
+                "enum": [
+                  "minutes",
+                  "hours",
+                  "days",
+                  "weeks",
+                  "months"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxgapintervalunits"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "outputInterval": {
+            "title": "Outputinterval",
+            "type": "integer"
+          },
+          "outputIntervalUnits": {
+            "enum": [
+              "minutes",
+              "hours",
+              "days",
+              "weeks",
+              "months"
+            ],
+            "title": "Outputintervalunits",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastreamId",
+          "inputDatastreamIds",
+          "formula",
+          "outputIntervalUnits",
+          "outputInterval"
+        ],
+        "title": "CompositeExpressionTransformationSummaryResponse",
+        "type": "object"
+      },
       "DataConnectionOrderBy": {
         "enum": [
           "id",
@@ -1815,6 +1988,92 @@
         "title": "DataConnectionResponse",
         "type": "object"
       },
+      "DataProductTaskDetailResponse": {
+        "properties": {
+          "aggregationTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/AggregationTransformationResponse"
+            },
+            "title": "Aggregationtransformations",
+            "type": "array"
+          },
+          "compositeExpressionTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+            },
+            "title": "Compositeexpressiontransformations",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "expressionTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/ExpressionTransformationResponse"
+            },
+            "title": "Expressiontransformations",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latestRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ratingCurveTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+            },
+            "title": "Ratingcurvetransformations",
+            "type": "array"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thing": {
+            "$ref": "#/components/schemas/ThingSummaryResponse"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "thing",
+          "ratingCurveTransformations",
+          "expressionTransformations",
+          "compositeExpressionTransformations",
+          "aggregationTransformations"
+        ],
+        "title": "DataProductTaskDetailResponse",
+        "type": "object"
+      },
       "DataProductTaskOrderBy": {
         "enum": [
           "id",
@@ -1918,6 +2177,17 @@
       },
       "DataProductTaskQueryParameters": {
         "properties": {
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
           "input_datastream_id": {
             "default": [],
             "description": "Filter data product tasks by input datastream ID.",
@@ -2060,18 +2330,18 @@
         "title": "DataProductTaskQueryParameters",
         "type": "object"
       },
-      "DataProductTaskResponse": {
+      "DataProductTaskSummaryResponse": {
         "properties": {
           "aggregationTransformations": {
             "items": {
-              "$ref": "#/components/schemas/AggregationTransformationResponse"
+              "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
             },
             "title": "Aggregationtransformations",
             "type": "array"
           },
           "compositeExpressionTransformations": {
             "items": {
-              "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+              "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
             },
             "title": "Compositeexpressiontransformations",
             "type": "array"
@@ -2089,7 +2359,7 @@
           },
           "expressionTransformations": {
             "items": {
-              "$ref": "#/components/schemas/ExpressionTransformationResponse"
+              "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
             },
             "title": "Expressiontransformations",
             "type": "array"
@@ -2115,7 +2385,7 @@
           },
           "ratingCurveTransformations": {
             "items": {
-              "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+              "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
             },
             "title": "Ratingcurvetransformations",
             "type": "array"
@@ -2130,20 +2400,28 @@
               }
             ]
           },
-          "thing": {
-            "$ref": "#/components/schemas/ThingSummaryResponse"
+          "thingId": {
+            "format": "uuid",
+            "title": "Thingid",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "thing",
+          "thingId",
+          "workspaceId",
           "ratingCurveTransformations",
           "expressionTransformations",
           "compositeExpressionTransformations",
           "aggregationTransformations"
         ],
-        "title": "DataProductTaskResponse",
+        "title": "DataProductTaskSummaryResponse",
         "type": "object"
       },
       "DataProductTransformationOrderBy": {
@@ -3609,6 +3887,73 @@
         "title": "EtlDataMappingResponse",
         "type": "object"
       },
+      "EtlTaskDetailResponse": {
+        "properties": {
+          "dataConnection": {
+            "$ref": "#/components/schemas/DataConnectionResponse"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latestRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mappings": {
+            "items": {
+              "$ref": "#/components/schemas/EtlDataMappingResponse"
+            },
+            "title": "Mappings",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taskVariables": {
+            "title": "Taskvariables",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "taskVariables",
+          "dataConnection",
+          "mappings"
+        ],
+        "title": "EtlTaskDetailResponse",
+        "type": "object"
+      },
       "EtlTaskOrderBy": {
         "enum": [
           "id",
@@ -3745,6 +4090,17 @@
             },
             "title": "Data Connection Id",
             "type": "array"
+          },
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
           },
           "latest_run_finished_at_max": {
             "anyOf": [
@@ -3903,10 +4259,12 @@
         "title": "EtlTaskQueryParameters",
         "type": "object"
       },
-      "EtlTaskResponse": {
+      "EtlTaskSummaryResponse": {
         "properties": {
-          "dataConnection": {
-            "$ref": "#/components/schemas/DataConnectionResponse"
+          "dataConnectionId": {
+            "format": "uuid",
+            "title": "Dataconnectionid",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -3934,13 +4292,6 @@
               }
             ]
           },
-          "mappings": {
-            "items": {
-              "$ref": "#/components/schemas/EtlDataMappingResponse"
-            },
-            "title": "Mappings",
-            "type": "array"
-          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -3958,16 +4309,21 @@
           "taskVariables": {
             "title": "Taskvariables",
             "type": "object"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "taskVariables",
-          "dataConnection",
-          "mappings"
+          "workspaceId",
+          "dataConnectionId",
+          "taskVariables"
         ],
-        "title": "EtlTaskResponse",
+        "title": "EtlTaskSummaryResponse",
         "type": "object"
       },
       "ExpressionTransformationPatchBody": {
@@ -4072,6 +4428,48 @@
           "formula"
         ],
         "title": "ExpressionTransformationResponse",
+        "type": "object"
+      },
+      "ExpressionTransformationSummaryResponse": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreamId": {
+            "format": "uuid",
+            "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "variableName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variablename"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastreamId",
+          "inputDatastreamId",
+          "formula"
+        ],
+        "title": "ExpressionTransformationSummaryResponse",
         "type": "object"
       },
       "FileAttachmentDeleteBody": {
@@ -4523,6 +4921,28 @@
         "title": "MonitoredDatastreamResponse",
         "type": "object"
       },
+      "MonitoredDatastreamSummaryResponse": {
+        "properties": {
+          "datastreamId": {
+            "format": "uuid",
+            "title": "Datastreamid",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoringRuleDetailResponse"
+            },
+            "title": "Rules",
+            "type": "array"
+          }
+        },
+        "required": [
+          "datastreamId",
+          "rules"
+        ],
+        "title": "MonitoredDatastreamSummaryResponse",
+        "type": "object"
+      },
       "MonitoringRuleDetailResponse": {
         "properties": {
           "id": {
@@ -4917,6 +5337,76 @@
         "title": "MonitoringRuleResponse",
         "type": "object"
       },
+      "MonitoringTaskDetailResponse": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latestRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monitoredDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/MonitoredDatastreamResponse"
+            },
+            "title": "Monitoreddatastreams",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thing": {
+            "$ref": "#/components/schemas/ThingSummaryResponse"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "thing",
+          "monitoredDatastreams",
+          "recipients"
+        ],
+        "title": "MonitoringTaskDetailResponse",
+        "type": "object"
+      },
       "MonitoringTaskOrderBy": {
         "enum": [
           "id",
@@ -5045,6 +5535,17 @@
             "title": "Datastream Id",
             "type": "array"
           },
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
           "latest_run_status": {
             "default": [],
             "description": "Filter monitoring tasks by their most recent run status.",
@@ -5157,7 +5658,7 @@
         "title": "MonitoringTaskQueryParameters",
         "type": "object"
       },
-      "MonitoringTaskResponse": {
+      "MonitoringTaskSummaryResponse": {
         "properties": {
           "description": {
             "anyOf": [
@@ -5187,7 +5688,7 @@
           },
           "monitoredDatastreams": {
             "items": {
-              "$ref": "#/components/schemas/MonitoredDatastreamResponse"
+              "$ref": "#/components/schemas/MonitoredDatastreamSummaryResponse"
             },
             "title": "Monitoreddatastreams",
             "type": "array"
@@ -5213,18 +5714,26 @@
               }
             ]
           },
-          "thing": {
-            "$ref": "#/components/schemas/ThingSummaryResponse"
+          "thingId": {
+            "format": "uuid",
+            "title": "Thingid",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "thing",
+          "thingId",
+          "workspaceId",
           "monitoredDatastreams",
           "recipients"
         ],
-        "title": "MonitoringTaskResponse",
+        "title": "MonitoringTaskSummaryResponse",
         "type": "object"
       },
       "NotificationPatchBody": {
@@ -6987,6 +7496,38 @@
           "ratingCurve"
         ],
         "title": "RatingCurveTransformationResponse",
+        "type": "object"
+      },
+      "RatingCurveTransformationSummaryResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreamId": {
+            "format": "uuid",
+            "title": "Inputdatastreamid",
+            "type": "string"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "ratingCurveId": {
+            "format": "uuid",
+            "title": "Ratingcurveid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastreamId",
+          "inputDatastreamId",
+          "ratingCurveId"
+        ],
+        "title": "RatingCurveTransformationSummaryResponse",
         "type": "object"
       },
       "ResultQualifierDetailResponse": {
@@ -13963,6 +14504,22 @@
               "description": "Filter tasks whose latest run finished on or before this datetime.",
               "title": "Latest Run Finished At Max"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -13970,11 +14527,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/EtlTaskResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/EtlTaskSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/EtlTaskDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -14027,7 +14594,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EtlTaskResponse"
+                  "$ref": "#/components/schemas/EtlTaskSummaryResponse"
                 }
               }
             },
@@ -14189,6 +14756,22 @@
               "title": "Task Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -14196,7 +14779,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EtlTaskResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/EtlTaskSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EtlTaskDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -14282,7 +14873,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EtlTaskResponse"
+                  "$ref": "#/components/schemas/EtlTaskSummaryResponse"
                 }
               }
             },
@@ -14955,6 +15546,22 @@
               "title": "Rule Type",
               "type": "array"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -14962,11 +15569,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MonitoringTaskResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/MonitoringTaskDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -15019,7 +15636,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MonitoringTaskResponse"
+                  "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
                 }
               }
             },
@@ -15181,6 +15798,22 @@
               "title": "Task Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -15188,7 +15821,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MonitoringTaskResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MonitoringTaskDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -15274,7 +15915,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MonitoringTaskResponse"
+                  "$ref": "#/components/schemas/MonitoringTaskSummaryResponse"
                 }
               }
             },
@@ -18394,6 +19035,22 @@
               "title": "Rating Curve Id",
               "type": "array"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -18401,11 +19058,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DataProductTaskResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/DataProductTaskDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -18458,7 +19125,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataProductTaskResponse"
+                  "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
                 }
               }
             },
@@ -18620,6 +19287,22 @@
               "title": "Task Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
           }
         ],
         "responses": {
@@ -18627,7 +19310,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataProductTaskResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DataProductTaskDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
                 }
               }
             },
@@ -18713,7 +19404,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataProductTaskResponse"
+                  "$ref": "#/components/schemas/DataProductTaskSummaryResponse"
                 }
               }
             },
@@ -19255,7 +19946,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/AggregationTransformationResponse"
+                    "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -19344,7 +20035,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregationTransformationResponse"
+                  "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
                 }
               }
             },
@@ -19533,7 +20224,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregationTransformationResponse"
+                  "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
                 }
               }
             },
@@ -19629,7 +20320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregationTransformationResponse"
+                  "$ref": "#/components/schemas/AggregationTransformationSummaryResponse"
                 }
               }
             },
@@ -19825,7 +20516,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+                    "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -19914,7 +20605,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20103,7 +20794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20199,7 +20890,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20395,7 +21086,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ExpressionTransformationResponse"
+                    "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -20484,7 +21175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20673,7 +21364,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20769,7 +21460,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationResponse"
+                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
                 }
               }
             },
@@ -20965,7 +21656,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+                    "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -21054,7 +21745,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+                  "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
                 }
               }
             },
@@ -21243,7 +21934,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+                  "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
                 }
               }
             },
@@ -21339,7 +22030,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RatingCurveTransformationResponse"
+                  "$ref": "#/components/schemas/RatingCurveTransformationSummaryResponse"
                 }
               }
             },
