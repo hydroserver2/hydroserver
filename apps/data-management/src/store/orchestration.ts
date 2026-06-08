@@ -12,6 +12,7 @@ import type {
   DataProductTaskType,
   TabId,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
+import type { Task } from '@/types/orchestrationTasks'
 
 export const useOrchestrationStore = defineStore('orchestration', () => {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
@@ -19,7 +20,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
   const workspaceDatastreams = ref<Datastream[]>([])
   const draftDatastreams = ref<DatastreamExtended[]>([])
-  const workspaceTasks = ref<TaskExpanded[]>([])
+  const workspaceTasks = ref<Task[]>([])
   const workspaceThings = ref<Thing[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])

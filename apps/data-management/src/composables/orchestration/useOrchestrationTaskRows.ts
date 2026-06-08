@@ -1,11 +1,11 @@
 import { computed, ref, type Ref } from 'vue'
+import type { TaskMapping, TaskRun, TaskSchedule } from '@hydroserver/client'
 import type {
-  DataProductTaskExpanded,
-  MonitoringTaskExpanded,
-  TaskExpanded,
-  TaskMapping,
-  TaskRun,
-} from '@hydroserver/client'
+  AnyTask,
+  DataProductTask,
+  MonitoringTask,
+  Task,
+} from '@/types/orchestrationTasks'
 import {
   getDisplayedTaskStatus,
   getMonitoringRulesViolated,
@@ -23,8 +23,6 @@ import type {
   TaskNoWorkWarning,
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
-
-type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
 
 const targetDatastream = (mapping: TaskMapping) =>
   'targetDatastream' in mapping ? mapping.targetDatastream : null
@@ -49,9 +47,9 @@ const MONITORING_NO_WORK_WARNING: TaskNoWorkWarning = {
 
 type Inputs = {
   activeTab: Ref<TabId>
-  workspaceTasks: Ref<TaskExpanded[]>
-  dataProductTasks: Ref<DataProductTaskExpanded[]>
-  monitoringTasks: Ref<MonitoringTaskExpanded[]>
+  workspaceTasks: Ref<Task[]>
+  dataProductTasks: Ref<DataProductTask[]>
+  monitoringTasks: Ref<MonitoringTask[]>
   datastreamThingByDatastreamId: Ref<Record<string, string>>
   runNowTriggeredByTaskId: Record<string, boolean>
 }
@@ -61,11 +59,12 @@ const buildRowBase = (
   kind: TaskKind,
   runNowTriggeredByTaskId: Record<string, boolean>
 ) => {
-  const schedule = task.schedule ?? null
-  const latestRun = (task as any).latestRun as TaskRun | null | undefined
+  const schedule = (task.schedule ?? null) as TaskSchedule | null
+  const latestRun = ((task as any).latestRun ?? null) as TaskRun | null
   const nextRunAtDate = getTaskNextRunAt(task as any)
   const hasValidCachedNextRun =
-    !!schedule?.nextRunAt && !Number.isNaN(new Date(schedule.nextRunAt).getTime())
+    !!schedule?.nextRunAt &&
+    !Number.isNaN(new Date(schedule.nextRunAt).getTime())
   const nextRunAt = hasValidCachedNextRun
     ? schedule?.nextRunAt ?? null
     : nextRunAtDate?.toISOString() ?? null
@@ -90,7 +89,7 @@ const buildRowBase = (
 }
 
 const resolveDataProductTaskType = (
-  t: DataProductTaskExpanded
+  t: DataProductTask
 ): DataProductTaskType => {
   if (t.aggregationTransformations?.length) return 'Aggregation'
   if (t.expressionTransformations?.length) return 'Expression'
@@ -104,13 +103,13 @@ const hasEtlMapping = (mapping: TaskMapping) => {
   return !!(anyMapping.targetDatastream?.id || anyMapping.targetDatastreamId)
 }
 
-const getEtlNoWorkWarning = (task: TaskExpanded): TaskNoWorkWarning =>
-  Array.isArray(task.mappings) && task.mappings.some(hasEtlMapping)
-    ? null
-    : ETL_NO_WORK_WARNING
+const getEtlNoWorkWarning = (task: Task): TaskNoWorkWarning => {
+  if (!Array.isArray(task.mappings)) return null
+  return task.mappings.some(hasEtlMapping) ? null : ETL_NO_WORK_WARNING
+}
 
 const getDataProductNoWorkWarning = (
-  task: DataProductTaskExpanded
+  task: DataProductTask
 ): TaskNoWorkWarning =>
   [
     task.aggregationTransformations,
@@ -121,9 +120,7 @@ const getDataProductNoWorkWarning = (
     ? null
     : DATA_PRODUCT_NO_WORK_WARNING
 
-const getMonitoringNoWorkWarning = (
-  task: MonitoringTaskExpanded
-): TaskNoWorkWarning =>
+const getMonitoringNoWorkWarning = (task: MonitoringTask): TaskNoWorkWarning =>
   (task.monitoredDatastreams ?? []).some(
     (monitored) => (monitored.rules ?? []).length > 0
   )
@@ -131,11 +128,9 @@ const getMonitoringNoWorkWarning = (
     : MONITORING_NO_WORK_WARNING
 
 const humanizeRuleType = (value: string) =>
-  value
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
+  value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
 
-const resolveMonitoringRules = (task: MonitoringTaskExpanded) => {
+const resolveMonitoringRules = (task: MonitoringTask) => {
   const ruleCounts = new Map<string, number>()
   for (const monitored of task.monitoredDatastreams ?? []) {
     for (const rule of monitored.rules ?? []) {
@@ -170,8 +165,8 @@ const resolveMonitoringRules = (task: MonitoringTaskExpanded) => {
 
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
 // target datastream, cross-referencing the workspace datastream list for thingId.
-const resolveEtlTaskThingId = (
-  task: TaskExpanded,
+const resolveTaskThingId = (
+  task: Task,
   datastreamThingMap: Record<string, string>
 ): string | null => {
   for (const mapping of task.mappings ?? []) {
@@ -212,8 +207,9 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
   const etlTaskRows = computed<TaskRow[]>(() =>
     workspaceTasks.value.map((t) => ({
       ...buildRowBase(t, 'etl', runNowTriggeredByTaskId),
-      dataConnectionId: (t as any).dataConnection?.id ?? null,
-      thingId: resolveEtlTaskThingId(t, datastreamThingByDatastreamId.value),
+      dataConnectionId:
+        (t as any).dataConnection?.id ?? (t as any).dataConnectionId ?? null,
+      thingId: resolveTaskThingId(t, datastreamThingByDatastreamId.value),
       noWorkWarning: getEtlNoWorkWarning(t),
     }))
   )
@@ -222,7 +218,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
     dataProductTasks.value.map((t) => ({
       ...buildRowBase(t, 'dataProduct', runNowTriggeredByTaskId),
       dataConnectionId: null,
-      thingId: t.thing?.id ?? null,
+      thingId: (t as any).thing?.id ?? (t as any).thingId ?? null,
       taskType: resolveDataProductTaskType(t),
       noWorkWarning: getDataProductNoWorkWarning(t),
     }))
@@ -234,12 +230,14 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       return {
         ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
         dataConnectionId: null,
-        thingId: t.thing?.id ?? null,
+        thingId: (t as any).thing?.id ?? (t as any).thingId ?? null,
         noWorkWarning: getMonitoringNoWorkWarning(t),
         qualityRuleSummary: rules.summary,
         qualityRuleCount: rules.total,
         qualityRuleBreakdown: rules.breakdown,
-        monitoringRulesViolated: getMonitoringRulesViolated(t.latestRun),
+        monitoringRulesViolated: getMonitoringRulesViolated(
+          (t as any).latestRun
+        ),
       }
     })
   )
