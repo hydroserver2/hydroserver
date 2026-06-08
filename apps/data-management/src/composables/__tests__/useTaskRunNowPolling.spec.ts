@@ -62,9 +62,7 @@ describe('useTaskRunNowPolling', () => {
     polling.startPollingForLatestRun('monitoring', 'mon-1')
     await vi.advanceTimersByTimeAsync(3000)
 
-    expect(serviceMocks.getItem).toHaveBeenCalledWith('mon-1', {
-      expand_related: true,
-    })
+    expect(serviceMocks.getItem).toHaveBeenCalledWith('mon-1')
     expect(serviceMocks.runTask).not.toHaveBeenCalled()
     expect(monitoringTasks.value[0].latestRun).toMatchObject({
       id: 'run-1',
