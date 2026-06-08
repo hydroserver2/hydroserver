@@ -109,6 +109,73 @@ describe('useOrchestrationTaskRows', () => {
     })
   })
 
+  it('builds rows from summary task responses without expanded related objects', () => {
+    const rows = useOrchestrationTaskRows({
+      activeTab: ref('ingestion'),
+      workspaceTasks: ref([
+        {
+          id: 'etl-summary',
+          name: 'Summary import',
+          dataConnectionId: 'dc-summary',
+          workspaceId: 'workspace-1',
+          taskVariables: {},
+          latestRun: null,
+          schedule: null,
+        },
+      ] as any),
+      dataProductTasks: ref([
+        {
+          id: 'dp-summary',
+          name: 'Summary product',
+          thingId: 'thing-summary',
+          workspaceId: 'workspace-1',
+          latestRun: null,
+          schedule: null,
+          aggregationTransformations: [{ id: 'agg-1' }],
+          compositeExpressionTransformations: [],
+          expressionTransformations: [],
+          ratingCurveTransformations: [],
+        },
+      ] as any),
+      monitoringTasks: ref([
+        {
+          id: 'mon-summary',
+          name: 'Summary quality',
+          thingId: 'thing-summary',
+          workspaceId: 'workspace-1',
+          latestRun: null,
+          schedule: null,
+          recipients: [],
+          monitoredDatastreams: [
+            {
+              datastreamId: 'ds-1',
+              rules: [{ ruleType: 'range' }, { ruleType: 'missing_data' }],
+            },
+          ],
+        },
+      ] as any),
+      datastreamThingByDatastreamId: ref({}),
+      runNowTriggeredByTaskId: {},
+    })
+
+    expect(rows.etlTaskRows.value[0]).toMatchObject({
+      id: 'etl-summary',
+      dataConnectionId: 'dc-summary',
+      noWorkWarning: null,
+    })
+    expect(rows.dataProductTaskRows.value[0]).toMatchObject({
+      id: 'dp-summary',
+      thingId: 'thing-summary',
+      taskType: 'Aggregation',
+    })
+    expect(rows.monitoringTaskRows.value[0]).toMatchObject({
+      id: 'mon-summary',
+      thingId: 'thing-summary',
+      qualityRuleSummary: '1 Missing Data, 1 Range',
+      qualityRuleCount: 2,
+    })
+  })
+
   it('flags tasks that have no configured work', () => {
     const rows = useOrchestrationTaskRows({
       activeTab: ref('ingestion'),
@@ -257,11 +324,13 @@ describe('useOrchestrationTaskRows', () => {
     rows.toggleSort('taskType')
     expect(rows.sortKey.value).toBe('taskType')
     expect(
-      rows.sortRows([
-        { name: 'Mean stage', taskType: 'Aggregation' } as any,
-        { name: 'Curve output', taskType: 'Rating curve' } as any,
-        { name: 'Derived flow', taskType: 'Derivation' } as any,
-      ]).map((row) => row.taskType)
+      rows
+        .sortRows([
+          { name: 'Mean stage', taskType: 'Aggregation' } as any,
+          { name: 'Curve output', taskType: 'Rating curve' } as any,
+          { name: 'Derived flow', taskType: 'Derivation' } as any,
+        ])
+        .map((row) => row.taskType)
     ).toEqual(['Aggregation', 'Derivation', 'Rating curve'])
   })
 })

@@ -1,23 +1,25 @@
 import { onBeforeUnmount, reactive, type Ref } from 'vue'
+import type { TaskRun } from '@hydroserver/client'
+import {
+  serviceForKind,
+  type TaskKind,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 import type {
-  DataProductTaskExpanded,
-  MonitoringTaskExpanded,
-  TaskExpanded,
-  TaskRun,
-} from '@hydroserver/client'
-import { serviceForKind, type TaskKind } from '@/components/Orchestration/workbench/orchestrationTabs'
+  AnyTask,
+  DataProductTask,
+  MonitoringTask,
+  Task,
+} from '@/types/orchestrationTasks'
 
 const POLL_INTERVAL_MS = 3000
 const POLL_DURATION_MS = 21_000
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILURE']
 const ACTIVE_RUN_STATUSES = new Set(['PENDING', 'STARTED'])
 
-type AnyTask = TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
-
 type Lists = {
-  etl: Ref<TaskExpanded[]>
-  dataProduct: Ref<DataProductTaskExpanded[]>
-  monitoring: Ref<MonitoringTaskExpanded[]>
+  etl: Ref<Task[]>
+  dataProduct: Ref<DataProductTask[]>
+  monitoring: Ref<MonitoringTask[]>
 }
 
 type Options = {
@@ -74,9 +76,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
   const refreshAfterCompletion = async (kind: TaskKind, taskId: string) => {
     try {
       const svc = serviceForKind(kind)
-      const updated = (await svc.getItem(taskId, {
-        expand_related: true,
-      })) as any
+      const updated = (await svc.getItem(taskId)) as any
       if (updated) upsertTask(kind, updated)
     } catch (error) {
       console.error('Error refreshing task after run completion', error)
@@ -114,7 +114,9 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
 
       try {
         const runResponse = await svc.getTaskRun(taskId, requestedRunId)
-        const updatedRun = runResponse.ok ? (runResponse.data as TaskRun) ?? null : null
+        const updatedRun = runResponse.ok
+          ? (runResponse.data as TaskRun) ?? null
+          : null
 
         if (workspaceId !== currentWorkspaceId()) {
           runNowTriggeredByTaskId[taskId] = false
@@ -179,9 +181,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       }
 
       try {
-        const updated = (await svc.getItem(taskId, {
-          expand_related: true,
-        })) as AnyTask | null
+        const updated = (await svc.getItem(taskId)) as AnyTask | null
 
         if (workspaceId !== currentWorkspaceId()) {
           runNowTriggeredByTaskId[taskId] = false
@@ -226,7 +226,9 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       if (!response.ok) {
         throw new Error(response.message || 'Unable to run task now.')
       }
-      const requestedRun = response.ok ? (response.data as TaskRun) ?? null : null
+      const requestedRun = response.ok
+        ? (response.data as TaskRun) ?? null
+        : null
       if (requestedRun?.id) {
         syncLatestRun(kind, taskId, requestedRun)
         startPollingTaskRun(kind, taskId, requestedRun.id, startedAt)

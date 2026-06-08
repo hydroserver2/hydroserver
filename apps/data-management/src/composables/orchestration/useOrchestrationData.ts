@@ -1,15 +1,14 @@
 import { computed, ref, type Ref } from 'vue'
-import hs, {
-  DataConnection,
-  DataProductTaskExpanded,
-  MonitoringTaskExpanded,
-  TaskExpanded,
-  ThingTaskSummary,
-} from '@hydroserver/client'
+import hs, { DataConnection, ThingTaskSummary } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
 import type { TabId } from '@/components/Orchestration/workbench/orchestrationTabs'
+import type {
+  DataProductTask,
+  Task,
+  MonitoringTask,
+} from '@/types/orchestrationTasks'
 
 type LoadedTaskGroup = {
   workspaceId: string
@@ -20,15 +19,17 @@ type LoadedTaskGroup = {
 export function useOrchestrationData() {
   const { workspaceTasks } = storeToRefs(useOrchestrationStore())
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
-  const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+  const selectedWorkspaceId = computed(
+    () => selectedWorkspace.value?.id ?? null
+  )
 
   const loading = ref(false)
   const taskLoading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
   const things = ref<ThingTaskSummary[]>([])
   const datastreamThingByDatastreamId = ref<Record<string, string>>({})
-  const dataProductTasks = ref<DataProductTaskExpanded[]>([])
-  const monitoringTasks = ref<MonitoringTaskExpanded[]>([])
+  const dataProductTasks = ref<DataProductTask[]>([])
+  const monitoringTasks = ref<MonitoringTask[]>([])
   const loadedTaskGroup = ref<LoadedTaskGroup>(null)
 
   let fetchRequestId = 0
@@ -73,7 +74,9 @@ export function useOrchestrationData() {
       if (requestId !== fetchRequestId) return
 
       dataConnections.value = dcItems
-      things.value = taskSummaryResponse.ok ? taskSummaryResponse.data ?? [] : []
+      things.value = taskSummaryResponse.ok
+        ? taskSummaryResponse.data ?? []
+        : []
       clearTaskLists()
     } catch (error) {
       if (requestId !== fetchRequestId) return
@@ -181,6 +184,6 @@ export function useOrchestrationData() {
 export type OrchestrationData = ReturnType<typeof useOrchestrationData>
 
 export type TaskListRef =
-  | Ref<TaskExpanded[]>
-  | Ref<DataProductTaskExpanded[]>
-  | Ref<MonitoringTaskExpanded[]>
+  | Ref<Task[]>
+  | Ref<DataProductTask[]>
+  | Ref<MonitoringTask[]>
