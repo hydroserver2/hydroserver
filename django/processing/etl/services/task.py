@@ -55,7 +55,12 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         )
 
         if expand_related:
-            queryset = queryset.select_related("data_connection__workspace").prefetch_related("etl_mappings")
+            queryset = queryset.select_related(
+                "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related(
+                "etl_mappings", "etl_mappings__target_datastream", "etl_mappings__target_datastream__datastream_tags",
+                "etl_mappings__target_datastream__datastream_file_attachments"
+            )
 
         return queryset.get(pk=task.pk)
 
@@ -128,7 +133,10 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         if expand_related:
             queryset = queryset.select_related(
                 "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
-            ).prefetch_related("etl_mappings")
+            ).prefetch_related(
+                "etl_mappings", "etl_mappings__target_datastream", "etl_mappings__target_datastream__datastream_tags",
+                "etl_mappings__target_datastream__datastream_file_attachments"
+            )
         else:
             queryset = queryset.select_related(
                 "data_connection", "periodic_task__crontab", "periodic_task__interval"
