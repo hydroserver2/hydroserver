@@ -289,13 +289,17 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
             if (metadataUpdate) {
               failedMetadataUpdates.push({
                 id: metadataUpdate.ratingCurveId,
-                message: res.message || 'Unable to update rating curve metadata.',
+                message:
+                  res.message ||
+                  'Unable to update rating curve metadata.',
               })
             }
             if (replace) {
               failedReplaces.push({
                 id: replace.ratingCurveId,
-                message: res.message || 'Unable to replace rating curve points.',
+                message:
+                  res.message ||
+                  'Unable to replace rating curve points.',
               })
             }
             continue
@@ -333,7 +337,9 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
             failedCreates.push({
               tempId: item.tempId,
               name: item.name,
-              message: res.message || 'Unable to create rating curve.',
+              message:
+                res.message ||
+                'Unable to create rating curve.',
             })
             continue
           }

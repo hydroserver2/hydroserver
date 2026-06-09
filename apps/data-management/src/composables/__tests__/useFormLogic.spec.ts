@@ -65,7 +65,7 @@ describe('useFormLogic', () => {
 
   it('submits create when form is valid and no initial item exists', async () => {
     const createResult = { ...unit2 } as Unit
-    const createItem = vi.fn().mockResolvedValue({ data: createResult })
+    const createItem = vi.fn().mockResolvedValue({ ok: true, data: createResult })
     const wrapper = mount(createDummyComponent({ createItem }))
 
     wrapper.vm.myForm = { validate: vi.fn().mockResolvedValue(undefined) } as any
@@ -79,7 +79,7 @@ describe('useFormLogic', () => {
   it('submits update when form is valid and initial item exists', async () => {
     const initialUnit = Object.assign(new Unit(), unit1)
     const updateResult = { ...unit1, symbol: 'm2' } as Unit
-    const updateItem = vi.fn().mockResolvedValue({ data: updateResult })
+    const updateItem = vi.fn().mockResolvedValue({ ok: true, data: updateResult })
 
     const wrapper = mount(
       createDummyComponent({

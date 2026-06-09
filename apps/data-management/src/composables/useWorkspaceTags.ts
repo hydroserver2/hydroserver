@@ -28,7 +28,7 @@ export function useWorkspaceTags(localWorkspace?: Ref<Workspace | undefined>) {
     async (id) => {
       if (id) {
         const res = await hs.things.getTagKeys({ workspace_id: id })
-        tags.value = res.data
+        if (res.ok) tags.value = res.data
       }
     },
     { immediate: true }

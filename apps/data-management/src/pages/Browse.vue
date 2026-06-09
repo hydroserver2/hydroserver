@@ -24,7 +24,7 @@ const updateFilteredThings = (updatedThings: ThingMarker[]) => {
 
 onMounted(async () => {
   const res = await hs.things.listMarkers()
-  filteredThings.value = things.value = res.data ?? []
+  filteredThings.value = things.value = res.ok ? res.data : []
 
   // The BroseFilterTool changes the Canvas size of the Map, making it zoom too close.
   // Wait until we're sure the drawer has opened, then render map

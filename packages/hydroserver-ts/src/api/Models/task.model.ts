@@ -4,7 +4,7 @@ export class Task {
   id = ''
   name = ''
   description: string | null = null
-  taskVariables: Record<string, any> = {}
+  taskVariables: Record<string, unknown> = {}
   dataConnectionId = ''
   mappings: TaskMapping[] = []
   schedule: TaskSchedule | null = null
@@ -18,7 +18,7 @@ export interface TaskExpanded {
   id: string
   name: string
   description?: string | null
-  taskVariables: Record<string, any>
+  taskVariables: Record<string, unknown>
   dataConnection: DataConnection
   mappings: TaskMapping[]
   latestRun?: TaskRun | null
@@ -49,7 +49,13 @@ export type TaskSchedule = {
 
 export interface EtlMapping {
   sourceIdentifier: string
-  targetDatastream: { id: string; name: string; [key: string]: any }
+  targetDatastream: {
+    id: string
+    name: string
+    thingId?: string
+    thing_id?: string
+    [key: string]: unknown
+  }
 }
 
 export interface EtlMappingPostBody {

@@ -15,21 +15,21 @@ export function resolveId<T extends WithId>(
  * - Removes the original ref keys so they don’t leak into the query.
  */
 export function coerceRefParams<
-  P extends Record<string, any>,
+  P extends Record<string, unknown>,
   M extends Record<string, string>
 >(
   params: P,
   mapping: M
 ): Omit<P, keyof M> & Partial<Record<M[keyof M], string>> {
-  const out: Record<string, any> = { ...params }
+  const out: Record<string, unknown> = { ...params }
   for (const [refKey, idKey] of Object.entries(mapping)) {
-    const fromRef = resolveId(out[refKey])
+    const fromRef = resolveId(out[refKey] as ResourceRef | undefined)
     const fromId = out[idKey]
     if (fromRef !== undefined) out[idKey] = fromRef
     else if (typeof fromId === 'string') out[idKey] = fromId
     delete out[refKey]
   }
-  return out as any
+  return out as Omit<P, keyof M> & Partial<Record<M[keyof M], string>>
 }
 
 /* Common scoped param mixins you can reuse in ListParams */

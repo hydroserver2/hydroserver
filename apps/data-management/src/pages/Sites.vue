@@ -255,7 +255,7 @@ const onRowClick = (event: Event, item: any) => {
 
 const loadThings = async () => {
   const res = await hs.things.listSiteSummaries(selectedWorkspace.value!.id)
-  workspaceThings.value = res.data ?? []
+  workspaceThings.value = res.ok ? res.data : []
 }
 
 onMounted(async () => {
@@ -270,7 +270,7 @@ onMounted(async () => {
       hs.workspaces.listAllItems({ is_associated: true, expand_related: true }),
     ])
     setWorkspaces(workspaceRes)
-    workspaceThings.value = thingsRes.data ?? []
+    workspaceThings.value = thingsRes.ok ? thingsRes.data : []
   }
   isPageLoaded.value = true
 })

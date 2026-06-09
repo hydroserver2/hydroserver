@@ -7,7 +7,7 @@ export class RatingCurve {
   description: string | null = null
   fittingMethod: RatingCurveFittingMethod = 'linear'
   thingId = ''
-  thing?: { id: string; name: string; [key: string]: any }
+  thing?: { id: string; name: string; [key: string]: unknown }
   points: RatingCurvePoint[] = []
 
   constructor(init?: Partial<RatingCurve>) {

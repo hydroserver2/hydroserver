@@ -3,7 +3,7 @@ import type { HydroServer } from '../HydroServer'
 import { apiMethods } from '../apiMethods'
 import Storage from '../../utils/storage'
 import { getCSRFToken } from '../getCSRFToken'
-import { ApiResponse } from '../responseInterceptor'
+import { ApiResponse, Meta } from '../responseInterceptor'
 
 export interface Provider {
   id: string
@@ -19,6 +19,17 @@ export type SessionSnapshot = {
   flows: Array<{ id: string; providers?: string[] }>
   oAuthProviders: Provider[]
   signupEnabled: boolean
+}
+
+/**
+ * Body returned by the Django AllAuth session/login/signup endpoints. The
+ * authenticated user (when present) is under `account`; auth-flow state is
+ * under `flows`. Extra keys are passed through untyped.
+ */
+export interface SessionResponse {
+  account?: User
+  flows?: Array<{ id: string; providers?: string[] }>
+  [key: string]: unknown
 }
 
 const DEFAULT_SESSION_SNAPSHOT: SessionSnapshot = {
@@ -100,10 +111,10 @@ export class SessionService {
     this._setSession(res)
   }
 
-  get = async () => apiMethods.fetch(this.sessionBase)
+  get = async () => apiMethods.fetch<SessionResponse>(this.sessionBase)
 
   async login(email: string, password: string) {
-    const res = await apiMethods.post(this.sessionBase, {
+    const res = await apiMethods.post<SessionResponse>(this.sessionBase, {
       email,
       password,
     })
@@ -136,18 +147,21 @@ export class SessionService {
     }
   }
 
-  _setSession(res: ApiResponse) {
-    const meta = res?.meta ?? {}
-    const data = res?.data ?? {}
+  _setSession(res: ApiResponse<unknown>) {
+    const meta: Meta = (res.ok ? res.meta : undefined) ?? {}
+    const data: Record<string, unknown> =
+      (res.ok ? (res.data as Record<string, unknown> | null) : null) ?? {}
 
     this.snapshot = {
       isAuthenticated: Boolean(meta.is_authenticated),
       expiresAt: meta.expires ?? null,
-      flows: Array.isArray(data.flows) ? data.flows : [],
-      oAuthProviders: Array.isArray(meta.oAuthProviders ?? [])
-        ? meta.oAuthProviders
+      flows: Array.isArray(data.flows)
+        ? (data.flows as SessionSnapshot['flows'])
         : [],
-      signupEnabled: Boolean(meta.signupEnabled ?? false),
+      oAuthProviders: Array.isArray(meta.oAuthProviders)
+        ? (meta.oAuthProviders as Provider[])
+        : [],
+      signupEnabled: Boolean(meta.signupEnabled),
     }
   }
 
@@ -210,7 +224,7 @@ export class SessionService {
     apiMethods.fetch(`${this._client.providerBase}/connections`)
 
   providerSignup = async (user: User) => {
-    const res = await apiMethods.post(
+    const res = await apiMethods.post<SessionResponse>(
       `${this._client.providerBase}/signup`,
       user
     )

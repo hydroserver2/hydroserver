@@ -97,7 +97,7 @@ const onResetRequest = async () => {
   const res = await hs.user.requestPasswordReset(email.value)
   if (res.status == 404)
     Snackbar.warn('No account was found for the email you specified')
-  resetEmailSent.value = res.data
+  resetEmailSent.value = res.ok
 }
 
 const resetPassword = async () => {

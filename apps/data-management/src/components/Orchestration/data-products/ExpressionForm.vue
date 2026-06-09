@@ -96,7 +96,9 @@
 
         <div class="mb-3">
           <div class="d-flex flex-wrap align-center gap-1 mb-1">
-            <span class="text-caption text-medium-emphasis mr-1">Variable:</span>
+            <span class="text-caption text-medium-emphasis mr-1"
+              >Variable:</span
+            >
             <v-chip
               size="x-small"
               :color="DATA_PRODUCT_ACCENT"

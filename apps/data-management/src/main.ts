@@ -39,7 +39,7 @@ async function initializeApp() {
   user.value = new User()
   if (hs.session.isAuthenticated) {
     const res = await hs.user.get()
-    user.value = res.status == 401 ? new User() : res.data
+    user.value = res.ok && res.status !== 401 ? res.data : new User()
   }
 
   if (hs.session.isAuthenticated) {

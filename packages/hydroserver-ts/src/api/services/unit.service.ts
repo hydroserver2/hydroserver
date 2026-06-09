@@ -8,5 +8,5 @@ export class UnitService extends HydroServerBaseService<typeof C, M> {
   static writableKeys = C.writableKeys
   static Model = M
 
-  getTypes = () => apiMethods.fetch(`${this._route}/types`)
+  getTypes = () => apiMethods.fetch<string[]>(`${this._route}/types`)
 }

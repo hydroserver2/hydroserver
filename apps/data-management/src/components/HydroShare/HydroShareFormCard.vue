@@ -210,12 +210,13 @@ const { hydroShareArchive: archive, loading } = storeToRefs(
   useHydroShareStore()
 )
 
-const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
-  hs.things.createHydroShareArchive,
-  hs.things.updateHydroShareArchive,
-  PostHydroShareArchive,
-  archive.value || undefined
-)
+const { item, isEdit, valid, myForm, uploadItem } =
+  useFormLogic<PostHydroShareArchive>(
+    hs.things.createHydroShareArchive,
+    hs.things.updateHydroShareArchive,
+    PostHydroShareArchive,
+    archive.value || undefined
+  )
 
 const { thing } = storeToRefs(useThingStore())
 const datastreams = ref<Datastream[]>([])

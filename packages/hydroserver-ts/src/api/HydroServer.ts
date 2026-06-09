@@ -59,13 +59,13 @@ export class HydroServer {
     return client
   }
 
-  private listeners: Record<string, Array<(...args: any[]) => void>> = {}
+  private listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
 
-  public on(eventName: string, callback: (...args: any[]) => void): void {
+  public on(eventName: string, callback: (...args: unknown[]) => void): void {
     ;(this.listeners[eventName] ??= []).push(callback)
   }
 
-  public emit(eventName: string, ...args: any[]): void {
+  public emit(eventName: string, ...args: unknown[]): void {
     for (const callback of this.listeners[eventName] ?? []) {
       callback(...args)
     }

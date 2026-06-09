@@ -530,7 +530,7 @@ async function onSubmit() {
       console.error(res)
       return
     }
-    task.value = hydrateTask(res.data)
+    task.value = hydrateTask(res.data as unknown as TaskExpanded)
     emit(isEdit ? 'updated' : 'created', res.data)
     closeForm()
   } catch (error: unknown) {

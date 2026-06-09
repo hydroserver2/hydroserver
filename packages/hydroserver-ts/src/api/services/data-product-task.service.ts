@@ -4,13 +4,24 @@ import {
   RunContract,
 } from '../../generated/contracts'
 import { DataProductTask as M } from '../Models/data-product-task.model'
+import type { TaskRun } from '../Models/task.model'
 import { apiMethods } from '../apiMethods'
+import type * as Data from '../../generated/data.types'
 import type {
   AggregationTransformationPatchPayload,
   AggregationTransformationPayload,
   CompositeExpressionTransformationPatchPayload,
   CompositeExpressionTransformationPayload,
 } from './data-product-transformation.types'
+
+type AggregationTransformationResponse =
+  Data.components['schemas']['AggregationTransformationResponse']
+type ExpressionTransformationResponse =
+  Data.components['schemas']['ExpressionTransformationResponse']
+type RatingCurveTransformationResponse =
+  Data.components['schemas']['RatingCurveTransformationResponse']
+type CompositeExpressionTransformationResponse =
+  Data.components['schemas']['CompositeExpressionTransformationResponse']
 
 export class DataProductTaskService extends HydroServerBaseService<
   typeof C,
@@ -25,17 +36,17 @@ export class DataProductTaskService extends HydroServerBaseService<
   }
 
   runTask(taskId: string) {
-    return apiMethods.post(`${this._route}/${taskId}/trigger`)
+    return apiMethods.post<TaskRun>(`${this._route}/${taskId}/trigger`)
   }
 
   getTaskRuns(taskId: string, params?: RunContract.QueryParameters) {
-    return apiMethods.paginatedFetch(
+    return apiMethods.paginatedFetch<TaskRun[]>(
       this.withQuery(`${this._route}/${taskId}/runs`, params)
     )
   }
 
   getTaskRun(taskId: string, runId: string) {
-    return apiMethods.fetch(`${this._route}/${taskId}/runs/${runId}`)
+    return apiMethods.fetch<TaskRun>(`${this._route}/${taskId}/runs/${runId}`)
   }
 
   /* -------------------- Expression Transformations ------------------- */
@@ -56,7 +67,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   }
 
   listExpressionTransformations(taskId: string) {
-    return apiMethods.fetch(
+    return apiMethods.fetch<ExpressionTransformationResponse[]>(
       `${this._route}/${taskId}/transformations/expression`
     )
   }
@@ -100,7 +111,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   }
 
   listRatingCurveTransformations(taskId: string) {
-    return apiMethods.fetch(
+    return apiMethods.fetch<RatingCurveTransformationResponse[]>(
       `${this._route}/${taskId}/transformations/rating-curve`
     )
   }
@@ -139,7 +150,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   }
 
   listAggregationTransformations(taskId: string) {
-    return apiMethods.fetch(
+    return apiMethods.fetch<AggregationTransformationResponse[]>(
       `${this._route}/${taskId}/transformations/aggregation`
     )
   }
@@ -174,7 +185,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   }
 
   listCompositeExpressionTransformations(taskId: string) {
-    return apiMethods.fetch(
+    return apiMethods.fetch<CompositeExpressionTransformationResponse[]>(
       `${this._route}/${taskId}/transformations/composite-expression`
     )
   }

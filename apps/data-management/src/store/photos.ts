@@ -18,9 +18,10 @@ export const usePhotosStore = defineStore('photos', () => {
       return await hs.things.uploadAttachments(thingId, data)
     })
 
-    const newPhotoResponses: ApiResponse<FileAttachment>[] = await Promise.all(promises)
-    const photoData = newPhotoResponses.map(
-      (res: ApiResponse<FileAttachment>) => res.data
+    const newPhotoResponses: ApiResponse<FileAttachment>[] =
+      await Promise.all(promises)
+    const photoData = newPhotoResponses.flatMap((res) =>
+      res.ok ? [res.data] : []
     )
     photos.value = [...photos.value, ...photoData]
   }

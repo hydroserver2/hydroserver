@@ -9,6 +9,8 @@ import {
   ThingMarker,
   ThingSiteSummary,
   ThingTaskSummary,
+  Tag,
+  FileAttachment,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
@@ -22,11 +24,11 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   static Model = Thing
 
   listMarkers(): Promise<ApiResponse<ThingMarker[]>> {
-    return apiMethods.fetch(`${this._route}/markers`)
+    return apiMethods.fetch<ThingMarker[]>(`${this._route}/markers`)
   }
 
   listSiteSummaries(workspaceId: string): Promise<ApiResponse<ThingSiteSummary[]>> {
-    return apiMethods.fetch(
+    return apiMethods.fetch<ThingSiteSummary[]>(
       this.withQuery(`${this._route}/site-summaries`, { workspace_id: workspaceId })
     )
   }
@@ -35,7 +37,7 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     workspace_id?: string | string[]
     site_type?: string | string[]
   }): Promise<ApiResponse<ThingTaskSummary[]>> {
-    return apiMethods.fetch(
+    return apiMethods.fetch<ThingTaskSummary[]>(
       this.withQuery(`${this._route}/task-summaries`, params)
     )
   }
@@ -44,22 +46,22 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     id: string,
     isPrivate: boolean
   ): Promise<ApiResponse<Thing>> =>
-    apiMethods.patch(`${this._route}/${id}`, { isPrivate })
+    apiMethods.patch<Thing>(`${this._route}/${id}`, { isPrivate })
 
-  getSiteTypes = () => apiMethods.fetch(`${this._route}/site-types`)
+  getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
   getSamplingFeatureTypes = () =>
-    apiMethods.fetch(`${this._route}/sampling-feature-types`)
+    apiMethods.fetch<string[]>(`${this._route}/sampling-feature-types`)
 
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
   getTags(thingId: string) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Tag[]>(url)
   }
 
   getTagKeys(params: { workspace_id?: string; thing_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Record<string, string[]>>(url)
   }
 
   createTag(thingId: string, tag: TagPostBody) {
@@ -80,24 +82,32 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   /* ----------------- Sub-resources: File Attachments ----------------- */
 
   getFileAttachmentTypes = () =>
-    apiMethods.fetch(`${this._route}/file-attachment-types`)
+    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
 
   async uploadAttachments(thingId: string, data: FormData) {
     const url = `${this._route}/${thingId}/file-attachments`
     const res = await apiMethods.post(url, data)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data as { link?: string }[],
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachment>
   }
 
   async getAttachments(thingId: string) {
     const url = `${this._route}/${thingId}/file-attachments`
     const res = await apiMethods.paginatedFetch(url)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data as { link?: string }[],
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachment[]>
   }
 
   deleteAttachment(thingId: string, name: string) {
@@ -109,7 +119,7 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
 
   async createHydroShareArchive(archive: PostHydroShareArchive) {
     const url = `${this._route}/${archive.thingId}/archive`
-    return await apiMethods.post(url, archive)
+    return await apiMethods.post<HydroShareArchive>(url, archive)
   }
 
   async updateHydroShareArchive(
@@ -117,12 +127,12 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     old?: HydroShareArchive
   ) {
     const url = `${this._route}/${archive.thingId}/archive`
-    return await apiMethods.patch(url, archive, old)
+    return await apiMethods.patch<HydroShareArchive>(url, archive, old)
   }
 
   getHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<HydroShareArchive>(url)
   }
 
   deleteHydroShareArchive(thingId: string) {

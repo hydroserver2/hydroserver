@@ -30,8 +30,27 @@ describe('requestInterceptor', () => {
     expect(result.body).toBe(JSON.stringify(options.body))
 
     // Checking properties that shouldn't be changed
-    expect(result.headers['Existing-Header']).toBe('Existing-Value')
+    expect(new Headers(result.headers).get('Existing-Header')).toBe(
+      'Existing-Value'
+    )
     expect(result.method).toBe('GET')
     expect(result.credentials).toBe('include')
+  })
+
+  it('accepts standard HeadersInit values', () => {
+    const result = requestInterceptor({
+      headers: new Headers([['Existing-Header', 'Existing-Value']]),
+    })
+
+    expect(new Headers(result.headers).get('Existing-Header')).toBe(
+      'Existing-Value'
+    )
+  })
+
+  it('keeps native BodyInit values as is', () => {
+    const body = new URLSearchParams({ test: 'value' })
+    const result = requestInterceptor({ body })
+
+    expect(result.body).toBe(body)
   })
 })

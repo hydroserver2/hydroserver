@@ -48,29 +48,24 @@ export interface VisualizationBootstrap {
 
 type TagPostBody = Data.components['schemas']['TagPostBody']
 type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
+type TagResponse = Data.components['schemas']['TagGetResponse']
+type TagKeyResponse = Record<string, string[]>
+type FileAttachmentResponse =
+  Data.components['schemas']['FileAttachmentGetResponse']
 
-type ObservationBulkPostQueryParameters = {
-  /**
-   * Mode
-   * @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.
-   */
-  mode?: ('insert' | 'append' | 'backfill' | 'replace') | null
-}
-
-type ObservationBulkPostBody = {
-  fields: ('phenomenonTime' | 'result')[]
-  data: unknown[][]
-}
-
-type ObservationBulkDeleteBody = {
-  phenomenonTimeStart?: string | null
-  phenomenonTimeEnd?: string | null
-}
-
-type ObservationPostBody = {
-  phenomenonTime: string
-  result: number
-}
+type ObservationListResponse =
+  Data.operations['interfaces_api_views_sta_observation_get_observations']['responses'][200]['content']['application/json']
+type ObservationResponse =
+  | Data.components['schemas']['ObservationSummaryResponse']
+  | Data.components['schemas']['ObservationDetailResponse']
+type ObservationBulkPostQueryParameters =
+  Data.components['schemas']['ObservationBulkPostQueryParameters']
+type ObservationBulkPostBody =
+  Data.components['schemas']['ObservationBulkPostBody']
+type ObservationBulkDeleteBody =
+  Data.components['schemas']['ObservationBulkDeleteBody']
+type ObservationPostBody = Data.components['schemas']['ObservationPostBody']
+type NoContentResponse = null
 /**
  * Transport layer for /datastreams routes.
  * Inherits CRUD + handle helpers from HydroServerBaseService and adds:
@@ -87,55 +82,63 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   getTags(datastreamId: string) {
     const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<TagResponse[]>(url)
   }
 
   getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<TagKeyResponse>(url)
   }
 
   createTag(datastreamId: string, tag: TagPostBody) {
     const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.post(url, tag)
+    return apiMethods.post<TagResponse>(url, tag)
   }
 
   updateTag(datastreamId: string, tag: TagPostBody) {
     const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.put(url, tag)
+    return apiMethods.put<TagResponse>(url, tag)
   }
 
   deleteTag(datastreamId: string, tag: TagDeleteBody) {
     const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.delete(url, tag)
+    return apiMethods.delete<NoContentResponse>(url, tag)
   }
 
   /* ----------------- Sub-resources: File Attachments ----------------- */
 
   getFileAttachmentTypes = () =>
-    apiMethods.fetch(`${this._route}/file-attachment-types`)
+    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
 
   async uploadAttachments(datastreamId: string, data: FormData) {
     const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.post(url, data)
+    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data,
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachmentResponse>
   }
 
   async getAttachments(datastreamId: string) {
     const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.paginatedFetch(url)
+    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data,
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachmentResponse[]>
   }
 
   deleteAttachment(datastreamId: string, name: string) {
     const url = `${this._route}/${datastreamId}/file-attachments`
-    return apiMethods.delete(url, { name })
+    return apiMethods.delete<NoContentResponse>(url, { name })
   }
 
   /* ============================== CSV =============================== */
@@ -143,9 +146,9 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   /** Fetch CSV as a Blob for a single datastream. */
   async fetchCsvBlob(id: string): Promise<ApiResponse<Blob>> {
     const url = `${this._route}/${encodeURIComponent(id)}/csv`
-    return apiMethods.fetch(url, {
+    return apiMethods.fetch<Blob>(url, {
       headers: { Accept: 'text/csv' },
-    }) as Promise<ApiResponse<Blob>>
+    })
   }
 
   /* ======================= Observation APIs ======================== */
@@ -157,12 +160,12 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
       `${this._route}/${datastreamId}/observations`,
       params
     )
-    return apiMethods.paginatedFetch(url)
+    return apiMethods.paginatedFetch<ObservationListResponse>(url)
   }
 
   createObservation(datastreamId: string, body: ObservationPostBody) {
     const url = `${this._route}/${datastreamId}/observations`
-    return apiMethods.post(url, body)
+    return apiMethods.post<ObservationResponse>(url, body)
   }
 
   createObservations(
@@ -174,12 +177,12 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
       `${this._route}/${datastreamId}/observations/bulk-create`,
       params
     )
-    return apiMethods.post(url, body)
+    return apiMethods.post<NoContentResponse>(url, body)
   }
 
   deleteObservations(datastreamId: string, body?: ObservationBulkDeleteBody) {
     const url = `${this._route}/${datastreamId}/observations/bulk-delete`
-    return apiMethods.post(
+    return apiMethods.post<NoContentResponse>(
       url,
       body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }
     )
@@ -189,21 +192,22 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     const url = `${this._route}/${encodeURIComponent(
       datastreamId
     )}/observations/${encodeURIComponent(observationId)}`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<ObservationResponse>(url)
   }
 
   deleteObservation(datastreamId: string, observationId: string) {
     const url = `${this._route}/${datastreamId}/observations/${observationId}`
-    return apiMethods.delete(url)
+    return apiMethods.delete<NoContentResponse>(url)
   }
 
-  getStatuses = () => apiMethods.paginatedFetch(`${this._route}/statuses`)
+  getStatuses = () =>
+    apiMethods.paginatedFetch<string[]>(`${this._route}/statuses`)
 
   getAggregationStatistics = () =>
-    apiMethods.paginatedFetch(`${this._route}/aggregation-statistics`)
+    apiMethods.paginatedFetch<string[]>(`${this._route}/aggregation-statistics`)
 
   getSampledMediums = () =>
-    apiMethods.paginatedFetch(`${this._route}/sampled-mediums`)
+    apiMethods.paginatedFetch<string[]>(`${this._route}/sampled-mediums`)
 
   async getVisualizationBootstrap(): Promise<
     ApiResponse<VisualizationBootstrap>

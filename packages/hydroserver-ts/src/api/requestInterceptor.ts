@@ -1,32 +1,48 @@
 import { getCSRFToken } from './getCSRFToken'
 
+export interface RequestOptions extends Omit<RequestInit, 'body'> {
+  body?: unknown
+}
+
+function isBodyInit(value: unknown): value is BodyInit {
+  if (typeof value === 'string') return true
+  if (typeof FormData !== 'undefined' && value instanceof FormData) return true
+  if (typeof Blob !== 'undefined' && value instanceof Blob) return true
+  if (
+    typeof URLSearchParams !== 'undefined' &&
+    value instanceof URLSearchParams
+  )
+    return true
+  if (typeof ReadableStream !== 'undefined' && value instanceof ReadableStream)
+    return true
+  if (value instanceof ArrayBuffer) return true
+  if (ArrayBuffer.isView(value)) return true
+
+  return false
+}
+
 /**
  * Intercepts and enhances a request options object.
  *
  * - Adds CSRF Token header when available
  * - If a body is present and it's an object, the body is stringified.
- *
- * @param {any} options - The original request options object.
- *
- * @returns {any} The enhanced request options with possible modified headers and body.
  */
-export function requestInterceptor(options: any) {
-  let headers = options.headers ? { ...options.headers } : {}
+export function requestInterceptor(options: RequestOptions): RequestInit {
+  const headers = new Headers(options.headers)
 
-  let body: string | undefined = undefined
+  let body: BodyInit | undefined = undefined
   if (options.body !== undefined) {
-    body =
-      typeof options.body === 'string' || options.body instanceof FormData
-        ? options.body
-        : JSON.stringify(options.body)
+    body = isBodyInit(options.body)
+      ? options.body
+      : JSON.stringify(options.body)
   }
 
-  headers['X-CSRFToken'] = getCSRFToken() || ''
+  headers.set('X-CSRFToken', getCSRFToken() || '')
 
   return {
     ...options,
-    headers: headers,
-    body: body,
+    headers,
+    body,
     credentials: 'include',
   }
 }

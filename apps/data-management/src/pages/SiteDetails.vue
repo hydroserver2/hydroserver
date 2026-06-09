@@ -416,7 +416,7 @@ onMounted(async () => {
     }),
   ])
 
-  tags.value = tagResponse?.data
+  tags.value = tagResponse?.ok ? tagResponse.data : []
   thing.value = thingResponse ?? undefined
   try {
     workspace.value =

@@ -23,20 +23,20 @@ export class UserService {
   }
 
   get = async (): Promise<ApiResponse<User>> =>
-    apiMethods.fetch(this.accountBase)
+    apiMethods.fetch<User>(this.accountBase)
 
   create = async (user: User): Promise<ApiResponse<User>> => {
-    const res = await apiMethods.post(this.accountBase, user)
+    const res = await apiMethods.post<User>(this.accountBase, user)
     this._client.session._setSession(res)
     this._client.session.unverifiedEmail = user.email
     return res
   }
 
   update = async (user: User, oldUser?: User): Promise<ApiResponse<User>> =>
-    apiMethods.patch(this.accountBase, user, oldUser)
+    apiMethods.patch<User>(this.accountBase, user, oldUser)
 
   updateItem = async (user: User, oldUser?: User): Promise<User | null> => {
-    const res = await apiMethods.patch(this.accountBase, user, oldUser)
+    const res = await apiMethods.patch<User>(this.accountBase, user, oldUser)
     return res.ok ? res.data : null
   }
 
@@ -69,12 +69,12 @@ export class UserService {
   /* ----------------------- Organization/User types ------------------------- */
   getOrganizationTypes() {
     const url = `${this.accountBase}/organization-types`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<string[]>(url)
   }
 
   getUserTypes() {
     const url = `${this.accountBase}/user-types`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<string[]>(url)
   }
 
   /* ------------------------------ Providers -------------------------------- */
@@ -99,6 +99,7 @@ export class UserService {
     workspace: WorkspaceContract.DetailResponse
   ): Promise<boolean> {
     const res = await this.get()
+    if (!res.ok) return false
     const user = res.data
 
     if (isAdmin(user)) return true

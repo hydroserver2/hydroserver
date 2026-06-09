@@ -9,7 +9,7 @@ export class SensorService extends HydroServerBaseService<typeof C, M> {
   static Model = M
 
   getEncodingTypes = () =>
-    apiMethods.paginatedFetch(`${this._route}/encoding-types`)
+    apiMethods.paginatedFetch<string[]>(`${this._route}/encoding-types`)
   getMethodTypes = () =>
-    apiMethods.paginatedFetch(`${this._route}/method-types`)
+    apiMethods.paginatedFetch<string[]>(`${this._route}/method-types`)
 }

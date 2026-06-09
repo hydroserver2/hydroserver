@@ -58,18 +58,20 @@ export abstract class HydroServerBaseService<
   ): Promise<ApiResponse<M[]>> {
     const { fetch_all, ...query } = params
     const url = this.withQuery(this._route, query)
-    return fetch_all ? apiMethods.paginatedFetch(url) : apiMethods.fetch(url)
+    return fetch_all
+      ? apiMethods.paginatedFetch<M[]>(url)
+      : apiMethods.fetch<M[]>(url)
   }
 
   async listItems(
     params?: Partial<QueryParamsOf<C>> & { fetch_all?: boolean }
   ) {
-    const res = await this.list(params as any)
+    const res = await this.list(params)
     return res.ok ? res.data : []
   }
 
   async listAllItems(params?: Partial<QueryParamsOf<C>>) {
-    return this.listItems({ ...(params as any), fetch_all: true })
+    return this.listItems({ ...params, fetch_all: true })
   }
 
   get = async (
@@ -78,7 +80,7 @@ export abstract class HydroServerBaseService<
       expand_related: boolean
     }
   ): Promise<ApiResponse<M>> =>
-    await apiMethods.fetch(this.withQuery(`${this._route}/${id}`, params))
+    await apiMethods.fetch<M>(this.withQuery(`${this._route}/${id}`, params))
 
   getItem = async (
     id: string,
@@ -91,23 +93,24 @@ export abstract class HydroServerBaseService<
   }
 
   create = async (body: M): Promise<ApiResponse<M>> =>
-    apiMethods.post(this._route, this.serialize(body))
+    apiMethods.post<M>(this._route, this.serialize(body))
 
   createItem = async (body: M): Promise<M | null> => {
-    const res = await apiMethods.post(this._route, this.serialize(body))
+    const res = await apiMethods.post<M>(this._route, this.serialize(body))
     return res.ok ? res.data : null
   }
 
   update = async (
     body: Partial<M> & Pick<M, 'id'>,
     originalBody?: Partial<M> & Pick<M, 'id'>
-  ) => apiMethods.patch(`${this._route}/${body.id}`, body, originalBody ?? null)
+  ) =>
+    apiMethods.patch<M>(`${this._route}/${body.id}`, body, originalBody ?? null)
 
   updateItem = async (
     body: PatchBody<M>,
     originalBody?: PatchBody<M>
   ): Promise<M | null> => {
-    const res = await apiMethods.patch(
+    const res = await apiMethods.patch<M>(
       `${this._route}/${body.id}`,
       body,
       originalBody ?? null
@@ -147,7 +150,7 @@ export abstract class HydroServerBaseService<
 
   protected deserialize(model: M): M {
     const m = new this._ModelCtor()
-    Object.assign(m as any, model)
+    Object.assign(m, model)
     return m
   }
 }

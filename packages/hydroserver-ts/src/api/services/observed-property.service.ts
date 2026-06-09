@@ -12,5 +12,5 @@ export class ObservedPropertyService extends HydroServerBaseService<
   static Model = M
 
   getVariableTypes = () =>
-    apiMethods.paginatedFetch(`${this._route}/variable-types`)
+    apiMethods.paginatedFetch<string[]>(`${this._route}/variable-types`)
 }
