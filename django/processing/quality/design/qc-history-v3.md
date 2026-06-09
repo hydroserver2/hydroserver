@@ -166,9 +166,7 @@ Represents the linkage between a source datastream and a managed datastream and 
 | `id` | UUID | Primary key. |
 | `managed_datastream` | FK → Datastream (unique) | The managed datastream. Unique constraint enforces one history per managed datastream. |
 | `source_datastream` | FK → Datastream | The source datastream. |
-| `created_by` | FK → User | The user who created the history. |
 | `created_at` | DateTime | When the history was created. |
-| `description` | Text (nullable) | Optional description of the history. |
 | `phenomenon_time_start` | DateTime (nullable) | Start of the full committed time range. Null if no sessions have been committed. |
 | `phenomenon_time_end` | DateTime (nullable) | End of the full committed time range. Null if no sessions have been committed. |
 | `source_checksum` | CharField (nullable) | Checksum of the source datastream over the full committed time range. Updated on each commit. |
@@ -348,32 +346,53 @@ A history and its sessions are publicly accessible if both the source and manage
 #### GET/POST /quality-control/histories
 
 - **GET**: Retrieve all histories the authenticated user has permission to view, plus all public histories. Filterable by `managed_datastream_id` and `source_datastream_id`.
-- **POST**: Create a new QC history. Request body must include `managed_datastream_id`, `source_datastream_id`, and optional `description`. Fails if the managed datastream already has a history.
+- **POST**: Create a new QC history. Request body must include `managed_datastream_id` and `source_datastream_id`. Fails if the managed datastream already has a history.
 
-#### GET/PATCH/DELETE /quality-control/histories/{history_id}
+#### GET/DELETE /quality-control/histories/{history_id}
 
 - **GET**: Retrieve the history with the given ID, including `phenomenon_time_start`, `phenomenon_time_end`, checksum fields, and summary session counts.
-- **PATCH**: Update the history. Editable fields: `description`.
 - **DELETE**: Delete the history and all associated sessions. Does not delete the managed or source datastreams. Only permitted if the history has no committed sessions, or if the user explicitly confirms deletion of an active history.
 
 ### 10.2. QC Sessions
 
 #### GET/POST /quality-control/histories/{history_id}/sessions
 
-- **GET**: Retrieve all sessions associated with the given history. Filterable by `status`, `phenomenon_time_start`, and `phenomenon_time_end`.
+- **GET**: Retrieve all sessions associated with the given history. Supports the following query parameters:
+  - `status`: Filter by session status (`in_progress` or `committed`).
+  - `range_start` / `range_end`: Filter sessions that **overlap** with the given phenomenon time range (i.e., session.phenomenon_time_start < range_end AND session.phenomenon_time_end > range_start). Either bound may be omitted for an open-ended range.
+  - `ancestor_of`: Return all transitive upstream ancestors of the session with the given ID. Does not include the referenced session itself; use the detail endpoint to fetch that session.
+  - `include_ancestors`: When `true`, expand the result to also include all transitive upstream ancestors of every session matched by the other filters. Allows a client to retrieve all sessions needed to reconstruct a given time window in a single request.
 - **POST**: Create a new in-progress session. Request body must include `phenomenon_time_start`, `phenomenon_time_end`, and optional `description`. Fails if an in-progress session already exists for this history. Records the `source_checksum` at creation time.
 
 #### GET/PATCH/DELETE /quality-control/histories/{history_id}/sessions/{session_id}
 
-- **GET**: Retrieve session details including `status`, time range, checksum fields, resolved dependencies, and associated operations.
-- **PATCH**: Update the session. Editable fields: `description`, `operations`. Only in-progress sessions can be edited.
+- **GET**: Retrieve session details including `status`, time range, checksum fields, direct dependencies (`dependency_ids`), and associated operations.
+- **PATCH**: Update the session. Editable fields: `description`. Only in-progress sessions can be edited.
 - **DELETE**: Delete the session. Only in-progress sessions can be deleted.
 
 #### POST /quality-control/histories/{history_id}/sessions/{session_id}/commit
 
 - **POST**: Commit the session. No request body. Observations must already have been pushed to the managed datastream via the observations API before calling this endpoint. The server performs integrity checks, updates session and history records, and computes session dependencies. Returns the updated session record on success or a descriptive error on failure.
 
-### 10.3. Observations (checksum support)
+### 10.3. QC Operations
+
+Operations are nested beneath their parent session. The session detail endpoint embeds all operations for convenience; these endpoints exist for targeted access and incremental appending during an active edit session.
+
+#### GET /quality-control/histories/{history_id}/sessions/{session_id}/operations
+
+- **GET**: Retrieve all operations for the given session in execution order.
+
+#### POST /quality-control/histories/{history_id}/sessions/{session_id}/operations
+
+- **POST**: Append one or more operations to an in-progress session. Request body is a list of operation objects; one or many may be submitted in a single request. Each object must include `operation_type`, with optional `order`, `comment`, and `arguments`. If `order` is omitted, the server assigns values sequentially after any existing operations. Only in-progress sessions can be modified. Returns the list of newly created operations.
+
+#### GET/PATCH/DELETE /quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}
+
+- **GET**: Retrieve a single operation by ID.
+- **PATCH**: Update an operation. Editable fields: `order`, `comment`, `arguments`. Only permitted on in-progress sessions. `operation_type` is not editable; delete and re-append to change the type.
+- **DELETE**: Delete an operation. Only permitted on in-progress sessions. Remaining operations retain their existing `order` values; ordering becomes sparse if a non-final operation is removed.
+
+### 10.4. Observations (checksum support)
 
 Observation endpoints that return collections include a checksum value in the `X-Observation-Checksum` response header computed over the returned subset. The QC App uses this to verify source and managed datastream integrity.
 
