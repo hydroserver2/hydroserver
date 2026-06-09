@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.6",
-    "@googlemaps/markerclusterer": "^2.5.3",
     "@hydroserver/client": "0.5.0",
     "@mdi/js": "^7.4.47",
     "country-list": "^2.3.0",
