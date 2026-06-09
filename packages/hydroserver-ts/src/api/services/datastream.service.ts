@@ -212,10 +212,12 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   async getVisualizationBootstrap(): Promise<
     ApiResponse<VisualizationBootstrap>
   > {
-    const res = await apiMethods.fetch(`${this._route}/visualization-bootstrap`)
-    if (!res.ok) return res as unknown as ApiResponse<VisualizationBootstrap>
+    const res = await apiMethods.fetch<VisualizationBootstrapPayload>(
+      `${this._route}/visualization-bootstrap`
+    )
+    if (!res.ok) return res
 
-    const payload = res.data as VisualizationBootstrapPayload
+    const payload = res.data
 
     const things = payload.things.map((p) => Object.assign(new Thing(), p))
     const thingById = new Map(things.map((t) => [t.id, t]))

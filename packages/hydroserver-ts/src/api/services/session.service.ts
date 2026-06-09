@@ -107,7 +107,7 @@ export class SessionService {
   }
 
   async initialize(): Promise<void> {
-    const res = await apiMethods.fetch(this.sessionBase)
+    const res = await apiMethods.fetch<SessionResponse>(this.sessionBase)
     this._setSession(res)
   }
 
@@ -138,7 +138,7 @@ export class SessionService {
           }
         }
       }
-      const res = await apiMethods.delete(this.sessionBase)
+      const res = await apiMethods.delete<SessionResponse>(this.sessionBase)
       this._setSession(res)
     } catch (error) {
       console.error('Error logging out.', error)
@@ -147,7 +147,7 @@ export class SessionService {
     }
   }
 
-  _setSession(res: ApiResponse<unknown>) {
+  _setSession<T>(res: ApiResponse<T>) {
     const meta: Meta = (res.ok ? res.meta : undefined) ?? {}
     const data: Record<string, unknown> =
       (res.ok ? (res.data as Record<string, unknown> | null) : null) ?? {}
@@ -221,7 +221,7 @@ export class SessionService {
   }
 
   fetchConnectedProviders = async () =>
-    apiMethods.fetch(`${this._client.providerBase}/connections`)
+    apiMethods.fetch<Provider[]>(`${this._client.providerBase}/connections`)
 
   providerSignup = async (user: User) => {
     const res = await apiMethods.post<SessionResponse>(
@@ -233,7 +233,7 @@ export class SessionService {
   }
 
   deleteProvider = async (provider: string, account: string) =>
-    apiMethods.delete(`${this._client.providerBase}/connections`, {
+    apiMethods.delete<Provider[]>(`${this._client.providerBase}/connections`, {
       provider: provider,
       account: account,
     })

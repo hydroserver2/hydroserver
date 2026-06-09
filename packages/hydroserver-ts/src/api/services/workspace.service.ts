@@ -41,19 +41,21 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   }
 
   removeCollaborator = (workspaceId: string, email: string) =>
-    apiMethods.delete(`${this._route}/${workspaceId}/collaborators`, {
+    apiMethods.delete<null>(`${this._route}/${workspaceId}/collaborators`, {
       email,
     })
 
   // ---------- sub-resources: ownership transfer ----------
   transferOwnership = (workspaceId: string, newOwner: string) =>
-    apiMethods.post(`${this._route}/${workspaceId}/transfer`, { newOwner })
+    apiMethods.post<string>(`${this._route}/${workspaceId}/transfer`, {
+      newOwner,
+    })
 
   acceptOwnershipTransfer = (workspaceId: string) =>
-    apiMethods.put(`${this._route}/${workspaceId}/transfer`)
+    apiMethods.put<string>(`${this._route}/${workspaceId}/transfer`)
 
   rejectOwnershipTransfer = (id: string) =>
-    apiMethods.delete(`${this._route}/${id}/transfer`)
+    apiMethods.delete<string>(`${this._route}/${id}/transfer`)
 
   // ---------- sub-resources: keys/roles ----------
   getApiKeys(workspaceId: string) {
@@ -107,7 +109,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
     )
 
   deleteApiKey = async (id: string, apiKeyId: string) =>
-    apiMethods.delete(`${this._route}/${id}/api-keys/${apiKeyId}`)
+    apiMethods.delete<null>(`${this._route}/${id}/api-keys/${apiKeyId}`)
 
   getRoles = (params?: RoleQueryParameters) => {
     const url = this.withQuery(`${this._client.baseRoute}/roles`, params)

@@ -40,6 +40,9 @@ export interface RatingCurvePreviewRow {
   outputValue: string
 }
 
+type NoContentResponse = null
+type PreviewFetchResponse = string | Blob | Record<string, unknown>
+
 function errorResponse(status: number, message: string): ApiResponse<never> {
   return { ok: false, status, message }
 }
@@ -53,9 +56,7 @@ export class ThingFileAttachmentService {
 
   async list(thingId: string, params: ThingFileAttachmentListParams = {}) {
     const url = this.withQuery(this.baseAttachmentRoute(thingId), params)
-    const res = (await apiMethods.paginatedFetch(url)) as ApiResponse<
-      ThingFileAttachment[]
-    >
+    const res = await apiMethods.paginatedFetch<ThingFileAttachment[]>(url)
     if (!res.ok) return res
     return {
       ...res,
@@ -82,10 +83,10 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = (await apiMethods.post(
+    const res = await apiMethods.post<ThingFileAttachment>(
       this.baseAttachmentRoute(thingId),
       data
-    )) as ApiResponse<ThingFileAttachment>
+    )
     if (!res.ok) return res
     return {
       ...res,
@@ -144,10 +145,10 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = (await apiMethods.put(
+    const res = await apiMethods.put<ThingFileAttachment>(
       this.baseAttachmentRoute(thingId),
       data
-    )) as ApiResponse<ThingFileAttachment>
+    )
 
     if (!res.ok) {
       return res
@@ -184,7 +185,10 @@ export class ThingFileAttachmentService {
   async delete(thingId: string, fileAttachmentId: string | number) {
     const attachment = await this.findAttachment(thingId, fileAttachmentId)
     const name = attachment?.name ?? String(fileAttachmentId)
-    return apiMethods.delete(this.baseAttachmentRoute(thingId), { name })
+    return apiMethods.delete<NoContentResponse>(
+      this.baseAttachmentRoute(thingId),
+      { name }
+    )
   }
 
   async fetchRatingCurvePreview(
@@ -202,16 +206,23 @@ export class ThingFileAttachmentService {
     }
 
     const previewUrls = this.resolveAttachmentPreviewUrls(link)
-    let firstNonOkResponse: Extract<ApiResponse<unknown>, { ok: false }> | null =
-      null
-    let fallbackOkResponse: Extract<ApiResponse<unknown>, { ok: true }> | null =
-      null
+    let firstNonOkResponse: Extract<
+      ApiResponse<PreviewFetchResponse>,
+      { ok: false }
+    > | null = null
+    let fallbackOkResponse: Extract<
+      ApiResponse<PreviewFetchResponse>,
+      { ok: true }
+    > | null = null
     let fallbackRows: RatingCurvePreviewRow[] = []
     let onlyHtmlLikePayloads = true
 
     for (const previewUrl of previewUrls) {
       try {
-        const candidate = await apiMethods.fetch(previewUrl, fetchOptions)
+        const candidate = await apiMethods.fetch<PreviewFetchResponse>(
+          previewUrl,
+          fetchOptions
+        )
         if (!candidate.ok) {
           firstNonOkResponse ??= candidate
           continue
@@ -276,7 +287,10 @@ export class ThingFileAttachmentService {
 
     for (const candidateUrl of this.resolveAttachmentPreviewUrls(followupUrl)) {
       try {
-        const followedResponse = await apiMethods.fetch(candidateUrl, fetchOptions)
+        const followedResponse = await apiMethods.fetch<PreviewFetchResponse>(
+          candidateUrl,
+          fetchOptions
+        )
         if (followedResponse.ok) {
           csvText = await normalizeCsvText(followedResponse.data)
           if (csvText.trim()) break
@@ -303,7 +317,7 @@ export class ThingFileAttachmentService {
   }
 
   private async fetchAttachmentBlob(link: string) {
-    const response = await apiMethods.fetch(link, {
+    const response = await apiMethods.fetch<Blob>(link, {
       headers: {
         Accept: 'text/csv, text/plain, application/octet-stream',
       },

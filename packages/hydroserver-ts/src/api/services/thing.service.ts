@@ -10,13 +10,15 @@ import {
   ThingSiteSummary,
   ThingTaskSummary,
   Tag,
-  FileAttachment,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
 
 type TagPostBody = Data.components['schemas']['TagPostBody']
 type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
+type TagResponse = Data.components['schemas']['TagGetResponse']
+type FileAttachmentResponse =
+  Data.components['schemas']['FileAttachmentGetResponse']
 
 export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   static route = C.route
@@ -66,17 +68,17 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
 
   createTag(thingId: string, tag: TagPostBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.post(url, tag)
+    return apiMethods.post<TagResponse>(url, tag)
   }
 
   updateTag(thingId: string, tag: TagPostBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.put(url, tag)
+    return apiMethods.put<TagResponse>(url, tag)
   }
 
   deleteTag(thingId: string, tag: TagDeleteBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.delete(url, tag)
+    return apiMethods.delete<null>(url, tag)
   }
 
   /* ----------------- Sub-resources: File Attachments ----------------- */
@@ -86,33 +88,33 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
 
   async uploadAttachments(thingId: string, data: FormData) {
     const url = `${this._route}/${thingId}/file-attachments`
-    const res = await apiMethods.post(url, data)
+    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
     if (!res.ok) return res
     return {
       ...res,
       data: normalizeAttachmentCollection(
-        res.data as { link?: string }[],
+        res.data,
         this._client.host
       ),
-    } as ApiResponse<FileAttachment>
+    } as ApiResponse<FileAttachmentResponse>
   }
 
   async getAttachments(thingId: string) {
     const url = `${this._route}/${thingId}/file-attachments`
-    const res = await apiMethods.paginatedFetch(url)
+    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
     if (!res.ok) return res
     return {
       ...res,
       data: normalizeAttachmentCollection(
-        res.data as { link?: string }[],
+        res.data,
         this._client.host
       ),
-    } as ApiResponse<FileAttachment[]>
+    } as ApiResponse<FileAttachmentResponse[]>
   }
 
   deleteAttachment(thingId: string, name: string) {
     const url = `${this._route}/${thingId}/file-attachments`
-    return apiMethods.delete(url, { name })
+    return apiMethods.delete<null>(url, { name })
   }
 
   /* --------------- Sub-resources: HydroShare Archive ----------------- */
@@ -137,28 +139,28 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
 
   deleteHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive`
-    return apiMethods.delete(url)
+    return apiMethods.delete<null>(url)
   }
 
   triggerHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive/trigger`
-    return apiMethods.post(url, {})
+    return apiMethods.post<string>(url, {})
   }
 
   /* ---------------------- Ownership management ----------------------- */
 
   removeOwner(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, removeOwner: true })
+    return apiMethods.patch<Thing>(url, { email, removeOwner: true })
   }
 
   addSecondaryOwner(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, makeOwner: true })
+    return apiMethods.patch<Thing>(url, { email, makeOwner: true })
   }
 
   transferPrimaryOwnership(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, transferPrimary: true })
+    return apiMethods.patch<Thing>(url, { email, transferPrimary: true })
   }
 }

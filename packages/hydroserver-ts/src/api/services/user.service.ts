@@ -4,12 +4,15 @@ import { type HydroServer } from '../HydroServer'
 import type * as Data from '../../generated/data.types'
 import { User } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
+import type { Provider } from './session.service'
 
 type Permission = Data.components['schemas']['PermissionDetailResponse']
 type PermissionAction =
   Data.components['schemas']['PermissionDetailResponse']['action']
 type PermissionResource =
   Data.components['schemas']['PermissionDetailResponse']['resource']
+type NoContentResponse = null
+type MessageResponse = string
 
 export class UserService {
   private readonly _client: HydroServer
@@ -40,17 +43,20 @@ export class UserService {
     return res.ok ? res.data : null
   }
 
-  delete = async () => apiMethods.delete(this.accountBase)
+  delete = async () => apiMethods.delete<NoContentResponse>(this.accountBase)
 
   /* ---------------------------- Email verification --------------------------- */
   async sendVerificationEmail(email: string) {
-    return apiMethods.put(`${this.accountBase}/email/verify`, { email })
+    return apiMethods.put<MessageResponse>(`${this.accountBase}/email/verify`, {
+      email,
+    })
   }
 
   async verifyEmailWithCode(key: string) {
-    const res = await apiMethods.post(`${this.accountBase}/email/verify`, {
-      key,
-    })
+    const res = await apiMethods.post<MessageResponse>(
+      `${this.accountBase}/email/verify`,
+      { key }
+    )
     this._client.session._setSession(res)
     return res
   }
@@ -58,12 +64,12 @@ export class UserService {
   /* ---------------------------- Password helpers --------------------------- */
   requestPasswordReset(email: string) {
     const url = `${this.accountBase}/password/request`
-    return apiMethods.post(url, { email })
+    return apiMethods.post<MessageResponse>(url, { email })
   }
 
   resetPassword(key: string, password: string) {
     const url = `${this.accountBase}/password/reset`
-    return apiMethods.post(url, { key, password })
+    return apiMethods.post<MessageResponse>(url, { key, password })
   }
 
   /* ----------------------- Organization/User types ------------------------- */
@@ -80,17 +86,17 @@ export class UserService {
   /* ------------------------------ Providers -------------------------------- */
   listProviderConnections() {
     const url = `${this.providerBase}/connections`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Provider[]>(url)
   }
 
   disconnectProvider(provider: string) {
     const url = toUrl(`${this.providerBase}/connections`, { provider })
-    return apiMethods.delete(url)
+    return apiMethods.delete<Provider[]>(url)
   }
 
   redirectToProvider(provider: string, next?: string) {
     const url = toUrl(`${this.providerBase}/redirect`, { provider, next })
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<NoContentResponse>(url)
   }
 
   async can(

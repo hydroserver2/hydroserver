@@ -67,6 +67,6 @@ export class MonitoringTaskService extends HydroServerBaseService<typeof C, M> {
   }
 
   deleteRule(taskId: string, ruleId: string) {
-    return apiMethods.delete(`${this._route}/${taskId}/rules/${ruleId}`)
+    return apiMethods.delete<null>(`${this._route}/${taskId}/rules/${ruleId}`)
   }
 }
