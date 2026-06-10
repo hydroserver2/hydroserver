@@ -7,11 +7,8 @@ from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet, Q, Value, Max, Func, F
-from django.db.models import OuterRef, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models import QuerySet, Q, Max, Func, F
 from django.db.utils import IntegrityError
-from django.contrib.postgres.aggregates import ArrayAgg
 from core.iam.models import APIKey
 from core.sta.models import Observation, ResultQualifier
 from interfaces.api.schemas.sta.observation import (
@@ -102,13 +99,15 @@ class ObservationService(ServiceUtils):
             )
             queryset = queryset.filter(datastream=datastream)
 
-        for field in [
-            "phenomenon_time__lte",
-            "phenomenon_time__gte",
-            "result_qualifiers__code",
-        ]:
+        for field in ["phenomenon_time__lte", "phenomenon_time__gte"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if filtering.get("result_qualifier_codes"):
+            code_filter = Q()
+            for code in filtering["result_qualifier_codes"]:
+                code_filter |= Q(result_qualifiers__contains=[code])
+            queryset = queryset.filter(code_filter)
 
         queryset = queryset.visible(principal=principal)
 
@@ -126,25 +125,8 @@ class ObservationService(ServiceUtils):
             uuid.UUID(checksum_result["max_id"]) if checksum_result["max_id"] else None
         )
 
-        result_qualifier_subquery = (
-            Observation.result_qualifiers.through.objects.filter(
-                **{"observation": OuterRef("pk")}
-            )
-            .values("observation")
-            .annotate(
-                codes=ArrayAgg(
-                    f"resultqualifier__code",
-                    distinct=True,
-                    filter=~Q(**{"resultqualifier__code": None}),
-                )
-            )
-            .values("codes")[:1]
-        )
-
         queryset = queryset.annotate(
-            result_qualifier_codes=Coalesce(
-                Subquery(result_qualifier_subquery), Value([])
-            )
+            result_qualifier_codes=F("result_qualifiers")
         )
 
         if not order_by:
@@ -335,35 +317,23 @@ class ObservationService(ServiceUtils):
             result_qualifier_code_set = {
                 code for row in data.data for code in row[idx_result_qualifier_codes]
             }
-            result_qualifiers = (
+            valid_codes = set(
                 ResultQualifier.objects.filter(
                     Q(workspace_id=datastream.thing.workspace_id)
                     | Q(workspace__isnull=True)
                 )
                 .filter(code__in=result_qualifier_code_set)
                 .visible(principal=principal)
-                .values("id", "code", "workspace_id")
+                .values_list("code", flat=True)
             )
-            result_qualifier_map = {
-                row["code"]: row["id"]
-                for row in sorted(
-                    result_qualifiers, key=lambda r: r["workspace_id"] is not None
-                )
-            }
-            invalid_codes = result_qualifier_code_set - result_qualifier_map.keys()
+            invalid_codes = result_qualifier_code_set - valid_codes
             if invalid_codes:
                 raise HttpError(
                     400,
                     f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
                 )
-            result_qualifier_records = [
-                (obs.id, result_qualifier_map[code])
-                for obs, row in zip(observation_records, data.data)
-                for code in row[idx_result_qualifier_codes]
-                if code in result_qualifier_map
-            ]
-        else:
-            result_qualifier_records = None
+            for obs, row in zip(observation_records, data.data):
+                obs.result_qualifiers = row[idx_result_qualifier_codes]
 
         if mode == "append" and datastream.phenomenon_end_time:
             if (
@@ -399,9 +369,7 @@ class ObservationService(ServiceUtils):
             )
 
         try:
-            Observation.objects.bulk_copy(
-                observation_records, result_qualifiers=result_qualifier_records
-            )
+            Observation.objects.bulk_copy(observation_records)
         except (
             IntegrityError,
             UniqueViolation,
