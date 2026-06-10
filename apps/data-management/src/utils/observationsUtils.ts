@@ -51,6 +51,21 @@ export const fetchObservations = async (
   return toObservationRows(res.data as Record<string, unknown>)
 }
 
+export const fetchRecentObservationsPage = async (
+  datastream: Datastream,
+  pageSize = 200
+) => {
+  const res = await hs.datastreams.getObservations(datastream.id, {
+    page: 1,
+    order_by: ['-phenomenonTime'],
+    page_size: pageSize,
+    format: 'column',
+  })
+
+  if (!res.ok || !res.data || typeof res.data !== 'object') return []
+  return toObservationRows(res.data as Record<string, unknown>).reverse()
+}
+
 function toDataPointArray(dataArray: DataArray | ObservationArray) {
   return (dataArray as ObservationArray).map(([dateValue, value]) => ({
     date: new Date(dateValue),

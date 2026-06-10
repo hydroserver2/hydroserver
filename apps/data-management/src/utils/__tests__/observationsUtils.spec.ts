@@ -34,6 +34,7 @@ import {
   addNaNForGaps,
   convertTimeSpacingToMilliseconds,
   fetchObservations,
+  fetchRecentObservationsPage,
   preProcessData,
   replaceNoDataValues,
   subtractHours,
@@ -154,6 +155,53 @@ describe('fetchObservations', () => {
       data: { phenomenonTime: 'bad', result: [] },
     })
     expect(await fetchObservations(createDatastream())).toEqual([])
+  })
+})
+
+describe('fetchRecentObservationsPage', () => {
+  it('fetches the first newest-first page and returns chronological rows', async () => {
+    getObservationsMock.mockResolvedValue({
+      ok: true,
+      data: {
+        phenomenonTime: [
+          '2023-01-01T02:00:00Z',
+          '2023-01-01T01:00:00Z',
+          '2023-01-01T00:00:00Z',
+        ],
+        result: [3, 2, 1],
+      },
+    })
+
+    const data = await fetchRecentObservationsPage(createDatastream())
+
+    expect(data).toEqual([
+      ['2023-01-01T00:00:00Z', 1],
+      ['2023-01-01T01:00:00Z', 2],
+      ['2023-01-01T02:00:00Z', 3],
+    ])
+    expect(getObservationsMock).toHaveBeenCalledWith('123', {
+      page: 1,
+      order_by: ['-phenomenonTime'],
+      page_size: 200,
+      format: 'column',
+    })
+  })
+
+  it('allows overriding the page size', async () => {
+    getObservationsMock.mockResolvedValue({
+      ok: true,
+      data: {
+        phenomenon_time: ['2023-01-01T00:00:00Z'],
+        result: [1],
+      },
+    })
+
+    await fetchRecentObservationsPage(createDatastream(), 25)
+
+    expect(getObservationsMock).toHaveBeenCalledWith(
+      '123',
+      expect.objectContaining({ page_size: 25 })
+    )
   })
 })
 
