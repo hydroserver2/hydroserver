@@ -59,7 +59,7 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
         toRef(props, 'workspaceId')
       )
     : useSystemTableLogic(
-        () => hs.units.listAllItems(),
+        () => hs.units.listAllItems({ workspace_id: ['null'] }),
         (id: string) => hs.units.delete(id),
         Unit
       )
