@@ -43,20 +43,26 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         task: Union[uuid.UUID, EtlTask],
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | APIKey | None | Unset = Unset,
+        expand_related: Optional[bool] = None,
     ) -> EtlTask:
         """Get an ETL task with related data and the latest run annotations."""
 
         task = super().get(task=task, action=action, principal=principal)
 
-        if isinstance(task.pk, uuid.UUID):
-            task = (
-                self.annotate_latest_run(self.task_model.objects)
-                .select_related("data_connection__workspace", "periodic_task__crontab", "periodic_task__interval")
-                .prefetch_related("etl_mappings")
-                .get(pk=task.pk)
+        queryset = (
+            self.annotate_latest_run(self.task_model.objects)
+            .select_related("data_connection", "periodic_task__crontab", "periodic_task__interval")
+        )
+
+        if expand_related:
+            queryset = queryset.select_related(
+                "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related(
+                "etl_mappings", "etl_mappings__target_datastream", "etl_mappings__target_datastream__datastream_tags",
+                "etl_mappings__target_datastream__datastream_file_attachments"
             )
 
-        return task
+        return queryset.get(pk=task.pk)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
@@ -73,6 +79,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         latest_run_started_at_max: datetime | Unset = Unset,
         latest_run_finished_at_min: datetime | Unset = Unset,
         latest_run_finished_at_max: datetime | Unset = Unset,
+        expand_related: Optional[bool] = None,
     ) -> tuple[int, list[EtlTask]]:
         """
         Return a collection of ETL tasks.
@@ -122,16 +129,28 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             raise ValueError(f"Invalid order_by field(s): {order_by}")
 
         queryset = queryset.order_by(*order_by, "-id")
-        queryset = queryset.select_related(
-            "periodic_task__crontab", "periodic_task__interval"
-        ).prefetch_related("etl_mappings")
+
+        if expand_related:
+            queryset = queryset.select_related(
+                "data_connection__workspace", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related(
+                "etl_mappings", "etl_mappings__target_datastream", "etl_mappings__target_datastream__datastream_tags",
+                "etl_mappings__target_datastream__datastream_file_attachments"
+            )
+        else:
+            queryset = queryset.select_related(
+                "data_connection", "periodic_task__crontab", "periodic_task__interval"
+            )
+
         queryset = queryset.visible(principal=principal).distinct()  # noqa
 
         count = queryset.count()
         offset = (page - 1) * page_size
 
         tasks = self.attach_latest_runs(list(queryset[offset:offset + page_size]))
-        self._attach_data_connections(tasks)
+
+        if expand_related:
+            self._attach_data_connections(tasks)
 
         return count, tasks
 

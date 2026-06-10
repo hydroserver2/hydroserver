@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from ninja import Router, Path, Query
 from django.http import HttpResponse
@@ -11,7 +12,8 @@ from processing.orchestration.models import TaskRun
 from processing.monitoring.services.task import MonitoringTaskService
 from processing.monitoring.tasks import run_monitoring_task
 from interfaces.api.schemas.monitoring.task import (
-    MonitoringTaskResponse,
+    MonitoringTaskSummaryResponse,
+    MonitoringTaskDetailResponse,
     MonitoringTaskPostBody,
     MonitoringTaskPatchBody,
     MonitoringTaskQueryParameters,
@@ -26,7 +28,7 @@ monitoring_task_service = MonitoringTaskService()
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: list[MonitoringTaskResponse],
+        200: list[MonitoringTaskSummaryResponse] | list[MonitoringTaskDetailResponse],
         401: str,
     },
     by_alias=True,
@@ -45,13 +47,15 @@ def get_monitoring_tasks(
             principal=request.principal,
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "thing", "workspace", "datastream", "rule_type"
+                "order_by", "thing", "workspace", "datastream", "rule_type",
             }),
             **({"thing": query.thing} if "thing" in query.model_fields_set else {}),
             **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
             **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
             **({"rule_type": query.rule_type} if "rule_type" in query.model_fields_set else {}),
         )
+
+    schema = MonitoringTaskDetailResponse if query.expand_related else MonitoringTaskSummaryResponse
 
     apply_response_pagination_headers(
         response=response,
@@ -60,14 +64,14 @@ def get_monitoring_tasks(
         page_size=query.page_size,
     )
 
-    return 200, tasks
+    return 200, [schema.model_validate(task) for task in tasks]
 
 
 @monitoring_task_router.post(
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        201: MonitoringTaskResponse,
+        201: MonitoringTaskSummaryResponse,
         400: str,
         401: str,
         403: str,
@@ -99,7 +103,7 @@ def create_monitoring_task(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: MonitoringTaskResponse,
+        200: MonitoringTaskSummaryResponse | MonitoringTaskDetailResponse,
         401: str,
         403: str,
         404: str,
@@ -109,6 +113,7 @@ def create_monitoring_task(
 def get_monitoring_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
+    expand_related: Optional[bool] = None,
 ):
     """
     Get a monitoring task.
@@ -118,16 +123,19 @@ def get_monitoring_task(
         task = monitoring_task_service.get(
             task=task_id,
             principal=request.principal,
+            expand_related=expand_related,
         )
 
-    return 200, task
+    schema = MonitoringTaskDetailResponse if expand_related else MonitoringTaskSummaryResponse
+
+    return 200, schema.model_validate(task)
 
 
 @monitoring_task_router.patch(
     "/{task_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: MonitoringTaskResponse,
+        200: MonitoringTaskSummaryResponse,
         400: str,
         401: str,
         403: str,

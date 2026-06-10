@@ -27,7 +27,7 @@ class DataProductTransformationService:
         raise TypeError(f"Type {type(obj)} not serializable")
 
     def _route(self, task_id: Union[UUID, str], type_slug: str) -> str:
-        return f"/{self.client.base_route}/products/tasks/{str(task_id)}/transformations/{type_slug}"
+        return f"/{self.client.base_route}/products/tasks/{normalize_uuid(task_id)}/transformations/{type_slug}"
 
     def _post(self, task_id, type_slug, body) -> dict:
         return self.client.request(

@@ -45,7 +45,21 @@ export function useSimpleTaskDetails(
 ) {
   const route = useRoute()
   const service = serviceForKind(kind)
-  const task = ref<any>(props.initialTask ?? null)
+  const isDetailedTask = (candidate: any) => {
+    if (!candidate) return false
+    if (kind === 'etl') {
+      return !!candidate.dataConnection && Array.isArray(candidate.mappings)
+    }
+    if (kind === 'dataProduct') {
+      return (
+        !!candidate.thing && Array.isArray(candidate.ratingCurveTransformations)
+      )
+    }
+    return !!candidate.thing && Array.isArray(candidate.monitoredDatastreams)
+  }
+  const task = ref<any>(
+    isDetailedTask(props.initialTask) ? props.initialTask : null
+  )
   const runs = ref<TaskRun[]>([])
   const loading = ref(false)
   const loadingRuns = ref(false)
@@ -323,9 +337,7 @@ export function useSimpleTaskDetails(
   }
 
   onMounted(async () => {
-    // ETL tasks always need the full load for mappings data not present in list items.
-    // Other kinds skip load when initialTask is already provided (fully expanded data).
-    if (!task.value || kind === 'etl') await load()
+    await load()
     await fetchRuns()
   })
 

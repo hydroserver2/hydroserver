@@ -1,6 +1,7 @@
 import uuid6
 
 from django.db import models
+from django.utils import timezone
 
 from .task import Task
 
@@ -17,7 +18,7 @@ class TaskRun(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="runs")
     status = models.CharField(max_length=10, choices=TaskRunStatus)
     message = models.TextField(null=True, blank=True)
-    started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(default=timezone.now)
     finished_at = models.DateTimeField(null=True, blank=True)
     result = models.JSONField(blank=True, null=True)
 

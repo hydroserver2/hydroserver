@@ -51,6 +51,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         task: Union[uuid.UUID, MonitoringTask],
         action: Literal["view", "edit", "delete"] = "view",
         principal: User | APIKey | None | Unset = Unset,
+        expand_related: Optional[bool] = None,
     ) -> MonitoringTask:
         """
         Get a monitoring task.
@@ -58,15 +59,20 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         task = super().get(task=task, action=action, principal=principal)
 
-        if isinstance(task.pk, uuid.UUID):
-            task = (
-                self.annotate_latest_run(self.task_model.objects)
-                .select_related("thing__workspace", "periodic_task__crontab", "periodic_task__interval")
-                .prefetch_related("rules__datastream", "recipients")
-                .get(pk=task.pk)
-            )
+        queryset = (
+            self.annotate_latest_run(self.task_model.objects)
+            .select_related("thing", "periodic_task__crontab", "periodic_task__interval")
+        )
 
-        return task
+        if expand_related:
+            queryset = queryset.select_related("thing__workspace").prefetch_related(
+                "rules__datastream", "rules__datastream__datastream_tags",
+                "rules__datastream__datastream_file_attachments", "recipients"
+            )
+        else:
+            queryset = queryset.prefetch_related("rules", "recipients")
+
+        return queryset.get(pk=task.pk)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
@@ -81,6 +87,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         latest_run_status: list[str] | Unset = Unset,
         datastream: list[uuid.UUID] | Unset = Unset,
         rule_type: list[str] | Unset = Unset,
+        expand_related: Optional[bool] = None,
     ) -> tuple[int, list[MonitoringTask]]:
         """
         Return a collection of monitoring tasks.
@@ -116,9 +123,19 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             raise ValueError(f"Invalid order_by field(s): {order_by}")
 
         queryset = queryset.order_by(*order_by, "-id")
-        queryset = queryset.select_related(
-            "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
-        ).prefetch_related("rules__datastream", "recipients")
+
+        if expand_related:
+            queryset = (queryset.select_related(
+                "thing", "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related(
+                "rules__datastream", "rules__datastream__datastream_tags",
+                "rules__datastream__datastream_file_attachments", "recipients"
+            ))
+        else:
+            queryset = queryset.select_related(
+                "thing", "periodic_task__crontab", "periodic_task__interval"
+            ).prefetch_related("rules", "recipients")
+
         queryset = queryset.visible(principal=principal).distinct()  # noqa
 
         count = queryset.count()

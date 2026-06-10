@@ -4,7 +4,8 @@ from interfaces.api.schemas.products.rating_curve import (
     RatingCurveQueryParameters,
 )
 from interfaces.api.schemas.products.task import (
-    DataProductTaskResponse,
+    DataProductTaskSummaryResponse,
+    DataProductTaskDetailResponse,
     DataProductTaskPostBody,
     DataProductTaskPatchBody,
     DataProductTaskQueryParameters,

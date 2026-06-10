@@ -2155,6 +2155,42 @@ export interface components {
             /** Timezonetype */
             timezoneType?: ("offset" | "iana") | null;
         };
+        /** AggregationTransformationSummaryResponse */
+        AggregationTransformationSummaryResponse: {
+            /**
+             * Aggregationmethod
+             * @enum {string}
+             */
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /** Minvalues */
+            minValues?: number | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
+            /** Timezone */
+            timezone?: string | null;
+            /** Timezonetype */
+            timezoneType?: ("offset" | "iana") | null;
+        };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
             /** Datastartrow */
@@ -2315,6 +2351,34 @@ export interface components {
              */
             outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
         };
+        /** CompositeExpressionTransformationSummaryResponse */
+        CompositeExpressionTransformationSummaryResponse: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inputdatastreamids */
+            inputDatastreamIds: string[];
+            /** Maxgapinterval */
+            maxGapInterval?: number | null;
+            /** Maxgapintervalunits */
+            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Outputinterval */
+            outputInterval: number;
+            /**
+             * Outputintervalunits
+             * @enum {string}
+             */
+            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
+        };
         /**
          * DataConnectionOrderBy
          * @enum {string}
@@ -2446,6 +2510,29 @@ export interface components {
             timezoneType?: ("offset" | "iana") | null;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
         };
+        /** DataProductTaskDetailResponse */
+        DataProductTaskDetailResponse: {
+            /** Aggregationtransformations */
+            aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
+            /** Compositeexpressiontransformations */
+            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationResponse"][];
+            /** Description */
+            description?: string | null;
+            /** Expressiontransformations */
+            expressionTransformations: components["schemas"]["ExpressionTransformationResponse"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Name */
+            name: string;
+            /** Ratingcurvetransformations */
+            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationResponse"][];
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            thing: components["schemas"]["ThingSummaryResponse"];
+        };
         /**
          * DataProductTaskOrderBy
          * @enum {string}
@@ -2480,6 +2567,8 @@ export interface components {
         };
         /** DataProductTaskQueryParameters */
         DataProductTaskQueryParameters: {
+            /** Expand Related */
+            expand_related?: boolean | null;
             /**
              * Input Datastream Id
              * @description Filter data product tasks by input datastream ID.
@@ -2541,16 +2630,16 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** DataProductTaskResponse */
-        DataProductTaskResponse: {
+        /** DataProductTaskSummaryResponse */
+        DataProductTaskSummaryResponse: {
             /** Aggregationtransformations */
-            aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
+            aggregationTransformations: components["schemas"]["AggregationTransformationSummaryResponse"][];
             /** Compositeexpressiontransformations */
-            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationResponse"][];
+            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationSummaryResponse"][];
             /** Description */
             description?: string | null;
             /** Expressiontransformations */
-            expressionTransformations: components["schemas"]["ExpressionTransformationResponse"][];
+            expressionTransformations: components["schemas"]["ExpressionTransformationSummaryResponse"][];
             /**
              * Id
              * Format: uuid
@@ -2560,9 +2649,18 @@ export interface components {
             /** Name */
             name: string;
             /** Ratingcurvetransformations */
-            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationResponse"][];
+            ratingCurveTransformations: components["schemas"]["RatingCurveTransformationSummaryResponse"][];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            thing: components["schemas"]["ThingSummaryResponse"];
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /**
          * DataProductTransformationOrderBy
@@ -3103,6 +3201,25 @@ export interface components {
             sourceIdentifier: string;
             targetDatastream: components["schemas"]["DatastreamSummaryResponse"];
         };
+        /** EtlTaskDetailResponse */
+        EtlTaskDetailResponse: {
+            dataConnection: components["schemas"]["DataConnectionResponse"];
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Mappings */
+            mappings: components["schemas"]["EtlDataMappingResponse"][];
+            /** Name */
+            name: string;
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /** Taskvariables */
+            taskVariables: Record<string, never>;
+        };
         /**
          * EtlTaskOrderBy
          * @enum {string}
@@ -3157,6 +3274,8 @@ export interface components {
              * @default []
              */
             data_connection_id: string[];
+            /** Expand Related */
+            expand_related?: boolean | null;
             /**
              * Latest Run Finished At Max
              * @description Filter tasks whose latest run finished on or before this datetime.
@@ -3208,9 +3327,13 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** EtlTaskResponse */
-        EtlTaskResponse: {
-            dataConnection: components["schemas"]["DataConnectionResponse"];
+        /** EtlTaskSummaryResponse */
+        EtlTaskSummaryResponse: {
+            /**
+             * Dataconnectionid
+             * Format: uuid
+             */
+            dataConnectionId: string;
             /** Description */
             description?: string | null;
             /**
@@ -3219,13 +3342,16 @@ export interface components {
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
-            /** Mappings */
-            mappings: components["schemas"]["EtlDataMappingResponse"][];
             /** Name */
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
             taskVariables: Record<string, never>;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** ExpressionTransformationPatchBody */
         ExpressionTransformationPatchBody: {
@@ -3277,6 +3403,28 @@ export interface components {
             id: string;
             inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
             outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Variablename */
+            variableName?: string | null;
+        };
+        /** ExpressionTransformationSummaryResponse */
+        ExpressionTransformationSummaryResponse: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
             /** Variablename */
             variableName?: string | null;
         };
@@ -3406,6 +3554,16 @@ export interface components {
             /** Rules */
             rules: components["schemas"]["MonitoringRuleDetailResponse"][];
         };
+        /** MonitoredDatastreamSummaryResponse */
+        MonitoredDatastreamSummaryResponse: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
+            /** Rules */
+            rules: components["schemas"]["MonitoringRuleDetailResponse"][];
+        };
         /** MonitoringRuleDetailResponse */
         MonitoringRuleDetailResponse: {
             /**
@@ -3528,6 +3686,25 @@ export interface components {
             /** Windowintervalunits */
             windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
         };
+        /** MonitoringTaskDetailResponse */
+        MonitoringTaskDetailResponse: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /** Monitoreddatastreams */
+            monitoredDatastreams: components["schemas"]["MonitoredDatastreamResponse"][];
+            /** Name */
+            name: string;
+            /** Recipients */
+            recipients: string[];
+            schedule?: components["schemas"]["ScheduleResponse"] | null;
+            thing: components["schemas"]["ThingSummaryResponse"];
+        };
         /**
          * MonitoringTaskOrderBy
          * @enum {string}
@@ -3575,6 +3752,8 @@ export interface components {
              * @default []
              */
             datastream_id: string[];
+            /** Expand Related */
+            expand_related?: boolean | null;
             /**
              * Latest Run Status
              * @description Filter monitoring tasks by their most recent run status.
@@ -3618,8 +3797,8 @@ export interface components {
              */
             workspace_id: string[];
         };
-        /** MonitoringTaskResponse */
-        MonitoringTaskResponse: {
+        /** MonitoringTaskSummaryResponse */
+        MonitoringTaskSummaryResponse: {
             /** Description */
             description?: string | null;
             /**
@@ -3629,13 +3808,22 @@ export interface components {
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
             /** Monitoreddatastreams */
-            monitoredDatastreams: components["schemas"]["MonitoredDatastreamResponse"][];
+            monitoredDatastreams: components["schemas"]["MonitoredDatastreamSummaryResponse"][];
             /** Name */
             name: string;
             /** Recipients */
             recipients: string[];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            thing: components["schemas"]["ThingSummaryResponse"];
+            /**
+             * Thingid
+             * Format: uuid
+             */
+            thingId: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** NotificationPatchBody */
         NotificationPatchBody: {
@@ -4248,6 +4436,29 @@ export interface components {
             inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
             outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
             ratingCurve: components["schemas"]["RatingCurveSummaryResponse"];
+        };
+        /** RatingCurveTransformationSummaryResponse */
+        RatingCurveTransformationSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Inputdatastreamid
+             * Format: uuid
+             */
+            inputDatastreamId: string;
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /**
+             * Ratingcurveid
+             * Format: uuid
+             */
+            ratingCurveId: string;
         };
         /** ResultQualifierDetailResponse */
         ResultQualifierDetailResponse: {
@@ -6931,6 +7142,7 @@ export interface operations {
                 latest_run_finished_at_min?: string | null;
                 /** @description Filter tasks whose latest run finished on or before this datetime. */
                 latest_run_finished_at_max?: string | null;
+                expand_related?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -6944,7 +7156,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskResponse"][];
+                    "application/json": components["schemas"]["EtlTaskSummaryResponse"][] | components["schemas"]["EtlTaskDetailResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -6977,7 +7189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskResponse"];
+                    "application/json": components["schemas"]["EtlTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7029,7 +7241,9 @@ export interface operations {
     };
     interfaces_api_views_etl_task_get_etl_task: {
         parameters: {
-            query?: never;
+            query?: {
+                expand_related?: boolean | null;
+            };
             header?: never;
             path: {
                 task_id: string;
@@ -7044,7 +7258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskResponse"];
+                    "application/json": components["schemas"]["EtlTaskSummaryResponse"] | components["schemas"]["EtlTaskDetailResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -7144,7 +7358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EtlTaskResponse"];
+                    "application/json": components["schemas"]["EtlTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7378,6 +7592,7 @@ export interface operations {
                 datastream_id?: string[];
                 /** @description Filter monitoring tasks by rule type. */
                 rule_type?: string[];
+                expand_related?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7391,7 +7606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskResponse"][];
+                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"][] | components["schemas"]["MonitoringTaskDetailResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -7424,7 +7639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskResponse"];
+                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7476,7 +7691,9 @@ export interface operations {
     };
     interfaces_api_views_monitoring_task_get_monitoring_task: {
         parameters: {
-            query?: never;
+            query?: {
+                expand_related?: boolean | null;
+            };
             header?: never;
             path: {
                 task_id: string;
@@ -7491,7 +7708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskResponse"];
+                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"] | components["schemas"]["MonitoringTaskDetailResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -7591,7 +7808,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonitoringTaskResponse"];
+                    "application/json": components["schemas"]["MonitoringTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -8951,6 +9168,7 @@ export interface operations {
                 input_datastream_id?: string[];
                 /** @description Filter data product tasks by rating curve ID. */
                 rating_curve_id?: string[];
+                expand_related?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -8964,7 +9182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataProductTaskResponse"][];
+                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"][] | components["schemas"]["DataProductTaskDetailResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -8997,7 +9215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9049,7 +9267,9 @@ export interface operations {
     };
     interfaces_api_views_products_task_get_data_product_task: {
         parameters: {
-            query?: never;
+            query?: {
+                expand_related?: boolean | null;
+            };
             header?: never;
             path: {
                 task_id: string;
@@ -9064,7 +9284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"] | components["schemas"]["DataProductTaskDetailResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -9164,7 +9384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DataProductTaskResponse"];
+                    "application/json": components["schemas"]["DataProductTaskSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9358,7 +9578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AggregationTransformationResponse"][];
+                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -9411,7 +9631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9479,7 +9699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -9581,7 +9801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AggregationTransformationResponse"];
+                    "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9659,7 +9879,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"][];
+                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -9712,7 +9932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9780,7 +10000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -9882,7 +10102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -9960,7 +10180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationResponse"][];
+                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -10013,7 +10233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -10081,7 +10301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -10183,7 +10403,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationResponse"];
+                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -10261,7 +10481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationResponse"][];
+                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -10314,7 +10534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -10382,7 +10602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -10484,7 +10704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RatingCurveTransformationResponse"];
+                    "application/json": components["schemas"]["RatingCurveTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */

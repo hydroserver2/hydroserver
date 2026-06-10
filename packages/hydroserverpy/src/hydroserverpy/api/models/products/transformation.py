@@ -7,41 +7,19 @@ AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
 
 
-class DatastreamSummary(BaseModel):
-    id: uuid.UUID
-    name: str
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
-class RatingCurveSummary(BaseModel):
-    id: uuid.UUID
-    name: str
-    fitting_method: Literal["linear", "power_law"]
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
-class TransformationInput(BaseModel):
-    datastream: DatastreamSummary
-    variable_name: Optional[str] = None
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
 class RatingCurveTransformation(BaseModel):
     id: uuid.UUID
-    output_datastream: DatastreamSummary
-    input_datastream: DatastreamSummary
-    rating_curve: RatingCurveSummary
+    output_datastream_id: uuid.UUID
+    input_datastream_id: uuid.UUID
+    rating_curve_id: uuid.UUID
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class ExpressionTransformation(BaseModel):
     id: uuid.UUID
-    output_datastream: DatastreamSummary
-    input_datastream: DatastreamSummary
+    output_datastream_id: uuid.UUID
+    input_datastream_id: uuid.UUID
     variable_name: Optional[str] = None
     formula: str
 
@@ -50,8 +28,8 @@ class ExpressionTransformation(BaseModel):
 
 class CompositeExpressionTransformation(BaseModel):
     id: uuid.UUID
-    output_datastream: DatastreamSummary
-    input_datastreams: List[TransformationInput]
+    output_datastream_id: uuid.UUID
+    input_datastream_ids: List[uuid.UUID]
     formula: str
     output_interval_units: Period
     output_interval: int
@@ -63,8 +41,8 @@ class CompositeExpressionTransformation(BaseModel):
 
 class AggregationTransformation(BaseModel):
     id: uuid.UUID
-    output_datastream: DatastreamSummary
-    input_datastream: DatastreamSummary
+    output_datastream_id: uuid.UUID
+    input_datastream_id: uuid.UUID
     aggregation_method: AggregationMethod
     output_interval_units: Period
     output_interval: int

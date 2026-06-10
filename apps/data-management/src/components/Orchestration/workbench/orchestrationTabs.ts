@@ -3,13 +3,8 @@ import {
   mdiDatabaseArrowDownOutline,
   mdiShieldCheckOutline,
 } from '@mdi/js'
-import type {
-  DataProductTaskExpanded,
-  MonitoringTaskExpanded,
-  TaskExpanded,
-  TaskRun,
-  TaskSchedule,
-} from '@hydroserver/client'
+import type { TaskRun, TaskSchedule } from '@hydroserver/client'
+import type { AnyTask } from '@/types/orchestrationTasks'
 import hs from '@hydroserver/client'
 import {
   getDisplayedTaskStatus,
@@ -19,12 +14,7 @@ import {
 export type TabId = 'ingestion' | 'aggregation' | 'quality'
 export type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
 export type ActiveView = 'tasks' | 'workspaces'
-export type SortKey =
-  | 'name'
-  | 'status'
-  | 'lastRunAt'
-  | 'nextRunAt'
-  | 'taskType'
+export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt' | 'taskType'
 export type SortDir = 'asc' | 'desc'
 
 export type DataProductTaskType =
@@ -82,7 +72,7 @@ export type TaskRow = {
   monitoringRulesViolated?: number
   noWorkWarning: TaskNoWorkWarning
   userClickedRunNow: boolean
-  raw: TaskExpanded | DataProductTaskExpanded | MonitoringTaskExpanded
+  raw: AnyTask
 }
 
 export type TabDefinition = {

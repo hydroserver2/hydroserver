@@ -217,12 +217,12 @@ import hs, {
   type MonitoringTask,
   PermissionAction,
   PermissionResource,
-  type TaskExpanded,
   type ThingTaskSummary,
 } from '@hydroserver/client'
 
 import router from '@/router/router'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import type { Task } from '@/types/orchestrationTasks'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useOrchestrationData } from '@/composables/orchestration/useOrchestrationData'
@@ -460,7 +460,8 @@ const issueCountForConnectionSummary = (dcId: string) =>
   connectionsById.value.get(dcId)?.taskAttentionCount ?? 0
 
 const loadedGroupMatches = (tab: TabId, groupId: string) =>
-  loadedTaskGroup.value?.tab === tab && loadedTaskGroup.value.groupId === groupId
+  loadedTaskGroup.value?.tab === tab &&
+  loadedTaskGroup.value.groupId === groupId
 
 const selectedConnectionRows = (dcId: string) =>
   etlTaskRows.value.filter((t) => t.dataConnectionId === dcId)
@@ -642,10 +643,11 @@ const selectSidebarFromTaskDetails = () => {
   const task = selectedTask.value as any
   if (!hasTaskDetails.value || !task) return false
   if (selectedTaskKind.value === 'etl') {
-    selectedConnectionId.value = task.dataConnection?.id ?? null
+    selectedConnectionId.value =
+      task.dataConnection?.id ?? task.dataConnectionId ?? null
     return !!selectedConnectionId.value
   }
-  selectedThingId.value = task.thing?.id ?? null
+  selectedThingId.value = task.thing?.id ?? task.thingId ?? null
   return !!selectedThingId.value
 }
 
@@ -859,7 +861,7 @@ const onDataConnectionCreated = async () => {
   await refreshDataConnections()
 }
 
-const onTaskCreated = async (_createdTask?: TaskExpanded) => {
+const onTaskCreated = async (_createdTask?: Task) => {
   closeCreateTaskDialog()
   await fetchAll()
   await autoSelectSidebarAndSync()

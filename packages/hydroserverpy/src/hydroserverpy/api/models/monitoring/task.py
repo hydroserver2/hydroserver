@@ -24,18 +24,16 @@ class MonitoringRuleInline(BaseModel):
 
 
 class MonitoredDatastream(BaseModel):
-    datastream_id: uuid.UUID = Field(..., validation_alias=AliasPath("datastream", "id"))
-    datastream_name: str = Field(..., validation_alias=AliasPath("datastream", "name"))
+    datastream_id: uuid.UUID
     rules: List[MonitoringRuleInline] = []
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class MonitoringTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID = Field(..., validation_alias=AliasPath("thing", "id"))
-    thing_name: str = Field(..., validation_alias=AliasPath("thing", "name"))
+    thing_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))
