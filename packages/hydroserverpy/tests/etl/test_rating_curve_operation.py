@@ -20,11 +20,12 @@ SIMPLE_CURVE_CSV = b"input,output\n0,0\n10,100\n20,200\n"
 SIMPLE_CURVE_URL = "https://example.com/curve.csv"
 
 
-def _make_op(url=SIMPLE_CURVE_URL, target_identifier="target_1"):
+def _make_op(url=SIMPLE_CURVE_URL, target_identifier="target_1", no_data_value=None):
     return RatingCurveDataOperation(
         type="rating_curve",
         rating_curve_url=url,
         target_identifier=target_identifier,
+        no_data_value=no_data_value,
     )
 
 
@@ -65,6 +66,18 @@ class TestRatingCurveDataOperationModel:
     def test_target_identifier_is_stored(self):
         op = _make_op(target_identifier="my_target")
         assert op.target_identifier == "my_target"
+
+    def test_no_data_value_defaults_to_none(self):
+        op = RatingCurveDataOperation(
+            type="rating_curve",
+            rating_curve_url=SIMPLE_CURVE_URL,
+            target_identifier="t",
+        )
+        assert op.no_data_value is None
+
+    def test_no_data_value_is_stored(self):
+        op = _make_op(no_data_value=-9999.0)
+        assert op.no_data_value == -9999.0
 
     def test_rating_curve_url_is_required(self):
         with pytest.raises(Exception):
@@ -276,15 +289,36 @@ class TestRatingCurveDataOperationApply:
             result = _make_op().apply(_make_tv_df(10.0))
         assert result["value"].iloc[0] == pytest.approx(100.0)
 
-    def test_value_below_range_is_clamped_to_left(self):
+    def test_value_below_range_without_no_data_value_is_nan(self):
         with _patch_fetch():
             result = _make_op().apply(_make_tv_df(-999.0))
-        assert result["value"].iloc[0] == pytest.approx(0.0)
+        assert np.isnan(result["value"].iloc[0])
 
-    def test_value_above_range_is_clamped_to_right(self):
+    def test_value_above_range_without_no_data_value_is_nan(self):
         with _patch_fetch():
             result = _make_op().apply(_make_tv_df(999.0))
-        assert result["value"].iloc[0] == pytest.approx(200.0)
+        assert np.isnan(result["value"].iloc[0])
+
+    def test_value_below_range_is_set_to_no_data_value(self):
+        with _patch_fetch():
+            result = _make_op(no_data_value=-9999.0).apply(_make_tv_df(-999.0))
+        assert result["value"].iloc[0] == pytest.approx(-9999.0)
+
+    def test_value_above_range_is_set_to_no_data_value(self):
+        with _patch_fetch():
+            result = _make_op(no_data_value=-9999.0).apply(_make_tv_df(999.0))
+        assert result["value"].iloc[0] == pytest.approx(-9999.0)
+
+    def test_in_range_values_are_unaffected_by_no_data_value(self):
+        with _patch_fetch():
+            result = _make_op(no_data_value=-9999.0).apply(_make_tv_df(5.0))
+        assert result["value"].iloc[0] == pytest.approx(50.0)
+
+    def test_endpoints_are_in_range(self):
+        with _patch_fetch():
+            result = _make_op(no_data_value=-9999.0).apply(_make_tv_df(0.0, 20.0))
+        assert result["value"].iloc[0] == pytest.approx(0.0)
+        assert result["value"].iloc[1] == pytest.approx(200.0)
 
     def test_nan_input_produces_nan_output(self):
         with _patch_fetch():

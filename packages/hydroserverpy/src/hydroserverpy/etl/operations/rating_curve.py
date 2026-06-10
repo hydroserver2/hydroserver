@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 from functools import lru_cache
 from io import BytesIO
+from typing import Optional
 from urllib.parse import unquote, urlparse
 from .base import DataOperation
 from ..exceptions import ETLError
@@ -144,6 +145,7 @@ def load_rating_curve(rating_curve_uri: str) -> tuple[np.ndarray, np.ndarray]:
 
 class RatingCurveDataOperation(DataOperation):
     rating_curve_url: str
+    no_data_value: Optional[float] = None
 
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -153,7 +155,10 @@ class RatingCurveDataOperation(DataOperation):
         The rating curve is loaded from the provided URL and used to map numeric
         values to output values using linear interpolation. Non-numeric values
         are coerced to NaN and remain NaN in the output. Values outside the range
-        of the rating curve are clamped to the nearest endpoint of the curve.
+        of the rating curve are set to the target datastream's no_data_value
+        rather than clamped to the nearest endpoint, so that impossible readings
+        remain explicit instead of masquerading as the curve's min or max. When
+        no no_data_value is configured, out-of-range values fall back to NaN.
         The timestamp column is passed through unchanged.
         """
 
@@ -170,14 +175,26 @@ class RatingCurveDataOperation(DataOperation):
                 series_values[finite_mask],
                 lookup_input,
                 lookup_output,
-                left=lookup_output[0],
-                right=lookup_output[-1],
             )
 
+        out_of_range_mask = finite_mask & (
+            (series_values < lookup_input[0]) | (series_values > lookup_input[-1])
+        )
+
+        out_of_range_count = int(out_of_range_mask.sum())
+        if out_of_range_count:
+            out_of_range_fill = (
+                self.no_data_value if self.no_data_value is not None else np.nan
+            )
+            transformed_values[out_of_range_mask] = out_of_range_fill
+
         logger.debug(
-            "Applied rating curve transformation for target=%r using reference=%r.",
+            "Applied rating curve transformation for target=%r using reference=%r "
+            "(%d out-of-range value(s) set to %r).",
             self.target_identifier,
             self.rating_curve_url,
+            out_of_range_count,
+            self.no_data_value if self.no_data_value is not None else "NaN",
         )
 
         result = df.copy()
