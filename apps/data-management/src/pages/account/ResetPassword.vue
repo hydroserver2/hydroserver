@@ -95,24 +95,31 @@ const confirmPassword = ref('')
 
 const onResetRequest = async () => {
   const res = await hs.user.requestPasswordReset(email.value)
-  if (res.status == 404)
-    Snackbar.warn('No account was found for the email you specified')
-  resetEmailSent.value = res.ok
+  if (!res.ok) {
+    Snackbar.error(
+      res.message ||
+        'Unable to send the password reset email. Please try again.'
+    )
+    return
+  }
+  resetEmailSent.value = true
 }
 
 const resetPassword = async () => {
   if (!valid.value) return
 
-  try {
-    await hs.user.resetPassword(
-      route.params.passwordResetKey.toString(),
-      password.value
+  const res = await hs.user.resetPassword(
+    route.params.passwordResetKey.toString(),
+    password.value
+  )
+  if (!res.ok) {
+    Snackbar.error(
+      res.message ||
+        'Unable to reset password. This reset link may have expired. Please request a new one.'
     )
-    Snackbar.success('Password has been reset')
-    await router.push({ name: 'Login' })
-  } catch (error: any) {
-    console.error('Error resetting password', error)
-    Snackbar.error(error.message)
+    return
   }
+  Snackbar.success('Your password has been reset')
+  await router.push({ name: 'Login' })
 }
 </script>
