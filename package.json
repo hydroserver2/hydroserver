@@ -50,7 +50,7 @@
     "@types/plotly.js": "^3.0.10",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.8",
-    "@vitest/web-worker": "^4.1.8",
+    "@vitest/web-worker": "^4.1.9",
     "@vue/compiler-sfc": "^3.5.35",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
