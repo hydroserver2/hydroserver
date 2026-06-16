@@ -13,6 +13,16 @@ from interfaces.api.schemas.quality.operation import QualityControlOperationResp
 
 SessionStatus = Literal["in_progress", "committed"]
 
+DELETED_USER_CONTACT = {
+    "name": "Deleted User",
+    "email": "deleted-user@hydroserver.invalid",
+    "organization_name": None,
+    "phone": None,
+    "address": None,
+    "link": None,
+    "user_type": "Unknown",
+}
+
 
 class QualityControlSessionSummaryResponse(BaseGetResponse):
     id: uuid.UUID
@@ -26,6 +36,10 @@ class QualityControlSessionSummaryResponse(BaseGetResponse):
     description: Optional[str] = None
     source_checksum: str
     managed_checksum: Optional[str] = None
+
+    @staticmethod
+    def resolve_created_by(obj):
+        return obj.created_by or DELETED_USER_CONTACT
 
 
 class QualityControlSessionDetailResponse(BaseGetResponse):
@@ -43,8 +57,21 @@ class QualityControlSessionDetailResponse(BaseGetResponse):
     dependency_ids: list[uuid.UUID]
     operations: list[QualityControlOperationResponse]
 
+    @staticmethod
+    def resolve_created_by(obj):
+        return obj.created_by or DELETED_USER_CONTACT
+
+    @staticmethod
+    def resolve_dependency_ids(obj):
+        return [dependency.dependency_id for dependency in obj.dependencies.all()]
+
+    @staticmethod
+    def resolve_operations(obj):
+        return list(obj.operations.all())
+
 
 class QualityControlSessionQueryParameters(CollectionQueryParameters):
+    expand_related: Optional[bool] = None
     status: Optional[SessionStatus] = None
     range_start: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range start.")
     range_end: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range end.")

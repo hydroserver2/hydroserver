@@ -18,6 +18,7 @@ def django_db_setup(django_db_setup, django_db_blocker):
         call_command("load_etl_test_data")
         call_command("load_products_test_data")
         call_command("load_monitoring_test_data")
+        call_command("load_quality_test_data")
 
 
 @pytest.fixture(scope="function")

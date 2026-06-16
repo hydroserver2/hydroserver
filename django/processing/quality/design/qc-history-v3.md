@@ -142,14 +142,13 @@ Three checksums are maintained:
 - **Session source checksum**: Stored on each session. Covers the source datastream over the session's phenomenon time range. Recorded at session creation and never updated.
 - **Session managed checksum**: Stored on each session. Covers the managed datastream over the session's phenomenon time range. Recorded at commit time.
 
-Integrity checks are performed:
-- When a user opens or resumes an in-progress session.
-- When a user attempts to commit a session.
-- On demand via the QC App UI.
+Integrity verification is a responsibility of the QC App (client), not the server:
 
-If the current source checksum over the session's time range differs from the stored session source checksum, the user is warned that the source data has been modified since the session was created. They must review their edits against the updated source data before committing.
+- When a user opens or resumes an in-progress session, the QC App compares the session's stored `source_checksum` against the current checksum of the source datastream over the session's time range. If they differ, the user is warned that the source data has changed since the session was created, and the QC App should refetch the source data and update its local copy of the checksum before the user continues.
+- Before pushing edited observations and committing a session, the QC App re-verifies the source checksum as above. For sessions whose range overlaps previously committed sessions, the QC App also compares the relevant portions of the history's `managed_checksum` against the current state of the managed datastream to detect modifications made outside the QC history.
+- If any discrepancy is found, the user must resolve it (e.g., by refetching source data and reapplying edits) before the QC App pushes data and calls the commit endpoint.
 
-If the current managed checksum over the session's time range differs from the stored session managed checksum (at commit time), the user is warned that the managed datastream was modified outside the QC history. The user must resolve the discrepancy before the commit can proceed.
+The commit endpoint itself performs no checksum comparisons; it only records new checksum values (`session.managed_checksum`, `history.source_checksum`, `history.managed_checksum`) for future reference.
 
 ---
 
@@ -323,15 +322,16 @@ The QC App sends the edited observations to the managed datastream via a `bulk-c
 
 **Step 2 — Commit** (QC App → `/commit`):
 
+Before calling this endpoint, the QC App is responsible for verifying checksums as described in Section 7.4. The commit endpoint performs no integrity checks of its own; it assumes the QC App has already pushed the correct observations to the managed datastream.
+
 The QC App calls the commit endpoint with no request body. The server then:
 
-1. **Integrity check — source datastream**: Fetch the current checksum of the source datastream over the session's phenomenon time range and compare it against the session's stored `source_checksum`. If they differ, return an error indicating the source data has changed since the session was created.
-2. **Integrity check — managed datastream**: Fetch the current checksum of the managed datastream over the session's phenomenon time range and compare it against the history's `managed_checksum` for that range. If they differ, return an error indicating the managed datastream was modified outside the QC history.
-3. **Update session record**: Set `status = committed`, set `committed_at` to the current datetime, and record the new `managed_checksum` over the session's phenomenon time range.
-4. **Update history record**: Extend `phenomenon_time_start` and `phenomenon_time_end` to cover the newly committed time range (if applicable) and update `source_checksum` and `managed_checksum` to cover the full committed time range.
-5. **Compute dependencies**: Query all previously committed sessions whose phenomenon time ranges overlap this session's range and create `QCSessionDependency` records.
+1. **Update session record**: Set `status = committed`, set `committed_at` to the current datetime, and record `managed_checksum` over the session's phenomenon time range.
+2. **Update history record**: Extend `phenomenon_time_start` and `phenomenon_time_end` to cover the newly committed time range (if applicable) and recompute `source_checksum` and `managed_checksum` over the full committed time range.
 
-If the commit endpoint returns an error after observations have already been pushed (Step 1), the inconsistency is self-correcting: the session remains `in_progress`, the QC App can surface the error to the user, and the user retries once the issue is resolved. The integrity checks will pass on retry as long as no further changes are made to the managed datastream between attempts.
+Session dependencies are not computed at commit time — see Section 7.2.2.
+
+If the commit endpoint returns an error after observations have already been pushed (Step 1), the inconsistency is self-correcting: the session remains `in_progress`, the QC App can surface the error to the user, and the user retries once the issue is resolved.
 
 ---
 
@@ -339,7 +339,7 @@ If the commit endpoint returns an error after observations have already been pus
 
 The HydroServer QC App retrieves and manages histories and sessions via dedicated endpoints in the HydroServer Data Management API. Other software tools may also use these endpoints.
 
-A history and its sessions are publicly accessible if both the source and managed datastreams are in public workspaces. Otherwise, access requires view permission on the managed datastream's workspace. Creating or modifying a history or session requires edit permission on the managed datastream's workspace.
+All QC history resources are private: access requires view permission on the managed datastream's workspace, regardless of whether the source or managed datastreams belong to public workspaces. Creating or modifying a history or session requires edit permission on the managed datastream's workspace.
 
 ### 10.1. QC History
 

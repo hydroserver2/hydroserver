@@ -38,12 +38,12 @@ class QualityControlOperationQueryParameters(CollectionQueryParameters):
 
 class QualityControlOperationPostBody(BasePostBody):
     operation_type: OperationType
-    order: Optional[int] = None
+    order: int
     comment: Optional[str] = None
     arguments: dict[str, Any] | list[Any] | None = None
 
 
 class QualityControlOperationPatchBody(BasePatchBody):
-    order: Optional[int] = None
+    order: int
     comment: Optional[str] = None
     arguments: dict[str, Any] | list[Any] | None = None

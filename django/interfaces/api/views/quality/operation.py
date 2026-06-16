@@ -7,6 +7,7 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from processing.quality.services.operation import QCOperationService, OperationInput
 from interfaces.api.schemas.quality.operation import (
     QualityControlOperationResponse,
     QualityControlOperationQueryParameters,
@@ -17,6 +18,7 @@ from interfaces.api.schemas.quality.operation import (
 _auth = [session_auth, bearer_auth, apikey_auth]
 
 qc_operation_router = Router(tags=["Quality Control Operations"])
+qc_operation_service = QCOperationService()
 
 
 @qc_operation_router.get(
@@ -34,7 +36,22 @@ def get_qc_operations(
 ):
     """Get all operations for a QC session in execution order."""
 
-    raise NotImplementedError
+    with raise_http_errors():
+        count, operations = qc_operation_service.get_collection(
+            history=history_id,
+            session=session_id,
+            principal=request.principal,
+            **query.model_dump(exclude_unset=True),
+        )
+
+    apply_response_pagination_headers(
+        response=response,
+        count=count,
+        page=query.page,
+        page_size=query.page_size,
+    )
+
+    return 200, operations
 
 
 @qc_operation_router.post(
@@ -51,7 +68,15 @@ def create_qc_operations(
 ):
     """Append one or more operations to an in-progress session."""
 
-    raise NotImplementedError
+    with raise_http_errors():
+        operations = qc_operation_service.create(
+            principal=request.principal,
+            history=history_id,
+            session=session_id,
+            operations=[OperationInput(**item.model_dump()) for item in data],
+        )
+
+    return 201, operations
 
 
 @qc_operation_router.get(
@@ -68,7 +93,15 @@ def get_qc_operation(
 ):
     """Get a single QC operation by ID."""
 
-    raise NotImplementedError
+    with raise_http_errors():
+        operation = qc_operation_service.get(
+            history=history_id,
+            session=session_id,
+            operation=operation_id,
+            principal=request.principal,
+        )
+
+    return 200, operation
 
 
 @qc_operation_router.patch(
@@ -86,7 +119,16 @@ def update_qc_operation(
 ):
     """Update the comment or arguments of an operation in an in-progress session."""
 
-    raise NotImplementedError
+    with raise_http_errors():
+        operation = qc_operation_service.update(
+            history=history_id,
+            session=session_id,
+            operation=operation_id,
+            principal=request.principal,
+            **data.model_dump(exclude_unset=True),
+        )
+
+    return 200, operation
 
 
 @qc_operation_router.delete(
@@ -103,4 +145,12 @@ def delete_qc_operation(
 ):
     """Delete an operation from an in-progress session."""
 
-    raise NotImplementedError
+    with raise_http_errors():
+        qc_operation_service.delete(
+            history=history_id,
+            session=session_id,
+            operation=operation_id,
+            principal=request.principal,
+        )
+
+    return 204, None

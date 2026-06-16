@@ -2,15 +2,16 @@ import uuid
 import math
 import hashlib
 from typing import Optional, Literal, get_args
+from datetime import datetime
 from ninja.errors import HttpError
 from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet, Q, Max, Func, F
+from django.db.models import QuerySet, Q, Count, Max, Func, F
 from django.db.utils import IntegrityError
 from core.iam.models import APIKey
-from core.sta.models import Observation, ResultQualifier
+from core.sta.models import Datastream, Observation, ResultQualifier
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationOrderByFields,
@@ -428,3 +429,31 @@ class ObservationService(ServiceUtils):
 
         payload = uuid_bytes + count_bytes
         return hashlib.sha256(payload).hexdigest()[:16]
+
+    def get_checksum(
+        self,
+        datastream: Datastream,
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
+    ) -> str:
+        queryset = Observation.objects.filter(datastream=datastream)
+
+        if phenomenon_time_start is not None:
+            queryset = queryset.filter(phenomenon_time__gte=phenomenon_time_start)
+        if phenomenon_time_end is not None:
+            queryset = queryset.filter(phenomenon_time__lte=phenomenon_time_end)
+
+        # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
+        result = queryset.aggregate(
+            max_id=Max(
+                Func(
+                    F("id"),
+                    function="CAST",
+                    template="%(function)s(%(expressions)s AS text)",
+                )
+            ),
+            count=Count("id"),
+        )
+        checksum_uuid = uuid.UUID(result["max_id"]) if result["max_id"] else None
+
+        return self.generate_checksum(checksum_uuid, result["count"])
