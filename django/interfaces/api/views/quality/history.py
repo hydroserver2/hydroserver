@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import bearer_auth, session_auth
 from processing.quality.services.history import QCHistoryService
 from interfaces.api.schemas.quality.history import (
     QualityControlHistorySummaryResponse,
@@ -16,7 +16,7 @@ from interfaces.api.schemas.quality.history import (
     QualityControlHistoryPostBody,
 )
 
-_auth = [session_auth, bearer_auth, apikey_auth]
+_auth = [session_auth, bearer_auth]
 
 qc_history_router = Router(tags=["Quality Control Histories"])
 qc_history_service = QCHistoryService()

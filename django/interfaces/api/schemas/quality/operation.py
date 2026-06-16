@@ -44,7 +44,6 @@ class QualityControlOperationResponse(BaseGetResponse):
         return obj.created_by or DELETED_USER_CONTACT
 
 
-
 class QualityControlOperationQueryParameters(CollectionQueryParameters):
     pass
 
