@@ -1,7 +1,14 @@
 import uuid
 from typing import Any, Literal, Optional
 from core.types import ISODatetime
-from interfaces.api.schemas import BaseGetResponse, BasePostBody, BasePatchBody, CollectionQueryParameters
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    BasePostBody,
+    BasePatchBody,
+    CollectionQueryParameters,
+    AccountContactDetailResponse,
+)
+from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
 
 OperationType = Literal[
     "SELECTION",
@@ -25,11 +32,17 @@ OperationType = Literal[
 
 class QualityControlOperationResponse(BaseGetResponse):
     id: uuid.UUID
+    created_by: AccountContactDetailResponse
     order: int
     operation_type: OperationType
     created_at: ISODatetime
     comment: Optional[str] = None
     arguments: dict[str, Any] | list[Any] | None = None
+
+    @staticmethod
+    def resolve_created_by(obj):
+        return obj.created_by or DELETED_USER_CONTACT
+
 
 
 class QualityControlOperationQueryParameters(CollectionQueryParameters):

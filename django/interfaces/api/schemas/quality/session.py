@@ -10,18 +10,9 @@ from interfaces.api.schemas import (
     AccountContactDetailResponse,
 )
 from interfaces.api.schemas.quality.operation import QualityControlOperationResponse
+from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
 
 SessionStatus = Literal["in_progress", "committed"]
-
-DELETED_USER_CONTACT = {
-    "name": "Deleted User",
-    "email": "deleted-user@hydroserver.invalid",
-    "organization_name": None,
-    "phone": None,
-    "address": None,
-    "link": None,
-    "user_type": "Unknown",
-}
 
 
 class QualityControlSessionSummaryResponse(BaseGetResponse):

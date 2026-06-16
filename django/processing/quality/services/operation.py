@@ -100,6 +100,7 @@ class QCOperationService(ServiceUtils):
             QCOperation.objects.create(
                 pk=uuid6.uuid7(),
                 session=session,
+                created_by=principal if isinstance(principal, User) else None,
                 order=operation.order,
                 operation_type=operation.operation_type.value,
                 comment=operation.comment,
