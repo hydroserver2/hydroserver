@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+
+    // Vitest specs index into `wrapper.findAll(...)` results and
+    // mocked-store arrays positionally on every line. Under strict
+    // `noUncheckedIndexedAccess` each access widens to `T | undefined`
+    // and the tests would need a non-null assertion on every line for
+    // no real safety gain — the indices are deterministic in the test
+    // fixtures. Disabling the check here keeps production code strict
+    // while letting specs read naturally.
+    "noUncheckedIndexedAccess": false
+  },
+  "include": [
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
+    "src/utils/test/**/*.ts",
+    // Source must transitively compile when a test imports it, but the
+    // ambient module shims (`plotly.js-dist`, vite/client, vuetify
+    // styles) live in `src/types/` and need to be visible to this
+    // project too — declarations are project-scoped, not loaded
+    // through the file graph.
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/**/*.d.ts"
+  ],
+  // Override the parent's test-excluding list so the spec files are
+  // visible to this project.
+  "exclude": ["node_modules", "dist"]
+}

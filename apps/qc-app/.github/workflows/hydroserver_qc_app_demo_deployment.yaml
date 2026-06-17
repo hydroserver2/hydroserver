@@ -1,0 +1,139 @@
+name: HydroServer QC App LRO Demo Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Enter a deployment environment to use.'
+        type: environment
+        required: true
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+  id-token: write
+  actions: write
+
+jobs:
+  check-environment-variables:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_IAM_ROLE: ${{ vars.AWS_IAM_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      PROXY_BASE_URL: ${{ vars.PROXY_BASE_URL }}
+      APP_ROUTE: ${{ vars.APP_ROUTE }}
+    steps:
+      - name: Check Required Environment Variables
+        run: |
+          echo "Checking required environment variables..."
+          required_vars=(AWS_ACCOUNT_ID AWS_IAM_ROLE AWS_REGION PROXY_BASE_URL APP_ROUTE)
+          for var in "${required_vars[@]}"; do
+            if [ -z "${!var}" ]; then
+              echo "Error: Environment variable $var is not defined."
+              exit 1
+            fi
+          done
+
+  verify-ci-success:
+    needs:
+      - check-environment-variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CI workflow succeeded on selected branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          set -euo pipefail
+          echo "Checking latest CI run on branch: $BRANCH"
+          RESPONSE=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?branch=${BRANCH}&status=completed&per_page=1" \
+            --jq '.workflow_runs[0]')
+          if [ -z "$RESPONSE" ] || [ "$RESPONSE" = "null" ]; then
+            echo "::error::No completed CI run found for branch '$BRANCH'."
+            echo "::error::Push a commit on this branch and wait for the CI workflow (.github/workflows/ci.yml) to complete before redeploying."
+            exit 1
+          fi
+          CONCLUSION=$(echo "$RESPONSE" | jq -r '.conclusion')
+          SHA=$(echo "$RESPONSE" | jq -r '.head_sha')
+          URL=$(echo "$RESPONSE" | jq -r '.html_url')
+          echo "Latest CI run on '$BRANCH': sha=${SHA} conclusion=${CONCLUSION}"
+          echo "Run URL: ${URL}"
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::CI workflow did not succeed on branch '$BRANCH' (conclusion=${CONCLUSION})."
+            echo "::error::Fix CI before redeploying. See: ${URL}"
+            exit 1
+          fi
+          echo "::notice::CI succeeded on $BRANCH at $SHA — proceeding with deploy."
+
+  deploy-hydroserver-data-mgmt-app:
+    needs:
+      - check-environment-variables
+      - verify-ci-success
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_IAM_ROLE }}
+          role-session-name: create-hydroserver-resources
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Checkout Data Management App Repo
+        uses: actions/checkout@v4
+        with:
+          repository: hydroserver2/hydroserver-qc-app
+          ref: ${{ github.event.inputs.branch }}
+          path: qc_app
+      - name: Setup Node 23.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 23.x
+          cache: npm
+          cache-dependency-path: qc_app/package-lock.json
+      - name: Install Dependencies
+        working-directory: ./qc_app
+        run: |
+          npm install
+          npm ci
+      - name: Configure Environment Variables
+        working-directory: ./qc_app
+        run: |
+          cat << EOF > .env
+          VITE_APP_API_URL=${{ vars.PROXY_BASE_URL }}
+          VITE_APP_ROUTE=${{ vars.APP_ROUTE }}
+          VITE_APP_VERSION=${{ github.sha }}
+          VITE_APP_API_URL=${{ vars.APP_API_URL }}
+          EOF
+      - name: Build QC App
+        working-directory: ./qc_app
+        run: npm run build
+      - name: Deploy to S3
+        working-directory: ./qc_app
+        run: |
+          mv ./dist/index.html /tmp/index.html
+          aws s3 sync ./dist s3://hydroserver-qc-demo-app-${{ github.event.inputs.environment }}-${{ vars.AWS_ACCOUNT_ID }}/quality-control-demo/ --delete
+          aws s3 cp /tmp/index.html s3://hydroserver-qc-demo-app-${{ github.event.inputs.environment }}-${{ vars.AWS_ACCOUNT_ID }}/index.html
+          aws s3 cp /tmp/index.html s3://hydroserver-qc-demo-app-${{ github.event.inputs.environment }}-${{ vars.AWS_ACCOUNT_ID }}/quality-control-demo/index.html
+      - name: Get CloudFront Distribution ID
+        run: |
+          DISTRIBUTION_IDS=$(aws cloudfront list-distributions --query "DistributionList.Items[*].Id" --output text)
+          for ID in $DISTRIBUTION_IDS; do
+            TAGS_JSON=$(aws cloudfront list-tags-for-resource --resource "arn:aws:cloudfront::${{ vars.AWS_ACCOUNT_ID }}:distribution/$ID")
+            MATCHING_ID=$(echo "$TAGS_JSON" | jq -r '
+              if any(.Tags.Items[]; .Key == "'"${{ vars.AWS_TAG_KEY || 'hydroserver-instance' }}"'" and .Value == "'"${{ vars.AWS_TAG_VALUE || github.event.inputs.environment }}"'") then "'$ID'" else empty end
+            ')
+            if [ -n "$MATCHING_ID" ]; then
+              CLOUDFRONT_ID=$MATCHING_ID
+              break
+            fi
+          done
+          echo "CLOUDFRONT_ID=$CLOUDFRONT_ID" >> $GITHUB_ENV
+      - name: Invalidate CloudFront Distribution Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
