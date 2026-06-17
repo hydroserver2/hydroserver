@@ -1,4 +1,7 @@
-import { test, expect } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+import { config as loadEnv } from 'dotenv'
+
+loadEnv({ path: '.env.local' })
 
 declare global {
   interface Window {
@@ -11,10 +14,31 @@ declare global {
   }
 }
 
-// Smoke spec covering the QC golden path against the live playground.hydroserver.org
-// backend (Option A from RESEARCH.md). No page.route() mocks, no fixture JSON.
+const QC_ENTRYPOINT = process.env.QC_E2E_BASE_URL || 'http://127.0.0.1:1203/qc/'
+const E2E_EMAIL = process.env.HYDROSERVER_E2E_EMAIL
+const E2E_PASSWORD = process.env.HYDROSERVER_E2E_PASSWORD
+
+async function loginThroughDataManagementIfNeeded(page: Page) {
+  await page.goto(QC_ENTRYPOINT)
+  if (!new URL(page.url()).pathname.startsWith('/login')) return
+
+  test.skip(
+    !E2E_EMAIL || !E2E_PASSWORD,
+    'Set HYDROSERVER_E2E_EMAIL and HYDROSERVER_E2E_PASSWORD for live same-origin QC e2e.'
+  )
+
+  await page.locator('input[name="email"]').fill(E2E_EMAIL)
+  await page.locator('input[name="password"]').fill(E2E_PASSWORD)
+  await page.getByRole('button', { name: /^log in$/i }).click()
+  await expect(page).toHaveURL(/\/qc(\/|$)/, { timeout: 60_000 })
+}
+
+// Smoke spec covering the QC golden path against a live HydroServer backend
+// through the supported same-origin Data Management entrypoint. No
+// page.route() mocks, no fixture JSON.
 //
 // Steps:
+//   0. Enter via Data Management's same-origin /qc/ route; log in if needed.
 //   1. Navigate to app root — a fresh browser has no persisted workspace
 //      selection, so the router's workspace guard redirects to /workspaces.
 //   2. Select "Test Workspace #2" from the picker.
@@ -25,14 +49,15 @@ declare global {
 //   7. Wait for selection to populate, open "Change values", commit edit.
 //   8. Assert CHANGE_VALUES appears in EditHistory.
 //   9. Click Save Changes, confirm, assert success snackbar.
-
-// Live smoke — talks to playground.hydroserver.org. Opt in with
-// `E2E_LIVE=1 npx playwright test qc-golden-path` so CI runs the fast
-// mocked suite by default; the live smoke is for pre-release confidence.
-test.describe('QC golden path (live)', () => {
+//
+// Live smoke — talks to the backend configured behind Data Management's
+// /api proxy. Opt in with `E2E_LIVE=1 npx playwright test qc-golden-path`
+// so CI runs the fast mocked suite by default; the live smoke is for
+// pre-release confidence.
+test.describe('QC golden path (live same-origin)', () => {
   test.skip(
-    !process.env.E2E_LIVE,
-    'Set E2E_LIVE=1 to run the live-backend smoke'
+    process.env.E2E_LIVE !== '1',
+    'Set E2E_LIVE=1 to run the live same-origin smoke.'
   )
 
   test('qc golden path: filter, edit, submit', async ({ page }) => {
@@ -41,13 +66,17 @@ test.describe('QC golden path (live)', () => {
     // flow room to breathe on a cold dev server.
     test.setTimeout(180_000)
 
+    // Step 0 — Enter QC through the Data Management origin. If the browser
+    // has no valid session, Data Management handles the login page and
+    // redirects back to /qc/ via the `next` query.
+    await loginThroughDataManagementIfNeeded(page)
+
     // Step 1 & 2 — Navigate to app root. Fresh browser has no stored
     // workspace, so the guard redirects to /workspaces. Pick
     // "Test Workspace #2" (pinned because the datastream referenced
     // below lives there). The picker loads the workspace list
     // asynchronously; waiting for the SELECT button to be visible is
     // our "picker ready" signal.
-    await page.goto('/')
     const pickButton = page
       .getByRole('listitem')
       .filter({ hasText: 'Test Workspace #2' })
@@ -70,7 +99,9 @@ test.describe('QC golden path (live)', () => {
     // instead of pinning to a specific id. After checking, wait
     // for the data-loading-indicator to hide — observations have
     // finished loading into Plotly.
-    const firstPlotButton = page.locator('[data-testid^="plot-checkbox-"]').first()
+    const firstPlotButton = page
+      .locator('[data-testid^="plot-checkbox-"]')
+      .first()
     await expect(firstPlotButton).toBeVisible({ timeout: 30_000 })
     await firstPlotButton.click()
     await page
@@ -108,7 +139,7 @@ test.describe('QC golden path (live)', () => {
       { timeout: 10_000 }
     )
     await page.evaluate(() =>
-      window.__vbwTestHooks!.waitForSelectedData(1, 10_000).then(() => { })
+      window.__vbwTestHooks!.waitForSelectedData(1, 10_000).then(() => {})
     )
     await page.getByTestId('op-changeValues').click()
 
@@ -145,6 +176,8 @@ test.describe('QC golden path (live)', () => {
       page.getByText('Quality-controlled observations submitted')
     ).toBeVisible({ timeout: 60_000 })
     // MH-17: after submit the store clears editHistory → history-item-0 must be gone.
-    await expect(page.getByTestId('history-item-0')).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.getByTestId('history-item-0')).toHaveCount(0, {
+      timeout: 15_000,
+    })
   })
 })

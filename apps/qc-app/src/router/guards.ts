@@ -1,43 +1,37 @@
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs from '@hydroserver/client'
-import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import {
+  NavigationGuardNext,
+  RouteLocationNormalized,
+  RouteLocationRaw,
+} from 'vue-router'
+
+type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
 export type RouteGuard = (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext
-) => any | void
+) => RouteGuardResult | Promise<RouteGuardResult>
+
+const getQcReturnPath = (to: RouteLocationNormalized) => {
+  const fullPath = to.fullPath.startsWith('/') ? to.fullPath : `/${to.fullPath}`
+  return `/qc${fullPath}`
+}
+
+const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
+  const loginUrl = new URL('/login', window.location.origin)
+  loginUrl.searchParams.set('next', getQcReturnPath(to))
+  window.location.assign(loginUrl.toString())
+  return false as const
+}
 
 /** Guards are executed in the order they appear in this array */
 export const guards: RouteGuard[] = [
-  // TODO(oauth): re-enable the auth guard once OAuth sign-in is wired
-  // end-to-end (see the TODO in `components/account/OAuth.vue`).
-  // Blocking protected routes now would strand the user on the Login
-  // page with only email/password available — fine on its own, but
-  // the UX goal is to ship Google OAuth first. Until then every route
-  // loads regardless of session state.
-  // (to) => {
-  //   if (!to.meta?.hasAuthGuard) return null
-  //   if (hs.session?.isAuthenticated) return null
-  //   return {
-  //     name: 'Login',
-  //     query: { next: to.fullPath },
-  //   }
-  // },
-
-  // hasLoggedOutGuard — the Login page is only useful when the user
-  // isn't logged in; once they are, bounce them to the home route
-  // (or the route named in `meta.redirectAfterLogin`).
   (to) => {
-    if (!to.meta?.hasLoggedOutGuard) return null
-    if (!hs.session?.isAuthenticated) return null
-    const next =
-      (typeof to.query.next === 'string' && to.query.next) ||
-      (typeof to.meta.redirectAfterLogin === 'string'
-        ? to.meta.redirectAfterLogin
-        : 'Home')
-    // `next` may be a path (from the auth guard) or a route name.
-    return next.startsWith('/') ? { path: next } : { name: next }
+    if (!to.meta?.hasAuthGuard) return null
+    if (hs.session?.isAuthenticated) return null
+    return redirectToDataManagementLogin(to)
   },
 
   // Shared-link workspace switch. An incoming URL carrying `?ws=<id>`

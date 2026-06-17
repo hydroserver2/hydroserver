@@ -20,7 +20,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 | Type system      | TypeScript 5 (strict)                        | Surfaces shape errors early; eliminates a class of regressions around `ObservationRecord` API drift. |
 | Unit tests       | Vitest + Vue Test Utils (`jsdom`)            | Shares the Vite build pipeline, runs in-process, transparent ESM. |
 | E2E tests        | Playwright (chromium + firefox)              | Cross-browser, headless-or-headed, intercepts network requests cleanly. WebKit excluded — see [QUALITY.md](./QUALITY.md). |
-| Auth             | HydroServer session cookies + Google OAuth   | Same auth surface as the data-management app; no separate identity provider to operate. |
+| Auth             | HydroServer session cookies                  | Authentication is owned by the data-management app; QC consumes the existing session. |
 | Package manager  | npm                                          | Stays compatible with CI cache + the published `@uwrl/qc-utils` workflow.       |
 
 ### Database technology
@@ -70,8 +70,7 @@ always be recovered by a hard refresh.
                                  ▼
                 ┌──────────────────────────────────────────┐
                 │  HydroServer backend                     │
-                │   (VITE_APP_API_URL — e.g.               │
-                │    playground.hydroserver.org)           │
+                │   same-origin /api via Data Management   │
                 │                                          │
                 │  Django + django-ninja  ·  Postgres      │
                 │  Workspaces · Things · Datastreams       │
@@ -89,14 +88,13 @@ submit.
 ```
 src/
 ├─ App.vue, main.ts             Entry point, plugin wiring (Vuetify, Pinia, router).
-├─ pages/                       Top-level routed views (Home, Workspaces, Login).
+├─ pages/                       Top-level routed views (Home, Workspaces).
 ├─ components/
 │  ├─ Navigation/               NavigationRail, SelectDrawer, EditDrawer, PerformanceCalibration.
 │  ├─ VisualizeData/            DataVisualization (Plotly host), data table, info card, filters.
 │  ├─ FilterPoints/             One panel per filter op (ValueThreshold, GapFinder, Persistence, …).
 │  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …)
 │  │                            plus EditHistory + the operation metadata registry.
-│  ├─ account/                  OAuth widget, login glue.
 │  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications).
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
@@ -114,7 +112,6 @@ src/
 │  └─ time.ts                   Time unit conversions.
 ├─ router/                      vue-router setup, auth + workspace guards.
 ├─ plugins/vuetify.ts           Vuetify theme + icon set.
-├─ config/settings.ts           Runtime config from `VITE_APP_*` env vars.
 ├─ models/, types/              TypeScript models and ambient declarations.
 └─ testHooks.ts                 `window.__vbwTestHooks` for Playwright (gated on VITE_APP_E2E_HOOKS).
 ```
@@ -128,7 +125,7 @@ goes one direction.
 |-----------------------|-----------------------------------------------------------------------|
 | `workspaces.ts`       | Workspace list, current selection (persisted).                        |
 | `hydroserver.ts`      | The `@hydroserver/client` instance + session state.                   |
-| `user.ts`             | Logged-in user, auth state, OAuth providers.                          |
+| `user.ts`             | Logged-in user and auth state.                                         |
 | `observations.ts`     | Fetch + cache observation windows per datastream.                     |
 | `dataVisualization.ts`| Selected datastream, plotted streams, QC datastream, selectedData.    |
 | `plotly.ts`           | Plot ref, edit history, redraw, `suppressedEchoSelection` sentinel.    |
@@ -225,11 +222,12 @@ silently breaks the worker fast-path. Don't.
 
 ## Routing and auth
 
-vue-router 5, three routes (Home, Workspaces, Login). Two guards run on
+vue-router 5, two routes (Home, Workspaces). Two guards run on
 every navigation:
 
-- **`hasAuthGuard`** — redirects unauthenticated users to `/login` and
-  remembers the intended destination.
+- **`hasAuthGuard`** — redirects unauthenticated users to the
+  data-management app's `/login` route and remembers the intended QC
+  destination.
 - **`hasWorkspaceGuard`** — redirects users without a selected workspace
   to `/workspaces`.
 

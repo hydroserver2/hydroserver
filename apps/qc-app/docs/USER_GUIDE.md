@@ -39,14 +39,10 @@ Everything runs in your web browser. The backend never sees your edit history un
 
 ## First-time setup
 
-1. Open the app URL. You'll be redirected to the **Log in** page.
-2. Enter your HydroServer email and password, then press **Log in**. If your deployment has Google OAuth wired up an extra "Sign in with Google" button appears below the form.
-
-   ![Login page](./images/login.png)
-
-:::warning
-Log-in is currently disabled in the QC App. If you want to try the demo deployment, make sure your Workspace and its contents are publicly visible.
-:::
+1. Sign in through the HydroServer Data Management app.
+2. Open the QC app from the Data Management navigation. If your session
+   expires, QC redirects back to the Data Management login page and returns
+   you to the QC page after authentication.
 
 3. On the **Workspaces** page, pick the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home.
 

@@ -10,7 +10,6 @@ import hs, { createHydroServer, User } from '@hydroserver/client'
 import { useUserStore } from '@/store/user'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { loadAppSettings } from '@/config/settings'
 import { ensureCalibration } from '@uwrl/qc-utils'
 
 const app = createApp(App)
@@ -23,18 +22,7 @@ async function initializeApp() {
   // so the user/workspace rehydration below has a live client to talk
   // to. Mirrors data-management-app/src/main.ts.
   //
-  // Load runtime app-settings in parallel — auth provider config (the
-  // Google/HydroShare OAuth button list) lives in the backend's index
-  // HTML, not in the session endpoint. Running both at once keeps
-  // boot latency flat.
-  await Promise.all([
-    createHydroServer({
-      host:
-        import.meta.env.VITE_APP_API_URL ||
-        (import.meta.env.DEV ? 'http://127.0.0.1:8000' : ''),
-    }),
-    loadAppSettings(),
-  ])
+  await createHydroServer({ host: '' })
 
   // Wire the singleton into the app's pre-existing pinia ref so every
   // `useHydroServer().hs` call site keeps working without churn.
@@ -51,8 +39,7 @@ async function initializeApp() {
   }
 
   // Pre-fetch workspaces when logged in so the picker renders without
-  // a flash of emptiness. Skipped for anonymous boots — the Login page
-  // doesn't read them.
+  // a flash of emptiness.
   if (hs.session.isAuthenticated) {
     try {
       await useWorkspaceStore().loadWorkspaces()

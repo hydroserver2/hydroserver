@@ -21,15 +21,4 @@ export const routes: RouteRecordRaw[] = [
       title: 'Workspaces',
     },
   },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/pages/account/Login.vue'),
-    meta: {
-      title: 'Login',
-      hasLoggedOutGuard: true,
-      redirectAfterLogin: 'Home',
-      disablePasswordReset: true,
-    },
-  },
 ]

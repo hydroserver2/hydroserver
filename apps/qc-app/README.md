@@ -26,11 +26,12 @@ The heavy lifting (worker-parallelized typed-array kernels, calibration, history
 
 ```bash
 npm install
-# Create .env.local with at least VITE_APP_API_URL (see Configuration below).
-npm run dev                  # http://127.0.0.1:1203
+npm run dev                  # internal QC dev server at http://127.0.0.1:5173
 ```
 
-**Use `127.0.0.1`, not `localhost`.** The HydroServer backend's CORS allowlist pins the IP literal, and the host name variant fails every API request silently. Vite's dev server is configured for `127.0.0.1:1203` to match.
+During normal HydroServer development, open QC through the Data Management app at `http://127.0.0.1:1203/qc/`. Data Management owns authentication and proxies `/qc/` to this app's Vite server.
+
+**Use `127.0.0.1`, not `localhost`.** The HydroServer backend's CORS allowlist pins the IP literal, and the host name variant fails API requests silently.
 
 ### Configuration
 
@@ -38,10 +39,7 @@ npm run dev                  # http://127.0.0.1:1203
 
 | Var                              | Required | Purpose                                                                 |
 |----------------------------------|----------|-------------------------------------------------------------------------|
-| `VITE_APP_API_URL`               | yes      | Base URL of the HydroServer instance (e.g. `https://playground.hydroserver.org`). |
 | `VITE_APP_VERSION`               | no       | Build-time version string surfaced in the about menu.                   |
-| `VITE_APP_GOOGLE_OAUTH_ENABLED`  | no       | Show the Google sign-in button.                                         |
-| `VITE_APP_DISABLE_ACCOUNT_CREATION` | no    | Hide the sign-up button (useful for invite-only deployments).           |
 | `VITE_APP_DISABLE_COOP`          | no       | Drop the `Cross-Origin-Opener-Policy` + `Cross-Origin-Embedder-Policy` headers. Use only when the backend you're hitting doesn't serve `Cross-Origin-Resource-Policy` (older HydroServer deployments). The `qc-utils` worker layer falls back to inline kernels when SAB isn't available, so the app still works — just slower on large edits. |
 | `VITE_APP_E2E_HOOKS`             | no       | Set to `1` to expose `window.__vbwTestHooks` for Playwright. CI sets this automatically. |
 
@@ -121,12 +119,12 @@ Run modes:
 ```bash
 npm run test:e2e              # headed — opens a visible browser
 npm run test:e2e:ci           # headless — CI mode, also fast for local
-npm run test:e2e:live         # against playground.hydroserver.org (requires .env.local)
+npm run test:e2e:live         # same-origin smoke via Data Management
 ```
 
-The Playwright `webServer` config auto-starts the Vite dev server at `http://127.0.0.1:1203` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs — running e2e against a static `file://` build won't work.
+The Playwright `webServer` config auto-starts the QC Vite dev server at `http://127.0.0.1:5173` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs — running e2e against a static `file://` build won't work.
 
-The mocked specs (everything except `qc-golden-path.spec.ts`) intercept HydroServer routes via `page.route()` and serve fixture JSON, so most runs need no backend. The live `qc-golden-path` spec talks to `playground.hydroserver.org` and reads credentials from `.env.local`.
+The mocked specs intercept HydroServer routes via `page.route()` and serve fixture JSON, so most runs need no backend. The live golden-path spec expects both frontends to be running and enters QC through `http://127.0.0.1:1203/qc/`.
 
 E2E specs live in `e2e/` (separate from the Vitest unit specs under `src/**/__tests__/`).
 

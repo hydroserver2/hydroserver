@@ -13,11 +13,9 @@ where the documentation gaps are so they don't waste a day finding out.
 | Git        | any recent       |                                                             |
 | A browser  | Chrome 111+ / Firefox 119+ / Safari 16.4+ | Required for `SharedArrayBuffer` and typed-array `resize()`. |
 
-You do **not** need:
-
-- Python, Postgres, or any backend tooling. The app talks to a deployed
-  HydroServer (`playground.hydroserver.org` by default).
-- Docker. Everything is npm-driven.
+You do **not** need Docker. For frontend-only work you can run the Data
+Management app and QC app against a deployed HydroServer
+(`playground.hydroserver.org` by default).
 
 ## First-day setup
 
@@ -27,30 +25,24 @@ cd hydroserver-qc-app
 npm install
 ```
 
-Create `.env.local` with at minimum:
-
-```dotenv
-VITE_APP_API_URL=https://playground.hydroserver.org
-```
-
-See [README — Configuration](../README.md#configuration) for the rest of
-the optional keys.
-
 ```bash
-npm run dev          # http://127.0.0.1:1203
+npm run dev          # internal QC dev server at http://127.0.0.1:5173
 ```
 
-**Use `http://127.0.0.1:1203`, not `http://localhost:1203`.** The
-playground backend's CORS allowlist pins the IP literal; the `localhost`
-hostname makes every API request fail and the app silently never mounts.
-The dev-server is configured for `127.0.0.1:1203` to match.
+For the full app flow, start both frontends and open QC through Data
+Management at `http://127.0.0.1:1203/qc/`. The shared VS Code task
+`Start Frontends Against Playground` starts both apps pointed at
+`https://playground.hydroserver.org`.
+
+**Use `http://127.0.0.1:1203`, not `http://localhost:1203`, for the Data
+Management entrypoint.** The playground backend's CORS allowlist pins the
+IP literal.
 
 If you hit a blank page with `Failed to fetch app settings` in the
 console, it's almost always one of:
 
 1. Hitting `localhost:` instead of `127.0.0.1:`.
-2. `VITE_APP_API_URL` missing or pointing somewhere unreachable.
-3. The backend doesn't serve `Cross-Origin-Resource-Policy` and COOP/COEP
+2. The backend doesn't serve `Cross-Origin-Resource-Policy` and COOP/COEP
    is on — try `VITE_APP_DISABLE_COOP=1`.
 
 ## Project tour, in reading order
@@ -73,7 +65,7 @@ Read these files in order:
 ## Day-to-day workflow
 
 ```bash
-npm run dev               # vite dev server, http://127.0.0.1:1203
+npm run dev               # QC vite dev server, http://127.0.0.1:5173
 npm test                  # vitest, watch mode
 npm run coverage          # vitest one-shot + v8 coverage (80% threshold)
 npm run test:e2e          # playwright, headed

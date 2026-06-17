@@ -36,7 +36,7 @@ npm run test:e2e
 # E2E, one-shot headless on Chromium + Firefox
 npm run test:e2e:ci
 
-# E2E against the live HydroServer playground (one spec, headed)
+# E2E against a live HydroServer through the Data Management same-origin entrypoint
 npm run test:e2e:live
 
 # Type-check the whole app (no emit)
@@ -215,9 +215,9 @@ The CI gate prints uncovered line numbers per file. Common causes:
 - `projects: chromium, firefox` only. WebKit is **excluded on
   purpose**: `SharedArrayBuffer` + COOP/COEP behavior diverges in
   Safari and would need its own validation pass.
-- `baseURL: http://127.0.0.1:1203` — **never `localhost`**. The
+- `baseURL: http://127.0.0.1:5173` — **never `localhost`**. The
   backend (`playground.hydroserver.org`) CORS-allowlists
-  `127.0.0.1` only; using `localhost` makes every API request fail
+  the `127.0.0.1` origins only; using `localhost` makes API requests fail
   with `net::ERR_FAILED` and the app never mounts.
 - `webServer.command: npm run dev` with
   `env: { VITE_APP_E2E_HOOKS: '1' }`. The env var arms test hooks
@@ -253,10 +253,10 @@ test.describe('edit: delete points', () => {
 })
 ```
 
-Everything happens against the mocked backend. Specs do not talk to
-a live server unless they explicitly opt in
-(`qc-golden-path.spec.ts` is the sole live spec, gated by
-`E2E_LIVE=1`).
+Everything except `qc-golden-path.spec.ts` happens against the mocked
+backend. The live golden-path spec is gated by `E2E_LIVE=1`, expects both
+frontends to be running, and enters QC through the Data Management
+same-origin entrypoint.
 
 ### Mocks
 
@@ -333,7 +333,7 @@ them so the next contributor doesn't rediscover them.
 
 3. **The dev-server URL must be `127.0.0.1`, not `localhost`.**
    Configured in `playwright.config.ts` and `vite.config.ts`. If a
-   spec navigates to `localhost:1203` directly, the backend's
+   spec navigates to `localhost` directly, the backend's
    CORS rejection cascades into `createHydroServer()` rejecting
    and the app never mounts. The mocked specs are immune (no
    real backend traffic) but live specs would fail invisibly.

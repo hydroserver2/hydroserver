@@ -27,12 +27,47 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "VITE_APP_API_URL": "http://127.0.0.1:8000",
           "VITE_APP_DISABLE_COOP": "1"
         }
       },
       "presentation": {
         "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Data Management App (Playground)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/data-management",
+        "env": {
+          "VITE_APP_PROXY_BASE_URL": "https://playground.hydroserver.org",
+          "VITE_HYDROSERVER_CLIENT_LOCAL": "1",
+          "VITE_HYDROSERVER_CLIENT_PATH": "${workspaceFolder}/packages/hydroserver-ts/src"
+        }
+      },
+      "presentation": {
+        "group": "playground",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start QC App (Playground)",
+      "type": "shell",
+      "command": "npm run dev:qc",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "VITE_APP_DISABLE_COOP": "1"
+        }
+      },
+      "presentation": {
+        "group": "playground",
         "panel": "dedicated",
         "reveal": "always"
       },
@@ -92,6 +127,15 @@
         "Start Backend",
         "Start Data Management App",
         "Start QC App"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Frontends Against Playground",
+      "dependsOn": [
+        "Start Data Management App (Playground)",
+        "Start QC App (Playground)"
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []

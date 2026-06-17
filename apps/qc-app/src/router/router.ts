@@ -11,7 +11,12 @@ export function setupRouteGuards() {
   guards.map((fn) => {
     router.beforeEach(async (to, from, next) => {
       const activatedRouteGuard = await fn(to, from, next)
-      if (activatedRouteGuard) {
+      if (activatedRouteGuard === false) {
+        next(false)
+      } else if (
+        activatedRouteGuard !== null &&
+        activatedRouteGuard !== undefined
+      ) {
         next(activatedRouteGuard)
       } else {
         next()

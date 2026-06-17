@@ -13,9 +13,7 @@
  *   await page.goto('/')
  *
  * The handlers match on path fragments (`/api/data/datastreams/...`)
- * regardless of host, so they work whether the app is pointed at the
- * default `http://127.0.0.1:8000` or anywhere else via
- * `VITE_APP_API_URL`.
+ * regardless of host.
  */
 
 import type { Page, Route } from '@playwright/test'
@@ -109,8 +107,7 @@ export async function installMocks(
   const submissions = options.submissions ?? []
 
   // Preflights for anything — the real server serves OPTIONS via
-  // middleware; swallowing them here keeps the mocks happy when
-  // `VITE_APP_API_URL` points at a cross-origin host.
+  // middleware; swallowing them here keeps the mocks happy.
   await page.route('**/api/**', async (route) => {
     const request = route.request()
     if (request.method() === 'OPTIONS') {

@@ -63,10 +63,9 @@ Playwright specs in `e2e/`, run on **chromium and firefox only**.
 WebKit is intentionally excluded — `SharedArrayBuffer` + COOP/COEP
 behavior differs in Safari and needs separate validation.
 
-Mocked specs intercept HydroServer routes via `page.route()`. The single
-live spec `qc-golden-path.spec.ts` talks to `playground.hydroserver.org`
-and reads credentials from `.env.local` — run with
-`npm run test:e2e:live`.
+Mocked specs intercept HydroServer routes via `page.route()`. The live
+golden-path smoke enters QC through the Data Management same-origin
+entrypoint so QC and Data Management share the same session.
 
 ### Manual / unmodeled testing
 

@@ -30,8 +30,8 @@ Three required pieces:
 1. **Static hosting** — any object store + CDN. AWS S3 + CloudFront is
    what the demo workflow uses (see below); GitHub Pages, Cloudflare
    Pages, Azure Blob + Front Door, or nginx in a container all work.
-2. **A HydroServer instance to point at** — provided to the build at
-   compile-time via `VITE_APP_API_URL`. The app does not bundle a default.
+2. **A HydroServer instance on the same origin** — QC expects `/api` and
+   `/login` to be served from the same origin as `/qc/`.
 3. **Response headers** at the edge:
    - `Cross-Origin-Opener-Policy: same-origin`
    - `Cross-Origin-Embedder-Policy: require-corp`
@@ -63,8 +63,7 @@ deploys to AWS. The flow:
    - Assumes the IAM role via OIDC (`aws-actions/configure-aws-credentials`).
    - Checks out the chosen branch.
    - Sets up Node 23.x with `package-lock.json` caching.
-   - Generates `.env` with `VITE_APP_API_URL` (sourced from
-     `PROXY_BASE_URL`), `VITE_APP_ROUTE`, and `VITE_APP_VERSION` (the
+   - Generates `.env` with `VITE_APP_ROUTE` and `VITE_APP_VERSION` (the
      deploy commit SHA).
    - Runs `npm install && npm ci` then `npm run build`.
    - Syncs `./dist/` to
@@ -98,10 +97,7 @@ cd hydroserver-qc-app
 npm ci
 
 cat > .env.local <<'EOF'
-VITE_APP_API_URL=https://hydroserver.example.org
-# Optional:
 VITE_APP_VERSION=$(git describe --tags --always)
-VITE_APP_GOOGLE_OAUTH_ENABLED=1
 VITE_APP_DISABLE_COOP=                 # leave blank unless backend lacks CORP
 EOF
 

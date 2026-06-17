@@ -22,13 +22,13 @@ utils) and the external HydroServer REST endpoints the app consumes.
 ## External: HydroServer REST API
 
 The app talks to a HydroServer instance via the `@hydroserver/client`
-package. The base URL is `${VITE_APP_API_URL}/api`. Endpoint groups used:
+package. QC uses the current origin's `/api` route so it shares the
+Data Management app's authenticated session. Endpoint groups used:
 
 | Group              | Base path                              | Purpose                                             |
 |--------------------|----------------------------------------|-----------------------------------------------------|
-| Session / auth     | `/auth/browser/session`                | Login, logout, current session.                     |
-| Account            | `/auth/browser/account`                | User profile, signup, email verification.           |
-| OAuth providers    | `/auth/browser/provider`               | Google sign-in handshake (Django AllAuth).          |
+| Session / auth     | `/auth/browser/session`                | Current session and logout. Login is handled by Data Management. |
+| Account            | `/auth/browser/account`                | Current user profile.                               |
 | Workspaces         | `/data/workspaces`                     | List, pick, create workspaces.                      |
 | Things (sites)     | `/data/things`                         | Sites the operator can browse.                      |
 | Datastreams        | `/data/datastreams`                    | List + fetch metadata + observations + bulk replace.|
@@ -52,7 +52,7 @@ is carried in qc-utils for legacy reasons; the QC App uses
 - **No OData, no GraphQL, no OGC SensorThings.** Bridging to those
   standards is a HydroServer-backend concern; the QC App will inherit
   whatever HydroServer exposes.
-- **OAuth2 (Google).** Delegated to HydroServer's Django AllAuth setup.
+- **Login / OAuth.** Delegated to the HydroServer Data Management app.
 
 ### Observation read
 

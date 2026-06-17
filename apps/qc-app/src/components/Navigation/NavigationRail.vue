@@ -214,17 +214,13 @@ async function discardAndContinue() {
   }
 }
 
-async function goHome() {
+function goHome() {
   resetState()
   qcDatastreamId.value = null
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select
   isDrawerOpen.value = true
-  if (router.currentRoute.value.name !== 'Home') {
-    await router.push({ name: 'Home', query: {} })
-  } else {
-    await router.replace({ name: 'Home', query: {} })
-  }
+  window.location.assign('/')
 }
 
 const items = ref([
@@ -235,8 +231,8 @@ const items = ref([
 async function onLogout() {
   await hs.value.session.logout()
   workspaceStore.clearSelection()
-  await router.push({ name: 'Login' })
   Snackbar.info('You have logged out')
+  window.location.assign('/login')
 }
 
 async function onSwitchWorkspace() {

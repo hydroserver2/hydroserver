@@ -36,7 +36,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       host: '127.0.0.1',
-      port: 1203,
+      port: 5173,
       strictPort: true,
       // COOP/COEP headers enable SharedArrayBuffer-backed workers (fast
       // shared-memory data ops) but also block cross-origin responses
@@ -110,7 +110,6 @@ export default defineConfig(({ command, mode }) => {
           '**/src/components/VisualizeData/Plot.vue',
           '**/src/components/VisualizeData/PlottedDatastreams.vue',
           '**/src/components/VisualizeData/SeriesStyleCard.vue',
-          '**/src/components/account/**/*.vue',
           '**/src/components/base/**/*.vue',
           '**/src/pages/**/*.vue',
           '**/src/plugins/**',
