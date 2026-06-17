@@ -152,6 +152,7 @@ INSTALLED_APPS = [
     "processing.etl.apps.EtlConfig",
     "processing.products.apps.ProductsConfig",
     "processing.monitoring.apps.MonitoringConfig",
+    "processing.quality.apps.QualityConfig",
     "django.contrib.admin",
 ]
 

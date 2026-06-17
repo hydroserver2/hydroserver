@@ -101,7 +101,7 @@ datastream_service = DatastreamService()
         (
             "owner",
             "27c70b41-e845-40ea-8cc7-d1b40f89816b",
-            {"result_qualifiers__code": "SystemResultQualifier"},
+            {"result_qualifier_codes": ["SystemResultQualifier"]},
             [3.1],
             11,
         ),
