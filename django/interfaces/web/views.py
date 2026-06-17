@@ -107,7 +107,9 @@ def main_spa_view(request):
 
 @cache_page(60 * 10)
 def qc_spa_view(request):
-    return render(request, "qc/index.html")
+    context = get_app_settings_context()
+
+    return render(request, "qc/index.html", {"settings": context})
 
 
 index = main_spa_view

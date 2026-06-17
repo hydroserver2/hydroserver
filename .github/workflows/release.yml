@@ -61,6 +61,60 @@ jobs:
           name: data-management-app-${{ inputs.tag }}
           path: apps/data-management/data-management-app-${{ inputs.tag }}.zip
 
+  build-quality-control-app:
+    name: Build Data Management App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: |
+            apps/qc-app/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
+
+      - name: Install QC utils dependencies
+        working-directory: packages/qc-utils
+        run: npm ci
+
+      - name: Install dependencies
+        working-directory: apps/qc-app
+        run: npm ci
+
+      - name: Configure environment variables
+        working-directory: apps/qc-app
+        run: |
+          cat << EOF > .env
+          VITE_APP_VERSION=${{ inputs.tag }}
+          VITE_APP_ROUTE=/quality-control/
+          EOF
+
+      - name: Build
+        working-directory: apps/qc-app
+        run: npm run django-build
+
+      - name: Create ZIP archive
+        working-directory: apps/qc-app
+        run: zip -r qc-app-${{ inputs.tag }}.zip dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qc-app-${{ inputs.tag }}
+          path: apps/qc-app/qc-app-${{ inputs.tag }}.zip
+
+
   publish-hydroserverpy:
     name: Publish hydroserverpy to PyPI
     runs-on: ubuntu-latest

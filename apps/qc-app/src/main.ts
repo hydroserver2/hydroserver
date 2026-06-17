@@ -17,12 +17,19 @@ const app = createApp(App)
 async function initializeApp() {
   app.use(store)
 
+  const hydroServerHost =
+    import.meta.env.VITE_APP_PROXY_BASE_URL
+      ? ''
+      : import.meta.env.DEV
+      ? 'http://127.0.0.1:8000'
+      : ''
+
   // The session must be initialized before the router so auth guards
   // can read `hs.session.isAuthenticated` on the first navigation, and
   // so the user/workspace rehydration below has a live client to talk
   // to. Mirrors data-management-app/src/main.ts.
   //
-  await createHydroServer({ host: '' })
+  await createHydroServer({ host: hydroServerHost })
 
   // Wire the singleton into the app's pre-existing pinia ref so every
   // `useHydroServer().hs` call site keeps working without churn.

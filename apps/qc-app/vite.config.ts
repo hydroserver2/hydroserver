@@ -7,13 +7,14 @@ import vuetify from 'vite-plugin-vuetify'
 
 // @ts-ignore
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd())
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
   const qcUtilsRoot = resolve(__dirname, '../../packages/qc-utils/src')
   const useLocalQcUtils =
     command === 'serve' || env.VITE_QC_UTILS_LOCAL === '1'
 
   return {
-    base: '/qc/',
+    base: mode === 'django' ? '/static/qc/' : '/qc/',
     plugins: [
       vue(),
       vuetify({
@@ -38,6 +39,16 @@ export default defineConfig(({ command, mode }) => {
       host: '127.0.0.1',
       port: 5173,
       strictPort: true,
+      proxy: {
+        ...(apiProxyTarget
+          ? {
+              '/api': {
+                target: apiProxyTarget,
+                changeOrigin: true,
+              },
+            }
+          : {}),
+      },
       // COOP/COEP headers enable SharedArrayBuffer-backed workers (fast
       // shared-memory data ops) but also block cross-origin responses
       // that don't carry CORP — including the `playground.hydroserver.org`

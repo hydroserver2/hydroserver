@@ -9,6 +9,7 @@
     "docker-dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
     "build-prod": "vue-tsc --noEmit -p tsconfig.app.json && vite build --mode prod",
+    "django-build": "vue-tsc --noEmit -p tsconfig.app.json && vite build --mode django",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.test.json",
     "preview": "vite preview",
     "test": "vitest run",
