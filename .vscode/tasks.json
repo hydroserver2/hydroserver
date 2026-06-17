@@ -1,0 +1,113 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Data Management App",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/data-management",
+        "env": {
+          "VITE_APP_PROXY_BASE_URL": "http://127.0.0.1:8000",
+          "VITE_HYDROSERVER_CLIENT_LOCAL": "1",
+          "VITE_HYDROSERVER_CLIENT_PATH": "${workspaceFolder}/packages/hydroserver-ts/src"
+        }
+      },
+      "presentation": {
+        "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start QC App",
+      "type": "shell",
+      "command": "npm run dev:qc",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "VITE_APP_API_URL": "http://127.0.0.1:8000",
+          "VITE_APP_DISABLE_COOP": "1"
+        }
+      },
+      "presentation": {
+        "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Backend",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/dev-api-command manage.py runserver 0.0.0.0:8000",
+      "options": {
+        "cwd": "${workspaceFolder}/django"
+      },
+      "presentation": {
+        "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Redis",
+      "type": "shell",
+      "command": "if [ \"$(docker inspect -f '{{.State.Running}}' hydroserver-redis 2>/dev/null)\" = \"true\" ]; then echo \"Redis already running\"; elif docker inspect -f '{{.State.Running}}' hydroserver-redis >/dev/null 2>&1; then docker start hydroserver-redis; else docker run --name hydroserver-redis -p 6379:6379 -d --restart unless-stopped redis; fi",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Celery Worker",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/dev-api-command -m celery -A hydroserver worker --loglevel=INFO",
+      "options": {
+        "cwd": "${workspaceFolder}/django"
+      },
+      "presentation": {
+        "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Celery Beat",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/dev-api-command -m celery -A hydroserver beat --loglevel=INFO",
+      "options": {
+        "cwd": "${workspaceFolder}/django"
+      },
+      "presentation": {
+        "group": "dev-environment",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Dev Environment",
+      "dependsOn": [
+        "Start Backend",
+        "Start Data Management App",
+        "Start QC App"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Dev Environment + Celery",
+      "dependsOn": [
+        "Start Redis",
+        "Start Backend",
+        "Start Data Management App",
+        "Start QC App",
+        "Start Celery Worker",
+        "Start Celery Beat"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
