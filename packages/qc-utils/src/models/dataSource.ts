@@ -1,4 +1,4 @@
-import { Datastream } from '@/types'
+import { Datastream } from '../types'
 import { Payload } from './payload'
 import { Timestamp } from './timestamp'
 

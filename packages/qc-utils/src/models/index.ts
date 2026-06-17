@@ -1,2 +1,2 @@
-export { DataSource } from '@/models/dataSource'
-export { Payload } from '@/models/payload'
+export { DataSource } from './dataSource'
+export { Payload } from './payload'

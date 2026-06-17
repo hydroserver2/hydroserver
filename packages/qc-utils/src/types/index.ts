@@ -1,5 +1,5 @@
-import { DataSource } from "@/models";
-import { ObservationRecord } from "@/utils/plotting/observation-record";
+import { DataSource } from "../models";
+import { ObservationRecord } from "../utils/plotting/observation-record";
 
 export type EnumDictionary<T extends string | symbol | number, U> = {
   [K in T]: U;

@@ -1,4 +1,4 @@
-import { EnumDictionary, TimeUnit } from '@/types'
+import { EnumDictionary, TimeUnit } from '../types'
 
 const SECOND = 1
 const MINUTE = SECOND * 60
