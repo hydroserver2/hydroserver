@@ -6,15 +6,13 @@ from django.conf import settings
 from core.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
 
-@cache_page(60 * 10)
-def index(request):
-
+def get_app_settings_context():
     instance_configuration = InstanceConfiguration.get_configuration()
     contact_information = ContactInformation.objects.all()
     map_layers = MapLayer.objects.all()
     social_apps = SocialApp.objects.all()
 
-    context = {
+    return {
         "authenticationConfiguration": {
             "hydroserverSignupEnabled": settings.ACCOUNT_SIGNUP_ENABLED,
             "providers": [
@@ -99,4 +97,17 @@ def index(request):
         },
     }
 
+
+@cache_page(60 * 10)
+def main_spa_view(request):
+    context = get_app_settings_context()
+
     return render(request, "index.html", {"settings": context})
+
+
+@cache_page(60 * 10)
+def qc_spa_view(request):
+    return render(request, "qc/index.html")
+
+
+index = main_spa_view

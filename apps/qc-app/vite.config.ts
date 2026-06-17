@@ -6,12 +6,14 @@ import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 
 // @ts-ignore
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd())
-  const base = env.VITE_APP_ROUTE || '/'
+  const qcUtilsRoot = resolve(__dirname, '../../packages/qc-utils/src')
+  const useLocalQcUtils =
+    command === 'serve' || env.VITE_QC_UTILS_LOCAL === '1'
 
   return {
-    base,
+    base: '/qc/',
     plugins: [
       vue(),
       vuetify({
@@ -30,7 +32,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     optimizeDeps: {
-      exclude: ['vuetify'],
+      exclude: ['vuetify', ...(useLocalQcUtils ? ['@uwrl/qc-utils'] : [])],
     },
     server: {
       host: '127.0.0.1',
@@ -49,11 +51,20 @@ export default defineConfig(({ mode }) => {
           'Cross-Origin-Opener-Policy': 'same-origin',
           'Cross-Origin-Embedder-Policy': 'require-corp',
         },
+      fs: {
+        allow: [
+          resolve(__dirname),
+          ...(useLocalQcUtils ? [qcUtilsRoot] : []),
+        ],
+      },
     },
     resolve: {
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts', '.py'],
       alias: {
         '@': resolve(__dirname, 'src'),
+        ...(useLocalQcUtils
+          ? { '@uwrl/qc-utils': resolve(qcUtilsRoot, 'index.ts') }
+          : {}),
       },
     },
     build: {

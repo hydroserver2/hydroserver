@@ -6,6 +6,8 @@ import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
+  const qcProxyTarget = env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:1203'
   const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
@@ -30,14 +32,21 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '127.0.0.1',
       port: 5173,
-      proxy: env.VITE_APP_PROXY_BASE_URL
-        ? {
-            '/api': {
-              target: env.VITE_APP_PROXY_BASE_URL,
-              changeOrigin: true,
-            },
-          }
-        : undefined,
+      proxy: {
+        ...(apiProxyTarget
+          ? {
+              '/api': {
+                target: apiProxyTarget,
+                changeOrigin: true,
+              },
+            }
+          : {}),
+        '/qc': {
+          target: qcProxyTarget,
+          changeOrigin: true,
+          ws: true,
+        },
+      },
       fs: {
         allow: [
           sdkRoot,
