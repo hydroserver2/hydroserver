@@ -418,3 +418,56 @@ def test_delete_data_connection(get_principal, principal, data_connection, error
             principal=get_principal(principal),
         )
         assert not DataConnection.objects.filter(pk=uuid.UUID(data_connection)).exists()
+
+
+def _json_create_params(**overrides):
+    params = dict(
+        name="New JSON Data Connection",
+        source_url="https://example.com/data.json",
+        payload_type="JSON",
+        timestamp_key="timestamp",
+        jmespath="items[*].value",
+    )
+    params.update(overrides)
+    return params
+
+
+@pytest.mark.parametrize(
+    "jmespath, error, error_fragment",
+    [
+        ("items[*].value", None, None),
+        ("foo.bar.baz", None, None),
+        ("[invalid", ValueError, "Invalid JMESPath expression"),
+        ("foo..bar", ValueError, "Invalid JMESPath expression"),
+    ],
+)
+def test_create_json_data_connection_jmespath_validation(
+    get_principal, jmespath, error, error_fragment
+):
+    if error:
+        with pytest.raises(error) as exc_info:
+            data_connection_service.create(
+                principal=get_principal("owner"),
+                workspace=uuid.UUID(PRIVATE_WORKSPACE),
+                **_json_create_params(jmespath=jmespath),
+            )
+        assert error_fragment in _err(exc_info)
+    else:
+        result = data_connection_service.create(
+            principal=get_principal("owner"),
+            workspace=uuid.UUID(PRIVATE_WORKSPACE),
+            **_json_create_params(jmespath=jmespath),
+        )
+        assert result.payload.jmespath == jmespath
+
+
+def test_update_json_data_connection_with_invalid_jmespath(get_principal):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            payload_type="JSON",
+            timestamp_key="timestamp",
+            jmespath="[invalid",
+        )
+    assert "Invalid JMESPath expression" in _err(exc_info)
