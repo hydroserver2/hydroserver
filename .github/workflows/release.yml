@@ -62,7 +62,7 @@ jobs:
           path: apps/data-management/data-management-app-${{ inputs.tag }}.zip
 
   build-quality-control-app:
-    name: Build Data Management App
+    name: Build Quality Control App
     runs-on: ubuntu-latest
 
     steps:
@@ -79,6 +79,7 @@ jobs:
           cache-dependency-path: |
             apps/qc-app/package-lock.json
             packages/hydroserver-ts/package-lock.json
+            packages/qc-utils/package-lock.json
 
       - name: Install TypeScript client dependencies
         working-directory: packages/hydroserver-ts
@@ -87,6 +88,10 @@ jobs:
       - name: Install QC utils dependencies
         working-directory: packages/qc-utils
         run: npm ci
+
+      - name: Build QC utils
+        working-directory: packages/qc-utils
+        run: npm run build
 
       - name: Install dependencies
         working-directory: apps/qc-app
@@ -97,7 +102,7 @@ jobs:
         run: |
           cat << EOF > .env
           VITE_APP_VERSION=${{ inputs.tag }}
-          VITE_APP_ROUTE=/quality-control/
+          VITE_APP_ROUTE=/qc/
           EOF
 
       - name: Build
