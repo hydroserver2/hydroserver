@@ -167,7 +167,6 @@ const notificationRecipientInputError = ref('')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const authHeaderNameOptions = ['Authorization', 'X-API-Key']
-const defaultAuthHeaderName = authHeaderNameOptions[0]
 
 const toRecipientString = (value: unknown) => {
   if (typeof value === 'string') return value.trim()
@@ -235,19 +234,9 @@ function hasAdvancedFeatures(dataConnection?: DataConnection) {
   )
 }
 
-function ensureDefaultAuthHeaderName() {
-  if (
-    !toRecipientString(formDataConnection.value.authHeaderName) &&
-    !toRecipientString(formDataConnection.value.authHeaderValue)
-  ) {
-    formDataConnection.value.authHeaderName = defaultAuthHeaderName
-  }
-}
-
 function resetFormState(dataConnection?: DataConnection) {
   formDataConnection.value = dataConnection ?? new DataConnection()
   advancedFeaturesEnabled.value = hasAdvancedFeatures(formDataConnection.value)
-  if (advancedFeaturesEnabled.value) ensureDefaultAuthHeaderName()
   showAuthHeaderValue.value = false
   notificationRecipientInput.value = ''
   notificationRecipientInputError.value = ''
@@ -293,8 +282,7 @@ watch(
   { immediate: true }
 )
 
-watch(advancedFeaturesEnabled, (enabled) => {
-  if (enabled) ensureDefaultAuthHeaderName()
+watch(advancedFeaturesEnabled, () => {
   notificationRecipientInputError.value = ''
 })
 
@@ -339,13 +327,13 @@ async function onSubmit() {
       emit('created', res.data.id)
       Snackbar.success('Created data connection')
     }
+    emit('close')
   } else {
     Snackbar.error(res.message)
     console.error(res)
   }
 
   isSubmitting.value = false
-  emit('close')
 }
 
 function normalizeAdvancedFields(dataConnection: DataConnection) {
