@@ -176,7 +176,7 @@ jobs:
   build-and-push-docker-image:
     name: Build and Push Docker Image to GHCR
     runs-on: ubuntu-latest
-    needs: [build-data-management-app]
+    needs: [build-data-management-app, build-quality-control-app]
 
     steps:
       - name: Checkout repository
@@ -190,8 +190,17 @@ jobs:
           name: data-management-app-${{ inputs.tag }}
           path: .
 
-      - name: Rename artifact for Docker build
+      - name: Rename data management artifact for Docker build
         run: mv data-management-app-${{ inputs.tag }}.zip data_mgmt_app.zip
+
+      - name: Download quality control app artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qc-app-${{ inputs.tag }}
+          path: .
+
+      - name: Rename quality control artifact for Docker build
+        run: mv qc-app-${{ inputs.tag }}.zip qc_app.zip
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
