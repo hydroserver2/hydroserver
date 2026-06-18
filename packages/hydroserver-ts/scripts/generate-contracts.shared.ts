@@ -62,6 +62,16 @@ function toDataRef(schemaName: string): string {
   return `Data.components['schemas']['${schemaName}']`
 }
 
+function schemaToType(schema: any): string | null {
+  if (!schema || typeof schema !== 'object') return null
+  if (schema.$ref) return refName(schema.$ref)
+  if (schema.type === 'array') {
+    const itemType = schemaToType(schema.items)
+    return itemType ? `${itemType}[]` : null
+  }
+  return null
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -289,9 +299,9 @@ function analyzeResource(
     itemPathObj.delete ?? colPathObj.delete
   )
 
-  const postRef = postReqSchema?.$ref ? refName(postReqSchema.$ref) : null
-  const patchRef = patchReqSchema?.$ref ? refName(patchReqSchema.$ref) : null
-  const deleteRef = deleteReqSchema?.$ref ? refName(deleteReqSchema.$ref) : null
+  const postRef = schemaToType(postReqSchema)
+  const patchRef = schemaToType(patchReqSchema)
+  const deleteRef = schemaToType(deleteReqSchema)
 
   const PostBody = postRef ?? null
   const PatchBody = patchRef ?? (postRef ? `Partial<${postRef}>` : null)
