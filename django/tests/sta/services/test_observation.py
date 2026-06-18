@@ -8,6 +8,7 @@ from interfaces.api.schemas import (
     DatastreamPatchBody,
     ObservationBulkPostBody,
     ObservationBulkDeleteBody,
+    ObservationPostBody,
     ObservationSummaryResponse,
 )
 
@@ -133,6 +134,74 @@ def test_list_observation(
         assert (
             ObservationSummaryResponse.from_orm(observation) for observation in result
         )
+
+
+def test_create_observation(
+    django_assert_max_num_queries,
+    get_principal,
+):
+    datastream_id = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+
+    with django_assert_max_num_queries(12):
+        result = observation_service.create(
+            principal=get_principal("owner"),
+            datastream_id=datastream_id,
+            data=ObservationPostBody(
+                phenomenon_time="2025-03-10T01:00:00Z",
+                result=9.1,
+            ),
+            update_datastream_statistics=False,
+        )
+
+    assert result.result == 9.1
+    assert result.result_qualifier_codes == []
+
+
+def test_create_observation_with_result_qualifier_codes(
+    django_assert_max_num_queries,
+    get_principal,
+):
+    datastream_id = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+
+    with django_assert_max_num_queries(14):
+        result = observation_service.create(
+            principal=get_principal("owner"),
+            datastream_id=datastream_id,
+            data=ObservationPostBody(
+                phenomenon_time="2025-03-10T02:00:00Z",
+                result=9.2,
+                result_qualifier_codes=["SystemResultQualifier", "PublicResultQualifier"],
+            ),
+            update_datastream_statistics=False,
+        )
+
+    assert result.result == 9.2
+    assert set(result.result_qualifier_codes) == {
+        "SystemResultQualifier",
+        "PublicResultQualifier",
+    }
+
+
+def test_create_observation_with_invalid_result_qualifier_code(
+    get_principal,
+):
+    from ninja.errors import HttpError
+
+    datastream_id = uuid.UUID("27c70b41-e845-40ea-8cc7-d1b40f89816b")
+
+    with pytest.raises(HttpError) as exc_info:
+        observation_service.create(
+            principal=get_principal("owner"),
+            datastream_id=datastream_id,
+            data=ObservationPostBody(
+                phenomenon_time="2025-03-10T03:00:00Z",
+                result=9.3,
+                result_qualifier_codes=["NonExistentCode"],
+            ),
+            update_datastream_statistics=False,
+        )
+
+    assert exc_info.value.status_code == 400
 
 
 def test_create_observations(
