@@ -17,11 +17,9 @@ class SensorThingsUtils:
 
     @staticmethod
     def iso_time_interval(begin, end):
-        if begin is None and end is None:
+        if begin is None or end is None or end <= begin:
             return None
-        begin_str = begin.isoformat() if begin else ".."
-        end_str = end.isoformat() if end else ".."
-        return f"{begin_str}/{end_str}"
+        return f"{begin.isoformat()}/{end.isoformat()}"
 
     def transform_model_field(self, component, prop):
         if component.__name__ == "Thing":
