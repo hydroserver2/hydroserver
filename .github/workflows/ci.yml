@@ -372,18 +372,32 @@ jobs:
           cache: npm
           cache-dependency-path: |
             apps/qc-app/package-lock.json
+            packages/qc-utils/package-lock.json
             packages/hydroserver-ts/package-lock.json
 
       # The QC app builds @hydroserver/client from source via a local `file:`
       # link, so the client's own dependencies must be present for the e2e
-      # build/serve to resolve them.
+      # build/serve to resolve them. `--workspaces=false` keeps each install
+      # scoped to its own package-lock.json instead of the workspace root.
       - name: Install TypeScript client dependencies
         working-directory: packages/hydroserver-ts
         run: npm ci
 
+      - name: Install QC utils dependencies
+        working-directory: packages/qc-utils
+        run: npm ci --workspaces=false
+
+      - name: Build QC utils
+        working-directory: packages/qc-utils
+        run: npm run build
+
       - name: Install QC app dependencies
         working-directory: apps/qc-app
-        run: npm ci
+        run: npm ci --workspaces=false
+
+      - name: Install local QC utils package
+        working-directory: apps/qc-app
+        run: npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false
 
       - name: Install Playwright browsers
         working-directory: apps/qc-app
