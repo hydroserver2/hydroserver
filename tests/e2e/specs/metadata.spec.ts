@@ -273,18 +273,26 @@ test.describe('metadata management', () => {
   test('metadata search box filters visible rows', async ({ page }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
+    await selectWorkspace(page, fixtures.workspaces.public.name)
+
+    const workspaceTable = page.getByTestId('workspace-metadata-table')
 
     const searchBox = page.getByRole('textbox', { name: /search/i }).first()
     await expect(searchBox).toBeVisible()
 
     await searchBox.fill('Public Assigned Sensor')
     await expect(
-      page.locator('tr').filter({ hasText: 'Public Assigned Sensor' }).first()
+      workspaceTable
+        .locator('tr')
+        .filter({ hasText: 'Public Assigned Sensor' })
+        .first()
     ).toBeVisible()
 
     await searchBox.fill('zzz-no-match-e2e')
     await expect(
-      page.locator('tr').filter({ hasText: 'Public Assigned Sensor' })
+      workspaceTable
+        .locator('tr')
+        .filter({ hasText: 'Public Assigned Sensor' })
     ).toHaveCount(0)
 
     await searchBox.clear()
