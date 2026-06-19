@@ -106,9 +106,19 @@ export async function installMocks(
   const observationsById = options.observationsById ?? {}
   const submissions = options.submissions ?? []
 
+  // Match only real HydroServer API calls by pathname. A bare `**/api/**`
+  // glob also catches the dev server's own source modules — the QC app
+  // aliases `@hydroserver/client` to `packages/hydroserver-ts/src`, whose
+  // files live under `.../src/api/...` and are served from
+  // `/qc/@fs/.../src/api/runtime.ts`. Those URLs contain `/api/` but their
+  // pathname starts with `/qc/`, so intercepting them would return
+  // `application/json` for a module script and blank the app. Real API
+  // requests always have a pathname that starts with `/api/`.
+  const isApiRequest = (url: URL): boolean => url.pathname.startsWith('/api/')
+
   // Preflights for anything — the real server serves OPTIONS via
   // middleware; swallowing them here keeps the mocks happy.
-  await page.route('**/api/**', async (route) => {
+  await page.route(isApiRequest, async (route) => {
     const request = route.request()
     if (request.method() === 'OPTIONS') {
       return route.fulfill({ status: 204, headers: corsHeaders(route) })
