@@ -696,6 +696,7 @@ export const createPlotlyOption = (
   const resetAxesButton = {
     name: 'Reset axes',
     title: 'Reset axes',
+    attr: 'reset-axes',
     icon: iconReset,
     click: resetAxesClick,
   }

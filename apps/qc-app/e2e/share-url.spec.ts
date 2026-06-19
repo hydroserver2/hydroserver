@@ -57,6 +57,39 @@ async function waitForPlotMeta(page: Page) {
     return null
   })
 }
+
+async function clickResetAxes(page: Page) {
+  const selector =
+    '.modebar-btn[data-attr="reset-axes"], .modebar-btn[data-title="Reset axes"]'
+
+  await page.waitForFunction(
+    (buttonSelector) => {
+      const button = document.querySelector(
+        buttonSelector
+      ) as HTMLElement | null
+      if (!button) return false
+
+      const rect = button.getBoundingClientRect()
+      const style = window.getComputedStyle(button)
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      )
+    },
+    selector,
+    { timeout: 15_000 }
+  )
+
+  await page.evaluate((buttonSelector) => {
+    const button = document.querySelector(
+      buttonSelector
+    ) as HTMLButtonElement | null
+    if (!button) throw new Error('Reset axes modebar button was not found')
+    button.click()
+  }, selector)
+}
 import {
   DATASTREAM_ID,
   DATASTREAM_ID_B,
@@ -324,7 +357,7 @@ test.describe('share URL', () => {
   }) => {
     // Firefox cold-load + plot rebuild + reset is too heavy for the
     // default 30 s under worker contention.
-    test.setTimeout(60_000)
+    test.setTimeout(90_000)
     // Bug (options.ts:689): on a fresh mount with a URL `z=`, Plotly
     // pins `_rangeInitial0/1` to the URL view — stock Reset bounces
     // back there instead of the data extent. A cold goto to a zoomed
@@ -360,7 +393,7 @@ test.describe('share URL', () => {
     await page.mouse.up()
     await page.waitForTimeout(400)
 
-    await page.locator('.modebar-btn[data-title="Reset axes"]').click()
+    await clickResetAxes(page)
     await page.waitForTimeout(500)
 
     const afterReset = await page.evaluate(() => {
