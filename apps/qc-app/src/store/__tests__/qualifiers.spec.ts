@@ -8,8 +8,16 @@ const { selectedWorkspaceId, hsRef, mockList, mockCreate } = vi.hoisted(() => {
   const mockCreate = { fn: (..._: any[]) => Promise.resolve({ data: null as any }) }
   const hsRef = ref<any>({
     resultQualifiers: {
-      list: (...args: any[]) => mockList.fn(...args),
-      create: (...args: any[]) => mockCreate.fn(...args),
+      list: async (...args: any[]) => ({
+        ok: true,
+        status: 200,
+        ...(await mockList.fn(...args)),
+      }),
+      create: async (...args: any[]) => ({
+        ok: true,
+        status: 200,
+        ...(await mockCreate.fn(...args)),
+      }),
     },
   })
   return {

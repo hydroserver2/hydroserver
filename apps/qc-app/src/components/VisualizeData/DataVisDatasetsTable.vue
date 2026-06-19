@@ -241,8 +241,7 @@ import { computed, reactive, ref } from 'vue'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import { Datastream } from '@hydroserver/client'
 import type { DatastreamExtended } from '@hydroserver/client'
-import { useHydroServer } from '@/store/hydroserver'
-const { hs } = storeToRefs(useHydroServer())
+import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 
 const { filteredDatastreams, plottedDatastreams, qcDatastream } =
   storeToRefs(useDataVisStore())
@@ -260,7 +259,7 @@ const selectedDatastream = ref<(Datastream & DatastreamExtended) | null>(null)
 const downloadSelected = async (plottedDatastreams: Datastream[]) => {
   downloading.value = true
   try {
-    await hs.value.datastreams.downloadCsvBatchZip(plottedDatastreams)
+    await downloadDatastreamsCsvZip(plottedDatastreams)
   } catch (error) {
     console.error('Error downloading selected datastreams', error)
   }

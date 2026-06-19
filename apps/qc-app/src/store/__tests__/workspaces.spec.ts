@@ -6,7 +6,11 @@ const { hsRef, mockList } = vi.hoisted(() => {
   const mockList = { fn: (..._: any[]) => Promise.resolve({ data: [] as any[] }) }
   const hsRef = ref<any>({
     workspaces: {
-      list: (...args: any[]) => mockList.fn(...args),
+      list: async (...args: any[]) => ({
+        ok: true,
+        status: 200,
+        ...(await mockList.fn(...args)),
+      }),
     },
   })
   return { hsRef, mockList }

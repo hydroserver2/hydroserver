@@ -47,11 +47,16 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     hs.value.observedProperties.list({ workspace_id: workspaceId } as any),
   ])
 
-  things.value = thingsResponse.data
-  datastreams.value = datastreamsResponse.data as (Datastream &
-    DatastreamExtended)[]
-  processingLevels.value = processingLevelsResponse.data
-  observedProperties.value = observedPropertiesResponse.data
+  things.value = thingsResponse.ok ? thingsResponse.data : []
+  datastreams.value = (datastreamsResponse.ok
+    ? datastreamsResponse.data
+    : []) as (Datastream & DatastreamExtended)[]
+  processingLevels.value = processingLevelsResponse.ok
+    ? processingLevelsResponse.data
+    : []
+  observedProperties.value = observedPropertiesResponse.ok
+    ? observedPropertiesResponse.data
+    : []
 }
 
 // Clearing the selection wipes catalogs so stale data from the old

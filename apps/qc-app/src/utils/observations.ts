@@ -33,17 +33,23 @@ export const fetchObservationsSync = async (
         }
       )
 
-      if (!result.data.result.length) {
+      if (!result.ok) {
+        break
+      }
+
+      const cols = result.data as {
+        result: number[]
+        phenomenonTime: string[]
+      }
+      if (!cols.result.length) {
         break
       }
 
       datetimes = [
         ...datetimes,
-        ...result.data.phenomenonTime.map((d: any) =>
-          new Date(d).getTime()
-        ),
+        ...cols.phenomenonTime.map((d: any) => new Date(d).getTime()),
       ]
-      dataValues = [...dataValues, ...result.data.result]
+      dataValues = [...dataValues, ...cols.result]
       page++
     }
 

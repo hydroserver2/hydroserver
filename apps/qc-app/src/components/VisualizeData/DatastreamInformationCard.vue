@@ -221,6 +221,7 @@ import {
 } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 import { formatTimeWithZone } from '@/utils/time'
+import { downloadDatastreamCsv } from '@/utils/csvExport'
 
 const { hs } = storeToRefs(useHydroServer())
 
@@ -285,7 +286,7 @@ const MetadataList = (props: { items: { label: string; value: any }[] }, { slots
 const downloadDatastream = async (id: string) => {
   downloading.value = true
   try {
-    await hs.value.datastreams.downloadCsv(id)
+    await downloadDatastreamCsv(id)
   } catch (error) {
     console.error('Error downloading datastream', error)
   }
@@ -407,7 +408,7 @@ onMounted(async () => {
   }
   try {
     const res = await hs.value.datastreams.getTags(d.value.id)
-    tags.value = Array.isArray(res.data) ? res.data : []
+    tags.value = res.ok && Array.isArray(res.data) ? res.data : []
   } catch (error) {
     console.error('Error fetching datastream tags', error)
     tags.value = []

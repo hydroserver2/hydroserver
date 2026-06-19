@@ -5,7 +5,9 @@
     // to this tsconfig's directory, so `@/*` still maps to `./src/*`.
     // `baseUrl` itself is deprecated in TS 6 and removed in TS 7.
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@hydroserver/client": ["../../packages/hydroserver-ts/src/index.ts"],
+      "@hydroserver/client/*": ["../../packages/hydroserver-ts/src/*"]
     },
 
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",

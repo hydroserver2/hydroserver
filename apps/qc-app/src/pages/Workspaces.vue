@@ -165,7 +165,7 @@ async function loadQualifierCounts() {
     const response = await hs.value.resultQualifiers.list({
       fetch_all: true,
     })
-    const list = (response.data ?? []) as ResultQualifier[]
+    const list = (response.ok ? response.data : []) as ResultQualifier[]
     const counts: Record<string, number> = {}
     for (const q of list) {
       const wsId = q.workspaceId
@@ -187,7 +187,7 @@ async function loadDatastreamCounts() {
     const response = await hs.value.datastreams.list({
       fetch_all: true,
     })
-    const list = (response.data ?? []) as Datastream[]
+    const list = (response.ok ? response.data : []) as Datastream[]
     const counts: Record<string, number> = {}
     for (const ds of list) {
       const wsId = ds.workspaceId

@@ -55,7 +55,7 @@ export const useQualifierStore = defineStore(
           workspace_id: selectedWorkspaceId.value,
           fetch_all: true,
         } as any)
-        const list = (response.data ?? []) as ResultQualifier[]
+        const list = (response.ok ? response.data : []) as ResultQualifier[]
         qualifiers.value = list.map((q) => ({
           id: q.id,
           code: q.code,
@@ -118,7 +118,9 @@ export const useQualifierStore = defineStore(
           body.description = description.trim()
           body.workspaceId = selectedWorkspaceId.value
           const response = await hs.value.resultQualifiers.create(body)
-          const saved = response.data as ResultQualifier | undefined
+          const saved = (response.ok ? response.data : undefined) as
+            | ResultQualifier
+            | undefined
           if (saved?.id) {
             const q: Qualifier = {
               id: saved.id,

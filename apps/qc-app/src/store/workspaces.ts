@@ -60,7 +60,7 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     isLoading.value = true
     try {
       const response = await hs.value.workspaces.list({ fetch_all: true })
-      const list = (response.data ?? []) as Workspace[]
+      const list = (response.ok ? response.data : []) as Workspace[]
       availableWorkspaces.value = list
 
       // Reconcile against the fresh list: promote the stored placeholder

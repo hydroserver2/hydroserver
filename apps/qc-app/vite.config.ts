@@ -12,6 +12,8 @@ export default defineConfig(({ command, mode }) => {
   const qcUtilsRoot = resolve(__dirname, '../../packages/qc-utils/src')
   const useLocalQcUtils =
     command === 'serve' || env.VITE_QC_UTILS_LOCAL === '1'
+  const clientRoot = resolve(__dirname, '../../packages/hydroserver-ts/src')
+  const useLocalClient = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
 
   return {
     base: mode === 'django' ? '/static/qc/' : '/qc/',
@@ -30,7 +32,11 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     optimizeDeps: {
-      exclude: ['vuetify', ...(useLocalQcUtils ? ['@uwrl/qc-utils'] : [])],
+      exclude: [
+        'vuetify',
+        ...(useLocalQcUtils ? ['@uwrl/qc-utils'] : []),
+        ...(useLocalClient ? ['@hydroserver/client'] : []),
+      ],
     },
     server: {
       host: '127.0.0.1',
@@ -63,6 +69,7 @@ export default defineConfig(({ command, mode }) => {
         allow: [
           resolve(__dirname),
           ...(useLocalQcUtils ? [qcUtilsRoot] : []),
+          ...(useLocalClient ? [clientRoot] : []),
         ],
       },
     },
@@ -72,6 +79,9 @@ export default defineConfig(({ command, mode }) => {
         '@': resolve(__dirname, 'src'),
         ...(useLocalQcUtils
           ? { '@uwrl/qc-utils': resolve(qcUtilsRoot, 'index.ts') }
+          : {}),
+        ...(useLocalClient
+          ? { '@hydroserver/client': resolve(clientRoot, 'index.ts') }
           : {}),
       },
     },
