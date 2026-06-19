@@ -66,6 +66,7 @@ export default defineConfig(({ mode }) => {
       manifest: true,
     },
     test: {
+      include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       globals: true,
       environmentMatchGlobs: [['src/components/**', 'jsdom']],
       setupFiles: ['src/test/setup.ts'],
