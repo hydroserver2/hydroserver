@@ -142,6 +142,15 @@ jobs:
           cache-dependency-path: |
             apps/qc-app/package-lock.json
             packages/qc-utils/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      # The QC app consumes @hydroserver/client as a local `file:` link and
+      # builds it from source, so the client's own dependencies (e.g. p-limit)
+      # must be installed for typecheck/build to resolve them. Mirrors the
+      # data-management job.
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
 
       - name: Install QC utils dependencies
         working-directory: packages/qc-utils
@@ -361,7 +370,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/qc-app/package-lock.json
+          cache-dependency-path: |
+            apps/qc-app/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      # The QC app builds @hydroserver/client from source via a local `file:`
+      # link, so the client's own dependencies must be present for the e2e
+      # build/serve to resolve them.
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
 
       - name: Install QC app dependencies
         working-directory: apps/qc-app

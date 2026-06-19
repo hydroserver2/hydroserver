@@ -10,8 +10,7 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
   const qcUtilsRoot = resolve(__dirname, '../../packages/qc-utils/src')
-  const useLocalQcUtils =
-    command === 'serve' || env.VITE_QC_UTILS_LOCAL === '1'
+  const useLocalQcUtils = command === 'serve' || env.VITE_QC_UTILS_LOCAL === '1'
   const clientRoot = resolve(__dirname, '../../packages/hydroserver-ts/src')
   const useLocalClient = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
 
@@ -59,12 +58,13 @@ export default defineConfig(({ command, mode }) => {
       // when you need to talk to a backend that doesn't serve CORP headers.
       // The worker layer gracefully falls back to inline execution when
       // SharedArrayBuffer isn't available.
-      headers: env.VITE_APP_DISABLE_COOP === '1'
-        ? undefined
-        : {
-          'Cross-Origin-Opener-Policy': 'same-origin',
-          'Cross-Origin-Embedder-Policy': 'require-corp',
-        },
+      headers:
+        env.VITE_APP_DISABLE_COOP === '1'
+          ? undefined
+          : {
+              'Cross-Origin-Opener-Policy': 'same-origin',
+              'Cross-Origin-Embedder-Policy': 'require-corp',
+            },
       fs: {
         allow: [
           resolve(__dirname),
@@ -90,6 +90,7 @@ export default defineConfig(({ command, mode }) => {
     },
     test: {
       globals: true,
+      include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
       environmentMatchGlobs: [['src/components/**', 'jsdom']],
       server: {
