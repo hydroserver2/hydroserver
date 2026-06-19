@@ -1,5 +1,9 @@
 <template>
-  <div class="d-flex flex-column" style="min-height: 0">
+  <div
+    data-testid="filter-range-panel"
+    class="d-flex flex-column"
+    style="min-height: 0"
+  >
     <div class="px-3 py-2" style="min-height: 0">
       <RangeStager ref="stager" />
     </div>

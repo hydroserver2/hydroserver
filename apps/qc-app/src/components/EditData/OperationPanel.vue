@@ -69,6 +69,7 @@
             <template #activator="{ props: tp }">
               <v-btn
                 v-bind="tp"
+                data-testid="filter-range-disable-btn"
                 size="x-small"
                 variant="text"
                 density="comfortable"
@@ -86,6 +87,7 @@
             date range mask to restrict it to a datetime window.
           </p>
           <v-btn
+            data-testid="filter-range-enable-btn"
             size="small"
             variant="outlined"
             color="primary"

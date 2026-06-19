@@ -6,12 +6,12 @@ where the documentation gaps are so they don't waste a day finding out.
 
 ## Prerequisites
 
-| Tool       | Version          | Notes                                                       |
-|------------|------------------|-------------------------------------------------------------|
-| Node.js    | 20 LTS or 23.x   | CI runs 20; the demo deploy workflow runs 23. Either works. |
-| npm        | 10+              | Ships with Node.                                            |
-| Git        | any recent       |                                                             |
-| A browser  | Chrome 111+ / Firefox 119+ / Safari 16.4+ | Required for `SharedArrayBuffer` and typed-array `resize()`. |
+| Tool      | Version                                   | Notes                                                        |
+| --------- | ----------------------------------------- | ------------------------------------------------------------ |
+| Node.js   | 20 LTS or 23.x                            | CI runs 20; the demo deploy workflow runs 23. Either works.  |
+| npm       | 10+                                       | Ships with Node.                                             |
+| Git       | any recent                                |                                                              |
+| A browser | Chrome 111+ / Firefox 119+ / Safari 16.4+ | Required for `SharedArrayBuffer` and typed-array `resize()`. |
 
 You do **not** need Docker. For frontend-only work you can run the Data
 Management app and QC app against a deployed HydroServer
@@ -68,8 +68,7 @@ Read these files in order:
 npm run dev               # QC vite dev server, http://127.0.0.1:5173
 npm test                  # vitest, watch mode
 npm run coverage          # vitest one-shot + v8 coverage (80% threshold)
-npm run test:e2e          # playwright, headed
-npm run test:e2e:ci       # playwright, headless (CI mode)
+npm run e2e               # playwright, headless (CI mode); add -- --ui or -- --headed
 npm run build             # vue-tsc + vite build → dist/
 ```
 
@@ -104,7 +103,7 @@ To unlink: `npm unlink @uwrl/qc-utils && npm install`.
 - Vue 3 Composition API with `<script setup>`. Options API is not used.
 - Pinia stores for cross-component state; component-local state stays in
   `ref` / `reactive` inside the component.
-- Comments only for the non-obvious *why*. Don't restate the code.
+- Comments only for the non-obvious _why_. Don't restate the code.
 - Commit format: `{type}({scope}): {description}` — `feat`, `fix`,
   `test`, `refactor`, `perf`, `docs`, `style`, `chore`.
 

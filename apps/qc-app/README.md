@@ -117,12 +117,14 @@ npx playwright install chromium firefox
 Run modes:
 
 ```bash
-npm run test:e2e              # headed — opens a visible browser
-npm run test:e2e:ci           # headless — CI mode, also fast for local
-npm run test:e2e:live         # same-origin smoke via Data Management
+npm run e2e                   # headless — Chromium + Firefox (CI mode, fast for local)
+npm run e2e:live              # same-origin smoke via Data Management
 ```
 
-The Playwright `webServer` config auto-starts the QC Vite dev server at `http://127.0.0.1:5173` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs — running e2e against a static `file://` build won't work.
+For interactive debugging, append Playwright flags, e.g. `npm run e2e -- --ui` or
+`npm run e2e -- --headed`.
+
+The Playwright config in `playwright.config.ts` auto-starts the QC Vite dev server at `http://127.0.0.1:15173` and reuses an existing one outside CI. The dev server is what serves the COOP / COEP headers `SharedArrayBuffer` needs — running e2e against a static `file://` build won't work.
 
 The mocked specs intercept HydroServer routes via `page.route()` and serve fixture JSON, so most runs need no backend. The live golden-path spec expects both frontends to be running and enters QC through `http://127.0.0.1:1203/qc/`.
 

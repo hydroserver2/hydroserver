@@ -51,7 +51,8 @@ async function loginThroughDataManagementIfNeeded(page: Page) {
 //   9. Click Save Changes, confirm, assert success snackbar.
 //
 // Live smoke — talks to the backend configured behind Data Management's
-// /api proxy. Opt in with `E2E_LIVE=1 npx playwright test qc-golden-path`
+// /api proxy. Opt in with
+// `npm run e2e:live` (E2E_LIVE=1 playwright test qc-golden-path --headed)
 // so CI runs the fast mocked suite by default; the live smoke is for
 // pre-release confidence.
 test.describe('QC golden path (live same-origin)', () => {

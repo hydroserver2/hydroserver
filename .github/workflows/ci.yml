@@ -219,8 +219,8 @@ jobs:
           SMTP_URL: smtp://127.0.0.1:1025
         run: python -m pytest
 
-  e2e:
-    name: End-to-End Tests
+  e2e-data-management:
+    name: Data Management E2E
     runs-on: ubuntu-latest
     env:
       E2E_DATABASE_URL: postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver_e2e_${{ github.run_id }}_${{ github.run_attempt }}
@@ -269,7 +269,6 @@ jobs:
           cache-dependency-path: |
             apps/data-management/package-lock.json
             packages/hydroserver-ts/package-lock.json
-            tests/e2e/package-lock.json
 
       - name: Install API dependencies
         run: |
@@ -285,27 +284,61 @@ jobs:
         working-directory: apps/data-management
         run: npm ci
 
-      - name: Install E2E dependencies
-        working-directory: tests/e2e
-        run: npm ci
-
       - name: Install Playwright browser
-        working-directory: tests/e2e
+        working-directory: apps/data-management
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright E2E suite
+      - name: Run data-management Playwright E2E suite
+        working-directory: apps/data-management
         env:
           E2E_PYTHON: python
-        run: ./scripts/e2e test
+        run: npm run e2e
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-data-management
           path: |
-            tests/e2e/playwright-report
-            tests/e2e/test-results
+            apps/data-management/playwright-report
+            apps/data-management/test-results
+          if-no-files-found: ignore
+
+  e2e-qc-app:
+    name: QC App E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/qc-app/package-lock.json
+
+      - name: Install QC app dependencies
+        working-directory: apps/qc-app
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: apps/qc-app
+        run: npx playwright install --with-deps chromium firefox
+
+      - name: Run QC app Playwright E2E suite
+        working-directory: apps/qc-app
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-qc-app
+          path: |
+            apps/qc-app/playwright-report
+            apps/qc-app/test-results
           if-no-files-found: ignore
 
   trigger-release:
@@ -317,7 +350,7 @@ jobs:
         github.event.release.prerelease ||
         (!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled'))
       )
-    needs: [docs, hydroserver-ts, data-management, hydroserverpy, api, e2e]
+    needs: [docs, hydroserver-ts, data-management, hydroserverpy, api, e2e-data-management, e2e-qc-app]
     permissions:
       actions: write
  

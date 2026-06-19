@@ -21,7 +21,9 @@ test.describe('workspace management', () => {
     await page.getByLabel('Name *').fill(workspaceName)
     await page.getByRole('button', { name: 'Save' }).click()
 
-    const workspaceRow = page.getByRole('row', { name: new RegExp(workspaceName) })
+    const workspaceRow = page.getByRole('row', {
+      name: new RegExp(workspaceName),
+    })
     await expect(workspaceRow).toBeVisible()
 
     await workspaceRow.getByRole('button').nth(1).click()
@@ -74,7 +76,9 @@ test.describe('workspace management', () => {
     await page.getByLabel('Name *').fill(workspaceName)
     await page.getByRole('button', { name: 'Save' }).click()
 
-    const workspaceRow = page.getByRole('row', { name: new RegExp(workspaceName) })
+    const workspaceRow = page.getByRole('row', {
+      name: new RegExp(workspaceName),
+    })
     await expect(workspaceRow).toBeVisible()
     await workspaceRow
       .locator('[data-testid^="workspace-access-control-"]')
@@ -93,19 +97,13 @@ test.describe('workspace management', () => {
     await expect(collaboratorRow).toContainText('Viewer')
 
     await collaboratorRow.click()
-    await page
-      .getByTestId(`edit-collaborator-${users.viewer.email}`)
-      .click()
+    await page.getByTestId(`edit-collaborator-${users.viewer.email}`).click()
     await collaboratorRow.getByRole('combobox').first().click()
     await page.getByRole('option', { name: /Editor/ }).click()
-    await page
-      .getByTestId(`save-collaborator-${users.viewer.email}`)
-      .click()
+    await page.getByTestId(`save-collaborator-${users.viewer.email}`).click()
     await expect(collaboratorRow).toContainText('Editor')
 
-    await page
-      .getByTestId(`remove-collaborator-${users.viewer.email}`)
-      .click()
+    await page.getByTestId(`remove-collaborator-${users.viewer.email}`).click()
     await expect(collaboratorRow).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Close' }).click()

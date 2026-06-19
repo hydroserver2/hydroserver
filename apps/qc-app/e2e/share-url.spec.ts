@@ -25,7 +25,7 @@ async function waitForPlotMeta(page: Page) {
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
     const start = Date.now()
     while (Date.now() - start < 10_000) {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & {
             _fullLayout?: {
               xaxis?: {
@@ -42,10 +42,10 @@ async function waitForPlotMeta(page: Page) {
           typeof v === 'string' ? Date.parse(v) : v
         const bounds = (gd as HTMLElement).getBoundingClientRect()
         return {
-          dataFitRange: [
-            toMs(xa.range[0]),
-            toMs(xa.range[1]),
-          ] as [number, number],
+          dataFitRange: [toMs(xa.range[0]), toMs(xa.range[1])] as [
+            number,
+            number,
+          ],
           cursorClient: {
             x: bounds.x + xa._offset + xa._length / 2,
             y: bounds.y + bounds.height / 2,
@@ -110,7 +110,7 @@ test.describe('share URL', () => {
     // exercises captureCurrentZoomState (which normalises `yaxis` →
     // `y`) and the URL writer (which keys `yz=` by trace-axis ref).
     const gutter = await page.evaluate(() => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & {
             _fullLayout?: {
               xaxis?: { _offset?: number }
@@ -217,7 +217,7 @@ test.describe('share URL', () => {
       const start = Date.now()
       const tick = async () => {
         const r = await page.evaluate(() => {
-          const gd = document.querySelector('.plot-main') as
+          const gd = document.querySelector('[data-testid="main-plot"]') as
             | (HTMLElement & {
                 _fullLayout?: { xaxis?: { range?: [number, number] } }
               })
@@ -229,7 +229,8 @@ test.describe('share URL', () => {
           return [+new Date(range[0]), +new Date(range[1])] as [number, number]
         })
         if (r) {
-          const within = (got: number, want: number) => Math.abs(got - want) <= 1500
+          const within = (got: number, want: number) =>
+            Math.abs(got - want) <= 1500
           if (within(r[0], xLo) && within(r[1], xHi)) {
             resolve(r)
             return
@@ -247,8 +248,12 @@ test.describe('share URL', () => {
     expect(live).not.toBeNull()
     // Allow a 1.5 s slop window so the base36-second truncation in
     // the URL doesn't fight the assertion.
-    expect(Math.abs((live as [number, number])[0] - xLo)).toBeLessThanOrEqual(1500)
-    expect(Math.abs((live as [number, number])[1] - xHi)).toBeLessThanOrEqual(1500)
+    expect(Math.abs((live as [number, number])[0] - xLo)).toBeLessThanOrEqual(
+      1500
+    )
+    expect(Math.abs((live as [number, number])[1] - xHi)).toBeLessThanOrEqual(
+      1500
+    )
   })
 
   test('hydrator hides traces flagged by the URL `h=` bitmask on a cold load', async ({
@@ -276,7 +281,7 @@ test.describe('share URL', () => {
 
     const visibility = await page.evaluate(
       ({ a, b }) => {
-        const gd = document.querySelector('.plot-main') as
+        const gd = document.querySelector('[data-testid="main-plot"]') as
           | (HTMLElement & {
               data?: Array<{
                 id?: string
@@ -286,7 +291,10 @@ test.describe('share URL', () => {
             })
           | null
         const traces = gd?.data ?? []
-        type State = { visible: boolean | 'legendonly' | undefined; overlayHidden: boolean }
+        type State = {
+          visible: boolean | 'legendonly' | undefined
+          overlayHidden: boolean
+        }
         const reportFor = (id: string): State | null => {
           const main = traces.find((t) => t.id === id)
           if (!main) return null
@@ -356,7 +364,7 @@ test.describe('share URL', () => {
     await page.waitForTimeout(500)
 
     const afterReset = await page.evaluate(() => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & {
             _fullLayout?: { xaxis?: { range?: [number, number] } }
           })
@@ -372,5 +380,4 @@ test.describe('share URL', () => {
     expect(resetSpan).toBeGreaterThan(fullSpan * 0.8)
     expect(resetSpan).toBeLessThan(fullSpan * 1.5)
   })
-
 })

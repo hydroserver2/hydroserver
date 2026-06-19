@@ -302,7 +302,12 @@
       <v-tabs-window v-model="tab" class="flex-grow-1">
         <v-tabs-window-item value="plot" class="fill-height">
           <div class="fill-height position-relative d-flex flex-column">
-            <div ref="plot" class="flex-fill" style="min-height: 0"></div>
+            <div
+              ref="plot"
+              data-testid="main-plot"
+              class="flex-fill"
+              style="min-height: 0"
+            ></div>
             <template v-if="!preview">
               <div
                 class="plot-context-strip d-flex align-center justify-center cursor-pointer user-select-none"

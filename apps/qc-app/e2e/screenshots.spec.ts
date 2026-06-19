@@ -59,7 +59,7 @@ const OUT = path.resolve(__dirname, '..', 'docs', 'images')
 async function waitForPlotLayoutSettled(page: Page) {
   await page.waitForFunction(
     () => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & { _fullLayout?: { width: number } })
         | null
       if (!gd) return true
@@ -168,7 +168,9 @@ test.describe('docs screenshots', () => {
     await snapPage(page, 'home-multi-datastreams.png')
   })
 
-  test('edit view (two datastreams, secondary axis visible)', async ({ page }) => {
+  test('edit view (two datastreams, secondary axis visible)', async ({
+    page,
+  }) => {
     await page.setViewportSize(STD_VIEWPORT)
     await installMocks(page, {
       observationsById: {
@@ -211,9 +213,7 @@ test.describe('docs screenshots', () => {
     await installMocks(page)
     await setupEditView(page)
     // The help button is the only `?` icon in the toolbar.
-    await page
-      .getByRole('button', { name: /plot controls/i })
-      .click()
+    await page.getByRole('button', { name: /plot controls/i }).click()
     const menu = page.locator('.plot-help').first()
     await expect(menu).toBeVisible({ timeout: 5_000 })
     await snapEl(menu, 'plot-help-menu.png')
@@ -231,9 +231,7 @@ test.describe('docs screenshots', () => {
     await plotDatastreamById(page, DATASTREAM_ID)
     await plotDatastreamById(page, DATASTREAM_ID_B)
     await page.waitForTimeout(600)
-    const list = page
-      .locator('.select-view__plotted')
-      .first()
+    const list = page.locator('.select-view__plotted').first()
     await snapEl(list, 'plotted-datastreams-list.png')
   })
 
@@ -285,9 +283,7 @@ test.describe('docs screenshots', () => {
     await setupEditView(page)
     await openOp(page, 'valueThreshold')
     const panel = page.getByTestId('operation-panel-valueThreshold')
-    await panel
-      .getByRole('button', { name: /enable date range mask/i })
-      .click()
+    await panel.getByRole('button', { name: /enable date range mask/i }).click()
     // Let RangeStager wire up its bounds + plot overlay before capture.
     await page.waitForTimeout(400)
     await snapEl(panel, 'panel-date-range-mask.png')

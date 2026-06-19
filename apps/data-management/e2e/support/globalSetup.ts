@@ -1,5 +1,5 @@
 import type { FullConfig } from '@playwright/test'
-import { chromium, request } from '@playwright/test'
+import { chromium } from '@playwright/test'
 
 const FRONTEND_READY_TIMEOUT_MS = 30_000
 const APP_BOOT_ROUTE = '/browse'
@@ -15,12 +15,6 @@ function getAppBaseUrl(config: FullConfig) {
   return `http://${appHost}:${appPort}`
 }
 
-function getApiBaseUrl() {
-  const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
-  const apiPort = process.env.E2E_API_PORT || '18000'
-  return `http://${apiHost}:${apiPort}`
-}
-
 function summarizeMessages(title: string, messages: string[]) {
   if (!messages.length) return `${title}: none`
   return `${title}:\n- ${messages.slice(0, 5).join('\n- ')}`
@@ -28,18 +22,10 @@ function summarizeMessages(title: string, messages: string[]) {
 
 export default async function globalSetup(config: FullConfig) {
   const appBaseUrl = getAppBaseUrl(config)
-  const apiBaseUrl = getApiBaseUrl()
 
-  const apiContext = await request.newContext({ baseURL: apiBaseUrl })
-  const apiResponse = await apiContext.get('/api/data/workspaces')
-  if (!apiResponse.ok()) {
-    await apiContext.dispose()
-    throw new Error(
-      `E2E startup check failed before browser launch: API readiness probe returned ${apiResponse.status()} from ${apiBaseUrl}/api/data/workspaces`
-    )
-  }
-  await apiContext.dispose()
-
+  // Playwright's webServer `url` checks already block until the API and app
+  // respond, so this hook only needs to verify the Vue app actually mounts
+  // (catches a "server serves HTML but the SPA white-screens" boot).
   const browser = await chromium.launch()
   const page = await browser.newPage()
   const consoleErrors: string[] = []

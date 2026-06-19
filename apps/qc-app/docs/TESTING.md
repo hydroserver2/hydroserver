@@ -2,7 +2,7 @@
 
 How to run, write, and debug tests in `hydroserver-qc-app`.
 
-For *what is and isn't covered* (and the rationale behind the
+For _what is and isn't covered_ (and the rationale behind the
 exclusion list), see [QUALITY.md](./QUALITY.md). This document is
 the operator's manual; QUALITY.md is the policy.
 
@@ -10,10 +10,10 @@ the operator's manual; QUALITY.md is the policy.
 
 ## Test layers
 
-| Layer       | Runner                       | Where                                      | Count |
-|-------------|------------------------------|--------------------------------------------|-------|
-| Unit        | Vitest                       | `src/**/__tests__/*.spec.ts`               | 24 files |
-| End-to-end  | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`                         | 22 files |
+| Layer      | Runner                          | Where                        | Count    |
+| ---------- | ------------------------------- | ---------------------------- | -------- |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 24 files |
+| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 22 files |
 
 There is no separate "integration" tier — component tests live in the
 unit tier and mount real Vue components with the Vue Test Utils
@@ -30,14 +30,14 @@ npm test
 # Unit, one-shot with v8 coverage report
 npm run coverage
 
-# E2E, Playwright UI mode (recommended interactive flow)
-npm run test:e2e
-
 # E2E, one-shot headless on Chromium + Firefox
-npm run test:e2e:ci
+npm run e2e
+
+# E2E, Playwright UI mode (recommended interactive flow)
+npm run e2e -- --ui
 
 # E2E against a live HydroServer through the Data Management same-origin entrypoint
-npm run test:e2e:live
+npm run e2e:live
 
 # Type-check the whole app (no emit)
 npx vue-tsc --noEmit
@@ -133,7 +133,7 @@ should follow them.
 
 4. **`storeToRefs` mocks must include every ref the production code
    touches.** A missing ref throws `Cannot read properties of
-   undefined (reading 'value')` from inside a `setTimeout` (the
+undefined (reading 'value')` from inside a `setTimeout` (the
    relayout debounce), which surfaces as an unhandled rejection
    plus an unrelated assertion failure. When the store grows a new
    ref read by `handleRelayout`, the relayout spec mock needs the
@@ -202,7 +202,7 @@ The CI gate prints uncovered line numbers per file. Common causes:
 
 ### Runner config
 
-[`playwright.config.ts`](../playwright.config.ts) sets:
+[`playwright.config.ts`](../playwright.config.ts) sets the QC app profile:
 
 - `testDir: './e2e'`
 - `fullyParallel: true` with `workers: process.env.CI ? 1 : 2`.
@@ -240,12 +240,14 @@ e2e/
 ```ts
 test.describe('edit: delete points', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)        // stub HydroServer routes
-    await setupEditView(page)        // boot → plot → switch to edit view
-    await selectAllPoints(page)      // seed a selection via the panel UI
+    await installMocks(page) // stub HydroServer routes
+    await setupEditView(page) // boot → plot → switch to edit view
+    await selectAllPoints(page) // seed a selection via the panel UI
   })
 
-  test('dispatches DELETE_POINTS for the current selection', async ({ page }) => {
+  test('dispatches DELETE_POINTS for the current selection', async ({
+    page,
+  }) => {
     await openOp(page, 'deletePoints')
     await page.getByRole('button', { name: /^delete$/i }).click()
     await expectHistoryContains(page, 'Delete Points')
@@ -323,27 +325,30 @@ them so the next contributor doesn't rediscover them.
    `:disabled="isUpdating || !value"` guard silently swallows the
    click. The fields' own `@keyup.enter` handlers dispatch in one
    event, removing the race:
+
    ```ts
    const value = page.getByLabel('Value')
    await value.fill('1')
    await value.press('Enter')
    ```
+
    `selectAllPoints`, `history.spec.ts`'s Change-Values preamble,
    and the tooltip-threshold spec already follow this pattern.
 
-3. **The dev-server URL must be `127.0.0.1`, not `localhost`.**
+2. **The dev-server URL must be `127.0.0.1`, not `localhost`.**
    Configured in `playwright.config.ts` and `vite.config.ts`. If a
    spec navigates to `localhost` directly, the backend's
    CORS rejection cascades into `createHydroServer()` rejecting
    and the app never mounts. The mocked specs are immune (no
    real backend traffic) but live specs would fail invisibly.
 
-4. **The mode menu doesn't auto-close on item click.** Vuetify's
+3. **The mode menu doesn't auto-close on item click.** Vuetify's
    `v-menu` with `close-on-content-click="false"` (used for the
    data-points mode menu so the threshold form stays open during
    edits) leaves the menu open after picking a mode. Helpers like
    `pickMode` press Escape after the click and assert the menu's
    gone:
+
    ```ts
    await page.getByTestId('tooltips-mode-btn').click()
    await page.getByTestId(`tooltips-mode-${mode}`).click()
@@ -351,7 +356,7 @@ them so the next contributor doesn't rediscover them.
    await expect(page.getByTestId('tooltips-mode-menu')).toHaveCount(0)
    ```
 
-5. **Browser windows steal focus.** Headed Vuetify components
+4. **Browser windows steal focus.** Headed Vuetify components
    sometimes change behavior when the test window is not the
    foreground OS window. If a previously-green spec started
    failing only after you alt-tabbed, that's why.
@@ -445,12 +450,14 @@ targeting `main`. The job:
 ## Maintenance checklist
 
 When a Vuetify upgrade lands:
+
 - Re-run the full unit suite; component specs that mock Vuetify
   internals (rare in this repo) may break.
 - Re-run E2E on both projects; testid selectors may need updates
   if Vuetify reshuffles DOM internals.
 
 When a `qc-utils` upgrade lands:
+
 - Re-run unit specs that mock `@uwrl/qc-utils` enums — the
   canonical sites are `EditHistory.spec.ts` and any spec under
   `src/utils/plotting/__tests__/` that imports the enums.
@@ -460,12 +467,14 @@ When a `qc-utils` upgrade lands:
 
 When a new Pinia store ref is read by `handleRelayout` or any
 debounced path:
+
 - Add it to `vi.mock('@/store/plotly')` in
   `src/utils/plotting/__tests__/relayout.spec.ts` and to
   `resetStoreState`. Missing refs throw inside a `setTimeout`
   and produce confusing unhandled-rejection failures.
 
 When a Playwright spec starts flaking:
+
 - Check the trace.zip first — it almost always shows the cause.
 - If it's `waitForSelection` timing out, the suspect is a
   `fill('...').click(button)` pattern; switch to
@@ -475,6 +484,7 @@ When a Playwright spec starts flaking:
   clear, or use the field's `@keyup.enter` handler.
 
 When coverage drops below threshold after a code change:
+
 - Add targeted tests for the new branches; do **not** lower the
   threshold or grow the exclude list to make the gate pass.
 - The "Uncovered Line #s" column of the coverage report points

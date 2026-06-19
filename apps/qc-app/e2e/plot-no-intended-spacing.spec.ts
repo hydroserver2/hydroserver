@@ -39,7 +39,7 @@ type RoutedTrace = {
 async function waitForTraceRendered(page: Page, id: string): Promise<void> {
   await page.waitForFunction(
     (targetId) => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & { data?: Array<{ id?: string }> })
         | null
       return !!gd?.data?.some((t) => t.id === targetId)
@@ -117,7 +117,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     await waitForTraceRendered(page, DATASTREAM_ID)
 
     const trace = await page.evaluate((id) => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & { data?: RoutedTrace[] })
         | null
       const traces = gd?.data ?? []
@@ -171,7 +171,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     await page.waitForTimeout(150)
 
     const main = await page.evaluate((id) => {
-      const gd = document.querySelector('.plot-main') as
+      const gd = document.querySelector('[data-testid="main-plot"]') as
         | (HTMLElement & { data?: RoutedTrace[] })
         | null
       const t = gd?.data?.find((tr) => tr.id === id)
