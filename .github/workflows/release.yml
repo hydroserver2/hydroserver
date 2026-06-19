@@ -40,13 +40,6 @@ jobs:
         working-directory: apps/data-management
         run: npm ci
 
-      - name: Configure environment variables
-        working-directory: apps/data-management
-        run: |
-          cat << EOF > .env
-          VITE_APP_VERSION=${{ inputs.tag }}
-          EOF
-
       - name: Build
         working-directory: apps/data-management
         run: npm run django-build
@@ -101,7 +94,6 @@ jobs:
         working-directory: apps/qc-app
         run: |
           cat << EOF > .env
-          VITE_APP_VERSION=${{ inputs.tag }}
           VITE_APP_ROUTE=/qc/
           EOF
 

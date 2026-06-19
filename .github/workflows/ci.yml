@@ -83,7 +83,7 @@ jobs:
         run: npm run build
 
   data-management:
-    name: Data Management App Coverage
+    name: Data Management App 80% Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -111,7 +111,6 @@ jobs:
         working-directory: apps/data-management
         run: |
           {
-            echo "VITE_APP_VERSION=ci"
             echo "VITE_APP_GOOGLE_MAPS_API_KEY="
             echo "VITE_APP_GOOGLE_MAPS_MAP_ID="
             echo "VITE_APP_PROXY_BASE_URL=http://127.0.0.1:8000"

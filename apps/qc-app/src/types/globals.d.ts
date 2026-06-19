@@ -8,7 +8,6 @@
 declare module 'vuetify/styles'
 
 interface ImportMetaEnv {
-  readonly VITE_APP_VERSION: string
   readonly VITE_APP_DISABLE_COOP?: string
   readonly VITE_APP_E2E_HOOKS?: string
 }

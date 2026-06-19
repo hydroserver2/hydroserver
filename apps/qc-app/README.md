@@ -39,7 +39,6 @@ During normal HydroServer development, open QC through the Data Management app a
 
 | Var                              | Required | Purpose                                                                 |
 |----------------------------------|----------|-------------------------------------------------------------------------|
-| `VITE_APP_VERSION`               | no       | Build-time version string surfaced in the about menu.                   |
 | `VITE_APP_DISABLE_COOP`          | no       | Drop the `Cross-Origin-Opener-Policy` + `Cross-Origin-Embedder-Policy` headers. Use only when the backend you're hitting doesn't serve `Cross-Origin-Resource-Policy` (older HydroServer deployments). The `qc-utils` worker layer falls back to inline kernels when SAB isn't available, so the app still works — just slower on large edits. |
 | `VITE_APP_E2E_HOOKS`             | no       | Set to `1` to expose `window.__vbwTestHooks` for Playwright. CI sets this automatically. |
 

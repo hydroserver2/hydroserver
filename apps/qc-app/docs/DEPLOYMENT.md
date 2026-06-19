@@ -63,8 +63,7 @@ deploys to AWS. The flow:
    - Assumes the IAM role via OIDC (`aws-actions/configure-aws-credentials`).
    - Checks out the chosen branch.
    - Sets up Node 23.x with `package-lock.json` caching.
-   - Generates `.env` with `VITE_APP_ROUTE` and `VITE_APP_VERSION` (the
-     deploy commit SHA).
+   - Generates `.env` with `VITE_APP_ROUTE`.
    - Runs `npm install && npm ci` then `npm run build`.
    - Syncs `./dist/` to
      `s3://hydroserver-qc-demo-app-${environment}-${account}/quality-control-demo/`
@@ -97,7 +96,6 @@ cd hydroserver-qc-app
 npm ci
 
 cat > .env.local <<'EOF'
-VITE_APP_VERSION=$(git describe --tags --always)
 VITE_APP_DISABLE_COOP=                 # leave blank unless backend lacks CORP
 EOF
 
@@ -169,21 +167,9 @@ and failure rates.
 
 ## Version upgrades and migrations
 
-There are three flavors of upgrade to keep separate.
+There are two flavors of upgrade to keep separate.
 
-### 1. App-version upgrades
-
-The user-facing version is built into `dist/index.html` at compile time
-via `VITE_APP_VERSION` and surfaced in the about menu. To upgrade an
-existing deployment:
-
-1. Merge to `main`.
-2. Wait for CI to go green.
-3. Re-run the deploy workflow.
-4. Verify the CloudFront invalidation completes and the about-menu
-   version string ticks over.
-
-There is no client-side migration step — `localStorage` keys are kept
+There is no client-side app migration step; `localStorage` keys are kept
 shape-stable. If you ever need to break a persisted shape:
 
 - Bump a version key inside the affected store's persisted slice and
@@ -193,7 +179,7 @@ shape-stable. If you ever need to break a persisted shape:
   it and let the user re-pick their workspace / preferences. Reset is
   cheap; data corruption is not.
 
-### 2. qc-utils version upgrades
+### 1. qc-utils version upgrades
 
 `@uwrl/qc-utils` is the QC engine, versioned independently and published
 to npm. The QC App pins it in `package.json` (`"@uwrl/qc-utils": "^0.0.x"`).
@@ -225,7 +211,7 @@ HMR doesn't propagate through linked packages — refresh the browser to
 pick up changes. See [ONBOARDING.md](./ONBOARDING.md) for the full
 linked-dev workflow.
 
-### 3. HydroServer backend / schema migrations
+### 2. HydroServer backend / schema migrations
 
 These are owned by the HydroServer project, not by the QC App. What
 matters here is **how the QC App weathers them**:

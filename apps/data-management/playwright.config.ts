@@ -111,7 +111,6 @@ export default defineConfig({
       cwd: here,
       env: {
         ...process.env,
-        VITE_APP_VERSION: 'e2e',
         VITE_APP_GOOGLE_MAPS_API_KEY: '',
         VITE_APP_GOOGLE_MAPS_MAP_ID: '',
         VITE_APP_PROXY_BASE_URL: apiBaseUrl,
