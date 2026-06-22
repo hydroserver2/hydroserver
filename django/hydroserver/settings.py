@@ -152,6 +152,7 @@ INSTALLED_APPS = [
     "processing.etl.apps.EtlConfig",
     "processing.products.apps.ProductsConfig",
     "processing.monitoring.apps.MonitoringConfig",
+    "processing.quality.apps.QualityConfig",
     "django.contrib.admin",
 ]
 
@@ -458,6 +459,7 @@ SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
 ]
 SENSORTHINGS_V1_1_ID_TYPE = UUID
 SENSORTHINGS_V1_1_ID_DELIMITER = "'"
+SENSORTHINGS_V1_1_MAX_TOP = 1000
 SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
     "Things": "interfaces.sensorthings.schemas.ThingProperties",
     "Datastreams": "interfaces.sensorthings.schemas.DatastreamProperties",

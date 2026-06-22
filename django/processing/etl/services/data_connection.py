@@ -1,8 +1,10 @@
 import uuid
 import uuid6
+import jmespath as jmespath_lib
 from datetime import datetime
 from typing import Optional, Literal, Union, Annotated
 
+from jmespath.exceptions import JMESPathError
 from pydantic import Field, ConfigDict, validate_call
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Subquery, OuterRef, IntegerField
@@ -407,6 +409,12 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 raise ValueError("header_row, data_start_row, and delimiter are required when creating a CSV payload.")
             if payload_type == "JSON" and jmespath is Unset:
                 raise ValueError("jmespath is required when creating a JSON payload.")
+
+        if payload_type == "JSON" and jmespath is not Unset:
+            try:
+                jmespath_lib.compile(jmespath)
+            except JMESPathError as e:
+                raise ValueError(f"Invalid JMESPath expression: {e}") from e
 
         if payload_type == "CSV":
             fields = {

@@ -2,7 +2,7 @@ import { defineStore, storeToRefs } from 'pinia'
 import hs, {
   Datastream,
   DatastreamExtended,
-  TaskExpanded,
+  TaskMapping,
   Thing,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'

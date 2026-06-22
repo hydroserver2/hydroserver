@@ -20,7 +20,7 @@ run_python_client() {
 }
 
 run_ui() {
-  "$ROOT_DIR/scripts/e2e" test
+  (cd "$ROOT_DIR/apps/data-management" && npm run e2e)
 }
 
 case "$SUITE" in

@@ -65,8 +65,9 @@
           <v-list>
             <v-list-item
               v-for="menuItem of path.menu"
-              v-bind="menuItem.attrs"
+              v-bind="menuItem.attrs || {}"
               :title="menuItem.label"
+              @click="menuItem.onClick"
             />
           </v-list>
         </v-menu>
@@ -132,10 +133,11 @@
         <div v-else>
           <v-list-item
             v-for="menuItem of path.menu"
-            v-bind="menuItem.attrs"
+            v-bind="menuItem.attrs || {}"
             :title="menuItem.label"
             :prepend-icon="menuItem.icon"
-            :value="menuItem.attrs.to || menuItem.attrs.href"
+            :value="menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label"
+            @click="menuItem.onClick"
           />
         </div>
       </div>
@@ -186,6 +188,7 @@ import {
   mdiAccountCircle,
   mdiAccountPlusOutline,
   mdiChartLine,
+  mdiCheckCircleOutline,
   mdiDatabaseCog,
   mdiFileChart,
   mdiInformation,
@@ -206,13 +209,23 @@ const { mdAndDown } = useDisplay()
 const sidebar = useSidebarStore()
 const drawer = ref(false)
 
-const paths: {
-  attrs?: { to?: string; href?: string }
+type NavItemAttrs = {
+  to?: string
+  href?: string
+}
+
+type NavMenuItem = {
+  attrs?: NavItemAttrs
   label: string
   icon?: string
-  menu?: any[]
   onClick?: () => void
-}[] = [
+}
+
+type NavItem = NavMenuItem & {
+  menu?: NavMenuItem[]
+}
+
+const paths: NavItem[] = [
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
@@ -242,6 +255,13 @@ const paths: {
         label: 'Job orchestration',
         icon: mdiFileChart,
       },
+      {
+        label: 'Quality Control',
+        icon: mdiCheckCircleOutline,
+        onClick: () => {
+          window.location.href = '/qc/'
+        },
+      },
     ],
   },
   {
@@ -264,4 +284,3 @@ async function onLogout() {
   border-bottom: 1px solid #e8e8e8 !important;
 }
 </style>
-

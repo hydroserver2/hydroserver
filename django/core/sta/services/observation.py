@@ -2,18 +2,16 @@ import uuid
 import math
 import hashlib
 from typing import Optional, Literal, get_args
+from datetime import datetime
 from ninja.errors import HttpError
 from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet, Q, Value, Max, Func, F
-from django.db.models import OuterRef, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models import QuerySet, Q, Count, Max, Func, F
 from django.db.utils import IntegrityError
-from django.contrib.postgres.aggregates import ArrayAgg
 from core.iam.models import APIKey
-from core.sta.models import Observation, ResultQualifier
+from core.sta.models import Datastream, Observation, ResultQualifier
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationOrderByFields,
@@ -50,7 +48,25 @@ class ObservationService(ServiceUtils):
         expand_related: Optional[bool] = None,
     ):
         try:
-            observation = Observation.objects
+            result_qualifier_subquery = (
+                Observation.result_qualifiers.through.objects.filter(
+                    **{"observation": OuterRef("pk")}
+                )
+                .values("observation")
+                .annotate(
+                    codes=ArrayAgg(
+                        "resultqualifier__code",
+                        distinct=True,
+                        filter=~Q(**{"resultqualifier__code": None}),
+                    )
+                )
+                .values("codes")[:1]
+            )
+            observation = Observation.objects.annotate(
+                result_qualifier_codes=Coalesce(
+                    Subquery(result_qualifier_subquery), Value([])
+                )
+            )
             if expand_related:
                 observation = self.select_expanded_fields(observation)
             else:
@@ -102,13 +118,15 @@ class ObservationService(ServiceUtils):
             )
             queryset = queryset.filter(datastream=datastream)
 
-        for field in [
-            "phenomenon_time__lte",
-            "phenomenon_time__gte",
-            "result_qualifiers__code",
-        ]:
+        for field in ["phenomenon_time__lte", "phenomenon_time__gte"]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
+
+        if filtering.get("result_qualifier_codes"):
+            code_filter = Q()
+            for code in filtering["result_qualifier_codes"]:
+                code_filter |= Q(result_qualifiers__contains=[code])
+            queryset = queryset.filter(code_filter)
 
         queryset = queryset.visible(principal=principal)
 
@@ -126,25 +144,8 @@ class ObservationService(ServiceUtils):
             uuid.UUID(checksum_result["max_id"]) if checksum_result["max_id"] else None
         )
 
-        result_qualifier_subquery = (
-            Observation.result_qualifiers.through.objects.filter(
-                **{"observation": OuterRef("pk")}
-            )
-            .values("observation")
-            .annotate(
-                codes=ArrayAgg(
-                    f"resultqualifier__code",
-                    distinct=True,
-                    filter=~Q(**{"resultqualifier__code": None}),
-                )
-            )
-            .values("codes")[:1]
-        )
-
         queryset = queryset.annotate(
-            result_qualifier_codes=Coalesce(
-                Subquery(result_qualifier_subquery), Value([])
-            )
+            result_qualifier_codes=F("result_qualifiers")
         )
 
         if not order_by:
@@ -239,13 +240,37 @@ class ObservationService(ServiceUtils):
             observation = Observation.objects.create(
                 pk=data.id,
                 datastream=datastream,
-                **data.dict(include=set(ObservationFields.model_fields.keys())),
+                **data.dict(include=set(ObservationFields.model_fields.keys()), exclude=["result_qualifier_codes"]),
             )
         except (
             IntegrityError,
             UniqueViolation,
         ):
             raise HttpError(409, "Duplicate phenomenonTime or ID found on this datastream.")
+
+        if data.result_qualifier_codes:
+            result_qualifiers = (
+                ResultQualifier.objects.filter(
+                    Q(workspace_id=datastream.thing.workspace_id)
+                    | Q(workspace__isnull=True)
+                )
+                .filter(code__in=data.result_qualifier_codes)
+                .visible(principal=principal)
+                .values("id", "code", "workspace_id")
+            )
+            result_qualifier_map = {
+                row["code"]: row["id"]
+                for row in sorted(
+                    result_qualifiers, key=lambda r: r["workspace_id"] is not None
+                )
+            }
+            invalid_codes = set(data.result_qualifier_codes) - result_qualifier_map.keys()
+            if invalid_codes:
+                raise HttpError(
+                    400,
+                    f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
+                )
+            observation.result_qualifiers.add(*result_qualifier_map.values())
 
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
@@ -335,35 +360,23 @@ class ObservationService(ServiceUtils):
             result_qualifier_code_set = {
                 code for row in data.data for code in row[idx_result_qualifier_codes]
             }
-            result_qualifiers = (
+            valid_codes = set(
                 ResultQualifier.objects.filter(
                     Q(workspace_id=datastream.thing.workspace_id)
                     | Q(workspace__isnull=True)
                 )
                 .filter(code__in=result_qualifier_code_set)
                 .visible(principal=principal)
-                .values("id", "code", "workspace_id")
+                .values_list("code", flat=True)
             )
-            result_qualifier_map = {
-                row["code"]: row["id"]
-                for row in sorted(
-                    result_qualifiers, key=lambda r: r["workspace_id"] is not None
-                )
-            }
-            invalid_codes = result_qualifier_code_set - result_qualifier_map.keys()
+            invalid_codes = result_qualifier_code_set - valid_codes
             if invalid_codes:
                 raise HttpError(
                     400,
                     f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
                 )
-            result_qualifier_records = [
-                (obs.id, result_qualifier_map[code])
-                for obs, row in zip(observation_records, data.data)
-                for code in row[idx_result_qualifier_codes]
-                if code in result_qualifier_map
-            ]
-        else:
-            result_qualifier_records = None
+            for obs, row in zip(observation_records, data.data):
+                obs.result_qualifiers = row[idx_result_qualifier_codes]
 
         if mode == "append" and datastream.phenomenon_end_time:
             if (
@@ -399,9 +412,7 @@ class ObservationService(ServiceUtils):
             )
 
         try:
-            Observation.objects.bulk_copy(
-                observation_records, result_qualifiers=result_qualifier_records
-            )
+            Observation.objects.bulk_copy(observation_records)
         except (
             IntegrityError,
             UniqueViolation,
@@ -460,3 +471,31 @@ class ObservationService(ServiceUtils):
 
         payload = uuid_bytes + count_bytes
         return hashlib.sha256(payload).hexdigest()[:16]
+
+    def get_checksum(
+        self,
+        datastream: Datastream,
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
+    ) -> str:
+        queryset = Observation.objects.filter(datastream=datastream)
+
+        if phenomenon_time_start is not None:
+            queryset = queryset.filter(phenomenon_time__gte=phenomenon_time_start)
+        if phenomenon_time_end is not None:
+            queryset = queryset.filter(phenomenon_time__lte=phenomenon_time_end)
+
+        # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
+        result = queryset.aggregate(
+            max_id=Max(
+                Func(
+                    F("id"),
+                    function="CAST",
+                    template="%(function)s(%(expressions)s AS text)",
+                )
+            ),
+            count=Count("id"),
+        )
+        checksum_uuid = uuid.UUID(result["max_id"]) if result["max_id"] else None
+
+        return self.generate_checksum(checksum_uuid, result["count"])

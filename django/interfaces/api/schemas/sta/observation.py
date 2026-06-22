@@ -47,7 +47,7 @@ class ObservationQueryParameters(CollectionQueryParameters):
         description="Sets the minimum phenomenon time of filtered observations.",
         alias="phenomenon_time_min",
     )
-    result_qualifiers__code: list[str] = Query(
+    result_qualifier_codes: list[str] = Query(
         [],
         description="Filter observations by result qualifier code.",
         alias="result_qualifier_code",

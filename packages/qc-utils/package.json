@@ -1,0 +1,65 @@
+{
+  "name": "@uwrl/qc-utils",
+  "version": "0.1.1",
+  "description": "Quality Control Utilities",
+  "homepage": "https://github.com/hydroserver2/hydroserver/tree/main/packages/qc-utils#readme",
+  "bugs": {
+    "url": "https://github.com/hydroserver2/hydroserver/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hydroserver2/hydroserver.git",
+    "directory": "packages/qc-utils"
+  },
+  "license": "ISC",
+  "author": "Maurier Ramirez",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/types.d.ts",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "vite build --mode prod && vue-tsc --declaration --emitDeclarationOnly",
+    "build:clean": "npm run clean:dist && npm run build",
+    "pub": "npm publish --access public",
+    "clean:dist": "rimraf dist",
+    "clean:coverage": "rimraf coverage",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "coverage": "vitest run --coverage",
+    "up": "taze major -I",
+    "dev": "vite build --watch --mode prod"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.0.0",
+    "eslint": "^10.0.0",
+    "eslint-plugin-cypress": "^6.0.0",
+    "eslint-plugin-prettier": "^5.4.1",
+    "happy-dom": "^20.9.0",
+    "rimraf": "^6.0.1",
+    "rollup-plugin-visualizer": "^7.0.0",
+    "stylelint": "^17.0.0",
+    "taze": "^19.1.0",
+    "typescript": "latest",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.0.1",
+    "vue-tsc": "^3.0.5"
+  }
+}

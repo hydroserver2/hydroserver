@@ -32,6 +32,8 @@ datastream_service = DatastreamService()
                 "Private Datastream 6",
                 "Private Datastream 7",
                 "Public Datastream 2",
+                "QC Managed Datastream",
+                "QC Managed Datastream (No History)",
             ],
             5,
         ),
@@ -48,6 +50,8 @@ datastream_service = DatastreamService()
                 "Private Datastream 6",
                 "Private Datastream 7",
                 "Public Datastream 2",
+                "QC Managed Datastream",
+                "QC Managed Datastream (No History)",
             ],
             5,
         ),
@@ -64,6 +68,8 @@ datastream_service = DatastreamService()
                 "Private Datastream 6",
                 "Private Datastream 7",
                 "Public Datastream 2",
+                "QC Managed Datastream",
+                "QC Managed Datastream (No History)",
             ],
             5,
         ),
@@ -80,6 +86,8 @@ datastream_service = DatastreamService()
                 "Private Datastream 6",
                 "Private Datastream 7",
                 "Public Datastream 2",
+                "QC Managed Datastream",
+                "QC Managed Datastream (No History)",
             ],
             5,
         ),
@@ -101,7 +109,7 @@ datastream_service = DatastreamService()
         (
             "owner",
             {"page": 2, "page_size": 2, "order_by": "-name"},
-            ["Private Datastream 7", "Private Datastream 6"],
+            ["Public Datastream 2", "Public Datastream 1"],
             6,
         ),
         # Test filtering
@@ -113,6 +121,8 @@ datastream_service = DatastreamService()
                 "Private Datastream 5",
                 "Private Datastream 6",
                 "Private Datastream 7",
+                "QC Managed Datastream",
+                "QC Managed Datastream (No History)",
             ],
             5,
         ),
@@ -237,6 +247,8 @@ def test_list_datastream_visualization_bootstrap_filters_by_workspace(get_princi
             "Private Datastream 5",
             "Private Datastream 6",
             "Private Datastream 7",
+            "QC Managed Datastream",
+            "QC Managed Datastream (No History)",
         ]
     )
     assert Counter(thing["name"] for thing in bootstrap["things"]) == Counter(
@@ -1782,7 +1794,7 @@ def test_edit_datastream(
             "9f96957b-ee20-4c7b-bf2b-673a0cda3a04",
             "Private Datastream 7",
             None,
-            18,
+            19,
         ),
         # Anonymous and viewers cannot delete datastreams
         (
