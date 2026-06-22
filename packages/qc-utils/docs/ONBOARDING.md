@@ -18,9 +18,10 @@ You do **not** need Docker, Python, or any backend infrastructure.
 ## First-day setup
 
 ```bash
-git clone https://github.com/hydroserver2/qc-utils.git
-cd qc-utils
+git clone https://github.com/hydroserver2/hydroserver.git
+cd hydroserver
 npm install
+cd packages/qc-utils
 npm test                # vitest, full suite
 npm run coverage        # vitest + v8 coverage, 80% threshold
 npm run lint            # eslint
@@ -30,29 +31,22 @@ npm run build           # vite build + .d.ts emit → dist/
 That's the entire flow. If CI gates pass locally, your branch will
 pass in CI.
 
-## Linked-dev with hydroserver-qc-app
+## Local development with the QC app
 
 The typical workflow when you're tweaking a kernel and want to verify
 end-to-end behavior in the consumer app:
 
-```bash
-# Terminal 1 — qc-utils
-cd qc-utils
-npm link                # registers @uwrl/qc-utils in the local npm registry
-npm run dev             # vite build --watch — rebuilds dist/ in ~1s
+From `apps/qc-app`:
 
-# Terminal 2 — qc-app
-cd ../hydroserver-qc-app
-npm run link-qc-utils   # npm link @uwrl/qc-utils
-npm run dev             # http://127.0.0.1:1203
+```bash
+npm run dev             # http://127.0.0.1:5173
 ```
 
-Refresh the browser to pick up `qc-utils` changes — HMR doesn't propagate
-through linked packages. If type errors look stale after editing
-`src/types/index.ts` or other declarations, run `npm run build` once in
-qc-utils to refresh `.d.ts`.
-
-To unlink: `cd hydroserver-qc-app && npm unlink @uwrl/qc-utils && npm install`.
+The QC app dev server aliases `@uwrl/qc-utils` directly to
+`packages/qc-utils/src`, so edits to the package source are served
+without rebuilding. Run `npm run build` in `packages/qc-utils` when you
+need to verify the published package artifacts or before a production
+QC app build.
 
 ## Project tour, in reading order
 
@@ -165,7 +159,7 @@ Use:
 
 ## Where to ask for help
 
-- [Issue tracker](https://github.com/hydroserver2/qc-utils/issues).
+- [Issue tracker](https://github.com/hydroserver2/hydroserver/issues).
 - HydroServer organization on GitHub: <https://github.com/hydroserver2>.
 
 ## See also

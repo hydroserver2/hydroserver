@@ -14,7 +14,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 | State            | Pinia (+ `pinia-plugin-persistedstate`)      | Pinia is the official Vue 3 store; tree-shakeable, fully typed, no boilerplate. The persistence plugin handles `localStorage` rehydration for workspace + UI prefs. |
 | Routing          | vue-router 5                                 | Only three routes; vue-router is the standard.                                  |
 | Charting         | Plotly.js (`plotly.js-dist`)                 | Multi-axis synchronized plotting, lasso + box selection, programmatic restyle, mature in the science community. ECharts and uPlot were prototyped; Plotly's mature selection model was the deciding factor. |
-| QC engine        | `@uwrl/qc-utils`                             | Worker-parallelized typed-array kernels with a replayable history. Lives in a sibling repo (`qc-utils/`) so non-Vue consumers can reuse it. |
+| QC engine        | `@uwrl/qc-utils`                             | Worker-parallelized typed-array kernels with a replayable history. Lives in `packages/qc-utils/` so non-Vue consumers can reuse it. |
 | Backend client   | `@hydroserver/client`                        | Generated typed REST client around the HydroServer Django + django-ninja API. Keeps endpoint shapes in sync with the backend. |
 | Build / dev      | Vite 7                                       | Fast cold start, native ESM, first-class TypeScript + Vue SFC support. The dev server is also what serves the COOP/COEP headers `SharedArrayBuffer` needs. |
 | Type system      | TypeScript 5 (strict)                        | Surfaces shape errors early; eliminates a class of regressions around `ObservationRecord` API drift. |

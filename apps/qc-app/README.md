@@ -76,21 +76,16 @@ The data flow for an edit is always: panel collects args → `useFilterDispatch`
 
 ## Working with `@uwrl/qc-utils` locally
 
-When you're tweaking QC algorithms or worker kernels, link the sibling `qc-utils` checkout instead of bumping the npm version:
+The app consumes `@uwrl/qc-utils` from the root workspace. In dev mode,
+Vite aliases the package directly to `packages/qc-utils/src`, so you can
+edit QC engine source without rebuilding the package:
 
 ```bash
-# qc-utils (terminal 1)
-npm link
-npm run dev          # vite watch — rebuilds dist/ on every save
-
-# hydroserver-qc-app (terminal 2)
-npm run link-qc-utils
 npm run dev
 ```
 
-Refresh the browser to pick up `qc-utils` changes — HMR doesn't propagate through linked packages. If the app surfaces stale type errors, run `npm run build` once in `qc-utils` to refresh `.d.ts`.
-
-To unlink: `npm unlink @uwrl/qc-utils && npm install`.
+Build `qc-utils` first only for production-style app builds or when you
+need to verify the published package artifacts.
 
 ## Testing
 
@@ -101,7 +96,7 @@ npm test                      # watch mode
 npm run coverage              # one shot + v8 coverage
 ```
 
-Specs live next to source under `src/**/__tests__/`. Plotly is mocked at the module boundary; qc-utils workers use the inline mocks in `qc-utils/src/utils/plotting/__tests__/workerMocks.ts`.
+Specs live next to source under `src/**/__tests__/`. Plotly is mocked at the module boundary; qc-utils workers use the inline mocks in `packages/qc-utils/src/utils/plotting/__tests__/workerMocks.ts`.
 
 ### End-to-end tests (Playwright)
 

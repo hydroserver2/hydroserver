@@ -2,13 +2,14 @@
   "name": "@uwrl/qc-utils",
   "version": "0.1.1",
   "description": "Quality Control Utilities",
-  "homepage": "https://github.com/hydroserver2/qc-utils#readme",
+  "homepage": "https://github.com/hydroserver2/hydroserver/tree/main/packages/qc-utils#readme",
   "bugs": {
-    "url": "https://github.com/hydroserver2/qc-utils/issues"
+    "url": "https://github.com/hydroserver2/hydroserver/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hydroserver2/qc-utils.git"
+    "url": "git+https://github.com/hydroserver2/hydroserver.git",
+    "directory": "packages/qc-utils"
   },
   "license": "ISC",
   "author": "Maurier Ramirez",
@@ -39,7 +40,6 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "coverage": "vitest run --coverage",
     "up": "taze major -I",
-    "link": "npm link",
     "dev": "vite build --watch --mode prod"
   },
   "dependencies": {
