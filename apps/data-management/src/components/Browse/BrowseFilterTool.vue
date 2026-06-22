@@ -21,8 +21,31 @@
       <v-list-item>
         <v-autocomplete
           class="pt-2"
+          v-model="selectedSite"
+          :items="availableSites"
+          :item-props="
+            (site) => ({
+              subtitle: site.siteType,
+            })
+          "
+          name="browse-site-search"
+          item-title="name"
+          return-object
+          clearable
+          :prepend-inner-icon="mdiMapMarker"
+          label="Search sites"
+          autocomplete="new-password"
+          hide-details
+          color="primary"
+          no-data-text="No sites found"
+        />
+      </v-list-item>
+
+      <v-list-item>
+        <v-autocomplete
+          class="pt-2"
           v-model="selectedWorkspaces"
-          :items="workspaces"
+          :items="availableWorkspaces"
           :item-props="(ws) => ({ subtitle: `Owned by: ${ws?.owner?.name}` })"
           name="browse-workspace-filter"
           item-title="name"
@@ -54,7 +77,7 @@
           class="pt-2"
           label="Site types"
           v-model="selectedSiteTypes"
-          :items="vocabularyStore.siteTypes"
+          :items="availableSiteTypes"
           name="browse-site-type-filter"
           clearable
           :prepend-inner-icon="mdiWaterPump"
@@ -81,20 +104,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { useSidebarStore } from '@/store/useSidebar'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import { filterThingMarkers } from '@/utils/browseFilters'
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
-import { mdiClose, mdiDomain, mdiWaterPump } from '@mdi/js'
+import { mdiClose, mdiDomain, mdiMapMarker, mdiWaterPump } from '@mdi/js'
 
 const { smAndDown } = useDisplay()
 const vocabularyStore = useVocabularyStore()
 
 const selectedSiteTypes = ref<string[]>([])
 const selectedWorkspaces = ref<Workspace[]>([])
+const selectedSite = ref<ThingMarker | null>(null)
 const workspaces = ref<Workspace[]>([])
 
 const emit = defineEmits(['filter'])
@@ -108,11 +133,50 @@ const props = defineProps({
 const sidebar = useSidebarStore()
 sidebar.isOpen = !!smAndDown
 
+const sortedThings = computed(() =>
+  [...props.things].sort((a, b) => a.name.localeCompare(b.name))
+)
+
+const availableSites = computed(() =>
+  filterThingMarkers(
+    sortedThings.value,
+    selectedWorkspaces.value,
+    selectedSiteTypes.value
+  )
+)
+
+const availableWorkspaces = computed(() => {
+  const workspaceIds = new Set(
+    filterThingMarkers(
+      props.things,
+      [],
+      selectedSiteTypes.value,
+      selectedSite.value
+    ).map((thing) => thing.workspaceId)
+  )
+
+  return workspaces.value.filter((workspace) => workspaceIds.has(workspace.id))
+})
+
+const availableSiteTypes = computed(() => {
+  const siteTypes = new Set(
+    filterThingMarkers(
+      props.things,
+      selectedWorkspaces.value,
+      [],
+      selectedSite.value
+    ).map((thing) => thing.siteType)
+  )
+
+  return vocabularyStore.siteTypes.filter((siteType) => siteTypes.has(siteType))
+})
+
 const emitFilteredThings = () => {
   const filteredThings = filterThingMarkers(
     props.things,
     selectedWorkspaces.value,
-    selectedSiteTypes.value
+    selectedSiteTypes.value,
+    selectedSite.value
   )
   emit('filter', filteredThings)
 }
@@ -120,6 +184,7 @@ const emitFilteredThings = () => {
 const onClearFilters = () => {
   selectedSiteTypes.value = []
   selectedWorkspaces.value = []
+  selectedSite.value = null
 }
 
 onMounted(async () => {
@@ -129,7 +194,48 @@ onMounted(async () => {
   })
 })
 
-watch([selectedSiteTypes, selectedWorkspaces], emitFilteredThings, {
+watch([selectedSiteTypes, selectedWorkspaces, selectedSite], emitFilteredThings, {
   deep: true,
 })
+
+watch(availableSites, (sites) => {
+  if (
+    selectedSite.value &&
+    !sites.some((site) => site.id === selectedSite.value?.id)
+  ) {
+    selectedSite.value = null
+  }
+})
+
+// Drop any selected values that are no longer in the available set when the
+// other filters narrow the options.
+const pruneSelectionToAvailable = <T, A>(
+  selected: Ref<T[]>,
+  available: ComputedRef<A[]>,
+  selectedKey: (item: T) => unknown,
+  availableKey: (item: A) => unknown
+) =>
+  watch(available, (items) => {
+    const availableKeys = new Set(items.map(availableKey))
+    const pruned = selected.value.filter((item) =>
+      availableKeys.has(selectedKey(item))
+    )
+    if (pruned.length !== selected.value.length) {
+      selected.value = pruned
+    }
+  })
+
+pruneSelectionToAvailable(
+  selectedWorkspaces,
+  availableWorkspaces,
+  (workspace) => workspace.id,
+  (workspace) => workspace.id
+)
+
+pruneSelectionToAvailable(
+  selectedSiteTypes,
+  availableSiteTypes,
+  (siteType) => siteType,
+  (siteType) => siteType
+)
 </script>

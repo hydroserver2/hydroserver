@@ -65,4 +65,25 @@ describe('filterThingMarkers', () => {
       )
     ).toEqual(['thing-3'])
   })
+
+  it('filters things by selected site', () => {
+    expect(
+      filterThingMarkers(things as any, [], [], things[1] as any).map(
+        (thing) => thing.id
+      )
+    ).toEqual(['thing-2'])
+  })
+
+  it('requires a selected site to match the other filters', () => {
+    const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
+
+    expect(
+      filterThingMarkers(
+        things as any,
+        selectedWorkspaces as any,
+        ['Stream'],
+        things[1] as any
+      ).map((thing) => thing.id)
+    ).toEqual([])
+  })
 })
