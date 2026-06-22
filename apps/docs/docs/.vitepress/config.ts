@@ -155,6 +155,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/loading-data",
               },
               {
+                text: "Using the Streaming Data Loader",
+                link: "/user-guides/how-to/using-streaming-data-loader",
+              },
+              {
                 text: "Visualizing Data",
                 link: "/user-guides/how-to/visualizing-data",
               },

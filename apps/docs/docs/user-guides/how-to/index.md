@@ -7,7 +7,8 @@ In this section, we provide detailed documentation for all HydroServer functiona
 * **[Managing Access Control](/user-guides/how-to/managing-access-control.md)**: HydroServer's access control is role-based and controlled at the workspace level. However, additional granular visibility settings enable more fine-grained control over what public users and workspace collaborators can access.
 * **[Managing Site Metadata](/user-guides/how-to/managing-site-metadata.md):** The Data Management App is the primary graphical user interface for setting up metadata. The first step after creating a workspace is to create one or more monitoring sites.
 * **[Managing Datastream Metadata](/user-guides/how-to/managing-datastream-metadata.md)**: Once you have a monitoring site, you can create datastream metadata that describes what has been measured at that site.  
-* **[Loading Data](/user-guides/how-to/loading-data.md)**: Learn how to load data into HydroServer.
+* **[Loading Data](/user-guides/how-to/loading-data.md)**: Learn about multiple options for loading data into HydroServer.
+* **[Using the Streaming Data Loader](/user-guides/how-to/using-streaming-data-loader.md)**: Learn about how to use the Streaming Data Loader desktop app to load data into HydroServer from CSV files.
 * **[Visualizing Data](/user-guides/how-to/visualizing-data.md)**: Learn how to visualize data in HydroServer.
 * **[Quality Controlling Data](/user-guides/how-to/quality-controlling-data.md)**: Learn how to use the HydroServer Quality Control App to filter, edit, and submit cleaned observations back to HydroServer.
 * **[Exporting and Downloading Data](/user-guides/how-to/exporting-and-downloading-data.md)**: Learn how to export and download data from HydroServer.
