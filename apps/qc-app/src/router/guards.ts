@@ -1,7 +1,6 @@
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs from '@hydroserver/client'
 import {
-  NavigationGuardNext,
   RouteLocationNormalized,
   RouteLocationRaw,
 } from 'vue-router'
@@ -10,8 +9,7 @@ type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
 export type RouteGuard = (
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
-  next: NavigationGuardNext
+  from: RouteLocationNormalized
 ) => RouteGuardResult | Promise<RouteGuardResult>
 
 const getQcReturnPath = (to: RouteLocationNormalized) => {
@@ -66,7 +64,7 @@ export const guards: RouteGuard[] = [
   // HydroServer workspace context. If none is selected, bounce to the
   // picker and carry a `next` hint so we can come back here once the
   // user commits to a workspace.
-  (to, _from, _next) => {
+  (to) => {
     if (!to.meta?.hasWorkspaceGuard) return null
     const { hasSelection } = useWorkspaceStore()
     if (hasSelection) return null
@@ -78,7 +76,7 @@ export const guards: RouteGuard[] = [
 
   // https://www.digitalocean.com/community/tutorials/vuejs-vue-router-modify-head
   // Append head tags and update page title
-  (to, from, _next) => {
+  (to, from) => {
     // This goes through the matched routes from last to first, finding the closest route with a title.
     // e.g., if we have `/some/deep/nested/route` and `/some`, `/deep`, and `/nested` have titles,
     // `/nested`'s will be chosen.
