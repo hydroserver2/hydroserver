@@ -106,21 +106,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
-import { useDisplay } from 'vuetify/lib/framework.mjs'
+import { useRoute, useRouter } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import { useVocabularyStore } from '@/composables/useVocabulary'
-import { filterThingMarkers } from '@/utils/browseFilters'
+import {
+  buildBrowseFilterQuery,
+  filterThingMarkers,
+  parseBrowseFilterQuery,
+} from '@/utils/browseFilters'
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
 import { mdiClose, mdiDomain, mdiMapMarker, mdiWaterPump } from '@mdi/js'
 
-const { smAndDown } = useDisplay()
 const vocabularyStore = useVocabularyStore()
+const route = useRoute()
+const router = useRouter()
 
 const selectedSiteTypes = ref<string[]>([])
 const selectedWorkspaces = ref<Workspace[]>([])
 const selectedSite = ref<ThingMarker | null>(null)
 const workspaces = ref<Workspace[]>([])
+const workspacesLoaded = ref(false)
+const isApplyingRouteState = ref(false)
+const hasAppliedInitialRouteState = ref(false)
 
 const emit = defineEmits(['filter'])
 const props = defineProps({
@@ -128,10 +136,19 @@ const props = defineProps({
     type: Array as () => ThingMarker[],
     required: true,
   },
+  thingsLoaded: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const sidebar = useSidebarStore()
-sidebar.isOpen = !!smAndDown
+const routeState = parseBrowseFilterQuery(route.query)
+if (routeState.drawer !== null) {
+  sidebar.setOpen(routeState.drawer, true)
+} else {
+  sidebar.setOpen(true)
+}
 
 const sortedThings = computed(() =>
   [...props.things].sort((a, b) => a.name.localeCompare(b.name))
@@ -181,6 +198,58 @@ const emitFilteredThings = () => {
   emit('filter', filteredThings)
 }
 
+const querySignature = (query: Record<string, unknown>) =>
+  JSON.stringify(
+    Object.keys(query)
+      .sort()
+      .map((key) => [key, query[key]])
+  )
+
+const syncRouteFromSelection = async () => {
+  if (isApplyingRouteState.value || !hasAppliedInitialRouteState.value) return
+
+  const query = buildBrowseFilterQuery(route.query, {
+    siteId: selectedSite.value?.id,
+    workspaceIds: selectedWorkspaces.value.map((workspace) => workspace.id),
+    siteTypes: selectedSiteTypes.value,
+    drawer: sidebar.isOpen,
+  })
+
+  if (querySignature(query) === querySignature(route.query)) return
+
+  await router.replace({
+    name: route.name || 'Browse',
+    params: route.params,
+    query,
+  })
+}
+
+const applyRouteState = () => {
+  if (!props.thingsLoaded || !workspacesLoaded.value) return
+
+  const state = parseBrowseFilterQuery(route.query)
+  isApplyingRouteState.value = true
+
+  selectedSite.value = state.siteIds.length
+    ? sortedThings.value.find((thing) => thing.id === state.siteIds[0]) ?? null
+    : null
+  selectedWorkspaces.value = state.workspaceIds.length
+    ? workspaces.value.filter((workspace) =>
+        state.workspaceIds.includes(workspace.id)
+      )
+    : []
+  selectedSiteTypes.value = state.siteTypes
+
+  if (state.drawer !== null) {
+    sidebar.setOpen(state.drawer, true)
+  }
+
+  isApplyingRouteState.value = false
+  hasAppliedInitialRouteState.value = true
+  emitFilteredThings()
+  void syncRouteFromSelection()
+}
+
 const onClearFilters = () => {
   selectedSiteTypes.value = []
   selectedWorkspaces.value = []
@@ -192,13 +261,38 @@ onMounted(async () => {
     order_by: ['name'],
     expand_related: true,
   })
+  workspacesLoaded.value = true
+  applyRouteState()
 })
 
-watch([selectedSiteTypes, selectedWorkspaces, selectedSite], emitFilteredThings, {
-  deep: true,
-})
+watch(
+  [selectedSiteTypes, selectedWorkspaces, selectedSite],
+  emitFilteredThings,
+  {
+    deep: true,
+  }
+)
+
+watch(
+  [selectedSiteTypes, selectedWorkspaces, selectedSite, () => sidebar.isOpen],
+  syncRouteFromSelection,
+  { deep: true }
+)
+
+watch(
+  () =>
+    [
+      route.query,
+      props.things,
+      props.thingsLoaded,
+      workspacesLoaded.value,
+    ] as const,
+  applyRouteState,
+  { deep: true }
+)
 
 watch(availableSites, (sites) => {
+  if (!props.thingsLoaded) return
   if (
     selectedSite.value &&
     !sites.some((site) => site.id === selectedSite.value?.id)
@@ -216,6 +310,7 @@ const pruneSelectionToAvailable = <T, A>(
   availableKey: (item: A) => unknown
 ) =>
   watch(available, (items) => {
+    if (!props.thingsLoaded) return
     const availableKeys = new Set(items.map(availableKey))
     const pruned = selected.value.filter((item) =>
       availableKeys.has(selectedKey(item))

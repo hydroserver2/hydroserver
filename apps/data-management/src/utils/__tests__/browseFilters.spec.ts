@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { filterThingMarkers } from '../browseFilters'
+import {
+  buildBrowseFilterQuery,
+  filterThingMarkers,
+  parseBrowseFilterQuery,
+} from '../browseFilters'
 
 describe('filterThingMarkers', () => {
   const things = [
@@ -33,9 +37,9 @@ describe('filterThingMarkers', () => {
   ]
 
   it('returns all things when no filters are selected', () => {
-    expect(filterThingMarkers(things as any, [], []).map((thing) => thing.id)).toEqual(
-      ['thing-1', 'thing-2', 'thing-3']
-    )
+    expect(
+      filterThingMarkers(things as any, [], []).map((thing) => thing.id)
+    ).toEqual(['thing-1', 'thing-2', 'thing-3'])
   })
 
   it('filters things by selected workspaces', () => {
@@ -60,9 +64,9 @@ describe('filterThingMarkers', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, ['Spring']).map(
-        (thing) => thing.id
-      )
+      filterThingMarkers(things as any, selectedWorkspaces as any, [
+        'Spring',
+      ]).map((thing) => thing.id)
     ).toEqual(['thing-3'])
   })
 
@@ -85,5 +89,88 @@ describe('filterThingMarkers', () => {
         things[1] as any
       ).map((thing) => thing.id)
     ).toEqual([])
+  })
+})
+
+describe('parseBrowseFilterQuery', () => {
+  it('reads canonical query params', () => {
+    expect(
+      parseBrowseFilterQuery({
+        sites: 'thing-1',
+        workspaces: ['workspace-1', 'workspace-2'],
+        siteTypes: ['Lake', 'Stream'],
+        drawer: '0',
+      })
+    ).toEqual({
+      siteIds: ['thing-1'],
+      workspaceIds: ['workspace-1', 'workspace-2'],
+      siteTypes: ['Lake', 'Stream'],
+      drawer: false,
+    })
+  })
+
+  it('deduplicates values and accepts legacy singular aliases', () => {
+    expect(
+      parseBrowseFilterQuery({
+        site: 'thing-1',
+        siteId: 'thing-1',
+        workspace: 'workspace-1,workspace-2',
+        workspaceIds: ['workspace-2'],
+        siteType: ['Lake', 'Lake'],
+        drawer: 'yes',
+      })
+    ).toEqual({
+      siteIds: ['thing-1'],
+      workspaceIds: ['workspace-1', 'workspace-2'],
+      siteTypes: ['Lake'],
+      drawer: true,
+    })
+  })
+
+  it('returns null for an absent or unrecognized drawer state', () => {
+    expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
+    expect(parseBrowseFilterQuery({}).drawer).toBeNull()
+  })
+})
+
+describe('buildBrowseFilterQuery', () => {
+  it('writes selected Browse state to canonical query params and omits an open drawer', () => {
+    expect(
+      buildBrowseFilterQuery(
+        {},
+        {
+          siteId: 'thing-1',
+          workspaceIds: ['workspace-1', 'workspace-2'],
+          siteTypes: ['Lake'],
+          drawer: true,
+        }
+      )
+    ).toEqual({
+      sites: 'thing-1',
+      workspaces: ['workspace-1', 'workspace-2'],
+      siteTypes: 'Lake',
+    })
+  })
+
+  it('removes stale Browse aliases while preserving unrelated query params', () => {
+    expect(
+      buildBrowseFilterQuery(
+        {
+          sites: 'thing-1',
+          workspace: 'workspace-1',
+          siteType: 'Lake',
+          page: '2',
+        },
+        {
+          siteId: null,
+          workspaceIds: [],
+          siteTypes: [],
+          drawer: false,
+        }
+      )
+    ).toEqual({
+      page: '2',
+      drawer: '0',
+    })
   })
 })
