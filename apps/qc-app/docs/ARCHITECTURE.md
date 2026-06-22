@@ -220,6 +220,55 @@ itself has zero Vue / Pinia / Plotly dependencies. The contract:
 Side-stepping `dispatch` breaks undo / redo, breaks QC History export, and
 silently breaks the worker fast-path. Don't.
 
+## QC history / session service
+
+Editing is persisted as a session DAG through the HydroServer QC API
+(`/api/data/quality-control/histories/{id}/sessions/{id}/operations`).
+
+The API client itself lives in **`@hydroserver/client`**, split across three
+SDK services on the `hs` instance: `qualityControlHistories`,
+`qualityControlSessions` (with `commit`), and `qualityControlOperations`. They
+are normal SDK services built on the shared `apiMethods` layer, so they inherit
+the session auth (CSRF cookie -> `X-CSRFToken`, `credentials: 'include'`) and
+the `ApiResponse` return shape — methods never throw on HTTP errors. Bodies are
+camelCase (`by_alias`); query parameters are snake_case (`expand_related`,
+`range_start`, `managed_datastream_id`, `ancestor_of`, ...).
+
+`src/services/qualityControl/` holds only the **app-side orchestration** that
+composes those services with `@uwrl/qc-utils` and the datastream/observation
+APIs: `createManagedDatastream`, the session lifecycle (`session.ts`),
+`persistOperations`, `commitSession`, `reconstructSession`, `findHistory`, and
+the `observationsBulkBody` serializer. `unwrap` bridges `ApiResponse` to the
+thrown errors this glue surfaces. None of it is a transport — swapping the QC
+client out is a `@hydroserver/client` change, not an app one.
+
+Two contract notes worth keeping in mind:
+
+- **The backend stores the operation DAG as metadata only — it never replays
+  operations.** The app applies ops locally (qc-utils), pushes the edited
+  series to the managed datastream via `bulk-create` (replace mode), then calls
+  `/commit`, which only records checksums and extends the history window.
+  Checksum verification (source/managed) is the client's responsibility;
+  `/commit` performs none.
+- **Vocabulary differs across the boundary.** qc-utils serializes operations as
+  `{ method, args }`; the QC API speaks `{ operationType, arguments, order }`.
+  The enum values are identical, so `persistOperations`/`reconstructSession`
+  rename the fields when crossing between qc-utils and the API.
+
+Tests stub the three services with `makeQcFake()` (a stateful in-memory double
+under `services/qualityControl/__tests__/` that returns
+`{ histories, sessions, operations }`) — the production client lives in the
+package, not the app.
+
+**Permission gating.** QC editing writes to the source datastream's workspace
+(creates the managed datastream, pushes observations), so the editor's entry
+points are gated on the signed-in user's workspace role via
+`useWorkspacePermissions()` — a read-only collaborator sees disabled Start
+editing / Save / Commit controls and an explanation instead of a mid-flow 403,
+and each workspace's role is marked on the picker. The role rides along on the
+`Workspace` object (`collaboratorRole.permissions`; owners have a null role;
+admins override), so no extra request is needed.
+
 ## Routing and auth
 
 vue-router 5, two routes (Home, Workspaces). Two guards run on

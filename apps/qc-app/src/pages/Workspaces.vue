@@ -47,14 +47,34 @@
           </template>
 
           <template #subtitle>
-            <span class="text-body-small">
-              {{ roleLabel(ws) }}
-              <span v-if="ws.owner?.name"> · {{ ws.owner.name }}</span>
+            <span v-if="ws.owner?.name" class="text-body-small">
+              Owned by {{ ws.owner.name }}
             </span>
           </template>
 
           <template #append>
             <div class="d-flex align-center ga-3">
+              <v-tooltip
+                location="top"
+                :text="
+                  canEdit(ws)
+                    ? `You can edit data in this workspace (role: ${roleName(ws)})`
+                    : `Read-only access (role: ${roleName(ws)})`
+                "
+              >
+                <template #activator="{ props: tp }">
+                  <v-chip
+                    v-bind="tp"
+                    :data-testid="`workspace-role-${ws.id}`"
+                    size="x-small"
+                    variant="tonal"
+                    :color="canEdit(ws) ? 'primary' : 'grey-darken-1'"
+                    :prepend-icon="canEdit(ws) ? 'mdi-pencil' : 'mdi-eye-outline'"
+                  >
+                    {{ roleName(ws) }}
+                  </v-chip>
+                </template>
+              </v-tooltip>
               <v-tooltip
                 location="top"
                 :text="datastreamCountTooltip(ws.id)"
@@ -123,15 +143,17 @@
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
-import { Workspace, Datastream, ResultQualifier } from '@hydroserver/client'
+import { Datastream, ResultQualifier } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useHydroServer } from '@/store/hydroserver'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 
 const router = useRouter()
 const route = useRoute()
 const store = useWorkspaceStore()
 const { availableWorkspaces, selectedWorkspace, isLoading } = storeToRefs(store)
 const { hs } = storeToRefs(useHydroServer())
+const { roleName, canEdit } = useWorkspacePermissions()
 
 // One unscoped listing bucketed by workspaceId is cheaper than N
 // scoped listings: server RBAC already filters to visible datastreams.
@@ -219,12 +241,6 @@ function onPick(id: string) {
   if (!picked) return
   const next = typeof route.query.next === 'string' ? route.query.next : 'Home'
   router.push({ name: next })
-}
-
-function roleLabel(ws: Workspace): string {
-  // Owners have `collaboratorRole === null`.
-  if (!ws.collaboratorRole) return 'Owner'
-  return ws.collaboratorRole.name || 'Collaborator'
 }
 </script>
 

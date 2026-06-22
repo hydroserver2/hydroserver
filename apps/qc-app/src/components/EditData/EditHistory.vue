@@ -122,6 +122,8 @@
       class="flex-grow-1 overflow-y-auto pa-2"
       style="min-height: 0"
     >
+      <SessionList class="mb-2" />
+
      <div class="rounded border bg-surface overflow-hidden">
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
@@ -342,6 +344,7 @@ import { formatDuration } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
 import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
+import SessionList from '@/components/EditData/SessionList.vue'
 import { useQcHistory } from '@/composables/useQcHistory'
 import { Snackbar } from '@uwrl/qc-utils'
 

@@ -140,6 +140,53 @@ history), serializes `[phenomenonTime, result]` rows, POSTs with
 `mode: 'replace'`, surfaces a Snackbar, and clears the history in place
 on success.
 
+### `useEditSession()`
+
+Orchestrates the server-backed QC session workflow against the
+`services/qualityControl/` glue:
+
+```ts
+const { beginEditing, startSession, saveDraft, commit, needsSession, needsHistory } =
+  useEditSession()
+```
+
+- `beginEditing()` — resolves the QC history for the QC datastream, loads
+  its sessions, resumes the in-progress one (or sets `needsSession`); sets
+  `needsHistory` when the datastream isn't QC-managed yet.
+- `startSession(spec)` — creates a session and copies the source window in.
+- `saveDraft()` — persists the record's edit operations to the session
+  (append-only reconcile).
+- `commit()` — saves, verifies checksum C, pushes observations
+  (`mode: 'replace'`), then locks the session.
+
+### `useCreateManagedDatastream()`
+
+```ts
+const { create } = useCreateManagedDatastream()
+const { managedDatastream, history } = await create({ source, processingLevelId, name })
+```
+
+Delegates to the tested `createManagedDatastream` orchestration with the
+live client (`hs.datastreams` + `hs.qualityControlHistories`).
+
+### `useWorkspacePermissions()`
+
+Synchronous, reactive role/permission checks for gating UI. The role
+travels with the `Workspace` object (`collaboratorRole.permissions`; owners
+have a null role; `accountType === 'admin'` overrides), so no separate
+endpoint is needed.
+
+```ts
+const { canEdit, canCreateDatastream, roleName, isOwner, can } =
+  useWorkspacePermissions()
+canEdit()                 // selected workspace: can run the QC edit flow?
+canCreateDatastream(ws)   // can create the managed datastream here?
+roleName(ws)              // 'Owner' | <collaborator role> | 'Admin' | 'Read-only'
+```
+
+Used to disable the editor's Start editing / Save / Commit / Create
+controls and to mark each workspace's role on the picker.
+
 ### `useResizable()`
 
 Generic pointer-drag-resize hook. Used by `SelectDrawer`, `EditDrawer`,
@@ -410,6 +457,37 @@ ephemeral connection state).
 | Name | Kind  | Type / signature   | Notes |
 |------|-------|--------------------|-------|
 | `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
+
+### `useQcSessionStore()` — `src/store/qcSession.ts`
+
+View-mode state for QC sessions: which session is editable (the single
+in-progress one) and which is being viewed. Viewing a committed session
+puts the editor in read-only mode.
+
+| Name                | Kind     | Type / signature                        | Notes |
+|---------------------|----------|-----------------------------------------|-------|
+| `historyId`         | state    | `string \| null`                        | The managed datastream's QC history being navigated. |
+| `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
+| `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
+| `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
+| `isLoading`         | state    | `boolean`                               | True while `loadSessions` is in flight. |
+| `isReadOnly`        | computed | `boolean`                               | True unless viewing the in-progress session. |
+| `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
+| `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
+| `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
+| `loadSessions`      | action   | `(historyId: string) => Promise<void>`  | Load a history's sessions; default the view to the in-progress one. |
+| `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
+| `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
+| `reset`             | action   | `() => void`                            | Clear all state. |
+
+### `useQcPreferencesStore()` — `src/store/qcPreferences.ts`
+
+Persisted QC editing preferences. Persistence: key `qc:preferences:v1`,
+`pick: ['processingLevelId']`.
+
+| Name                | Kind  | Type / signature | Notes |
+|---------------------|-------|------------------|-------|
+| `processingLevelId` | state | `string \| null` | Last-used processing level for the Create-Datastream-for-Editing form; null on first use (no assumed default). |
 
 ## Internal: utilities
 
