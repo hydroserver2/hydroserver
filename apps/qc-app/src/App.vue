@@ -25,7 +25,7 @@ import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 // auth guard sees `hs.session.isAuthenticated` on first navigation.
 const isLoading = ref(false)
 
-const { things, processingLevels, observedProperties, datastreams } =
+const { things, processingLevels, observedProperties, datastreams, qcHistories } =
   storeToRefs(useDataVisStore())
 
 const { hs } = storeToRefs(useHydroServer())
@@ -37,6 +37,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     datastreamsResponse,
     processingLevelsResponse,
     observedPropertiesResponse,
+    histories,
   ] = await Promise.all([
     hs.value.things.list({ workspace_id: workspaceId } as any),
     hs.value.datastreams.list({
@@ -45,6 +46,9 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     } as any),
     hs.value.processingLevels.list({ workspace_id: workspaceId } as any),
     hs.value.observedProperties.list({ workspace_id: workspaceId } as any),
+    // QC histories aren't workspace-filterable server-side; entries for
+    // other workspaces simply never match this catalog's datastream ids.
+    hs.value.qualityControlHistories.listAllItems(),
   ])
 
   things.value = thingsResponse.ok ? thingsResponse.data : []
@@ -57,6 +61,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
   observedProperties.value = observedPropertiesResponse.ok
     ? observedPropertiesResponse.data
     : []
+  qcHistories.value = histories
 }
 
 // Clearing the selection wipes catalogs so stale data from the old

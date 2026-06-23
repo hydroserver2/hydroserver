@@ -53,7 +53,12 @@ describe('collectSessionOperations', () => {
       win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'),
       ['SELECTION', 'DELETE_POINTS']
     )
-    const ops = await collectSessionOperations(qc.sessions, historyId, s.id)
+    const ops = await collectSessionOperations(
+      qc.sessions,
+      qc.operations,
+      historyId,
+      s.id
+    )
     expect(ops.map((o) => o.method)).toEqual(['SELECTION', 'DELETE_POINTS'])
   })
 
@@ -74,7 +79,12 @@ describe('collectSessionOperations', () => {
       ['CHANGE_VALUES']
     )
 
-    const ops = await collectSessionOperations(qc.sessions, historyId, b.id)
+    const ops = await collectSessionOperations(
+      qc.sessions,
+      qc.operations,
+      historyId,
+      b.id
+    )
     expect(ops.map((o) => o.method)).toEqual(['VALUE_THRESHOLD', 'CHANGE_VALUES'])
   })
 })
@@ -99,7 +109,7 @@ describe('reconstructSession', () => {
     const source = { id: 's-1' } as unknown as Datastream
 
     const result = await reconstructSession(
-      { qcSessions: qc.sessions, fetchInRange, applyHistory },
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
       source,
       historyId,
       s.id

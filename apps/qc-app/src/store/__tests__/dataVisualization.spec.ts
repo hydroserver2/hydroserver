@@ -605,3 +605,33 @@ describe('useDataVisStore.clearPlottedDatastreams + toggleDatastream', () => {
     expect(store.plottedDatastreams).toEqual([])
   })
 })
+
+describe('useDataVisStore.adoptManagedDatastream', () => {
+  it('reuses the source series as the managed working copy (one item, data kept)', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    const sourceData = { tag: 'loaded-record' }
+    store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
+    store.qcDatastreamId = 'src'
+    mockGraphSeriesArray.value = [
+      { id: 'src', name: 'Raw', data: sourceData, color: '#1', yAxisLabel: 'T' },
+    ]
+
+    await store.adoptManagedDatastream(
+      makeDs({ id: 'mgd', name: 'Raw (QC)' }) as any,
+      'src'
+    )
+
+    // Single plotted item, now the managed datastream as the QC target.
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd'])
+    expect(store.qcDatastreamId).toBe('mgd')
+    // The loaded series was re-keyed in place, keeping its data...
+    expect(mockGraphSeriesArray.value).toHaveLength(1)
+    expect(mockGraphSeriesArray.value[0].id).toBe('mgd')
+    expect(mockGraphSeriesArray.value[0].name).toBe('Raw (QC)')
+    expect(mockGraphSeriesArray.value[0].data).toEqual(sourceData)
+    // ...and the working copy was reused, not re-fetched (managed is empty).
+    expect(mockFetchGraphSeries).not.toHaveBeenCalled()
+    expect(mockFetchObservationsInRange).not.toHaveBeenCalled()
+  })
+})

@@ -111,12 +111,18 @@ describe('useEditSession', () => {
       })
     )
     await qc.sessions.create(h.id, WIN)
+    // The reconstructed working copy that resume should wire into the series.
+    const reconstructed = makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
+    fetchObservationsInRange.mockResolvedValue(reconstructed)
     const { useEditSession } = await import('@/composables/useEditSession')
     const qcUtils = await import('@uwrl/qc-utils')
     const { beginEditing, needsSession } = useEditSession()
     await beginEditing()
     expect(needsSession.value).toBe(false)
     expect(qcUtils.applyHistory).toHaveBeenCalled()
+    // The QC-target series now shows the reconstructed session, not the
+    // empty managed datastream.
+    expect(selectedSeries.value.data).toEqual(reconstructed)
   })
 
   it('startSession creates a session and copies the source window', async () => {
@@ -128,6 +134,27 @@ describe('useEditSession', () => {
     expect(session.needsSession.value).toBe(false)
     expect(useQcSessionStore().inProgressSession?.description).toBe('Jan')
     expect(fetchObservationsInRange.mock.calls.at(-1)?.[0].id).toBe('s-1')
+  })
+
+  it('startSession clamps the window to the source datastream extent', async () => {
+    await seedHistory()
+    getItem.mockResolvedValue({
+      id: 's-1',
+      name: 'Source',
+      phenomenonBeginTime: '2025-01-01T00:00:00Z',
+      phenomenonEndTime: '2025-01-15T00:00:00Z',
+    })
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    // Display window ends "now" (past the source's last observation).
+    await session.startSession({
+      phenomenonTimeStart: '2025-01-05T00:00:00Z',
+      phenomenonTimeEnd: '2025-06-01T00:00:00Z',
+    })
+    const inProgress = useQcSessionStore().inProgressSession
+    expect(inProgress?.phenomenonTimeEnd).toBe('2025-01-15T00:00:00.000Z')
+    expect(inProgress?.phenomenonTimeStart).toBe('2025-01-05T00:00:00.000Z')
   })
 
   it('saveDraft persists the record operations to the session', async () => {
@@ -171,5 +198,20 @@ describe('useEditSession', () => {
     const store = useQcSessionStore()
     expect(store.committedSessions.length).toBe(1)
     expect(store.inProgressSession).toBeNull()
+  })
+
+  it('commit saves the description provided at commit time', async () => {
+    await seedHistory()
+    selectedSeries.value = {
+      data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]),
+    }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    await session.commit('Reviewed January spike')
+
+    const store = useQcSessionStore()
+    expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
   })
 })

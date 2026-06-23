@@ -1,5 +1,5 @@
-import { mount } from '@vue/test-utils'
-import { describe, it, expect } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
 import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue'
 ;(globalThis as any).ResizeObserver ||= class {
@@ -68,6 +68,53 @@ describe('CreateDatastreamForm', () => {
     const w = mountForm()
     await w.find('[data-testid="create-cancel"]').trigger('click')
     expect(w.emitted('cancel')).toHaveLength(1)
+  })
+
+  it('ignores a remembered default not in this workspace, and stays invalid until a real level is picked', async () => {
+    const w = mount(CreateDatastreamForm, {
+      props: {
+        source,
+        processingLevels,
+        // A level id persisted from another workspace/backend.
+        defaultProcessingLevelId: 'pl-from-elsewhere',
+      },
+      global: { plugins: [createTestVuetify()] },
+    })
+    // Stale default dropped -> confirm disabled (not submitted as-is).
+    expect(
+      w.find('[data-testid="create-confirm"]').attributes('disabled')
+    ).toBeDefined()
+    await levelSelect(w).vm.$emit('update:modelValue', 'pl-qc')
+    expect(
+      w.find('[data-testid="create-confirm"]').attributes('disabled')
+    ).toBeUndefined()
+  })
+
+  it('adds a processing level inline and selects the new one', async () => {
+    const created = { id: 'pl-new', code: 'Quality Controlled' }
+    const onCreateProcessingLevel = vi.fn().mockResolvedValue(created)
+    const w = mount(CreateDatastreamForm, {
+      props: { source, processingLevels, onCreateProcessingLevel },
+      global: { plugins: [createTestVuetify()] },
+    })
+
+    // Open the inline add panel and submit a new level.
+    await w.find('[data-testid="add-level-toggle"]').trigger('click')
+    await w.find('[data-testid="new-level-code"] input').setValue('Quality Controlled')
+    await w.find('[data-testid="new-level-save"]').trigger('click')
+    await flushPromises()
+
+    expect(onCreateProcessingLevel).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'Quality Controlled' })
+    )
+    // Parent appends the created level to the catalog.
+    await w.setProps({ processingLevels: [...processingLevels, created] })
+
+    // Panel collapsed, and the new level is selected -> confirm carries it.
+    expect(w.find('[data-testid="new-level-code"]').exists()).toBe(false)
+    await w.find('[data-testid="create-confirm"]').trigger('click')
+    const spec = w.emitted('confirm')![0][0] as { processingLevelId: string }
+    expect(spec.processingLevelId).toBe('pl-new')
   })
 
   it('blocks create and shows a warning when permissionError is set', async () => {

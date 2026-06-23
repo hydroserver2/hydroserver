@@ -72,7 +72,7 @@
                 append-icon="mdi-arrow-right"
                 :loading="isCreating"
                 :disabled="!canEditWorkspace"
-                @click="goToEdit"
+                @click="openEditChooser"
               >
                 Start editing
               </v-btn>
@@ -104,18 +104,32 @@
       <DataVisDatasetsTable class="fill-height" />
     </v-card>
 
+    <v-dialog v-model="showChooser" max-width="640">
+      <StartEditingDialog
+        v-if="chooserSource"
+        :source="chooserSource"
+        :options="chooserOptions"
+        :loading="chooserLoading"
+        @edit="editManaged"
+        @delete="onChooserDelete"
+        @create="onChooserCreate"
+        @cancel="showChooser = false"
+      />
+    </v-dialog>
+
     <v-dialog v-model="showCreateDatastream" max-width="560" persistent>
       <v-card v-if="qcDatastream" rounded="lg">
         <CreateDatastreamForm
           :source="qcDatastream"
           :processing-levels="processingLevels"
           :default-processing-level-id="qcPreferences.processingLevelId"
+          :on-create-processing-level="onCreateProcessingLevel"
           :permission-error="
             canCreateDatastreamHere
               ? ''
               : `Your role on this workspace (${workspaceRole}) can't create datastreams. Ask a workspace owner for an editor role.`
           "
-          @cancel="showCreateDatastream = false"
+          @cancel="onCreateCancel"
           @confirm="onCreateDatastream"
         />
       </v-card>
@@ -248,7 +262,7 @@
             prepend-icon="mdi-cloud-check-outline"
             :disabled="commitDisabled"
             :loading="isCommitting"
-            @click="showCommitConfirm = true"
+            @click="openCommit"
           >
             Commit
           </v-btn>
@@ -377,6 +391,17 @@
           <strong>replace</strong> the managed datastream over this session's
           range and the session is locked into the history.
         </v-card-text>
+        <div class="px-6 pb-2">
+          <v-textarea
+            v-model="commitDescription"
+            data-testid="commit-description"
+            label="Session description (optional)"
+            rows="2"
+            auto-grow
+            density="compact"
+            hide-details="auto"
+          />
+        </div>
         <v-divider />
         <v-card-actions class="d-flex align-center ga-2 px-4 py-3">
           <v-btn variant="text" @click="showCommitConfirm = false">Cancel</v-btn>
@@ -428,13 +453,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-dialog v-model="showStartSession" max-width="520" persistent>
-      <v-card rounded="lg">
-        <StartSessionForm @cancel="cancelStartSession" @confirm="onStartSession" />
-      </v-card>
-    </v-dialog>
-  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -454,14 +473,19 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useEditSession } from '@/composables/useEditSession'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useQcPreferencesStore } from '@/store/qcPreferences'
-import StartSessionForm from '@/components/EditData/StartSessionForm.vue'
 import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue'
+import StartEditingDialog from '@/components/EditData/StartEditingDialog.vue'
 import {
   useCreateManagedDatastream,
   type CreateManagedDatastreamSpec,
 } from '@/composables/useCreateManagedDatastream'
+import {
+  useManagedDatastreams,
+  type ManagedDatastreamOption,
+} from '@/composables/useManagedDatastreams'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
-import type { QualityControlSessionContract } from '@hydroserver/client'
+import { useProcessingLevels } from '@/composables/useProcessingLevels'
+import type { Datastream } from '@hydroserver/client'
 import { Snackbar } from '@uwrl/qc-utils'
 import {
   decodeShareState,
@@ -502,7 +526,12 @@ const {
   tooltipsMaxDataPoints,
 } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
-const { setPlottedDatastreams } = useDataVisStore()
+const {
+  setPlottedDatastreams,
+  adoptManagedDatastream,
+  addQcHistory,
+  removeManagedDatastream,
+} = useDataVisStore()
 
 const {
   beginEditing,
@@ -517,8 +546,8 @@ const { isReadOnly, inProgressSession } = storeToRefs(qcSessionStore)
 const { create: createManaged } = useCreateManagedDatastream()
 const qcPreferences = useQcPreferencesStore()
 const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
-
-type QcSessionPostBody = QualityControlSessionContract.PostBody
+const { createProcessingLevel } = useProcessingLevels()
+const { loadForSource, deleteManaged } = useManagedDatastreams()
 
 // Permission gating: QC editing writes to the selected workspace (creates
 // the managed datastream, pushes observations). Gate the editor entry
@@ -531,8 +560,12 @@ const workspaceRole = computed(() => roleName())
 const editCount = computed(() => editHistory.value?.length ?? 0)
 const showCommitConfirm = ref(false)
 const showCloseConfirm = ref(false)
-const showStartSession = ref(false)
 const showCreateDatastream = ref(false)
+const commitDescription = ref('')
+const showChooser = ref(false)
+const chooserLoading = ref(false)
+const chooserOptions = ref<ManagedDatastreamOption[]>([])
+const chooserSource = ref<Datastream | null>(null)
 const isSavingDraft = ref(false)
 const isCommitting = ref(false)
 const isCreating = ref(false)
@@ -640,10 +673,14 @@ function exitToSelect() {
   isDrawerOpen.value = true
 }
 
-async function onStartSession(spec: QcSessionPostBody) {
-  showStartSession.value = false
+// No in-progress session yet: open one over the window already chosen by the
+// time-range controls in the Select view, rather than prompting for it again.
+async function startSessionForWindow() {
   try {
-    await startSession(spec)
+    await startSession({
+      phenomenonTimeStart: beginDate.value.toISOString(),
+      phenomenonTimeEnd: endDate.value.toISOString(),
+    })
     await redraw()
     Snackbar.success('Edit session started.')
   } catch (e) {
@@ -651,9 +688,23 @@ async function onStartSession(spec: QcSessionPostBody) {
   }
 }
 
-function cancelStartSession() {
-  showStartSession.value = false
-  exitToSelect()
+async function onCreateProcessingLevel(input: {
+  code: string
+  definition?: string
+  explanation?: string
+}) {
+  try {
+    const level = await createProcessingLevel(input)
+    // Add to the catalog so it shows in the picker and is immediately valid.
+    processingLevels.value = [...processingLevels.value, level]
+    Snackbar.success('Processing level added.')
+    return level
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not add the processing level.'
+    )
+    return null
+  }
 }
 
 async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
@@ -661,13 +712,19 @@ async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
   qcPreferences.processingLevelId = spec.processingLevelId
   isCreating.value = true
   try {
-    const { managedDatastream } = await createManaged(spec)
-    await setPlottedDatastreams(
-      [...plottedDatastreams.value, managedDatastream],
-      managedDatastream.id
-    )
+    const { managedDatastream, history } = await createManaged(spec)
+    // Register the new history + datastream so it's hidden from the catalog
+    // and the chooser can resolve it (by its name, not id) without a reload.
+    addQcHistory(history)
+    datastreams.value = [
+      ...datastreams.value,
+      managedDatastream as (typeof datastreams.value)[number],
+    ]
+    // Reuse the source's already-loaded series as the managed datastream's
+    // working copy instead of adding a second, empty plotted item.
+    await adoptManagedDatastream(managedDatastream, spec.source.id)
     Snackbar.success('Managed datastream created.')
-    await goToEdit()
+    await enterEdit()
   } catch (e) {
     Snackbar.error(
       e instanceof Error ? e.message : 'Could not create the datastream.'
@@ -695,11 +752,18 @@ async function onSaveAndClose() {
   if (await onSaveDraft()) exitToSelect()
 }
 
+// Prefill the description with the session's current one so committing
+// preserves/edits it rather than blanking it.
+function openCommit() {
+  commitDescription.value = inProgressSession.value?.description ?? ''
+  showCommitConfirm.value = true
+}
+
 async function onCommit() {
   showCommitConfirm.value = false
   isCommitting.value = true
   try {
-    await commit()
+    await commit(commitDescription.value)
     await redraw()
     Snackbar.success('Session committed.')
   } catch (e) {
@@ -919,23 +983,80 @@ onUnmounted(() => {
   resetState()
 })
 
-async function goToEdit() {
+// "Start editing" opens a chooser of the source's managed datastreams and
+// their sessions, rather than editing the raw datastream directly.
+async function openEditChooser() {
+  const source = qcDatastream.value
+  if (!source) return
+  chooserSource.value = source
+  chooserOptions.value = []
+  chooserLoading.value = true
+  showChooser.value = true
   try {
-    await beginEditing()
-    if (needsHistory.value) {
-      // Not a managed datastream yet: create one from it (as source).
-      showCreateDatastream.value = true
-      return
-    }
-    currentView.value = DrawerType.Edit
-    selectedDrawer.value = DrawerType.Edit
-    isDrawerOpen.value = true
-    if (needsSession.value) showStartSession.value = true
+    chooserOptions.value = await loadForSource(source.id)
   } catch (e) {
     Snackbar.error(
-      e instanceof Error ? e.message : 'Could not start editing this datastream.'
+      e instanceof Error ? e.message : 'Could not load QC datastreams.'
+    )
+  } finally {
+    chooserLoading.value = false
+  }
+}
+
+// Edit a chosen managed datastream: reuse the source's loaded series as its
+// working copy, then resume its in-progress session (or start a new one).
+async function editManaged(option: ManagedDatastreamOption) {
+  showChooser.value = false
+  const source = chooserSource.value
+  if (!source) return
+  try {
+    await adoptManagedDatastream(option.managed, source.id)
+    await enterEdit()
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not open the datastream for editing.'
     )
   }
+}
+
+function onChooserCreate() {
+  showChooser.value = false
+  showCreateDatastream.value = true
+}
+
+// Cancelling create returns to the chooser it was opened from.
+function onCreateCancel() {
+  showCreateDatastream.value = false
+  if (chooserSource.value) showChooser.value = true
+}
+
+async function onChooserDelete(option: ManagedDatastreamOption) {
+  try {
+    await deleteManaged(option.historyId, option.managed.id)
+    removeManagedDatastream(option.historyId, option.managed.id)
+    chooserOptions.value = chooserOptions.value.filter(
+      (o) => o.historyId !== option.historyId
+    )
+    Snackbar.success('Managed datastream deleted.')
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not delete the managed datastream.'
+    )
+  }
+}
+
+// Enter the editor on the current QC-target managed datastream: resume its
+// in-progress session, or start a new one over the selected time range.
+async function enterEdit() {
+  await beginEditing()
+  if (needsHistory.value) {
+    Snackbar.error('This datastream is not set up for QC editing.')
+    return
+  }
+  currentView.value = DrawerType.Edit
+  selectedDrawer.value = DrawerType.Edit
+  isDrawerOpen.value = true
+  if (needsSession.value) await startSessionForWindow()
 }
 </script>
 

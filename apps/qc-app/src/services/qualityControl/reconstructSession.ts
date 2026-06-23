@@ -1,11 +1,14 @@
 /**
- * Reconstruct the datastream state "as of" a committed session for
- * read-only viewing (spec section 4 / 7.3).
+ * Reconstruct the datastream state "as of" a session for resume/read-only
+ * viewing (spec section 4 / 7.3).
  *
  * Fetch the source window, then replay the session's operations preceded
  * by its ancestors' operations (chronological order) via qc-utils
  * `applyHistory`. `fetchInRange` and `applyHistory` are injected so this
  * unit-tests without a real ObservationRecord.
+ *
+ * Operations are read from the operations endpoint, not off the session: a
+ * session GET can return the summary shape (no embedded `operations`).
  *
  * Caveat (deferred): operations are index-coupled to the exact dataset
  * they were authored against, so reconstructing across sessions authored
@@ -16,8 +19,8 @@
 import type {
   Datastream,
   QualityControlSessionService,
+  QualityControlOperationService,
   QualityControlOperation,
-  QualityControlSessionContract,
 } from '@hydroserver/client'
 import type {
   ApplyHistoryReport,
@@ -27,8 +30,6 @@ import type {
 } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
 import type { FetchObservationsInRange } from './session'
-
-type QcSessionDetail = QualityControlSessionContract.DetailResponse
 
 /** API operation -> qc-utils replayable operation (rename operationType/arguments). */
 const toSerialized = (op: QualityControlOperation): QcHistoryOperation =>
@@ -43,12 +44,10 @@ const toSerialized = (op: QualityControlOperation): QcHistoryOperation =>
  */
 export async function collectSessionOperations(
   qcSessions: QualityControlSessionService,
+  qcOperations: QualityControlOperationService,
   historyId: string,
   sessionId: string
 ): Promise<QcHistoryOperation[]> {
-  const session = unwrap(
-    await qcSessions.get(historyId, sessionId)
-  ) as QcSessionDetail
   const ancestors = unwrap(
     await qcSessions.list(historyId, {
       ancestor_of: sessionId,
@@ -63,17 +62,21 @@ export async function collectSessionOperations(
 
   const operations: QcHistoryOperation[] = []
   for (const ancestor of ordered) {
-    const detail = unwrap(
-      await qcSessions.get(historyId, ancestor.id)
-    ) as QcSessionDetail
-    operations.push(...detail.operations.map(toSerialized))
+    const ops = unwrap(
+      await qcOperations.list(historyId, ancestor.id, { fetch_all: true })
+    )
+    operations.push(...ops.map(toSerialized))
   }
-  operations.push(...session.operations.map(toSerialized))
+  const sessionOps = unwrap(
+    await qcOperations.list(historyId, sessionId, { fetch_all: true })
+  )
+  operations.push(...sessionOps.map(toSerialized))
   return operations
 }
 
 export interface ReconstructSessionDeps {
   qcSessions: QualityControlSessionService
+  qcOperations: QualityControlOperationService
   fetchInRange: FetchObservationsInRange
   applyHistory: (
     record: ObservationRecord,
@@ -92,12 +95,17 @@ export async function reconstructSession(
   historyId: string,
   sessionId: string
 ): Promise<ReconstructSessionResult> {
-  const { qcSessions, fetchInRange, applyHistory } = deps
+  const { qcSessions, qcOperations, fetchInRange, applyHistory } = deps
 
-  const session = unwrap(
-    await qcSessions.get(historyId, sessionId)
-  ) as QcSessionDetail
-  const operations = await collectSessionOperations(qcSessions, historyId, sessionId)
+  // The session GET supplies the window; operations come from the
+  // operations endpoint (the GET may omit them in the summary shape).
+  const session = unwrap(await qcSessions.get(historyId, sessionId))
+  const operations = await collectSessionOperations(
+    qcSessions,
+    qcOperations,
+    historyId,
+    sessionId
+  )
 
   const record = await fetchInRange(
     source,

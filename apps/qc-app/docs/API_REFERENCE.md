@@ -169,6 +169,19 @@ const { managedDatastream, history } = await create({ source, processingLevelId,
 Delegates to the tested `createManagedDatastream` orchestration with the
 live client (`hs.datastreams` + `hs.qualityControlHistories`).
 
+### `useManagedDatastreams()`
+
+```ts
+const { loadForSource } = useManagedDatastreams()
+const options = await loadForSource(sourceDatastreamId)
+// options: [{ historyId, managed, sessions }]
+```
+
+Resolves a source datastream's managed (QC) datastreams from the loaded QC
+histories and fetches each one's sessions — feeds the "Start editing"
+chooser, which lists managed datastreams with their in-progress/committed
+sessions.
+
 ### `useWorkspacePermissions()`
 
 Synchronous, reactive role/permission checks for gating UI. The role
@@ -228,12 +241,17 @@ on boot.
 |-------------------------------------|----------|---------------------------------------------------|-------|
 | `things`                            | state    | `Thing[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
 | `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
+| `qcHistories`                       | state    | `QualityControlHistory[]`                         | Workspace QC histories (each links a managed datastream to its source); loaded with the catalog. |
+| `managedDatastreamIds`              | computed | `Set<string>`                                     | Ids of every managed (QC) datastream; hidden from the catalog (reached via the Start-editing chooser). |
+| `historiesBySource`                 | computed | `Map<string, QualityControlHistory[]>`            | `sourceDatastreamId` -> its QC histories; drives the Start-editing chooser. |
+| `addQcHistory`                      | action   | `(history: QualityControlHistory) => void`        | Register a newly-created history so its managed datastream hides from the catalog and shows in the chooser without a reload. |
+| `removeManagedDatastream`           | action   | `(historyId: string, managedId: string) => void`  | Drop a deleted managed datastream + its history from local state (chooser/catalog) after deleting it server-side. |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
 | `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |
 | `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
 | `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
-| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections. |
+| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections, with managed (QC) datastreams excluded. |
 | `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 5 streams currently on the chart. |
 | `qcDatastreamId`                    | state    | `string \| null`                                  | Storage form of the QC target; survives plotted-list mutations. |
 | `qcDatastream`                      | computed | `Datastream \| null`                              | Live lookup of `qcDatastreamId` in `plottedDatastreams`. |
@@ -259,6 +277,7 @@ on boot.
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
 | `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
+| `adoptManagedDatastream`            | action   | `(managed: Datastream, sourceId: string) => Promise<void>` | Enter editing on a freshly-created managed datastream: replace the source in the plot and re-key its already-loaded series as the managed datastream's working copy (no second, empty item; no re-fetch). |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
 ### `usePlotlyStore()` — `src/store/plotly.ts`

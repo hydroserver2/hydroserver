@@ -35,6 +35,38 @@ import {
 
 type QcSessionPostBody = QualityControlSessionContract.PostBody
 
+/**
+ * Keep a new session's window within the source datastream's observed extent.
+ * The window comes from the display time-range controls, whose end is usually
+ * "now" — past the source's last observation — which the backend rejects
+ * (`phenomenon_time_end cannot extend past the source datastream's current end
+ * time`). Resume ignores the spec, so this only shapes freshly-created sessions.
+ */
+function clampSpecToSource(
+  spec: QcSessionPostBody,
+  source: Pick<Datastream, 'phenomenonBeginTime' | 'phenomenonEndTime'>
+): QcSessionPostBody {
+  let start = new Date(spec.phenomenonTimeStart).getTime()
+  let end = new Date(spec.phenomenonTimeEnd).getTime()
+  if (source.phenomenonBeginTime) {
+    start = Math.max(start, new Date(source.phenomenonBeginTime).getTime())
+  }
+  if (source.phenomenonEndTime) {
+    end = Math.min(end, new Date(source.phenomenonEndTime).getTime())
+  }
+  if (!(start < end)) {
+    throw new Error(
+      'The selected time range has no source observations to edit. ' +
+        'Pick a range that overlaps the datastream (try the "All" preset).'
+    )
+  }
+  return {
+    ...spec,
+    phenomenonTimeStart: new Date(start).toISOString(),
+    phenomenonTimeEnd: new Date(end).toISOString(),
+  }
+}
+
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { selectedSeries } = storeToRefs(usePlotlyStore())
@@ -70,10 +102,14 @@ export function useEditSession() {
     const inProgress = sessionStore.inProgressSession
     const record = selectedSeries.value?.data
     if (inProgress && sourceDatastream.value && record) {
-      // Resume: reconstruct the in-progress session's working state.
-      await reconstructSession(
+      // Resume: reconstruct the in-progress session's working state (source
+      // window + replayed draft operations) and wire it into the QC-target
+      // series so the editor shows the saved edits instead of the empty,
+      // uncommitted managed datastream.
+      const { record: reconstructed } = await reconstructSession(
         {
           qcSessions: hs.value.qualityControlSessions,
+          qcOperations: hs.value.qualityControlOperations,
           fetchInRange: fetchObservationsInRange,
           applyHistory,
         },
@@ -81,6 +117,7 @@ export function useEditSession() {
         history.id,
         inProgress.id
       )
+      if (selectedSeries.value) selectedSeries.value.data = reconstructed
       needsSession.value = false
     } else {
       needsSession.value = true
@@ -89,16 +126,17 @@ export function useEditSession() {
 
   async function startSession(spec: QcSessionPostBody): Promise<void> {
     const historyId = sessionStore.historyId
-    if (!historyId || !sourceDatastream.value) {
+    const source = sourceDatastream.value
+    if (!historyId || !source) {
       throw new Error('Load a managed datastream for editing first.')
     }
     const session = await startOrResumeSession(
       hs.value.qualityControlSessions,
       historyId,
-      spec
+      clampSpecToSource(spec, source)
     )
     await sessionStore.loadSessions(historyId)
-    await loadSourceWindow(fetchObservationsInRange, sourceDatastream.value, session)
+    await loadSourceWindow(fetchObservationsInRange, source, session)
     needsSession.value = false
   }
 
@@ -121,7 +159,7 @@ export function useEditSession() {
     )
   }
 
-  async function commit(): Promise<void> {
+  async function commit(description?: string): Promise<void> {
     const managed = qcDatastream.value
     const historyId = sessionStore.historyId
     const session = sessionStore.inProgressSession
@@ -130,6 +168,20 @@ export function useEditSession() {
       throw new Error('No active edit session to commit.')
     }
     await saveDraft()
+
+    // The window was chosen earlier by the time-range controls; the
+    // description is captured here at commit time. Persist it if it changed.
+    const trimmed = description?.trim()
+    if (trimmed !== undefined && trimmed !== (session.description ?? '')) {
+      const res = await hs.value.qualityControlSessions.update(
+        historyId,
+        session.id,
+        { description: trimmed || null }
+      )
+      if (!res.ok) {
+        throw new Error(res.message || 'Could not save the session description.')
+      }
+    }
 
     const body = observationsBulkBody(record as ObservationRecord)
     await commitQcSession({
