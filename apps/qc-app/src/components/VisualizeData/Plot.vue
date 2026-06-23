@@ -1,8 +1,9 @@
 ﻿<template>
   <div class="plot-root d-flex flex-column">
-    <div v-if="!preview" class="plot-header">
+    <div class="plot-header">
       <div class="plot-toolbar d-flex align-center flex-wrap ga-1 px-3 py-1">
         <v-btn-toggle
+          v-if="!preview"
           v-model="tab"
           density="compact"
           color="primary"
@@ -30,7 +31,7 @@
         />
 
         <v-chip
-          v-if="selectedData?.length || hasSelectionShape"
+          v-if="(selectedData?.length || hasSelectionShape) && !preview"
           class="plot-toolbar__selection flex-grow-0 flex-shrink-0"
           size="small"
           color="red"
@@ -47,7 +48,7 @@
         <v-spacer />
 
         <div
-          v-if="tab === 'plot'"
+          v-if="preview || tab === 'plot'"
           class="plot-toolbar__points-combo d-inline-flex align-stretch rounded-lg"
           :class="{
             'plot-toolbar__points-combo--on': areTooltipsEnabled,
@@ -183,7 +184,7 @@
         </div>
 
         <v-btn
-          v-if="tab === 'plot'"
+          v-if="tab === 'plot' && !preview"
           size="small"
           variant="text"
           icon="mdi-share-variant-outline"
@@ -194,7 +195,7 @@
 
         <v-menu
           v-model="showHelp"
-          v-if="tab === 'plot'"
+          v-if="tab === 'plot' && !preview"
           :close-on-content-click="false"
           location="bottom end"
           offset="6"
@@ -265,6 +266,7 @@
         </v-menu>
 
         <v-speed-dial
+          v-if="!preview"
           v-model="rangeDialOpen"
           location="bottom center"
           transition="fade-transition"
@@ -296,7 +298,7 @@
       </div>
     </div>
 
-    <v-divider v-if="!preview"></v-divider>
+    <v-divider></v-divider>
 
     <div class="d-flex flex-row flex-grow-1">
       <v-tabs-window v-model="tab" class="flex-grow-1">
