@@ -6,18 +6,23 @@
         Output datastream
       </div>
 
-      <div
-        v-for="(t, ti) in transformations"
-        :key="ti"
-        class="rc-mapping-row"
-      >
+      <div v-for="(t, ti) in transformations" :key="ti" class="rc-mapping-row">
         <div class="rc-mapping-source">
-          <div class="etl-source-display">
-            <span class="target-name">{{ t.inputDatastream?.name || '—' }}</span>
-            <span v-if="t.ratingCurve?.name" class="target-thing">
-              via {{ t.ratingCurve.name }}
-            </span>
-            <span class="target-id">{{ t.inputDatastream?.id || '—' }}</span>
+          <div class="etl-source-display datastream-display">
+            <div class="datastream-display__content">
+              <span class="target-name">{{
+                t.inputDatastream?.name || '—'
+              }}</span>
+              <span v-if="t.ratingCurve?.name" class="target-thing">
+                via {{ t.ratingCurve.name }}
+              </span>
+              <span class="target-id">{{ inputDatastreamId(t) || '—' }}</span>
+            </div>
+            <DatastreamSiteButton
+              :datastream="t.inputDatastream"
+              :datastream-id="inputDatastreamId(t)"
+              :fallback-thing-id="props.thingId"
+            />
           </div>
         </div>
 
@@ -26,12 +31,21 @@
         </div>
 
         <div class="rc-mapping-target">
-          <div class="etl-target-display">
-            <span class="target-name">{{ t.outputDatastream?.name || '—' }}</span>
-            <span v-if="outputThingName(t)" class="target-thing">
-              {{ outputThingName(t) }}
-            </span>
-            <span class="target-id">{{ t.outputDatastream?.id || '—' }}</span>
+          <div class="etl-target-display datastream-display">
+            <div class="datastream-display__content">
+              <span class="target-name">{{
+                t.outputDatastream?.name || '—'
+              }}</span>
+              <span v-if="outputThingName(t)" class="target-thing">
+                {{ outputThingName(t) }}
+              </span>
+              <span class="target-id">{{ outputDatastreamId(t) || '—' }}</span>
+            </div>
+            <DatastreamSiteButton
+              :datastream="t.outputDatastream"
+              :datastream-id="outputDatastreamId(t)"
+              :fallback-thing-id="props.thingId"
+            />
           </div>
         </div>
       </div>
@@ -42,26 +56,54 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { mdiArrowRight } from '@mdi/js'
+import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { datastreamThingId } from '@/utils/orchestration/datastreams'
 
 type RatingCurveTransformation = {
   id?: string
-  inputDatastream?: { id?: string; name?: string; thingId?: string }
-  outputDatastream?: { id?: string; name?: string; thingId?: string }
+  inputDatastreamId?: string
+  outputDatastreamId?: string
+  inputDatastream?: {
+    id?: string
+    name?: string
+    thingId?: string
+    thing_id?: string
+    thing?: { id?: string }
+  }
+  outputDatastream?: {
+    id?: string
+    name?: string
+    thingId?: string
+    thing_id?: string
+    thing?: { id?: string }
+  }
   ratingCurve?: { id?: string; name?: string }
 }
 
 const props = defineProps<{
   transformations: RatingCurveTransformation[]
+  thingId?: string | null
 }>()
 
 const { workspaceThings } = storeToRefs(useOrchestrationStore())
 
+function inputDatastreamId(t: RatingCurveTransformation) {
+  return t.inputDatastream?.id || t.inputDatastreamId || ''
+}
+
+function outputDatastreamId(t: RatingCurveTransformation) {
+  return t.outputDatastream?.id || t.outputDatastreamId || ''
+}
+
 function outputThingName(t: RatingCurveTransformation) {
-  const ds = t.outputDatastream as any
-  const thingId = ds?.thingId ?? ds?.thing_id
+  const thingId =
+    (t.outputDatastream ? datastreamThingId(t.outputDatastream as any) : '') ||
+    props.thingId
   if (!thingId) return ''
-  return workspaceThings.value.find((th) => th.id === String(thingId))?.name || ''
+  return (
+    workspaceThings.value.find((th) => th.id === String(thingId))?.name || ''
+  )
 }
 </script>
 
@@ -137,6 +179,18 @@ function outputThingName(t: RatingCurveTransformation) {
   justify-content: center;
   text-align: left;
   overflow: hidden;
+}
+.datastream-display {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.datastream-display__content {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .target-id {
   color: rgba(0, 0, 0, 0.55);

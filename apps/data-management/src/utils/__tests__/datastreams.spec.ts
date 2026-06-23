@@ -7,6 +7,9 @@ import {
 describe('datastream orchestration helpers', () => {
   it('resolves thing ids from lean or expanded datastreams', () => {
     expect(datastreamThingId({ thingId: 'thing-1' } as any)).toBe('thing-1')
+    expect(datastreamThingId({ thing_id: 'thing-snake' } as any)).toBe(
+      'thing-snake'
+    )
     expect(datastreamThingId({ thing: { id: 'thing-2' } } as any)).toBe(
       'thing-2'
     )
@@ -17,13 +20,13 @@ describe('datastream orchestration helpers', () => {
     const datastreams = [
       { id: 'ds-1', thingId: 'thing-1' },
       { id: 'ds-2', thing: { id: 'thing-1' } },
+      { id: 'ds-snake', thing_id: 'thing-1' },
       { id: 'ds-3', thingId: 'thing-2' },
     ] as any[]
 
     expect(datastreamsForThing(datastreams, null)).toEqual([])
-    expect(datastreamsForThing(datastreams, 'thing-1').map((d) => d.id)).toEqual([
-      'ds-1',
-      'ds-2',
-    ])
+    expect(
+      datastreamsForThing(datastreams, 'thing-1').map((d) => d.id)
+    ).toEqual(['ds-1', 'ds-2', 'ds-snake'])
   })
 })

@@ -120,6 +120,7 @@
       <RatingCurveSwimlanes
         v-else
         :transformations="task.ratingCurveTransformations ?? []"
+        :thing-id="task.thing?.id"
       />
     </section>
   </div>
