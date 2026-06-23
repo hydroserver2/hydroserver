@@ -14,12 +14,13 @@
           variant="text"
           color="primary"
           rounded="lg"
+          class="task-datastream-site-button__button"
           :to="siteRoute"
           :disabled="!thingId"
           :aria-label="ariaLabel"
           :data-testid="testId"
         >
-          <v-icon :icon="mdiMapMarker" size="16" />
+          <v-icon :icon="mdiOpenInNew" size="16" />
         </v-btn>
       </template>
     </v-tooltip>
@@ -30,7 +31,7 @@
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Datastream } from '@hydroserver/client'
-import { mdiMapMarker } from '@mdi/js'
+import { mdiOpenInNew } from '@mdi/js'
 import { datastreamThingId } from '@/utils/orchestration/datastreams'
 
 const props = withDefaults(
@@ -71,12 +72,12 @@ const siteRoute = computed<RouteLocationRaw | undefined>(() =>
 )
 
 const tooltipText = computed(() =>
-  thingId.value ? 'View site details' : 'Site details unavailable'
+  thingId.value ? 'Go to site details page' : 'Site details unavailable'
 )
 
 const ariaLabel = computed(() =>
   thingId.value
-    ? `View site details for datastream ${datastreamId.value || 'mapping'}`
+    ? `Go to site details page for datastream ${datastreamId.value || 'mapping'}`
     : 'Site details unavailable'
 )
 
@@ -90,6 +91,23 @@ const testId = computed(() =>
 <style scoped>
 .task-datastream-site-button {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
   margin-left: auto;
+}
+
+.task-datastream-site-button__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-datastream-site-button__button :deep(.v-btn__content) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 </style>
