@@ -244,6 +244,21 @@
               Manage
             </v-btn>
           </div>
+          <div
+            v-else-if="showTaskSkeleton"
+            class="datastream-task-link datastream-task-link--loading"
+            aria-label="Loading task information"
+          >
+            <span class="datastream-task-link__loading-icon" />
+            <div class="datastream-task-link__body">
+              <span
+                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
+              />
+              <span
+                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
+              />
+            </div>
+          </div>
         </div>
         <div class="datastream-card__actions">
           <div class="datastream-card__icons">
@@ -819,6 +834,21 @@
             Manage
           </v-btn>
         </div>
+        <div
+          v-else-if="showTaskSkeleton"
+          class="datastream-task-link datastream-task-link--card datastream-task-link--loading"
+          aria-label="Loading task information"
+        >
+          <span class="datastream-task-link__loading-icon" />
+          <div class="datastream-task-link__body">
+            <span
+              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
+            />
+            <span
+              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </v-card>
@@ -958,6 +988,7 @@ const datastreamTableRef = ref<{
   scrollToIndex?: (index: number) => void
 } | null>(null)
 const highlightedDatastreamId = ref('')
+const DATASTREAM_HIGHLIGHT_DURATION_MS = 2500
 let highlightTimeout: number | undefined
 const { smAndDown } = useDisplay()
 const isMobile = computed(() => smAndDown.value)
@@ -1014,6 +1045,7 @@ const linkedTasksByDatastreamId = ref<Record<string, LinkedDatastreamTask[]>>(
   {}
 )
 const linkedTasksLoaded = ref(false)
+const linkedTasksErrored = ref(false)
 let linkedTasksRequestId = 0
 
 const handleLatestValueUpdate = (
@@ -1160,7 +1192,7 @@ function highlightTargetDatastream() {
   if (highlightTimeout) window.clearTimeout(highlightTimeout)
   highlightTimeout = window.setTimeout(() => {
     highlightedDatastreamId.value = ''
-  }, 5000)
+  }, DATASTREAM_HIGHLIGHT_DURATION_MS)
 }
 
 async function scrollToTargetDatastream() {
@@ -1211,6 +1243,13 @@ const linkedTasksForDatastream = (datastreamId: string) =>
 
 const showTaskRow = computed(
   () => canViewOrchestrationInfo.value && linkedTasksLoaded.value
+)
+
+const showTaskSkeleton = computed(
+  () =>
+    canViewOrchestrationInfo.value &&
+    !linkedTasksLoaded.value &&
+    !linkedTasksErrored.value
 )
 
 const datastreamTaskLinkClass = (datastreamId: string) => {
@@ -1378,6 +1417,7 @@ const addLinkedTask = (
 const loadLinkedTasks = async () => {
   const requestId = ++linkedTasksRequestId
   linkedTasksLoaded.value = false
+  linkedTasksErrored.value = false
   const site = thing.value
   if (
     !canViewOrchestrationInfo.value ||
@@ -1466,6 +1506,7 @@ const loadLinkedTasks = async () => {
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return
     console.error('Error fetching linked datastream tasks', error)
+    linkedTasksErrored.value = true
     linkedTasksByDatastreamId.value = {}
   }
 }
@@ -1884,6 +1925,47 @@ const loadDatastreams = async () => {
   color: rgba(0, 0, 0, 0.87);
 }
 
+.datastream-task-link--loading {
+  border-left-color: #90a4ae;
+  background: #f3f6f8;
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.datastream-task-link__loading-icon,
+.datastream-task-link__loading-bar {
+  display: block;
+  flex: none;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(120, 144, 156, 0.14) 0%,
+      rgba(120, 144, 156, 0.28) 42%,
+      rgba(120, 144, 156, 0.14) 82%
+    );
+  background-size: 220% 100%;
+  animation: datastream-task-skeleton 1.4s ease-in-out infinite;
+}
+
+.datastream-task-link__loading-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.datastream-task-link__loading-bar {
+  height: 0.48rem;
+}
+
+.datastream-task-link__loading-bar--label {
+  width: 8rem;
+  max-width: 38%;
+}
+
+.datastream-task-link__loading-bar--name {
+  width: 20rem;
+  max-width: 68%;
+}
+
 .datastream-task-link__icon--source {
   color: #2196f3 !important;
 }
@@ -1974,6 +2056,16 @@ const loadDatastreams = async () => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+@keyframes datastream-task-skeleton {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
 }
 
 @media (max-width: 960px) {
