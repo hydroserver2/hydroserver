@@ -112,27 +112,6 @@
                 </div>
               </div>
             </div>
-
-            <div class="run-entry-detail-row run-entry-detail-row-inline">
-              <div class="run-entry-detail-inline">
-                <div class="run-entry-detail-label">Copy run as URL</div>
-                <v-tooltip text="Copy run as URL" location="bottom">
-                  <template #activator="{ props: tooltipProps }">
-                    <v-btn
-                      v-bind="tooltipProps"
-                      icon
-                      variant="text"
-                      size="small"
-                      color="blue-grey-darken-2"
-                      aria-label="Copy run as URL"
-                      @click="$emit('copy-run-link', run.id)"
-                    >
-                      <v-icon :icon="mdiContentCopy" />
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -189,7 +168,6 @@ defineProps<{
 defineEmits<{
   (e: 'fetch-full'): void
   (e: 'copy', value: string): void
-  (e: 'copy-run-link', runId: string): void
 }>()
 
 const shortId = (id: string) => {
@@ -350,17 +328,6 @@ const runDurationText = (run?: TaskRun | null) => {
   grid-template-columns: minmax(160px, 190px) 1fr;
   gap: 10px;
   align-items: start;
-}
-
-.run-entry-detail-row-inline {
-  grid-template-columns: 1fr;
-}
-
-.run-entry-detail-inline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
 }
 
 .run-entry-detail-label {

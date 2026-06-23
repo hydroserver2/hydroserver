@@ -115,7 +115,6 @@
         highlighted-run-id=""
         @fetch-full="fetchRuns"
         @copy="copy"
-        @copy-run-link="() => null"
       />
       <RatingCurveSwimlanes
         v-else
