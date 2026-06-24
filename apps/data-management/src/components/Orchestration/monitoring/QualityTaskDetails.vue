@@ -27,7 +27,7 @@
               : 'Resume'
           }}</span>
         </button>
-        <v-dialog width="64rem">
+        <v-dialog v-model="editDialogOpen" width="64rem">
           <template #activator="{ props }">
             <button
               v-bind="props"
@@ -42,8 +42,8 @@
           <QualityManagementForm
             :initial-thing-id="task.thing.id"
             :edit-task-id="task.id"
-            @close="onUpdated"
-            @updated="onUpdated"
+            @close="closeEditDialog"
+            @updated="onFormUpdated"
             @deleted="deleteTask"
           />
         </v-dialog>
@@ -112,6 +112,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
+const editDialogOpen = ref(false)
 const {
   task,
   loadingRuns,
@@ -130,6 +131,15 @@ const {
   runNow,
   togglePaused,
 } = useSimpleTaskDetails('monitoring', props, emit)
+
+function closeEditDialog() {
+  editDialogOpen.value = false
+}
+
+function onFormUpdated() {
+  closeEditDialog()
+  onUpdated()
+}
 </script>
 
 <style scoped>
