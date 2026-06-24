@@ -106,16 +106,17 @@
       <v-tab value="mappings">Mappings</v-tab>
     </v-tabs>
     <section class="body">
-      <TaskRunHistory
-        v-if="tab === 'runs'"
-        :rows="runRows"
-        :show-loading="loadingRuns"
-        :has-loaded-full-run-history="true"
-        :loading-full-run-history="loadingRuns"
-        highlighted-run-id=""
-        @fetch-full="fetchRuns"
-        @copy="copy"
-      />
+      <div v-if="tab === 'runs'" class="run-history-list">
+        <TaskRunHistory
+          :rows="runRows"
+          :show-loading="loadingRuns"
+          :has-loaded-full-run-history="true"
+          :loading-full-run-history="loadingRuns"
+          highlighted-run-id=""
+          @fetch-full="fetchRuns"
+          @copy="copy"
+        />
+      </div>
       <RatingCurveSwimlanes
         v-else-if="taskLabel === 'rating curve'"
         :transformations="task.ratingCurveTransformations ?? []"
@@ -326,6 +327,11 @@ h2 {
   overflow: auto;
   padding: 16px 22px;
   background: #f5f7fa;
+}
+.run-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .loading {
   padding: 40px 20px;

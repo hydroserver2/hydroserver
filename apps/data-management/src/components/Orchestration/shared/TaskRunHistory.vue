@@ -46,7 +46,10 @@
           </div>
         </div>
 
-        <div class="run-entry-footer">
+        <div
+          v-if="run.runtimeUrl || run.violations.length"
+          class="run-entry-footer"
+        >
           <div class="run-entry-footer-content">
             <div v-if="run.runtimeUrl" class="run-entry-detail-row">
               <div class="run-entry-detail-label">Runtime source URI</div>
