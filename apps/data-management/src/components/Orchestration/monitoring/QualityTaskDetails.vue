@@ -72,8 +72,14 @@
         </button>
       </div>
     </header>
+
+    <v-tabs v-model="tab" density="compact">
+      <v-tab value="runs">Run history</v-tab>
+      <v-tab value="mappings">Mappings</v-tab>
+    </v-tabs>
     <section class="body">
       <TaskRunHistory
+        v-if="tab === 'runs'"
         :rows="runRows"
         :show-loading="loadingRuns"
         :has-loaded-full-run-history="true"
@@ -82,23 +88,21 @@
         @fetch-full="fetchRuns"
         @copy="copy"
       />
+      <QualityTaskMappings v-else :task="task" :thing-id="task.thing?.id" />
     </section>
   </div>
   <div v-else class="loading">Loading...</div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
+import QualityTaskMappings from '@/components/Orchestration/monitoring/QualityTaskMappings.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
-import {
-  mdiPause,
-  mdiPencil,
-  mdiPlay,
-  mdiTrashCanOutline,
-} from '@mdi/js'
+import { mdiPause, mdiPencil, mdiPlay, mdiTrashCanOutline } from '@mdi/js'
 
 const props = defineProps<{
   taskId: string
@@ -107,6 +111,7 @@ const props = defineProps<{
   initialTask?: any
 }>()
 const emit = defineEmits(['close', 'deleted', 'updated'])
+const tab = ref('runs')
 const {
   task,
   loadingRuns,

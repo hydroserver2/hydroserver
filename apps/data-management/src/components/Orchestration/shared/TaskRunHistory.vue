@@ -101,7 +101,7 @@
                       </span>
                     </div>
                     <div class="run-entry-violation-meta">
-                      {{ violation.violationCount }} violation{{
+                      {{ violation.violationCount }} violating observation{{
                         violation.violationCount === 1 ? '' : 's'
                       }}
                       <span v-if="violation.firstViolationAt">

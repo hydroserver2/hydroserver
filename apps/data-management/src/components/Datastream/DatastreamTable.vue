@@ -241,8 +241,65 @@
               :append-icon="mdiChevronRight"
               :to="linkedTasksForDatastream(item.id)[0].route"
             >
-              Manage
+              Manage task
             </v-btn>
+            <div
+              v-if="monitoringTasksForDatastream(item.id).length"
+              class="datastream-task-link__monitoring"
+            >
+              <v-icon
+                :icon="mdiShieldCheckOutline"
+                size="20"
+                class="datastream-task-link__monitoring-icon"
+              />
+              <div class="datastream-task-link__monitoring-body">
+                <span class="datastream-task-link__label">
+                  Quality monitoring
+                </span>
+                <span
+                  v-for="task in monitoringTasksForDatastream(item.id)"
+                  :key="task.id"
+                  class="datastream-task-link__monitoring-task"
+                >
+                  <RouterLink
+                    class="datastream-task-link__name"
+                    :to="task.route"
+                  >
+                    {{ task.displayName }}
+                  </RouterLink>
+                  <span
+                    class="datastream-task-link__quality-outcome"
+                    :class="monitoringOutcomeClass(task)"
+                  >
+                    {{ monitoringOutcomeLabel(task) }}
+                  </span>
+                  <span
+                    class="datastream-task-link__status"
+                    :title="monitoringLastRunStatus(task)"
+                  >
+                    <span
+                      class="datastream-task-link__dot"
+                      :style="{
+                        backgroundColor: monitoringLastRunColor(task),
+                      }"
+                    />
+                    <span class="datastream-task-link__last-ran">
+                      {{ lastRanLabel(task) }}
+                    </span>
+                  </span>
+                </span>
+              </div>
+              <v-btn
+                v-if="monitoringTasksForDatastream(item.id).length === 1"
+                size="small"
+                variant="text"
+                color="primary"
+                :append-icon="mdiChevronRight"
+                :to="monitoringTasksForDatastream(item.id)[0].route"
+              >
+                Manage monitoring
+              </v-btn>
+            </div>
           </div>
           <div
             v-else-if="showTaskSkeleton"
@@ -831,8 +888,60 @@
             :append-icon="mdiChevronRight"
             :to="linkedTasksForDatastream(item.id)[0].route"
           >
-            Manage
+            Manage task
           </v-btn>
+          <div
+            v-if="monitoringTasksForDatastream(item.id).length"
+            class="datastream-task-link__monitoring"
+          >
+            <v-icon
+              :icon="mdiShieldCheckOutline"
+              size="20"
+              class="datastream-task-link__monitoring-icon"
+            />
+            <div class="datastream-task-link__monitoring-body">
+              <span class="datastream-task-link__label">
+                Quality monitoring
+              </span>
+              <span
+                v-for="task in monitoringTasksForDatastream(item.id)"
+                :key="task.id"
+                class="datastream-task-link__monitoring-task"
+              >
+                <RouterLink class="datastream-task-link__name" :to="task.route">
+                  {{ task.displayName }}
+                </RouterLink>
+                <span
+                  class="datastream-task-link__quality-outcome"
+                  :class="monitoringOutcomeClass(task)"
+                >
+                  {{ monitoringOutcomeLabel(task) }}
+                </span>
+                <span
+                  class="datastream-task-link__status"
+                  :title="monitoringLastRunStatus(task)"
+                >
+                  <span
+                    class="datastream-task-link__dot"
+                    :style="{ backgroundColor: monitoringLastRunColor(task) }"
+                  />
+                  <span class="datastream-task-link__last-ran">
+                    {{ lastRanLabel(task) }}
+                  </span>
+                </span>
+              </span>
+            </div>
+            <v-btn
+              v-if="monitoringTasksForDatastream(item.id).length === 1"
+              size="small"
+              variant="text"
+              color="primary"
+              :append-icon="mdiChevronRight"
+              :to="monitoringTasksForDatastream(item.id)[0].route"
+            >
+              Manage monitoring
+            </v-btn>
+          </div>
         </div>
         <div
           v-else-if="showTaskSkeleton"
@@ -925,7 +1034,13 @@ import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
-import { getTaskStatusText } from '@/utils/orchestration/taskRunDetails'
+import {
+  countDistinctMonitoringViolationRules,
+  getMonitoringRulesViolated,
+  getMonitoringRunViolations,
+  getTaskRunStatusText,
+  getTaskStatusText,
+} from '@/utils/orchestration/taskRunDetails'
 import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
 import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard.vue'
@@ -951,6 +1066,7 @@ import {
   mdiMagnify,
   mdiPencil,
   mdiPlus,
+  mdiShieldCheckOutline,
   mdiSigma,
 } from '@mdi/js'
 
@@ -975,6 +1091,13 @@ type LinkedDatastreamTask = {
     params: { view: string }
     query: Record<string, string>
   }
+}
+
+type LinkedMonitoringTask = LinkedDatastreamTask & {
+  ruleCount: number
+  violationCount: number | null
+  latestRunStatus: string | null
+  lastRunStatus: StatusType
 }
 
 const { thing } = storeToRefs(useThingStore())
@@ -1044,6 +1167,9 @@ const latestValues = reactive<
 const linkedTasksByDatastreamId = ref<Record<string, LinkedDatastreamTask[]>>(
   {}
 )
+const monitoringTasksByDatastreamId = ref<
+  Record<string, LinkedMonitoringTask[]>
+>({})
 const linkedTasksLoaded = ref(false)
 const linkedTasksErrored = ref(false)
 let linkedTasksRequestId = 0
@@ -1241,6 +1367,9 @@ const mobileDatastreams = computed(() => {
 const linkedTasksForDatastream = (datastreamId: string) =>
   linkedTasksByDatastreamId.value[datastreamId] ?? []
 
+const monitoringTasksForDatastream = (datastreamId: string) =>
+  monitoringTasksByDatastreamId.value[datastreamId] ?? []
+
 const showTaskRow = computed(
   () => canViewOrchestrationInfo.value && linkedTasksLoaded.value
 )
@@ -1317,6 +1446,44 @@ const lastRanLabel = (task: LinkedDatastreamTask) => {
   return relative ? `Last ran ${relative}` : 'Never ran'
 }
 
+const monitoringOutcomeLabel = (task: LinkedMonitoringTask) => {
+  const ruleLabel = `${task.ruleCount} rule${task.ruleCount === 1 ? '' : 's'}`
+  if (!task.latestRunStatus) return `Not checked · ${ruleLabel}`
+  if (
+    task.latestRunStatus === 'PENDING' ||
+    task.latestRunStatus === 'STARTED'
+  ) {
+    return `Checking ${ruleLabel}`
+  }
+  if (task.latestRunStatus === 'FAILURE')
+    return `Results unavailable · ${ruleLabel}`
+  if (task.violationCount === null) return `Results unavailable · ${ruleLabel}`
+  if (task.violationCount === 0) {
+    return `${task.ruleCount}/${task.ruleCount} ${
+      task.ruleCount === 1 ? 'rule' : 'rules'
+    } passed`
+  }
+  return `${task.violationCount}/${task.ruleCount} ${
+    task.ruleCount === 1 ? 'rule' : 'rules'
+  } violated`
+}
+
+const monitoringOutcomeClass = (task: LinkedMonitoringTask) => {
+  if (task.violationCount !== null && task.violationCount > 0) {
+    return 'datastream-task-link__quality-outcome--violations'
+  }
+  if (task.latestRunStatus === 'SUCCESS' && task.violationCount === 0) {
+    return 'datastream-task-link__quality-outcome--ok'
+  }
+  return 'datastream-task-link__quality-outcome--unknown'
+}
+
+const monitoringLastRunStatus = (task: LinkedMonitoringTask): StatusType =>
+  task.lastRunStatus
+
+const monitoringLastRunColor = (task: LinkedMonitoringTask) =>
+  TASK_STATUS_DOT_COLORS[monitoringLastRunStatus(task)]
+
 const routeForIngestionTask = (task: any) => {
   const query: Record<string, string> = {
     workspace_id: props.workspace.id,
@@ -1363,11 +1530,57 @@ const routeForDataProductTask = (task: any) => {
   }
 }
 
+const routeForMonitoringTask = (task: any) => {
+  const query: Record<string, string> = {
+    workspace_id: props.workspace.id,
+    task_id: String(task.id),
+  }
+  const siteId = task.thing?.id ?? task.thingId ?? thing.value?.id
+  if (siteId) query.site_id = String(siteId)
+
+  return {
+    name: 'OrchestrationQualityDetails',
+    params: { view: 'quality' },
+    query,
+  }
+}
+
 const outputDatastreamId = (transformation: any) =>
   transformation?.outputDatastream?.id ?? transformation?.outputDatastreamId
 
 const targetDatastreamId = (mapping: any) =>
   mapping?.targetDatastream?.id ?? mapping?.targetDatastreamId
+
+const monitoredDatastreamId = (monitoredDatastream: any) =>
+  monitoredDatastream?.datastream?.id ??
+  monitoredDatastream?.datastreamId ??
+  monitoredDatastream?.id
+
+const monitoringViolationCount = (
+  task: any,
+  datastreamId: string,
+  monitoredDatastreamCount: number
+) => {
+  const latestRun = task?.latestRun
+  if (!latestRun || latestRun.status !== 'SUCCESS') return null
+
+  const totalViolations = getMonitoringRulesViolated(latestRun)
+  if (totalViolations === 0) return 0
+
+  const detailedViolations = getMonitoringRunViolations(latestRun)
+  const datastreamViolations = detailedViolations.filter(
+    (violation) => violation.datastreamId === datastreamId
+  )
+  if (datastreamViolations.length) {
+    return countDistinctMonitoringViolationRules(datastreamViolations)
+  }
+
+  if (detailedViolations.length && monitoredDatastreamCount === 1) {
+    return countDistinctMonitoringViolationRules(detailedViolations)
+  }
+
+  return monitoredDatastreamCount === 1 ? totalViolations : null
+}
 
 const taskPaused = (task: any) =>
   task.schedule ? task.schedule.enabled === false : false
@@ -1426,18 +1639,25 @@ const loadLinkedTasks = async () => {
     !items.value.length
   ) {
     linkedTasksByDatastreamId.value = {}
+    monitoringTasksByDatastreamId.value = {}
     return
   }
 
   const datastreamIds = new Set(items.value.map((d) => String(d.id)))
   try {
-    const [etlTasks, dataProductTasks] = await Promise.all([
+    const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
         workspace_id: [props.workspace.id],
         order_by: ['name'],
         expand_related: true,
       } as any),
       hs.dataProductTasks.listAllItems({
+        workspace_id: [props.workspace.id],
+        thing_id: [site.id],
+        order_by: ['name'],
+        expand_related: true,
+      } as any),
+      hs.monitoringTasks.listAllItems({
         workspace_id: [props.workspace.id],
         thing_id: [site.id],
         order_by: ['name'],
@@ -1501,13 +1721,56 @@ const loadLinkedTasks = async () => {
       }
     }
 
+    const groupedMonitoring: Record<string, LinkedMonitoringTask[]> = {}
+    const seenMonitoring = new Set<string>()
+    for (const task of monitoringTasks ?? []) {
+      const monitoredDatastreams = (task as any).monitoredDatastreams ?? []
+      for (const monitoredDatastream of monitoredDatastreams) {
+        const datastreamId = monitoredDatastreamId(monitoredDatastream)
+        if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+
+        const key = `${datastreamId}:${(task as any).id}`
+        if (seenMonitoring.has(key)) continue
+        seenMonitoring.add(key)
+        groupedMonitoring[String(datastreamId)] ??= []
+        groupedMonitoring[String(datastreamId)].push({
+          id: String((task as any).id),
+          name: (task as any).name,
+          dataConnectionName: null,
+          displayName: truncateTaskInfoPart(
+            (task as any).name || (task as any).id
+          ),
+          label: 'Quality monitoring',
+          icon: mdiShieldCheckOutline,
+          iconClass: 'datastream-task-link__icon--monitoring',
+          status: getTaskStatusText(task),
+          paused: taskPaused(task),
+          lastRunAt:
+            (task as any).latestRun?.startedAt ??
+            (task as any).latestRun?.finishedAt ??
+            null,
+          route: routeForMonitoringTask(task),
+          ruleCount: ((monitoredDatastream as any).rules ?? []).length,
+          violationCount: monitoringViolationCount(
+            task,
+            String(datastreamId),
+            monitoredDatastreams.length
+          ),
+          latestRunStatus: (task as any).latestRun?.status ?? null,
+          lastRunStatus: getTaskRunStatusText((task as any).latestRun),
+        })
+      }
+    }
+
     linkedTasksByDatastreamId.value = grouped
+    monitoringTasksByDatastreamId.value = groupedMonitoring
     linkedTasksLoaded.value = true
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return
     console.error('Error fetching linked datastream tasks', error)
     linkedTasksErrored.value = true
     linkedTasksByDatastreamId.value = {}
+    monitoringTasksByDatastreamId.value = {}
   }
 }
 
@@ -1875,6 +2138,7 @@ const loadDatastreams = async () => {
 .datastream-task-link {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
   width: 100%;
   margin-top: 0.75rem;
@@ -1936,13 +2200,12 @@ const loadDatastreams = async () => {
   display: block;
   flex: none;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(120, 144, 156, 0.14) 0%,
-      rgba(120, 144, 156, 0.28) 42%,
-      rgba(120, 144, 156, 0.14) 82%
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(120, 144, 156, 0.14) 0%,
+    rgba(120, 144, 156, 0.28) 42%,
+    rgba(120, 144, 156, 0.14) 82%
+  );
   background-size: 220% 100%;
   animation: datastream-task-skeleton 1.4s ease-in-out infinite;
 }
@@ -1980,6 +2243,11 @@ const loadDatastreams = async () => {
 
 .datastream-task-link__icon--rating-curve {
   color: #283593 !important;
+}
+
+.datastream-task-link__icon--monitoring,
+.datastream-task-link__monitoring-icon {
+  color: #00695c !important;
 }
 
 .datastream-task-link__body {
@@ -2056,6 +2324,58 @@ const loadDatastreams = async () => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.datastream-task-link__monitoring {
+  display: flex;
+  align-items: center;
+  flex: 0 0 100%;
+  gap: 0.75rem;
+}
+
+.datastream-task-link__monitoring-body {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  min-width: 0;
+}
+
+.datastream-task-link__monitoring-task {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.datastream-task-link__monitoring-task
+  + .datastream-task-link__monitoring-task {
+  padding-left: 0.65rem;
+  border-left: 1px solid rgba(0, 105, 92, 0.24);
+}
+
+.datastream-task-link__quality-outcome {
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.datastream-task-link__quality-outcome--ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.datastream-task-link__quality-outcome--violations {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
+.datastream-task-link__quality-outcome--unknown {
+  background: #eceff1;
+  color: #546e7a;
 }
 
 @keyframes datastream-task-skeleton {
