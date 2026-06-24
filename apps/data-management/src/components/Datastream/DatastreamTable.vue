@@ -1164,12 +1164,9 @@ const openCharts = reactive<Record<string, boolean>>({})
 const latestValues = reactive<
   Record<string, { text: string; showUnit: boolean; isBad: boolean }>
 >({})
-const linkedTasksByDatastreamId = ref<Record<string, LinkedDatastreamTask[]>>(
-  {}
-)
-const monitoringTasksByDatastreamId = ref<
-  Record<string, LinkedMonitoringTask[]>
->({})
+const rawEtlTasks = ref<any[]>([])
+const rawDataProductTasks = ref<any[]>([])
+const rawMonitoringTasks = ref<any[]>([])
 const linkedTasksLoaded = ref(false)
 const linkedTasksErrored = ref(false)
 let linkedTasksRequestId = 0
@@ -1632,18 +1629,13 @@ const loadLinkedTasks = async () => {
   linkedTasksLoaded.value = false
   linkedTasksErrored.value = false
   const site = thing.value
-  if (
-    !canViewOrchestrationInfo.value ||
-    !site ||
-    !props.workspace?.id ||
-    !items.value.length
-  ) {
-    linkedTasksByDatastreamId.value = {}
-    monitoringTasksByDatastreamId.value = {}
+  if (!canViewOrchestrationInfo.value || !site || !props.workspace?.id) {
+    rawEtlTasks.value = []
+    rawDataProductTasks.value = []
+    rawMonitoringTasks.value = []
     return
   }
 
-  const datastreamIds = new Set(items.value.map((d) => String(d.id)))
   try {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
@@ -1666,121 +1658,134 @@ const loadLinkedTasks = async () => {
     ])
     if (requestId !== linkedTasksRequestId) return
 
-    const grouped: Record<string, LinkedDatastreamTask[]> = {}
-    const seen = new Set<string>()
-
-    for (const task of etlTasks ?? []) {
-      for (const mapping of (task as any).mappings ?? []) {
-        const datastreamId = targetDatastreamId(mapping)
-        if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
-        addLinkedTask(grouped, seen, String(datastreamId), task, {
-          label: 'Fed by',
-          icon: mdiLightningBolt,
-          iconClass: 'datastream-task-link__icon--source',
-          route: routeForIngestionTask(task),
-        })
-      }
-    }
-
-    for (const task of dataProductTasks ?? []) {
-      const transformationGroups = [
-        {
-          label: 'Aggregated by',
-          icon: mdiCallMerge,
-          iconClass: 'datastream-task-link__icon--aggregation',
-          transformations: (task as any).aggregationTransformations ?? [],
-        },
-        {
-          label: 'Derived by',
-          icon: mdiSigma,
-          iconClass: 'datastream-task-link__icon--derived',
-          transformations: [
-            ...((task as any).compositeExpressionTransformations ?? []),
-            ...((task as any).expressionTransformations ?? []),
-          ],
-        },
-        {
-          label: 'Rating curve',
-          icon: mdiChartBellCurve,
-          iconClass: 'datastream-task-link__icon--rating-curve',
-          transformations: (task as any).ratingCurveTransformations ?? [],
-        },
-      ]
-      for (const group of transformationGroups) {
-        for (const transformation of group.transformations) {
-          const datastreamId = outputDatastreamId(transformation)
-          if (!datastreamId || !datastreamIds.has(String(datastreamId)))
-            continue
-          addLinkedTask(grouped, seen, String(datastreamId), task, {
-            label: group.label,
-            icon: group.icon,
-            iconClass: group.iconClass,
-            route: routeForDataProductTask(task),
-          })
-        }
-      }
-    }
-
-    const groupedMonitoring: Record<string, LinkedMonitoringTask[]> = {}
-    const seenMonitoring = new Set<string>()
-    for (const task of monitoringTasks ?? []) {
-      const monitoredDatastreams = (task as any).monitoredDatastreams ?? []
-      for (const monitoredDatastream of monitoredDatastreams) {
-        const datastreamId = monitoredDatastreamId(monitoredDatastream)
-        if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
-
-        const key = `${datastreamId}:${(task as any).id}`
-        if (seenMonitoring.has(key)) continue
-        seenMonitoring.add(key)
-        groupedMonitoring[String(datastreamId)] ??= []
-        groupedMonitoring[String(datastreamId)].push({
-          id: String((task as any).id),
-          name: (task as any).name,
-          dataConnectionName: null,
-          displayName: truncateTaskInfoPart(
-            (task as any).name || (task as any).id
-          ),
-          label: 'Quality monitoring',
-          icon: mdiShieldCheckOutline,
-          iconClass: 'datastream-task-link__icon--monitoring',
-          status: getTaskStatusText(task),
-          paused: taskPaused(task),
-          lastRunAt:
-            (task as any).latestRun?.startedAt ??
-            (task as any).latestRun?.finishedAt ??
-            null,
-          route: routeForMonitoringTask(task),
-          ruleCount: ((monitoredDatastream as any).rules ?? []).length,
-          violationCount: monitoringViolationCount(
-            task,
-            String(datastreamId),
-            monitoredDatastreams.length
-          ),
-          latestRunStatus: (task as any).latestRun?.status ?? null,
-          lastRunStatus: getTaskRunStatusText((task as any).latestRun),
-        })
-      }
-    }
-
-    linkedTasksByDatastreamId.value = grouped
-    monitoringTasksByDatastreamId.value = groupedMonitoring
+    rawEtlTasks.value = etlTasks ?? []
+    rawDataProductTasks.value = dataProductTasks ?? []
+    rawMonitoringTasks.value = monitoringTasks ?? []
     linkedTasksLoaded.value = true
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return
     console.error('Error fetching linked datastream tasks', error)
     linkedTasksErrored.value = true
-    linkedTasksByDatastreamId.value = {}
-    monitoringTasksByDatastreamId.value = {}
+    rawEtlTasks.value = []
+    rawDataProductTasks.value = []
+    rawMonitoringTasks.value = []
   }
 }
 
+const linkedTasksByDatastreamId = computed<
+  Record<string, LinkedDatastreamTask[]>
+>(() => {
+  if (!linkedTasksLoaded.value) return {}
+  const datastreamIds = new Set(items.value.map((d) => String(d.id)))
+  const grouped: Record<string, LinkedDatastreamTask[]> = {}
+  const seen = new Set<string>()
+
+  for (const task of rawEtlTasks.value) {
+    for (const mapping of (task as any).mappings ?? []) {
+      const datastreamId = targetDatastreamId(mapping)
+      if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+      addLinkedTask(grouped, seen, String(datastreamId), task, {
+        label: 'Fed by',
+        icon: mdiLightningBolt,
+        iconClass: 'datastream-task-link__icon--source',
+        route: routeForIngestionTask(task),
+      })
+    }
+  }
+
+  for (const task of rawDataProductTasks.value) {
+    const transformationGroups = [
+      {
+        label: 'Aggregated by',
+        icon: mdiCallMerge,
+        iconClass: 'datastream-task-link__icon--aggregation',
+        transformations: (task as any).aggregationTransformations ?? [],
+      },
+      {
+        label: 'Derived by',
+        icon: mdiSigma,
+        iconClass: 'datastream-task-link__icon--derived',
+        transformations: [
+          ...((task as any).compositeExpressionTransformations ?? []),
+          ...((task as any).expressionTransformations ?? []),
+        ],
+      },
+      {
+        label: 'Rating curve',
+        icon: mdiChartBellCurve,
+        iconClass: 'datastream-task-link__icon--rating-curve',
+        transformations: (task as any).ratingCurveTransformations ?? [],
+      },
+    ]
+    for (const group of transformationGroups) {
+      for (const transformation of group.transformations) {
+        const datastreamId = outputDatastreamId(transformation)
+        if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+        addLinkedTask(grouped, seen, String(datastreamId), task, {
+          label: group.label,
+          icon: group.icon,
+          iconClass: group.iconClass,
+          route: routeForDataProductTask(task),
+        })
+      }
+    }
+  }
+
+  return grouped
+})
+
+const monitoringTasksByDatastreamId = computed<
+  Record<string, LinkedMonitoringTask[]>
+>(() => {
+  if (!linkedTasksLoaded.value) return {}
+  const datastreamIds = new Set(items.value.map((d) => String(d.id)))
+  const groupedMonitoring: Record<string, LinkedMonitoringTask[]> = {}
+  const seenMonitoring = new Set<string>()
+
+  for (const task of rawMonitoringTasks.value) {
+    const monitoredDatastreams = (task as any).monitoredDatastreams ?? []
+    for (const monitoredDatastream of monitoredDatastreams) {
+      const datastreamId = monitoredDatastreamId(monitoredDatastream)
+      if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+
+      const key = `${datastreamId}:${(task as any).id}`
+      if (seenMonitoring.has(key)) continue
+      seenMonitoring.add(key)
+      groupedMonitoring[String(datastreamId)] ??= []
+      groupedMonitoring[String(datastreamId)].push({
+        id: String((task as any).id),
+        name: (task as any).name,
+        dataConnectionName: null,
+        displayName: truncateTaskInfoPart(
+          (task as any).name || (task as any).id
+        ),
+        label: 'Quality monitoring',
+        icon: mdiShieldCheckOutline,
+        iconClass: 'datastream-task-link__icon--monitoring',
+        status: getTaskStatusText(task),
+        paused: taskPaused(task),
+        lastRunAt:
+          (task as any).latestRun?.startedAt ??
+          (task as any).latestRun?.finishedAt ??
+          null,
+        route: routeForMonitoringTask(task),
+        ruleCount: ((monitoredDatastream as any).rules ?? []).length,
+        violationCount: monitoringViolationCount(
+          task,
+          String(datastreamId),
+          monitoredDatastreams.length
+        ),
+        latestRunStatus: (task as any).latestRun?.status ?? null,
+        lastRunStatus: getTaskRunStatusText((task as any).latestRun),
+      })
+    }
+  }
+
+  return groupedMonitoring
+})
+
 watch(
-  [
-    () => props.workspace.id,
-    canViewOrchestrationInfo,
-    thingIdRef,
-    () => items.value.map((d) => d.id).join(','),
-  ],
+  [() => props.workspace.id, canViewOrchestrationInfo, thingIdRef],
   () => {
     void loadLinkedTasks()
   },
