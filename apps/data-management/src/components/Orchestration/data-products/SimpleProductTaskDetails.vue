@@ -101,7 +101,7 @@
       </div>
     </header>
 
-    <v-tabs v-if="taskLabel === 'rating curve'" v-model="tab" density="compact">
+    <v-tabs v-model="tab" density="compact">
       <v-tab value="runs">Run history</v-tab>
       <v-tab value="mappings">Mappings</v-tab>
     </v-tabs>
@@ -117,8 +117,14 @@
         @copy="copy"
       />
       <RatingCurveSwimlanes
-        v-else
+        v-else-if="taskLabel === 'rating curve'"
         :transformations="task.ratingCurveTransformations ?? []"
+        :thing-id="task.thing?.id"
+      />
+      <ProductTaskSwimlanes
+        v-else
+        :task="task"
+        :task-label="taskLabel"
         :thing-id="task.thing?.id"
       />
     </section>
@@ -134,6 +140,7 @@ import AggregationForm from '@/components/Orchestration/data-products/Aggregatio
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
 import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
+import ProductTaskSwimlanes from '@/components/Orchestration/data-products/ProductTaskSwimlanes.vue'
 import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
@@ -217,7 +224,8 @@ function onFormUpdated() {
 }
 .bar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
   gap: 10px;
   padding: 14px 22px 12px;
   border-bottom: 1px solid #e8e8e8;
@@ -232,7 +240,8 @@ function onFormUpdated() {
 }
 .title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
 }
@@ -255,11 +264,17 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: flex-start;
+  align-self: start;
+  justify-content: flex-end;
+  justify-self: end;
 }
 .header-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
@@ -274,6 +289,7 @@ h2 {
   line-height: 1.1;
   transition: background-color 0.12s, border-color 0.12s, color 0.12s;
   white-space: nowrap;
+  width: auto;
 }
 .header-btn :deep(.v-icon) {
   flex: 0 0 auto;
@@ -315,5 +331,15 @@ h2 {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
+}
+
+@media (max-width: 760px) {
+  .bar {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    justify-self: start;
+    justify-content: flex-start;
+  }
 }
 </style>
