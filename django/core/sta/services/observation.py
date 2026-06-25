@@ -19,6 +19,7 @@ from interfaces.api.schemas.sta.observation import (
     ObservationDetailResponse,
     ObservationPostBody,
     ObservationBulkPostBody,
+    ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
 )
 from core.sta.services.datastream import DatastreamService
@@ -291,7 +292,7 @@ class ObservationService(ServiceUtils):
     def bulk_create(
         self,
         principal: User | APIKey,
-        data: ObservationBulkPostBody,
+        data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
         datastream_id: uuid.UUID,
         mode: Literal["insert", "append", "backfill", "replace"],
         update_datastream_statistics: bool = True,
