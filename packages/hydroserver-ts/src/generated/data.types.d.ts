@@ -1172,6 +1172,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/quality-control/histories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc Histories
+         * @description Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True.
+         */
+        get: operations["interfaces_api_views_quality_history_get_qc_histories"];
+        put?: never;
+        /**
+         * Create Qc History
+         * @description Create a new QC history for a managed datastream.
+         */
+        post: operations["interfaces_api_views_quality_history_create_qc_history"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc History
+         * @description Get a QC history by ID.
+         */
+        get: operations["interfaces_api_views_quality_history_get_qc_history"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Qc History
+         * @description Delete a QC history and all associated sessions.
+         */
+        delete: operations["interfaces_api_views_quality_history_delete_qc_history"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc Sessions
+         * @description Get sessions for a QC history. Supports range_start/range_end overlap filtering, ancestor_of, and include_ancestors.
+         */
+        get: operations["interfaces_api_views_quality_session_get_qc_sessions"];
+        put?: never;
+        /**
+         * Create Qc Session
+         * @description Create a new in-progress session for a QC history.
+         */
+        post: operations["interfaces_api_views_quality_session_create_qc_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc Session
+         * @description Get a QC session by ID. Includes dependencies and operations when expand_related=True.
+         */
+        get: operations["interfaces_api_views_quality_session_get_qc_session"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Qc Session
+         * @description Delete an in-progress session.
+         */
+        delete: operations["interfaces_api_views_quality_session_delete_qc_session"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Qc Session
+         * @description Update an in-progress session's description.
+         */
+        patch: operations["interfaces_api_views_quality_session_update_qc_session"];
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit Qc Session
+         * @description Commit an in-progress session after observations have been pushed to the managed datastream.
+         */
+        post: operations["interfaces_api_views_quality_session_commit_qc_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc Operations
+         * @description Get all operations for a QC session in execution order.
+         */
+        get: operations["interfaces_api_views_quality_operation_get_qc_operations"];
+        put?: never;
+        /**
+         * Create Qc Operations
+         * @description Append one or more operations to an in-progress session.
+         */
+        post: operations["interfaces_api_views_quality_operation_create_qc_operations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Qc Operation
+         * @description Get a single QC operation by ID.
+         */
+        get: operations["interfaces_api_views_quality_operation_get_qc_operation"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Qc Operation
+         * @description Delete an operation from an in-progress session.
+         */
+        delete: operations["interfaces_api_views_quality_operation_delete_qc_operation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Qc Operation
+         * @description Update the comment or arguments of an operation in an in-progress session.
+         */
+        patch: operations["interfaces_api_views_quality_operation_update_qc_operation"];
+        trace?: never;
+    };
     "/api/data/result-qualifiers": {
         parameters: {
             query?: never;
@@ -4261,6 +4433,280 @@ export interface components {
             id: string;
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /** QualityControlHistoryDetailResponse */
+        QualityControlHistoryDetailResponse: {
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Managedchecksum */
+            managedChecksum?: string | null;
+            managedDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Phenomenontimeend */
+            phenomenonTimeEnd?: string | null;
+            /** Phenomenontimestart */
+            phenomenonTimeStart?: string | null;
+            /** Sourcechecksum */
+            sourceChecksum?: string | null;
+            sourceDatastream: components["schemas"]["DatastreamSummaryResponse"];
+        };
+        /** QualityControlHistoryPostBody */
+        QualityControlHistoryPostBody: {
+            /**
+             * Manageddatastreamid
+             * Format: uuid
+             */
+            managedDatastreamId: string;
+            /**
+             * Sourcedatastreamid
+             * Format: uuid
+             */
+            sourceDatastreamId: string;
+        };
+        /** QualityControlHistoryQueryParameters */
+        QualityControlHistoryQueryParameters: {
+            /** Expand Related */
+            expand_related?: boolean | null;
+            /**
+             * Managed Datastream Id
+             * @description Filter histories by managed datastream ID.
+             * @default []
+             */
+            managed_datastream_id: string[];
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Source Datastream Id
+             * @description Filter histories by source datastream ID.
+             * @default []
+             */
+            source_datastream_id: string[];
+        };
+        /** QualityControlHistorySummaryResponse */
+        QualityControlHistorySummaryResponse: {
+            /** Createdat */
+            createdAt: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Managedchecksum */
+            managedChecksum?: string | null;
+            /**
+             * Manageddatastreamid
+             * Format: uuid
+             */
+            managedDatastreamId: string;
+            /** Phenomenontimeend */
+            phenomenonTimeEnd?: string | null;
+            /** Phenomenontimestart */
+            phenomenonTimeStart?: string | null;
+            /** Sourcechecksum */
+            sourceChecksum?: string | null;
+            /**
+             * Sourcedatastreamid
+             * Format: uuid
+             */
+            sourceDatastreamId: string;
+        };
+        /** QualityControlOperationPatchBody */
+        QualityControlOperationPatchBody: {
+            /** Arguments */
+            arguments?: Record<string, never> | unknown[] | null;
+            /** Comment */
+            comment?: string | null;
+            /** Order */
+            order?: number;
+        };
+        /** QualityControlOperationPostBody */
+        QualityControlOperationPostBody: {
+            /** Arguments */
+            arguments?: Record<string, never> | unknown[] | null;
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Operationtype
+             * @enum {string}
+             */
+            operationType: "SELECTION" | "VALUE_THRESHOLD" | "DATETIME_RANGE" | "CHANGE" | "RATE_OF_CHANGE" | "FIND_GAPS" | "PERSISTENCE" | "ADD_POINTS" | "CHANGE_VALUES" | "ASSIGN_VALUES_BULK" | "DELETE_POINTS" | "DRIFT_CORRECTION" | "INTERPOLATE" | "SHIFT_DATETIMES" | "FILL_GAPS" | "ASSIGN_DATETIMES_BULK";
+            /** Order */
+            order: number;
+        };
+        /** QualityControlOperationQueryParameters */
+        QualityControlOperationQueryParameters: {
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+        };
+        /** QualityControlOperationResponse */
+        QualityControlOperationResponse: {
+            /** Arguments */
+            arguments?: Record<string, never> | unknown[] | null;
+            /** Comment */
+            comment?: string | null;
+            /** Createdat */
+            createdAt: string;
+            createdBy: components["schemas"]["AccountContactDetailResponse"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Operationtype
+             * @enum {string}
+             */
+            operationType: "SELECTION" | "VALUE_THRESHOLD" | "DATETIME_RANGE" | "CHANGE" | "RATE_OF_CHANGE" | "FIND_GAPS" | "PERSISTENCE" | "ADD_POINTS" | "CHANGE_VALUES" | "ASSIGN_VALUES_BULK" | "DELETE_POINTS" | "DRIFT_CORRECTION" | "INTERPOLATE" | "SHIFT_DATETIMES" | "FILL_GAPS" | "ASSIGN_DATETIMES_BULK";
+            /** Order */
+            order: number;
+        };
+        /** QualityControlSessionDetailResponse */
+        QualityControlSessionDetailResponse: {
+            /** Committedat */
+            committedAt?: string | null;
+            /** Createdat */
+            createdAt: string;
+            createdBy: components["schemas"]["AccountContactDetailResponse"];
+            /** Dependencyids */
+            dependencyIds: string[];
+            /** Description */
+            description?: string | null;
+            /**
+             * Historyid
+             * Format: uuid
+             */
+            historyId: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Managedchecksum */
+            managedChecksum?: string | null;
+            /** Operations */
+            operations: components["schemas"]["QualityControlOperationResponse"][];
+            /** Phenomenontimeend */
+            phenomenonTimeEnd: string;
+            /** Phenomenontimestart */
+            phenomenonTimeStart: string;
+            /** Sourcechecksum */
+            sourceChecksum: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "in_progress" | "committed";
+        };
+        /** QualityControlSessionPatchBody */
+        QualityControlSessionPatchBody: {
+            /** Description */
+            description?: string | null;
+        };
+        /** QualityControlSessionPostBody */
+        QualityControlSessionPostBody: {
+            /** Description */
+            description?: string | null;
+            /** Phenomenontimeend */
+            phenomenonTimeEnd: string;
+            /** Phenomenontimestart */
+            phenomenonTimeStart: string;
+        };
+        /** QualityControlSessionQueryParameters */
+        QualityControlSessionQueryParameters: {
+            /**
+             * Ancestor Of
+             * @description Return all transitive ancestors of the given session ID.
+             */
+            ancestor_of?: string | null;
+            /** Expand Related */
+            expand_related?: boolean | null;
+            /**
+             * Include Ancestors
+             * @description Also return transitive ancestors of all sessions matched by other filters.
+             * @default false
+             */
+            include_ancestors: boolean;
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Range End
+             * @description Return sessions overlapping with this range end.
+             */
+            range_end?: string | null;
+            /**
+             * Range Start
+             * @description Return sessions overlapping with this range start.
+             */
+            range_start?: string | null;
+            /** Status */
+            status?: ("in_progress" | "committed") | null;
+        };
+        /** QualityControlSessionSummaryResponse */
+        QualityControlSessionSummaryResponse: {
+            /** Committedat */
+            committedAt?: string | null;
+            /** Createdat */
+            createdAt: string;
+            createdBy: components["schemas"]["AccountContactDetailResponse"];
+            /** Description */
+            description?: string | null;
+            /**
+             * Historyid
+             * Format: uuid
+             */
+            historyId: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Managedchecksum */
+            managedChecksum?: string | null;
+            /** Phenomenontimeend */
+            phenomenonTimeEnd: string;
+            /** Phenomenontimestart */
+            phenomenonTimeStart: string;
+            /** Sourcechecksum */
+            sourceChecksum: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "in_progress" | "committed";
         };
         /**
          * RatingCurveOrderBy
@@ -10794,6 +11240,896 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_history_get_qc_histories: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                expand_related?: boolean | null;
+                /** @description Filter histories by managed datastream ID. */
+                managed_datastream_id?: string[];
+                /** @description Filter histories by source datastream ID. */
+                source_datastream_id?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlHistorySummaryResponse"][] | components["schemas"]["QualityControlHistoryDetailResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_history_create_qc_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityControlHistoryPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlHistoryDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_history_get_qc_history: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                history_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlHistorySummaryResponse"] | components["schemas"]["QualityControlHistoryDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_history_delete_qc_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_get_qc_sessions: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                expand_related?: boolean | null;
+                status?: ("in_progress" | "committed") | null;
+                /** @description Return sessions overlapping with this range start. */
+                range_start?: string | null;
+                /** @description Return sessions overlapping with this range end. */
+                range_end?: string | null;
+                /** @description Return all transitive ancestors of the given session ID. */
+                ancestor_of?: string | null;
+                /** @description Also return transitive ancestors of all sessions matched by other filters. */
+                include_ancestors?: boolean;
+            };
+            header?: never;
+            path: {
+                history_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlSessionSummaryResponse"][] | components["schemas"]["QualityControlSessionDetailResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_create_qc_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityControlSessionPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_get_qc_session: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlSessionSummaryResponse"] | components["schemas"]["QualityControlSessionDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_delete_qc_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_update_qc_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityControlSessionPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_session_commit_qc_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlSessionDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_operation_get_qc_operations: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+            };
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlOperationResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_operation_create_qc_operations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityControlOperationPostBody"][];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlOperationResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_operation_get_qc_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlOperationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_operation_delete_qc_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_quality_operation_update_qc_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                history_id: string;
+                session_id: string;
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityControlOperationPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityControlOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

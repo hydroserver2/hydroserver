@@ -1,0 +1,52 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    // `paths` without `baseUrl` — TS 5+ resolves each pattern relative
+    // to this tsconfig's directory, so `@/*` still maps to `./src/*`.
+    // `baseUrl` itself is deprecated in TS 6 and removed in TS 7.
+    "paths": {
+      "@/*": ["./src/*"],
+      "@hydroserver/client": ["../../packages/hydroserver-ts/src/index.ts"],
+      "@hydroserver/client/*": ["../../packages/hydroserver-ts/src/*"]
+    },
+
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    "verbatimModuleSyntax": false,
+
+    // ES2022 lib unlocks Array.prototype.at, Error.cause, hasOwn, etc.
+    // The Vite build target stays whatever vite.config.ts sets.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+
+    // The base config sets `types: []` for a clean globals slate.
+    // We pull in Node + Vitest because:
+    //   - Vitest tests use `require()` for inline JSON fixtures.
+    //   - `expect`, `describe`, `it`, `vi` are configured as globals
+    //     via vite.config.ts's `test.globals: true`.
+    "types": ["node", "vitest/globals"],
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": false,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "vitest.config.ts"
+  ],
+  // Tests live under `tsconfig.test.json` (more lenient — see comments
+  // there); excluding them from the app project keeps production code
+  // strict while the suite still type-checks under its own config.
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/__tests__/**",
+    "src/utils/test/**"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

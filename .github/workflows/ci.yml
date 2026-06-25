@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
   release:
     types: [created]
@@ -19,22 +19,22 @@ jobs:
   docs:
     name: Docs Build
     runs-on: ubuntu-latest
- 
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
- 
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: apps/docs/package-lock.json
- 
+
       - name: Install docs dependencies
         working-directory: apps/docs
         run: npm ci
- 
+
       - name: Build docs
         working-directory: apps/docs
         run: npm run docs:build
@@ -83,7 +83,7 @@ jobs:
         run: npm run build
 
   data-management:
-    name: Data Management App
+    name: Data Management App 80% Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -111,7 +111,6 @@ jobs:
         working-directory: apps/data-management
         run: |
           {
-            echo "VITE_APP_VERSION=ci"
             echo "VITE_APP_GOOGLE_MAPS_API_KEY="
             echo "VITE_APP_GOOGLE_MAPS_MAP_ID="
             echo "VITE_APP_PROXY_BASE_URL=http://127.0.0.1:8000"
@@ -125,6 +124,60 @@ jobs:
 
       - name: Build app
         working-directory: apps/data-management
+        run: npm run build
+
+  qc-app:
+    name: QC App Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            apps/qc-app/package-lock.json
+            packages/qc-utils/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      # The QC app consumes @hydroserver/client as a local `file:` link and
+      # builds it from source, so the client's own dependencies (e.g. p-limit)
+      # must be installed for typecheck/build to resolve them. Mirrors the
+      # data-management job.
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
+
+      - name: Install QC utils dependencies
+        working-directory: packages/qc-utils
+        run: npm ci --workspaces=false
+
+      - name: Build QC utils
+        working-directory: packages/qc-utils
+        run: npm run build
+
+      - name: Install QC app dependencies
+        working-directory: apps/qc-app
+        run: npm ci --workspaces=false
+
+      - name: Install local QC utils package
+        working-directory: apps/qc-app
+        run: npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false
+
+      - name: Run QC app typecheck
+        working-directory: apps/qc-app
+        run: npm run typecheck
+
+      - name: Run QC app coverage
+        working-directory: apps/qc-app
+        run: npm run coverage
+
+      - name: Build QC app
+        working-directory: apps/qc-app
         run: npm run build
 
   hydroserverpy:
@@ -219,8 +272,8 @@ jobs:
           SMTP_URL: smtp://127.0.0.1:1025
         run: python -m pytest
 
-  e2e:
-    name: End-to-End Tests
+  e2e-data-management:
+    name: Data Management E2E
     runs-on: ubuntu-latest
     env:
       E2E_DATABASE_URL: postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver_e2e_${{ github.run_id }}_${{ github.run_attempt }}
@@ -269,7 +322,6 @@ jobs:
           cache-dependency-path: |
             apps/data-management/package-lock.json
             packages/hydroserver-ts/package-lock.json
-            tests/e2e/package-lock.json
 
       - name: Install API dependencies
         run: |
@@ -285,27 +337,84 @@ jobs:
         working-directory: apps/data-management
         run: npm ci
 
-      - name: Install E2E dependencies
-        working-directory: tests/e2e
-        run: npm ci
-
       - name: Install Playwright browser
-        working-directory: tests/e2e
+        working-directory: apps/data-management
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright E2E suite
+      - name: Run data-management Playwright E2E suite
+        working-directory: apps/data-management
         env:
           E2E_PYTHON: python
-        run: ./scripts/e2e test
+        run: npm run e2e
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-data-management
           path: |
-            tests/e2e/playwright-report
-            tests/e2e/test-results
+            apps/data-management/playwright-report
+            apps/data-management/test-results
+          if-no-files-found: ignore
+
+  e2e-qc-app:
+    name: QC App E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            apps/qc-app/package-lock.json
+            packages/qc-utils/package-lock.json
+            packages/hydroserver-ts/package-lock.json
+
+      # The QC app builds @hydroserver/client from source via a local `file:`
+      # link, so the client's own dependencies must be present for the e2e
+      # build/serve to resolve them. `--workspaces=false` keeps each install
+      # scoped to its own package-lock.json instead of the workspace root.
+      - name: Install TypeScript client dependencies
+        working-directory: packages/hydroserver-ts
+        run: npm ci
+
+      - name: Install QC utils dependencies
+        working-directory: packages/qc-utils
+        run: npm ci --workspaces=false
+
+      - name: Build QC utils
+        working-directory: packages/qc-utils
+        run: npm run build
+
+      - name: Install QC app dependencies
+        working-directory: apps/qc-app
+        run: npm ci --workspaces=false
+
+      - name: Install local QC utils package
+        working-directory: apps/qc-app
+        run: npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false
+
+      - name: Install Playwright browsers
+        working-directory: apps/qc-app
+        run: npx playwright install --with-deps chromium firefox
+
+      - name: Run QC app Playwright E2E suite
+        working-directory: apps/qc-app
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-qc-app
+          path: |
+            apps/qc-app/playwright-report
+            apps/qc-app/test-results
           if-no-files-found: ignore
 
   trigger-release:
@@ -317,10 +426,20 @@ jobs:
         github.event.release.prerelease ||
         (!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled'))
       )
-    needs: [docs, hydroserver-ts, data-management, hydroserverpy, api, e2e]
+    needs:
+      [
+        docs,
+        hydroserver-ts,
+        data-management,
+        qc-app,
+        hydroserverpy,
+        api,
+        e2e-data-management,
+        e2e-qc-app,
+      ]
     permissions:
       actions: write
- 
+
     steps:
       - name: Trigger release workflow
         uses: actions/github-script@v7

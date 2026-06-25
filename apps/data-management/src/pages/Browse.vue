@@ -1,6 +1,10 @@
 <template>
   <div class="d-flex fill-height">
-    <BrowseFilterTool :things="things" @filter="updateFilteredThings" />
+    <BrowseFilterTool
+      :things="things"
+      :things-loaded="loaded"
+      @filter="updateFilteredThings"
+    />
     <OpenLayersMap v-if="loaded" :things="filteredThings" />
     <FullScreenLoader v-else loading-text="Loading map..." />
   </div>

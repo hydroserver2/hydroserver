@@ -7126,6 +7126,907 @@
         "title": "ProcessingLevelSummaryResponse",
         "type": "object"
       },
+      "QualityControlHistoryDetailResponse": {
+        "properties": {
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "managedChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managedchecksum"
+          },
+          "managedDatastream": {
+            "$ref": "#/components/schemas/DatastreamSummaryResponse"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenontimestart"
+          },
+          "sourceChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcechecksum"
+          },
+          "sourceDatastream": {
+            "$ref": "#/components/schemas/DatastreamSummaryResponse"
+          }
+        },
+        "required": [
+          "id",
+          "managedDatastream",
+          "sourceDatastream",
+          "createdAt"
+        ],
+        "title": "QualityControlHistoryDetailResponse",
+        "type": "object"
+      },
+      "QualityControlHistoryPostBody": {
+        "properties": {
+          "managedDatastreamId": {
+            "format": "uuid",
+            "title": "Manageddatastreamid",
+            "type": "string"
+          },
+          "sourceDatastreamId": {
+            "format": "uuid",
+            "title": "Sourcedatastreamid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "managedDatastreamId",
+          "sourceDatastreamId"
+        ],
+        "title": "QualityControlHistoryPostBody",
+        "type": "object"
+      },
+      "QualityControlHistoryQueryParameters": {
+        "properties": {
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
+          "managed_datastream_id": {
+            "default": [],
+            "description": "Filter histories by managed datastream ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Managed Datastream Id",
+            "type": "array"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "source_datastream_id": {
+            "default": [],
+            "description": "Filter histories by source datastream ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Source Datastream Id",
+            "type": "array"
+          }
+        },
+        "title": "QualityControlHistoryQueryParameters",
+        "type": "object"
+      },
+      "QualityControlHistorySummaryResponse": {
+        "properties": {
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "managedChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managedchecksum"
+          },
+          "managedDatastreamId": {
+            "format": "uuid",
+            "title": "Manageddatastreamid",
+            "type": "string"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phenomenontimestart"
+          },
+          "sourceChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcechecksum"
+          },
+          "sourceDatastreamId": {
+            "format": "uuid",
+            "title": "Sourcedatastreamid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "managedDatastreamId",
+          "sourceDatastreamId",
+          "createdAt"
+        ],
+        "title": "QualityControlHistorySummaryResponse",
+        "type": "object"
+      },
+      "QualityControlOperationPatchBody": {
+        "properties": {
+          "arguments": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "title": "QualityControlOperationPatchBody",
+        "type": "object"
+      },
+      "QualityControlOperationPostBody": {
+        "properties": {
+          "arguments": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "operationType": {
+            "enum": [
+              "SELECTION",
+              "VALUE_THRESHOLD",
+              "DATETIME_RANGE",
+              "CHANGE",
+              "RATE_OF_CHANGE",
+              "FIND_GAPS",
+              "PERSISTENCE",
+              "ADD_POINTS",
+              "CHANGE_VALUES",
+              "ASSIGN_VALUES_BULK",
+              "DELETE_POINTS",
+              "DRIFT_CORRECTION",
+              "INTERPOLATE",
+              "SHIFT_DATETIMES",
+              "FILL_GAPS",
+              "ASSIGN_DATETIMES_BULK"
+            ],
+            "title": "Operationtype",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "operationType",
+          "order"
+        ],
+        "title": "QualityControlOperationPostBody",
+        "type": "object"
+      },
+      "QualityControlOperationQueryParameters": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          }
+        },
+        "title": "QualityControlOperationQueryParameters",
+        "type": "object"
+      },
+      "QualityControlOperationResponse": {
+        "properties": {
+          "arguments": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/AccountContactDetailResponse"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operationType": {
+            "enum": [
+              "SELECTION",
+              "VALUE_THRESHOLD",
+              "DATETIME_RANGE",
+              "CHANGE",
+              "RATE_OF_CHANGE",
+              "FIND_GAPS",
+              "PERSISTENCE",
+              "ADD_POINTS",
+              "CHANGE_VALUES",
+              "ASSIGN_VALUES_BULK",
+              "DELETE_POINTS",
+              "DRIFT_CORRECTION",
+              "INTERPOLATE",
+              "SHIFT_DATETIMES",
+              "FILL_GAPS",
+              "ASSIGN_DATETIMES_BULK"
+            ],
+            "title": "Operationtype",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "createdBy",
+          "order",
+          "operationType",
+          "createdAt"
+        ],
+        "title": "QualityControlOperationResponse",
+        "type": "object"
+      },
+      "QualityControlSessionDetailResponse": {
+        "properties": {
+          "committedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committedat"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/AccountContactDetailResponse"
+          },
+          "dependencyIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Dependencyids",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "historyId": {
+            "format": "uuid",
+            "title": "Historyid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "managedChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managedchecksum"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/QualityControlOperationResponse"
+            },
+            "title": "Operations",
+            "type": "array"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimestart"
+          },
+          "sourceChecksum": {
+            "title": "Sourcechecksum",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "in_progress",
+              "committed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "historyId",
+          "createdBy",
+          "createdAt",
+          "phenomenonTimeStart",
+          "phenomenonTimeEnd",
+          "status",
+          "sourceChecksum",
+          "dependencyIds",
+          "operations"
+        ],
+        "title": "QualityControlSessionDetailResponse",
+        "type": "object"
+      },
+      "QualityControlSessionPatchBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "title": "QualityControlSessionPatchBody",
+        "type": "object"
+      },
+      "QualityControlSessionPostBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimestart"
+          }
+        },
+        "required": [
+          "phenomenonTimeStart",
+          "phenomenonTimeEnd"
+        ],
+        "title": "QualityControlSessionPostBody",
+        "type": "object"
+      },
+      "QualityControlSessionQueryParameters": {
+        "properties": {
+          "ancestor_of": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Return all transitive ancestors of the given session ID.",
+            "title": "Ancestor Of"
+          },
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
+          "include_ancestors": {
+            "default": false,
+            "description": "Also return transitive ancestors of all sessions matched by other filters.",
+            "title": "Include Ancestors",
+            "type": "boolean"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          },
+          "range_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Return sessions overlapping with this range end.",
+            "title": "Range End"
+          },
+          "range_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Return sessions overlapping with this range start.",
+            "title": "Range Start"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "in_progress",
+                  "committed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "QualityControlSessionQueryParameters",
+        "type": "object"
+      },
+      "QualityControlSessionSummaryResponse": {
+        "properties": {
+          "committedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committedat"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/AccountContactDetailResponse"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "historyId": {
+            "format": "uuid",
+            "title": "Historyid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "managedChecksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managedchecksum"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "title": "Phenomenontimestart"
+          },
+          "sourceChecksum": {
+            "title": "Sourcechecksum",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "in_progress",
+              "committed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "historyId",
+          "createdBy",
+          "createdAt",
+          "phenomenonTimeStart",
+          "phenomenonTimeEnd",
+          "status",
+          "sourceChecksum"
+        ],
+        "title": "QualityControlSessionSummaryResponse",
+        "type": "object"
+      },
       "RatingCurveOrderBy": {
         "enum": [
           "id",
@@ -10702,7 +11603,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.10.0"
+    "version": "1.10.2"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -22184,6 +23085,1734 @@
         "summary": "Trigger Data Product Task",
         "tags": [
           "Data Product Tasks"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories": {
+      "get": {
+        "description": "Get QC histories. Returns detail responses (with expanded datastreams) when expand_related=True.",
+        "operationId": "interfaces_api_views_quality_history_get_qc_histories",
+        "parameters": [
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          },
+          {
+            "description": "Filter histories by managed datastream ID.",
+            "in": "query",
+            "name": "managed_datastream_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter histories by managed datastream ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Managed Datastream Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter histories by source datastream ID.",
+            "in": "query",
+            "name": "source_datastream_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter histories by source datastream ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Source Datastream Id",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/QualityControlHistorySummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/QualityControlHistoryDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc Histories",
+        "tags": [
+          "Quality Control Histories"
+        ]
+      },
+      "post": {
+        "description": "Create a new QC history for a managed datastream.",
+        "operationId": "interfaces_api_views_quality_history_create_qc_history",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlHistoryPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlHistoryDetailResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Qc History",
+        "tags": [
+          "Quality Control Histories"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}": {
+      "delete": {
+        "description": "Delete a QC history and all associated sessions.",
+        "operationId": "interfaces_api_views_quality_history_delete_qc_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Qc History",
+        "tags": [
+          "Quality Control Histories"
+        ]
+      },
+      "get": {
+        "description": "Get a QC history by ID.",
+        "operationId": "interfaces_api_views_quality_history_get_qc_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/QualityControlHistorySummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QualityControlHistoryDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc History",
+        "tags": [
+          "Quality Control Histories"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}/sessions": {
+      "get": {
+        "description": "Get sessions for a QC history. Supports range_start/range_end overlap filtering, ancestor_of, and include_ancestors.",
+        "operationId": "interfaces_api_views_quality_session_get_qc_sessions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "in_progress",
+                    "committed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Return sessions overlapping with this range start.",
+            "in": "query",
+            "name": "range_start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Return sessions overlapping with this range start.",
+              "title": "Range Start"
+            }
+          },
+          {
+            "description": "Return sessions overlapping with this range end.",
+            "in": "query",
+            "name": "range_end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Return sessions overlapping with this range end.",
+              "title": "Range End"
+            }
+          },
+          {
+            "description": "Return all transitive ancestors of the given session ID.",
+            "in": "query",
+            "name": "ancestor_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Return all transitive ancestors of the given session ID.",
+              "title": "Ancestor Of"
+            }
+          },
+          {
+            "description": "Also return transitive ancestors of all sessions matched by other filters.",
+            "in": "query",
+            "name": "include_ancestors",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Also return transitive ancestors of all sessions matched by other filters.",
+              "title": "Include Ancestors",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/QualityControlSessionSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc Sessions",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      },
+      "post": {
+        "description": "Create a new in-progress session for a QC history.",
+        "operationId": "interfaces_api_views_quality_session_create_qc_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlSessionPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Qc Session",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}": {
+      "delete": {
+        "description": "Delete an in-progress session.",
+        "operationId": "interfaces_api_views_quality_session_delete_qc_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Qc Session",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      },
+      "get": {
+        "description": "Get a QC session by ID. Includes dependencies and operations when expand_related=True.",
+        "operationId": "interfaces_api_views_quality_session_get_qc_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/QualityControlSessionSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc Session",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      },
+      "patch": {
+        "description": "Update an in-progress session's description.",
+        "operationId": "interfaces_api_views_quality_session_update_qc_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlSessionPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Qc Session",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/commit": {
+      "post": {
+        "description": "Commit an in-progress session after observations have been pushed to the managed datastream.",
+        "operationId": "interfaces_api_views_quality_session_commit_qc_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlSessionDetailResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Commit Qc Session",
+        "tags": [
+          "Quality Control Sessions"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations": {
+      "get": {
+        "description": "Get all operations for a QC session in execution order.",
+        "operationId": "interfaces_api_views_quality_operation_get_qc_operations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QualityControlOperationResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc Operations",
+        "tags": [
+          "Quality Control Operations"
+        ]
+      },
+      "post": {
+        "description": "Append one or more operations to an in-progress session.",
+        "operationId": "interfaces_api_views_quality_operation_create_qc_operations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/QualityControlOperationPostBody"
+                },
+                "title": "Data",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QualityControlOperationResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Qc Operations",
+        "tags": [
+          "Quality Control Operations"
+        ]
+      }
+    },
+    "/api/data/quality-control/histories/{history_id}/sessions/{session_id}/operations/{operation_id}": {
+      "delete": {
+        "description": "Delete an operation from an in-progress session.",
+        "operationId": "interfaces_api_views_quality_operation_delete_qc_operation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Operation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Qc Operation",
+        "tags": [
+          "Quality Control Operations"
+        ]
+      },
+      "get": {
+        "description": "Get a single QC operation by ID.",
+        "operationId": "interfaces_api_views_quality_operation_get_qc_operation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Operation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlOperationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Qc Operation",
+        "tags": [
+          "Quality Control Operations"
+        ]
+      },
+      "patch": {
+        "description": "Update the comment or arguments of an operation in an in-progress session.",
+        "operationId": "interfaces_api_views_quality_operation_update_qc_operation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "history_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "History Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Operation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlOperationPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityControlOperationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Qc Operation",
+        "tags": [
+          "Quality Control Operations"
         ]
       }
     },

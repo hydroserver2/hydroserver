@@ -2,7 +2,7 @@
   <v-progress-linear v-if="loading" color="secondary" indeterminate />
   <div v-else-if="!loading && canShowSparkline">
     <div class="w-[300px] max-w-full max-[600px]:w-full">
-      <div class="mb-1 text-body-3 font-weight-light opacity-70">
+      <div class="sparkline-subtitle mb-1 font-weight-light opacity-70">
         Sparkline is showing most recent {{ validObservations.length }}
         values
       </div>
@@ -380,3 +380,10 @@ onBeforeUnmount(() => {
   // No cleanup required for SVG-based sparklines.
 })
 </script>
+
+<style scoped>
+.sparkline-subtitle {
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+</style>

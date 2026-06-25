@@ -3,7 +3,7 @@ import uuid6
 from datetime import datetime, timezone
 from typing import Optional, Union, Literal
 
-from pydantic import Field, ConfigDict, validate_call
+from pydantic import Field, ConfigDict, ValidationError, validate_call
 from pydantic.alias_generators import to_camel
 from django.db import transaction
 from django.contrib.auth import get_user_model
@@ -21,6 +21,7 @@ from hydroserverpy.etl import ETLPipeline
 from hydroserverpy.etl.extractors import HTTPExtractor
 from hydroserverpy.etl.transformers import CSVTransformer, JSONTransformer, ETLDataMapping, ETLTargetPath
 from hydroserverpy.etl.models import Timestamp
+from hydroserverpy.etl.user_facing_errors import coerce_known_etl_error
 
 
 User = get_user_model()
@@ -394,11 +395,14 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             )
 
         elif data_connection.payload.payload_type == "JSON":
-            transformer = JSONTransformer(
-                **timestamp.model_dump(),
-                timestamp_key=data_connection.payload.timestamp_key,
-                jmespath=data_connection.payload.jmespath
-            )
+            try:
+                transformer = JSONTransformer(
+                    **timestamp.model_dump(),
+                    timestamp_key=data_connection.payload.timestamp_key,
+                    jmespath=data_connection.payload.jmespath
+                )
+            except ValidationError as exc:
+                raise coerce_known_etl_error(exc, component="transformer") from exc
 
         else:
             raise NotImplementedError(

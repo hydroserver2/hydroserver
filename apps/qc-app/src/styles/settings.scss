@@ -1,0 +1,10 @@
+@use 'vuetify/settings' with (
+  $list-item-icon-margin-end: 16px,
+  $tooltip-font-size: 1.1em
+);
+
+@for $i from 1 through 4 {
+  .gap-#{$i} {
+    gap: #{$i}rem;
+  }
+}

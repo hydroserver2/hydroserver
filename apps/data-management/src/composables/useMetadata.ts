@@ -43,6 +43,9 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   )
 
   const fetchMetadata = async (id: string | null) => {
+    const workspaceFilter = id
+      ? { workspace_id: [id, 'null'] as (string | 'null')[] }
+      : {}
     try {
       const [
         unitsResponse,
@@ -51,11 +54,20 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         sensorsResponse,
         resultQualifiersResponse,
       ] = await Promise.all([
-        hs.units.listAllItems({ order_by: ['name'] }),
-        hs.observedProperties.listAllItems({ order_by: ['name'] }),
-        hs.processingLevels.listAllItems({ order_by: ['code'] }),
-        hs.sensors.listAllItems({ order_by: ['name'] }),
-        hs.resultQualifiers.listAllItems({ order_by: ['code'] }),
+        hs.units.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.observedProperties.listAllItems({
+          order_by: ['name'],
+          ...workspaceFilter,
+        }),
+        hs.processingLevels.listAllItems({
+          order_by: ['code'],
+          ...workspaceFilter,
+        }),
+        hs.sensors.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.resultQualifiers.listAllItems({
+          order_by: ['code'],
+          ...workspaceFilter,
+        }),
       ])
 
       units.value = unitsResponse.filter(

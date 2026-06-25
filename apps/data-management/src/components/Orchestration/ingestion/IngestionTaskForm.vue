@@ -368,7 +368,7 @@ function hydrateTask(source?: TaskExpanded): Task {
         name: source.name,
         description: source.description ?? null,
         taskVariables: { ...source.taskVariables },
-        dataConnectionId: source.dataConnection.id || props.dataConnection.id,
+        dataConnectionId: source.dataConnection.id ?? props.dataConnection.id,
         mappings: source.mappings.map(editableMappingFrom) as any,
         schedule: cloneSchedule(source.schedule),
       })
@@ -530,7 +530,6 @@ async function onSubmit() {
       console.error(res)
       return
     }
-    task.value = hydrateTask(res.data as unknown as TaskExpanded)
     emit(isEdit ? 'updated' : 'created', res.data)
     closeForm()
   } catch (error: unknown) {

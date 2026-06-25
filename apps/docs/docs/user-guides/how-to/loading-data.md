@@ -18,7 +18,7 @@ The HydroServer Streaming Data Loader (SDL) is a desktop software app that can b
 
 The SDL provides a user interface for configuring connections to CSV file, specifying which data columns to load, and mapping those data columns to datastreams in HydroServer. 
 
-[Download the SDL](/references/streaming-data-loader.md)
+[Learn how to use the Streaming Data Loader](using-streaming-data-loader.md)
 
 ## Via a Script or Client Program
 

@@ -1,7 +1,6 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,11 +9,12 @@
     "django-build": "vue-tsc && vite build --mode django",
     "preview": "vite preview",
     "test": "vitest",
-    "coverage": "vitest run --coverage --environment jsdom"
+    "coverage": "vitest run --coverage --environment jsdom",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.6",
-    "@hydroserver/client": "1.0.0-beta.1",
+    "@hydroserver/client": "file:../../packages/hydroserver-ts",
     "@mdi/js": "^7.4.47",
     "country-list": "^2.3.0",
     "jszip": "^3.10.1",
@@ -29,6 +29,7 @@
     "vuetify": "^3.11.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/country-list": "^2.1.4",
     "@types/google.maps": "^3.54.10",

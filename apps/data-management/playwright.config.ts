@@ -1,0 +1,126 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { defineConfig, devices } from '@playwright/test'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const repoRoot = path.resolve(here, '../..')
+const apiDir = path.join(repoRoot, 'django')
+const ensureDbScript = path.join(here, 'e2e/scripts/ensure_e2e_database.py')
+
+const e2ePython = process.env.E2E_PYTHON || 'python3.11'
+const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
+const apiPort = process.env.E2E_API_PORT || '18000'
+const apiBaseUrl = `http://${apiHost}:${apiPort}`
+const appHost = process.env.E2E_APP_HOST || '127.0.0.1'
+const appPort = process.env.E2E_APP_PORT || '14173'
+const appBaseUrl = `http://${appHost}:${appPort}`
+
+// Local runs use the fast Vite dev server (quiet, no rebuild between runs); CI
+// builds and previews the production bundle so the release gate tests the real
+// artifact.
+const appCommand = process.env.CI
+  ? `npm run build && npm run preview -- --host ${appHost} --port ${appPort}`
+  : `npm run dev -- --host ${appHost} --port ${appPort}`
+
+// Suppress the managed servers' output in the local test console so the
+// reporter's pass/fail list stays readable. CI keeps stderr so a failed run
+// still surfaces server tracebacks in the workflow logs.
+const serverOutput = {
+  stdout: 'ignore',
+  stderr: process.env.CI ? 'pipe' : 'ignore',
+} as const
+const e2eDatabaseUrl =
+  process.env.E2E_DATABASE_URL ||
+  'postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver_e2e'
+const e2eAdminDatabaseUrl =
+  process.env.E2E_ADMIN_DATABASE_URL ||
+  'postgresql://hsdbadmin:admin@127.0.0.1:5432/postgres'
+
+process.env.E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || apiBaseUrl
+process.env.E2E_APP_BASE_URL = process.env.E2E_APP_BASE_URL || appBaseUrl
+
+const reporter = process.env.CI
+  ? [
+      ['list'] as const,
+      ['github'] as const,
+      ['html', { open: 'never', outputFolder: 'playwright-report' }] as const,
+      ['junit', { outputFile: 'test-results/results.xml' }] as const,
+    ]
+  : [
+      ['list'] as const,
+      ['html', { open: 'never', outputFolder: 'playwright-report' }] as const,
+    ]
+
+export default defineConfig({
+  testDir: path.join(here, 'e2e', 'specs'),
+  globalSetup: path.join(here, 'e2e', 'support', 'globalSetup.ts'),
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  timeout: 60 * 1000,
+  expect: {
+    timeout: 10 * 1000,
+  },
+  workers: process.env.CI ? 2 : 1,
+  reporter,
+  outputDir: path.join(here, 'test-results'),
+  use: {
+    baseURL: appBaseUrl,
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+  ],
+  webServer: [
+    {
+      command: `${e2ePython} ${ensureDbScript} && ${e2ePython} manage.py setup_e2e_data && ${e2ePython} manage.py runserver ${apiHost}:${apiPort}`,
+      cwd: apiDir,
+      env: {
+        ...process.env,
+        DATABASE_URL: e2eDatabaseUrl,
+        E2E_DATABASE_URL: e2eDatabaseUrl,
+        E2E_ADMIN_DATABASE_URL: e2eAdminDatabaseUrl,
+        CELERY_BROKER_URL: process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
+        SMTP_URL: process.env.SMTP_URL || 'memory://',
+        PROXY_BASE_URL: appBaseUrl,
+        ALLOWED_HOSTS: '127.0.0.1,localhost',
+        // The seeded browser suite issues many short bursts of API requests while
+        // bootstrapping pages. Keep throttling effectively disabled in the
+        // isolated E2E environment so the release pass reflects product failures,
+        // not test-runner rate limiting.
+        ANON_THROTTLE_RATE: '10000/s',
+        AUTH_THROTTLE_RATE: '10000/s',
+        ACCOUNT_RATE_LIMITS_DISABLED: 'true',
+        DEPLOYMENT_BACKEND: 'dev',
+        DEBUG: 'True',
+      },
+      url: `${apiBaseUrl}/api/data/workspaces`,
+      reuseExistingServer: false,
+      timeout: 180 * 1000,
+      ...serverOutput,
+    },
+    {
+      command: appCommand,
+      cwd: here,
+      env: {
+        ...process.env,
+        VITE_APP_GOOGLE_MAPS_API_KEY: '',
+        VITE_APP_GOOGLE_MAPS_MAP_ID: '',
+        VITE_APP_PROXY_BASE_URL: apiBaseUrl,
+        VITE_HYDROSERVER_CLIENT_LOCAL: '1',
+        VITE_HYDROSERVER_CLIENT_PATH: '../../packages/hydroserver-ts/src',
+      },
+      url: `${appBaseUrl}/browse`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 300 * 1000,
+      ...serverOutput,
+    },
+  ],
+})

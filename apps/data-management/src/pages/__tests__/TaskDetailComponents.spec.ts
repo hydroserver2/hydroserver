@@ -136,6 +136,16 @@ const makeEtlTask = () => ({
   },
 })
 
+const makeMonitoringTask = () => ({
+  id: 'monitoring-task-1',
+  name: 'Quality task',
+  description: null,
+  thing: { id: 'thing-1', name: 'Site 1', workspaceId: 'workspace-1' },
+  monitoredDatastreams: [],
+  latestRun: null,
+  schedule: null,
+})
+
 const globalStubs = {
   'v-dialog': {
     props: ['modelValue'],
@@ -154,6 +164,10 @@ const globalStubs = {
   IngestionTaskForm: {
     props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
+  },
+  QualityManagementForm: {
+    emits: ['close', 'updated', 'deleted'],
+    template: '<div class="quality-form-stub" />',
   },
 }
 
@@ -186,6 +200,10 @@ describe('Task detail components', () => {
     dataProductUpdateMock.mockResolvedValue({
       ok: true,
       data: makeDataProductTask(),
+    })
+    monitoringGetMock.mockResolvedValue({
+      ok: true,
+      data: makeMonitoringTask(),
     })
   })
 
@@ -263,5 +281,29 @@ describe('Task detail components', () => {
       expand_related: true,
     })
     expect(wrapper.text()).toContain('Ingestion task')
+  })
+
+  it('closes the quality edit dialog after a successful update', async () => {
+    const { default: QualityTaskDetails } = await import(
+      '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
+    )
+    await seedWorkspace()
+
+    const wrapper = shallowMount(QualityTaskDetails as any, {
+      props: {
+        taskId: 'monitoring-task-1',
+        embedded: true,
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+    ;(wrapper.vm as any).editDialogOpen = true
+    ;(wrapper.vm as any).onFormUpdated()
+    await flushPromises()
+
+    expect((wrapper.vm as any).editDialogOpen).toBe(false)
+    expect(monitoringGetMock).toHaveBeenCalledTimes(2)
   })
 })
