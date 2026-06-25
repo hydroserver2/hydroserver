@@ -6,7 +6,7 @@ The HydroServer SensorThings API supports posting Observations data. This means 
 
 Most of the newer Campbell Scientific dataloggers include an `HTTPPost()` function in their CRBasic instruction set. This function is a straightforward way to send HTTP POST requests to a remote server like HydroServer. To use `HTTPPost()`, the datalogger must be connected to the Internet via Wi-Fi or cellular data connection. For more remote stations where Wi-Fi or cellular Internet connections are not possible, you can set up whatever telemetry system you need to retrieve the data from your station using Campbell Scientific's Loggernet software and then load the data from the ".dat" file retrieved to HydroServer using the Streaming Data Loader or HydroServer's Job Orchestration System.
 
-A <a href="/hydroserver/user-guides/how-to/CR350_example.CRB" download>full example program for using a Campbell Scientific CR350 series datalogger</a> to POST data directly to HydroServer is provided here. Below, we describe sections of this program to give you an overview of how it works.
+A <a href="/user-guides/how-to/CR350_example.CRB" download>full example program for using a Campbell Scientific CR350 series datalogger</a> to POST data directly to HydroServer is provided here. Below, we describe sections of this program to give you an overview of how it works.
 
 ### Setting up Variables and Constants
 
@@ -104,7 +104,7 @@ It might be easier to construct this JSON string using the CRBasic `Sprintf()` f
 - `time_stamp`: This is the datetime value associated with the observation string formatted according to the ISO 8601 standard.
 - `data_value`: This is the numeric data value you are trying to load.
 
-In the full <a href="/hydroserver/user-guides/how-to/CR350_example.CRB" download>CR350 datalogger example</a>, data for multiple observed variables are loaded into HydroServer. So, the construction of the header and the JSON payload for the `HTTPPost()` request are both contained in a loop within a subroutine we wrote that gets the last record from the program's data table, splits that record into elements, and then loads each data value to HydroServer using a separate `HTTPPost()` function call.
+In the full <a href="/user-guides/how-to/CR350_example.CRB" download>CR350 datalogger example</a>, data for multiple observed variables are loaded into HydroServer. So, the construction of the header and the JSON payload for the `HTTPPost()` request are both contained in a loop within a subroutine we wrote that gets the last record from the program's data table, splits that record into elements, and then loads each data value to HydroServer using a separate `HTTPPost()` function call.
 
 ### The Main CRBasic Program
 

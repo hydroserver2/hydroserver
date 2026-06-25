@@ -4,7 +4,7 @@
 
 Before we take our last step and load some data, we'll need some data to load.
 
-<a href="/hydroserver/hydroserver-101/daily_temp.csv" download>Download daily_temp.csv</a>
+<a href="/hydroserver-101/daily_temp.csv" download>Download daily_temp.csv</a>
 
 The CSV file looks like this:
 
