@@ -218,7 +218,7 @@
                     <template #activator="{ props: tooltipProps }">
                       <span v-bind="tooltipProps" class="inline-flex">
                         <v-btn
-                          :icon="mdiDelete"
+                          :icon="mdiTrashCanOutline"
                           variant="text"
                           color="delete"
                           :loading="isValidatingDelete(attachment.id)"
@@ -538,7 +538,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { mdiAlert, mdiDelete, mdiDownload, mdiPencil } from '@mdi/js'
+import { mdiAlert, mdiTrashCanOutline, mdiDownload, mdiPencil } from '@mdi/js'
 import hs, {
   type RatingCurve,
   type RatingCurveFittingMethod,
@@ -718,7 +718,7 @@ const attachmentCountLabel = computed(() => {
 const selectedFile = computed(() => {
   const value = attachmentFile.value
   if (!value) return null
-  return Array.isArray(value) ? value[0] ?? null : value
+  return Array.isArray(value) ? (value[0] ?? null) : value
 })
 
 const canCreateAttachment = computed(
@@ -731,7 +731,7 @@ const canCreateAttachment = computed(
 const selectedEditFile = computed(() => {
   const value = editAttachmentFile.value
   if (!value) return null
-  return Array.isArray(value) ? value[0] ?? null : value
+  return Array.isArray(value) ? (value[0] ?? null) : value
 })
 const canSaveEditAttachment = computed(
   () =>

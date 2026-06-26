@@ -32,7 +32,7 @@
           item-title="name"
           return-object
           clearable
-          :prepend-inner-icon="mdiMapMarker"
+          :prepend-inner-icon="mdiMapMarkerOutline"
           label="Search sites"
           autocomplete="new-password"
           hide-details
@@ -51,7 +51,7 @@
           item-title="name"
           return-object
           clearable
-          :prepend-inner-icon="mdiDomain"
+          :prepend-inner-icon="mdiBriefcaseOutline"
           label="Workspaces"
           autocomplete="new-password"
           multiple
@@ -116,7 +116,12 @@ import {
 } from '@/utils/browseFilters'
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
-import { mdiClose, mdiDomain, mdiMapMarker, mdiWaterPump } from '@mdi/js'
+import {
+  mdiBriefcaseOutline,
+  mdiClose,
+  mdiMapMarkerOutline,
+  mdiWaterPump,
+} from '@mdi/js'
 
 const vocabularyStore = useVocabularyStore()
 const route = useRoute()
@@ -231,7 +236,8 @@ const applyRouteState = () => {
   isApplyingRouteState.value = true
 
   selectedSite.value = state.siteIds.length
-    ? sortedThings.value.find((thing) => thing.id === state.siteIds[0]) ?? null
+    ? (sortedThings.value.find((thing) => thing.id === state.siteIds[0]) ??
+      null)
     : null
   selectedWorkspaces.value = state.workspaceIds.length
     ? workspaces.value.filter((workspace) =>

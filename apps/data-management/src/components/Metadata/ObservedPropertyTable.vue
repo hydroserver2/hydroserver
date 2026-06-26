@@ -8,7 +8,7 @@
   >
     <template v-slot:item.actions="{ item }" v-if="canEdit">
       <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiDelete" @click="openDialog(item, 'delete')" />
+      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
     </template>
   </v-data-table-virtual>
 
@@ -44,7 +44,7 @@ import hs, { ObservedProperty } from '@hydroserver/client'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { computed, toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
 
 const props = defineProps<{
   search: string | undefined

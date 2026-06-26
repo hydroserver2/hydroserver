@@ -29,12 +29,7 @@
           </template>
 
           <template #denied>
-            <v-btn-add
-              disabled
-              class="mr-2"
-              color="white"
-              variant="outlined"
-            >
+            <v-btn-add disabled class="mr-2" color="white" variant="outlined">
               Add workspace
             </v-btn-add>
           </template>
@@ -63,9 +58,7 @@
               color="grey lighten-1"
             />
             <h4 class="mt-2">No workspaces found</h4>
-            <p class="mb-4">
-              Click the "Add workspace" button to create one.
-            </p>
+            <p class="mb-4">Click the "Add workspace" button to create one.</p>
             <v-icon
               class="mb-4"
               @click="showWorkspaceHelp = !showWorkspaceHelp"
@@ -127,7 +120,7 @@
             variant="text"
             color="red-darken-2"
             @click="openDialog(item, 'delete')"
-            :icon="mdiDelete"
+            :icon="mdiTrashCanOutline"
             :data-testid="`workspace-delete-${item.id}`"
             rounded="xl"
           />
@@ -180,7 +173,7 @@ import hs, {
 } from '@hydroserver/client'
 import {
   mdiBriefcaseOutline,
-  mdiDelete,
+  mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiLockPlusOutline,
   mdiMagnify,

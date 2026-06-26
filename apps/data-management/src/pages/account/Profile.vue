@@ -16,7 +16,10 @@
         </v-btn-secondary>
       </v-col>
       <v-col cols="auto">
-        <v-btn-delete :prepend-icon="mdiDelete" @click="openDelete = true">
+        <v-btn-delete
+          :prepend-icon="mdiTrashCanOutline"
+          @click="openDelete = true"
+        >
           Delete Account</v-btn-delete
         >
       </v-col>
@@ -45,7 +48,7 @@ import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/store/user'
 import hs from '@hydroserver/client'
-import { mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
 
 const { isConnectionEnabled: isHydroShareConnectionEnabled } = useHydroShare()
 const openDelete = ref(false)

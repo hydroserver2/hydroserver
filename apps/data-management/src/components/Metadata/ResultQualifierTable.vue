@@ -8,7 +8,7 @@
   >
     <template v-slot:item.actions="{ item }" v-if="canEdit">
       <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiDelete" @click="openDialog(item, 'delete')" />
+      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
     </template>
   </v-data-table-virtual>
 
@@ -41,7 +41,7 @@ import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import { toRef } from 'vue'
 import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
 
 const props = defineProps<{
   search: string | undefined

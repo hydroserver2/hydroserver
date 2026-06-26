@@ -168,8 +168,8 @@
                 !linkedTasksForDatastream(item.id).length
                   ? mdiLinkOff
                   : linkedTasksForDatastream(item.id).length > 1
-                  ? mdiAlertOctagon
-                  : linkedTasksForDatastream(item.id)[0].icon
+                    ? mdiAlertOctagon
+                    : linkedTasksForDatastream(item.id)[0].icon
               "
               size="20"
             />
@@ -180,8 +180,8 @@
                     linkedTasksForDatastream(item.id).length > 1
                       ? 'Multiple task targets'
                       : linkedTasksForDatastream(item.id).length === 1
-                      ? linkedTasksForDatastream(item.id)[0].label
-                      : 'No task connected'
+                        ? linkedTasksForDatastream(item.id)[0].label
+                        : 'No task connected'
                   }}
                 </span>
                 <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -442,7 +442,7 @@
                   "
                 >
                   <v-list-item
-                    :prepend-icon="mdiDelete"
+                    :prepend-icon="mdiTrashCanOutline"
                     title="Delete datastream"
                     :data-testid="`delete-datastream-${item.id}`"
                     @click="openDialog(item, 'delete')"
@@ -456,7 +456,7 @@
                       workspace
                     )
                   "
-                  :prepend-icon="mdiDeleteOutline"
+                  :prepend-icon="mdiTrashCanOutline"
                   title="Delete data from datastream"
                   :data-testid="`delete-datastream-data-${item.id}`"
                   @click="openObservationDialog(item)"
@@ -742,7 +742,7 @@
                     "
                   >
                     <v-list-item
-                      :prepend-icon="mdiDelete"
+                      :prepend-icon="mdiTrashCanOutline"
                       title="Delete datastream"
                       :data-testid="`delete-datastream-${item.id}`"
                       @click="openDialog(item, 'delete')"
@@ -756,7 +756,7 @@
                         workspace
                       )
                     "
-                    :prepend-icon="mdiDeleteOutline"
+                    :prepend-icon="mdiTrashCanOutline"
                     title="Delete data from datastream"
                     :data-testid="`delete-datastream-data-${item.id}`"
                     @click="openObservationDialog(item)"
@@ -815,8 +815,8 @@
               !linkedTasksForDatastream(item.id).length
                 ? mdiLinkOff
                 : linkedTasksForDatastream(item.id).length > 1
-                ? mdiAlertOctagon
-                : linkedTasksForDatastream(item.id)[0].icon
+                  ? mdiAlertOctagon
+                  : linkedTasksForDatastream(item.id)[0].icon
             "
             size="20"
           />
@@ -827,8 +827,8 @@
                   linkedTasksForDatastream(item.id).length > 1
                     ? 'Multiple task targets'
                     : linkedTasksForDatastream(item.id).length === 1
-                    ? linkedTasksForDatastream(item.id)[0].label
-                    : 'No task connected'
+                      ? linkedTasksForDatastream(item.id)[0].label
+                      : 'No task connected'
                 }}
               </span>
               <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -1053,8 +1053,7 @@ import {
   mdiChartLine,
   mdiChevronRight,
   mdiContentCopy,
-  mdiDelete,
-  mdiDeleteOutline,
+  mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
   mdiFileEyeOutline,
