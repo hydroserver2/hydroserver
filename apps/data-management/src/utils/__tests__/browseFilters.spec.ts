@@ -103,6 +103,7 @@ describe('parseBrowseFilterQuery', () => {
       })
     ).toEqual({
       siteIds: ['thing-1'],
+      searchText: '',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake', 'Stream'],
       drawer: false,
@@ -117,10 +118,12 @@ describe('parseBrowseFilterQuery', () => {
         workspace: 'workspace-1,workspace-2',
         workspaceIds: ['workspace-2'],
         siteType: ['Lake', 'Lake'],
+        search: 'Logan',
         drawer: 'yes',
       })
     ).toEqual({
       siteIds: ['thing-1'],
+      searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake'],
       drawer: true,
@@ -140,6 +143,7 @@ describe('buildBrowseFilterQuery', () => {
         {},
         {
           siteId: 'thing-1',
+          searchText: 'Logan',
           workspaceIds: ['workspace-1', 'workspace-2'],
           siteTypes: ['Lake'],
           drawer: true,
@@ -147,6 +151,7 @@ describe('buildBrowseFilterQuery', () => {
       )
     ).toEqual({
       sites: 'thing-1',
+      search: 'Logan',
       workspaces: ['workspace-1', 'workspace-2'],
       siteTypes: 'Lake',
     })
@@ -163,6 +168,7 @@ describe('buildBrowseFilterQuery', () => {
         },
         {
           siteId: null,
+          searchText: '',
           workspaceIds: [],
           siteTypes: [],
           drawer: false,

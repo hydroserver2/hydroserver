@@ -1,113 +1,170 @@
 <template>
-  <v-navigation-drawer v-model="sidebar.isOpen" width="400">
-    <v-list>
-      <v-list-subheader class="text-h6 mb-2 mt-1">
-        Browse data collection sites
-      </v-list-subheader>
+  <div
+    class="browse-filter-tool"
+    :class="{ 'browse-filter-tool--expanded': isExpanded }"
+  >
+    <v-btn
+      v-if="!isExpanded"
+      class="filter-chip"
+      elevation="8"
+      rounded="pill"
+      color="surface"
+      @click="setExpanded(true)"
+    >
+      <v-icon :icon="mdiMagnify" size="16" color="primary" />
+      <span class="filter-chip-label">Sites</span>
+      <span class="filter-chip-count">({{ availableSites.length }})</span>
+    </v-btn>
 
-      <v-divider />
+    <v-card v-else class="filter-panel" elevation="10">
+      <div class="filter-header">
+        <h1>Monitoring sites</h1>
 
-      <v-list-item class="d-flex justify-end mt-2">
-        <v-btn
-          color="primary-darken-2"
-          variant="outlined"
-          rounded="xl"
-          @click="onClearFilters"
-          :append-icon="mdiClose"
-          >Clear filters</v-btn
-        >
-      </v-list-item>
+        <div class="filter-header-actions">
+          <v-btn
+            icon
+            color="primary"
+            size="34"
+            rounded="lg"
+            aria-label="Add site"
+            to="/sites"
+          >
+            <v-icon :icon="mdiPlus" size="20" />
+          </v-btn>
 
-      <v-list-item>
-        <v-autocomplete
-          class="pt-2"
-          v-model="selectedSite"
-          :items="availableSites"
-          :item-props="
-            (site) => ({
-              subtitle: site.siteType,
-            })
-          "
+          <v-btn
+            icon
+            variant="text"
+            color="default"
+            size="34"
+            aria-label="Collapse site filters"
+            @click="setExpanded(false)"
+          >
+            <v-icon :icon="mdiChevronLeft" size="20" />
+          </v-btn>
+        </div>
+      </div>
+
+      <div class="filter-controls">
+        <v-text-field
+          v-model="siteSearch"
+          class="site-search"
           name="browse-site-search"
-          item-title="name"
-          return-object
+          placeholder="Search sites or workspaces"
+          :prepend-inner-icon="mdiMagnify"
           clearable
-          :prepend-inner-icon="mdiMapMarkerOutline"
-          label="Search sites"
-          autocomplete="new-password"
+          density="compact"
           hide-details
+          single-line
+          variant="outlined"
+          bg-color="#f2f4f7"
           color="primary"
-          no-data-text="No sites found"
+          autocomplete="off"
+          @click:clear="siteSearch = ''"
         />
-      </v-list-item>
 
-      <v-list-item>
-        <v-autocomplete
-          class="pt-2"
+        <v-select
           v-model="selectedWorkspaces"
           :items="availableWorkspaces"
-          :item-props="(ws) => ({ subtitle: `Owned by: ${ws?.owner?.name}` })"
+          class="workspace-filter"
           name="browse-workspace-filter"
           item-title="name"
           return-object
-          clearable
+          multiple
+          density="compact"
+          hide-details
+          variant="outlined"
+          color="primary"
           :prepend-inner-icon="mdiBriefcaseOutline"
-          label="Workspaces"
-          autocomplete="new-password"
-          multiple
-          hide-details
-          color="primary"
+          :placeholder="workspacePlaceholder"
         >
-          <template v-slot:selection="{ item, index }">
-            <v-chip
-              color="primary-darken-2"
-              rounded
-              closable
-              density="comfortable"
-              @click:close="selectedWorkspaces.splice(index, 1)"
-            >
-              <span>{{ item.title }}</span>
-            </v-chip>
+          <template v-slot:selection="{ index }">
+            <span v-if="index === 0" class="workspace-selection">
+              {{ workspaceSelectionLabel }}
+            </span>
           </template>
-        </v-autocomplete>
-      </v-list-item>
+        </v-select>
 
-      <v-list-item>
-        <v-autocomplete
-          class="pt-2"
-          label="Site types"
-          v-model="selectedSiteTypes"
-          :items="availableSiteTypes"
-          name="browse-site-type-filter"
-          clearable
-          :prepend-inner-icon="mdiWaterPump"
-          autocomplete="new-password"
-          multiple
-          hide-details
-          color="primary"
-        >
-          <template v-slot:selection="{ item, index }">
-            <v-chip
-              color="primary-darken-2"
-              rounded
-              density="comfortable"
-              closable
-              @click:close="selectedSiteTypes.splice(index, 1)"
+        <section v-if="availableSiteTypes.length" class="filter-section">
+          <div class="filter-section-title">Site type</div>
+          <div class="chip-grid">
+            <v-btn
+              v-for="siteType in availableSiteTypes"
+              :key="siteType"
+              class="filter-pill"
+              :class="{ selected: selectedSiteTypes.includes(siteType) }"
+              :variant="
+                selectedSiteTypes.includes(siteType) ? 'tonal' : 'outlined'
+              "
+              color="default"
+              rounded="pill"
+              @click="toggleSiteType(siteType)"
             >
-              <span>{{ item.title }}</span>
-            </v-chip>
-          </template>
-        </v-autocomplete>
-      </v-list-item>
-    </v-list>
-  </v-navigation-drawer>
+              <v-icon
+                :icon="getSiteTypeIcon(siteType)"
+                :color="
+                  selectedSiteTypes.includes(siteType) ? 'primary' : 'default'
+                "
+                size="16"
+              />
+              <span>{{ siteType }}</span>
+            </v-btn>
+          </div>
+        </section>
+
+        <div v-if="hasActiveFilters" class="filter-actions">
+          <v-btn
+            variant="text"
+            color="primary"
+            density="comfortable"
+            :prepend-icon="mdiClose"
+            @click="onClearFilters"
+          >
+            Clear filters
+          </v-btn>
+        </div>
+      </div>
+
+      <v-divider />
+
+      <div class="site-list">
+        <div class="site-list-count">{{ availableSites.length }} sites</div>
+
+        <div v-if="availableSites.length" class="site-list-items">
+          <button
+            v-for="site in availableSites"
+            :key="site.id"
+            type="button"
+            class="site-row"
+            :class="{ selected: site.id === selectedSiteId }"
+            @click="$emit('select-site', site.id)"
+          >
+            <span class="site-row-icon">
+              <v-icon :icon="getSiteTypeIcon(site.siteType)" size="20" />
+              <span class="site-row-status" />
+            </span>
+
+            <span class="site-row-text">
+              <span class="site-row-name">{{ site.name }}</span>
+              <span class="site-row-workspace">
+                {{ getWorkspaceName(site.workspaceId) }}
+              </span>
+            </span>
+
+            <span class="site-row-type">{{ site.siteType }}</span>
+          </button>
+        </div>
+
+        <div v-else class="empty-sites">No sites match these filters.</div>
+      </div>
+    </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useSidebarStore } from '@/store/useSidebar'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import {
   buildBrowseFilterQuery,
@@ -118,9 +175,32 @@ import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
 import {
   mdiBriefcaseOutline,
+  mdiChevronLeft,
   mdiClose,
+  mdiEarth,
+  mdiFactory,
+  mdiFlaskOutline,
+  mdiFountain,
+  mdiGauge,
+  mdiGrass,
+  mdiHydroPower,
   mdiMapMarkerOutline,
-  mdiWaterPump,
+  mdiMagnify,
+  mdiPipe,
+  mdiPlus,
+  mdiSnowflake,
+  mdiTerrain,
+  mdiThermometer,
+  mdiThermometerWater,
+  mdiWaterCheckOutline,
+  mdiWaterPercent,
+  mdiWater,
+  mdiWaterWell,
+  mdiWeatherCloudy,
+  mdiWeatherPouring,
+  mdiWeatherSunny,
+  mdiWeatherWindy,
+  mdiWaves,
 } from '@mdi/js'
 
 const vocabularyStore = useVocabularyStore()
@@ -129,13 +209,18 @@ const router = useRouter()
 
 const selectedSiteTypes = ref<string[]>([])
 const selectedWorkspaces = ref<Workspace[]>([])
-const selectedSite = ref<ThingMarker | null>(null)
+const siteSearch = ref('')
 const workspaces = ref<Workspace[]>([])
 const workspacesLoaded = ref(false)
+const isExpanded = ref(true)
 const isApplyingRouteState = ref(false)
 const hasAppliedInitialRouteState = ref(false)
 
-const emit = defineEmits(['filter'])
+const emit = defineEmits<{
+  filter: [ThingMarker[]]
+  'select-site': [string]
+}>()
+
 const props = defineProps({
   things: {
     type: Array as () => ThingMarker[],
@@ -145,23 +230,43 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  selectedSiteId: {
+    type: String,
+    default: undefined,
+  },
 })
 
-const sidebar = useSidebarStore()
 const routeState = parseBrowseFilterQuery(route.query)
 if (routeState.drawer !== null) {
-  sidebar.setOpen(routeState.drawer, true)
-} else {
-  sidebar.setOpen(true)
+  isExpanded.value = routeState.drawer
 }
 
 const sortedThings = computed(() =>
   [...props.things].sort((a, b) => a.name.localeCompare(b.name))
 )
 
+const workspaceById = computed(
+  () => new Map(workspaces.value.map((workspace) => [workspace.id, workspace]))
+)
+
+const searchNeedle = computed(() =>
+  (siteSearch.value ?? '').trim().toLowerCase()
+)
+
+const thingsMatchingSearch = computed(() => {
+  if (!searchNeedle.value) return sortedThings.value
+
+  return sortedThings.value.filter((thing) => {
+    const workspaceName = getWorkspaceName(thing.workspaceId)
+    return [thing.name, workspaceName].some((value) =>
+      value.toLowerCase().includes(searchNeedle.value)
+    )
+  })
+})
+
 const availableSites = computed(() =>
   filterThingMarkers(
-    sortedThings.value,
+    thingsMatchingSearch.value,
     selectedWorkspaces.value,
     selectedSiteTypes.value
   )
@@ -170,10 +275,9 @@ const availableSites = computed(() =>
 const availableWorkspaces = computed(() => {
   const workspaceIds = new Set(
     filterThingMarkers(
-      props.things,
+      thingsMatchingSearch.value,
       [],
-      selectedSiteTypes.value,
-      selectedSite.value
+      selectedSiteTypes.value
     ).map((thing) => thing.workspaceId)
   )
 
@@ -183,24 +287,144 @@ const availableWorkspaces = computed(() => {
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
     filterThingMarkers(
-      props.things,
+      thingsMatchingSearch.value,
       selectedWorkspaces.value,
-      [],
-      selectedSite.value
+      []
     ).map((thing) => thing.siteType)
   )
 
   return vocabularyStore.siteTypes.filter((siteType) => siteTypes.has(siteType))
 })
 
-const emitFilteredThings = () => {
-  const filteredThings = filterThingMarkers(
-    props.things,
-    selectedWorkspaces.value,
-    selectedSiteTypes.value,
-    selectedSite.value
+const workspacePlaceholder = computed(() =>
+  selectedWorkspaces.value.length ? '' : 'All workspaces'
+)
+
+const workspaceSelectionLabel = computed(() => {
+  const count = selectedWorkspaces.value.length
+  if (!count) return 'All workspaces'
+  if (count === 1) return selectedWorkspaces.value[0]?.name ?? '1 workspace'
+  return `${count} workspaces`
+})
+
+const hasActiveFilters = computed(
+  () =>
+    Boolean((siteSearch.value ?? '').trim()) ||
+    selectedWorkspaces.value.length > 0 ||
+    selectedSiteTypes.value.length > 0
+)
+
+const getWorkspaceName = (workspaceId: string) =>
+  workspaceById.value.get(workspaceId)?.name || 'Workspace'
+
+const siteTypeIconRules = [
+  {
+    keywords: ['quality', 'chemistry', 'chemical', 'sample', 'sampling'],
+    icon: mdiFlaskOutline,
+  },
+  {
+    keywords: ['gage', 'gauge', 'stage', 'level', 'discharge', 'flow'],
+    icon: mdiGauge,
+  },
+  {
+    keywords: ['weather', 'meteorological', 'met station', 'atmosphere'],
+    icon: mdiWeatherCloudy,
+  },
+  {
+    keywords: ['precipitation', 'rain', 'rainfall', 'storm'],
+    icon: mdiWeatherPouring,
+  },
+  {
+    keywords: ['wind'],
+    icon: mdiWeatherWindy,
+  },
+  {
+    keywords: ['solar', 'radiation', 'sun'],
+    icon: mdiWeatherSunny,
+  },
+  {
+    keywords: ['water temperature'],
+    icon: mdiThermometerWater,
+  },
+  {
+    keywords: ['temperature', 'thermal'],
+    icon: mdiThermometer,
+  },
+  {
+    keywords: ['groundwater', 'ground water', 'well', 'aquifer'],
+    icon: mdiWaterWell,
+  },
+  {
+    keywords: ['reservoir', 'lake', 'pond', 'pool'],
+    icon: mdiWaves,
+  },
+  {
+    keywords: ['stream', 'river', 'creek', 'brook', 'channel'],
+    icon: mdiWater,
+  },
+  {
+    keywords: ['canal', 'pipe', 'pipeline', 'conduit'],
+    icon: mdiPipe,
+  },
+  {
+    keywords: ['spring', 'seep'],
+    icon: mdiFountain,
+  },
+  {
+    keywords: ['wetland', 'marsh', 'swamp'],
+    icon: mdiGrass,
+  },
+  {
+    keywords: ['snow', 'ice', 'glacier'],
+    icon: mdiSnowflake,
+  },
+  {
+    keywords: ['soil', 'terrain', 'land'],
+    icon: mdiTerrain,
+  },
+  {
+    keywords: ['humidity', 'moisture'],
+    icon: mdiWaterPercent,
+  },
+  {
+    keywords: ['water treatment', 'wastewater', 'waste water', 'effluent'],
+    icon: mdiFactory,
+  },
+  {
+    keywords: ['dam', 'hydropower', 'hydro power'],
+    icon: mdiHydroPower,
+  },
+  {
+    keywords: ['water check', 'water status'],
+    icon: mdiWaterCheckOutline,
+  },
+  {
+    keywords: ['earth', 'environmental', 'ecosystem'],
+    icon: mdiEarth,
+  },
+]
+
+const getSiteTypeIcon = (siteType: string) => {
+  const normalized = siteType.toLowerCase()
+  return (
+    siteTypeIconRules.find(({ keywords }) =>
+      keywords.some((keyword) => normalized.includes(keyword))
+    )?.icon ?? mdiMapMarkerOutline
   )
-  emit('filter', filteredThings)
+}
+
+const toggleSiteType = (siteType: string) => {
+  selectedSiteTypes.value = selectedSiteTypes.value.includes(siteType)
+    ? selectedSiteTypes.value.filter((selected) => selected !== siteType)
+    : [...selectedSiteTypes.value, siteType]
+}
+
+const setExpanded = (value: boolean) => {
+  isExpanded.value = value
+}
+
+const emitFilteredThings = () => {
+  emit('filter', availableSites.value)
 }
 
 const querySignature = (query: Record<string, unknown>) =>
@@ -214,10 +438,9 @@ const syncRouteFromSelection = async () => {
   if (isApplyingRouteState.value || !hasAppliedInitialRouteState.value) return
 
   const query = buildBrowseFilterQuery(route.query, {
-    siteId: selectedSite.value?.id,
+    searchText: siteSearch.value,
     workspaceIds: selectedWorkspaces.value.map((workspace) => workspace.id),
     siteTypes: selectedSiteTypes.value,
-    drawer: sidebar.isOpen,
   })
 
   if (querySignature(query) === querySignature(route.query)) return
@@ -235,10 +458,12 @@ const applyRouteState = () => {
   const state = parseBrowseFilterQuery(route.query)
   isApplyingRouteState.value = true
 
-  selectedSite.value = state.siteIds.length
-    ? (sortedThings.value.find((thing) => thing.id === state.siteIds[0]) ??
-      null)
-    : null
+  const linkedSiteName = state.siteIds.length
+    ? sortedThings.value.find((thing) => thing.id === state.siteIds[0])?.name ??
+      ''
+    : ''
+
+  siteSearch.value = state.searchText || linkedSiteName
   selectedWorkspaces.value = state.workspaceIds.length
     ? workspaces.value.filter((workspace) =>
         state.workspaceIds.includes(workspace.id)
@@ -247,7 +472,7 @@ const applyRouteState = () => {
   selectedSiteTypes.value = state.siteTypes
 
   if (state.drawer !== null) {
-    sidebar.setOpen(state.drawer, true)
+    isExpanded.value = state.drawer
   }
 
   isApplyingRouteState.value = false
@@ -259,7 +484,7 @@ const applyRouteState = () => {
 const onClearFilters = () => {
   selectedSiteTypes.value = []
   selectedWorkspaces.value = []
-  selectedSite.value = null
+  siteSearch.value = ''
 }
 
 onMounted(async () => {
@@ -271,16 +496,12 @@ onMounted(async () => {
   applyRouteState()
 })
 
-watch(
-  [selectedSiteTypes, selectedWorkspaces, selectedSite],
-  emitFilteredThings,
-  {
-    deep: true,
-  }
-)
+watch([selectedSiteTypes, selectedWorkspaces, siteSearch], emitFilteredThings, {
+  deep: true,
+})
 
 watch(
-  [selectedSiteTypes, selectedWorkspaces, selectedSite, () => sidebar.isOpen],
+  [selectedSiteTypes, selectedWorkspaces, siteSearch],
   syncRouteFromSelection,
   { deep: true }
 )
@@ -296,16 +517,6 @@ watch(
   applyRouteState,
   { deep: true }
 )
-
-watch(availableSites, (sites) => {
-  if (!props.thingsLoaded) return
-  if (
-    selectedSite.value &&
-    !sites.some((site) => site.id === selectedSite.value?.id)
-  ) {
-    selectedSite.value = null
-  }
-})
 
 // Drop any selected values that are no longer in the available set when the
 // other filters narrow the options.
@@ -340,3 +551,316 @@ pruneSelectionToAvailable(
   (siteType) => siteType
 )
 </script>
+
+<style scoped>
+.browse-filter-tool {
+  width: min(38vw, 380px);
+  min-width: 340px;
+  max-height: calc(100% - 32px);
+}
+
+.browse-filter-tool--expanded {
+  height: calc(100% - 32px);
+}
+
+.filter-chip {
+  height: 38px;
+  padding-inline: 14px;
+  color: #222529;
+  box-shadow: 0 4px 16px rgba(22, 27, 34, 0.16) !important;
+}
+
+.filter-chip :deep(.v-btn__content) {
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.filter-chip-count {
+  color: #8b8f96;
+  font-weight: 600;
+}
+
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 10px;
+}
+
+.filter-header h1 {
+  margin: 0;
+  color: #202124;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.filter-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.filter-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 14px;
+}
+
+.site-search :deep(.v-field),
+.workspace-filter :deep(.v-field) {
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.site-search :deep(.v-field__input),
+.workspace-filter :deep(.v-field__input) {
+  font-size: 13px;
+}
+
+.site-search :deep(input::placeholder) {
+  color: #6f747b;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.workspace-filter :deep(.v-field__input) {
+  font-weight: 600;
+}
+
+.workspace-selection {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-section-title {
+  color: #5f6368;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-pill {
+  min-height: 30px;
+  padding-inline: 10px;
+  color: #63676d;
+  border-color: #dce0e5;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-pill :deep(.v-btn__content) {
+  gap: 6px;
+  letter-spacing: 0;
+}
+
+.filter-pill.selected {
+  color: #1976d2;
+  border-color: rgba(33, 150, 243, 0.38);
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+}
+
+.site-list {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden auto;
+  padding: 12px 20px 16px;
+}
+
+.site-list-count {
+  margin-bottom: 10px;
+  color: #5f6368;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.site-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.site-row:hover,
+.site-row.selected {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.site-row:hover .site-row-name,
+.site-row.selected .site-row-name {
+  color: rgb(var(--v-theme-primary));
+}
+
+.site-row-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #f1f3f6;
+  color: #5f6368;
+}
+
+.site-row-status {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #43a047;
+}
+
+.site-row-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-row-name,
+.site-row-workspace {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-row-name {
+  color: #202124;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.site-row-workspace {
+  color: #5f6368;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.site-row-type {
+  max-width: 96px;
+  overflow: hidden;
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-sites {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  color: #8a8d91;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .browse-filter-tool {
+    width: min(380px, calc(100vw - 24px));
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .browse-filter-tool {
+    width: 100%;
+  }
+
+  .browse-filter-tool--expanded {
+    height: calc(100% - 24px);
+  }
+
+  .filter-panel {
+    border-radius: 10px;
+  }
+
+  .filter-header {
+    padding: 16px 16px 10px;
+  }
+
+  .filter-header h1 {
+    font-size: 17px;
+  }
+
+  .filter-header-actions {
+    gap: 6px;
+  }
+
+  .filter-controls,
+  .site-list {
+    padding-inline: 16px;
+  }
+
+  .site-row {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .site-row-type {
+    display: none;
+  }
+}
+</style>

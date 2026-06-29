@@ -4,6 +4,7 @@ import type { LocationQuery } from 'vue-router'
 
 export interface BrowseFilterRouteState {
   siteIds: string[]
+  searchText: string
   workspaceIds: string[]
   siteTypes: string[]
   drawer: boolean | null
@@ -11,6 +12,7 @@ export interface BrowseFilterRouteState {
 
 export interface BrowseFilterSelectionState {
   siteId?: string | null
+  searchText?: string | null
   workspaceIds: string[]
   siteTypes: string[]
   drawer?: boolean
@@ -20,6 +22,8 @@ const BROWSE_FILTER_QUERY_KEYS = [
   'sites',
   'site',
   'siteId',
+  'search',
+  'q',
   'workspaces',
   'workspace',
   'workspaceIds',
@@ -64,6 +68,7 @@ export function parseBrowseFilterQuery(
 ): BrowseFilterRouteState {
   return {
     siteIds: readQueryValues(query, ['sites', 'site', 'siteId']),
+    searchText: queryValues(query.search)[0] ?? queryValues(query.q)[0] ?? '',
     workspaceIds: readQueryValues(query, [
       'workspaces',
       'workspace',
@@ -83,11 +88,13 @@ export function buildBrowseFilterQuery(
   BROWSE_FILTER_QUERY_KEYS.forEach((key) => delete nextQuery[key])
 
   const siteIds = state.siteId ? [state.siteId] : []
+  const searchText = state.searchText?.trim()
   const sites = queryArray(siteIds)
   const workspaces = queryArray(state.workspaceIds)
   const siteTypes = queryArray(state.siteTypes)
 
   if (sites !== undefined) nextQuery.sites = sites
+  if (searchText) nextQuery.search = searchText
   if (workspaces !== undefined) nextQuery.workspaces = workspaces
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes
   if (state.drawer === false) nextQuery.drawer = '0'

@@ -44,7 +44,6 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/Browse.vue'),
     meta: {
       hideFooter: true,
-      hasSidebar: true,
       title: 'Browse Monitoring Sites',
       metaTags: [
         {
