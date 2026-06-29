@@ -25,6 +25,10 @@
       <div ref="popupContent" />
     </div>
 
+    <div ref="selectionLabelContainer" class="selected-site-label">
+      {{ selectedSiteLabel }}
+    </div>
+
     <div v-if="uniqueColoredThings.length" class="legend">
       <h3>Legend</h3>
       <ul>
@@ -108,7 +112,7 @@ import VectorSource from 'ol/source/Vector'
 import { Feature, Overlay } from 'ol'
 import type { FeatureLike } from 'ol/Feature'
 import Point from 'ol/geom/Point'
-import { Style, Icon, Text, Fill, Stroke } from 'ol/style'
+import { Style, Icon } from 'ol/style'
 import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
 import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
@@ -186,6 +190,7 @@ const mapContainer = ref<HTMLElement>()
 const popupContainer = ref<HTMLElement>()
 const popupContent = ref<HTMLElement>()
 const popupCloser = ref<HTMLElement>()
+const selectionLabelContainer = ref<HTMLElement>()
 
 const coloredThings = ref<MapThingWithColor[]>([])
 const selectedTileSourceName = ref<string>(basemapTileSources[0].name)
@@ -194,6 +199,7 @@ const detailedThingCache = new Map<string, Thing>()
 let map: OlMap
 let rasterLayer: TileLayer
 let popupOverlay: Overlay | undefined
+let selectionLabelOverlay: Overlay | undefined
 let selectedThingTransitionId = 0
 let selectedThingPopupTimer: number | undefined
 let activeFlyId = 0
@@ -208,6 +214,7 @@ let selectionLayer: VectorLayer | undefined
 const SELECTION_SCALE = 0.78
 let selectionScale = SELECTION_SCALE
 let selectionAnimId = 0
+const selectedSiteLabel = ref('')
 
 const detailSubtitle = computed(() => {
   const thing = detailThing.value
@@ -320,10 +327,8 @@ const openPopupForFeature = async (feature: Feature) => {
   popupOverlay.setPosition(geometry.getCoordinates())
 }
 
-// Style for the grown, labelled selection marker drawn on top of the WebGL
-// markers. Mirrors the design: enlarged pin + the site name beside it.
+// Style for the grown selection marker drawn on top of the WebGL markers.
 const selectionStyle = (feature: FeatureLike) => {
-  const thing = getFeatureThing(feature as Feature)
   const color = (feature.get('markerColor') as string) || '#D32F2F'
   return new Style({
     image: new Icon({
@@ -331,18 +336,6 @@ const selectionStyle = (feature: FeatureLike) => {
       anchor: [0.5, 1],
       color,
       scale: selectionScale,
-    }),
-    text: new Text({
-      text: thing?.name ?? '',
-      font: "600 13px Roboto, 'Helvetica Neue', Arial, sans-serif",
-      textAlign: 'left',
-      textBaseline: 'middle',
-      offsetX: 14,
-      offsetY: -Math.round(64 * selectionScale * 0.5),
-      fill: new Fill({ color: 'rgba(0,0,0,0.78)' }),
-      backgroundFill: new Fill({ color: 'rgba(255,255,255,0.95)' }),
-      backgroundStroke: new Stroke({ color: 'rgba(0,0,0,0.12)', width: 1 }),
-      padding: [3, 8, 3, 8],
     }),
   })
 }
@@ -365,17 +358,25 @@ const animateSelectionScale = (from: number, to: number, duration = 180) => {
 const updateSelectionMarker = (thingId?: string | null) => {
   selectionSource.clear()
   if (!thingId) {
+    selectedSiteLabel.value = ''
+    selectionLabelOverlay?.setPosition(undefined)
     selectionAnimId++ // stop any in-flight grow
     return
   }
   const feature = findFeatureByThingId(thingId)
   const geometry = feature?.getGeometry()
-  if (!feature || !(geometry instanceof Point)) return
+  if (!feature || !(geometry instanceof Point)) {
+    selectedSiteLabel.value = ''
+    selectionLabelOverlay?.setPosition(undefined)
+    return
+  }
 
   const clone = new Feature({ geometry: geometry.clone() })
   clone.set('markerColor', feature.get('markerColor'))
   clone.set('thing', getFeatureThing(feature))
   selectionSource.addFeature(clone)
+  selectedSiteLabel.value = getFeatureThing(feature)?.name ?? ''
+  selectionLabelOverlay?.setPosition(geometry.getCoordinates())
   animateSelectionScale(SELECTION_SCALE * 0.78, SELECTION_SCALE)
 }
 
@@ -623,6 +624,13 @@ const initializeMap = () => {
     autoPan: props.singleMarkerMode ? false : { animation: { duration: 250 } },
   })
 
+  selectionLabelOverlay = new Overlay({
+    element: selectionLabelContainer.value,
+    positioning: 'center-left',
+    offset: [42, -26],
+    stopEvent: false,
+  })
+
   popupCloser.value!.onclick = () => {
     popupOverlay?.setPosition(undefined)
     return false
@@ -631,7 +639,7 @@ const initializeMap = () => {
   map = new OlMap({
     target: mapContainer.value,
     layers: [rasterLayer, markerLayer.value, selectionLayer],
-    overlays: [popupOverlay],
+    overlays: [popupOverlay, selectionLabelOverlay],
     view: new View(defaultView),
   })
 
@@ -782,6 +790,27 @@ watch(
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.selected-site-label {
+  max-width: 320px;
+  padding: 6px 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-site-label:empty {
+  display: none;
 }
 
 /* ── Browse selected-site detail card ── */

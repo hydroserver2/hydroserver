@@ -52,40 +52,47 @@
           v-model="siteSearch"
           class="site-search"
           name="browse-site-search"
-          placeholder="Search sites or workspaces"
+          label="Search sites"
           :prepend-inner-icon="mdiMagnify"
           clearable
-          density="compact"
           hide-details
-          single-line
-          variant="outlined"
-          bg-color="#f2f4f7"
           color="primary"
           autocomplete="off"
+          @keydown.enter.prevent="onSiteSearchEnter"
           @click:clear="siteSearch = ''"
         />
 
-        <v-select
+        <v-autocomplete
           v-model="selectedWorkspaces"
           :items="availableWorkspaces"
           class="workspace-filter"
           name="browse-workspace-filter"
+          label="Workspaces"
           item-title="name"
           return-object
           multiple
-          density="compact"
+          clearable
           hide-details
-          variant="outlined"
           color="primary"
           :prepend-inner-icon="mdiBriefcaseOutline"
-          :placeholder="workspacePlaceholder"
         >
-          <template v-slot:selection="{ index }">
-            <span v-if="index === 0" class="workspace-selection">
-              {{ workspaceSelectionLabel }}
+          <template v-slot:selection="{ item, index }">
+            <v-chip
+              v-if="index < 2"
+              size="small"
+              closable
+              @click:close="selectedWorkspaces.splice(index, 1)"
+            >
+              <span>{{ item.title }}</span>
+            </v-chip>
+            <span
+              v-else-if="index === 2"
+              class="text-caption text-medium-emphasis ms-1"
+            >
+              +{{ selectedWorkspaces.length - 2 }} more
             </span>
           </template>
-        </v-select>
+        </v-autocomplete>
 
         <section v-if="availableSiteTypes.length" class="filter-section">
           <div class="filter-section-title">Site type</div>
@@ -113,7 +120,6 @@
             </v-btn>
           </div>
         </section>
-
       </div>
 
       <v-divider />
@@ -132,7 +138,6 @@
           >
             <span class="site-row-icon">
               <v-icon :icon="getSiteTypeIcon(site.siteType)" size="20" />
-              <span class="site-row-status" />
             </span>
 
             <span class="site-row-text">
@@ -141,8 +146,6 @@
                 {{ getWorkspaceName(site.workspaceId) }}
               </span>
             </span>
-
-            <span class="site-row-type">{{ site.siteType }}</span>
           </button>
         </div>
 
@@ -165,32 +168,85 @@ import {
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingMarker } from '@/types'
 import {
+  mdiAccessPoint,
+  mdiBacteria,
+  mdiBeach,
+  mdiBiohazard,
   mdiBriefcaseOutline,
+  mdiBridge,
   mdiChevronLeft,
+  mdiCity,
+  mdiCloudOutline,
+  mdiCounter,
+  mdiCrosshairsGps,
+  mdiCupWater,
+  mdiDatabaseMarkerOutline,
   mdiEarth,
   mdiFactory,
+  mdiFerry,
+  mdiFilterVariant,
   mdiFilterOffOutline,
-  mdiFlaskOutline,
+  mdiForest,
   mdiFountain,
   mdiGauge,
+  mdiGate,
+  mdiGreenhouse,
   mdiGrass,
+  mdiHomeFlood,
   mdiHydroPower,
+  mdiLayersTripleOutline,
+  mdiLifebuoy,
   mdiMapMarkerOutline,
+  mdiMapMarkerRadiusOutline,
   mdiMagnify,
+  mdiMoleculeCo2,
+  mdiOfficeBuildingMarkerOutline,
   mdiPipe,
+  mdiPipeDisconnected,
+  mdiRadar,
+  mdiRecycle,
+  mdiRoadVariant,
+  mdiRoutes,
+  mdiSatelliteVariant,
+  mdiScaleBalance,
+  mdiSignCaution,
+  mdiSlopeUphill,
+  mdiSmog,
   mdiSnowflake,
+  mdiSnowflakeMelt,
+  mdiSolarPower,
+  mdiSpeedometer,
+  mdiSprout,
+  mdiSprinkler,
   mdiTerrain,
+  mdiTestTube,
   mdiThermometer,
   mdiThermometerWater,
+  mdiTransmissionTower,
+  mdiTractor,
+  mdiValve,
+  mdiWarehouse,
+  mdiWaterAlertOutline,
   mdiWaterCheckOutline,
+  mdiWaterCircle,
+  mdiWaterMinus,
+  mdiWaterOutline,
   mdiWaterPercent,
+  mdiWaterPlus,
   mdiWater,
+  mdiWaterPump,
+  mdiWaterSync,
   mdiWaterWell,
   mdiWeatherCloudy,
+  mdiWeatherFog,
+  mdiWeatherHazy,
+  mdiWeatherPartlyCloudy,
   mdiWeatherPouring,
   mdiWeatherSunny,
   mdiWeatherWindy,
   mdiWaves,
+  mdiWavesArrowRight,
+  mdiWavesArrowUp,
 } from '@mdi/js'
 
 const vocabularyStore = useVocabularyStore()
@@ -286,17 +342,6 @@ const availableSiteTypes = computed(() => {
   return vocabularyStore.siteTypes.filter((siteType) => siteTypes.has(siteType))
 })
 
-const workspacePlaceholder = computed(() =>
-  selectedWorkspaces.value.length ? '' : 'All workspaces'
-)
-
-const workspaceSelectionLabel = computed(() => {
-  const count = selectedWorkspaces.value.length
-  if (!count) return 'All workspaces'
-  if (count === 1) return selectedWorkspaces.value[0]?.name ?? '1 workspace'
-  return `${count} workspaces`
-})
-
 const hasActiveFilters = computed(
   () =>
     Boolean((siteSearch.value ?? '').trim()) ||
@@ -307,99 +352,435 @@ const hasActiveFilters = computed(
 const getWorkspaceName = (workspaceId: string) =>
   workspaceById.value.get(workspaceId)?.name || 'Workspace'
 
+const normalizeSiteType = (siteType: string) =>
+  siteType
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+
 const siteTypeIconRules = [
   {
-    keywords: ['quality', 'chemistry', 'chemical', 'sample', 'sampling'],
-    icon: mdiFlaskOutline,
+    keywords: ['iot', 'sensor network', 'access point'],
+    icon: mdiAccessPoint,
   },
   {
-    keywords: ['gage', 'gauge', 'stage', 'level', 'discharge', 'flow'],
-    icon: mdiGauge,
+    keywords: [
+      'air quality',
+      'air monitor',
+      'air monitoring',
+      'particulate',
+      'pm2 5',
+      'pm10',
+      'smoke',
+    ],
+    icon: mdiSmog,
   },
   {
-    keywords: ['weather', 'meteorological', 'met station', 'atmosphere'],
-    icon: mdiWeatherCloudy,
+    keywords: ['bacteria', 'pathogen', 'e coli', 'coliform'],
+    icon: mdiBacteria,
   },
   {
-    keywords: ['precipitation', 'rain', 'rainfall', 'storm'],
-    icon: mdiWeatherPouring,
+    keywords: ['irrigation', 'irrigated'],
+    icon: mdiSprinkler,
   },
   {
-    keywords: ['wind'],
-    icon: mdiWeatherWindy,
+    keywords: ['coastal', 'beach', 'shore', 'shoreline', 'estuary', 'tidal'],
+    icon: mdiBeach,
   },
   {
-    keywords: ['solar', 'radiation', 'sun'],
-    icon: mdiWeatherSunny,
+    keywords: [
+      'toxic',
+      'contamination',
+      'contaminant',
+      'hazard',
+      'pollution',
+      'spill',
+    ],
+    icon: mdiBiohazard,
   },
   {
-    keywords: ['water temperature'],
-    icon: mdiThermometerWater,
+    keywords: ['bridge', 'crossing'],
+    icon: mdiBridge,
   },
   {
-    keywords: ['temperature', 'thermal'],
-    icon: mdiThermometer,
+    keywords: [
+      'reservoir profile',
+      'reservoir profiles',
+      'water column profile',
+      'profile',
+    ],
+    icon: mdiLayersTripleOutline,
   },
   {
-    keywords: ['groundwater', 'ground water', 'well', 'aquifer'],
-    icon: mdiWaterWell,
+    keywords: ['urban', 'municipal', 'city'],
+    icon: mdiCity,
   },
   {
-    keywords: ['reservoir', 'lake', 'pond', 'pool'],
-    icon: mdiWaves,
+    keywords: ['cloud', 'cloud cover'],
+    icon: mdiCloudOutline,
   },
   {
-    keywords: ['stream', 'river', 'creek', 'brook', 'channel'],
-    icon: mdiWater,
+    keywords: ['flow meter', 'flowmeter', 'meter', 'counter', 'totalizer'],
+    icon: mdiCounter,
   },
   {
-    keywords: ['canal', 'pipe', 'pipeline', 'conduit'],
-    icon: mdiPipe,
+    keywords: ['reference', 'benchmark', 'survey', 'gps'],
+    icon: mdiCrosshairsGps,
   },
   {
-    keywords: ['spring', 'seep'],
+    keywords: ['drinking water', 'potable'],
+    icon: mdiCupWater,
+  },
+  {
+    keywords: ['model', 'grid', 'database'],
+    icon: mdiDatabaseMarkerOutline,
+  },
+  {
+    keywords: ['earth', 'environmental', 'ecosystem'],
+    icon: mdiEarth,
+  },
+  {
+    keywords: ['industrial', 'industry', 'factory'],
+    icon: mdiFactory,
+  },
+  {
+    keywords: ['boat', 'harbor', 'marine'],
+    icon: mdiFerry,
+  },
+  {
+    keywords: ['forest', 'riparian', 'watershed'],
+    icon: mdiForest,
+  },
+  {
+    keywords: ['spring', 'seep', 'fountain'],
     icon: mdiFountain,
+  },
+  {
+    keywords: ['dry dam release', 'dry dam', 'dam'],
+    icon: mdiGate,
+  },
+  {
+    keywords: [
+      'stream gage',
+      'stream gauge',
+      'gage',
+      'gauge',
+      'stage',
+      'level',
+      'discharge',
+      'flow station',
+    ],
+    icon: mdiGauge,
   },
   {
     keywords: ['wetland', 'marsh', 'swamp'],
     icon: mdiGrass,
   },
   {
-    keywords: ['snow', 'ice', 'glacier'],
+    keywords: ['greenhouse'],
+    icon: mdiGreenhouse,
+  },
+  {
+    keywords: ['flood', 'floodplain'],
+    icon: mdiHomeFlood,
+  },
+  {
+    keywords: ['hydropower', 'hydro power', 'power generation'],
+    icon: mdiHydroPower,
+  },
+  {
+    keywords: ['monitoring station', 'station', 'site'],
+    icon: mdiMapMarkerRadiusOutline,
+  },
+  {
+    keywords: ['co2', 'carbon dioxide', 'greenhouse gas'],
+    icon: mdiMoleculeCo2,
+  },
+  {
+    keywords: ['facility', 'building', 'public works'],
+    icon: mdiOfficeBuildingMarkerOutline,
+  },
+  {
+    keywords: ['pipe', 'pipeline', 'conduit'],
+    icon: mdiPipe,
+  },
+  {
+    keywords: ['buoy'],
+    icon: mdiLifebuoy,
+  },
+  {
+    keywords: ['radar', 'doppler'],
+    icon: mdiRadar,
+  },
+  {
+    keywords: [
+      'combined sewer',
+      'sanitary sewer',
+      'wastewater',
+      'waste water',
+      'effluent',
+      'sewer',
+    ],
+    icon: mdiRecycle,
+  },
+  {
+    keywords: ['culvert', 'road crossing', 'road'],
+    icon: mdiRoadVariant,
+  },
+  {
+    keywords: [
+      'channel',
+      'conveyance',
+      'diversion',
+      'delivery',
+      'route',
+      'transfer',
+      'distribution',
+      'ditch',
+      'lateral',
+      'canal',
+      'aqueduct',
+    ],
+    icon: mdiRoutes,
+  },
+  {
+    keywords: ['remote sensing', 'satellite'],
+    icon: mdiSatelliteVariant,
+  },
+  {
+    keywords: ['warning', 'alert', 'watch'],
+    icon: mdiSignCaution,
+  },
+  {
+    keywords: ['slope', 'hillslope'],
+    icon: mdiSlopeUphill,
+  },
+  {
+    keywords: ['snow', 'snowpack', 'snotel', 'ice', 'glacier'],
     icon: mdiSnowflake,
+  },
+  {
+    keywords: ['snowmelt', 'snow melt'],
+    icon: mdiSnowflakeMelt,
+  },
+  {
+    keywords: ['solar power', 'solar panel'],
+    icon: mdiSolarPower,
+  },
+  {
+    keywords: ['pressure', 'speed', 'velocity'],
+    icon: mdiSpeedometer,
+  },
+  {
+    keywords: ['soil moisture'],
+    icon: mdiSprout,
   },
   {
     keywords: ['soil', 'terrain', 'land'],
     icon: mdiTerrain,
   },
   {
+    keywords: [
+      'water quality sample',
+      'water quality samples',
+      'quality sample',
+      'grab sample',
+      'field sample',
+      'chemistry',
+      'chemical',
+      'sample',
+      'sampling',
+      'lab',
+      'laboratory',
+    ],
+    icon: mdiTestTube,
+  },
+  {
+    keywords: ['temperature', 'thermal'],
+    icon: mdiThermometer,
+  },
+  {
+    keywords: ['water temperature'],
+    icon: mdiThermometerWater,
+  },
+  {
+    keywords: ['agricultural', 'agriculture', 'farm', 'crop'],
+    icon: mdiTractor,
+  },
+  {
+    keywords: ['telemetry', 'telemetred', 'telemetered', 'radio', 'tower'],
+    icon: mdiTransmissionTower,
+  },
+  {
+    keywords: ['valve', 'turnout', 'gate valve'],
+    icon: mdiValve,
+  },
+  {
+    keywords: ['warehouse', 'storage'],
+    icon: mdiWarehouse,
+  },
+  {
+    keywords: ['creek', 'river', 'stream', 'brook'],
+    icon: mdiWater,
+  },
+  {
+    keywords: ['drought', 'dry'],
+    icon: mdiWaterAlertOutline,
+  },
+  // TODO: no dedicated treatment-plant icon in MDI 7.4.47; revisit
+  {
+    keywords: ['water treatment', 'treatment plant', 'treatment works'],
+    icon: mdiFilterVariant,
+  },
+  {
+    keywords: [
+      'water quality',
+      'water quality sensor',
+      'quality sensor',
+      'sonde',
+      'multiparameter',
+      'conductivity',
+      'dissolved oxygen',
+      'turbidity',
+      'ph',
+      'chlorophyll',
+      'nutrient',
+      'water check',
+      'water status',
+    ],
+    icon: mdiWaterCheckOutline,
+  },
+  {
+    keywords: ['water supply', 'supply', 'source water'],
+    icon: mdiWaterCircle,
+  },
+  {
+    keywords: ['withdrawal', 'intake', 'diverted'],
+    icon: mdiWaterMinus,
+  },
+  {
+    keywords: ['surface water'],
+    icon: mdiWaterOutline,
+  },
+  {
     keywords: ['humidity', 'moisture'],
     icon: mdiWaterPercent,
   },
   {
-    keywords: ['water treatment', 'wastewater', 'waste water', 'effluent'],
-    icon: mdiFactory,
+    keywords: ['injection', 'recharge', 'addition'],
+    icon: mdiWaterPlus,
   },
   {
-    keywords: ['dam', 'hydropower', 'hydro power'],
-    icon: mdiHydroPower,
+    keywords: ['pump station', 'pump', 'pumping'],
+    icon: mdiWaterPump,
   },
   {
-    keywords: ['water check', 'water status'],
-    icon: mdiWaterCheckOutline,
+    keywords: ['reclaimed', 'reuse'],
+    icon: mdiWaterSync,
   },
   {
-    keywords: ['earth', 'environmental', 'ecosystem'],
-    icon: mdiEarth,
+    keywords: ['water balance', 'water budget', 'sync'],
+    icon: mdiScaleBalance,
+  },
+  {
+    keywords: [
+      'well',
+      'ground water',
+      'groundwater',
+      'groundwater well',
+      'wellfield',
+      'aquifer',
+      'piezometer',
+    ],
+    icon: mdiWaterWell,
+  },
+  {
+    keywords: [
+      'reservoir',
+      'reservoir lake',
+      'lake',
+      'pond',
+      'pool',
+      'impoundment',
+    ],
+    icon: mdiWaves,
+  },
+  {
+    keywords: ['reservoir release', 'release', 'outflow', 'spillway'],
+    icon: mdiWavesArrowRight,
+  },
+  {
+    keywords: [
+      'weather station',
+      'weather',
+      'meteorological',
+      'meteorology',
+      'met station',
+    ],
+    icon: mdiWeatherCloudy,
+  },
+  {
+    keywords: ['fog', 'visibility', 'mist'],
+    icon: mdiWeatherFog,
+  },
+  {
+    keywords: ['dust', 'smoke haze', 'haze', 'hazy'],
+    icon: mdiWeatherHazy,
+  },
+  // TODO: no drain/storm-sewer icon in MDI 7.4.47; pipe-disconnected is a stand-in
+  {
+    keywords: [
+      'storm sewer',
+      'storm drain',
+      'stormwater',
+      'storm water',
+      'drainage',
+      'drain',
+    ],
+    icon: mdiPipeDisconnected,
+  },
+  {
+    keywords: ['atmospheric deposition', 'atmospheric', 'deposition'],
+    icon: mdiWeatherPartlyCloudy,
+  },
+  {
+    keywords: ['precipitation', 'precip', 'rain', 'rainfall', 'storm'],
+    icon: mdiWeatherPouring,
+  },
+  {
+    keywords: ['solar', 'radiation', 'sun'],
+    icon: mdiWeatherSunny,
+  },
+  {
+    keywords: ['evaporation', 'evapotranspiration'],
+    icon: mdiWavesArrowUp,
+  },
+  {
+    keywords: ['wind', 'anemometer'],
+    icon: mdiWeatherWindy,
   },
 ]
 
+const matchesSiteTypeKeyword = (normalizedSiteType: string, keyword: string) =>
+  ` ${normalizedSiteType} `.includes(` ${normalizeSiteType(keyword)} `)
+
+// Prefer the longest / most specific keyword so multi-word site types resolve
+// before generic substrings like "moisture" or "sample".
 const getSiteTypeIcon = (siteType: string) => {
-  const normalized = siteType.toLowerCase()
+  const normalized = normalizeSiteType(siteType)
   return (
-    siteTypeIconRules.find(({ keywords }) =>
-      keywords.some((keyword) => normalized.includes(keyword))
-    )?.icon ?? mdiMapMarkerOutline
+    siteTypeIconRules
+      .flatMap(({ keywords, icon }) =>
+        keywords.map((keyword) => ({ keyword, icon }))
+      )
+      .filter(({ keyword }) => matchesSiteTypeKeyword(normalized, keyword))
+      .sort(
+        (a, b) =>
+          normalizeSiteType(b.keyword).length -
+          normalizeSiteType(a.keyword).length
+      )[0]?.icon ??
+    mdiMapMarkerOutline
   )
 }
 
@@ -411,6 +792,15 @@ const toggleSiteType = (siteType: string) => {
 
 const setExpanded = (value: boolean) => {
   isExpanded.value = value
+}
+
+// Let the user quickly jump to a site: typing a query and pressing Enter
+// selects the first match while leaving the search field focused and intact.
+const onSiteSearchEnter = () => {
+  const firstSite = availableSites.value[0]
+  if (firstSite) {
+    emit('select-site', firstSite.id)
+  }
 }
 
 const emitFilteredThings = () => {
@@ -624,22 +1014,6 @@ pruneSelectionToAvailable(
   font-size: 13px;
 }
 
-.site-search :deep(input::placeholder) {
-  color: #6f747b;
-  opacity: 1;
-  font-weight: 600;
-}
-
-.workspace-filter :deep(.v-field__input) {
-  font-weight: 600;
-}
-
-.workspace-selection {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .filter-section {
   display: flex;
   flex-direction: column;
@@ -716,7 +1090,7 @@ pruneSelectionToAvailable(
 
 .site-row {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -754,17 +1128,6 @@ pruneSelectionToAvailable(
   color: #5f6368;
 }
 
-.site-row-status {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 10px;
-  height: 10px;
-  border: 2px solid #ffffff;
-  border-radius: 999px;
-  background: #43a047;
-}
-
 .site-row-text {
   display: flex;
   min-width: 0;
@@ -790,17 +1153,6 @@ pruneSelectionToAvailable(
   color: #5f6368;
   font-size: 11px;
   font-weight: 500;
-}
-
-.site-row-type {
-  max-width: 96px;
-  overflow: hidden;
-  color: #2e7d32;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .empty-sites {
@@ -849,14 +1201,6 @@ pruneSelectionToAvailable(
   .filter-controls,
   .site-list {
     padding-inline: 16px;
-  }
-
-  .site-row {
-    grid-template-columns: 34px minmax(0, 1fr);
-  }
-
-  .site-row-type {
-    display: none;
   }
 }
 </style>
