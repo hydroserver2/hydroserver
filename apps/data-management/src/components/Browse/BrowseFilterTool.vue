@@ -1173,19 +1173,25 @@ pruneSelectionToAvailable(
   }
 }
 
-@media (max-width: 560px) {
-  .browse-filter-tool {
+@media (max-width: 700px) {
+  .browse-filter-tool--expanded {
     width: 100%;
+    height: 100%;
+    max-height: 100%;
   }
 
-  .browse-filter-tool--expanded {
-    height: calc(100% - 24px);
+  .browse-filter-tool:not(.browse-filter-tool--expanded) {
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    max-height: none;
   }
 
   .filter-panel {
-    border-radius: 10px;
+    border-radius: 0;
   }
+}
 
+@media (max-width: 560px) {
   .filter-header {
     padding: 16px 16px 10px;
   }

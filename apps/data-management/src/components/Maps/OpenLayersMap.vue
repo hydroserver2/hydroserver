@@ -725,6 +725,20 @@ watch(
   }
 )
 
+watch(
+  () => props.fitPadding,
+  () => {
+    if (!map) return
+    map.updateSize()
+    if (props.selectedThingId) {
+      void focusThingById(props.selectedThingId)
+    } else {
+      fitViewToMarkers(250)
+    }
+  },
+  { deep: true }
+)
+
 function getConfigByName(name: string): ConfigTileSource {
   const found = basemapTileSources.find((cfg) => cfg.name === name)
   return found || basemapTileSources[0]
@@ -918,6 +932,10 @@ watch(
 }
 
 @media (max-width: 900px) {
+  .selected-site-label {
+    display: none;
+  }
+
   .site-detail-card {
     left: 12px;
     right: 12px;
