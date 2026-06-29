@@ -176,6 +176,7 @@ import {
   mdiBridge,
   mdiChevronLeft,
   mdiCity,
+  mdiCloudArrowDownOutline,
   mdiCloudOutline,
   mdiCounter,
   mdiCrosshairsGps,
@@ -206,9 +207,7 @@ import {
   mdiRadar,
   mdiRecycle,
   mdiRoadVariant,
-  mdiRoutes,
   mdiSatelliteVariant,
-  mdiScaleBalance,
   mdiSignCaution,
   mdiSlopeUphill,
   mdiSmog,
@@ -218,6 +217,7 @@ import {
   mdiSpeedometer,
   mdiSprout,
   mdiSprinkler,
+  mdiStorageTank,
   mdiTerrain,
   mdiTestTube,
   mdiThermometer,
@@ -235,18 +235,17 @@ import {
   mdiWaterPlus,
   mdiWater,
   mdiWaterPump,
-  mdiWaterSync,
   mdiWaterWell,
   mdiWeatherCloudy,
   mdiWeatherFog,
   mdiWeatherHazy,
-  mdiWeatherPartlyCloudy,
   mdiWeatherPouring,
   mdiWeatherSunny,
   mdiWeatherWindy,
   mdiWaves,
   mdiWavesArrowRight,
   mdiWavesArrowUp,
+  mdiVectorPolyline,
 } from '@mdi/js'
 
 const vocabularyStore = useVocabularyStore()
@@ -378,7 +377,19 @@ const siteTypeIconRules = [
     icon: mdiSmog,
   },
   {
-    keywords: ['bacteria', 'pathogen', 'e coli', 'coliform'],
+    keywords: [
+      'bacteria',
+      'pathogen',
+      'e coli',
+      'coliform',
+      'habs',
+      'hab',
+      'algae',
+      'cyanobacteria',
+      'bloom',
+      'algal bloom',
+      'harmful algal bloom',
+    ],
     icon: mdiBacteria,
   },
   {
@@ -409,7 +420,7 @@ const siteTypeIconRules = [
       'reservoir profile',
       'reservoir profiles',
       'water column profile',
-      'profile',
+      'depth profile',
     ],
     icon: mdiLayersTripleOutline,
   },
@@ -458,7 +469,7 @@ const siteTypeIconRules = [
     icon: mdiFountain,
   },
   {
-    keywords: ['dry dam release', 'dry dam', 'dam'],
+    keywords: ['dry dam release', 'dry dam', 'dam', 'weir', 'sluice'],
     icon: mdiGate,
   },
   {
@@ -471,11 +482,13 @@ const siteTypeIconRules = [
       'level',
       'discharge',
       'flow station',
+      'flume',
+      'stilling well',
     ],
     icon: mdiGauge,
   },
   {
-    keywords: ['wetland', 'marsh', 'swamp'],
+    keywords: ['wetland', 'marsh', 'swamp', 'bog', 'fen'],
     icon: mdiGrass,
   },
   {
@@ -522,6 +535,8 @@ const siteTypeIconRules = [
       'waste water',
       'effluent',
       'sewer',
+      'reclaimed',
+      'reuse',
     ],
     icon: mdiRecycle,
   },
@@ -533,7 +548,6 @@ const siteTypeIconRules = [
     keywords: [
       'channel',
       'conveyance',
-      'diversion',
       'delivery',
       'route',
       'transfer',
@@ -543,7 +557,7 @@ const siteTypeIconRules = [
       'canal',
       'aqueduct',
     ],
-    icon: mdiRoutes,
+    icon: mdiVectorPolyline,
   },
   {
     keywords: ['remote sensing', 'satellite'],
@@ -582,6 +596,10 @@ const siteTypeIconRules = [
     icon: mdiTerrain,
   },
   {
+    keywords: ['tank', 'storage tank', 'cistern'],
+    icon: mdiStorageTank,
+  },
+  {
     keywords: [
       'water quality sample',
       'water quality samples',
@@ -610,11 +628,11 @@ const siteTypeIconRules = [
     icon: mdiTractor,
   },
   {
-    keywords: ['telemetry', 'telemetred', 'telemetered', 'radio', 'tower'],
+    keywords: ['telemetry', 'telemetered', 'radio', 'tower'],
     icon: mdiTransmissionTower,
   },
   {
-    keywords: ['valve', 'turnout', 'gate valve'],
+    keywords: ['valve', 'turnout', 'gate valve', 'headgate'],
     icon: mdiValve,
   },
   {
@@ -622,7 +640,7 @@ const siteTypeIconRules = [
     icon: mdiWarehouse,
   },
   {
-    keywords: ['creek', 'river', 'stream', 'brook'],
+    keywords: ['creek', 'river', 'stream', 'brook', 'tributary'],
     icon: mdiWater,
   },
   {
@@ -649,6 +667,10 @@ const siteTypeIconRules = [
       'nutrient',
       'water check',
       'water status',
+      'sediment',
+      'suspended sediment',
+      'tss',
+      'bedload',
     ],
     icon: mdiWaterCheckOutline,
   },
@@ -657,7 +679,13 @@ const siteTypeIconRules = [
     icon: mdiWaterCircle,
   },
   {
-    keywords: ['withdrawal', 'intake', 'diverted'],
+    keywords: [
+      'withdrawal',
+      'intake',
+      'diverted',
+      'diversion',
+      'point of diversion',
+    ],
     icon: mdiWaterMinus,
   },
   {
@@ -665,24 +693,22 @@ const siteTypeIconRules = [
     icon: mdiWaterOutline,
   },
   {
-    keywords: ['humidity', 'moisture'],
+    keywords: ['humidity', 'moisture', 'dew point'],
     icon: mdiWaterPercent,
   },
   {
-    keywords: ['injection', 'recharge', 'addition'],
+    keywords: [
+      'injection',
+      'recharge',
+      'addition',
+      'infiltration',
+      'managed aquifer recharge',
+    ],
     icon: mdiWaterPlus,
   },
   {
-    keywords: ['pump station', 'pump', 'pumping'],
+    keywords: ['pump station', 'pump', 'pumping', 'lift station'],
     icon: mdiWaterPump,
-  },
-  {
-    keywords: ['reclaimed', 'reuse'],
-    icon: mdiWaterSync,
-  },
-  {
-    keywords: ['water balance', 'water budget', 'sync'],
-    icon: mdiScaleBalance,
   },
   {
     keywords: [
@@ -693,6 +719,7 @@ const siteTypeIconRules = [
       'wellfield',
       'aquifer',
       'piezometer',
+      'borehole',
     ],
     icon: mdiWaterWell,
   },
@@ -738,12 +765,13 @@ const siteTypeIconRules = [
       'storm water',
       'drainage',
       'drain',
+      'outfall',
     ],
     icon: mdiPipeDisconnected,
   },
   {
     keywords: ['atmospheric deposition', 'atmospheric', 'deposition'],
-    icon: mdiWeatherPartlyCloudy,
+    icon: mdiCloudArrowDownOutline,
   },
   {
     keywords: ['precipitation', 'precip', 'rain', 'rainfall', 'storm'],
