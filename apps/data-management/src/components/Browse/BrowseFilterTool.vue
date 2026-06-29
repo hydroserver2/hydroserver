@@ -156,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useVocabularyStore } from '@/composables/useVocabulary'
@@ -261,10 +261,11 @@ const workspacesLoaded = ref(false)
 const isExpanded = ref(true)
 const isApplyingRouteState = ref(false)
 const hasAppliedInitialRouteState = ref(false)
+let routeApplyId = 0
 
 const emit = defineEmits<{
   filter: [ThingMarker[]]
-  'select-site': [string]
+  'select-site': [string | undefined]
 }>()
 
 const props = defineProps({
@@ -814,13 +815,15 @@ const querySignature = (query: Record<string, unknown>) =>
       .map((key) => [key, query[key]])
   )
 
-const syncRouteFromSelection = async () => {
+const syncRouteFromSelection = async (siteId = props.selectedSiteId) => {
   if (isApplyingRouteState.value || !hasAppliedInitialRouteState.value) return
 
   const query = buildBrowseFilterQuery(route.query, {
+    siteId,
     searchText: siteSearch.value,
     workspaceIds: selectedWorkspaces.value.map((workspace) => workspace.id),
     siteTypes: selectedSiteTypes.value,
+    drawer: isExpanded.value,
   })
 
   if (querySignature(query) === querySignature(route.query)) return
@@ -832,18 +835,16 @@ const syncRouteFromSelection = async () => {
   })
 }
 
-const applyRouteState = () => {
+const applyRouteState = async () => {
   if (!props.thingsLoaded || !workspacesLoaded.value) return
 
+  const applyId = ++routeApplyId
   const state = parseBrowseFilterQuery(route.query)
   isApplyingRouteState.value = true
 
-  const linkedSiteName = state.siteIds.length
-    ? sortedThings.value.find((thing) => thing.id === state.siteIds[0])?.name ??
-      ''
-    : ''
+  const linkedSiteId = state.siteIds[0]
 
-  siteSearch.value = state.searchText || linkedSiteName
+  siteSearch.value = state.searchText
   selectedWorkspaces.value = state.workspaceIds.length
     ? workspaces.value.filter((workspace) =>
         state.workspaceIds.includes(workspace.id)
@@ -855,10 +856,17 @@ const applyRouteState = () => {
     isExpanded.value = state.drawer
   }
 
+  if (linkedSiteId !== props.selectedSiteId) {
+    emit('select-site', linkedSiteId)
+  }
+
+  await nextTick()
+  if (applyId !== routeApplyId) return
+
   isApplyingRouteState.value = false
   hasAppliedInitialRouteState.value = true
   emitFilteredThings()
-  void syncRouteFromSelection()
+  void syncRouteFromSelection(linkedSiteId)
 }
 
 const onClearFilters = () => {
@@ -873,7 +881,7 @@ onMounted(async () => {
     expand_related: true,
   })
   workspacesLoaded.value = true
-  applyRouteState()
+  void applyRouteState()
 })
 
 watch([selectedSiteTypes, selectedWorkspaces, siteSearch], emitFilteredThings, {
@@ -881,9 +889,14 @@ watch([selectedSiteTypes, selectedWorkspaces, siteSearch], emitFilteredThings, {
 })
 
 watch(
-  [selectedSiteTypes, selectedWorkspaces, siteSearch],
-  syncRouteFromSelection,
+  [selectedSiteTypes, selectedWorkspaces, siteSearch, isExpanded],
+  () => syncRouteFromSelection(),
   { deep: true }
+)
+
+watch(
+  () => props.selectedSiteId,
+  (siteId) => syncRouteFromSelection(siteId)
 )
 
 watch(

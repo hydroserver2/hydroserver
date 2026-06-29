@@ -96,28 +96,27 @@ describe('parseBrowseFilterQuery', () => {
   it('reads canonical query params', () => {
     expect(
       parseBrowseFilterQuery({
-        sites: 'thing-1',
+        selectedSite: 'thing-1',
+        search: 'Logan',
         workspaces: ['workspace-1', 'workspace-2'],
         siteTypes: ['Lake', 'Stream'],
         drawer: '0',
       })
     ).toEqual({
       siteIds: ['thing-1'],
-      searchText: '',
+      searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake', 'Stream'],
       drawer: false,
     })
   })
 
-  it('deduplicates values and accepts legacy singular aliases', () => {
+  it('deduplicates canonical values and accepts comma-separated lists', () => {
     expect(
       parseBrowseFilterQuery({
-        site: 'thing-1',
-        siteId: 'thing-1',
-        workspace: 'workspace-1,workspace-2',
-        workspaceIds: ['workspace-2'],
-        siteType: ['Lake', 'Lake'],
+        selectedSite: ['thing-1', 'thing-1'],
+        workspaces: 'workspace-1,workspace-2',
+        siteTypes: ['Lake', 'Lake'],
         search: 'Logan',
         drawer: 'yes',
       })
@@ -150,20 +149,20 @@ describe('buildBrowseFilterQuery', () => {
         }
       )
     ).toEqual({
-      sites: 'thing-1',
+      selectedSite: 'thing-1',
       search: 'Logan',
       workspaces: ['workspace-1', 'workspace-2'],
       siteTypes: 'Lake',
     })
   })
 
-  it('removes stale Browse aliases while preserving unrelated query params', () => {
+  it('removes stale Browse query params while preserving unrelated query params', () => {
     expect(
       buildBrowseFilterQuery(
         {
-          sites: 'thing-1',
-          workspace: 'workspace-1',
-          siteType: 'Lake',
+          selectedSite: 'thing-1',
+          workspaces: 'workspace-1',
+          siteTypes: 'Lake',
           page: '2',
         },
         {

@@ -19,16 +19,10 @@ export interface BrowseFilterSelectionState {
 }
 
 const BROWSE_FILTER_QUERY_KEYS = [
-  'sites',
-  'site',
-  'siteId',
+  'selectedSite',
   'search',
-  'q',
   'workspaces',
-  'workspace',
-  'workspaceIds',
   'siteTypes',
-  'siteType',
   'drawer',
 ]
 
@@ -67,14 +61,10 @@ export function parseBrowseFilterQuery(
   query: LocationQuery
 ): BrowseFilterRouteState {
   return {
-    siteIds: readQueryValues(query, ['sites', 'site', 'siteId']),
-    searchText: queryValues(query.search)[0] ?? queryValues(query.q)[0] ?? '',
-    workspaceIds: readQueryValues(query, [
-      'workspaces',
-      'workspace',
-      'workspaceIds',
-    ]),
-    siteTypes: readQueryValues(query, ['siteTypes', 'siteType']),
+    siteIds: readQueryValues(query, ['selectedSite']),
+    searchText: queryValues(query.search)[0] ?? '',
+    workspaceIds: readQueryValues(query, ['workspaces']),
+    siteTypes: readQueryValues(query, ['siteTypes']),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
@@ -93,7 +83,7 @@ export function buildBrowseFilterQuery(
   const workspaces = queryArray(state.workspaceIds)
   const siteTypes = queryArray(state.siteTypes)
 
-  if (sites !== undefined) nextQuery.sites = sites
+  if (sites !== undefined) nextQuery.selectedSite = sites
   if (searchText) nextQuery.search = searchText
   if (workspaces !== undefined) nextQuery.workspaces = workspaces
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes

@@ -182,7 +182,7 @@ import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { navbarLogo } from '@/config/navbarConfig'
-import { useRoute } from 'vue-router'
+import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import hs from '@hydroserver/client'
 import router from '@/router/router'
@@ -212,7 +212,7 @@ const sidebar = useSidebarStore()
 const drawer = ref(false)
 
 type NavItemAttrs = {
-  to?: string
+  to?: RouteLocationRaw
   href?: string
 }
 
