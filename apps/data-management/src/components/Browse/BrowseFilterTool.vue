@@ -22,14 +22,16 @@
 
         <div class="filter-header-actions">
           <v-btn
-            icon
+            v-if="hasActiveFilters"
+            class="reset-filters-btn"
+            variant="text"
             color="primary"
-            size="34"
-            rounded="lg"
-            aria-label="Add site"
-            to="/sites"
+            size="small"
+            :prepend-icon="mdiFilterOffOutline"
+            title="Clear all filters"
+            @click="onClearFilters"
           >
-            <v-icon :icon="mdiPlus" size="20" />
+            Reset
           </v-btn>
 
           <v-btn
@@ -112,17 +114,6 @@
           </div>
         </section>
 
-        <div v-if="hasActiveFilters" class="filter-actions">
-          <v-btn
-            variant="text"
-            color="primary"
-            density="comfortable"
-            :prepend-icon="mdiClose"
-            @click="onClearFilters"
-          >
-            Clear filters
-          </v-btn>
-        </div>
       </div>
 
       <v-divider />
@@ -176,9 +167,9 @@ import type { ThingMarker } from '@/types'
 import {
   mdiBriefcaseOutline,
   mdiChevronLeft,
-  mdiClose,
   mdiEarth,
   mdiFactory,
+  mdiFilterOffOutline,
   mdiFlaskOutline,
   mdiFountain,
   mdiGauge,
@@ -187,7 +178,6 @@ import {
   mdiMapMarkerOutline,
   mdiMagnify,
   mdiPipe,
-  mdiPlus,
   mdiSnowflake,
   mdiTerrain,
   mdiThermometer,
@@ -690,10 +680,16 @@ pruneSelectionToAvailable(
   background: rgba(33, 150, 243, 0.1);
 }
 
-.filter-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: -6px;
+.reset-filters-btn {
+  min-width: 0;
+  padding-inline: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.reset-filters-btn :deep(.v-btn__prepend) {
+  margin-inline-end: 4px;
 }
 
 .site-list {
