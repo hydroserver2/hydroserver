@@ -11,9 +11,11 @@
     <OpenLayersMap
       v-if="loaded"
       class="browse-map"
+      selectable
       :things="filteredThings"
       :fit-padding="mapFitPadding"
       :selected-thing-id="selectedThingId"
+      @select="selectedThingId = $event"
     />
     <FullScreenLoader v-else loading-text="Loading map..." />
   </div>

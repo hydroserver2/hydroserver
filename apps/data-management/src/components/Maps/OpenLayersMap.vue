@@ -37,11 +37,61 @@
         </li>
       </ul>
     </div>
+
+    <transition name="detail-card">
+      <div v-if="selectable && detailThing" class="site-detail-card">
+        <div class="detail-accent" />
+        <div class="detail-body">
+          <div class="detail-header">
+            <div class="detail-heading">
+              <h2 class="detail-name">{{ detailThing.name }}</h2>
+              <div v-if="detailSubtitle" class="detail-meta">
+                <v-icon :icon="mdiMapMarker" size="14" />
+                <span>{{ detailSubtitle }}</span>
+              </div>
+            </div>
+            <button
+              class="detail-close"
+              aria-label="Close"
+              @click="emit('select', undefined)"
+            >
+              <v-icon :icon="mdiClose" size="18" />
+            </button>
+          </div>
+
+          <div v-if="detailCoordinates" class="detail-grid">
+            <div class="detail-field-label">Coordinates</div>
+            <div class="detail-field-value detail-mono">
+              {{ detailCoordinates }}
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <v-btn
+              color="primary"
+              variant="flat"
+              style="flex: 1"
+              :append-icon="mdiChevronRight"
+              :href="`/sites/${detailThing.id}`"
+            >
+              View details
+            </v-btn>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, type PropType } from 'vue'
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed,
+  type PropType,
+} from 'vue'
 import hs, { Thing } from '@hydroserver/client'
 import { MapThing, MapThingWithColor } from '@/types'
 import {
@@ -53,9 +103,12 @@ import {
 import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
+import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature, Overlay } from 'ol'
+import type { FeatureLike } from 'ol/Feature'
 import Point from 'ol/geom/Point'
+import { Style, Icon, Text, Fill, Stroke } from 'ol/style'
 import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
 import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
@@ -63,7 +116,7 @@ import { fetchLocationData } from '@/utils/maps/location'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
 import mapMarkerUrl from '@/assets/map-marker-64.png?url'
 import { OSM, XYZ } from 'ol/source'
-import { mdiMapMarker } from '@mdi/js'
+import { mdiMapMarker, mdiChevronRight, mdiClose } from '@mdi/js'
 
 const props = defineProps({
   things: {
@@ -81,8 +134,12 @@ const props = defineProps({
     type: String,
     default: undefined,
   },
+  // Browse-style selection: clicking a marker selects it (instead of opening
+  // the anchored popup), the selected marker grows + shows its name label, and
+  // details render in a fixed card rather than a marker-tethered popup.
+  selectable: Boolean,
 })
-const emit = defineEmits(['location-clicked'])
+const emit = defineEmits(['location-clicked', 'select'])
 
 interface ConfigTileSource {
   name: string
@@ -142,6 +199,41 @@ let selectedThingPopupTimer: number | undefined
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
 const markerLayer = ref<WebGLVectorLayer>()
+
+// ── Browse-style selection (only used when `selectable`) ──
+const detailThing = ref<MapThing>()
+const selectionSource = new VectorSource<Feature>()
+let selectionLayer: VectorLayer | undefined
+// Final scale of the grown selection marker, relative to the 64px source png.
+const SELECTION_SCALE = 0.78
+let selectionScale = SELECTION_SCALE
+let selectionAnimId = 0
+
+const detailSubtitle = computed(() => {
+  const thing = detailThing.value
+  if (!thing) return ''
+  const parts: string[] = []
+  if (isThingMarker(thing)) {
+    if (thing.siteType) parts.push(thing.siteType)
+  } else {
+    if (thing.siteType) parts.push(thing.siteType)
+    const area = [thing.location.adminArea2, thing.location.adminArea1]
+      .filter(Boolean)
+      .join(', ')
+    if (area) parts.push(area)
+  }
+  return parts.join(' · ')
+})
+
+const detailCoordinates = computed(() => {
+  const thing = detailThing.value
+  if (!thing) return ''
+  const [lng, lat] = getThingCoordinates(thing as MapThingWithColor)
+  const latNum = Number(lat)
+  const lngNum = Number(lng)
+  if (!isFinite(latNum) || !isFinite(lngNum)) return ''
+  return `${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`
+})
 
 const uniqueColoredThings = computed(() => {
   const firstOccurrenceMap = new Map()
@@ -226,6 +318,77 @@ const openPopupForFeature = async (feature: Feature) => {
   const popupThing = await getPopupThing(thing)
   popupContent.value!.innerHTML = generateMarkerContent(popupThing)
   popupOverlay.setPosition(geometry.getCoordinates())
+}
+
+// Style for the grown, labelled selection marker drawn on top of the WebGL
+// markers. Mirrors the design: enlarged pin + the site name beside it.
+const selectionStyle = (feature: FeatureLike) => {
+  const thing = getFeatureThing(feature as Feature)
+  const color = (feature.get('markerColor') as string) || '#D32F2F'
+  return new Style({
+    image: new Icon({
+      src: mapMarkerUrl,
+      anchor: [0.5, 1],
+      color,
+      scale: selectionScale,
+    }),
+    text: new Text({
+      text: thing?.name ?? '',
+      font: "600 13px Roboto, 'Helvetica Neue', Arial, sans-serif",
+      textAlign: 'left',
+      textBaseline: 'middle',
+      offsetX: 14,
+      offsetY: -Math.round(64 * selectionScale * 0.5),
+      fill: new Fill({ color: 'rgba(0,0,0,0.78)' }),
+      backgroundFill: new Fill({ color: 'rgba(255,255,255,0.95)' }),
+      backgroundStroke: new Stroke({ color: 'rgba(0,0,0,0.12)', width: 1 }),
+      padding: [3, 8, 3, 8],
+    }),
+  })
+}
+
+// Quick "pop" as the marker grows in, for parity with the design's CSS scale.
+const animateSelectionScale = (from: number, to: number, duration = 180) => {
+  const animId = ++selectionAnimId
+  const start = performance.now()
+  const ease = (k: number) => 1 - Math.pow(1 - k, 2)
+  const step = (now: number) => {
+    if (animId !== selectionAnimId) return
+    const k = Math.min(1, (now - start) / duration)
+    selectionScale = from + (to - from) * ease(k)
+    selectionLayer?.changed()
+    if (k < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
+const updateSelectionMarker = (thingId?: string | null) => {
+  selectionSource.clear()
+  if (!thingId) {
+    selectionAnimId++ // stop any in-flight grow
+    return
+  }
+  const feature = findFeatureByThingId(thingId)
+  const geometry = feature?.getGeometry()
+  if (!feature || !(geometry instanceof Point)) return
+
+  const clone = new Feature({ geometry: geometry.clone() })
+  clone.set('markerColor', feature.get('markerColor'))
+  clone.set('thing', getFeatureThing(feature))
+  selectionSource.addFeature(clone)
+  animateSelectionScale(SELECTION_SCALE * 0.78, SELECTION_SCALE)
+}
+
+const loadDetailThing = async (thingId?: string | null) => {
+  if (!thingId) {
+    detailThing.value = undefined
+    return
+  }
+  const base = props.things.find((thing) => thing.id === thingId)
+  if (!base) return
+  detailThing.value = base // show immediately, then enrich
+  const detailed = await getPopupThing(base)
+  if (props.selectedThingId === thingId) detailThing.value = detailed
 }
 
 const getPaddedCenter = (
@@ -352,6 +515,7 @@ const focusThingById = (thingId?: string | null) => {
   if (!map || !thingId) {
     activeFlyId++ // cancel any in-flight fly
     popupOverlay?.setPosition(undefined)
+    if (props.selectable) updateSelectionMarker(undefined)
     return
   }
 
@@ -366,6 +530,13 @@ const focusThingById = (thingId?: string | null) => {
   const targetCenter = getPaddedCenter(targetCoordinates, targetZoom)
 
   popupOverlay?.setPosition(undefined)
+
+  if (props.selectable) {
+    // Browse mode: grow the marker + show its label; details live in the card.
+    updateSelectionMarker(thingId)
+    flyTo(targetCenter, targetZoom, { duration: 700 })
+    return
+  }
 
   flyTo(targetCenter, targetZoom, {
     duration: 700,
@@ -442,6 +613,11 @@ const initializeMap = () => {
     },
   })
 
+  selectionLayer = new VectorLayer({
+    source: selectionSource,
+    style: selectionStyle,
+  })
+
   popupOverlay = new Overlay({
     element: popupContainer.value,
     autoPan: props.singleMarkerMode ? false : { animation: { duration: 250 } },
@@ -454,7 +630,7 @@ const initializeMap = () => {
 
   map = new OlMap({
     target: mapContainer.value,
-    layers: [rasterLayer, markerLayer.value],
+    layers: [rasterLayer, markerLayer.value, selectionLayer],
     overlays: [popupOverlay],
     view: new View(defaultView),
   })
@@ -473,6 +649,21 @@ const initializeMap = () => {
     }
 
     const rawFeatures = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
+
+    // Browse mode: clicks drive selection rather than opening a popup.
+    if (props.selectable) {
+      if (!rawFeatures) {
+        emit('select', undefined)
+        return
+      }
+      const clickedFeature = Array.isArray(rawFeatures.get('features'))
+        ? rawFeatures.get('features')[0]
+        : rawFeatures
+      const thingId = getFeatureThing(clickedFeature as Feature)?.id
+      if (thingId) emit('select', thingId)
+      return
+    }
+
     if (!rawFeatures) {
       popupOverlay?.setPosition(undefined)
       return
@@ -499,9 +690,21 @@ const initializeMap = () => {
   fitViewToMarkers()
 }
 
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && props.selectedThingId) emit('select', undefined)
+}
+
 onMounted(async () => {
   if (!mapContainer.value) return
   initializeMap()
+  if (props.selectable) {
+    void loadDetailThing(props.selectedThingId)
+    window.addEventListener('keydown', onKeydown)
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
 })
 
 watch(() => [props.things] as const, updateFeatures, { deep: true })
@@ -510,6 +713,7 @@ watch(
   () => props.selectedThingId,
   (thingId) => {
     void focusThingById(thingId)
+    if (props.selectable) void loadDetailThing(thingId)
   }
 )
 
@@ -578,6 +782,119 @@ watch(
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Browse selected-site detail card ── */
+.site-detail-card {
+  position: absolute;
+  left: 412px;
+  bottom: 16px;
+  width: 348px;
+  z-index: 6;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.detail-accent {
+  height: 4px;
+  background: rgb(var(--v-theme-primary));
+}
+
+.detail-body {
+  padding: 13px 16px 15px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.detail-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-name {
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.detail-close {
+  flex-shrink: 0;
+  display: flex;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.detail-close:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.detail-grid {
+  margin: 13px 0;
+  padding: 11px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+}
+
+.detail-field-label {
+  font-size: 10.5px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 2px;
+}
+
+.detail-field-value {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.detail-mono {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-card-enter-active,
+.detail-card-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.detail-card-enter-from,
+.detail-card-leave-to {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+@media (max-width: 900px) {
+  .site-detail-card {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
 }
 
 .ol-popup {
