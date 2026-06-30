@@ -48,10 +48,11 @@ def get_etl_tasks(
             principal=request.principal,
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "workspace_id", "data_connection_id",
+                "order_by", "thing_id", "workspace_id", "data_connection_id",
                 "latest_run_started_at_min", "latest_run_started_at_max",
                 "latest_run_finished_at_min", "latest_run_finished_at_max",
             }),
+            **({"thing": query.thing_id} if "thing_id" in query.model_fields_set else {}),
             **({"workspace": query.workspace_id} if "workspace_id" in query.model_fields_set else {}),
             **({"data_connection": query.data_connection_id}
                if "data_connection_id" in query.model_fields_set else {}),
