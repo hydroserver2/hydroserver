@@ -5816,6 +5816,56 @@
         "title": "NotificationResponse",
         "type": "object"
       },
+      "ObservationBulkColumnarPostBody": {
+        "properties": {
+          "phenomenonTime": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Phenomenontime",
+            "type": "array"
+          },
+          "result": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Result",
+            "type": "array"
+          },
+          "resultQualifierCodes": {
+            "default": [],
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Resultqualifiercodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "phenomenonTime",
+          "result"
+        ],
+        "title": "ObservationBulkColumnarPostBody",
+        "type": "object"
+      },
       "ObservationBulkDeleteBody": {
         "properties": {
           "phenomenonTimeEnd": {
@@ -14036,7 +14086,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ObservationBulkPostBody"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkPostBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
+                  }
+                ],
+                "title": "Data"
               }
             }
           },
