@@ -48,7 +48,7 @@
 
     <div v-if="isMobile" class="datastream-mobile-list">
       <v-card
-        v-for="item in mobileDatastreams"
+        v-for="item in tableDatastreams"
         :key="item.id"
         class="datastream-card"
         :class="{
@@ -1106,9 +1106,6 @@ const thingIdRef = computed(() => thing.value!.id)
 const downloading = reactive<Record<string, boolean>>({})
 const search = ref()
 const datastreamSectionRef = ref<any>(null)
-const datastreamTableRef = ref<{
-  scrollToIndex?: (index: number) => void
-} | null>(null)
 const highlightedDatastreamId = ref('')
 const DATASTREAM_HIGHLIGHT_DURATION_MS = 2500
 let highlightTimeout: number | undefined
@@ -1199,6 +1196,13 @@ const latestStatusClass = (datastream: Datastream) => {
 }
 
 const visibleDatastreams = computed(() => {
+  const unitsById = new Map(units.value.map((u) => [u.id, u]))
+  const sensorsById = new Map(sensors.value.map((s) => [s.id, s]))
+  const opsById = new Map(observedProperties.value.map((o) => [o.id, o]))
+  const processingLevelsById = new Map(
+    processingLevels.value.map((p) => [p.id, p])
+  )
+
   return items.value
     .filter(
       (d) =>
@@ -1210,14 +1214,10 @@ const visibleDatastreams = computed(() => {
         )
     )
     .map((d) => {
-      const unit = units.value.find((u) => u.id === d.unitId)
-      const sensor = sensors.value.find((s) => s.id === d.sensorId)
-      const op = observedProperties.value.find(
-        (o) => o.id === d.observedPropertyId
-      )
-      const pl = processingLevels.value.find(
-        (p) => p.id === d.processingLevelId
-      )
+      const unit = unitsById.get(d.unitId)
+      const sensor = sensorsById.get(d.sensorId)
+      const op = opsById.get(d.observedPropertyId)
+      const pl = processingLevelsById.get(d.processingLevelId)
 
       const mapped = {
         ...d,
@@ -1335,11 +1335,6 @@ async function scrollToTargetDatastream() {
     behavior: 'smooth',
   })
 
-  if (!isMobile.value && targetDatastreamIndex.value >= 0) {
-    datastreamTableRef.value?.scrollToIndex?.(targetDatastreamIndex.value)
-    await nextTick()
-  }
-
   window.setTimeout(() => {
     findTargetDatastreamElement()?.scrollIntoView({
       block: 'center',
@@ -1355,10 +1350,6 @@ const isDatastreamStale = (datastream: Datastream) => {
   const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000)
   return endTime < seventyTwoHoursAgo
 }
-
-const mobileDatastreams = computed(() => {
-  return tableDatastreams.value
-})
 
 const linkedTasksForDatastream = (datastreamId: string) =>
   linkedTasksByDatastreamId.value[datastreamId] ?? []
@@ -1511,7 +1502,7 @@ const dataProductRouteName = (task: any) => {
   return 'OrchestrationAggregationDetails'
 }
 
-const routeForDataProductTask = (task: any) => {
+const siteScopedRoute = (task: any, name: string, view: string) => {
   const query: Record<string, string> = {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
@@ -1519,27 +1510,14 @@ const routeForDataProductTask = (task: any) => {
   const siteId = task.thing?.id ?? task.thingId ?? thing.value?.id
   if (siteId) query.site_id = String(siteId)
 
-  return {
-    name: dataProductRouteName(task),
-    params: { view: 'aggregation' },
-    query,
-  }
+  return { name, params: { view }, query }
 }
 
-const routeForMonitoringTask = (task: any) => {
-  const query: Record<string, string> = {
-    workspace_id: props.workspace.id,
-    task_id: String(task.id),
-  }
-  const siteId = task.thing?.id ?? task.thingId ?? thing.value?.id
-  if (siteId) query.site_id = String(siteId)
+const routeForDataProductTask = (task: any) =>
+  siteScopedRoute(task, dataProductRouteName(task), 'aggregation')
 
-  return {
-    name: 'OrchestrationQualityDetails',
-    params: { view: 'quality' },
-    query,
-  }
-}
+const routeForMonitoringTask = (task: any) =>
+  siteScopedRoute(task, 'OrchestrationQualityDetails', 'quality')
 
 const outputDatastreamId = (transformation: any) =>
   transformation?.outputDatastream?.id ?? transformation?.outputDatastreamId
@@ -1560,10 +1538,12 @@ const monitoringViolationCount = (
   const latestRun = task?.latestRun
   if (!latestRun || latestRun.status !== 'SUCCESS') return null
 
-  const totalViolations = getMonitoringRulesViolated(latestRun)
+  const detailedViolations = getMonitoringRunViolations(latestRun)
+  const totalViolations = detailedViolations.length
+    ? countDistinctMonitoringViolationRules(detailedViolations)
+    : getMonitoringRulesViolated(latestRun)
   if (totalViolations === 0) return 0
 
-  const detailedViolations = getMonitoringRunViolations(latestRun)
   const datastreamViolations = detailedViolations.filter(
     (violation) => violation.datastreamId === datastreamId
   )
