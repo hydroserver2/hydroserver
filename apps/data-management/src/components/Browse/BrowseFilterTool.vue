@@ -176,7 +176,6 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useVocabularyStore } from '@/composables/useVocabulary'
 import {
   buildBrowseFilterQuery,
   filterThingMarkers,
@@ -265,7 +264,6 @@ import {
   mdiVectorPolyline,
 } from '@mdi/js'
 
-const vocabularyStore = useVocabularyStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -355,25 +353,8 @@ const availableSiteTypes = computed(() => {
       []
     ).map((thing) => thing.siteType)
   )
-  const vocabularyOrder = new Map(
-    vocabularyStore.siteTypes.map((siteType, index) => [
-      normalizeSiteType(siteType),
-      index,
-    ])
-  )
 
-  return [...siteTypes]
-    .filter(Boolean)
-    .sort((a, b) => {
-      const aOrder = vocabularyOrder.get(normalizeSiteType(a))
-      const bOrder = vocabularyOrder.get(normalizeSiteType(b))
-
-      if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder
-      if (aOrder !== undefined) return -1
-      if (bOrder !== undefined) return 1
-
-      return a.localeCompare(b)
-    })
+  return [...siteTypes].filter(Boolean).sort((a, b) => a.localeCompare(b))
 })
 
 const hasActiveFilters = computed(
@@ -825,25 +806,21 @@ const siteTypeIconRules = [
   },
 ]
 
-const matchesSiteTypeKeyword = (normalizedSiteType: string, keyword: string) =>
-  ` ${normalizedSiteType} `.includes(` ${normalizeSiteType(keyword)} `)
+// Flatten the rules once, pre-normalizing keywords and sorting longest-first so
+// multi-word site types resolve before generic substrings like "moisture" or
+// "sample". `find` then returns the most specific match.
+const normalizedSiteTypeIcons = siteTypeIconRules
+  .flatMap(({ keywords, icon }) =>
+    keywords.map((keyword) => ({ keyword: normalizeSiteType(keyword), icon }))
+  )
+  .sort((a, b) => b.keyword.length - a.keyword.length)
 
-// Prefer the longest / most specific keyword so multi-word site types resolve
-// before generic substrings like "moisture" or "sample".
 const getSiteTypeIcon = (siteType: string) => {
-  const normalized = normalizeSiteType(siteType)
+  const normalized = ` ${normalizeSiteType(siteType)} `
   return (
-    siteTypeIconRules
-      .flatMap(({ keywords, icon }) =>
-        keywords.map((keyword) => ({ keyword, icon }))
-      )
-      .filter(({ keyword }) => matchesSiteTypeKeyword(normalized, keyword))
-      .sort(
-        (a, b) =>
-          normalizeSiteType(b.keyword).length -
-          normalizeSiteType(a.keyword).length
-      )[0]?.icon ??
-    mdiMapMarkerOutline
+    normalizedSiteTypeIcons.find(({ keyword }) =>
+      normalized.includes(` ${keyword} `)
+    )?.icon ?? mdiMapMarkerOutline
   )
 }
 

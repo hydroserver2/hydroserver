@@ -201,7 +201,6 @@ let rasterLayer: TileLayer
 let popupOverlay: Overlay | undefined
 let selectionLabelOverlay: Overlay | undefined
 let selectedThingTransitionId = 0
-let selectedThingPopupTimer: number | undefined
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
 const markerLayer = ref<WebGLVectorLayer>()
@@ -220,10 +219,8 @@ const detailSubtitle = computed(() => {
   const thing = detailThing.value
   if (!thing) return ''
   const parts: string[] = []
-  if (isThingMarker(thing)) {
-    if (thing.siteType) parts.push(thing.siteType)
-  } else {
-    if (thing.siteType) parts.push(thing.siteType)
+  if (thing.siteType) parts.push(thing.siteType)
+  if (!isThingMarker(thing)) {
     const area = [thing.location.adminArea2, thing.location.adminArea1]
       .filter(Boolean)
       .join(', ')
@@ -508,11 +505,6 @@ const focusThingById = (thingId?: string | null) => {
   selectedThingTransitionId++
   const transitionId = selectedThingTransitionId
 
-  if (selectedThingPopupTimer !== undefined) {
-    window.clearTimeout(selectedThingPopupTimer)
-    selectedThingPopupTimer = undefined
-  }
-
   if (!map || !thingId) {
     activeFlyId++ // cancel any in-flight fly
     popupOverlay?.setPosition(undefined)
@@ -617,7 +609,7 @@ const initializeMap = () => {
       ],
       'icon-height': ['interpolate', ['linear'], ['zoom'], 1, 4, 8, 32, 16, 48],
       'icon-anchor': [0.5, 1],
-      'icon-color': ['get', 'markerColor'], // red-darken-2
+      'icon-color': ['get', 'markerColor'],
       'icon-opacity': 0.85,
     },
   })
@@ -721,6 +713,14 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  // Cancel in-flight animations and release the OL map / WebGL context so
+  // repeated navigation to Browse doesn't leak GPU contexts or layers.
+  activeFlyId++
+  selectionAnimId++
+  if (map) {
+    map.setTarget(undefined)
+    map.dispose()
+  }
 })
 
 watch(() => [props.things] as const, updateFeatures, { deep: true })
