@@ -13,7 +13,9 @@
     >
       <v-icon :icon="mdiMagnify" size="16" color="primary" />
       <span class="filter-chip-label">Sites</span>
-      <span class="filter-chip-count">({{ availableSites.length }})</span>
+      <span class="filter-chip-count">
+        {{ thingsLoaded ? `(${availableSites.length})` : "..." }}
+      </span>
     </v-btn>
 
     <v-card v-else class="filter-panel" elevation="10">
@@ -58,6 +60,7 @@
           hide-details
           color="primary"
           autocomplete="off"
+          :disabled="!thingsLoaded"
           @keydown.enter.prevent="onSiteSearchEnter"
           @click:clear="siteSearch = ''"
         />
@@ -75,6 +78,7 @@
           hide-details
           color="primary"
           :prepend-inner-icon="mdiBriefcaseOutline"
+          :disabled="!thingsLoaded"
         >
           <template v-slot:selection="{ item, index }">
             <v-chip
@@ -125,9 +129,22 @@
       <v-divider />
 
       <div class="site-list">
-        <div class="site-list-count">{{ availableSites.length }} sites</div>
+        <div class="site-list-count">
+          {{ thingsLoaded ? `${availableSites.length} sites` : 'Loading sites' }}
+        </div>
 
-        <div v-if="availableSites.length" class="site-list-items">
+        <div v-if="!thingsLoaded" class="site-list-items">
+          <div v-for="index in 8" :key="index" class="site-row skeleton-row">
+            <span class="site-row-icon skeleton-icon" />
+
+            <span class="site-row-text">
+              <span class="skeleton-line skeleton-line--name" />
+              <span class="skeleton-line skeleton-line--workspace" />
+            </span>
+          </div>
+        </div>
+
+        <div v-else-if="availableSites.length" class="site-list-items">
           <button
             v-for="site in availableSites"
             :key="site.id"
@@ -338,8 +355,25 @@ const availableSiteTypes = computed(() => {
       []
     ).map((thing) => thing.siteType)
   )
+  const vocabularyOrder = new Map(
+    vocabularyStore.siteTypes.map((siteType, index) => [
+      normalizeSiteType(siteType),
+      index,
+    ])
+  )
 
-  return vocabularyStore.siteTypes.filter((siteType) => siteTypes.has(siteType))
+  return [...siteTypes]
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aOrder = vocabularyOrder.get(normalizeSiteType(a))
+      const bOrder = vocabularyOrder.get(normalizeSiteType(b))
+
+      if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder
+      if (aOrder !== undefined) return -1
+      if (bOrder !== undefined) return 1
+
+      return a.localeCompare(b)
+    })
 })
 
 const hasActiveFilters = computed(
@@ -1169,6 +1203,46 @@ pruneSelectionToAvailable(
   color: #5f6368;
 }
 
+.skeleton-row {
+  pointer-events: none;
+}
+
+.skeleton-icon,
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  background: #e8ecf1;
+}
+
+.skeleton-icon::after,
+.skeleton-line::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
+  content: "";
+  transform: translateX(-100%);
+  animation: browse-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.skeleton-line--name {
+  width: min(72%, 190px);
+}
+
+.skeleton-line--workspace {
+  width: min(48%, 140px);
+}
+
 .site-row-text {
   display: flex;
   min-width: 0;
@@ -1205,6 +1279,12 @@ pruneSelectionToAvailable(
   font-size: 12px;
   font-weight: 600;
   text-align: center;
+}
+
+@keyframes browse-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 900px) {

@@ -565,9 +565,17 @@ async function updateFeatures() {
   vectorSource.clear()
   vectorSource.addFeatures(features)
 
+  if (props.selectedThingId) {
+    if (findFeatureByThingId(props.selectedThingId)) {
+      focusThingById(props.selectedThingId)
+      return
+    }
+
+    if (props.selectable) updateSelectionMarker(undefined)
+  }
+
   // 3) zoom to the extent of whatever source we used
   fitViewToMarkers()
-  focusThingById(props.selectedThingId)
 }
 
 const initializeMap = () => {
