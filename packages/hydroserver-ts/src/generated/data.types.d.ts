@@ -3493,6 +3493,12 @@ export interface components {
              */
             page_size: number | null;
             /**
+             * Thing Id
+             * @description Filter ETL tasks by thing ID.
+             * @default []
+             */
+            thing_id: string[];
+            /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
              * @default []
@@ -7574,6 +7580,8 @@ export interface operations {
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter ETL tasks by thing ID. */
+                thing_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter ETL tasks by data connection ID. */

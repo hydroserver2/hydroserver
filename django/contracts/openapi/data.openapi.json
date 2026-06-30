@@ -4245,6 +4245,16 @@
             "description": "The number of items per page.",
             "title": "Page Size"
           },
+          "thing_id": {
+            "default": [],
+            "description": "Filter ETL tasks by thing ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Thing Id",
+            "type": "array"
+          },
           "workspace_id": {
             "default": [],
             "description": "Filter ETL tasks by workspace ID.",
@@ -15257,6 +15267,22 @@
                 "type": "string"
               },
               "title": "Order By",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter ETL tasks by thing ID.",
+            "in": "query",
+            "name": "thing_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter ETL tasks by thing ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Thing Id",
               "type": "array"
             }
           },

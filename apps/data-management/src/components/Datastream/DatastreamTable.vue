@@ -1639,22 +1639,20 @@ const loadLinkedTasks = async () => {
   try {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
-        workspace_id: [props.workspace.id],
+        thing_id: [site.id],
         order_by: ['name'],
         expand_related: true,
-      } as any),
+      }),
       hs.dataProductTasks.listAllItems({
-        workspace_id: [props.workspace.id],
         thing_id: [site.id],
         order_by: ['name'],
         expand_related: true,
-      } as any),
+      }),
       hs.monitoringTasks.listAllItems({
-        workspace_id: [props.workspace.id],
         thing_id: [site.id],
         order_by: ['name'],
         expand_related: true,
-      } as any),
+      }),
     ])
     if (requestId !== linkedTasksRequestId) return
 
