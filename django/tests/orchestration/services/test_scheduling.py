@@ -160,6 +160,37 @@ def test_apply_schedule_updates_enabled():
     assert updated.enabled is True
 
 
+# --- apply_schedule: last_run_at on start_time update ---
+
+def test_apply_schedule_update_past_start_time_realigns_last_run_at():
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        pt = service.apply_schedule(
+            periodic_task=None, interval=6, interval_period="hours",
+            celery_task_name=CELERY_TASK,
+        )
+
+    new_start = FIXED_NOW - timedelta(hours=3)
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        updated = service.apply_schedule(periodic_task=pt, start_time=new_start)
+
+    assert updated.last_run_at == new_start
+
+
+def test_apply_schedule_update_future_start_time_clears_last_run_at():
+    past_start = FIXED_NOW - timedelta(hours=5)
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        pt = service.apply_schedule(
+            periodic_task=None, interval=6, interval_period="hours",
+            celery_task_name=CELERY_TASK, start_time=past_start,
+        )
+
+    future_start = FIXED_NOW + timedelta(hours=2)
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        updated = service.apply_schedule(periodic_task=pt, start_time=future_start)
+
+    assert updated.last_run_at is None
+
+
 # --- apply_schedule: last_run_at on creation ---
 
 def test_apply_schedule_interval_past_start_sets_last_run_at():
@@ -385,7 +416,7 @@ def test_compute_next_run_at_interval_uses_last_run_at():
     assert result == last_run + timedelta(hours=6)
 
 
-def test_compute_next_run_at_interval_falls_back_when_last_run_at_overdue():
+def test_compute_next_run_at_interval_overdue_schedules_one_interval_from_now():
     past_start = FIXED_NOW - timedelta(hours=10)
     pt = service.apply_schedule(
         periodic_task=None, interval=6, interval_period="hours",
@@ -398,6 +429,21 @@ def test_compute_next_run_at_interval_falls_back_when_last_run_at_overdue():
         result = SchedulingService.compute_next_run_at(pt)
 
     assert result == FIXED_NOW + timedelta(hours=6)
+
+
+def test_compute_next_run_at_interval_manual_trigger_advances_next_run():
+    past_start = FIXED_NOW - timedelta(hours=9)  # start_time = 9h ago, interval = 6h
+    pt = service.apply_schedule(
+        periodic_task=None, interval=6, interval_period="hours",
+        celery_task_name=CELERY_TASK, start_time=past_start,
+    )
+    pt.last_run_at = FIXED_NOW - timedelta(hours=1)  # manually triggered 1h ago (off-schedule)
+    pt.save()
+
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        result = SchedulingService.compute_next_run_at(pt)
+
+    assert result == pt.last_run_at + timedelta(hours=6)
 
 
 def test_compute_next_run_at_interval_future_start_time():

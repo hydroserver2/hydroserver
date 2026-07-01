@@ -233,10 +233,7 @@ describe('useOrchestrationTaskRows', () => {
     })
   })
 
-  it('displays inferred next run times for scheduled data product rows', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-03-13T12:00:00Z'))
-
+  it('displays backend-provided next run times for scheduled data product rows', () => {
     const rows = useOrchestrationTaskRows({
       activeTab: ref('aggregation'),
       workspaceTasks: ref([]),
@@ -249,7 +246,7 @@ describe('useOrchestrationTaskRows', () => {
           schedule: {
             enabled: true,
             startTime: '2026-03-13T13:00:00Z',
-            nextRunAt: null,
+            nextRunAt: '2026-03-14T13:00:00Z',
             crontab: null,
             interval: 1,
             intervalPeriod: 'days',
@@ -263,10 +260,8 @@ describe('useOrchestrationTaskRows', () => {
     })
 
     const row = rows.dataProductTaskRows.value[0]
-    expect(row.nextRunAt).toBe('2026-03-14T13:00:00.000Z')
+    expect(row.nextRunAt).toBe('2026-03-14T13:00:00Z')
     expect(row.nextRun).not.toBe('-')
-
-    vi.useRealTimers()
   })
 
   it('displays completed monitoring runs as OK instead of Pending', () => {

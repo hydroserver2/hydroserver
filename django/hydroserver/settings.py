@@ -91,6 +91,7 @@ CELERY_BROKER_HEARTBEAT = 10
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     "socket_keepalive": True,
     "retry_on_timeout": True,
+    "socket_timeout": 30,
 }
 
 DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()

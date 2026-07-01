@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timezone
 from ninja.errors import HttpError
 from django.db.models import Min, Max, Count, Q, Value, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
@@ -130,6 +131,7 @@ class ObservationMixin(SensorThingsUtils):
 
     def create_observations(self, payload, context=None):
         principal = context.principal if context else None
+        now = datetime.now(timezone.utc)
 
         by_datastream = {}
         for dto in payload:
@@ -156,13 +158,13 @@ class ObservationMixin(SensorThingsUtils):
                 new_observations = Observation.objects.bulk_copy([
                     Observation(
                         datastream_id=datastream_id,
-                        phenomenon_time=dto.phenomenon_time,
+                        phenomenon_time=now if dto.phenomenon_time is Absent else dto.phenomenon_time,
                         result=(
                             dto.result
                             if not (isinstance(dto.result, float) and math.isnan(dto.result))
                             else datastream.no_data_value
                         ),
-                        result_time=dto.result_time if dto.result_time is not None else None,
+                        result_time=dto.result_time if dto.result_time not in (None, Absent) else None,
                         quality_code=(
                             dto.result_quality.get("quality_code")
                             if dto.result_quality

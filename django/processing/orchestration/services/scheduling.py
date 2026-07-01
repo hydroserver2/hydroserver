@@ -127,7 +127,15 @@ class SchedulingService:
                 periodic_task.enabled = enabled if enabled is not Unset else periodic_task.enabled
 
                 if start_time is not Unset:
-                    periodic_task.start_time = start_time or now
+                    new_start_time = start_time or now
+                    periodic_task.start_time = new_start_time
+                    if periodic_task.interval:
+                        delta = periodic_task.schedule.run_every
+                        if new_start_time <= now:
+                            n = int((now - new_start_time).total_seconds() / delta.total_seconds())
+                            periodic_task.last_run_at = new_start_time + n * delta
+                        else:
+                            periodic_task.last_run_at = None
 
                 if periodic_task_name not in (None, Unset):
                     periodic_task.name = periodic_task_name
@@ -149,17 +157,9 @@ class SchedulingService:
                 )
 
                 if interval_schedule and effective_start <= now:
-                    period_deltas = {
-                        "days": timedelta(days=interval_schedule.every),
-                        "hours": timedelta(hours=interval_schedule.every),
-                        "minutes": timedelta(minutes=interval_schedule.every),
-                    }
-                    delta = period_deltas.get(interval_schedule.period)
-                    if delta:
-                        n = int((now - effective_start).total_seconds() / delta.total_seconds())
-                        initial_last_run_at = effective_start + n * delta
-                    else:
-                        initial_last_run_at = None
+                    delta = interval_schedule.schedule.run_every
+                    n = int((now - effective_start).total_seconds() / delta.total_seconds())
+                    initial_last_run_at = effective_start + n * delta
                 elif crontab_schedule and effective_start <= now:
                     initial_last_run_at = now
                 else:
