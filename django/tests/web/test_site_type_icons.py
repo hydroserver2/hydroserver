@@ -1,13 +1,50 @@
+import importlib
 import re
 
 import pytest
+from django.apps import apps
 from django.contrib import admin
 from django.conf import settings
+from django.core.management import call_command
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 from django.urls import reverse
 
+from core.sta.models import SiteType
 from core.web.admin import SiteTypeIconAdminForm
-from core.web.models import SITE_TYPE_ICON_CHOICES, SiteTypeIcon
+from core.web.models import (
+    SITE_TYPE_ICON_CHOICES,
+    InstanceConfiguration,
+    SiteTypeIcon,
+)
+
+
+SITE_TYPES = [
+    "Conveyance",
+    "Stream",
+    "Reservoir / Lake",
+    "Reservoir Release",
+    "Dam / Control Structure",
+    "Groundwater Well",
+    "Irrigation",
+    "Hydropower",
+    "Pump Station",
+    "Spring",
+    "Wetland",
+    "Coastal",
+    "Snow / Ice",
+    "Weather / Atmosphere",
+    "Soil",
+    "Stormwater",
+    "Gaging Station",
+    "Water Quality Station",
+    "Discrete Sample",
+    "Modeled / Calculated",
+    "House",
+    "Land",
+    "Pavement",
+    "Site — default fallback",
+]
 
 
 @pytest.mark.django_db
@@ -48,32 +85,125 @@ def test_default_site_type_icon_mappings_are_available(client):
     assert {
         "icon": "water-well",
         "siteTypes": [
-            "groundwater well",
-            "observation well",
-            "ground water",
-            "groundwater",
-            "borehole",
-            "aquifer",
-            "piezometer",
-            "well",
+            "Groundwater Well",
+            "Observation Well",
+            "Ground Water",
+            "Groundwater",
+            "Borehole",
+            "Aquifer",
+            "Piezometer",
+            "Well",
         ],
     } in mappings
     assert {
         "icon": "gate",
-        "siteTypes": ["dry dam release", "dry dam", "dam", "weir", "sluice"],
+        "siteTypes": [
+            "Dam / Control Structure",
+            "Dry Dam Release",
+            "Dry Dam",
+            "Dam",
+            "Weir",
+            "Sluice",
+        ],
     } in mappings
     assert {
         "icon": "hydro-power",
-        "siteTypes": ["hydropower", "hydro power", "power generation"],
+        "siteTypes": ["Hydropower", "Hydro Power", "Power Generation"],
     } in mappings
     assert {
-        "icon": "map-marker-radius-outline",
-        "siteTypes": ["monitoring site", "monitoring station", "site", "station"],
+        "icon": "map-marker",
+        "siteTypes": [
+            "Site — Default Fallback",
+            "Monitoring Site",
+            "Monitoring Station",
+            "Site",
+            "Station",
+        ],
     } in mappings
     assert {
         "icon": "waves-arrow-right",
-        "siteTypes": ["reservoir release", "release", "outflow", "spillway"],
+        "siteTypes": ["Reservoir Release", "Release", "Outflow", "Spillway"],
     } in mappings
+
+
+@pytest.mark.django_db
+def test_canonical_site_types_are_first_in_default_icon_mappings():
+    first_site_types = [
+        mapping.site_types[0] for mapping in SiteTypeIcon.objects.order_by("id")
+    ]
+
+    assert len(first_site_types) == len(set(first_site_types)) == 24
+    assert {site_type.casefold() for site_type in first_site_types} == {
+        site_type.casefold() for site_type in SITE_TYPES
+    }
+
+    for mapping in SiteTypeIcon.objects.all():
+        assert all(keyword == keyword.title() for keyword in mapping.site_types)
+        mapping.full_clean()
+
+
+@pytest.mark.django_db
+def test_default_site_type_fixture_contains_canonical_categories():
+    SiteType.objects.all().delete()
+
+    call_command("loaddata", "core/sta/fixtures/default_site_types.yaml", verbosity=0)
+
+    assert list(SiteType.objects.order_by("pk").values_list("name", flat=True)) == (
+        SITE_TYPES
+    )
+
+
+@pytest.mark.django_db
+@override_settings(LOAD_DEFAULT_DATA=True)
+def test_new_instance_default_data_loads_canonical_site_types():
+    SiteType.objects.all().delete()
+
+    call_command("load_default_data", verbosity=0)
+
+    assert list(SiteType.objects.order_by("pk").values_list("name", flat=True)) == (
+        SITE_TYPES
+    )
+
+
+@pytest.mark.django_db
+@override_settings(LOAD_DEFAULT_DATA=True)
+def test_default_data_does_not_replace_nonempty_site_types():
+    SiteType.objects.all().delete()
+    SiteType.objects.create(name="Instance-specific site type")
+
+    call_command("load_default_data", verbosity=0)
+
+    assert list(SiteType.objects.values_list("name", flat=True)) == [
+        "Instance-specific site type"
+    ]
+
+
+@pytest.mark.django_db
+@override_settings(LOAD_DEFAULT_DATA=True)
+def test_existing_instance_update_does_not_replace_site_types():
+    InstanceConfiguration.get_configuration()
+    SiteType.objects.all().delete()
+    SiteType.objects.create(name="Instance-specific site type")
+
+    call_command("load_default_data", verbosity=0)
+
+    assert list(SiteType.objects.values_list("name", flat=True)) == [
+        "Instance-specific site type"
+    ]
+
+
+@pytest.mark.django_db
+def test_site_type_icon_migration_does_not_replace_site_types():
+    SiteType.objects.all().delete()
+    SiteType.objects.create(name="Instance-specific site type")
+    SiteTypeIcon.objects.all().delete()
+    migration = importlib.import_module("core.web.migrations.0002_sitetypeicon")
+
+    migration.create_default_site_type_icons(apps, schema_editor=None)
+
+    assert list(SiteType.objects.values_list("name", flat=True)) == [
+        "Instance-specific site type"
+    ]
 
 
 @pytest.mark.django_db

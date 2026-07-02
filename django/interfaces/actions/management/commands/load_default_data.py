@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.db import transaction
 from django.conf import settings
+from core.sta.models import SiteType
 from core.web.models import InstanceConfiguration
 
 
@@ -35,6 +36,9 @@ class Command(BaseCommand):
                     "core/sta/fixtures/default_units.yaml",
                     "core/sta/fixtures/default_variable_types.yaml",
                 ]
+                if not SiteType.objects.exists():
+                    fixtures.append("core/sta/fixtures/default_site_types.yaml")
+
                 for fixture in fixtures:
                     self.stdout.write(f"Loading {fixture}...")
                     call_command("loaddata", fixture, verbosity=1)

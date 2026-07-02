@@ -2,23 +2,23 @@
 - model: sta.sitetype
   pk: 1
   fields:
-    name: Atmosphere
+    name: Conveyance
 - model: sta.sitetype
   pk: 2
   fields:
-    name: Borehole
+    name: Stream
 - model: sta.sitetype
   pk: 3
   fields:
-    name: Calculated
+    name: Reservoir / Lake
 - model: sta.sitetype
   pk: 4
   fields:
-    name: Ditch
+    name: Reservoir Release
 - model: sta.sitetype
   pk: 5
   fields:
-    name: Estuary
+    name: Dam / Control Structure
 - model: sta.sitetype
   pk: 6
   fields:
@@ -26,68 +26,72 @@
 - model: sta.sitetype
   pk: 7
   fields:
-    name: House
+    name: Irrigation
 - model: sta.sitetype
   pk: 8
   fields:
-    name: Irrigation Pivot
+    name: Hydropower
 - model: sta.sitetype
   pk: 9
   fields:
-    name: Lake, Reservoir, Impoundment
+    name: Pump Station
 - model: sta.sitetype
   pk: 10
   fields:
-    name: Land
+    name: Spring
 - model: sta.sitetype
   pk: 11
   fields:
-    name: Laboratory or sample-preparation area
+    name: Wetland
 - model: sta.sitetype
   pk: 12
   fields:
-    name: Observation well
+    name: Coastal
 - model: sta.sitetype
   pk: 13
   fields:
-    name: Other
+    name: Snow / Ice
 - model: sta.sitetype
   pk: 14
   fields:
-    name: Pavement
+    name: Weather / Atmosphere
 - model: sta.sitetype
   pk: 15
   fields:
-    name: Soil hole
+    name: Soil
 - model: sta.sitetype
   pk: 16
   fields:
-    name: Spring
+    name: Stormwater
 - model: sta.sitetype
   pk: 17
   fields:
-    name: Stream
+    name: Gaging Station
 - model: sta.sitetype
   pk: 18
   fields:
-    name: Stream gage
+    name: Water Quality Station
 - model: sta.sitetype
   pk: 19
   fields:
-    name: Storm sewer
+    name: Discrete Sample
 - model: sta.sitetype
   pk: 20
   fields:
-    name: Tidal stream
+    name: Modeled / Calculated
 - model: sta.sitetype
   pk: 21
   fields:
-    name: Water quality station
+    name: House
 - model: sta.sitetype
   pk: 22
   fields:
-    name: Weather station
+    name: Land
 - model: sta.sitetype
   pk: 23
   fields:
-    name: Wetland
+    name: Pavement
+- model: sta.sitetype
+  pk: 24
+  fields:
+    name: Site — default fallback

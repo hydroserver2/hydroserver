@@ -3,8 +3,8 @@ import {
   mdiGate,
   mdiGauge,
   mdiHydroPower,
+  mdiMapMarker,
   mdiMapMarkerOutline,
-  mdiMapMarkerRadiusOutline,
   mdiWater,
   mdiWavesArrowRight,
 } from '@mdi/js'
@@ -12,8 +12,8 @@ import { buildSiteTypeIconRules, getSiteTypeIcon } from '@/utils/siteTypeIcons'
 
 describe('site type icons', () => {
   const rules = buildSiteTypeIconRules([
-    { icon: 'water', siteTypes: ['stream'] },
-    { icon: 'gauge', siteTypes: ['stream gage'] },
+    { icon: 'water', siteTypes: ['Stream'] },
+    { icon: 'gauge', siteTypes: ['Stream Gage'] },
   ])
 
   it('uses the longest matching site type keyword', () => {
@@ -23,6 +23,7 @@ describe('site type icons', () => {
 
   it('ignores case and punctuation when matching', () => {
     expect(getSiteTypeIcon('STREAM-GAGE', rules)).toBe(mdiGauge)
+    expect(getSiteTypeIcon('mountain stream', rules)).toBe(mdiWater)
   })
 
   it('supports site type names with non-ASCII characters', () => {
@@ -36,7 +37,7 @@ describe('site type icons', () => {
   it.each([
     ['Reservoir Release', 'waves-arrow-right', mdiWavesArrowRight],
     ['Dry Dam Release', 'gate', mdiGate],
-    ['Site', 'map-marker-radius-outline', mdiMapMarkerRadiusOutline],
+    ['Site', 'map-marker', mdiMapMarker],
     ['Hydropower', 'hydro-power', mdiHydroPower],
   ])('maps the short-list site type %s', (siteType, icon, expected) => {
     const shortListRules = buildSiteTypeIconRules([
