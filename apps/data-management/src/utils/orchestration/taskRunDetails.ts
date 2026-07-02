@@ -241,15 +241,6 @@ export const getTaskRunRuntimeUrl = (run?: TaskRun | null) => {
   )
 }
 
-export const getMonitoringRulesViolated = (run?: TaskRun | null) => {
-  const result = getTaskRunResult(run)
-  const count = firstNumber(result.rulesViolated, result.rules_violated)
-  if (count !== undefined) return count
-
-  const violations = result.violations
-  return Array.isArray(violations) ? violations.length : 0
-}
-
 export const getMonitoringRunViolations = (
   run?: TaskRun | null
 ): MonitoringRunViolation[] => {
@@ -274,6 +265,29 @@ export const getMonitoringRunViolations = (
         entry.last_violation_at
       ),
     }))
+}
+
+export const countDistinctMonitoringViolationRules = (
+  violations: MonitoringRunViolation[]
+) =>
+  new Set(
+    violations.map((violation, index) => {
+      if (violation.ruleId) return violation.ruleId
+      const compositeKey = [violation.datastreamId, violation.ruleType]
+        .filter(Boolean)
+        .join(':')
+      return compositeKey || `violation-${index}`
+    })
+  ).size
+
+export const getMonitoringRulesViolated = (run?: TaskRun | null) => {
+  const violations = getMonitoringRunViolations(run)
+  if (violations.length) {
+    return countDistinctMonitoringViolationRules(violations)
+  }
+
+  const result = getTaskRunResult(run)
+  return firstNumber(result.rulesViolated, result.rules_violated) ?? 0
 }
 
 export const taskRunHasFailures = (run?: TaskRun | null) => {

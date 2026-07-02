@@ -239,6 +239,25 @@ describe('task run detail helpers', () => {
     expect(getTaskRunStatusText(run)).toBe('Needs attention')
   })
 
+  it('counts distinct violated rules instead of violating observations', () => {
+    const run: TaskRun = {
+      id: 'run-monitoring-counts',
+      status: 'SUCCESS',
+      result: {
+        rulesViolated: 3,
+        violations: [
+          {
+            ruleType: 'range',
+            violationCount: 3,
+          },
+        ],
+      },
+    }
+
+    expect(getMonitoringRulesViolated(run)).toBe(1)
+    expect(getTaskRunStatusText(run)).toBe('Needs attention')
+  })
+
   it('maps task run statuses for UI display', () => {
     expect(
       getTaskRunStatusText({

@@ -4245,6 +4245,16 @@
             "description": "The number of items per page.",
             "title": "Page Size"
           },
+          "thing_id": {
+            "default": [],
+            "description": "Filter ETL tasks by thing ID.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Thing Id",
+            "type": "array"
+          },
           "workspace_id": {
             "default": [],
             "description": "Filter ETL tasks by workspace ID.",
@@ -5804,6 +5814,56 @@
           "recipientEmails"
         ],
         "title": "NotificationResponse",
+        "type": "object"
+      },
+      "ObservationBulkColumnarPostBody": {
+        "properties": {
+          "phenomenonTime": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Phenomenontime",
+            "type": "array"
+          },
+          "result": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Result",
+            "type": "array"
+          },
+          "resultQualifierCodes": {
+            "default": [],
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Resultqualifiercodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "phenomenonTime",
+          "result"
+        ],
+        "title": "ObservationBulkColumnarPostBody",
         "type": "object"
       },
       "ObservationBulkDeleteBody": {
@@ -14026,7 +14086,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ObservationBulkPostBody"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkPostBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
+                  }
+                ],
+                "title": "Data"
               }
             }
           },
@@ -15257,6 +15325,22 @@
                 "type": "string"
               },
               "title": "Order By",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter ETL tasks by thing ID.",
+            "in": "query",
+            "name": "thing_id",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Filter ETL tasks by thing ID.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Thing Id",
               "type": "array"
             }
           },
