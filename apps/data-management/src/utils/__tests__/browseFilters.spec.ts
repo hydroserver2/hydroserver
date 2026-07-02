@@ -133,6 +133,16 @@ describe('parseBrowseFilterQuery', () => {
     expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
     expect(parseBrowseFilterQuery({}).drawer).toBeNull()
   })
+
+  it('preserves commas in the search text instead of truncating', () => {
+    const searchText = 'Logan, UT'
+    const query = buildBrowseFilterQuery(
+      {},
+      { searchText, workspaceIds: [], siteTypes: [] }
+    )
+
+    expect(parseBrowseFilterQuery(query).searchText).toBe(searchText)
+  })
 })
 
 describe('buildBrowseFilterQuery', () => {

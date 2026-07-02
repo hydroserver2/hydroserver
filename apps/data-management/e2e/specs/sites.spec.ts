@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -7,6 +7,9 @@ import {
   fillCombobox,
   selectWorkspace,
 } from '../support/ui'
+
+const datastreamEntriesByName = (page: Page, name: string) =>
+  page.locator('[data-datastream-id]').filter({ hasText: name })
 
 test.describe('sites and workspaces', () => {
   const apiBaseUrl = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:18000'
@@ -254,10 +257,7 @@ test.describe('sites and workspaces', () => {
       .fill('Temporary datastream created by the Playwright CRUD suite.')
     await page.getByRole('button', { name: 'Create datastream' }).click()
 
-    const datastreamRow = page
-      .locator('tr, .datastream-card')
-      .filter({ hasText: datastreamName })
-      .first()
+    const datastreamRow = datastreamEntriesByName(page, datastreamName).first()
     await expect(datastreamRow).toBeVisible()
 
     await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
@@ -265,10 +265,10 @@ test.describe('sites and workspaces', () => {
     await page.getByLabel('Datastream name *').fill(renamedDatastreamName)
     await page.getByRole('button', { name: 'Update datastream' }).click()
 
-    const renamedDatastreamRow = page
-      .locator('tr, .datastream-card')
-      .filter({ hasText: renamedDatastreamName })
-      .first()
+    const renamedDatastreamRow = datastreamEntriesByName(
+      page,
+      renamedDatastreamName
+    ).first()
     await expect(renamedDatastreamRow).toBeVisible()
 
     await renamedDatastreamRow
@@ -278,9 +278,7 @@ test.describe('sites and workspaces', () => {
     await page.locator('input').last().fill('Delete')
     await page.getByRole('button', { name: 'Confirm' }).click()
     await expect(
-      page.locator('tr, .datastream-card').filter({
-        hasText: renamedDatastreamName,
-      })
+      datastreamEntriesByName(page, renamedDatastreamName)
     ).toHaveCount(0)
 
     await page.getByTestId('delete-site-button').click()
@@ -363,9 +361,7 @@ test.describe('sites and workspaces', () => {
       .toBe(true)
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
     await expect(
-      anonymousPage.locator('tr, .datastream-card').filter({
-        hasText: fixtures.datastreams.public.name,
-      })
+      datastreamEntriesByName(anonymousPage, fixtures.datastreams.public.name)
     ).toHaveCount(0)
     await datastreamPrivacyToggle.click()
     await expect
@@ -398,11 +394,10 @@ test.describe('sites and workspaces', () => {
       })
       .toBe(false)
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
-    const anonymousPublicDatastreamRow = anonymousPage
-      .locator('tr, .datastream-card')
-      .filter({
-        hasText: fixtures.datastreams.public.name,
-      })
+    const anonymousPublicDatastreamRow = datastreamEntriesByName(
+      anonymousPage,
+      fixtures.datastreams.public.name
+    )
     await expect(anonymousPublicDatastreamRow).toHaveCount(1)
     await dataVisibilityToggle.click()
     await expect
@@ -417,9 +412,7 @@ test.describe('sites and workspaces', () => {
 
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
     await expect(
-      anonymousPage.locator('tr, .datastream-card').filter({
-        hasText: fixtures.datastreams.public.name,
-      })
+      datastreamEntriesByName(anonymousPage, fixtures.datastreams.public.name)
     ).toHaveCount(1)
 
     await anonymousContext.close()
@@ -431,10 +424,10 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/sites/${fixtures.things.public.id}`)
 
-    const datastreamRow = page
-      .locator('tr, .datastream-card')
-      .filter({ hasText: fixtures.datastreams.public.name })
-      .first()
+    const datastreamRow = datastreamEntriesByName(
+      page,
+      fixtures.datastreams.public.name
+    ).first()
     await expect(datastreamRow).toBeVisible()
 
     await datastreamRow
@@ -485,10 +478,10 @@ test.describe('sites and workspaces', () => {
     await expect(page.getByText(fixtures.datastreams.public.name, { exact: true })).toBeVisible()
 
     await page.goto(`/sites/${fixtures.things.public.id}`)
-    const datastreamRow = page
-      .locator('tr, .datastream-card')
-      .filter({ hasText: fixtures.datastreams.public.name })
-      .first()
+    const datastreamRow = datastreamEntriesByName(
+      page,
+      fixtures.datastreams.public.name
+    ).first()
     await datastreamRow
       .locator('[data-testid^="datastream-actions-"]')
       .click()

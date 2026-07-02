@@ -168,8 +168,8 @@
                 !linkedTasksForDatastream(item.id).length
                   ? mdiLinkOff
                   : linkedTasksForDatastream(item.id).length > 1
-                    ? mdiAlertOctagon
-                    : linkedTasksForDatastream(item.id)[0].icon
+                  ? mdiAlertOctagon
+                  : linkedTasksForDatastream(item.id)[0].icon
               "
               size="20"
             />
@@ -180,8 +180,8 @@
                     linkedTasksForDatastream(item.id).length > 1
                       ? 'Multiple task targets'
                       : linkedTasksForDatastream(item.id).length === 1
-                        ? linkedTasksForDatastream(item.id)[0].label
-                        : 'No task connected'
+                      ? linkedTasksForDatastream(item.id)[0].label
+                      : 'No task connected'
                   }}
                 </span>
                 <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -815,8 +815,8 @@
               !linkedTasksForDatastream(item.id).length
                 ? mdiLinkOff
                 : linkedTasksForDatastream(item.id).length > 1
-                  ? mdiAlertOctagon
-                  : linkedTasksForDatastream(item.id)[0].icon
+                ? mdiAlertOctagon
+                : linkedTasksForDatastream(item.id)[0].icon
             "
             size="20"
           />
@@ -827,8 +827,8 @@
                   linkedTasksForDatastream(item.id).length > 1
                     ? 'Multiple task targets'
                     : linkedTasksForDatastream(item.id).length === 1
-                      ? linkedTasksForDatastream(item.id)[0].label
-                      : 'No task connected'
+                    ? linkedTasksForDatastream(item.id)[0].label
+                    : 'No task connected'
                 }}
               </span>
               <template v-if="linkedTasksForDatastream(item.id).length === 1">
@@ -1559,7 +1559,9 @@ const monitoringViolationCount = (
 }
 
 const taskPaused = (task: any) =>
-  task.schedule ? task.schedule.enabled === false : false
+  task.schedule
+    ? task.schedule.paused === true || task.schedule.enabled === false
+    : false
 
 const truncateTaskInfoPart = (value: unknown, maxLength = 250) => {
   const text = `${value ?? ''}`.trim()

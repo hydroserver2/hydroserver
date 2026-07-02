@@ -1,6 +1,6 @@
 import re
 
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from solo.models import SingletonModel
 
@@ -222,20 +222,7 @@ class SiteTypeIcon(models.Model):
                 {"site_types": "Each site type may only appear once for an icon."}
             )
 
-        other_mappings = type(self).objects.exclude(pk=self.pk).values_list(
-            "icon", "site_types"
-        )
-        duplicate_mappings = {
-            normalize_site_type_keyword(site_type): icon
-            for icon, site_types in other_mappings
-            for site_type in site_types
-            if isinstance(site_type, str)
-        }
-        duplicates = [
-            site_type
-            for site_type in self.site_types
-            if normalize_site_type_keyword(site_type) in duplicate_mappings
-        ]
+        duplicates = self._conflicting_keywords()
         if duplicates:
             raise ValidationError(
                 {
@@ -245,6 +232,43 @@ class SiteTypeIcon(models.Model):
                     )
                 }
             )
+
+    def _conflicting_keywords(self):
+        """Return this icon's keywords that are already mapped to another icon."""
+
+        other_mappings = type(self).objects.exclude(pk=self.pk).values_list(
+            "icon", "site_types"
+        )
+        mapped_keywords = {
+            normalize_site_type_keyword(site_type)
+            for _, site_types in other_mappings
+            for site_type in site_types
+            if isinstance(site_type, str)
+        }
+        return [
+            site_type
+            for site_type in self.site_types
+            if normalize_site_type_keyword(site_type) in mapped_keywords
+        ]
+
+    def save(self, *args, **kwargs):
+        # clean() validates keyword uniqueness, but two concurrent saves can each
+        # pass validation before either commits, mapping the same keyword to two
+        # icons. Lock the other rows and re-check inside the write transaction so
+        # concurrent saves are serialized.
+        with transaction.atomic():
+            list(type(self).objects.select_for_update().values_list("pk", flat=True))
+            duplicates = self._conflicting_keywords()
+            if duplicates:
+                raise ValidationError(
+                    {
+                        "site_types": (
+                            "A site type or keyword can only map to one icon. "
+                            f"Already mapped: {', '.join(duplicates)}."
+                        )
+                    }
+                )
+            super().save(*args, **kwargs)
 
     class Meta:
         ordering = ("id",)

@@ -126,7 +126,8 @@ def create_default_site_type_icons(apps, schema_editor):
         [
             site_type_icon(icon=icon, site_types=site_types)
             for icon, site_types in DEFAULT_SITE_TYPE_ICONS
-        ]
+        ],
+        ignore_conflicts=True,
     )
 
 

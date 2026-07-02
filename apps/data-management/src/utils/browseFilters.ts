@@ -35,6 +35,13 @@ const queryValues = (value: unknown): string[] => {
     .filter(Boolean)
 }
 
+// Free-text search is a single value that may legitimately contain commas, so
+// it must not be run through queryValues() (which splits on commas).
+const querySingleValue = (value: unknown): string => {
+  const raw = Array.isArray(value) ? value[0] : value
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
 const uniqueValues = (values: string[]) => [...new Set(values)]
 
 const readQueryValues = (query: LocationQuery, keys: string[]): string[] =>
@@ -62,7 +69,7 @@ export function parseBrowseFilterQuery(
 ): BrowseFilterRouteState {
   return {
     siteIds: readQueryValues(query, ['selectedSite']),
-    searchText: queryValues(query.search)[0] ?? '',
+    searchText: querySingleValue(query.search),
     workspaceIds: readQueryValues(query, ['workspaces']),
     siteTypes: readQueryValues(query, ['siteTypes']),
     drawer: parseBooleanQuery(query.drawer),
