@@ -1,5 +1,40 @@
+import re
+
 from django.db import models
+from django.core.exceptions import ValidationError
 from solo.models import SingletonModel
+
+
+SITE_TYPE_ICON_CHOICES = (
+    ("beach", "Beach"),
+    ("calculator", "Calculator"),
+    ("fountain", "Fountain"),
+    ("gate", "Gate"),
+    ("gauge", "Gauge"),
+    ("grass", "Grass"),
+    ("home", "Home"),
+    ("hydro-power", "Hydropower"),
+    ("map-marker-radius-outline", "Site marker"),
+    ("pipe-disconnected", "Disconnected pipe"),
+    ("road-variant", "Road"),
+    ("snowflake", "Snowflake"),
+    ("sprinkler", "Sprinkler"),
+    ("terrain", "Terrain"),
+    ("test-tube", "Test tube"),
+    ("thermometer-water", "Water thermometer"),
+    ("vector-polyline", "Polyline"),
+    ("water", "Water"),
+    ("water-check-outline", "Water quality"),
+    ("water-pump", "Water pump"),
+    ("water-well", "Water well"),
+    ("waves", "Waves"),
+    ("waves-arrow-right", "Waves with right arrow"),
+    ("weather-cloudy", "Cloudy weather"),
+)
+
+
+def normalize_site_type_keyword(value):
+    return re.sub(r"[\W_]+", " ", value.casefold()).strip()
 
 
 MAP_LAYER_TYPE_CHOICES = (
@@ -137,3 +172,81 @@ class MapLayer(models.Model):
 
     class Meta:
         verbose_name = "Map Layer"
+
+
+class SiteTypeIcon(models.Model):
+    icon = models.CharField(
+        max_length=50,
+        choices=SITE_TYPE_ICON_CHOICES,
+        unique=True,
+        editable=False,
+    )
+    site_types = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Site type names or keywords that should use this icon.",
+    )
+
+    def __str__(self):
+        return self.get_icon_display()
+
+    def clean(self):
+        super().clean()
+
+        if not isinstance(self.site_types, list) or any(
+            not isinstance(site_type, str) for site_type in self.site_types
+        ):
+            raise ValidationError(
+                {"site_types": "Site types must be a list of text values."}
+            )
+
+        self.site_types = [
+            site_type.strip() for site_type in self.site_types if site_type.strip()
+        ]
+        normalized_site_types = [
+            normalize_site_type_keyword(site_type) for site_type in self.site_types
+        ]
+
+        if any(not site_type for site_type in normalized_site_types):
+            raise ValidationError(
+                {
+                    "site_types": (
+                        "Site type names and keywords must contain at least one "
+                        "letter or number."
+                    )
+                }
+            )
+
+        if len(normalized_site_types) != len(set(normalized_site_types)):
+            raise ValidationError(
+                {"site_types": "Each site type may only appear once for an icon."}
+            )
+
+        other_mappings = type(self).objects.exclude(pk=self.pk).values_list(
+            "icon", "site_types"
+        )
+        duplicate_mappings = {
+            normalize_site_type_keyword(site_type): icon
+            for icon, site_types in other_mappings
+            for site_type in site_types
+            if isinstance(site_type, str)
+        }
+        duplicates = [
+            site_type
+            for site_type in self.site_types
+            if normalize_site_type_keyword(site_type) in duplicate_mappings
+        ]
+        if duplicates:
+            raise ValidationError(
+                {
+                    "site_types": (
+                        "A site type or keyword can only map to one icon. "
+                        f"Already mapped: {', '.join(duplicates)}."
+                    )
+                }
+            )
+
+    class Meta:
+        ordering = ("id",)
+        verbose_name = "Site Type Icon"
+        verbose_name_plural = "Site Type Icons"

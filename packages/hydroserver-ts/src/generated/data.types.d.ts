@@ -1632,6 +1632,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/things/site-type-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Type Icons
+         * @description Get the configured site type icon mappings.
+         */
+        get: operations["interfaces_api_views_sta_thing_get_site_type_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/data/things/site-types": {
         parameters: {
             query?: never;
@@ -5273,6 +5293,13 @@ export interface components {
             name: string;
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /** SiteTypeIconResponse */
+        SiteTypeIconResponse: {
+            /** Icon */
+            icon: string;
+            /** Sitetypes */
+            siteTypes: string[];
         };
         /** TagDeleteBody */
         TagDeleteBody: {
@@ -13001,6 +13028,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_thing_get_site_type_icons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
                 };
             };
         };

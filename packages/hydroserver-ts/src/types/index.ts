@@ -451,6 +451,11 @@ export interface ThingMarker {
   longitude: number
 }
 
+export interface SiteTypeIcon {
+  icon: string
+  siteTypes: string[]
+}
+
 export interface ThingSiteSummary extends ThingMarker {
   samplingFeatureCode: string
   tags: Tag[]

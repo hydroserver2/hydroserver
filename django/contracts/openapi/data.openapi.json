@@ -9755,6 +9755,27 @@
         "title": "SensorSummaryResponse",
         "type": "object"
       },
+      "SiteTypeIconResponse": {
+        "properties": {
+          "icon": {
+            "title": "Icon",
+            "type": "string"
+          },
+          "siteTypes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sitetypes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "icon",
+          "siteTypes"
+        ],
+        "title": "SiteTypeIconResponse",
+        "type": "object"
+      },
       "TagDeleteBody": {
         "properties": {
           "key": {
@@ -27299,6 +27320,33 @@
           }
         ],
         "summary": "Get Thing Site Summaries",
+        "tags": [
+          "Things"
+        ]
+      }
+    },
+    "/api/data/things/site-type-icons": {
+      "get": {
+        "description": "Get the configured site type icon mappings.",
+        "operationId": "interfaces_api_views_sta_thing_get_site_type_icons",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SiteTypeIconResponse"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Site Type Icons",
         "tags": [
           "Things"
         ]
