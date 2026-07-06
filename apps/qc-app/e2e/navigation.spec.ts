@@ -56,9 +56,9 @@ test.describe('navigation', () => {
   }) => {
     await gotoHome(page)
     const editRail = page.getByTestId('nav-rail-item-edit')
-    await expect(editRail).toHaveClass(/v-list-item--disabled/)
+    await expect(editRail).toHaveAttribute('aria-disabled', 'true')
     await plotFirstDatastream(page)
-    await expect(editRail).not.toHaveClass(/v-list-item--disabled/)
+    await expect(editRail).toHaveAttribute('aria-disabled', 'false')
   })
 
   test('unsaved-edits dialog warns before navigating away from Edit', async ({
