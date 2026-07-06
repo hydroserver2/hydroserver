@@ -113,7 +113,6 @@
           highlighted-run-id=""
           @fetch-full="fetchRuns"
           @copy="copy"
-          @copy-run-link="() => null"
         />
         <template v-else>
           <Swimlanes v-if="task.mappings?.length" :task="task" />

@@ -183,11 +183,14 @@
         <div v-else class="text-body-2 text-medium-emphasis">
           No photos added yet.
         </div>
-
       </v-col>
     </v-row>
 
-    <DatastreamTable v-if="thing && workspace" :workspace="workspace" />
+    <DatastreamTable
+      v-if="thing && workspace"
+      :workspace="workspace"
+      :target-datastream-id="targetDatastreamId"
+    />
 
     <v-dialog v-model="isPhotoViewerOpen" width="60rem">
       <v-card v-if="selectedPhoto">
@@ -263,7 +266,12 @@ import HydroShareArchivalButton from '@/components/HydroShare/HydroShareArchival
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 
-const thingId = useRoute().params.id.toString()
+const route = useRoute()
+const thingId = route.params.id.toString()
+const targetDatastreamId = computed(() => {
+  const param = route.query.datastream
+  return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
+})
 const { photos, loading } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 

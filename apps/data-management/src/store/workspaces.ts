@@ -22,7 +22,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const ownedWorkspaces = computed(() =>
     workspaces.value.filter(
-      (ws) => !!ws.owner && ws.owner.email === user.value.email
+      (ws) => !!ws.owner && ws.owner.email === user.value?.email
     )
   )
 

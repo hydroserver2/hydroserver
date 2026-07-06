@@ -255,7 +255,7 @@ test.describe('sites and workspaces', () => {
     await page.getByRole('button', { name: 'Create datastream' }).click()
 
     const datastreamRow = page
-      .locator('tr, .datastream-card')
+      .locator('[data-datastream-id]')
       .filter({ hasText: datastreamName })
       .first()
     await expect(datastreamRow).toBeVisible()
@@ -266,7 +266,7 @@ test.describe('sites and workspaces', () => {
     await page.getByRole('button', { name: 'Update datastream' }).click()
 
     const renamedDatastreamRow = page
-      .locator('tr, .datastream-card')
+      .locator('[data-datastream-id]')
       .filter({ hasText: renamedDatastreamName })
       .first()
     await expect(renamedDatastreamRow).toBeVisible()
@@ -278,7 +278,7 @@ test.describe('sites and workspaces', () => {
     await page.locator('input').last().fill('Delete')
     await page.getByRole('button', { name: 'Confirm' }).click()
     await expect(
-      page.locator('tr, .datastream-card').filter({
+      page.locator('[data-datastream-id]').filter({
         hasText: renamedDatastreamName,
       })
     ).toHaveCount(0)
@@ -363,7 +363,7 @@ test.describe('sites and workspaces', () => {
       .toBe(true)
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
     await expect(
-      anonymousPage.locator('tr, .datastream-card').filter({
+      anonymousPage.locator('[data-datastream-id]').filter({
         hasText: fixtures.datastreams.public.name,
       })
     ).toHaveCount(0)
@@ -399,7 +399,7 @@ test.describe('sites and workspaces', () => {
       .toBe(false)
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
     const anonymousPublicDatastreamRow = anonymousPage
-      .locator('tr, .datastream-card')
+      .locator('[data-datastream-id]')
       .filter({
         hasText: fixtures.datastreams.public.name,
       })
@@ -417,7 +417,7 @@ test.describe('sites and workspaces', () => {
 
     await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
     await expect(
-      anonymousPage.locator('tr, .datastream-card').filter({
+      anonymousPage.locator('[data-datastream-id]').filter({
         hasText: fixtures.datastreams.public.name,
       })
     ).toHaveCount(1)
@@ -432,7 +432,7 @@ test.describe('sites and workspaces', () => {
     await page.goto(`/sites/${fixtures.things.public.id}`)
 
     const datastreamRow = page
-      .locator('tr, .datastream-card')
+      .locator('[data-datastream-id]')
       .filter({ hasText: fixtures.datastreams.public.name })
       .first()
     await expect(datastreamRow).toBeVisible()
@@ -486,7 +486,7 @@ test.describe('sites and workspaces', () => {
 
     await page.goto(`/sites/${fixtures.things.public.id}`)
     const datastreamRow = page
-      .locator('tr, .datastream-card')
+      .locator('[data-datastream-id]')
       .filter({ hasText: fixtures.datastreams.public.name })
       .first()
     await datastreamRow

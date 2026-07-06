@@ -3,10 +3,14 @@
     <div
       class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)] gap-[5px] items-center max-[960px]:grid-cols-1"
     >
-      <div class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-1 col-end-2 max-[960px]:col-span-full">
+      <div
+        class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-1 col-end-2 max-[960px]:col-span-full"
+      >
         Source field
       </div>
-      <div class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-3 col-end-4 max-[960px]:col-span-full">
+      <div
+        class="font-extrabold uppercase tracking-[0.04em] text-[#4f4b59] text-[0.68rem] pb-1 col-start-3 col-end-4 max-[960px]:col-span-full"
+      >
         Target datastream
       </div>
 
@@ -28,20 +32,31 @@
 
           <div class="min-w-0 flex items-center">
             <div
-              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] text-[0.86rem] text-[#1c1b1f] flex flex-col justify-center overflow-hidden"
+              class="etl-target-display w-full min-h-[40px] border border-[#d0c9d8] rounded-[10px] px-3 py-[6px] bg-[#f6f9ff] text-[0.86rem] text-[#1c1b1f] flex items-center gap-2 overflow-hidden"
             >
-              <span class="font-semibold text-[#1c1b1f] text-[0.86rem] leading-[1.25] [overflow-wrap:anywhere] whitespace-normal">
-                {{ resolveTargetName(m) || '—' }}
-              </span>
-              <span
-                v-if="resolveThingName(m)"
-                class="text-[rgba(0,0,0,0.66)] text-[0.78rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
-              >
-                {{ resolveThingName(m) }}
-              </span>
-              <span class="text-[rgba(0,0,0,0.55)] text-[0.72rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal">
-                {{ targetDatastream(m)?.id || '—' }}
-              </span>
+              <div class="min-w-0 flex flex-1 flex-col justify-center">
+                <span
+                  class="font-semibold text-[#1c1b1f] text-[0.86rem] leading-[1.25] [overflow-wrap:anywhere] whitespace-normal"
+                >
+                  {{ resolveTargetName(m) || '—' }}
+                </span>
+                <span
+                  v-if="resolveThingName(m)"
+                  class="text-[rgba(0,0,0,0.66)] text-[0.78rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
+                >
+                  {{ resolveThingName(m) }}
+                </span>
+                <span
+                  class="text-[rgba(0,0,0,0.55)] text-[0.72rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
+                >
+                  {{ targetDatastreamId(m) || '—' }}
+                </span>
+              </div>
+              <DatastreamSiteButton
+                :datastream="targetDatastream(m)"
+                :datastream-id="targetDatastreamId(m)"
+                :fallback-thing-id="resolveThingId(m)"
+              />
             </div>
           </div>
         </div>
@@ -54,7 +69,9 @@
 import { storeToRefs } from 'pinia'
 import type { TaskExpanded, TaskMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
+import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { datastreamThingId } from '@/utils/orchestration/datastreams'
 
 const props = defineProps<{
   task: TaskExpanded
@@ -71,10 +88,15 @@ function targetDatastream(mapping: TaskMapping) {
   return 'targetDatastream' in mapping ? mapping.targetDatastream : null
 }
 
+function targetDatastreamId(mapping: TaskMapping) {
+  const datastream = targetDatastream(mapping)
+  return datastream?.id || (mapping as any).targetDatastreamId || ''
+}
+
 function resolveTargetName(mapping: TaskMapping) {
   const datastream = targetDatastream(mapping)
   if (datastream?.name) return datastream.name
-  const id = datastream?.id
+  const id = targetDatastreamId(mapping)
   if (!id) return ''
   const key = String(id)
   return (
@@ -86,17 +108,22 @@ function resolveTargetName(mapping: TaskMapping) {
 }
 
 function resolveThingName(mapping: TaskMapping) {
-  const ds = targetDatastream(mapping)
-  const dsId = ds?.id
-  const thingId =
-    ds?.thingId ??
-    ds?.thing_id ??
-    (dsId
-      ? workspaceDatastreams.value.find((d) => d.id === String(dsId))?.thingId
-      : null)
+  const thingId = resolveThingId(mapping)
   if (!thingId) return ''
-  return (
-    workspaceThings.value.find((t) => t.id === String(thingId))?.name || ''
-  )
+  return workspaceThings.value.find((t) => t.id === String(thingId))?.name || ''
+}
+
+function resolveThingId(mapping: TaskMapping) {
+  const ds = targetDatastream(mapping)
+  const dsId = targetDatastreamId(mapping)
+  const thingId = ds ? datastreamThingId(ds as any) : ''
+  if (thingId) return thingId
+  if (!dsId) return ''
+  const key = String(dsId)
+  const relatedDatastream =
+    workspaceDatastreams.value.find((d) => d.id === key) ||
+    linkedDatastreams.value.find((d) => d.id === key) ||
+    draftDatastreams.value.find((d) => String(d.id) === key)
+  return relatedDatastream ? datastreamThingId(relatedDatastream as any) : ''
 }
 </script>
