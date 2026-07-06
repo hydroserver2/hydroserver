@@ -130,47 +130,81 @@ class Timestamp(Timezone):
         series: pd.Series
     ) -> pd.Series:
         """
-        Parse a pandas Series of timestamps and normalize them to a UTC baseline.
+        Parse a pandas Series of timestamps and normalize them to UTC.
 
-        Parsing Logic:
-        1. If timezone_type is 'utc' or None, strings are parsed as UTC-aware.
-        2. If timezone_type is 'iana' or 'offset', strings are parsed as naive.
+        Accepts uniform datetime64 Series, object-dtype Series of ISO strings,
+        object-dtype Series of strings with a custom timestamp_format, or
+        object-dtype Series of pd.Timestamp/datetime objects. Raises ValueError
+        on null values, mixed element types, or unsupported element types. Invalid
+        strings raise during parsing. The returned Series is always
+        datetime64[ns, UTC] with the same length as the input.
 
-        Conflict Resolution:
-        - Overwrite: If 'iana'/'offset' is configured but the data contains embedded
-          timezones, the embedded offsets are stripped and replaced by the config.
-        - Fallback: If no timezone is configured but the data is naive, UTC is assumed.
-        - Type Safety: Mixed offsets are flattened into a consistent datetime64[ns, UTC]
-          dtype to ensure the pandas .dt accessor remains available downstream.
+        For tz-naive inputs, the configured timezone is applied before converting
+        to UTC. If no timezone is configured, UTC is assumed. Tz-aware inputs are
+        converted to UTC from their embedded timezone without being overwritten.
+
+        For custom timestamp formats: include %z in timestamp_format if strings
+        carry embedded timezone info; omit %z if strings are tz-naive. A mismatch
+        between the format and the actual strings raises during parsing.
         """
 
-        # Ensure input is string-based for pandas parsing if not already datetime objects
-        if not pd.api.types.is_datetime64_any_dtype(series):
-            series: pd.Series = series.astype("string", copy=False).str.strip()
+        if len(series) == 0:
+            return pd.Series(dtype="datetime64[ns, UTC]")
 
-        # Determine if UTC parsing should be used directly
-        parse_as_utc = self.timezone_type in ["utc", None]
+        if series.isna().any():
+            raise ValueError("Series contains null or missing values")
 
-        # Perform initial parsing of the values
-        if self.timestamp_type == "iso":
-            parsed_series = pd.to_datetime(series, utc=parse_as_utc, errors="coerce")
+        tz_label = (
+            self._to_pandas_offset(self.timezone) if self.timezone_type == "offset"
+            else (self.timezone or "UTC")
+        )
+
+        # Uniform datetime64 (all naive or all same-tz-aware)
+        if pd.api.types.is_datetime64_any_dtype(series):
+            if series.dt.tz is None:
+                return series.dt.tz_localize(
+                    tz_label, ambiguous=False, nonexistent="shift_forward"
+                ).dt.tz_convert("UTC")
+            return series.dt.tz_convert("UTC")
+
+        # Object dtype: must be uniformly strings or Timestamp/datetime objects
+        first_timestamp = series.iloc[0]
+
+        if isinstance(first_timestamp, str):
+            series = series.str.strip()
+            if series.isna().any():
+                raise ValueError("Series contains mixed or non-string values")
+
+            if self.timestamp_format:
+                if "%z" in self.timestamp_format:
+                    return pd.Series(
+                        pd.to_datetime(series, utc=True, format=self.timestamp_format, errors="raise")
+                    )
+                return pd.Series(
+                    pd.to_datetime(series, utc=False, format=self.timestamp_format, errors="raise")
+                    .dt.tz_localize(tz_label, ambiguous=False, nonexistent="shift_forward")
+                    .dt.tz_convert("UTC")
+                )
+
+            # ISO strings: regex detects embedded tz per element to support mixed-offset series
+            # (pandas cannot parse mixed tz/naive strings without coercing to NaT)
+            has_tz = series.str.contains(r"[Zz]$|[+-]\d{2}:?\d{2}$", regex=True, na=False)
+            tz_aware = pd.to_datetime(series[has_tz], utc=True, errors="raise")
+            tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, errors="raise")
+
+        elif isinstance(first_timestamp, pd.Timestamp):
+            has_tz = series.apply(lambda x: x.tzinfo is not None)
+            tz_aware = pd.to_datetime(series[has_tz], utc=True)
+            tz_naive_raw_series = pd.to_datetime(series[~has_tz])
+
         else:
-            parsed_series = pd.to_datetime(series, utc=parse_as_utc, format=self.timestamp_format, errors="coerce")
+            raise ValueError(f"Unsupported series element type: {type(first_timestamp).__name__}")
 
-        # Apply fixed IANA or UTC offsets to the series if provided
-        if self.timezone_type in ["offset", "iana"]:
-            if parsed_series.dt.tz is not None or parsed_series.dtype == "object":
-                parsed_series = parsed_series.dt.tz_localize(None)
-            tz_label = self._to_pandas_offset(self.timezone) if self.timezone_type == "offset" else self.timezone
-            utc_series = parsed_series.dt.tz_localize(
-                tz_label, ambiguous=False, nonexistent="shift_forward"
-            ).dt.tz_convert(timezone.utc)
+        tz_naive_series = tz_naive_raw_series.dt.tz_localize(
+            tz_label, ambiguous=False, nonexistent="shift_forward"
+        ).dt.tz_convert("UTC")
 
-        # Normalize to UTC if the series timezones are embedded or naive and configured as UTC
-        else:
-            utc_series = pd.to_datetime(parsed_series, utc=True)
-
-        return utc_series
+        return pd.Series(pd.concat([tz_aware, tz_naive_series])).sort_index()
 
     def to_string(self, dt: datetime) -> str:
         """

@@ -189,17 +189,15 @@ class TestParseSeriesUtc:
         assert result.iloc[0] == pd.Timestamp("2024-01-01 00:00:00", tz="UTC")
         assert result.iloc[1] == pd.Timestamp("2024-06-15 12:30:00", tz="UTC")
 
-    def test_invalid_strings_become_nat(self, utc_iso_timestamp):
+    def test_invalid_strings_raise_error(self, utc_iso_timestamp):
         series = pd.Series(["not-a-date", "also-bad"])
-        result = utc_iso_timestamp.parse_series_to_utc(series)
-        assert result.isna().all()
+        with pytest.raises(Exception):
+            utc_iso_timestamp.parse_series_to_utc(series)
 
-    def test_mixed_valid_invalid(self, utc_iso_timestamp):
+    def test_mixed_valid_invalid_raises_error(self, utc_iso_timestamp):
         series = pd.Series(["2024-01-01T00:00:00", "bad-date", "2024-06-01T00:00:00"])
-        result = utc_iso_timestamp.parse_series_to_utc(series)
-        assert pd.notna(result.iloc[0])
-        assert pd.isna(result.iloc[1])
-        assert pd.notna(result.iloc[2])
+        with pytest.raises(Exception):
+            utc_iso_timestamp.parse_series_to_utc(series)
 
     def test_whitespace_is_stripped(self, utc_iso_timestamp):
         series = pd.Series(["  2024-01-01T12:00:00  ", "\t2024-06-01T00:00:00\n"])
@@ -262,11 +260,18 @@ class TestParseSeriesIana:
         assert result.dt.tz == timezone.utc
         assert result.iloc[0] == pd.Timestamp("2024-01-01 05:00:00", tz="UTC")
 
-    def test_embedded_offsets_are_overwritten_by_iana_zone(self, iana_timestamp):
-        # Embedded +05:30 is stripped; America/New_York (UTC-5 in Jan) applied instead
+    def test_embedded_offsets_are_preserved_with_iana_zone(self, iana_timestamp):
+        # Embedded +05:30 is respected; America/New_York config does not overwrite it
         series = pd.Series(["2024-01-01T00:00:00+05:30"])
         result = iana_timestamp.parse_series_to_utc(series)
+        assert result.iloc[0] == pd.Timestamp("2023-12-31 18:30:00", tz="UTC")
+
+    def test_naive_and_aware_mixed_series_with_iana_zone(self, iana_timestamp):
+        # Naive timestamps get America/New_York (UTC-5 in Jan); aware ones are preserved
+        series = pd.Series(["2024-01-01T00:00:00", "2024-01-01T00:00:00+05:30"])
+        result = iana_timestamp.parse_series_to_utc(series)
         assert result.iloc[0] == pd.Timestamp("2024-01-01 05:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2023-12-31 18:30:00", tz="UTC")
 
     def test_dst_spring_forward(self):
         ts = Timestamp(timestamp_type="iso", timezone_type="iana", timezone="America/New_York")
@@ -290,11 +295,18 @@ class TestParseSeriesOffset:
         assert result.dt.tz == timezone.utc
         assert result.iloc[0] == pd.Timestamp("2024-01-01 07:00:00", tz="UTC")
 
-    def test_embedded_offsets_are_overwritten_by_configured_offset(self, offset_timestamp):
-        # Embedded +05:30 is stripped; -0700 applied instead
+    def test_embedded_offsets_are_preserved_with_configured_offset(self, offset_timestamp):
+        # Embedded +05:30 is respected; -0700 config does not overwrite it
         series = pd.Series(["2024-01-01T00:00:00+05:30"])
         result = offset_timestamp.parse_series_to_utc(series)
+        assert result.iloc[0] == pd.Timestamp("2023-12-31 18:30:00", tz="UTC")
+
+    def test_naive_and_aware_mixed_series_with_configured_offset(self, offset_timestamp):
+        # Naive timestamps get -0700 applied; aware ones are preserved
+        series = pd.Series(["2024-01-01T00:00:00", "2024-01-01T00:00:00+05:30"])
+        result = offset_timestamp.parse_series_to_utc(series)
         assert result.iloc[0] == pd.Timestamp("2024-01-01 07:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2023-12-31 18:30:00", tz="UTC")
 
     def test_positive_offset_bare_format(self):
         ts = Timestamp(timestamp_type="iso", timezone_type="offset", timezone="+0530")
@@ -339,10 +351,10 @@ class TestParseSeriesCustomFormat:
         assert result.dt.tz == timezone.utc
         assert result.iloc[0] == pd.Timestamp("2024-03-15 08:00:00", tz="UTC")
 
-    def test_custom_format_wrong_data_becomes_nat(self, custom_timestamp):
+    def test_custom_format_wrong_data_raises_error(self, custom_timestamp):
         series = pd.Series(["2024-01-01T00:00:00Z"])
-        result = custom_timestamp.parse_series_to_utc(series)
-        assert result.isna().all()
+        with pytest.raises(Exception):
+            custom_timestamp.parse_series_to_utc(series)
 
     def test_custom_format_with_iana_timezone(self):
         ts = Timestamp(
@@ -403,3 +415,102 @@ class TestParseSeriesResultDtype:
         result = utc_iso_timestamp.parse_series_to_utc(pd.Series(dates))
         assert len(result) == 100_000
         assert result.isna().sum() == 0
+
+
+# ---------------------------------------------------------------------------
+# parse_series_to_utc – input validation errors
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesValidation:
+
+    def test_null_values_raise_error(self, utc_iso_timestamp):
+        series = pd.Series(["2024-01-01T00:00:00", None, "2024-06-01T00:00:00"])
+        with pytest.raises(ValueError, match="null"):
+            utc_iso_timestamp.parse_series_to_utc(series)
+
+    def test_mixed_strings_and_timestamps_raise_error(self, utc_iso_timestamp):
+        series = pd.Series(["2024-01-01T00:00:00Z", pd.Timestamp("2024-06-20", tz="UTC")])
+        with pytest.raises(ValueError):
+            utc_iso_timestamp.parse_series_to_utc(series)
+
+    def test_unsupported_element_type_raises_error(self, utc_iso_timestamp):
+        series = pd.Series([20240101, 20240615])
+        with pytest.raises((ValueError, TypeError)):
+            utc_iso_timestamp.parse_series_to_utc(series)
+
+    def test_invalid_string_raises_error(self, iana_timestamp):
+        series = pd.Series(["2024-01-15T08:00:00Z", "not-a-date"])
+        with pytest.raises(Exception):
+            iana_timestamp.parse_series_to_utc(series)
+
+
+# ---------------------------------------------------------------------------
+# parse_series_to_utc – pd.Timestamp object inputs
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesTimestampObjects:
+
+    def test_different_tz_aware_timestamps_convert_to_utc(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type="iana", timezone="America/New_York")
+        series = pd.Series([
+            pd.Timestamp("2024-01-15 08:00:00", tz="UTC"),
+            pd.Timestamp("2024-06-20 14:30:00", tz="America/New_York"),  # EDT = UTC-4
+            pd.Timestamp("2024-11-01 23:59:00", tz="Europe/London"),     # GMT = UTC+0
+        ])
+        result = ts.parse_series_to_utc(series)
+        assert result.dt.tz == timezone.utc
+        assert result.iloc[0] == pd.Timestamp("2024-01-15 08:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2024-06-20 18:30:00", tz="UTC")
+        assert result.iloc[2] == pd.Timestamp("2024-11-01 23:59:00", tz="UTC")
+
+    def test_mixed_naive_and_aware_timestamps_apply_config_tz_to_naive(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type="iana", timezone="America/New_York")
+        series = pd.Series([
+            pd.Timestamp("2024-01-15 08:00:00"),           # naive → America/New_York (EST = UTC-5)
+            pd.Timestamp("2024-01-15 08:00:00", tz="UTC"), # aware → preserved
+        ])
+        result = ts.parse_series_to_utc(series)
+        assert result.iloc[0] == pd.Timestamp("2024-01-15 13:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2024-01-15 08:00:00", tz="UTC")
+
+
+# ---------------------------------------------------------------------------
+# parse_series_to_utc – custom format with embedded timezone (%z)
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesCustomFormatWithTz:
+
+    def test_custom_format_with_tz_parses_embedded_offsets(self):
+        ts = Timestamp(
+            timestamp_type="custom",
+            timestamp_format="%m/%d/%Y %H:%M:%S %z",
+            timezone_type="iana",
+            timezone="America/New_York",
+        )
+        series = pd.Series(["01/15/2024 08:00:00 +0000", "11/01/2024 23:59:00 -0700"])
+        result = ts.parse_series_to_utc(series)
+        assert result.dt.tz == timezone.utc
+        assert result.iloc[0] == pd.Timestamp("2024-01-15 08:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2024-11-02 06:59:00", tz="UTC")
+
+    def test_custom_format_without_tz_raises_on_tz_aware_string(self):
+        ts = Timestamp(
+            timestamp_type="custom",
+            timestamp_format="%m/%d/%Y %H:%M:%S",
+            timezone_type="iana",
+            timezone="America/New_York",
+        )
+        series = pd.Series(["01/15/2024 08:00:00 +0000"])
+        with pytest.raises(Exception):
+            ts.parse_series_to_utc(series)
+
+    def test_custom_format_with_tz_raises_on_naive_string(self):
+        ts = Timestamp(
+            timestamp_type="custom",
+            timestamp_format="%m/%d/%Y %H:%M:%S %z",
+            timezone_type="iana",
+            timezone="America/New_York",
+        )
+        series = pd.Series(["01/15/2024 08:00:00"])
+        with pytest.raises(Exception):
+            ts.parse_series_to_utc(series)
