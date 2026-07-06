@@ -71,24 +71,13 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
       ])
 
       units.value = unitsResponse.filter(
-        (u) => (u.type !== 'Time' && !u.workspaceId) || u.workspaceId === id
+        (u) => u.workspaceId === id || u.type !== 'Time'
       )
 
-      sensors.value = sensorsResponse.filter(
-        (s) => s.workspaceId === null || s.workspaceId === id
-      )
-
-      observedProperties.value = observedPropertiesResponse.filter(
-        (op) => op.workspaceId === null || op.workspaceId === id
-      )
-
-      processingLevels.value = processingLevelsResponse.filter(
-        (p) => p.workspaceId === null || p.workspaceId === id
-      )
-
-      resultQualifiers.value = resultQualifiersResponse.filter(
-        (r) => r.workspaceId === null || r.workspaceId === id
-      )
+      sensors.value = sensorsResponse
+      observedProperties.value = observedPropertiesResponse
+      processingLevels.value = processingLevelsResponse
+      resultQualifiers.value = resultQualifiersResponse
     } catch (error) {
       console.error('Error fetching metadata', error)
     }

@@ -1,5 +1,40 @@
-from django.db import models
+import re
+
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
 from solo.models import SingletonModel
+
+
+SITE_TYPE_ICON_CHOICES = (
+    ("beach", "Beach"),
+    ("calculator", "Calculator"),
+    ("fountain", "Fountain"),
+    ("gate", "Gate"),
+    ("gauge", "Gauge"),
+    ("grass", "Grass"),
+    ("home-outline", "Home"),
+    ("hydro-power", "Hydropower"),
+    ("image-filter-hdr", "Land"),
+    ("map-marker", "Site marker"),
+    ("pipe-disconnected", "Disconnected pipe"),
+    ("road-variant", "Road"),
+    ("snowflake", "Snowflake"),
+    ("sprinkler", "Sprinkler"),
+    ("terrain", "Terrain"),
+    ("test-tube", "Test tube"),
+    ("vector-polyline", "Polyline"),
+    ("water", "Water"),
+    ("water-check", "Water quality"),
+    ("water-pump", "Water pump"),
+    ("water-well", "Water well"),
+    ("waves", "Waves"),
+    ("waves-arrow-right", "Waves with right arrow"),
+    ("weather-cloudy", "Cloudy weather"),
+)
+
+
+def normalize_site_type_keyword(value):
+    return re.sub(r"[\W_]+", " ", value.casefold()).strip()
 
 
 MAP_LAYER_TYPE_CHOICES = (
@@ -137,3 +172,105 @@ class MapLayer(models.Model):
 
     class Meta:
         verbose_name = "Map Layer"
+
+
+class SiteTypeIcon(models.Model):
+    icon = models.CharField(
+        max_length=50,
+        choices=SITE_TYPE_ICON_CHOICES,
+        unique=True,
+        editable=False,
+    )
+    site_types = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Site type names or keywords that should use this icon.",
+    )
+
+    def __str__(self):
+        return self.get_icon_display()
+
+    def clean(self):
+        super().clean()
+
+        if not isinstance(self.site_types, list) or any(
+            not isinstance(site_type, str) for site_type in self.site_types
+        ):
+            raise ValidationError(
+                {"site_types": "Site types must be a list of text values."}
+            )
+
+        self.site_types = [
+            site_type.strip() for site_type in self.site_types if site_type.strip()
+        ]
+        normalized_site_types = [
+            normalize_site_type_keyword(site_type) for site_type in self.site_types
+        ]
+
+        if any(not site_type for site_type in normalized_site_types):
+            raise ValidationError(
+                {
+                    "site_types": (
+                        "Site type names and keywords must contain at least one "
+                        "letter or number."
+                    )
+                }
+            )
+
+        if len(normalized_site_types) != len(set(normalized_site_types)):
+            raise ValidationError(
+                {"site_types": "Each site type may only appear once for an icon."}
+            )
+
+        duplicates = self._conflicting_keywords()
+        if duplicates:
+            raise ValidationError(
+                {
+                    "site_types": (
+                        "A site type or keyword can only map to one icon. "
+                        f"Already mapped: {', '.join(duplicates)}."
+                    )
+                }
+            )
+
+    def _conflicting_keywords(self):
+        """Return this icon's keywords that are already mapped to another icon."""
+
+        other_mappings = type(self).objects.exclude(pk=self.pk).values_list(
+            "icon", "site_types"
+        )
+        mapped_keywords = {
+            normalize_site_type_keyword(site_type)
+            for _, site_types in other_mappings
+            for site_type in site_types
+            if isinstance(site_type, str)
+        }
+        return [
+            site_type
+            for site_type in self.site_types
+            if normalize_site_type_keyword(site_type) in mapped_keywords
+        ]
+
+    def save(self, *args, **kwargs):
+        # clean() validates keyword uniqueness, but two concurrent saves can each
+        # pass validation before either commits, mapping the same keyword to two
+        # icons. Lock the other rows and re-check inside the write transaction so
+        # concurrent saves are serialized.
+        with transaction.atomic():
+            list(type(self).objects.select_for_update().values_list("pk", flat=True))
+            duplicates = self._conflicting_keywords()
+            if duplicates:
+                raise ValidationError(
+                    {
+                        "site_types": (
+                            "A site type or keyword can only map to one icon. "
+                            f"Already mapped: {', '.join(duplicates)}."
+                        )
+                    }
+                )
+            super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ("id",)
+        verbose_name = "Site Type Icon"
+        verbose_name_plural = "Site Type Icons"

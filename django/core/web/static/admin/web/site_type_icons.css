@@ -1,0 +1,13 @@
+.site-type-icon-preview {
+    display: block;
+}
+
+html[data-theme="dark"] .site-type-icon-preview {
+    filter: invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] .site-type-icon-preview {
+        filter: invert(1);
+    }
+}

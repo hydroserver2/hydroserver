@@ -4,6 +4,7 @@ import type { LocationQuery } from 'vue-router'
 
 export interface BrowseFilterRouteState {
   siteIds: string[]
+  searchText: string
   workspaceIds: string[]
   siteTypes: string[]
   drawer: boolean | null
@@ -11,20 +12,17 @@ export interface BrowseFilterRouteState {
 
 export interface BrowseFilterSelectionState {
   siteId?: string | null
+  searchText?: string | null
   workspaceIds: string[]
   siteTypes: string[]
   drawer?: boolean
 }
 
 const BROWSE_FILTER_QUERY_KEYS = [
-  'sites',
-  'site',
-  'siteId',
+  'selectedSite',
+  'search',
   'workspaces',
-  'workspace',
-  'workspaceIds',
   'siteTypes',
-  'siteType',
   'drawer',
 ]
 
@@ -37,10 +35,28 @@ const queryValues = (value: unknown): string[] => {
     .filter(Boolean)
 }
 
+// Free-text search is a single value that may legitimately contain commas, so
+// it must not be run through queryValues() (which splits on commas).
+const querySingleValue = (value: unknown): string => {
+  const raw = Array.isArray(value) ? value[0] : value
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
+const queryExactValues = (value: unknown): string[] => {
+  const values = Array.isArray(value) ? value : [value]
+
+  return values
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+}
+
 const uniqueValues = (values: string[]) => [...new Set(values)]
 
 const readQueryValues = (query: LocationQuery, keys: string[]): string[] =>
   uniqueValues(keys.flatMap((key) => queryValues(query[key])))
+
+const readExactQueryValues = (query: LocationQuery, keys: string[]): string[] =>
+  uniqueValues(keys.flatMap((key) => queryExactValues(query[key])))
 
 const parseBooleanQuery = (value: unknown): boolean | null => {
   const [raw] = queryValues(value)
@@ -63,13 +79,10 @@ export function parseBrowseFilterQuery(
   query: LocationQuery
 ): BrowseFilterRouteState {
   return {
-    siteIds: readQueryValues(query, ['sites', 'site', 'siteId']),
-    workspaceIds: readQueryValues(query, [
-      'workspaces',
-      'workspace',
-      'workspaceIds',
-    ]),
-    siteTypes: readQueryValues(query, ['siteTypes', 'siteType']),
+    siteIds: readQueryValues(query, ['selectedSite']),
+    searchText: querySingleValue(query.search),
+    workspaceIds: readQueryValues(query, ['workspaces']),
+    siteTypes: readExactQueryValues(query, ['siteTypes']),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
@@ -83,11 +96,13 @@ export function buildBrowseFilterQuery(
   BROWSE_FILTER_QUERY_KEYS.forEach((key) => delete nextQuery[key])
 
   const siteIds = state.siteId ? [state.siteId] : []
+  const searchText = state.searchText?.trim()
   const sites = queryArray(siteIds)
   const workspaces = queryArray(state.workspaceIds)
   const siteTypes = queryArray(state.siteTypes)
 
-  if (sites !== undefined) nextQuery.sites = sites
+  if (sites !== undefined) nextQuery.selectedSite = sites
+  if (searchText) nextQuery.search = searchText
   if (workspaces !== undefined) nextQuery.workspaces = workspaces
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes
   if (state.drawer === false) nextQuery.drawer = '0'

@@ -7,6 +7,7 @@ import {
   PostHydroShareArchive,
   HydroShareArchive,
   ThingMarker,
+  SiteTypeIcon,
   ThingSiteSummary,
   ThingTaskSummary,
   Tag,
@@ -51,6 +52,8 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     apiMethods.patch<Thing>(`${this._route}/${id}`, { isPrivate })
 
   getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
+  getSiteTypeIcons = () =>
+    apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
   getSamplingFeatureTypes = () =>
     apiMethods.fetch<string[]>(`${this._route}/sampling-feature-types`)
 

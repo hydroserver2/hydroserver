@@ -78,7 +78,7 @@
     <template v-slot:item.actions="{ item }">
       <v-icon :icon="mdiRefresh" @click="onOpenRegenerateDialog(item)" />
       <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiDelete" @click="openDialog(item, 'delete')" />
+      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
     </template>
   </v-data-table-virtual>
 
@@ -127,7 +127,7 @@ import DeleteApiKey from './DeleteApiKey.vue'
 import ApiKeyRegenerateForm from './ApiKeyRegenerateForm.vue'
 import {
   mdiContentCopy,
-  mdiDelete,
+  mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiPencil,
   mdiPlus,

@@ -157,6 +157,11 @@ class ThingMarkerResponse(BaseGetResponse):
     longitude: float
 
 
+class SiteTypeIconResponse(BaseGetResponse):
+    icon: str
+    site_types: list[str]
+
+
 class ThingSiteSummaryQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter site summaries by workspace ID."

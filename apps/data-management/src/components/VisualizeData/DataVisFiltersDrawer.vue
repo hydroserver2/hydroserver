@@ -37,7 +37,7 @@
               return-object
               multiple
               clearable
-              :prepend-inner-icon="mdiDomain"
+              :prepend-inner-icon="mdiBriefcaseOutline"
               label="Workspaces"
               density="compact"
               variant="outlined"
@@ -73,7 +73,7 @@
               return-object
               multiple
               clearable
-              :prepend-inner-icon="mdiMapMarker"
+              :prepend-inner-icon="mdiMapMarkerOutline"
               label="Sites"
               density="compact"
               variant="outlined"
@@ -185,10 +185,10 @@ import { useSidebarStore } from '@/store/useSidebar'
 import { useWorkspaceStore } from '@/store/workspaces'
 import {
   mdiChartLine,
+  mdiBriefcaseOutline,
   mdiClose,
-  mdiDomain,
   mdiLayersOutline,
-  mdiMapMarker,
+  mdiMapMarkerOutline,
 } from '@mdi/js'
 
 const {
@@ -287,7 +287,9 @@ const sortedProcessingLevelNames = computed(() => {
       return
     }
 
-    const definition = dataVisStore.processingLevelById.get(ds.processingLevelId)?.definition
+    const definition = dataVisStore.processingLevelById.get(
+      ds.processingLevelId
+    )?.definition
     if (definition) {
       names.add(definition)
     }
@@ -328,7 +330,9 @@ const sortedObservedPropertyNames = computed(() => {
       return
     }
 
-    const name = dataVisStore.observedPropertyById.get(ds.observedPropertyId)?.name
+    const name = dataVisStore.observedPropertyById.get(
+      ds.observedPropertyId
+    )?.name
     if (name) {
       names.add(name)
     }
@@ -396,5 +400,4 @@ watch(
 .datavis-filters-drawer {
   z-index: 1;
 }
-
 </style>

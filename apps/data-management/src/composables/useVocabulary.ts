@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import hs from '@hydroserver/client'
+import type { SiteTypeIcon } from '@hydroserver/client'
 
 export const useVocabularyStore = defineStore('vocabulary', () => {
   const userTypes = ref<string[]>([])
   const organizationTypes = ref<string[]>([])
   const siteTypes = ref<string[]>([])
+  const siteTypeIcons = ref<SiteTypeIcon[]>([])
   const samplingFeatureTypes = ref<string[]>([])
   const sensorEncodingTypes = ref<string[]>([])
   const methodTypes = ref<string[]>([])
@@ -28,6 +30,11 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   async function fetchSiteTypes() {
     const res = await hs.things.getSiteTypes()
     if (res.ok) siteTypes.value = res.data
+  }
+
+  async function fetchSiteTypeIcons() {
+    const res = await hs.things.getSiteTypeIcons()
+    if (res.ok) siteTypeIcons.value = res.data
   }
 
   async function fetchSamplingFeatureTypes() {
@@ -76,6 +83,7 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
       fetchUserTypes(),
       fetchOrganizationTypes(),
       fetchSiteTypes(),
+      fetchSiteTypeIcons(),
       fetchSamplingFeatureTypes(),
       fetchSensorEncodingTypes(),
       fetchMethodTypes(),
@@ -91,6 +99,7 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     userTypes,
     organizationTypes,
     siteTypes,
+    siteTypeIcons,
     samplingFeatureTypes,
     sensorEncodingTypes,
     methodTypes,
@@ -103,6 +112,7 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     fetchUserTypes,
     fetchOrganizationTypes,
     fetchSiteTypes,
+    fetchSiteTypeIcons,
     fetchSamplingFeatureTypes,
     fetchSensorEncodingTypes,
     fetchMethodTypes,

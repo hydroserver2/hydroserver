@@ -30,6 +30,7 @@ from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResp
 from interfaces.api.schemas.sta.thing import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
+    SiteTypeIconResponse,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
     ThingTaskSummaryResponse,

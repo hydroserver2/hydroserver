@@ -8,26 +8,26 @@
               {{ title || 'Job orchestration' }}
             </h1>
           </v-col>
-            <v-spacer />
-            <v-col cols="auto">
-              <WorkspaceSelector />
-            </v-col>
-            <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
-              <v-btn
-                @click="openWorkspaceTable = !openWorkspaceTable"
-                rounded="lg"
-                color="primary"
-                variant="outlined"
-                density="comfortable"
-                class="text-none font-weight-regular"
-                :append-icon="openWorkspaceTable ? mdiMenuUp : mdiMenuDown"
-              >
-                Manage workspaces
-              </v-btn>
-            </v-col>
-            <v-col v-if="$slots.actions" cols="12" sm="auto">
-              <slot name="actions" />
-            </v-col>
+          <v-spacer />
+          <v-col cols="auto">
+            <WorkspaceSelector />
+          </v-col>
+          <v-col v-if="!hideWorkspaceManagement" cols="12" sm="auto">
+            <v-btn
+              @click="openWorkspaceTable = !openWorkspaceTable"
+              rounded="lg"
+              color="primary"
+              variant="outlined"
+              density="comfortable"
+              class="text-none font-weight-regular"
+              :append-icon="openWorkspaceTable ? mdiMenuUp : mdiMenuDown"
+            >
+              Manage workspaces
+            </v-btn>
+          </v-col>
+          <v-col v-if="$slots.actions" cols="12" sm="auto">
+            <slot name="actions" />
+          </v-col>
           <v-col cols="12" sm="auto" v-if="pendingWorkspaces.length">
             <v-btn
               @click="openTransferTable = !openTransferTable"
@@ -277,7 +277,7 @@
                 variant="text"
                 color="red-darken-2"
                 @click="openDialog(item, 'delete')"
-                :icon="mdiDelete"
+                :icon="mdiTrashCanOutline"
                 :data-testid="`workspace-delete-${item.id}`"
                 rounded="xl"
               />
@@ -350,7 +350,7 @@ import {
   mdiBriefcaseOutline,
   mdiCheck,
   mdiClose,
-  mdiDelete,
+  mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiLockPlusOutline,
   mdiMagnify,
