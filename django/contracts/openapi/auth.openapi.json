@@ -678,7 +678,7 @@
   "info": {
     "description": "",
     "title": "HydroServer User Authentication API",
-    "version": "1.10.2"
+    "version": "1.10.3"
   },
   "openapi": "3.1.0",
   "paths": {

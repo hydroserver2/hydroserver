@@ -372,7 +372,7 @@ describe('task run detail helpers', () => {
       getTaskStatusText({
         schedule: {
           paused: false,
-          nextRunAt: null,
+          nextRunAt: '2026-02-24T12:00:00Z',
           interval: 1,
           intervalPeriod: 'days',
         },
@@ -401,7 +401,7 @@ describe('task run detail helpers', () => {
     vi.useRealTimers()
   })
 
-  it('infers an interval next run when the cached schedule value is empty', () => {
+  it('returns null when the backend provides no nextRunAt', () => {
     const next = getTaskNextRunAt({
       schedule: {
         nextRunAt: null,
@@ -416,10 +416,10 @@ describe('task run detail helpers', () => {
       },
     })
 
-    expect(next?.toISOString()).toBe('2026-03-13T12:00:00.000Z')
+    expect(next).toBeNull()
   })
 
-  it('prefers the backend cached next run when present', () => {
+  it('returns the backend-provided nextRunAt when present', () => {
     const next = getTaskNextRunAt({
       schedule: {
         nextRunAt: '2026-03-14T08:30:00Z',
@@ -435,23 +435,5 @@ describe('task run detail helpers', () => {
     })
 
     expect(next?.toISOString()).toBe('2026-03-14T08:30:00.000Z')
-  })
-
-  it('infers a crontab next run when the cached schedule value is empty', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-03-13T12:00:00Z'))
-
-    const next = getTaskNextRunAt({
-      schedule: {
-        nextRunAt: null,
-        startTime: '2026-03-13T10:00:00Z',
-        crontab: '30 14 * * *',
-      },
-      latestRun: null,
-    })
-
-    expect(next?.toISOString()).toBe(
-      new Date(2026, 2, 13, 14, 30).toISOString()
-    )
   })
 })

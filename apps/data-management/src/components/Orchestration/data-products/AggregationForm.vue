@@ -204,6 +204,7 @@ import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type DataProductTask,
+  type DataProductTaskExpanded,
   type AggregationMethod,
   type AggregationTransformationValues,
   type IntervalUnit,
@@ -377,35 +378,37 @@ async function loadDatastreams() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  try {
-    const [taskRes, transformRes] = await Promise.all([
-      hs.dataProductTasks.get(props.editTaskId),
-      hs.dataProductTasks.listAggregationTransformations(props.editTaskId),
-    ])
-
-    if (taskRes.ok && taskRes.data?.name) {
-      taskName.value = taskRes.data.name
-      schedule.value = taskRes.data.schedule ?? null
-    }
-
-    if (transformRes.ok && transformRes.data?.length) {
-      const t = transformRes.data[0]
-      existingTransformationId.value = t.id
-      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
-      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-      aggregationMethod.value = t.aggregationMethod
-      outputInterval.value = t.outputInterval
-      outputIntervalUnits.value = t.outputIntervalUnits
-      minValues.value = t.minValues ?? null
-      timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
-      timezone.value = t.timezone ?? null
-      originalTransformation.value = currentTransformationValues()
-    }
-  } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to load existing task.')
-  } finally {
+  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
+    expand_related: true,
+  })
+  if (!taskRes.ok) {
+    Snackbar.error(taskRes.message || 'Unable to load existing task.')
     loadingExisting.value = false
+    return
   }
+
+  const task = taskRes.data as unknown as DataProductTaskExpanded
+
+  if (task?.name) {
+    taskName.value = task.name
+    schedule.value = task.schedule ?? null
+  }
+
+  if (task?.aggregationTransformations?.length) {
+    const t = task.aggregationTransformations[0]
+    existingTransformationId.value = t.id
+    inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+    aggregationMethod.value = t.aggregationMethod
+    outputInterval.value = t.outputInterval
+    outputIntervalUnits.value = t.outputIntervalUnits
+    minValues.value = t.minValues ?? null
+    timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
+    timezone.value = t.timezone ?? null
+    originalTransformation.value = currentTransformationValues()
+  }
+
+  loadingExisting.value = false
 }
 
 async function onSubmit() {

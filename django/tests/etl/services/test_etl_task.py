@@ -12,6 +12,8 @@ DC1 = "019adb5c-da8b-7970-877d-c3b4ca37cc60"    # private workspace
 DC2 = "019bbd9d-ee62-7669-8db0-3ef50802f1d8"    # public workspace
 PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
 PUBLIC_WORKSPACE = "6e0deaf2-a92b-421b-9ece-86783265596f"
+PRIVATE_WS_THING = "819260c8-2543-4046-b8c4-7431243ed7c5"  # thing that DS_PRIVATE_WS belongs to (mapped by TASK1)
+PUBLIC_WS_THING = "3b7818af-eff7-4149-8517-e5cad9dc22e1"   # thing in public workspace (no ETL mapping)
 DS_PRIVATE_WS = "dd1f9293-ce29-4b6a-88e6-d65110d1be65"   # public datastream, public thing, private workspace (mapped by TASK1)
 DS_PRIVATE_WS_2 = "1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2"  # private datastream, public thing, private workspace
 DS_PUBLIC_WS = "27c70b41-e845-40ea-8cc7-d1b40f89816b"   # public datastream, public thing, public workspace
@@ -39,6 +41,9 @@ NONEXISTENT = "00000000-0000-0000-0000-000000000000"
         # Data connection filter
         ("owner", {"data_connection": [uuid.UUID(DC1)]}, ["Test ETL Task"], 10),
         ("owner", {"data_connection": [uuid.UUID(DC2)]}, [], 10),
+        # Thing filter (via ETL mapping → target datastream → thing)
+        ("owner", {"thing": [uuid.UUID(PRIVATE_WS_THING)]}, ["Test ETL Task"], 10),
+        ("owner", {"thing": [uuid.UUID(PUBLIC_WS_THING)]}, [], 10),
     ],
 )
 def test_list_etl_tasks(

@@ -4,13 +4,13 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "HydroServer",
   description: "The official docs for HydroServer",
-  base: "/hydroserver/",
+  base: "/",
   head: [
     [
       "link",
       {
         rel: "icon",
-        href: "/hydroserver/favicon.ico",
+        href: "/favicon.ico",
       },
     ],
   ],
