@@ -34,12 +34,21 @@ describe('filterThingMarkers', () => {
       latitude: 41.9,
       longitude: -111.6,
     },
+    {
+      id: 'thing-4',
+      workspaceId: 'workspace-1',
+      name: 'Reservoir Site',
+      siteType: 'Lake, Reservoir, Impoundment',
+      isPrivate: false,
+      latitude: 42.0,
+      longitude: -111.5,
+    },
   ]
 
   it('returns all things when no filters are selected', () => {
     expect(
       filterThingMarkers(things as any, [], []).map((thing) => thing.id)
-    ).toEqual(['thing-1', 'thing-2', 'thing-3'])
+    ).toEqual(['thing-1', 'thing-2', 'thing-3', 'thing-4'])
   })
 
   it('filters things by selected workspaces', () => {
@@ -49,7 +58,7 @@ describe('filterThingMarkers', () => {
       filterThingMarkers(things as any, selectedWorkspaces as any, []).map(
         (thing) => thing.id
       )
-    ).toEqual(['thing-1', 'thing-3'])
+    ).toEqual(['thing-1', 'thing-3', 'thing-4'])
   })
 
   it('filters things by selected site types', () => {
@@ -58,6 +67,14 @@ describe('filterThingMarkers', () => {
         (thing) => thing.id
       )
     ).toEqual(['thing-1', 'thing-2'])
+  })
+
+  it('filters things by custom site types that contain commas', () => {
+    expect(
+      filterThingMarkers(things as any, [], [
+        'Lake, Reservoir, Impoundment',
+      ]).map((thing) => thing.id)
+    ).toEqual(['thing-4'])
   })
 
   it('requires a thing to match both workspace and site type filters', () => {
@@ -111,7 +128,7 @@ describe('parseBrowseFilterQuery', () => {
     })
   })
 
-  it('deduplicates canonical values and accepts comma-separated lists', () => {
+  it('deduplicates canonical values and accepts comma-separated non-site-type lists', () => {
     expect(
       parseBrowseFilterQuery({
         selectedSite: ['thing-1', 'thing-1'],
@@ -129,6 +146,14 @@ describe('parseBrowseFilterQuery', () => {
     })
   })
 
+  it('preserves commas in site types because custom site type names can contain commas', () => {
+    expect(
+      parseBrowseFilterQuery({
+        siteTypes: 'Lake, Reservoir, Impoundment',
+      }).siteTypes
+    ).toEqual(['Lake, Reservoir, Impoundment'])
+  })
+
   it('returns null for an absent or unrecognized drawer state', () => {
     expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
     expect(parseBrowseFilterQuery({}).drawer).toBeNull()
@@ -142,6 +167,16 @@ describe('parseBrowseFilterQuery', () => {
     )
 
     expect(parseBrowseFilterQuery(query).searchText).toBe(searchText)
+  })
+
+  it('preserves comma-containing site types through query round trips', () => {
+    const siteType = 'Lake, Reservoir, Impoundment'
+    const query = buildBrowseFilterQuery(
+      {},
+      { searchText: '', workspaceIds: [], siteTypes: [siteType] }
+    )
+
+    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([siteType])
   })
 })
 

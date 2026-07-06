@@ -43,7 +43,6 @@ SITE_TYPES = [
     "House",
     "Land",
     "Pavement",
-    "Site — default fallback",
 ]
 
 
@@ -113,7 +112,6 @@ def test_default_site_type_icon_mappings_are_available(client):
     assert {
         "icon": "map-marker",
         "siteTypes": [
-            "Site — Default Fallback",
             "Monitoring Site",
             "Monitoring Station",
             "Site",
@@ -129,12 +127,18 @@ def test_default_site_type_icon_mappings_are_available(client):
 @pytest.mark.django_db
 def test_canonical_site_types_are_first_in_default_icon_mappings():
     first_site_types = [
-        mapping.site_types[0] for mapping in SiteTypeIcon.objects.order_by("id")
+        mapping.site_types[0]
+        for mapping in SiteTypeIcon.objects.exclude(icon="map-marker").order_by("id")
     ]
 
-    assert len(first_site_types) == len(set(first_site_types)) == 24
+    assert len(first_site_types) == len(set(first_site_types)) == 23
     assert {site_type.casefold() for site_type in first_site_types} == {
         site_type.casefold() for site_type in SITE_TYPES
+    }
+    assert "Site — Default Fallback" not in {
+        site_type
+        for mapping in SiteTypeIcon.objects.all()
+        for site_type in mapping.site_types
     }
 
     for mapping in SiteTypeIcon.objects.all():

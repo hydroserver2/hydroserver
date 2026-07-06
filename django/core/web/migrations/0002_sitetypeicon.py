@@ -40,7 +40,6 @@ DEFAULT_SITE_TYPE_ICONS = (
     (
         "map-marker",
         [
-            "Site — Default Fallback",
             "Monitoring Site",
             "Monitoring Station",
             "Site",

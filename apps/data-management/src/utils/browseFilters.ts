@@ -42,10 +42,21 @@ const querySingleValue = (value: unknown): string => {
   return typeof raw === 'string' ? raw.trim() : ''
 }
 
+const queryExactValues = (value: unknown): string[] => {
+  const values = Array.isArray(value) ? value : [value]
+
+  return values
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+}
+
 const uniqueValues = (values: string[]) => [...new Set(values)]
 
 const readQueryValues = (query: LocationQuery, keys: string[]): string[] =>
   uniqueValues(keys.flatMap((key) => queryValues(query[key])))
+
+const readExactQueryValues = (query: LocationQuery, keys: string[]): string[] =>
+  uniqueValues(keys.flatMap((key) => queryExactValues(query[key])))
 
 const parseBooleanQuery = (value: unknown): boolean | null => {
   const [raw] = queryValues(value)
@@ -71,7 +82,7 @@ export function parseBrowseFilterQuery(
     siteIds: readQueryValues(query, ['selectedSite']),
     searchText: querySingleValue(query.search),
     workspaceIds: readQueryValues(query, ['workspaces']),
-    siteTypes: readQueryValues(query, ['siteTypes']),
+    siteTypes: readExactQueryValues(query, ['siteTypes']),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
