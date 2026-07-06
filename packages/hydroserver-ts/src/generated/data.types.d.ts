@@ -4036,6 +4036,18 @@ export interface components {
             recipientEmails: string[];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
         };
+        /** ObservationBulkColumnarPostBody */
+        ObservationBulkColumnarPostBody: {
+            /** Phenomenontime */
+            phenomenonTime: (string)[];
+            /** Result */
+            result: (number | null)[];
+            /**
+             * Resultqualifiercodes
+             * @default []
+             */
+            resultQualifierCodes: string[][];
+        };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
             /** Phenomenontimeend */
@@ -6937,7 +6949,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ObservationBulkPostBody"];
+                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
             };
         };
         responses: {
