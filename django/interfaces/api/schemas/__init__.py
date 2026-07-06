@@ -98,6 +98,7 @@ from interfaces.api.schemas.sta.observation import (
     ObservationPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkPostBody,
+    ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
 )
 from interfaces.api.schemas.sta.attachment import (

@@ -19,6 +19,7 @@ from interfaces.api.schemas.sta.observation import (
     ObservationDetailResponse,
     ObservationPostBody,
     ObservationBulkPostBody,
+    ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
 )
 from core.sta.services.datastream import DatastreamService
@@ -48,24 +49,8 @@ class ObservationService(ServiceUtils):
         expand_related: Optional[bool] = None,
     ):
         try:
-            result_qualifier_subquery = (
-                Observation.result_qualifiers.through.objects.filter(
-                    **{"observation": OuterRef("pk")}
-                )
-                .values("observation")
-                .annotate(
-                    codes=ArrayAgg(
-                        "resultqualifier__code",
-                        distinct=True,
-                        filter=~Q(**{"resultqualifier__code": None}),
-                    )
-                )
-                .values("codes")[:1]
-            )
             observation = Observation.objects.annotate(
-                result_qualifier_codes=Coalesce(
-                    Subquery(result_qualifier_subquery), Value([])
-                )
+                result_qualifier_codes=F("result_qualifiers")
             )
             if expand_related:
                 observation = self.select_expanded_fields(observation)
@@ -249,28 +234,23 @@ class ObservationService(ServiceUtils):
             raise HttpError(409, "Duplicate phenomenonTime or ID found on this datastream.")
 
         if data.result_qualifier_codes:
-            result_qualifiers = (
+            valid_codes = set(
                 ResultQualifier.objects.filter(
                     Q(workspace_id=datastream.thing.workspace_id)
                     | Q(workspace__isnull=True)
                 )
                 .filter(code__in=data.result_qualifier_codes)
                 .visible(principal=principal)
-                .values("id", "code", "workspace_id")
+                .values_list("code", flat=True)
             )
-            result_qualifier_map = {
-                row["code"]: row["id"]
-                for row in sorted(
-                    result_qualifiers, key=lambda r: r["workspace_id"] is not None
-                )
-            }
-            invalid_codes = set(data.result_qualifier_codes) - result_qualifier_map.keys()
+            invalid_codes = set(data.result_qualifier_codes) - valid_codes
             if invalid_codes:
                 raise HttpError(
                     400,
                     f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
                 )
-            observation.result_qualifiers.add(*result_qualifier_map.values())
+            observation.result_qualifiers = data.result_qualifier_codes
+            observation.save(update_fields=["result_qualifiers"])
 
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
@@ -312,7 +292,7 @@ class ObservationService(ServiceUtils):
     def bulk_create(
         self,
         principal: User | APIKey,
-        data: ObservationBulkPostBody,
+        data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
         datastream_id: uuid.UUID,
         mode: Literal["insert", "append", "backfill", "replace"],
         update_datastream_statistics: bool = True,
