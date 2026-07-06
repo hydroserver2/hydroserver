@@ -54,8 +54,8 @@ By combining the flexible API structure of SensorThings with the domain-specific
 For detailed information about HydroServer's data model, go to the [data model documentation](/references/data-model.md).
 
 <script setup>
-const STDataModelLight = '/hydroserver/data-model/ogc_sensorthings_data_model_light.png'
-const STDataModelDark = '/hydroserver/data-model/ogc_sensorthings_data_model_dark.png'
-const ODMModelLight = '/hydroserver/data-model/odm_time_series_information_model_light.png'
-const ODMModelDark = '/hydroserver/data-model/odm_time_series_information_model_dark.png'
+const STDataModelLight = '/data-model/ogc_sensorthings_data_model_light.png'
+const STDataModelDark = '/data-model/ogc_sensorthings_data_model_dark.png'
+const ODMModelLight = '/data-model/odm_time_series_information_model_light.png'
+const ODMModelDark = '/data-model/odm_time_series_information_model_dark.png'
 </script>

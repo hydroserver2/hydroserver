@@ -62,12 +62,9 @@ const buildRowBase = (
   const schedule = (task.schedule ?? null) as TaskSchedule | null
   const latestRun = ((task as any).latestRun ?? null) as TaskRun | null
   const nextRunAtDate = getTaskNextRunAt(task as any)
-  const hasValidCachedNextRun =
-    !!schedule?.nextRunAt &&
-    !Number.isNaN(new Date(schedule.nextRunAt).getTime())
-  const nextRunAt = hasValidCachedNextRun
-    ? schedule?.nextRunAt ?? null
-    : nextRunAtDate?.toISOString() ?? null
+  const nextRunAt = nextRunAtDate
+    ? nextRunAtDate.toISOString().replace(/\.\d{3}Z$/, 'Z')
+    : null
   return {
     id: task.id,
     kind,

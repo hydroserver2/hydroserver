@@ -32,10 +32,10 @@ Covers ETL tasks, data product tasks, and monitoring tasks — the entities that
 </a>
 
 <script setup>
-const hydroserverIamModelLight = '/hydroserver/data-model/hydroserver_iam_model_light.png'
-const hydroserverIamModelDark = '/hydroserver/data-model/hydroserver_iam_model_dark.png'
-const hydroserverDataModelLight = '/hydroserver/data-model/hydroserver_data_model_light.png'
-const hydroserverDataModelDark = '/hydroserver/data-model/hydroserver_data_model_dark.png'
-const hydroserverProcessingModelLight = '/hydroserver/data-model/hydroserver_processing_model_light.png'
-const hydroserverProcessingModelDark = '/hydroserver/data-model/hydroserver_processing_model_dark.png'
+const hydroserverIamModelLight = '/data-model/hydroserver_iam_model_light.png'
+const hydroserverIamModelDark = '/data-model/hydroserver_iam_model_dark.png'
+const hydroserverDataModelLight = '/data-model/hydroserver_data_model_light.png'
+const hydroserverDataModelDark = '/data-model/hydroserver_data_model_dark.png'
+const hydroserverProcessingModelLight = '/data-model/hydroserver_processing_model_light.png'
+const hydroserverProcessingModelDark = '/data-model/hydroserver_processing_model_dark.png'
 </script>
