@@ -1,97 +1,70 @@
 ---
 - model: sta.sitetype
-  pk: 1
   fields:
     name: Conveyance
 - model: sta.sitetype
-  pk: 2
   fields:
     name: Stream
 - model: sta.sitetype
-  pk: 3
   fields:
     name: Reservoir / Lake
 - model: sta.sitetype
-  pk: 4
   fields:
     name: Reservoir Release
 - model: sta.sitetype
-  pk: 5
   fields:
     name: Dam / Control Structure
 - model: sta.sitetype
-  pk: 6
   fields:
     name: Groundwater Well
 - model: sta.sitetype
-  pk: 7
   fields:
     name: Irrigation
 - model: sta.sitetype
-  pk: 8
   fields:
     name: Hydropower
 - model: sta.sitetype
-  pk: 9
   fields:
     name: Pump Station
 - model: sta.sitetype
-  pk: 10
   fields:
     name: Spring
 - model: sta.sitetype
-  pk: 11
   fields:
     name: Wetland
 - model: sta.sitetype
-  pk: 12
   fields:
     name: Coastal
 - model: sta.sitetype
-  pk: 13
   fields:
     name: Snow / Ice
 - model: sta.sitetype
-  pk: 14
   fields:
     name: Weather / Atmosphere
 - model: sta.sitetype
-  pk: 15
   fields:
     name: Soil
 - model: sta.sitetype
-  pk: 16
   fields:
     name: Stormwater
 - model: sta.sitetype
-  pk: 17
   fields:
     name: Gaging Station
 - model: sta.sitetype
-  pk: 18
   fields:
     name: Water Quality Station
 - model: sta.sitetype
-  pk: 19
   fields:
     name: Discrete Sample
 - model: sta.sitetype
-  pk: 20
   fields:
     name: Modeled / Calculated
 - model: sta.sitetype
-  pk: 21
   fields:
     name: House
 - model: sta.sitetype
-  pk: 22
   fields:
     name: Land
 - model: sta.sitetype
-  pk: 23
   fields:
     name: Pavement
-- model: sta.sitetype
-  pk: 24
-  fields:
-    name: Site — default fallback
