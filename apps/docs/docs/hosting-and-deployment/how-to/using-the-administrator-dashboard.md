@@ -142,13 +142,16 @@ Enter one site type name or keyword per line. Matching ignores case and punctuat
 precedence. For example, a site type of `Stream Gage` can map to the gauge icon while `Stream` maps to the water icon.
 Each keyword can be assigned to only one icon. Leave an icon's keyword list empty if it should not be used.
 
-If no configured keyword matches a site's type, the Data Management app uses the default site marker icon.
+If no configured keyword matches a site's type, the Data Management app uses the default outlined map marker icon.
 
 ## Data and Metadata Administration
 
 The **Measurement Data** section exposes the core HydroServer data models. Most data entry should happen through the
 HydroServer web application, API, or client libraries, but the Django admin can be useful for reviewing records and
 performing administrator-only maintenance.
+
+Additional vocabulary models also appear in this admin section and are documented under **Controlled Vocabularies**
+below.
 
 | Model | Purpose |
 | --- | --- |
@@ -230,6 +233,8 @@ To enable authentication through third-party identity providers, do the followin
     "allowConnection": true
   }
   ```
-- Use **allowSignUp** to control whether users can sign up and log in with this provider.
+- Use **allowSignUp** to control whether users can sign up with this provider.
 - Use **allowConnection** to control whether users can connect the provider to an existing HydroServer account.
+- When omitted, **allowSignUp** defaults to enabled, but **allowConnection** is enabled only when explicitly set to
+  `true`.
 - Assign the default site that the provider can authenticate against.
