@@ -471,3 +471,98 @@ def test_update_json_data_connection_with_invalid_jmespath(get_principal):
             jmespath="[invalid",
         )
     assert "Invalid JMESPath expression" in _err(exc_info)
+
+
+def test_create_data_connection_with_window(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 0, "lookback_units": "hours"},
+        },
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+    assert p.data_ingestion_window_start_timestamp is None
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 0
+    assert p.data_ingestion_window_end_lookback_unit == "hours"
+    assert p.data_ingestion_window_end_timestamp is None
+
+
+def test_create_data_connection_with_start_boundary_only(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+        data_ingestion_window={"start": {"anchor": "latest_observation_timestamp", "lookback": 7, "lookback_units": "days"}},
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "latest_observation_timestamp"
+    assert p.data_ingestion_window_start_lookback == 7
+    assert p.data_ingestion_window_start_lookback_unit == "days"
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_create_data_connection_without_window_leaves_fields_null(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_sets_window(get_principal):
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 48, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 0, "lookback_units": "hours"},
+        },
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 48
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 0
+
+
+def test_update_data_connection_clears_window(get_principal):
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}},
+    )
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window=None,
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_omitting_window_leaves_it_unchanged(get_principal):
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}},
+    )
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        name="Renamed DC",
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24

@@ -998,6 +998,16 @@
       },
       "CSVPayloadPostBody": {
         "properties": {
+          "dataIngestionWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowPostBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dataStartRow": {
             "anyOf": [
               {
@@ -1072,6 +1082,16 @@
       },
       "CSVPayloadResponse": {
         "properties": {
+          "dataIngestionWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dataStartRow": {
             "anyOf": [
               {
@@ -1986,6 +2006,180 @@
           "placeholderVariables"
         ],
         "title": "DataConnectionResponse",
+        "type": "object"
+      },
+      "DataIngestionWindowBoundaryPostBody": {
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "enum": [
+                  "latest_observation_timestamp",
+                  "run_time",
+                  "fixed_timestamp"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "lookback": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookback"
+          },
+          "lookbackUnits": {
+            "anyOf": [
+              {
+                "enum": [
+                  "minutes",
+                  "hours",
+                  "days"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookbackunits"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "title": "DataIngestionWindowBoundaryPostBody",
+        "type": "object"
+      },
+      "DataIngestionWindowBoundaryResponse": {
+        "properties": {
+          "anchor": {
+            "anyOf": [
+              {
+                "enum": [
+                  "latest_observation_timestamp",
+                  "run_time",
+                  "fixed_timestamp"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "lookback": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookback"
+          },
+          "lookbackUnits": {
+            "anyOf": [
+              {
+                "enum": [
+                  "minutes",
+                  "hours",
+                  "days"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookbackunits"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "title": "DataIngestionWindowBoundaryResponse",
+        "type": "object"
+      },
+      "DataIngestionWindowPostBody": {
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowBoundaryPostBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowBoundaryPostBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DataIngestionWindowPostBody",
+        "type": "object"
+      },
+      "DataIngestionWindowResponse": {
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowBoundaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowBoundaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DataIngestionWindowResponse",
         "type": "object"
       },
       "DataProductTaskDetailResponse": {
@@ -4570,6 +4764,16 @@
       },
       "JSONPayloadPostBody": {
         "properties": {
+          "dataIngestionWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowPostBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "jmespath": {
             "anyOf": [
               {
@@ -4614,6 +4818,16 @@
       },
       "JSONPayloadResponse": {
         "properties": {
+          "dataIngestionWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "jmespath": {
             "anyOf": [
               {
@@ -5806,6 +6020,56 @@
         "title": "NotificationResponse",
         "type": "object"
       },
+      "ObservationBulkColumnarPostBody": {
+        "properties": {
+          "phenomenonTime": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Phenomenontime",
+            "type": "array"
+          },
+          "result": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Result",
+            "type": "array"
+          },
+          "resultQualifierCodes": {
+            "default": [],
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Resultqualifiercodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "phenomenonTime",
+          "result"
+        ],
+        "title": "ObservationBulkColumnarPostBody",
+        "type": "object"
+      },
       "ObservationBulkDeleteBody": {
         "properties": {
           "phenomenonTimeEnd": {
@@ -6563,6 +6827,17 @@
       },
       "PayloadPatchBody": {
         "properties": {
+          "dataIngestionWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataIngestionWindowPostBody"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataingestionwindow"
+          },
           "dataStartRow": {
             "anyOf": [
               {
@@ -6719,7 +6994,9 @@
             "enum": [
               "run_time",
               "latest_observation_timestamp",
-              "per_task"
+              "per_task",
+              "window_start",
+              "window_end"
             ],
             "title": "Type",
             "type": "string"
@@ -6749,7 +7026,9 @@
             "enum": [
               "run_time",
               "latest_observation_timestamp",
-              "per_task"
+              "per_task",
+              "window_start",
+              "window_end"
             ],
             "title": "Type",
             "type": "string"
@@ -6783,7 +7062,9 @@
             "enum": [
               "run_time",
               "latest_observation_timestamp",
-              "per_task"
+              "per_task",
+              "window_start",
+              "window_end"
             ],
             "title": "Type",
             "type": "string"
@@ -14026,7 +14307,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ObservationBulkPostBody"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkPostBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ObservationBulkColumnarPostBody"
+                  }
+                ],
+                "title": "Data"
               }
             }
           },

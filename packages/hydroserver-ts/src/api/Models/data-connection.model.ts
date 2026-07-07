@@ -6,6 +6,22 @@ export type PlaceholderVariableType =
   | 'run_time'
   | 'latest_observation_timestamp'
   | 'per_task'
+  | 'window_start'
+  | 'window_end'
+
+export type WindowAnchorType = 'latest_observation_timestamp' | 'run_time' | 'fixed_timestamp'
+
+export interface WindowBoundary {
+  anchor: WindowAnchorType
+  lookback?: number | null
+  lookbackUnits?: 'minutes' | 'hours' | 'days' | null
+  timestamp?: string | null
+}
+
+export interface PayloadWindow {
+  start?: WindowBoundary | null
+  end?: WindowBoundary | null
+}
 export type TimezoneType = 'offset' | 'iana'
 export type CSVDelimiterType = ',' | '\t' | ';' | '|' | ' '
 
@@ -16,6 +32,7 @@ export interface CSVPayload {
   headerRow?: number | null
   dataStartRow?: number | null
   delimiter?: CSVDelimiterType | null
+  dataIngestionWindow?: PayloadWindow | null
 }
 
 export interface JSONPayload {
@@ -23,6 +40,7 @@ export interface JSONPayload {
   timestampKey: string
   timestampFormat?: string | null
   jmespath?: string | null
+  dataIngestionWindow?: PayloadWindow | null
 }
 
 export type Payload = CSVPayload | JSONPayload

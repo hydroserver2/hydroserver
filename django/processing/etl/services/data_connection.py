@@ -86,7 +86,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if isinstance(data_connection, uuid.UUID):
             try:
-                data_connection = DataConnection.objects.get(pk=data_connection)
+                data_connection = DataConnection.objects.select_related("payload").get(pk=data_connection)
             except DataConnection.DoesNotExist:
                 raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
 
@@ -171,6 +171,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: Literal[",", "|", "\t", ";", " "] | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] = Field(default_factory=list),
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -224,6 +225,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_start_row=data_start_row,
             delimiter=delimiter,
             jmespath=jmespath,
+            data_ingestion_window=data_ingestion_window,
         )
 
         self.apply_placeholders(
@@ -264,6 +266,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] | Unset = Unset,
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -313,7 +316,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_connection.timezone = timestamp.timezone
 
         if any(field is not Unset for field in [payload_type, timestamp_key, timestamp_format,
-                                                 header_row, data_start_row, delimiter, jmespath]):
+                                                header_row, data_start_row, delimiter, jmespath,
+                                                data_ingestion_window]):
             resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
             self.apply_payload(
                 data_connection=data_connection,
@@ -324,6 +328,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 data_start_row=data_start_row,
                 delimiter=delimiter,
                 jmespath=jmespath,
+                data_ingestion_window=data_ingestion_window,
             )
 
         if placeholder_variables is not Unset:
@@ -386,6 +391,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
     ):
         """
         Create or update the payload settings attached to a data connection.
@@ -438,6 +444,35 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             }
         else:
             raise NotImplementedError(f"Unsupported payload type {payload_type}")
+
+        if data_ingestion_window is not Unset:
+            start = (data_ingestion_window or {}).get("start") or {}
+            end = (data_ingestion_window or {}).get("end") or {}
+
+            start_lookback = start.get("lookback")
+            start_lookback_unit = start.get("lookback_units")
+            end_lookback = end.get("lookback")
+            end_lookback_unit = end.get("lookback_units")
+
+            if (start_lookback is None) != (start_lookback_unit is None):
+                raise ValueError(
+                    "lookback and lookback_unit must both be set or both be null for the start boundary."
+                )
+            if (end_lookback is None) != (end_lookback_unit is None):
+                raise ValueError(
+                    "lookback and lookback_unit must both be set or both be null for the end boundary."
+                )
+
+            fields.update({
+                "data_ingestion_window_start_anchor": start.get("anchor"),
+                "data_ingestion_window_start_lookback": start.get("lookback"),
+                "data_ingestion_window_start_lookback_unit": start.get("lookback_units"),
+                "data_ingestion_window_start_timestamp": start.get("timestamp"),
+                "data_ingestion_window_end_anchor": end.get("anchor"),
+                "data_ingestion_window_end_lookback": end.get("lookback"),
+                "data_ingestion_window_end_lookback_unit": end.get("lookback_units"),
+                "data_ingestion_window_end_timestamp": end.get("timestamp"),
+            })
 
         if current_payload:
             for field, value in fields.items():
