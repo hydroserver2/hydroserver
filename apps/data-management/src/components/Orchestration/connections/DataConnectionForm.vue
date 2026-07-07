@@ -37,7 +37,7 @@
             color="primary"
             density="compact"
             hide-details
-            label="Advanced features"
+            label="Use advanced features"
           />
 
           <div v-if="advancedFeaturesEnabled" class="advanced-features-body">
