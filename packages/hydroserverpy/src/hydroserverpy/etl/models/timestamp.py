@@ -188,7 +188,7 @@ class Timestamp(Timezone):
 
             # ISO strings: regex detects embedded tz per element to support mixed-offset series
             # (pandas cannot parse mixed tz/naive strings without coercing to NaT)
-            has_tz = series.str.contains(r"[Zz]$|[+-]\d{2}:?\d{2}$", regex=True, na=False)
+            has_tz = series.str.contains(r"[Zz]$|[+-]\d{2}(?::?\d{2})?$", regex=True, na=False)
             tz_aware = pd.to_datetime(series[has_tz], utc=True, errors="raise")
             tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, errors="raise")
 

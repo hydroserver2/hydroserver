@@ -248,6 +248,41 @@ class TestParseSeriesNoneTimezone:
 
 
 # ---------------------------------------------------------------------------
+# parse_series_to_utc – hour-only UTC offsets embedded in ISO strings (±HH)
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesHourOnlyOffset:
+
+    def test_negative_hour_only_offset(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type=None)
+        series = pd.Series(["2024-01-01T12:00:00-07"])
+        result = ts.parse_series_to_utc(series)
+        assert result.dt.tz == timezone.utc
+        assert result.iloc[0] == pd.Timestamp("2024-01-01 19:00:00", tz="UTC")
+
+    def test_positive_hour_only_offset(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type=None)
+        series = pd.Series(["2024-01-01T12:00:00+05"])
+        result = ts.parse_series_to_utc(series)
+        assert result.dt.tz == timezone.utc
+        assert result.iloc[0] == pd.Timestamp("2024-01-01 07:00:00", tz="UTC")
+
+    def test_hour_only_offset_matches_full_offset(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type=None)
+        hour_only = ts.parse_series_to_utc(pd.Series(["2024-06-15T08:00:00-07"]))
+        full_hhmm = ts.parse_series_to_utc(pd.Series(["2024-06-15T08:00:00-07:00"]))
+        assert hour_only.iloc[0] == full_hhmm.iloc[0]
+
+    def test_mixed_hour_only_and_full_offsets(self):
+        ts = Timestamp(timestamp_type="iso", timezone_type=None)
+        series = pd.Series(["2024-01-01T12:00:00-07", "2024-01-01T12:00:00+05:30"])
+        result = ts.parse_series_to_utc(series)
+        assert result.dt.tz == timezone.utc
+        assert result.iloc[0] == pd.Timestamp("2024-01-01 19:00:00", tz="UTC")
+        assert result.iloc[1] == pd.Timestamp("2024-01-01 06:30:00", tz="UTC")
+
+
+# ---------------------------------------------------------------------------
 # parse_series_to_utc – IANA timezone type
 # ---------------------------------------------------------------------------
 
