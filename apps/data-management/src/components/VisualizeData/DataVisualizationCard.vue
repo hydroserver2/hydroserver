@@ -398,7 +398,7 @@ const captureAxisRangesFromPlotly = () => {
   if (Array.isArray(xRange) && xRange.length === 2) {
     const start = parseDateAxisValue(xRange[0])
     const end = parseDateAxisValue(xRange[1])
-    if (start !== null && end !== null) {
+    if (start !== null && end !== null && start < end) {
       xAxisRange.value = { start, end }
     }
   }
@@ -616,6 +616,7 @@ const handleRelayout = async (eventData: any) => {
       ? Date.parse(eventRangeEnd)
       : eventRangeEnd
   if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd)) return
+  if (rangeStart >= rangeEnd) return
 
   const bounds =
     plotlyOptions.value?.xRange || getXRangeBounds(graphSeriesArray.value)
