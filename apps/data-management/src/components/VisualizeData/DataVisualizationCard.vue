@@ -204,11 +204,14 @@ const LARGE_SERIES_TOTAL_THRESHOLD = 150_000
 const DEFAULT_HOVER_TEMPLATE = '<b>%{y}</b><extra></extra>'
 const currentHoverInfo = ref<'y' | 'skip'>('y')
 const isLargeSeriesMode = ref(false)
+const isHoverDisabled = ref(false)
 const defaultTraceModes = ref<string[]>([])
 const defaultMarkerSizes = ref<number[]>([])
 const defaultHoverMode = ref<'x' | false>('x')
 const lastStyledTraceCount = ref(0)
-const showLargeSeriesDisclaimer = computed(() => isLargeSeriesMode.value)
+const showLargeSeriesDisclaimer = computed(
+  () => isLargeSeriesMode.value || isHoverDisabled.value
+)
 const largeSeriesVisibleThreshold = computed(() =>
   LARGE_SERIES_VISIBLE_THRESHOLD.toLocaleString()
 )
@@ -297,33 +300,40 @@ const normalizeTraceArray = <T>(values: T[], length: number, fallback: T) => {
 const applyLargeSeriesMode = async (visiblePoints: number) => {
   if (!plotlyRef.value || !plotlyApi) return
   const totalPoints = getTotalPointCount()
+  // Markers are a viewport concern: hide them only when the *visible* window is
+  // too dense to draw meaningfully. scattergl renders markers on the GPU, so
+  // zooming into a sparse window restores them even on a huge series. This is
+  // how points reappear for datasets whose line is broken by intended-spacing
+  // gaps (the "large dataset shows nothing" case) — previously markers were
+  // force-disabled by total count at every zoom level.
+  const hideMarkers = visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD
+  // Hover (nearest-point search) is the genuinely total-sensitive cost, so keep
+  // it gated on the total point count.
   const forceLargeMode = totalPoints > LARGE_SERIES_TOTAL_THRESHOLD
-  const shouldEnable =
-    visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD || forceLargeMode
 
   const traceCount = plotlyRef.value.data?.length ?? 0
   if (!traceCount) return
   const needsEnforcement =
-    shouldEnable &&
+    hideMarkers &&
     plotlyRef.value.data?.some((trace: any) => {
       if (trace?.mode !== 'lines') return true
       const size = trace?.marker?.size
       return typeof size === 'number' ? size !== 0 : false
     })
-  const nextModes = shouldEnable
+  const nextModes = hideMarkers
     ? new Array(traceCount).fill('lines')
     : normalizeTraceArray(defaultTraceModes.value, traceCount, 'lines+markers')
-  const nextMarkerSizes = shouldEnable
+  const nextMarkerSizes = hideMarkers
     ? new Array(traceCount).fill(0)
     : normalizeTraceArray(defaultMarkerSizes.value, traceCount, 6)
-  const nextHoverInfo: 'y' | 'skip' = shouldEnable ? 'skip' : 'y'
+  const nextHoverInfo: 'y' | 'skip' = hideMarkers ? 'skip' : 'y'
   const nextHoverMode = forceLargeMode ? false : defaultHoverMode.value
   const traceCountChanged = traceCount !== lastStyledTraceCount.value
 
   if (
     traceCountChanged ||
     needsEnforcement ||
-    shouldEnable !== isLargeSeriesMode.value ||
+    hideMarkers !== isLargeSeriesMode.value ||
     nextHoverInfo !== currentHoverInfo.value
   ) {
     const nextTemplate = nextHoverInfo === 'skip' ? '' : DEFAULT_HOVER_TEMPLATE
@@ -333,10 +343,12 @@ const applyLargeSeriesMode = async (visiblePoints: number) => {
       hoverinfo: nextHoverInfo,
       hovertemplate: nextTemplate,
     })
-    isLargeSeriesMode.value = shouldEnable
+    isLargeSeriesMode.value = hideMarkers
     currentHoverInfo.value = nextHoverInfo
     lastStyledTraceCount.value = traceCount
   }
+
+  isHoverDisabled.value = forceLargeMode
 
   if (
     plotlyRef.value &&
@@ -629,12 +641,18 @@ const handleRelayout = async (eventData: any) => {
   if (rangeMatchesCurrent) xAxisRange.value = null
 }
 
-const debouncedRelayout = debounce(handleRelayout, 450)
+// Debounced so it runs only AFTER a zoom/pan gesture settles. Reconciling
+// (which issues restyle/relayout) mid-gesture interrupts Plotly's interaction
+// and makes zoom jitter and snap back, so keep this window comfortably long.
+const debouncedRelayout = debounce(handleRelayout, 400)
 
 const attachHandlers = () => {
   if (!plotlyRef.value || handlersAttached.value) return
+  // NB: we deliberately do NOT hook `plotly_afterplot`. It fires on every frame
+  // during a drag/zoom, and reconciling there mutates the plot mid-gesture,
+  // which fought the zoom (jitter + snap-back). Marker/hover reconciliation runs
+  // on render (below) and after the debounced relayout instead.
   plotlyRef.value.on('plotly_relayout', debouncedRelayout)
-  plotlyRef.value.on('plotly_afterplot', applyLargeSeriesModeForCurrentRange)
   handlersAttached.value = true
 }
 

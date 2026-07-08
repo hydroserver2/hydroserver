@@ -381,7 +381,9 @@ export const createPlotlyOption = (
   const titleColor = seriesArray[0]?.lineColor
 
   const layout: any = {
-    margin: { l: 4, r: 0, t: legendTopMargin, b: 70, pad: 0 },
+    // `b` is fixed (x-axis automargin is off — see xaxis below) so it must hold
+    // the worst case: two-line date tick labels + the "Datetime" title.
+    margin: { l: 4, r: 0, t: legendTopMargin, b: 80, pad: 0 },
     showlegend: addLegend,
     legend: addLegend
       ? {
@@ -402,7 +404,12 @@ export const createPlotlyOption = (
       gridwidth: 1,
       domain: [xDomainStart, xDomainEnd],
       title: { text: 'Datetime', standoff: 24 },
-      automargin: true,
+      // `automargin` must stay OFF on this date axis: zooming X changes the tick
+      // label format (1-line <-> 2-line dates), and with automargin on, Plotly
+      // recomputes the bottom margin every zoom step, making the plot area jump
+      // (X-axis zoom jitter). The fixed `margin.b` below already reserves enough
+      // room for the labels + "Datetime" title, so pinning this keeps X smooth.
+      automargin: false,
       range:
         resolvedRangeStart !== undefined && resolvedRangeEnd !== undefined
           ? [resolvedRangeStart, resolvedRangeEnd]
