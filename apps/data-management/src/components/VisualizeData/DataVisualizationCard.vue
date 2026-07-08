@@ -399,7 +399,9 @@ const captureAxisRangesFromPlotly = () => {
     const start = parseDateAxisValue(xRange[0])
     const end = parseDateAxisValue(xRange[1])
     if (start !== null && end !== null && start < end) {
-      xAxisRange.value = { start, end }
+      xAxisRange.value = isImplicitXAxisRange(start, end)
+        ? null
+        : { start, end }
     }
   }
 
@@ -500,6 +502,34 @@ const RANGE_MATCH_TOLERANCE_MS = 5 * 60 * 1000
 
 const isWithinTolerance = (value: number, target: number, tolerance: number) =>
   Math.abs(value - target) <= tolerance
+
+const rangeMatchesCurrentDateRange = (rangeStart: number, rangeEnd: number) => {
+  const currentStart = beginDate.value?.getTime()
+  const currentEnd = endDate.value?.getTime()
+  return (
+    currentStart !== undefined &&
+    currentEnd !== undefined &&
+    isWithinTolerance(rangeStart, currentStart, RANGE_MATCH_TOLERANCE_MS) &&
+    isWithinTolerance(rangeEnd, currentEnd, RANGE_MATCH_TOLERANCE_MS)
+  )
+}
+
+const rangeMatchesFullDataView = (rangeStart: number, rangeEnd: number) => {
+  if (dataZoomStart.value !== 0 || dataZoomEnd.value !== 100) return false
+
+  const bounds =
+    plotlyOptions.value?.xRange || getXRangeBounds(graphSeriesArray.value)
+  if (!bounds) return false
+
+  return (
+    isWithinTolerance(rangeStart, bounds.min, RANGE_MATCH_TOLERANCE_MS) &&
+    isWithinTolerance(rangeEnd, bounds.max, RANGE_MATCH_TOLERANCE_MS)
+  )
+}
+
+const isImplicitXAxisRange = (rangeStart: number, rangeEnd: number) =>
+  rangeMatchesFullDataView(rangeStart, rangeEnd) ||
+  rangeMatchesCurrentDateRange(rangeStart, rangeEnd)
 
 const preserveLiveAxisRanges = () => {
   if (!plotlyRef.value || !plotlyOptions.value) return
@@ -631,20 +661,12 @@ const handleRelayout = async (eventData: any) => {
   dataZoomEnd.value = Math.round(
     clampPercent(((rangeEnd - bounds.min) / span) * 100)
   )
-  xAxisRange.value = { start: rangeStart, end: rangeEnd }
+  xAxisRange.value = isImplicitXAxisRange(rangeStart, rangeEnd)
+    ? null
+    : { start: rangeStart, end: rangeEnd }
 
   const visiblePoints = getVisiblePointCount(rangeStart, rangeEnd)
   await applyLargeSeriesMode(visiblePoints)
-
-  const currentStart = beginDate.value?.getTime()
-  const currentEnd = endDate.value?.getTime()
-  const rangeMatchesCurrent =
-    currentStart !== undefined &&
-    currentEnd !== undefined &&
-    isWithinTolerance(rangeStart, currentStart, RANGE_MATCH_TOLERANCE_MS) &&
-    isWithinTolerance(rangeEnd, currentEnd, RANGE_MATCH_TOLERANCE_MS)
-
-  if (rangeMatchesCurrent) xAxisRange.value = null
 }
 
 // Debounced so it runs only AFTER a zoom/pan gesture settles. Reconciling
