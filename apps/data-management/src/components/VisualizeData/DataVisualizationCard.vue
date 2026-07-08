@@ -81,10 +81,11 @@
                         </v-card-title>
                         <v-divider />
                         <v-card-text class="px-4 py-2 text-body-2">
-                          Tooltips and markers are disabled to keep the plot
-                          responsive. This happens when visible points exceed
-                          {{ largeSeriesVisibleThreshold }} or total points
-                          exceed {{ largeSeriesTotalThreshold }}.
+                          Tooltips are disabled when total points exceed
+                          {{ largeSeriesTotalThreshold }}. Markers are hidden
+                          when visible points exceed
+                          {{ largeSeriesVisibleThreshold }}. Zoom in below the
+                          marker limit to show them again.
                         </v-card-text>
                       </v-card>
                     </v-tooltip>
@@ -149,7 +150,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
-import { getXRangeBounds } from '@/utils/plotting/plotly'
+import { getXRangeBounds, supportsWebgl } from '@/utils/plotting/plotly'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
 
 const emit = defineEmits(['copy-state'])
@@ -199,7 +200,11 @@ const parseDateAxisValue = (value: unknown) => {
   return null
 }
 
-const LARGE_SERIES_VISIBLE_THRESHOLD = 50_000
+// scattergl (WebGL) draws markers on the GPU and stays usable into the
+// hundreds of thousands of visible points, so we push close to that bound.
+// Without WebGL, Plotly falls back to SVG markers, which choke at a few
+// thousand — so cap far lower in that case.
+const LARGE_SERIES_VISIBLE_THRESHOLD = supportsWebgl() ? 200_000 : 5_000
 const LARGE_SERIES_TOTAL_THRESHOLD = 150_000
 const DEFAULT_HOVER_TEMPLATE = '<b>%{y}</b><extra></extra>'
 const currentHoverInfo = ref<'y' | 'skip'>('y')

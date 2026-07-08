@@ -88,7 +88,11 @@
 <script setup lang="ts">
 import { Datastream, GraphSeries } from '@hydroserver/client'
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
-import { createPlotlyOption, PlotlyOptions } from '@/utils/plotting/plotly'
+import {
+  createPlotlyOption,
+  PlotlyOptions,
+  supportsWebgl,
+} from '@/utils/plotting/plotly'
 import { onMounted, ref, nextTick, onBeforeUnmount, computed } from 'vue'
 import { debounce } from 'lodash-es'
 import { useObservationStore } from '@/store/observations'
@@ -128,7 +132,11 @@ const ensurePlotly = async () => {
   return plotlyApi
 }
 
-const LARGE_SERIES_VISIBLE_THRESHOLD = 50_000
+// scattergl (WebGL) draws markers on the GPU and stays usable into the
+// hundreds of thousands of visible points, so we push close to that bound.
+// Without WebGL, Plotly falls back to SVG markers, which choke at a few
+// thousand — so cap far lower in that case.
+const LARGE_SERIES_VISIBLE_THRESHOLD = supportsWebgl() ? 200_000 : 5_000
 const LARGE_SERIES_TOTAL_THRESHOLD = 200_000
 const DEFAULT_HOVER_TEMPLATE = '<b>%{y}</b><extra></extra>'
 const isLargeSeriesMode = ref(false)

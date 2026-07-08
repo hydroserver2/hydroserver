@@ -77,7 +77,7 @@ const rangeSelectorOptions = {
   ],
 }
 
-const supportsWebgl = () => {
+export const supportsWebgl = () => {
   if (cachedWebglSupport !== null) return cachedWebglSupport
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     cachedWebglSupport = false
