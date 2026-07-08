@@ -28,13 +28,10 @@ class ObservationMixin(SensorThingsUtils):
         if filters:
             observations = self.apply_filters(observations, Observation, filters)
 
-        if not orderby or not all(
-            field in ["/".join(f.path) for f in orderby]
-            for field in ["Datastream/id", "phenomenonTime"]
-        ):
-            observations = observations.order_by("datastream_id", "phenomenon_time")
-        else:
+        if orderby:
             observations = self.apply_order(observations, Observation, orderby)
+        else:
+            observations = observations.order_by("datastream_id", "phenomenon_time")
 
         if needs_result_quality:
             result_qualifier_subquery = (
