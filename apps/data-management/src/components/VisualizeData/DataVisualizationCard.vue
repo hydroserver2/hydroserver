@@ -538,7 +538,7 @@ const handleRelayout = async (eventData: any) => {
   const normalizeAxisKey = (key: string) => (key === 'yaxis1' ? 'yaxis' : key)
 
   eventKeys.forEach((key) => {
-    const autorangeMatch = key.match(/^(yaxis\\d*)\\.autorange$/)
+    const autorangeMatch = key.match(/^(yaxis\d*)\.autorange$/)
     if (autorangeMatch && eventData[key] === true) {
       if (!isResizeEvent) {
         delete nextYRanges[normalizeAxisKey(autorangeMatch[1])]
@@ -547,7 +547,7 @@ const handleRelayout = async (eventData: any) => {
       return
     }
 
-    const rangeArrayMatch = key.match(/^(yaxis\\d*)\\.range$/)
+    const rangeArrayMatch = key.match(/^(yaxis\d*)\.range$/)
     if (rangeArrayMatch && Array.isArray(eventData[key])) {
       const [start, end] = eventData[key]
       const parsedStart = parseNumericAxisValue(start)
@@ -562,7 +562,7 @@ const handleRelayout = async (eventData: any) => {
       return
     }
 
-    const rangeMatch = key.match(/^(yaxis\\d*)\\.range\\[(0|1)\\]$/)
+    const rangeMatch = key.match(/^(yaxis\d*)\.range\[(0|1)\]$/)
     if (!rangeMatch) return
     const axisKey = normalizeAxisKey(rangeMatch[1])
     const index = Number(rangeMatch[2])

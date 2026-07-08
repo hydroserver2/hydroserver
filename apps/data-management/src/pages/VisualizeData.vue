@@ -142,8 +142,7 @@ const generateStateUrl = () => {
   if (dataZoomEnd.value !== 0 && dataZoomEnd.value !== 100)
     queryParams.append('dataZoomEnd', dataZoomEnd.value.toString())
 
-  // Preset ranges must remain relative when the copied URL is reopened.
-  if (selectedDateBtnId.value < 0 && xAxisRange.value) {
+  if (xAxisRange.value) {
     queryParams.append('xStart', xAxisRange.value.start.toString())
     queryParams.append('xEnd', xAxisRange.value.end.toString())
   }
@@ -292,11 +291,7 @@ const parseUrlAndSetState = () => {
   const xEndRaw = Array.isArray(xEndParam) ? xEndParam[0] : xEndParam
   const xStart = xStartRaw ? Number(xStartRaw) : null
   const xEnd = xEndRaw ? Number(xEndRaw) : null
-  if (
-    selectedDateBtnId.value < 0 &&
-    Number.isFinite(xStart) &&
-    Number.isFinite(xEnd)
-  ) {
+  if (Number.isFinite(xStart) && Number.isFinite(xEnd)) {
     xAxisRange.value = { start: xStart as number, end: xEnd as number }
   } else {
     xAxisRange.value = null
