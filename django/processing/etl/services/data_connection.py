@@ -452,20 +452,30 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 if side not in window:
                     continue
 
-                boundary = window.get(side) or {}
-                lookback = boundary.get("lookback")
-                lookback_unit = boundary.get("lookback_units")
+                raw_boundary = window[side]
 
-                if (lookback is None) != (lookback_unit is None):
+                if raw_boundary is None or not current_payload:
+                    current = {"anchor": None, "lookback": None, "lookback_units": None, "timestamp": None}
+                else:
+                    current = {
+                        "anchor": getattr(current_payload, f"data_ingestion_window_{side}_anchor"),
+                        "lookback": getattr(current_payload, f"data_ingestion_window_{side}_lookback"),
+                        "lookback_units": getattr(current_payload, f"data_ingestion_window_{side}_lookback_unit"),
+                        "timestamp": getattr(current_payload, f"data_ingestion_window_{side}_timestamp"),
+                    }
+
+                boundary = {**current, **(raw_boundary or {})}
+
+                if (boundary["lookback"] is None) != (boundary["lookback_units"] is None):
                     raise ValueError(
                         f"lookback and lookback_unit must both be set or both be null for the {side} boundary."
                     )
 
                 fields.update({
-                    f"data_ingestion_window_{side}_anchor": boundary.get("anchor"),
-                    f"data_ingestion_window_{side}_lookback": lookback,
-                    f"data_ingestion_window_{side}_lookback_unit": lookback_unit,
-                    f"data_ingestion_window_{side}_timestamp": boundary.get("timestamp"),
+                    f"data_ingestion_window_{side}_anchor": boundary["anchor"],
+                    f"data_ingestion_window_{side}_lookback": boundary["lookback"],
+                    f"data_ingestion_window_{side}_lookback_unit": boundary["lookback_units"],
+                    f"data_ingestion_window_{side}_timestamp": boundary["timestamp"],
                 })
 
         if current_payload:

@@ -593,6 +593,54 @@ def test_update_data_connection_partial_window_update_preserves_other_boundary(g
     assert p.data_ingestion_window_end_lookback_unit == "hours"
 
 
+def test_update_data_connection_partial_boundary_update_preserves_other_fields(get_principal):
+    # Set a boundary with anchor, lookback, and timestamp fields all populated.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+        },
+    )
+
+    # A PATCH that only updates lookback/lookback_units on the "start" boundary must not
+    # clear the existing anchor (or any other field omitted from this PATCH).
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"lookback": 7, "lookback_units": "days"}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 7
+    assert p.data_ingestion_window_start_lookback_unit == "days"
+
+
+def test_update_data_connection_can_explicitly_clear_one_field_in_boundary(get_principal):
+    # Set a boundary with anchor, lookback, and timestamp fields all populated.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+        },
+    )
+
+    # Explicitly setting "anchor" to null within the boundary clears only that field;
+    # lookback/lookback_units are omitted from this PATCH and must be preserved.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": None}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+
+
 def test_update_data_connection_can_explicitly_clear_one_boundary(get_principal):
     # Set both boundaries first.
     data_connection_service.update(
