@@ -503,10 +503,12 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         for pv in placeholder_variables:
             if pv.get("timestamp_format"):
-                if pv.get("variable_type") not in ("run_time", "latest_observation_timestamp"):
+                if pv.get("variable_type") not in (
+                    "run_time", "latest_observation_timestamp", "window_start", "window_end"
+                ):
                     raise ValueError(
-                        "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
-                        "placeholder variables."
+                        "timestamp_format is only allowed on 'run_time', 'latest_observation_timestamp', "
+                        "'window_start', and 'window_end' placeholder variables."
                     )
                 Timestamp._validate_strftime_format(pv["timestamp_format"])  # noqa
 

@@ -284,6 +284,52 @@ def test_update_data_connection_timestamp_format(get_principal):
     assert result.payload.timestamp_format == "%m/%d/%Y"
 
 
+@pytest.mark.parametrize("variable_type", ["window_start", "window_end"])
+def test_create_data_connection_allows_timestamp_format_on_window_placeholders(
+    get_principal, variable_type
+):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **{
+            **_create_params(),
+            "source_url": "https://example.com/test.csv?start={boundary}",
+            "placeholder_variables": [
+                {
+                    "name": "boundary",
+                    "variable_type": variable_type,
+                    "timestamp_format": "%Y-%m-%d",
+                }
+            ],
+        },
+    )
+    placeholder = result.placeholder_variables.get(name="boundary")
+    assert placeholder.variable_type == variable_type
+    assert placeholder.timestamp_format == "%Y-%m-%d"
+
+
+def test_create_data_connection_rejects_timestamp_format_on_per_task_placeholder(
+    get_principal,
+):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.create(
+            principal=get_principal("owner"),
+            workspace=uuid.UUID(PRIVATE_WORKSPACE),
+            **{
+                **_create_params(),
+                "source_url": "https://example.com/test.csv?id={site_id}",
+                "placeholder_variables": [
+                    {
+                        "name": "site_id",
+                        "variable_type": "per_task",
+                        "timestamp_format": "%Y-%m-%d",
+                    }
+                ],
+            },
+        )
+    assert "timestamp_format is only allowed on" in _err(exc_info)
+
+
 def test_update_data_connection_timezone(get_principal):
     result = data_connection_service.update(
         data_connection=uuid.UUID(DC1),
