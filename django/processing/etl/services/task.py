@@ -399,6 +399,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                 header_row=data_connection.payload.header_row,
                 data_start_row=data_connection.payload.data_start_row,
                 delimiter=data_connection.payload.delimiter,  # noqa
+                identifier_type="index" if data_connection.payload.header_row is None else "name",
             )
 
         elif data_connection.payload.payload_type == "JSON":
