@@ -432,6 +432,14 @@ class TestEtlTaskRunDataIngestionWindow:
 
         assert captured["data_ingestion_window_end"] == fixed - timedelta(hours=3)
 
+    def test_fixed_timestamp_anchor_with_no_timestamp_raises(self, get_principal):
+        with pytest.raises(ValueError, match="timestamp is required"):
+            _run_task_and_capture_window(
+                get_principal,
+                data_ingestion_window_end_anchor="fixed_timestamp",
+                data_ingestion_window_end_timestamp=None,
+            )
+
     def test_lookback_is_ignored_when_unit_is_missing(self, get_principal):
         captured = _run_task_and_capture_window(
             get_principal,

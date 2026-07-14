@@ -431,6 +431,11 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                 getattr(payload, f"data_ingestion_window_{side}_timestamp")
                 if anchor == "fixed_timestamp" else placeholder_timestamps.get(anchor)
             )
+            if anchor == "fixed_timestamp" and boundary is None:
+                raise ValueError(
+                    f"data_ingestion_window_{side}_timestamp is required when "
+                    f"data_ingestion_window_{side}_anchor is 'fixed_timestamp'."
+                )
             lookback = getattr(payload, f"data_ingestion_window_{side}_lookback")
             lookback_unit = getattr(payload, f"data_ingestion_window_{side}_lookback_unit")
             if boundary is not None and lookback and lookback_unit:

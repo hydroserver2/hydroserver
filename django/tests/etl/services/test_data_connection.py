@@ -709,3 +709,56 @@ def test_update_data_connection_can_explicitly_clear_one_boundary(get_principal)
     assert p.data_ingestion_window_start_anchor == "run_time"
     assert p.data_ingestion_window_start_lookback == 24
     assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_fixed_timestamp_anchor_requires_timestamp(get_principal):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={"start": {"anchor": "fixed_timestamp"}},
+        )
+    assert "timestamp is required" in _err(exc_info)
+
+
+def test_update_data_connection_non_fixed_timestamp_anchor_rejects_timestamp(get_principal):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={
+                "start": {"anchor": "run_time", "timestamp": timezone.now()},
+            },
+        )
+    assert "timestamp must be null" in _err(exc_info)
+
+
+def test_update_data_connection_fixed_timestamp_anchor_with_timestamp_succeeds(get_principal):
+    fixed = timezone.now()
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "fixed_timestamp", "timestamp": fixed}},
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "fixed_timestamp"
+    assert p.data_ingestion_window_start_timestamp == fixed
+
+
+def test_update_data_connection_switching_off_fixed_timestamp_requires_clearing_timestamp(get_principal):
+    fixed = timezone.now()
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "fixed_timestamp", "timestamp": fixed}},
+    )
+
+    # Switching the anchor away from fixed_timestamp without clearing the stale
+    # timestamp must be rejected rather than silently leaving it in place.
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={"start": {"anchor": "run_time"}},
+        )
+    assert "timestamp must be null" in _err(exc_info)

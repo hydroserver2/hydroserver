@@ -471,6 +471,15 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                         f"lookback and lookback_unit must both be set or both be null for the {side} boundary."
                     )
 
+                if boundary["anchor"] == "fixed_timestamp" and boundary["timestamp"] is None:
+                    raise ValueError(
+                        f"timestamp is required for the {side} boundary when anchor is 'fixed_timestamp'."
+                    )
+                if boundary["anchor"] != "fixed_timestamp" and boundary["timestamp"] is not None:
+                    raise ValueError(
+                        f"timestamp must be null for the {side} boundary unless anchor is 'fixed_timestamp'."
+                    )
+
                 fields.update({
                     f"data_ingestion_window_{side}_anchor": boundary["anchor"],
                     f"data_ingestion_window_{side}_lookback": boundary["lookback"],
