@@ -50,9 +50,17 @@ const payloadType = computed({
   set: (newType: 'CSV' | 'JSON') => {
     const currentWindow = dataConnection.value.payload.dataIngestionWindow
     if (newType === 'CSV') {
-      dataConnection.value.payload = { type: 'CSV', timestampKey: '', window: currentWindow }
+      dataConnection.value.payload = {
+        type: 'CSV',
+        timestampKey: '',
+        dataIngestionWindow: currentWindow,
+      }
     } else {
-      dataConnection.value.payload = { type: 'JSON', timestampKey: '', window: currentWindow }
+      dataConnection.value.payload = {
+        type: 'JSON',
+        timestampKey: '',
+        dataIngestionWindow: currentWindow,
+      }
     }
   },
 })
