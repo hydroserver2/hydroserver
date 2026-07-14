@@ -114,6 +114,24 @@ class HydroServerLoader(Loader):
                 self.chunk_size,
             )
 
+            if data_ingestion_window_start is not None:
+                try:
+                    self.client.datastreams.delete_observations(
+                        uid=datastream.uid,
+                        phenomenon_time_start=target_df["timestamp"].min(),
+                        phenomenon_time_end=target_df["timestamp"].max(),
+                    )
+                except Exception as e:
+                    etl_results.target_results[target_id].status = "failed"
+                    etl_results.target_results[target_id].error = str(e)
+                    etl_results.target_results[target_id].traceback = traceback.format_exc()
+                    logger.info(
+                        "Load result: loaded=0 available=%s cutoff=%s",
+                        observations_to_load,
+                        self._format_cutoff(datastream.phenomenon_end_time),
+                    )
+                    continue
+
             for start_idx in range(0, observations_to_load, self.chunk_size):
                 end_idx = min(start_idx + self.chunk_size, observations_to_load)
                 chunk = target_df.iloc[start_idx:end_idx]
@@ -121,7 +139,7 @@ class HydroServerLoader(Loader):
                 try:
                     self.client.datastreams.load_observations(
                         uid=datastream.uid, observations=chunk,
-                        mode="replace" if data_ingestion_window_start is not None else "append",
+                        mode="insert" if data_ingestion_window_start is not None else "append",
                     )
                     etl_results.target_results[target_id].values_loaded += len(chunk)
                 except Exception as e:

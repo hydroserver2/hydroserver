@@ -136,14 +136,41 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
 
         assert result.target_results[DS1].values_loaded == 3
 
-    def test_mode_is_replace_when_window_start_is_set(self, task_instance):
+    def test_mode_is_insert_when_window_start_is_set(self, task_instance):
         payload = _make_payload()
 
         result, mock_service = _load(
             payload, task_instance, data_ingestion_window_start=_dt("2025-02-09T00:00:00"),
         )
 
-        assert mock_service.bulk_create.call_args.kwargs["mode"] == "replace"
+        assert mock_service.bulk_create.call_args.kwargs["mode"] == "insert"
+
+    def test_replace_mode_issues_single_delete_over_full_range_before_inserting(self, task_instance):
+        payload = _make_payload()
+
+        result, mock_service = _load(
+            payload, task_instance, chunk_size=1, data_ingestion_window_start=_dt("2025-02-09T00:00:00"),
+        )
+
+        mock_service.bulk_delete.assert_called_once()
+        delete_data = mock_service.bulk_delete.call_args.kwargs["data"]
+        assert delete_data.phenomenon_time_start == pd.Timestamp("2025-02-09T00:00:00", tz="UTC")
+        assert delete_data.phenomenon_time_end == pd.Timestamp("2025-02-11T00:00:00", tz="UTC")
+        assert mock_service.bulk_create.call_count == 3
+        assert all(call.kwargs["mode"] == "insert" for call in mock_service.bulk_create.call_args_list)
+
+    def test_replace_mode_skips_inserts_when_delete_fails(self, task_instance):
+        payload = _make_payload()
+
+        loader = HydroServerInternalLoader()
+        with patch("processing.etl.loader.observation_service") as mock_service:
+            mock_service.bulk_delete.side_effect = Exception("boom")
+            result = loader.load(
+                payload, task_instance=task_instance, data_ingestion_window_start=_dt("2025-02-09T00:00:00"),
+            )
+
+        assert result.target_results[DS1].status == "failed"
+        mock_service.bulk_create.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

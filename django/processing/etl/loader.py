@@ -8,7 +8,7 @@ from pydantic import ConfigDict
 
 from core.sta.models import Datastream
 from core.sta.services import ObservationService
-from interfaces.api.schemas import ObservationBulkPostBody
+from interfaces.api.schemas import ObservationBulkDeleteBody, ObservationBulkPostBody
 
 from hydroserverpy.etl.loaders import Loader, ETLLoaderResult, ETLTargetResult
 from hydroserverpy.etl.exceptions import ETLError
@@ -114,6 +114,28 @@ class HydroServerInternalLoader(Loader):
                 self.chunk_size,
             )
 
+            if data_ingestion_window_start is not None:
+                try:
+                    observation_service.bulk_delete(
+                        principal=task.workspace.owner,
+                        data=ObservationBulkDeleteBody(
+                            phenomenon_time_start=datastream_df["timestamp"].min(),
+                            phenomenon_time_end=datastream_df["timestamp"].max(),
+                        ),
+                        datastream_id=datastream.pk,
+                        update_datastream_statistics=False,
+                    )
+                except Exception as e:
+                    etl_results.target_results[target_id].status = "failed"
+                    etl_results.target_results[target_id].error = str(e)
+                    etl_results.target_results[target_id].traceback = traceback.format_exc()
+                    logger.info(
+                        "Load result: loaded=0 available=%s cutoff=%s",
+                        datastream_observations_to_load,
+                        self._format_cutoff(datastream.phenomenon_end_time),
+                    )
+                    continue
+
             for start_idx in range(0, datastream_observations_to_load, self.chunk_size):
                 end_idx = min(start_idx + self.chunk_size, datastream_observations_to_load)
                 chunk = datastream_df.iloc[start_idx:end_idx]
@@ -126,7 +148,7 @@ class HydroServerInternalLoader(Loader):
                             data=chunk.values.tolist(),
                         ),
                         datastream_id=datastream.pk,
-                        mode="replace" if data_ingestion_window_start is not None else "append",
+                        mode="insert" if data_ingestion_window_start is not None else "append",
                     )
                     etl_results.target_results[target_id].values_loaded += len(chunk)
                 except Exception as e:

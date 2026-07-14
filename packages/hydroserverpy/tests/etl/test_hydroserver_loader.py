@@ -133,17 +133,40 @@ class TestHydroServerLoaderDataIngestionWindow:
             _dt("2026-01-01T00:00:00"), _dt("2026-01-02T00:00:00"), _dt("2026-01-03T00:00:00"),
         ]
 
-    def test_mode_is_replace_when_window_start_is_set(self):
+    def test_mode_is_insert_when_window_start_is_set(self):
         loader, client = _make_loader({"target-1": _make_datastream()})
         loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
 
-        assert client.datastreams.load_observations.call_args.kwargs["mode"] == "replace"
+        assert client.datastreams.load_observations.call_args.kwargs["mode"] == "insert"
 
     def test_mode_is_append_when_window_start_is_not_set(self):
         loader, client = _make_loader({"target-1": _make_datastream()})
         loader.load(_make_payload(), data_ingestion_window_end=_dt("2026-01-03T00:00:00"))
 
         assert client.datastreams.load_observations.call_args.kwargs["mode"] == "append"
+
+    def test_replace_mode_issues_single_delete_over_full_range_before_inserting(self):
+        loader, client = _make_loader({"target-1": _make_datastream()}, chunk_size=1)
+        loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
+
+        client.datastreams.delete_observations.assert_called_once_with(
+            uid="target-1",
+            phenomenon_time_start=_dt("2026-01-01T00:00:00"),
+            phenomenon_time_end=_dt("2026-01-03T00:00:00"),
+        )
+        assert client.datastreams.load_observations.call_count == 3
+        assert all(
+            call.kwargs["mode"] == "insert" for call in client.datastreams.load_observations.call_args_list
+        )
+
+    def test_replace_mode_skips_inserts_when_delete_fails(self):
+        loader, client = _make_loader({"target-1": _make_datastream()})
+        client.datastreams.delete_observations.side_effect = Exception("boom")
+
+        result = loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
+
+        assert result.target_results["target-1"].status == "failed"
+        client.datastreams.load_observations.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
