@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from io import BytesIO
 import pandas as pd
 from pydantic import Field
@@ -57,6 +58,41 @@ class FailingLoader(Loader):
     def load(self, payload, **kwargs):
         test_logger.warning("Dummy loader is about to fail")
         raise ETLError("Dummy load failure")
+
+    def target_loaded_through(self, target_identifier):
+        return None
+
+
+class RecordingTransformer(Transformer):
+    received_kwargs: dict = Field(default_factory=dict)
+
+    def transform(self, payload, data_mappings, **kwargs):
+        self.received_kwargs = kwargs
+        return pd.DataFrame(
+            {
+                "timestamp": ["2026-03-01T00:00:00Z"],
+                "value": [1.23],
+                "target_id": ["target-1"],
+            }
+        )
+
+
+class RecordingLoader(Loader):
+    received_kwargs: dict = Field(default_factory=dict)
+
+    def load(self, payload, **kwargs):
+        self.received_kwargs = kwargs
+        return ETLLoaderResult(
+            success_count=1,
+            values_loaded_total=1,
+            target_results={
+                "target-1": ETLTargetResult(
+                    target_identifier="target-1",
+                    status="success",
+                    values_loaded=1,
+                )
+            },
+        )
 
     def target_loaded_through(self, target_identifier):
         return None
@@ -148,3 +184,49 @@ def test_pipeline_preserves_log_entries_when_raise_on_error_is_false():
         and entry["level"] == "ERROR"
         for entry in context.log_entries
     )
+
+
+# ---------------------------------------------------------------------------
+# Data ingestion window pass-through
+# ---------------------------------------------------------------------------
+
+def test_pipeline_passes_data_ingestion_window_to_loader_only():
+    transformer = RecordingTransformer(timestamp_key="timestamp")
+    loader = RecordingLoader()
+    pipeline = ETLPipeline(
+        extractor=DummyExtractor(source_uri="https://example.com/{date}.csv"),
+        transformer=transformer,
+        loader=loader,
+    )
+
+    window_start = datetime(2026, 3, 1, tzinfo=timezone.utc)
+    window_end = datetime(2026, 3, 2, tzinfo=timezone.utc)
+
+    pipeline.run(
+        data_mappings=_make_mapping(),
+        data_ingestion_window_start=window_start,
+        data_ingestion_window_end=window_end,
+        date="2026-03-01",
+    )
+
+    assert loader.received_kwargs["data_ingestion_window_start"] == window_start
+    assert loader.received_kwargs["data_ingestion_window_end"] == window_end
+
+    # The transformer only receives kwargs not consumed as named `run()` params,
+    # so the window bounds are intentionally never forwarded to it.
+    assert "data_ingestion_window_start" not in transformer.received_kwargs
+    assert "data_ingestion_window_end" not in transformer.received_kwargs
+
+
+def test_pipeline_defaults_data_ingestion_window_to_none():
+    loader = RecordingLoader()
+    pipeline = ETLPipeline(
+        extractor=DummyExtractor(source_uri="https://example.com/{date}.csv"),
+        transformer=DummyTransformer(timestamp_key="timestamp"),
+        loader=loader,
+    )
+
+    pipeline.run(data_mappings=_make_mapping(), date="2026-03-01")
+
+    assert loader.received_kwargs["data_ingestion_window_start"] is None
+    assert loader.received_kwargs["data_ingestion_window_end"] is None

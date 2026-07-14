@@ -446,33 +446,27 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             raise NotImplementedError(f"Unsupported payload type {payload_type}")
 
         if data_ingestion_window is not Unset:
-            start = (data_ingestion_window or {}).get("start") or {}
-            end = (data_ingestion_window or {}).get("end") or {}
+            window = {"start": None, "end": None} if data_ingestion_window is None else data_ingestion_window
 
-            start_lookback = start.get("lookback")
-            start_lookback_unit = start.get("lookback_units")
-            end_lookback = end.get("lookback")
-            end_lookback_unit = end.get("lookback_units")
+            for side in ("start", "end"):
+                if side not in window:
+                    continue
 
-            if (start_lookback is None) != (start_lookback_unit is None):
-                raise ValueError(
-                    "lookback and lookback_unit must both be set or both be null for the start boundary."
-                )
-            if (end_lookback is None) != (end_lookback_unit is None):
-                raise ValueError(
-                    "lookback and lookback_unit must both be set or both be null for the end boundary."
-                )
+                boundary = window.get(side) or {}
+                lookback = boundary.get("lookback")
+                lookback_unit = boundary.get("lookback_units")
 
-            fields.update({
-                "data_ingestion_window_start_anchor": start.get("anchor"),
-                "data_ingestion_window_start_lookback": start.get("lookback"),
-                "data_ingestion_window_start_lookback_unit": start.get("lookback_units"),
-                "data_ingestion_window_start_timestamp": start.get("timestamp"),
-                "data_ingestion_window_end_anchor": end.get("anchor"),
-                "data_ingestion_window_end_lookback": end.get("lookback"),
-                "data_ingestion_window_end_lookback_unit": end.get("lookback_units"),
-                "data_ingestion_window_end_timestamp": end.get("timestamp"),
-            })
+                if (lookback is None) != (lookback_unit is None):
+                    raise ValueError(
+                        f"lookback and lookback_unit must both be set or both be null for the {side} boundary."
+                    )
+
+                fields.update({
+                    f"data_ingestion_window_{side}_anchor": boundary.get("anchor"),
+                    f"data_ingestion_window_{side}_lookback": lookback,
+                    f"data_ingestion_window_{side}_lookback_unit": lookback_unit,
+                    f"data_ingestion_window_{side}_timestamp": boundary.get("timestamp"),
+                })
 
         if current_payload:
             for field, value in fields.items():

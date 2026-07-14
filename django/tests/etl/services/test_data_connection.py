@@ -566,3 +566,52 @@ def test_update_data_connection_omitting_window_leaves_it_unchanged(get_principa
     p = result.payload
     assert p.data_ingestion_window_start_anchor == "run_time"
     assert p.data_ingestion_window_start_lookback == 24
+
+
+def test_update_data_connection_partial_window_update_preserves_other_boundary(get_principal):
+    # Set both boundaries first.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 1, "lookback_units": "hours"},
+        },
+    )
+
+    # A PATCH that only includes "start" must not clear the existing "end" boundary.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 48, "lookback_units": "hours"}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_lookback == 48
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 1
+    assert p.data_ingestion_window_end_lookback_unit == "hours"
+
+
+def test_update_data_connection_can_explicitly_clear_one_boundary(get_principal):
+    # Set both boundaries first.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 1, "lookback_units": "hours"},
+        },
+    )
+
+    # Explicitly setting "end" to null clears only that boundary, leaving "start" intact.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}, "end": None},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_end_anchor is None

@@ -25,6 +25,8 @@ class HydroServerLoader(Loader):
     def load(
         self,
         payload: pd.DataFrame,
+        data_ingestion_window_start: Optional[datetime] = None,
+        data_ingestion_window_end: Optional[datetime] = None,
         **kwargs
     ) -> ETLLoaderResult:
         """
@@ -34,7 +36,8 @@ class HydroServerLoader(Loader):
         The payload is expected to have columns 'timestamp', 'value', and 'target_id'.
         Each unique target_id is resolved to a HydroServer datastream. Observations
         already present in HydroServer (at or before the datastream's phenomenon_end_time)
-        are skipped per target. Remaining observations are uploaded in chunks.
+        are skipped per target unless a data window is set. Remaining observations are
+        uploaded in chunks.
         """
 
         target_ids = payload["target_id"].unique()
@@ -80,8 +83,13 @@ class HydroServerLoader(Loader):
                 .copy()
             )
 
-            if datastream.phenomenon_end_time is not None:
+            if data_ingestion_window_start is not None:
+                target_df = target_df.loc[target_df["timestamp"] >= data_ingestion_window_start]
+            elif datastream.phenomenon_end_time is not None:
                 target_df = target_df.loc[target_df["timestamp"] > datastream.phenomenon_end_time]
+
+            if data_ingestion_window_end is not None:
+                target_df = target_df.loc[target_df["timestamp"] <= data_ingestion_window_end]
 
             if target_df.empty:
                 etl_results.skipped_count += 1
@@ -112,7 +120,8 @@ class HydroServerLoader(Loader):
 
                 try:
                     self.client.datastreams.load_observations(
-                        uid=datastream.uid, observations=chunk
+                        uid=datastream.uid, observations=chunk,
+                        mode="replace" if data_ingestion_window_start is not None else "append",
                     )
                     etl_results.target_results[target_id].values_loaded += len(chunk)
                 except Exception as e:

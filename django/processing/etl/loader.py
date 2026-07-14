@@ -30,6 +30,8 @@ class HydroServerInternalLoader(Loader):
     def load(
         self,
         payload: pd.DataFrame,
+        data_ingestion_window_start: Optional[datetime] = None,
+        data_ingestion_window_end: Optional[datetime] = None,
         **kwargs
     ) -> ETLLoaderResult:
         """
@@ -63,15 +65,15 @@ class HydroServerInternalLoader(Loader):
                 f"Missing datastream IDs: {', '.join(sorted(missing_datastreams))}."
             )
 
-        if not datastreams or any(datastream.phenomenon_end_time is None for datastream in datastreams.values()):
-            earliest_phenomenon_end_time = None
-        else:
-            earliest_phenomenon_end_time = min(
+        if data_ingestion_window_start is not None:
+            payload = payload[payload["timestamp"] >= data_ingestion_window_start]
+        elif datastreams and all(datastream.phenomenon_end_time is not None for datastream in datastreams.values()):
+            payload = payload[payload["timestamp"] > min(
                 datastream.phenomenon_end_time for datastream in datastreams.values()
-            )
+            )]
 
-        if earliest_phenomenon_end_time is not None:
-            payload = payload[payload["timestamp"] > earliest_phenomenon_end_time]
+        if data_ingestion_window_end is not None:
+            payload = payload[payload["timestamp"] <= data_ingestion_window_end]
 
         etl_results = ETLLoaderResult()
 
@@ -86,7 +88,7 @@ class HydroServerInternalLoader(Loader):
                 .copy()
             )
 
-            if datastream.phenomenon_end_time is not None:
+            if data_ingestion_window_start is None and datastream.phenomenon_end_time is not None:
                 datastream_df = datastream_df.loc[datastream_df["timestamp"] > datastream.phenomenon_end_time]
 
             if datastream_df.empty:
@@ -124,7 +126,7 @@ class HydroServerInternalLoader(Loader):
                             data=chunk.values.tolist(),
                         ),
                         datastream_id=datastream.pk,
-                        mode="append",
+                        mode="replace" if data_ingestion_window_start is not None else "append",
                     )
                     etl_results.target_results[target_id].values_loaded += len(chunk)
                 except Exception as e:

@@ -1,6 +1,6 @@
 import uuid
 import uuid6
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, ValidationError, validate_call
@@ -422,12 +422,30 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             target_identifiers=[str(etl_mapping.target_datastream_id) for etl_mapping in etl_mappings]
         )
 
+        placeholder_timestamps = {"run_time": execution_time, "latest_observation_timestamp": earliest_loaded_through}
+        payload = data_connection.payload
+
+        for side in ("start", "end"):
+            anchor = getattr(payload, f"data_ingestion_window_{side}_anchor")
+            boundary = (
+                getattr(payload, f"data_ingestion_window_{side}_timestamp")
+                if anchor == "fixed_timestamp" else placeholder_timestamps.get(anchor)
+            )
+            lookback = getattr(payload, f"data_ingestion_window_{side}_lookback")
+            lookback_unit = getattr(payload, f"data_ingestion_window_{side}_lookback_unit")
+            if boundary is not None and lookback and lookback_unit:
+                boundary -= timedelta(**{lookback_unit: lookback})
+            placeholder_timestamps[f"window_{side}"] = boundary
+
+        data_ingestion_window_start = placeholder_timestamps["window_start"]
+        data_ingestion_window_end = placeholder_timestamps["window_end"]
+
         placeholder_kwargs = {}
         for pv in data_connection.placeholder_variables.all():
             if pv.variable_type == "per_task":
                 placeholder_kwargs[pv.name] = task.task_variables.get(pv.name)
-            elif pv.variable_type in ("run_time", "latest_observation_timestamp"):
-                dt = execution_time if pv.variable_type == "run_time" else earliest_loaded_through
+            elif pv.variable_type in placeholder_timestamps:
+                dt = placeholder_timestamps[pv.variable_type]
                 pv_timestamp = (
                     Timestamp(
                         timestamp_type="custom",
@@ -451,6 +469,8 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                     ],
                 ) for mapping in etl_mappings
             ],
+            data_ingestion_window_start=data_ingestion_window_start,
+            data_ingestion_window_end=data_ingestion_window_end,
             **placeholder_kwargs,
         )
 
