@@ -42,7 +42,7 @@ observation_service = ObservationService()
 rating_curve_service = RatingCurveService()
 
 TransformationType = Literal["rating_curve", "expression", "composite_expression", "aggregation"]
-AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
+AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
 
 

@@ -264,12 +264,13 @@ const timezone = ref<string | null>(null)
 const selectedThingId = computed(() => props.initialThingId ?? null)
 
 const aggregationMethodOptions = [
-  { title: 'Mean', value: 'mean' },
-  { title: 'Sum', value: 'sum' },
-  { title: 'Min', value: 'min' },
-  { title: 'Max', value: 'max' },
+  { title: 'Arithmetic Mean', value: 'mean' },
   { title: 'First', value: 'first' },
   { title: 'Last', value: 'last' },
+  { title: 'Max', value: 'max' },
+  { title: 'Min', value: 'min' },
+  { title: 'Sum', value: 'sum' },
+  { title: 'Time-weighted mean', value: 'time_weighted_mean' },
 ]
 
 const intervalUnitOptions = [
