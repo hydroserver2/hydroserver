@@ -16,6 +16,20 @@ logger = logging.getLogger(__name__)
 TIME_WEIGHTED_MEAN = "time_weighted_mean"
 
 
+def _resample(frame: pd.DataFrame, rule, offset: pd.Timedelta):
+    """
+    Resample `frame` on TIMESTAMP_COL, omitting `offset` for calendar-aware
+    rules (e.g. Day) that don't support it — passing it anyway is harmless
+    (those rules are only used when offset is the zero default) but pandas
+    emits a RuntimeWarning on every call otherwise.
+    """
+
+    kwargs = dict(rule=rule, on=TIMESTAMP_COL, closed="left", label="left")
+    if isinstance(rule, pd.Timedelta):
+        kwargs["offset"] = offset
+    return frame.resample(**kwargs)
+
+
 def _boundary_value(
     target: pd.Timestamp,
     timestamps: list,
@@ -62,7 +76,27 @@ def _boundary_value(
     return None
 
 
-def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, freq: pd.Timedelta) -> pd.Series:
+def _next_bin_start(bin_start: pd.Timestamp, rule, offset: pd.Timedelta) -> pd.Timestamp:
+    """
+    Return the bin boundary immediately after `bin_start`, using pandas' own
+    resample binning rather than direct date arithmetic.
+
+    A plain `bin_start + rule` (or `pd.date_range`) can drift by the DST offset
+    across a transition, and that behavior isn't consistent across pandas
+    versions. Resampling a probe frame anchored at `bin_start` guarantees the
+    next label is computed by the exact same binning algorithm already used
+    (and proven correct) for every other bin boundary in the caller. `offset`
+    only has an effect when `rule` is Tick-based (e.g. a Timedelta); it's
+    ignored by pandas for calendar-aware offsets like Day, which is fine since
+    those are only used when no anchor/offset was requested.
+    """
+
+    probe = pd.DataFrame({TIMESTAMP_COL: [bin_start, bin_start + 2 * rule]})
+    edges = _resample(probe, rule, offset).size().index
+    return edges[1]
+
+
+def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, rule, offset: pd.Timedelta) -> pd.Series:
     """
     Compute a trapezoidal (linear-interpolation) time-weighted mean for each bin.
 
@@ -83,10 +117,8 @@ def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, freq: pd.Time
         if i + 1 < len(bin_starts):
             window_end = bin_starts[i + 1]
         else:
-            # No trailing bin label for the last window: derive its end the same
-            # DST-aware way pandas computes bin edges (plain Timestamp + Timedelta
-            # arithmetic would drift by the DST offset across a transition).
-            window_end = pd.date_range(start=window_start, periods=2, freq=freq)[1]
+            # No trailing bin label for the last window.
+            window_end = _next_bin_start(window_start, rule, offset)
 
         left = bisect_left(timestamps, window_start)
         right = bisect_left(timestamps, window_end)
@@ -189,6 +221,18 @@ def apply_aggregation(
     else:
         offset = pd.Timedelta(0)
 
+    # Day-or-longer intervals use a calendar-aware offset so windows respect
+    # local wall-clock (DST) boundaries rather than a fixed absolute duration
+    # (e.g. a "day" around a spring-forward transition is 23 real hours, not
+    # 24). Tick-based rules like Timedelta can't express that, and pandas
+    # ignores `offset=` for calendar-aware rules, so this only applies when
+    # there's no anchor.
+    _DAY_US = 86_400_000_000
+    if anchor is None and interval_us % _DAY_US == 0:
+        resample_rule = pd.tseries.offsets.Day(interval_us // _DAY_US)
+    else:
+        resample_rule = freq
+
     # Convert to local timezone before grouping so window boundaries align
     # to local calendar time rather than UTC. Reverted to UTC after aggregation.
     tz_str = normalize_tz(local_timezone) if local_timezone else "UTC"
@@ -196,11 +240,11 @@ def apply_aggregation(
     localized[TIMESTAMP_COL] = localized[TIMESTAMP_COL].dt.tz_convert(tz_str)
     localized = localized.sort_values(TIMESTAMP_COL).reset_index(drop=True)
 
-    resampled = localized.resample(rule=freq, on=TIMESTAMP_COL, closed="left", label="left", offset=offset)
+    resampled = _resample(localized, resample_rule, offset)
     counts = resampled[RESULT_COL].count()
 
     if method == TIME_WEIGHTED_MEAN:
-        values_col = _time_weighted_mean(localized, counts.index.tolist(), freq)
+        values_col = _time_weighted_mean(localized, counts.index.tolist(), resample_rule, offset)
     else:
         values_col = getattr(resampled[RESULT_COL], method)()
 
