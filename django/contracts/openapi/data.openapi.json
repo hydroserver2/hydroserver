@@ -11915,11 +11915,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-<<<<<<< Updated upstream
-    "version": "1.10.4"
-=======
     "version": "1.11.0b2"
->>>>>>> Stashed changes
   },
   "openapi": "3.1.0",
   "paths": {
