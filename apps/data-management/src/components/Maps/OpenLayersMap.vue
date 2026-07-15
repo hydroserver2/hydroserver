@@ -204,6 +204,7 @@ let selectedThingTransitionId = 0
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
 const markerLayer = ref<WebGLVectorLayer>()
+const DEFAULT_MARKER_OPACITY = 0.85
 
 // ── Browse-style selection (only used when `selectable`) ──
 const detailThing = ref<MapThing>()
@@ -272,6 +273,7 @@ const createFeature = (thing: MapThingWithColor) => {
     geometry: new Point(fromLonLat([longitude, latitude])),
   })
   f.set('markerColor', thing?.color?.background || '#D32F2F')
+  f.set('markerOpacity', DEFAULT_MARKER_OPACITY)
   f.set('thing', thing)
   return f
 }
@@ -354,6 +356,12 @@ const animateSelectionScale = (from: number, to: number, duration = 180) => {
 
 const updateSelectionMarker = (thingId?: string | null) => {
   selectionSource.clear()
+  // The enlarged selection marker replaces the base marker instead of
+  // stacking on top of its semi-opaque pixels.
+  vectorSource.getFeatures().forEach((feature) => {
+    const isSelected = getFeatureThing(feature)?.id === thingId
+    feature.set('markerOpacity', isSelected ? 0 : DEFAULT_MARKER_OPACITY)
+  })
   if (!thingId) {
     selectedSiteLabel.value = ''
     selectionLabelOverlay?.setPosition(undefined)
@@ -610,7 +618,7 @@ const initializeMap = () => {
       'icon-height': ['interpolate', ['linear'], ['zoom'], 1, 4, 8, 32, 16, 48],
       'icon-anchor': [0.5, 1],
       'icon-color': ['get', 'markerColor'],
-      'icon-opacity': 0.85,
+      'icon-opacity': ['get', 'markerOpacity'],
     },
   })
 
@@ -648,6 +656,7 @@ const initializeMap = () => {
       vectorSource.clear()
       const single = new Feature(new Point(evt.coordinate))
       single.set('markerColor', '#D32F2F')
+      single.set('markerOpacity', DEFAULT_MARKER_OPACITY)
       vectorSource.addFeature(single)
 
       const [lon, lat] = toLonLat(evt.coordinate)
