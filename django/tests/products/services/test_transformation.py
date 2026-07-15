@@ -59,9 +59,9 @@ def _load(transformation_id, task_id=TASK1):
 def _make_datastream(thing, sensor, observed_property, processing_level, unit):
     """Create a minimal datastream in the current transaction (rolled back after test)."""
     from core.sta.models import Datastream
-    import uuid6
+    import uuid
     return Datastream.objects.create(
-        pk=uuid6.uuid7(),
+        pk=uuid.uuid7(),
         thing=thing,
         sensor=sensor,
         observed_property=observed_property,
@@ -88,9 +88,9 @@ def _make_datastream(thing, sensor, observed_property, processing_level, unit):
 def _add_obs(datastream, phenomenon_time, result):
     """Insert a single observation (rolled back after test)."""
     from core.sta.models.observation import Observation
-    import uuid6
+    import uuid
     return Observation.objects.create(
-        pk=uuid6.uuid7(),
+        pk=uuid.uuid7(),
         datastream=datastream,
         phenomenon_time=phenomenon_time,
         result=result,

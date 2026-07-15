@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, validate_call
@@ -98,7 +98,7 @@ class QCOperationService(ServiceUtils):
 
         return [
             QCOperation.objects.create(
-                pk=uuid6.uuid7(),
+                pk=uuid.uuid7(),
                 session=session,
                 created_by=principal if isinstance(principal, User) else None,
                 order=operation.order,

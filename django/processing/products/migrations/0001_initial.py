@@ -2,7 +2,7 @@
 
 import core.iam.models.utils
 import django.db.models.deletion
-import uuid6
+import uuid
 from django.db import migrations, models
 
 
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RatingCurve',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('fitting_method', models.CharField(choices=[('linear', 'Linear'), ('power_law', 'Power Law')], max_length=20)),
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DataProductTransformation',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('transformation_type', models.CharField(choices=[('rating_curve', 'Rating Curve'), ('expression', 'Expression'), ('composite_expression', 'Composite Expression'), ('aggregation', 'Aggregation')], max_length=255)),
                 ('formula', models.TextField(blank=True, null=True)),
                 ('output_interval_units', models.CharField(blank=True, choices=[('minutes', 'Minutes'), ('hours', 'Hours'), ('days', 'Days'), ('weeks', 'Weeks'), ('months', 'Months')], max_length=255, null=True)),
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RatingCurvePoint',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('input_value', models.FloatField()),
                 ('output_value', models.FloatField()),
                 ('rating_curve', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='points', to='products.ratingcurve')),
@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DataProductTransformationInput',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('variable_name', models.CharField(blank=True, max_length=255, null=True)),
                 ('datastream', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='data_product_transformation_inputs', to='sta.datastream')),
                 ('transformation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='input_datastreams', to='products.dataproducttransformation')),

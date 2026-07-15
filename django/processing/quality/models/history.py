@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 from typing import Literal, Optional, Union
 
 from django.db import models
@@ -53,7 +53,7 @@ class QCHistoryQuerySet(models.QuerySet):
 
 
 class QCHistory(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     managed_datastream = models.OneToOneField(
         Datastream, on_delete=models.CASCADE, related_name="qc_history"
     )

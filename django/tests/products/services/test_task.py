@@ -294,14 +294,14 @@ def test_run_data_product_task_loads_observations(get_principal):
     """Running TASK1 processes T_RC (rating_curve) and T_EXP (expression) and loads observations."""
     from core.sta.models import Datastream
     from core.sta.models.observation import Observation
-    import uuid6
+    import uuid
 
     # Seed one observation into the T_RC input datastream (DS_IN_RC) so the run
     # has something to process. Setting phenomenon_end_time is required by the
     # run methods as the "end of available data" boundary.
     ds_in = Datastream.objects.get(pk=DS_IN_RC)
     t = datetime(2025, 3, 1, 12, 0, tzinfo=dt_timezone.utc)
-    Observation.objects.create(pk=uuid6.uuid7(), datastream=ds_in, phenomenon_time=t, result=1.5)
+    Observation.objects.create(pk=uuid.uuid7(), datastream=ds_in, phenomenon_time=t, result=1.5)
     ds_in.phenomenon_end_time = t
     ds_in.save(update_fields=["phenomenon_end_time"])
 

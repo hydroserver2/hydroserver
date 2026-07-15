@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 from typing import Union, Literal
 
 from django.db import models
@@ -14,7 +14,7 @@ User = get_user_model()
 
 
 class Task(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     periodic_task = models.OneToOneField(

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from datetime import timedelta
 from typing import Optional, Union, Literal
 
@@ -114,7 +114,7 @@ class MonitoringRuleService(ServiceUtils):
         principal: User | APIKey,
         datastream_id: uuid.UUID,
         rule_type: RuleType,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         min_value: float | None = None,
         max_value: float | None = None,
         window_interval: int | None = None,

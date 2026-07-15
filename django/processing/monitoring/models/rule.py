@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 
 from django.db import models
 
@@ -20,7 +20,7 @@ class WindowIntervalUnits(models.TextChoices):
 
 
 class MonitoringRule(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         MonitoringTask,
         on_delete=models.CASCADE,

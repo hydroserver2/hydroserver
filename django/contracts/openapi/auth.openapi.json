@@ -843,7 +843,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -951,7 +951,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "summary": "Create Account",
@@ -1037,6 +1037,7 @@
         },
         "summary": "Verify Email",
         "tags": [
+          "Account",
           "Email"
         ]
       },
@@ -1094,6 +1095,7 @@
         },
         "summary": "Send Verification Email",
         "tags": [
+          "Account",
           "Email"
         ]
       }
@@ -1241,6 +1243,7 @@
         },
         "summary": "Request Password Reset",
         "tags": [
+          "Account",
           "Password"
         ]
       }
@@ -1311,6 +1314,7 @@
         },
         "summary": "Reset Password",
         "tags": [
+          "Account",
           "Password"
         ]
       }

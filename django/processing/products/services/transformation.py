@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import logging
 import numpy as np
 import pandas as pd
@@ -172,7 +172,7 @@ class DataProductTransformationService(ServiceUtils):
         transformation_type: TransformationType,
         input_datastreams: list[TransformationInput],
         output_datastream: Union[uuid.UUID, Datastream],
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
         formula: str | Unset = Unset,
         aggregation_method: AggregationMethod | Unset = Unset,

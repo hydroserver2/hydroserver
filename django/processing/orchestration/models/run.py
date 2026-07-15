@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -14,7 +14,7 @@ class TaskRunStatus(models.TextChoices):
 
 
 class TaskRun(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="runs")
     status = models.CharField(max_length=10, choices=TaskRunStatus)
     message = models.TextField(null=True, blank=True)

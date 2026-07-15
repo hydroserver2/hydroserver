@@ -4,16 +4,9 @@
       "APIKeyDetailPostResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -28,9 +21,6 @@
           },
           "expiresAt": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -57,9 +47,6 @@
           },
           "lastUsed": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -98,16 +85,9 @@
       "APIKeyDetailResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -122,9 +102,6 @@
           },
           "expiresAt": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -146,9 +123,6 @@
           },
           "lastUsed": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -382,16 +356,9 @@
       "APIKeySummaryPostResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -406,9 +373,6 @@
           },
           "expiresAt": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -435,9 +399,6 @@
           },
           "lastUsed": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -480,16 +441,9 @@
       "APIKeySummaryResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -504,9 +458,6 @@
           },
           "expiresAt": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -528,9 +479,6 @@
           },
           "lastUsed": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -1056,9 +1004,6 @@
           },
           "type": {
             "const": "CSV",
-            "enum": [
-              "CSV"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -1130,9 +1075,6 @@
           },
           "type": {
             "const": "CSV",
-            "enum": [
-              "CSV"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -2208,9 +2150,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -2586,9 +2525,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -2600,9 +2536,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -2619,9 +2552,6 @@
           "resultBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -2633,9 +2563,6 @@
           },
           "resultEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -3619,9 +3546,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -3633,9 +3557,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -3654,9 +3575,6 @@
           "resultBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -3668,9 +3586,6 @@
           },
           "resultEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -3940,6 +3855,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4014,6 +3930,7 @@
             "title": "Schedule"
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4067,6 +3984,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "default": {},
             "title": "Taskvariables",
             "type": "object"
@@ -4176,9 +4094,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -4317,6 +4232,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           },
@@ -4608,9 +4524,6 @@
           },
           "type": {
             "const": "JSON",
-            "enum": [
-              "JSON"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -4652,9 +4565,6 @@
           },
           "type": {
             "const": "JSON",
-            "enum": [
-              "JSON"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -4719,8 +4629,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -4730,14 +4640,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -4802,8 +4712,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -4813,14 +4723,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -4881,8 +4791,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -4892,14 +4802,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -5566,9 +5476,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -5993,16 +5900,9 @@
             "type": "string"
           },
           "phenomenonTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontime"
+            "format": "date-time",
+            "title": "Phenomenontime",
+            "type": "string"
           },
           "result": {
             "title": "Result",
@@ -6243,16 +6143,9 @@
             "type": "string"
           },
           "phenomenonTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontime"
+            "format": "date-time",
+            "title": "Phenomenontime",
+            "type": "string"
           },
           "result": {
             "title": "Result",
@@ -6438,9 +6331,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6523,9 +6413,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6553,9 +6440,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7015,9 +6899,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7096,9 +6977,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7117,9 +6995,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7189,16 +7064,9 @@
       "QualityControlHistoryDetailResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -7222,9 +7090,6 @@
           "phenomenonTimeEnd": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7236,9 +7101,6 @@
           },
           "phenomenonTimeStart": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -7362,16 +7224,9 @@
       "QualityControlHistorySummaryResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -7397,9 +7252,6 @@
           "phenomenonTimeEnd": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7411,9 +7263,6 @@
           },
           "phenomenonTimeStart": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -7455,6 +7304,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7491,6 +7341,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7588,6 +7439,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7612,16 +7464,9 @@
             "title": "Comment"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -7673,9 +7518,6 @@
           "committedAt": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7686,16 +7528,9 @@
             "title": "Committedat"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -7748,28 +7583,14 @@
             "type": "array"
           },
           "phenomenonTimeEnd": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimeend"
+            "format": "date-time",
+            "title": "Phenomenontimeend",
+            "type": "string"
           },
           "phenomenonTimeStart": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimestart"
+            "format": "date-time",
+            "title": "Phenomenontimestart",
+            "type": "string"
           },
           "sourceChecksum": {
             "title": "Sourcechecksum",
@@ -7978,9 +7799,6 @@
           "committedAt": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7991,16 +7809,9 @@
             "title": "Committedat"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -8038,28 +7849,14 @@
             "title": "Managedchecksum"
           },
           "phenomenonTimeEnd": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimeend"
+            "format": "date-time",
+            "title": "Phenomenontimeend",
+            "type": "string"
           },
           "phenomenonTimeStart": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimestart"
+            "format": "date-time",
+            "title": "Phenomenontimestart",
+            "type": "string"
           },
           "sourceChecksum": {
             "title": "Sourcechecksum",
@@ -8598,9 +8395,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8679,9 +8473,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8700,9 +8491,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8763,7 +8551,7 @@
             "title": "Id",
             "type": "string"
           },
-          "isAPIKeyRole": {
+          "isApikeyRole": {
             "title": "Isapikeyrole",
             "type": "boolean"
           },
@@ -8798,7 +8586,7 @@
           "name",
           "description",
           "isUserRole",
-          "isAPIKeyRole",
+          "isApikeyRole",
           "id",
           "workspace",
           "permissions"
@@ -8907,9 +8695,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8932,7 +8717,7 @@
             "title": "Id",
             "type": "string"
           },
-          "isAPIKeyRole": {
+          "isApikeyRole": {
             "title": "Isapikeyrole",
             "type": "boolean"
           },
@@ -8969,7 +8754,7 @@
           "name",
           "description",
           "isUserRole",
-          "isAPIKeyRole",
+          "isApikeyRole",
           "id",
           "workspaceId",
           "permissions"
@@ -9538,9 +9323,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -9656,9 +9438,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -9677,9 +9456,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -10077,6 +9853,7 @@
           "result": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11008,9 +10785,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11093,9 +10867,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11123,9 +10894,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11239,9 +11007,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -11253,9 +11018,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -12359,7 +12121,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13130,7 +12892,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13282,7 +13044,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13531,7 +13293,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -13542,7 +13304,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13659,7 +13421,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -13670,7 +13432,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13938,6 +13700,7 @@
         ],
         "summary": "Get Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       },
@@ -14043,7 +13806,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14059,6 +13822,7 @@
         ],
         "summary": "Create Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14161,6 +13925,7 @@
         ],
         "summary": "Insert Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14231,6 +13996,7 @@
         ],
         "summary": "Delete Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14312,6 +14078,7 @@
         ],
         "summary": "Delete Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       },
@@ -14411,6 +14178,7 @@
         ],
         "summary": "Get Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14487,7 +14255,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14653,7 +14421,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14750,7 +14518,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15003,7 +14771,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15247,7 +15015,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15412,9 +15180,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -15659,7 +15424,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15938,7 +15703,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -16511,9 +16276,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -16701,7 +16463,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -16980,7 +16742,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17174,6 +16936,7 @@
         ],
         "summary": "Get Monitoring Rules",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17266,7 +17029,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17282,6 +17045,7 @@
         ],
         "summary": "Create Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -17363,6 +17127,7 @@
         ],
         "summary": "Delete Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17449,6 +17214,7 @@
         ],
         "summary": "Get Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17551,7 +17317,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17567,6 +17333,7 @@
         ],
         "summary": "Update Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -18103,9 +17870,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18130,9 +17894,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18157,9 +17918,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18329,7 +18087,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -18698,7 +18456,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -18822,9 +18580,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18849,9 +18604,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18876,9 +18628,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -19033,7 +18782,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19314,7 +19063,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19564,7 +19313,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19819,7 +19568,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19968,9 +19717,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -20190,7 +19936,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -20469,7 +20215,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21008,6 +20754,7 @@
         ],
         "summary": "Get Aggregation Transformations",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21100,7 +20847,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21116,6 +20863,7 @@
         ],
         "summary": "Create Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -21197,6 +20945,7 @@
         ],
         "summary": "Delete Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21283,6 +21032,7 @@
         ],
         "summary": "Get Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21385,7 +21135,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21401,6 +21151,7 @@
         ],
         "summary": "Update Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -21578,6 +21329,7 @@
         ],
         "summary": "Get Composite Expression Transformations",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -21670,7 +21422,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21686,6 +21438,7 @@
         ],
         "summary": "Create Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       }
@@ -21767,6 +21520,7 @@
         ],
         "summary": "Delete Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -21853,6 +21607,7 @@
         ],
         "summary": "Get Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -21955,7 +21710,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21971,6 +21726,7 @@
         ],
         "summary": "Update Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       }
@@ -22148,6 +21904,7 @@
         ],
         "summary": "Get Expression Transformations",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22240,7 +21997,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22256,6 +22013,7 @@
         ],
         "summary": "Create Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       }
@@ -22337,6 +22095,7 @@
         ],
         "summary": "Delete Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22423,6 +22182,7 @@
         ],
         "summary": "Get Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22525,7 +22285,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22541,6 +22301,7 @@
         ],
         "summary": "Update Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       }
@@ -22718,6 +22479,7 @@
         ],
         "summary": "Get Rating Curve Transformations",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -22810,7 +22572,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22826,6 +22588,7 @@
         ],
         "summary": "Create Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -22907,6 +22670,7 @@
         ],
         "summary": "Delete Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -22993,6 +22757,7 @@
         ],
         "summary": "Get Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -23095,7 +22860,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -23111,6 +22876,7 @@
         ],
         "summary": "Update Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -23427,7 +23193,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -23846,6 +23612,7 @@
         ],
         "summary": "Get Qc Sessions",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -23938,7 +23705,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -23951,6 +23718,7 @@
         ],
         "summary": "Create Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24029,6 +23797,7 @@
         ],
         "summary": "Delete Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -24136,6 +23905,7 @@
         ],
         "summary": "Get Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -24238,7 +24008,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24251,6 +24021,7 @@
         ],
         "summary": "Update Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24345,7 +24116,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24358,6 +24129,7 @@
         ],
         "summary": "Commit Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24488,6 +24260,7 @@
         ],
         "summary": "Get Qc Operations",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -24598,7 +24371,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24611,6 +24384,7 @@
         ],
         "summary": "Create Qc Operations",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -24699,6 +24473,7 @@
         ],
         "summary": "Delete Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -24792,6 +24567,7 @@
         ],
         "summary": "Get Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -24904,7 +24680,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24917,6 +24693,7 @@
         ],
         "summary": "Update Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -25025,9 +24802,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25052,9 +24826,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25079,9 +24850,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25214,7 +24982,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -25484,7 +25252,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -25612,9 +25380,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25919,9 +25684,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25946,9 +25708,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25973,9 +25732,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -26175,7 +25931,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -26632,7 +26388,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -27036,7 +26792,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -27942,7 +27698,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28034,7 +27790,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28283,7 +28039,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -28294,7 +28050,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28411,7 +28167,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -28422,7 +28178,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28514,7 +28270,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28680,7 +28436,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28777,7 +28533,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28905,9 +28661,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -28932,9 +28685,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -28959,9 +28709,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -29120,7 +28867,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29489,7 +29236,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29760,7 +29507,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30015,7 +29762,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30201,6 +29948,7 @@
         ],
         "summary": "Get Api Keys",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       },
@@ -30284,7 +30032,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30297,6 +30045,7 @@
         ],
         "summary": "Create Api Key",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       }
@@ -30364,6 +30113,7 @@
         ],
         "summary": "Delete Api Key",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       },
@@ -30463,6 +30213,7 @@
         ],
         "summary": "Get Api Key",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       },
@@ -30567,7 +30318,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30580,6 +30331,7 @@
         ],
         "summary": "Update Api Key",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       }
@@ -30687,7 +30439,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30700,6 +30452,7 @@
         ],
         "summary": "Regenerate Api Key",
         "tags": [
+          "Workspaces",
           "API Keys"
         ]
       }
@@ -30765,7 +30518,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30778,6 +30531,7 @@
         ],
         "summary": "Remove Collaborator",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -30904,6 +30658,7 @@
         ],
         "summary": "Get Collaborators",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -30974,7 +30729,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30987,6 +30742,7 @@
         ],
         "summary": "Add Collaborator",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -31057,7 +30813,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -31070,6 +30826,7 @@
         ],
         "summary": "Edit Collaborator Role",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       }
@@ -31228,7 +30985,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [

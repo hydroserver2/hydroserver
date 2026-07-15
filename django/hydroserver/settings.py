@@ -170,6 +170,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
+    "ninja.compatibility.files.fix_request_files_middleware",
     "core.web.middleware.NoIndexMiddleware",
 ]
 

@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 import typing
 from typing import Literal, Optional, Union
 from django.db import models
@@ -64,7 +64,7 @@ class ThingQuerySet(models.QuerySet):
 
 
 class Thing(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     workspace = models.ForeignKey(
         Workspace, related_name="things", on_delete=models.DO_NOTHING
     )

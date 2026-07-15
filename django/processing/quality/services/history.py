@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from typing import Literal
 
 from pydantic import Field, ConfigDict, validate_call
@@ -126,7 +126,7 @@ class QCHistoryService(ServiceUtils):
         principal: User | APIKey | None,
         managed_datastream: uuid.UUID | Datastream,
         source_datastream: uuid.UUID | Datastream,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> QCHistory:
         """Create a QC history linking a managed datastream to its source datastream."""
 

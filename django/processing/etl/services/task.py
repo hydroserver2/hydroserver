@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from datetime import datetime, timezone
 from typing import Optional, Union, Literal
 
@@ -210,7 +210,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         principal: User | APIKey,
         name: str,
         data_connection: Union[uuid.UUID, DataConnection],
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         description: str | None = None,
         task_variables: dict = Field(default_factory=dict),
         crontab: str | None = None,

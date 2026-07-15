@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 
 from typing import Union, Literal
 
@@ -91,7 +91,7 @@ class MonitoringTask(Task, PermissionChecker):
 
 
 class MonitoringNotificationRecipient(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         MonitoringTask,
         on_delete=models.CASCADE,

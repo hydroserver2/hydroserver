@@ -2066,7 +2066,10 @@ export interface components {
     schemas: {
         /** APIKeyDetailPostResponse */
         APIKeyDetailPostResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /** Description */
             description?: string | null;
@@ -2090,7 +2093,10 @@ export interface components {
         };
         /** APIKeyDetailResponse */
         APIKeyDetailResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /** Description */
             description?: string | null;
@@ -2172,7 +2178,10 @@ export interface components {
         };
         /** APIKeySummaryPostResponse */
         APIKeySummaryPostResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /** Description */
             description?: string | null;
@@ -2204,7 +2213,10 @@ export interface components {
         };
         /** APIKeySummaryResponse */
         APIKeySummaryResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /** Description */
             description?: string | null;
@@ -2398,7 +2410,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "CSV";
         };
@@ -2417,7 +2428,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "CSV";
         };
@@ -3410,7 +3420,9 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
         };
         /**
          * EtlTaskOrderBy
@@ -3428,7 +3440,9 @@ export interface components {
             /** Schedule */
             schedule?: components["schemas"]["SchedulePatchBody"] | null;
             /** Taskvariables */
-            taskVariables?: Record<string, never>;
+            taskVariables?: {
+                [key: string]: unknown;
+            };
         };
         /** EtlTaskPostBody */
         EtlTaskPostBody: {
@@ -3456,7 +3470,9 @@ export interface components {
              * Taskvariables
              * @default {}
              */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
         };
         /** EtlTaskQueryParameters */
         EtlTaskQueryParameters: {
@@ -3544,7 +3560,9 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
             /**
              * Workspaceid
              * Format: uuid
@@ -3676,7 +3694,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "JSON";
         };
@@ -3691,7 +3708,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "JSON";
         };
@@ -4093,7 +4109,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Phenomenontime */
+            /**
+             * Phenomenontime
+             * Format: date-time
+             */
             phenomenonTime: string;
             /** Result */
             result: number;
@@ -4181,7 +4200,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Phenomenontime */
+            /**
+             * Phenomenontime
+             * Format: date-time
+             */
             phenomenonTime: string;
             /** Result */
             result: number;
@@ -4474,7 +4496,10 @@ export interface components {
         };
         /** QualityControlHistoryDetailResponse */
         QualityControlHistoryDetailResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /**
              * Id
@@ -4536,7 +4561,10 @@ export interface components {
         };
         /** QualityControlHistorySummaryResponse */
         QualityControlHistorySummaryResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /**
              * Id
@@ -4565,7 +4593,9 @@ export interface components {
         /** QualityControlOperationPatchBody */
         QualityControlOperationPatchBody: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /** Order */
@@ -4574,7 +4604,9 @@ export interface components {
         /** QualityControlOperationPostBody */
         QualityControlOperationPostBody: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -4603,10 +4635,15 @@ export interface components {
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /**
@@ -4626,7 +4663,10 @@ export interface components {
         QualityControlSessionDetailResponse: {
             /** Committedat */
             committedAt?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /** Dependencyids */
@@ -4647,9 +4687,15 @@ export interface components {
             managedChecksum?: string | null;
             /** Operations */
             operations: components["schemas"]["QualityControlOperationResponse"][];
-            /** Phenomenontimeend */
+            /**
+             * Phenomenontimeend
+             * Format: date-time
+             */
             phenomenonTimeEnd: string;
-            /** Phenomenontimestart */
+            /**
+             * Phenomenontimestart
+             * Format: date-time
+             */
             phenomenonTimeStart: string;
             /** Sourcechecksum */
             sourceChecksum: string;
@@ -4717,7 +4763,10 @@ export interface components {
         QualityControlSessionSummaryResponse: {
             /** Committedat */
             committedAt?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /** Description */
@@ -4734,9 +4783,15 @@ export interface components {
             id: string;
             /** Managedchecksum */
             managedChecksum?: string | null;
-            /** Phenomenontimeend */
+            /**
+             * Phenomenontimeend
+             * Format: date-time
+             */
             phenomenonTimeEnd: string;
-            /** Phenomenontimestart */
+            /**
+             * Phenomenontimestart
+             * Format: date-time
+             */
             phenomenonTimeStart: string;
             /** Sourcechecksum */
             sourceChecksum: string;
@@ -5040,7 +5095,7 @@ export interface components {
              */
             id: string;
             /** Isapikeyrole */
-            isAPIKeyRole: boolean;
+            isApikeyRole: boolean;
             /** Isuserrole */
             isUserRole: boolean;
             /** Name */
@@ -5098,7 +5153,7 @@ export interface components {
              */
             id: string;
             /** Isapikeyrole */
-            isAPIKeyRole: boolean;
+            isApikeyRole: boolean;
             /** Isuserrole */
             isUserRole: boolean;
             /** Name */
@@ -5404,7 +5459,9 @@ export interface components {
             /** Message */
             message?: string | null;
             /** Result */
-            result?: Record<string, never> | null;
+            result?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Startedat
              * Format: date-time
@@ -6187,7 +6244,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6505,7 +6562,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6660,7 +6717,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -6669,7 +6726,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6741,7 +6798,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -6750,7 +6807,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6810,7 +6867,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6930,7 +6987,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7210,7 +7267,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7272,7 +7329,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7332,7 +7389,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7441,7 +7498,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7599,7 +7656,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7721,7 +7778,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7890,7 +7947,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8171,7 +8228,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8340,7 +8397,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8471,7 +8528,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8641,7 +8698,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8913,7 +8970,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9093,7 +9150,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9198,7 +9255,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9351,7 +9408,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9460,7 +9517,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9627,7 +9684,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9747,7 +9804,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9916,7 +9973,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10163,7 +10220,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10333,7 +10390,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10464,7 +10521,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10634,7 +10691,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10765,7 +10822,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10935,7 +10992,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11066,7 +11123,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11236,7 +11293,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11402,7 +11459,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11635,7 +11692,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11807,7 +11864,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11875,7 +11932,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12002,7 +12059,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12175,7 +12232,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12262,7 +12319,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12406,7 +12463,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12602,7 +12659,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12809,7 +12866,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12917,7 +12974,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13300,7 +13357,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13417,7 +13474,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -13426,7 +13483,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13498,7 +13555,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -13507,7 +13564,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13567,7 +13624,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13669,7 +13726,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13731,7 +13788,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13791,7 +13848,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13889,7 +13946,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14069,7 +14126,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14154,7 +14211,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14289,7 +14346,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14376,7 +14433,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14514,7 +14571,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14575,7 +14632,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14675,7 +14732,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14728,7 +14785,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14779,7 +14836,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14890,7 +14947,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
