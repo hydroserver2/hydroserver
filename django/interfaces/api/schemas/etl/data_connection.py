@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Optional, Literal, Union
 from ninja import Field, Query
 from pydantic import EmailStr
@@ -40,6 +41,56 @@ class DataConnectionQueryParameters(CollectionQueryParameters):
     )
 
 
+DataIngestionWindowAnchorType = Literal["latest_observation_timestamp", "run_time", "fixed_timestamp"]
+DataIngestionWindowLookbackUnits = Literal["minutes", "hours", "days"]
+
+
+class DataIngestionWindowBoundaryResponse(BaseGetResponse):
+    anchor: Optional[DataIngestionWindowAnchorType] = None
+    lookback: Optional[int] = None
+    lookback_units: Optional[DataIngestionWindowLookbackUnits] = None
+    timestamp: Optional[datetime] = None
+
+
+class DataIngestionWindowResponse(BaseGetResponse):
+    start: Optional[DataIngestionWindowBoundaryResponse] = None
+    end: Optional[DataIngestionWindowBoundaryResponse] = None
+
+
+class DataIngestionWindowBoundaryPostBody(BasePostBody):
+    anchor: Optional[DataIngestionWindowAnchorType] = None
+    lookback: Optional[int] = None
+    lookback_units: Optional[DataIngestionWindowLookbackUnits] = None
+    timestamp: Optional[datetime] = None
+
+
+class DataIngestionWindowPostBody(BasePostBody):
+    start: Optional[DataIngestionWindowBoundaryPostBody] = None
+    end: Optional[DataIngestionWindowBoundaryPostBody] = None
+
+
+def _resolve_data_ingestion_window(obj):
+    start = end = None
+    if obj.data_ingestion_window_start_anchor:
+        start = {
+            "anchor": obj.data_ingestion_window_start_anchor,
+            "lookback": obj.data_ingestion_window_start_lookback,
+            "lookback_units": obj.data_ingestion_window_start_lookback_unit,
+            "timestamp": obj.data_ingestion_window_start_timestamp,
+        }
+    if obj.data_ingestion_window_end_anchor:
+        end = {
+            "anchor": obj.data_ingestion_window_end_anchor,
+            "lookback": obj.data_ingestion_window_end_lookback,
+            "lookback_units": obj.data_ingestion_window_end_lookback_unit,
+            "timestamp": obj.data_ingestion_window_end_timestamp,
+        }
+    if start is None and end is None:
+        return None
+
+    return {"start": start, "end": end}
+
+
 class CSVPayloadResponse(BaseGetResponse):
     payload_type: Literal["CSV"] = Field(alias="type")
     timestamp_key: str
@@ -47,14 +98,16 @@ class CSVPayloadResponse(BaseGetResponse):
     header_row: Optional[int] = None
     data_start_row: Optional[int] = None
     delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
+    data_ingestion_window: Optional[DataIngestionWindowResponse] = None
+    resolve_data_ingestion_window = staticmethod(_resolve_data_ingestion_window)
 
 
 class CSVPayloadPostBody(BasePostBody, CSVPayloadResponse):
-    ...
+    data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
 class CSVPayloadPatchBody(BasePatchBody, CSVPayloadResponse):
-    ...
+    data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
 class JSONPayloadResponse(BaseGetResponse):
@@ -62,14 +115,16 @@ class JSONPayloadResponse(BaseGetResponse):
     timestamp_key: str
     timestamp_format: Optional[str] = None
     jmespath: Optional[str] = None
+    data_ingestion_window: Optional[DataIngestionWindowResponse] = None
+    resolve_data_ingestion_window = staticmethod(_resolve_data_ingestion_window)
 
 
 class JSONPayloadPostBody(BasePostBody, JSONPayloadResponse):
-    ...
+    data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
 class JSONPayloadPatchBody(BasePatchBody, JSONPayloadResponse):
-    ...
+    data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
 class PayloadPatchBody(BasePatchBody):
@@ -80,11 +135,14 @@ class PayloadPatchBody(BasePatchBody):
     data_start_row: Optional[int] = None
     delimiter: Optional[Literal[",", "|", "\t", ";", " "]] = Field(None, max_length=1)
     jmespath: Optional[str] = None
+    data_ingestion_window: Optional[DataIngestionWindowPostBody] = None
 
 
 class PlaceholderVariableResponse(BaseGetResponse):
     name: str
-    variable_type: Literal["run_time", "latest_observation_timestamp", "per_task"] = Field(alias="type")
+    variable_type: Literal[
+        "run_time", "latest_observation_timestamp", "per_task", "window_start", "window_end"
+    ] = Field(alias="type")
     timestamp_format: Optional[str] = None
 
 

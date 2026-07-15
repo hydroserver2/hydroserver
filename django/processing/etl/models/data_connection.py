@@ -64,6 +64,14 @@ class PlaceholderVariableType(models.TextChoices):
     RUN_TIME = "run_time"
     LATEST_OBSERVATION_TIMESTAMP = "latest_observation_timestamp"
     PER_TASK = "per_task"
+    DATA_INGESTION_WINDOW_START = "window_start"
+    DATA_INGESTION_WINDOW_END = "window_end"
+
+
+class DataIngestionWindowAnchorType(models.TextChoices):
+    LATEST_OBSERVATION_TIMESTAMP = "latest_observation_timestamp"
+    RUN_TIME = "run_time"
+    FIXED_TIMESTAMP = "fixed_timestamp"
 
 
 class DataConnection(models.Model, PermissionChecker):
@@ -159,6 +167,20 @@ class Payload(models.Model):
     # Timestamp fields
     timestamp_key = models.CharField(max_length=255)
     timestamp_format = models.CharField(max_length=255, blank=True, null=True)
+
+    # Data ingestion window fields
+    data_ingestion_window_start_anchor = models.CharField(
+        max_length=255, choices=DataIngestionWindowAnchorType, null=True, blank=True
+    )
+    data_ingestion_window_start_lookback = models.PositiveIntegerField(null=True, blank=True)
+    data_ingestion_window_start_lookback_unit = models.CharField(max_length=255, null=True, blank=True)
+    data_ingestion_window_start_timestamp = models.DateTimeField(null=True, blank=True)
+    data_ingestion_window_end_anchor = models.CharField(
+        max_length=255, choices=DataIngestionWindowAnchorType, null=True, blank=True
+    )
+    data_ingestion_window_end_lookback = models.PositiveIntegerField(null=True, blank=True)
+    data_ingestion_window_end_lookback_unit = models.CharField(max_length=255, null=True, blank=True)
+    data_ingestion_window_end_timestamp = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         app_label = "etl"

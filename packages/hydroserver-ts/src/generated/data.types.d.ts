@@ -2385,6 +2385,7 @@ export interface components {
         };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -2404,6 +2405,7 @@ export interface components {
         };
         /** CSVPayloadResponse */
         CSVPayloadResponse: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowResponse"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -2701,6 +2703,38 @@ export interface components {
             /** Timezonetype */
             timezoneType?: ("offset" | "iana") | null;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /** DataIngestionWindowBoundaryPostBody */
+        DataIngestionWindowBoundaryPostBody: {
+            /** Anchor */
+            anchor?: ("latest_observation_timestamp" | "run_time" | "fixed_timestamp") | null;
+            /** Lookback */
+            lookback?: number | null;
+            /** Lookbackunits */
+            lookbackUnits?: ("minutes" | "hours" | "days") | null;
+            /** Timestamp */
+            timestamp?: string | null;
+        };
+        /** DataIngestionWindowBoundaryResponse */
+        DataIngestionWindowBoundaryResponse: {
+            /** Anchor */
+            anchor?: ("latest_observation_timestamp" | "run_time" | "fixed_timestamp") | null;
+            /** Lookback */
+            lookback?: number | null;
+            /** Lookbackunits */
+            lookbackUnits?: ("minutes" | "hours" | "days") | null;
+            /** Timestamp */
+            timestamp?: string | null;
+        };
+        /** DataIngestionWindowPostBody */
+        DataIngestionWindowPostBody: {
+            end?: components["schemas"]["DataIngestionWindowBoundaryPostBody"] | null;
+            start?: components["schemas"]["DataIngestionWindowBoundaryPostBody"] | null;
+        };
+        /** DataIngestionWindowResponse */
+        DataIngestionWindowResponse: {
+            end?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
+            start?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
         };
         /** DataProductTaskDetailResponse */
         DataProductTaskDetailResponse: {
@@ -3667,6 +3701,7 @@ export interface components {
         };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Jmespath */
             jmespath?: string | null;
             /** Timestampformat */
@@ -3682,6 +3717,7 @@ export interface components {
         };
         /** JSONPayloadResponse */
         JSONPayloadResponse: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowResponse"] | null;
             /** Jmespath */
             jmespath?: string | null;
             /** Timestampformat */
@@ -4314,6 +4350,8 @@ export interface components {
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {
+            /** Dataingestionwindow */
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -4352,7 +4390,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type?: "run_time" | "latest_observation_timestamp" | "per_task";
+            type?: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariablePostBody */
         PlaceholderVariablePostBody: {
@@ -4364,7 +4402,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "run_time" | "latest_observation_timestamp" | "per_task";
+            type: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariableResponse */
         PlaceholderVariableResponse: {
@@ -4376,7 +4414,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "run_time" | "latest_observation_timestamp" | "per_task";
+            type: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** ProcessingLevelDetailResponse */
         ProcessingLevelDetailResponse: {
