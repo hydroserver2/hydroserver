@@ -47,7 +47,7 @@
             @deleted="deleteTask"
           />
         </v-dialog>
-        <v-dialog width="34rem">
+        <v-dialog v-model="deleteTaskDialogOpen" width="34rem">
           <template #activator="{ props }">
             <button
               v-bind="props"
@@ -59,7 +59,11 @@
               <span>Delete</span>
             </button>
           </template>
-          <DeleteTaskCard :task="task" @delete="deleteTask" />
+          <DeleteTaskCard
+            :task="task"
+            @close="deleteTaskDialogOpen = false"
+            @delete="deleteTask"
+          />
         </v-dialog>
         <button
           type="button"
@@ -113,6 +117,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
 const editDialogOpen = ref(false)
+const deleteTaskDialogOpen = ref(false)
 const {
   task,
   loadingRuns,
