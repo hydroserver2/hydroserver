@@ -88,8 +88,13 @@
 <script setup lang="ts">
 import { Datastream, GraphSeries } from '@hydroserver/client'
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
-import { createPlotlyOption, PlotlyOptions } from '@/utils/plotting/plotly'
+import {
+  createPlotlyOption,
+  PlotlyOptions,
+  supportsWebgl,
+} from '@/utils/plotting/plotly'
 import { onMounted, ref, nextTick, onBeforeUnmount, computed } from 'vue'
+import { debounce } from 'lodash-es'
 import { useObservationStore } from '@/store/observations'
 import { mdiArrowRight } from '@mdi/js'
 
@@ -127,7 +132,11 @@ const ensurePlotly = async () => {
   return plotlyApi
 }
 
-const LARGE_SERIES_VISIBLE_THRESHOLD = 50_000
+// scattergl (WebGL) draws markers on the GPU and stays usable into the
+// hundreds of thousands of visible points, so we push close to that bound.
+// Without WebGL, Plotly falls back to SVG markers, which choke at a few
+// thousand — so cap far lower in that case.
+const LARGE_SERIES_VISIBLE_THRESHOLD = supportsWebgl() ? 200_000 : 5_000
 const LARGE_SERIES_TOTAL_THRESHOLD = 200_000
 const DEFAULT_HOVER_TEMPLATE = '<b>%{y}</b><extra></extra>'
 const isLargeSeriesMode = ref(false)
@@ -222,34 +231,37 @@ const normalizeTraceArray = <T,>(
 const applyLargeSeriesMode = async (visiblePoints: number) => {
   if (!plotlyRef.value || !plotlyApi) return
   const totalPoints = getTotalPointCount()
+  // Markers are a viewport concern: hide them only when the *visible* window is
+  // too dense to draw meaningfully, so zooming into a sparse window restores
+  // them even on a huge series (scattergl draws markers on the GPU). Hover stays
+  // gated on the total point count.
+  const hideMarkers = visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD
   const forceLargeMode = totalPoints > LARGE_SERIES_TOTAL_THRESHOLD
-  const shouldEnable =
-    visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD || forceLargeMode
 
   const traceCount = plotlyRef.value.data?.length ?? 0
   if (!traceCount) return
   const needsEnforcement =
-    shouldEnable &&
+    hideMarkers &&
     plotlyRef.value.data?.some((trace: any) => {
       if (trace?.mode !== 'lines') return true
       const size = trace?.marker?.size
       return typeof size === 'number' ? size !== 0 : false
     })
 
-  const nextModes = shouldEnable
+  const nextModes = hideMarkers
     ? new Array(traceCount).fill('lines')
     : normalizeTraceArray(defaultTraceModes.value, traceCount, 'lines+markers')
-  const nextMarkerSizes = shouldEnable
+  const nextMarkerSizes = hideMarkers
     ? new Array(traceCount).fill(0)
     : normalizeTraceArray(defaultMarkerSizes.value, traceCount, 6)
-  const nextHoverInfo: 'y' | 'skip' = shouldEnable ? 'skip' : 'y'
+  const nextHoverInfo: 'y' | 'skip' = hideMarkers ? 'skip' : 'y'
   const nextHoverMode = forceLargeMode ? false : defaultHoverMode.value
   const traceCountChanged = traceCount !== lastStyledTraceCount.value
 
   if (
     traceCountChanged ||
     needsEnforcement ||
-    shouldEnable !== isLargeSeriesMode.value ||
+    hideMarkers !== isLargeSeriesMode.value ||
     nextHoverInfo !== currentHoverInfo.value
   ) {
     const nextTemplate = nextHoverInfo === 'skip' ? '' : DEFAULT_HOVER_TEMPLATE
@@ -259,7 +271,7 @@ const applyLargeSeriesMode = async (visiblePoints: number) => {
       hoverinfo: nextHoverInfo,
       hovertemplate: nextTemplate,
     })
-    isLargeSeriesMode.value = shouldEnable
+    isLargeSeriesMode.value = hideMarkers
     currentHoverInfo.value = nextHoverInfo
     lastStyledTraceCount.value = traceCount
   }
@@ -296,6 +308,30 @@ const applyLargeSeriesModeForCurrentRange = () => {
     applyLargeSeriesMode(totalPoints)
   }
 }
+
+// Debounced so it runs only AFTER a zoom/pan gesture settles — reconciling
+// (restyle/relayout) mid-gesture makes the zoom jitter and snap back.
+const debouncedPopupRelayout = debounce((eventData: any) => {
+  if (!eventData) return
+  let eventRangeStart = eventData['xaxis.range[0]']
+  let eventRangeEnd = eventData['xaxis.range[1]']
+  const eventRange = eventData['xaxis.range']
+  if (
+    (eventRangeStart === undefined || eventRangeEnd === undefined) &&
+    Array.isArray(eventRange)
+  ) {
+    ;[eventRangeStart, eventRangeEnd] = eventRange
+  }
+  if (eventRangeStart === undefined || eventRangeEnd === undefined) return
+  const rangeStart =
+    typeof eventRangeStart === 'string'
+      ? Date.parse(eventRangeStart)
+      : eventRangeStart
+  const rangeEnd =
+    typeof eventRangeEnd === 'string' ? Date.parse(eventRangeEnd) : eventRangeEnd
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd)) return
+  applyLargeSeriesMode(getVisiblePointCount(rangeStart, rangeEnd))
+}, 400)
 
 const dateOptions = [
   {
@@ -450,30 +486,10 @@ const renderPlot = async () => {
     if (!handlersAttached) {
       const plot = plotlyRef.value
       if (!plot) return
-      plot.on('plotly_relayout', (eventData: any) => {
-        if (!eventData) return
-        let eventRangeStart = eventData['xaxis.range[0]']
-        let eventRangeEnd = eventData['xaxis.range[1]']
-        const eventRange = eventData['xaxis.range']
-        if (
-          (eventRangeStart === undefined || eventRangeEnd === undefined) &&
-          Array.isArray(eventRange)
-        ) {
-          ;[eventRangeStart, eventRangeEnd] = eventRange
-        }
-        if (eventRangeStart === undefined || eventRangeEnd === undefined) return
-        const rangeStart =
-          typeof eventRangeStart === 'string'
-            ? Date.parse(eventRangeStart)
-            : eventRangeStart
-        const rangeEnd =
-          typeof eventRangeEnd === 'string'
-            ? Date.parse(eventRangeEnd)
-            : eventRangeEnd
-        if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd)) return
-        applyLargeSeriesMode(getVisiblePointCount(rangeStart, rangeEnd))
-      })
-      plot.on('plotly_afterplot', applyLargeSeriesModeForCurrentRange)
+      // No `plotly_afterplot` hook: it fires every frame during a drag/zoom and
+      // reconciling there mutates the plot mid-gesture (jitter + snap-back).
+      // The debounced relayout handler + the post-render call below cover it.
+      plot.on('plotly_relayout', debouncedPopupRelayout)
       handlersAttached = true
     }
   } else {
