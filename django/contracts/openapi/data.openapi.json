@@ -11919,7 +11919,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.0b2"
+    "version": "1.11.0b3"
   },
   "openapi": "3.1.0",
   "paths": {
