@@ -651,7 +651,8 @@
               "min",
               "max",
               "first",
-              "last"
+              "last",
+              "time_weighted_mean"
             ],
             "title": "Aggregationmethod",
             "type": "string"
@@ -731,7 +732,8 @@
               "min",
               "max",
               "first",
-              "last"
+              "last",
+              "time_weighted_mean"
             ],
             "title": "Aggregationmethod",
             "type": "string"
@@ -823,7 +825,8 @@
               "min",
               "max",
               "first",
-              "last"
+              "last",
+              "time_weighted_mean"
             ],
             "title": "Aggregationmethod",
             "type": "string"
@@ -912,7 +915,8 @@
               "min",
               "max",
               "first",
-              "last"
+              "last",
+              "time_weighted_mean"
             ],
             "title": "Aggregationmethod",
             "type": "string"

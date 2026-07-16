@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
+AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
 
 

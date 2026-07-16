@@ -2258,7 +2258,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Inputdatastreamid
              * Format: uuid
@@ -2289,7 +2289,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid
@@ -2325,7 +2325,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid
@@ -2353,7 +2353,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid

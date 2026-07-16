@@ -320,6 +320,21 @@ def test_create_aggregation_transformation(get_principal, ds_free):
     assert result.aggregation_method == "mean"
 
 
+def test_create_aggregation_transformation_time_weighted_mean(get_principal, ds_free):
+    result = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=get_principal("owner"),
+        transformation_type="aggregation",
+        output_datastream=ds_free,
+        aggregation_method="time_weighted_mean",
+        output_interval_units="hours",
+        output_interval=1,
+        input_datastreams=[TransformationInput(datastream=uuid.UUID(DS_IN_RC))],
+    )
+    assert result.transformation_type == "aggregation"
+    assert result.aggregation_method == "time_weighted_mean"
+
+
 def test_create_composite_expression_transformation(get_principal, ds_free):
     result = transformation_service.create(
         task=uuid.UUID(TASK1),
@@ -906,3 +921,52 @@ def test_run_aggregation(run_context):
     from core.sta.models.observation import Observation
     results = sorted(Observation.objects.filter(datastream=ds_out).values_list("result", flat=True))
     np.testing.assert_allclose(results, [2.0, 3.0])
+
+
+def test_run_aggregation_time_weighted_mean(run_context):
+    """
+    time_weighted_mean, 1-day UTC bucket [2025-02-10T00:00Z, 2025-02-11T00:00Z).
+
+    Observations at 06:00=1.0, 08:00=3.0, 10:00=2.0, 12:00=4.0. Boundary values are
+    flat-extrapolated (00:00 -> 1.0, 24:00 -> 4.0), then trapezoidal integration gives:
+      [00-06]: (1+1)/2*6 =  6
+      [06-08]: (1+3)/2*2 =  4
+      [08-10]: (3+2)/2*2 =  5
+      [10-12]: (2+4)/2*2 =  6
+      [12-24]: (4+4)/2*12= 48
+      total = 69 over 24h -> 2.875
+    This differs from the simple arithmetic mean of the same observations (2.5),
+    confirming the time-weighted method is actually wired through the run pipeline.
+    """
+    ctx = run_context
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_in = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+
+    for dt, val in [
+        (datetime(2025, 2, 10, 6, 0, tzinfo=dt_timezone.utc), 1.0),
+        (datetime(2025, 2, 10, 8, 0, tzinfo=dt_timezone.utc), 3.0),
+        (datetime(2025, 2, 10, 10, 0, tzinfo=dt_timezone.utc), 2.0),
+        (datetime(2025, 2, 10, 12, 0, tzinfo=dt_timezone.utc), 4.0),
+    ]:
+        _add_obs(ds_in, dt, val)
+    _set_end_time(ds_in, datetime(2025, 2, 11, 0, 0, tzinfo=dt_timezone.utc))
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="aggregation",
+        output_datastream=ds_out.pk,
+        aggregation_method="time_weighted_mean",
+        output_interval_units="days",
+        output_interval=1,
+        input_datastreams=[TransformationInput(datastream=ds_in.pk)],
+    )
+    loaded = transformation_service.run(t)
+    assert loaded == 1
+
+    from core.sta.models.observation import Observation
+    out_obs = list(Observation.objects.filter(datastream=ds_out))
+    assert len(out_obs) == 1
+    assert out_obs[0].phenomenon_time == datetime(2025, 2, 10, 0, 0, tzinfo=dt_timezone.utc)
+    np.testing.assert_allclose(out_obs[0].result, 2.875)
