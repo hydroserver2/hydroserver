@@ -116,7 +116,9 @@
                   class="mr-1 mb-1 max-w-full"
                   @click:close="removeNotificationRecipient(index)"
                 >
-                  <span class="truncate">{{ item.title }}</span>
+                  <span class="truncate">{{
+                    notificationRecipientEmails[index]
+                  }}</span>
                 </v-chip>
               </template>
             </v-combobox>

@@ -14,7 +14,7 @@
       <v-icon :icon="mdiMagnify" size="16" color="primary" />
       <span class="filter-chip-label">Sites</span>
       <span class="filter-chip-count">
-        {{ thingsLoaded ? `(${availableSites.length})` : "..." }}
+        {{ thingsLoaded ? `(${availableSites.length})` : '...' }}
       </span>
     </v-btn>
 
@@ -87,7 +87,7 @@
               closable
               @click:close="selectedWorkspaces.splice(index, 1)"
             >
-              <span>{{ item.title }}</span>
+              <span>{{ item.name }}</span>
             </v-chip>
             <span
               v-else-if="index === 2"
@@ -130,7 +130,9 @@
 
       <div class="site-list">
         <div class="site-list-count">
-          {{ thingsLoaded ? `${availableSites.length} sites` : 'Loading sites' }}
+          {{
+            thingsLoaded ? `${availableSites.length} sites` : 'Loading sites'
+          }}
         </div>
 
         <div v-if="!thingsLoaded" class="site-list-items">
@@ -684,7 +686,7 @@ pruneSelectionToAvailable(
     rgba(255, 255, 255, 0.75),
     transparent
   );
-  content: "";
+  content: '';
   transform: translateX(-100%);
   animation: browse-skeleton-shimmer 1.35s ease-in-out infinite;
 }
