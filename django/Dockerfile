@@ -25,3 +25,10 @@ RUN unzip /app/data_mgmt_app.zip -d /tmp/data_mgmt_app && \
     cp -r /tmp/data_mgmt_app/dist/* interfaces/web/static/web/ && \
     sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/index.html && \
     rm -rf /tmp/data_mgmt_app /app/data_mgmt_app.zip
+
+RUN unzip /app/qc_app.zip -d /tmp/qc_app && \
+    mkdir -p interfaces/web/static/qc && \
+    cp -f /tmp/qc_app/dist/index.html templates/qc/index.html && \
+    cp -r /tmp/qc_app/dist/* interfaces/web/static/qc/ && \
+    sed -i "s@<script id=\"app-settings\" type=\"application/json\"></script>@{{ settings|json_script:\"app-settings\" }}@" templates/qc/index.html && \
+    rm -rf /tmp/qc_app /app/qc_app.zip

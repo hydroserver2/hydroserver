@@ -1,4 +1,4 @@
-export type RatingCurveCsvRow = {
+type RatingCurveCsvRow = {
   inputValue: number
   outputValue: number
 }

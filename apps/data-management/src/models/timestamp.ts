@@ -42,8 +42,7 @@ export const FIXED_OFFSET_TIMEZONES = [
   { title: 'UTC+13:00 (Tonga Time)', value: '+1300' },
   { title: 'UTC+14:00 (Line Islands Time)', value: '+1400' },
 ] as const
-export type FixedOffsetTimezone =
-  (typeof FIXED_OFFSET_TIMEZONES)[number]['value']
+type FixedOffsetTimezone = (typeof FIXED_OFFSET_TIMEZONES)[number]['value']
 
 const WINTER = new Date('2025-01-01T00:00:00Z')
 const SUMMER = new Date('2025-07-01T00:00:00Z')
@@ -73,19 +72,9 @@ export const DST_AWARE_TIMEZONES = Intl.supportedValuesOf('timeZone').map(
 
 Object.freeze(DST_AWARE_TIMEZONES)
 
-export type DstAwareTimezone = (typeof DST_AWARE_TIMEZONES)[number]['value']
-
-export const TIMESTAMP_FORMATS = [
-  { text: 'Full ISO 8601 (YYYY-MM-DD hh:mm:ss.ssss+hh:mm)', value: 'ISO8601' },
-  {
-    text: 'Timezone naive (YYYY-MM-DD hh:mm:ss)',
-    value: 'naive',
-  },
-  { text: 'Custom Format', value: 'custom' },
-] as const
-export type TimestampFormat = (typeof TIMESTAMP_FORMATS)[number]['value']
-
-export type TimezoneMode =
+type DstAwareTimezone = (typeof DST_AWARE_TIMEZONES)[number]['value']
+type TimestampFormat = 'ISO8601' | 'naive' | 'custom'
+type TimezoneMode =
   | 'utc' // always UTC
   | 'daylightSavings' // IANA / DST-aware
   | 'fixedOffset' // constant offset

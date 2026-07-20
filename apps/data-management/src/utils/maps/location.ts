@@ -2,7 +2,7 @@ import { settings } from '@/config/settings'
 import { ElevationService, GeoService } from '@/models/settings'
 import { getElevationGoogle, getGeoDataGoogle } from './googleMaps'
 
-export async function getOpenElevation(latitude: number, longitude: number) {
+async function getOpenElevation(latitude: number, longitude: number) {
   const elevUrl = new URL('https://api.open-elevation.com/api/v1/lookup')
   elevUrl.searchParams.set('locations', `${latitude},${longitude}`)
   const elevRes = await fetch(elevUrl.toString())
@@ -11,13 +11,13 @@ export async function getOpenElevation(latitude: number, longitude: number) {
   return elevData.results?.[0]?.elevation ?? 0
 }
 
-export async function getElevation(latitude: number, longitude: number) {
+async function getElevation(latitude: number, longitude: number) {
   return settings.mapConfiguration.elevationService === ElevationService.OpenElevation
     ? getOpenElevation(latitude, longitude)
     : getElevationGoogle(latitude, longitude)
 }
 
-export async function getGeoDataNominatim(latitude: number, longitude: number) {
+async function getGeoDataNominatim(latitude: number, longitude: number) {
   const url = new URL('https://nominatim.openstreetmap.org/reverse')
   url.searchParams.set('format', 'jsonv2')
   url.searchParams.set('lat', String(latitude))
@@ -40,7 +40,7 @@ export async function getGeoDataNominatim(latitude: number, longitude: number) {
   }
 }
 
-export async function getGeoData(latitude: number, longitude: number) {
+async function getGeoData(latitude: number, longitude: number) {
   return settings.mapConfiguration.geoService === GeoService.Nominatim
     ? await getGeoDataNominatim(latitude, longitude)
     : await getGeoDataGoogle(latitude, longitude)

@@ -129,10 +129,17 @@ def resolve_runtime_variables(
     return runtime_variables
 
 
-def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
+def resolve_data_operations(
+    raw_etl_target_path: dict,
+    no_data_value: Optional[float] = None,
+) -> list[DataOperation]:
     """
     Parse the raw 'dataTransformations' list from a target path dict into a
     list of typed DataOperation instances.
+
+    The target datastream's no_data_value, when provided, is supplied to
+    operations that use it to flag invalid results (e.g. out-of-range rating
+    curve values).
     """
 
     resolved_data_operations = []
@@ -151,6 +158,7 @@ def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
                     RatingCurveDataOperation(
                         target_identifier=raw_etl_target_path["targetIdentifier"],
                         rating_curve_url=data_operation["ratingCurveUrl"],
+                        no_data_value=no_data_value,
                     )
                 )
             elif data_operation["type"] == "aggregation":
@@ -177,6 +185,32 @@ def resolve_data_operations(raw_etl_target_path: dict) -> list[DataOperation]:
             raise coerced from exc
 
     return resolved_data_operations
+
+
+def resolve_target_no_data_value(loader, target_identifier) -> Optional[float]:
+    """
+    Look up the no_data_value of a target datastream via the loader's client.
+
+    Returns None if the loader does not expose a HydroServer client or the
+    datastream cannot be retrieved, so that operations that rely on it can fall
+    back to leaving invalid results as NaN.
+    """
+
+    client = getattr(loader, "client", None)
+    if client is None:
+        return None
+
+    try:
+        datastream = client.datastreams.get(target_identifier)
+    except Exception:
+        logger.warning(
+            "Could not resolve no_data_value for target %r; out-of-range "
+            "rating curve values will fall back to NaN.",
+            target_identifier,
+        )
+        return None
+
+    return getattr(datastream, "no_data_value", None)
 
 
 def build_hydroserver_pipeline(
@@ -326,6 +360,18 @@ def build_hydroserver_pipeline(
             raise
         raise coerced from exc
 
+    def _resolve_path_operations(path: dict):
+        path_uses_no_data_value = any(
+            operation.get("type") == "rating_curve"
+            for operation in path.get("dataTransformations", [])
+        )
+        no_data_value = (
+            resolve_target_no_data_value(loader, path["targetIdentifier"])
+            if path_uses_no_data_value
+            else None
+        )
+        return resolve_data_operations(path, no_data_value=no_data_value)
+
     try:
         etl_data_mappings = [
             ETLDataMapping(
@@ -333,7 +379,7 @@ def build_hydroserver_pipeline(
                 target_paths=[
                     ETLTargetPath(
                         target_identifier=path["targetIdentifier"],
-                        data_operations=resolve_data_operations(path),
+                        data_operations=_resolve_path_operations(path),
                     )
                     for path in mapping["paths"]
                 ],

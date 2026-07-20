@@ -1,0 +1,224 @@
+# === Quality Control Test Data ===
+#
+# To avoid disturbing the global datastream/processing-level listings used by
+# other sta tests, this fixture reuses several existing datastreams from
+# test_datastreams.yaml rather than introducing new ones wherever possible:
+#
+#   - SOURCE_H1 (source for QC history H1)
+#       = Private Datastream 5 (1c9a797e..., Private Assigned Processing Level)
+#   - MANAGED_NO_SOURCE (managed datastream for QC history H2, which has no source)
+#       = Private Datastream 4 (dd1f9293..., Private Assigned Processing Level)
+#   - H3_MANAGED (managed datastream for QC history H3; also used as the
+#     "same processing level as source" argument in QCHistory.create() validation tests)
+#       = Private Datastream 6 (42e08eea..., Private Assigned Processing Level)
+#   - H3_SOURCE (source datastream for QC history H3)
+#       = Private Datastream 7 (9f96957b..., Private Assigned Processing Level)
+#   - MANAGED_PUBLIC (used as the "different workspace" argument in
+#     QCHistory.create() validation tests)
+#       = Public Datastream 1 (27c70b41..., Public Assigned Processing Level)
+#
+# Two new datastreams are added, both in the Private workspace and using the
+# Private Processing Level so they differ from SOURCE_H1's processing level:
+#
+#   - QC Managed Datastream (MANAGED_H1, has QC history H1, with observations
+#     for checksum testing)
+#   - QC Managed Datastream (No History) (MANAGED_FRESH, used for
+#     QCHistory.create() success tests)
+#
+# QC History 1 (H1): managed=MANAGED_H1, source=SOURCE_H1. Has one committed
+#   session covering 2025-01-01 00:00-06:00.
+#
+# QC History 2 (H2): managed=MANAGED_NO_SOURCE, source=null.
+#
+# QC History 3 (H3): managed/source pair dedicated to QC operation tests, with one
+#   in-progress session and two operations.
+
+# --- New Datastreams ---
+
+# Managed datastream for QC history H1
+- model: sta.datastream
+  pk: 019e0001-0000-7000-8000-000000000001
+  fields:
+    name: QC Managed Datastream
+    description: Managed datastream for QC history H1
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    value_count: 6
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    phenomenon_begin_time: 2025-01-01 01:00:00.000 -0700
+    phenomenon_end_time: 2025-01-01 06:00:00.000 -0700
+    is_private: True
+    is_visible: True
+
+# Managed datastream with no existing QC history (used for create() tests)
+- model: sta.datastream
+  pk: 019e0001-0000-7000-8000-000000000002
+  fields:
+    name: QC Managed Datastream (No History)
+    description: Managed datastream with no QC history, for create() tests
+    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
+    processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
+    unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
+    observation_type: Field Observation
+    result_type: Time Series
+    status: Ongoing
+    sampled_medium: Surface Water
+    no_data_value: -9999
+    intended_time_spacing: 1
+    intended_time_spacing_unit: hours
+    aggregation_statistic: Continuous
+    time_aggregation_interval: 1
+    time_aggregation_interval_unit: hours
+    is_private: True
+    is_visible: True
+
+# --- QC Histories ---
+
+# H1
+- model: quality.qchistory
+  pk: 019e0002-0000-7000-8000-000000000001
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    managed_datastream: 019e0001-0000-7000-8000-000000000001
+    source_datastream: 1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2
+    phenomenon_time_start: 2025-01-01 00:00:00.000 -0700
+    phenomenon_time_end: 2025-01-01 06:00:00.000 -0700
+    source_checksum: "0000000000000000"
+    managed_checksum: "1111111111111111"
+
+# H2 (no source datastream)
+- model: quality.qchistory
+  pk: 019e0002-0000-7000-8000-000000000002
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    managed_datastream: dd1f9293-ce29-4b6a-88e6-d65110d1be65
+    source_datastream: null
+    phenomenon_time_start: null
+    phenomenon_time_end: null
+    source_checksum: null
+    managed_checksum: null
+
+# H3 (operations test fixture)
+- model: quality.qchistory
+  pk: 019e0002-0000-7000-8000-000000000003
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    managed_datastream: 42e08eea-27bb-4ea3-8ced-63acff0f3334
+    source_datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
+    phenomenon_time_start: null
+    phenomenon_time_end: null
+    source_checksum: null
+    managed_checksum: null
+
+# --- QC Sessions ---
+
+# Committed session for H1 (2025-01-01 00:00-06:00)
+- model: quality.qcsession
+  pk: 019e0003-0000-7000-8000-000000000001
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    history: 019e0002-0000-7000-8000-000000000001
+    created_by: 1000000010
+    phenomenon_time_start: 2025-01-01 00:00:00.000 -0700
+    phenomenon_time_end: 2025-01-01 06:00:00.000 -0700
+    status: committed
+    committed_at: 2025-01-01 07:00:00.000 -0700
+    description: Initial QC pass
+    source_checksum: "0000000000000000"
+    managed_checksum: "1111111111111111"
+
+# In-progress session for H3 (operations test fixture)
+- model: quality.qcsession
+  pk: 019e0003-0000-7000-8000-000000000002
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    history: 019e0002-0000-7000-8000-000000000003
+    created_by: 1000000010
+    phenomenon_time_start: 2025-01-01 00:00:00.000 -0700
+    phenomenon_time_end: 2025-01-01 06:00:00.000 -0700
+    status: in_progress
+    committed_at: null
+    description: null
+    source_checksum: "2222222222222222"
+    managed_checksum: null
+
+# --- QC Operations (on the H3 in-progress session) ---
+
+- model: quality.qcoperation
+  pk: 019e0004-0000-7000-8000-000000000001
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    session: 019e0003-0000-7000-8000-000000000002
+    created_by: 1000000010
+    order: 1
+    operation_type: SELECTION
+    comment: Select range for QC
+    arguments:
+      start: "2025-01-01T01:00:00-07:00"
+      end: "2025-01-01T03:00:00-07:00"
+
+- model: quality.qcoperation
+  pk: 019e0004-0000-7000-8000-000000000002
+  fields:
+    created_at: 2025-01-01 00:00:00.000 -0700
+    session: 019e0003-0000-7000-8000-000000000002
+    created_by: 1000000010
+    order: 2
+    operation_type: VALUE_THRESHOLD
+    comment: null
+    arguments:
+      min: 0
+      max: 10
+
+# --- Observations (managed datastream, H1) ---
+
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-000000000007
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 01:00:00.000 -0700
+    result: 1.5
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-000000000008
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 02:00:00.000 -0700
+    result: 2.5
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-000000000009
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 03:00:00.000 -0700
+    result: 3.5
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-00000000000a
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 04:00:00.000 -0700
+    result: 4.5
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-00000000000b
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 05:00:00.000 -0700
+    result: 5.5
+- model: sta.observation
+  pk: 019e0005-0000-7000-8000-00000000000c
+  fields:
+    datastream_id: 019e0001-0000-7000-8000-000000000001
+    phenomenon_time: 2025-01-01 06:00:00.000 -0700
+    result: 6.5

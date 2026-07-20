@@ -1,0 +1,161 @@
+﻿<template>
+  <v-navigation-drawer
+    permanent
+    :width="drawerCollapsed ? 36 : drawerWidth"
+    elevation="1"
+    class="select-drawer"
+  >
+    <template v-if="drawerCollapsed">
+      <div class="select-drawer__bar d-flex justify-center align-center py-1">
+        <v-btn
+          size="x-small"
+          variant="text"
+          density="comfortable"
+          icon="mdi-chevron-right"
+          title="Expand filters"
+          @click="drawerCollapsed = false"
+        />
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="select-drawer__header px-3 py-1 d-flex align-center ga-1">
+        <v-icon icon="mdi-tune" color="primary" size="16" />
+        <span class="text-body-small font-weight-medium">Filters</span>
+        <v-spacer />
+        <v-btn
+          size="x-small"
+          variant="text"
+          density="comfortable"
+          icon="mdi-chevron-left"
+          title="Collapse filters"
+          @click="drawerCollapsed = true"
+        />
+      </div>
+
+      <v-divider />
+
+      <div
+        class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
+        role="button"
+        tabindex="0"
+        @click="timeCollapsed = !timeCollapsed"
+        @keydown.enter.prevent="timeCollapsed = !timeCollapsed"
+        @keydown.space.prevent="timeCollapsed = !timeCollapsed"
+      >
+        <v-icon
+          size="16"
+          :icon="timeCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        />
+        <v-icon icon="mdi-calendar-range" color="primary" size="16" />
+        <span class="text-body-small font-weight-medium">Time range</span>
+      </div>
+      <div v-show="!timeCollapsed" class="px-3 pt-2 pb-3" style="min-width: 0">
+        <DataVisTimeFilters />
+      </div>
+
+      <v-divider />
+
+      <div
+        class="select-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
+        role="button"
+        tabindex="0"
+        @click="filtersCollapsed = !filtersCollapsed"
+        @keydown.enter.prevent="filtersCollapsed = !filtersCollapsed"
+        @keydown.space.prevent="filtersCollapsed = !filtersCollapsed"
+      >
+        <v-icon
+          size="16"
+          :icon="filtersCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        />
+        <v-icon icon="mdi-filter-variant" color="primary" size="16" />
+        <span class="text-body-small font-weight-medium">Datastream filters</span>
+      </div>
+      <div
+        v-show="!filtersCollapsed"
+        class="px-3 pt-2 pb-2"
+        style="min-width: 0"
+      >
+        <DatastreamFilters />
+      </div>
+
+      <div
+        class="select-drawer__grip position-absolute user-select-none"
+        :class="{ 'select-drawer__grip--active': dragging }"
+        title="Drag to resize"
+        @mousedown="startDrag"
+      />
+    </template>
+  </v-navigation-drawer>
+</template>
+
+<script setup lang="ts">
+import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
+import DatastreamFilters from '@/components/VisualizeData/DatastreamFilters.vue'
+import { useResizable, usePersistedFlag } from '@/composables/useResizable'
+
+const { size: drawerWidth, onStart: startDrag, dragging } = useResizable({
+  initial: 320,
+  min: 240,
+  max: 560,
+  storageKey: 'qc:selectLayout:drawerWidth',
+})
+const drawerCollapsed = usePersistedFlag(
+  'qc:selectLayout:drawerCollapsed',
+  false
+)
+const timeCollapsed = usePersistedFlag(
+  'qc:selectLayout:timeCollapsed',
+  false
+)
+const filtersCollapsed = usePersistedFlag(
+  'qc:selectLayout:filtersCollapsed',
+  false
+)
+</script>
+
+<style scoped>
+.select-drawer :deep(.v-navigation-drawer__content) {
+  overflow-x: hidden;
+}
+
+.select-drawer__bar,
+.select-drawer__header {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  min-height: 32px;
+}
+
+.select-drawer__section-header {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  min-height: 28px;
+}
+.select-drawer__section-header:hover,
+.select-drawer__section-header:focus {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+.select-drawer__section-header:focus {
+  outline: none;
+}
+
+.select-drawer__grip {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 3;
+}
+.select-drawer__grip::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1px;
+  width: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.select-drawer__grip:hover::after,
+.select-drawer__grip--active::after {
+  background: rgba(var(--v-theme-primary), 0.55);
+}
+</style>

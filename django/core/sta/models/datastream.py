@@ -151,9 +151,6 @@ class Datastream(models.Model, PermissionChecker):
             f"datastream__{filter_suffix}" if filter_suffix else "datastream"
         )
 
-        Observation.delete_contents(
-            filter_arg=filter_arg, filter_suffix=datastream_relation_filter
-        )
         obs_qs = Observation.objects.filter(**{datastream_relation_filter: filter_arg})
         obs_qs._raw_delete(using=obs_qs.db)  # noqa
 

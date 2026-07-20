@@ -2,7 +2,7 @@
   <v-progress-linear v-if="loading" color="secondary" indeterminate />
   <div v-else-if="!loading && canShowSparkline">
     <div class="w-[300px] max-w-full max-[600px]:w-full">
-      <div class="mb-1 text-body-3 font-weight-light opacity-70">
+      <div class="sparkline-subtitle mb-1 font-weight-light opacity-70">
         Sparkline is showing most recent {{ validObservations.length }}
         values
       </div>
@@ -47,8 +47,8 @@ import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { PropType } from 'vue'
 import { Datastream, TimeSpacingUnit } from '@hydroserver/client'
 import {
+  fetchRecentObservationsPage,
   preProcessData,
-  subtractHours,
   ObservationArray,
 } from '@/utils/observationsUtils'
 import { useObservationStore } from '@/store/observations'
@@ -316,10 +316,9 @@ const fetchSparklineObservations = async (ds: Datastream) => {
     intendedTimeSpacingUnit,
   } = ds
 
-  if (!endTime) return null
-
-  let beginTime: string
   if (intendedTimeSpacing && intendedTimeSpacingUnit) {
+    if (!endTime) return null
+
     const spacingMs = convertToMilliseconds(
       intendedTimeSpacing,
       intendedTimeSpacingUnit
@@ -334,14 +333,17 @@ const fetchSparklineObservations = async (ds: Datastream) => {
 
     const observationCount = timeIntervalCount - 1
     const totalDurationMs = spacingMs * observationCount
-    beginTime = new Date(
+    const beginTime = new Date(
       new Date(endTime).getTime() - totalDurationMs
     ).toISOString()
-  } else {
-    beginTime = subtractHours(endTime, 72)
+
+    return fetchObservationsInRange(ds, beginTime, endTime).catch((error) => {
+      console.error('Failed to fetch observations:', error)
+      return null
+    })
   }
 
-  return fetchObservationsInRange(ds, beginTime, endTime).catch((error) => {
+  return fetchRecentObservationsPage(ds, 200).catch((error) => {
     console.error('Failed to fetch observations:', error)
     return null
   })
@@ -378,3 +380,10 @@ onBeforeUnmount(() => {
   // No cleanup required for SVG-based sparklines.
 })
 </script>
+
+<style scoped>
+.sparkline-subtitle {
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+</style>

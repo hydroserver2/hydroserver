@@ -36,6 +36,25 @@ const resources = [
     route: 'tasks',
   },
   'rating-curves',
+
+  // Quality control
+  {
+    resource: 'quality-control-histories',
+    pathSuffix: '/quality-control/histories',
+    route: 'quality-control/histories',
+  },
+  {
+    resource: 'quality-control-sessions',
+    pathSuffix: '/quality-control/histories/{history_id}/sessions',
+    route: 'quality-control/histories/{history_id}/sessions',
+  },
+  {
+    resource: 'quality-control-operations',
+    pathSuffix:
+      '/quality-control/histories/{history_id}/sessions/{session_id}/operations',
+    route:
+      'quality-control/histories/{history_id}/sessions/{session_id}/operations',
+  },
 ]
 
 generateContracts({

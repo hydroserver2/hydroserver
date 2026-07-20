@@ -2,7 +2,7 @@ import type { DataConnection, NotificationSchedule } from '@hydroserver/client'
 
 export const DEFAULT_NOTIFICATION_CRONTAB = '0 9 * * *'
 
-export const createDefaultNotificationSchedule = (): NotificationSchedule => ({
+const createDefaultNotificationSchedule = (): NotificationSchedule => ({
   enabled: true,
   crontab: DEFAULT_NOTIFICATION_CRONTAB,
   interval: null,

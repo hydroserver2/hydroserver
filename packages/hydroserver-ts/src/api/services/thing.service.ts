@@ -7,14 +7,19 @@ import {
   PostHydroShareArchive,
   HydroShareArchive,
   ThingMarker,
+  SiteTypeIcon,
   ThingSiteSummary,
   ThingTaskSummary,
+  Tag,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
 import { normalizeAttachmentCollection } from './attachment-link'
 
 type TagPostBody = Data.components['schemas']['TagPostBody']
 type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
+type TagResponse = Data.components['schemas']['TagGetResponse']
+type FileAttachmentResponse =
+  Data.components['schemas']['FileAttachmentGetResponse']
 
 export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   static route = C.route
@@ -22,11 +27,11 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   static Model = Thing
 
   listMarkers(): Promise<ApiResponse<ThingMarker[]>> {
-    return apiMethods.fetch(`${this._route}/markers`)
+    return apiMethods.fetch<ThingMarker[]>(`${this._route}/markers`)
   }
 
   listSiteSummaries(workspaceId: string): Promise<ApiResponse<ThingSiteSummary[]>> {
-    return apiMethods.fetch(
+    return apiMethods.fetch<ThingSiteSummary[]>(
       this.withQuery(`${this._route}/site-summaries`, { workspace_id: workspaceId })
     )
   }
@@ -35,7 +40,7 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     workspace_id?: string | string[]
     site_type?: string | string[]
   }): Promise<ApiResponse<ThingTaskSummary[]>> {
-    return apiMethods.fetch(
+    return apiMethods.fetch<ThingTaskSummary[]>(
       this.withQuery(`${this._route}/task-summaries`, params)
     )
   }
@@ -44,72 +49,82 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     id: string,
     isPrivate: boolean
   ): Promise<ApiResponse<Thing>> =>
-    apiMethods.patch(`${this._route}/${id}`, { isPrivate })
+    apiMethods.patch<Thing>(`${this._route}/${id}`, { isPrivate })
 
-  getSiteTypes = () => apiMethods.fetch(`${this._route}/site-types`)
+  getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
+  getSiteTypeIcons = () =>
+    apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
   getSamplingFeatureTypes = () =>
-    apiMethods.fetch(`${this._route}/sampling-feature-types`)
+    apiMethods.fetch<string[]>(`${this._route}/sampling-feature-types`)
 
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
   getTags(thingId: string) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Tag[]>(url)
   }
 
   getTagKeys(params: { workspace_id?: string; thing_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Record<string, string[]>>(url)
   }
 
   createTag(thingId: string, tag: TagPostBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.post(url, tag)
+    return apiMethods.post<TagResponse>(url, tag)
   }
 
   updateTag(thingId: string, tag: TagPostBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.put(url, tag)
+    return apiMethods.put<TagResponse>(url, tag)
   }
 
   deleteTag(thingId: string, tag: TagDeleteBody) {
     const url = `${this._route}/${thingId}/tags`
-    return apiMethods.delete(url, tag)
+    return apiMethods.delete<null>(url, tag)
   }
 
   /* ----------------- Sub-resources: File Attachments ----------------- */
 
   getFileAttachmentTypes = () =>
-    apiMethods.fetch(`${this._route}/file-attachment-types`)
+    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
 
   async uploadAttachments(thingId: string, data: FormData) {
     const url = `${this._route}/${thingId}/file-attachments`
-    const res = await apiMethods.post(url, data)
+    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data,
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachmentResponse>
   }
 
   async getAttachments(thingId: string) {
     const url = `${this._route}/${thingId}/file-attachments`
-    const res = await apiMethods.paginatedFetch(url)
+    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+    if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(res.data as any, this._client.host),
-    } as ApiResponse
+      data: normalizeAttachmentCollection(
+        res.data,
+        this._client.host
+      ),
+    } as ApiResponse<FileAttachmentResponse[]>
   }
 
   deleteAttachment(thingId: string, name: string) {
     const url = `${this._route}/${thingId}/file-attachments`
-    return apiMethods.delete(url, { name })
+    return apiMethods.delete<null>(url, { name })
   }
 
   /* --------------- Sub-resources: HydroShare Archive ----------------- */
 
   async createHydroShareArchive(archive: PostHydroShareArchive) {
     const url = `${this._route}/${archive.thingId}/archive`
-    return await apiMethods.post(url, archive)
+    return await apiMethods.post<HydroShareArchive>(url, archive)
   }
 
   async updateHydroShareArchive(
@@ -117,38 +132,38 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     old?: HydroShareArchive
   ) {
     const url = `${this._route}/${archive.thingId}/archive`
-    return await apiMethods.patch(url, archive, old)
+    return await apiMethods.patch<HydroShareArchive>(url, archive, old)
   }
 
   getHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<HydroShareArchive>(url)
   }
 
   deleteHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive`
-    return apiMethods.delete(url)
+    return apiMethods.delete<null>(url)
   }
 
   triggerHydroShareArchive(thingId: string) {
     const url = `${this._route}/${thingId}/archive/trigger`
-    return apiMethods.post(url, {})
+    return apiMethods.post<string>(url, {})
   }
 
   /* ---------------------- Ownership management ----------------------- */
 
   removeOwner(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, removeOwner: true })
+    return apiMethods.patch<Thing>(url, { email, removeOwner: true })
   }
 
   addSecondaryOwner(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, makeOwner: true })
+    return apiMethods.patch<Thing>(url, { email, makeOwner: true })
   }
 
   transferPrimaryOwnership(thingId: string, email: string) {
     const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch(url, { email, transferPrimary: true })
+    return apiMethods.patch<Thing>(url, { email, transferPrimary: true })
   }
 }

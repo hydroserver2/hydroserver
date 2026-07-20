@@ -1,4 +1,14 @@
 import type { TaskRun, TaskSchedule } from './task.model'
+import type * as Data from '../../generated/data.types'
+
+type AggregationTransformationResponse =
+  Data.components['schemas']['AggregationTransformationResponse']
+type CompositeExpressionTransformationResponse =
+  Data.components['schemas']['CompositeExpressionTransformationResponse']
+type ExpressionTransformationResponse =
+  Data.components['schemas']['ExpressionTransformationResponse']
+type RatingCurveTransformationResponse =
+  Data.components['schemas']['RatingCurveTransformationResponse']
 
 export class DataProductTask {
   id = ''
@@ -16,11 +26,11 @@ export interface DataProductTaskExpanded {
   id: string
   name: string
   description?: string | null
-  thing: { id: string; name: string; [key: string]: any }
-  aggregationTransformations: any[]
-  compositeExpressionTransformations: any[]
-  expressionTransformations: any[]
-  ratingCurveTransformations: any[]
+  thing: { id: string; name: string; [key: string]: unknown }
+  aggregationTransformations: AggregationTransformationResponse[]
+  compositeExpressionTransformations: CompositeExpressionTransformationResponse[]
+  expressionTransformations: ExpressionTransformationResponse[]
+  ratingCurveTransformations: RatingCurveTransformationResponse[]
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }

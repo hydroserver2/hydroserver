@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Vitest specs index into mocked array fixtures positionally (e.g.
+    // `samples[0]`, `wrapper.findAll(...)[0]`). Under strict
+    // `noUncheckedIndexedAccess` each access widens to `T | undefined`
+    // and every spec would need a non-null assertion for no real
+    // safety gain — the indices are deterministic in the fixtures.
+    // Disabling here keeps production strict while specs read
+    // naturally. Mirrors `tsconfig.test.json` in `hydroserver-qc-app`.
+    "noUncheckedIndexedAccess": false,
+    // Vitest globals (`describe`, `it`, `expect`, `vi`) are available
+    // via `globals: true` in `vite.config.ts`; pulling in the types
+    // here makes them visible to the type-checker without per-file
+    // imports.
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "src/**/__tests__/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", "public"]
+}

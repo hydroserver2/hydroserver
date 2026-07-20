@@ -86,7 +86,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if isinstance(data_connection, uuid.UUID):
             try:
-                data_connection = DataConnection.objects.get(pk=data_connection)
+                data_connection = DataConnection.objects.select_related("payload").get(pk=data_connection)
             except DataConnection.DoesNotExist:
                 raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
 
@@ -171,6 +171,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: Literal[",", "|", "\t", ";", " "] | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] = Field(default_factory=list),
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -224,6 +225,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_start_row=data_start_row,
             delimiter=delimiter,
             jmespath=jmespath,
+            data_ingestion_window=data_ingestion_window,
         )
 
         self.apply_placeholders(
@@ -264,6 +266,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] | Unset = Unset,
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -313,7 +316,8 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_connection.timezone = timestamp.timezone
 
         if any(field is not Unset for field in [payload_type, timestamp_key, timestamp_format,
-                                                 header_row, data_start_row, delimiter, jmespath]):
+                                                header_row, data_start_row, delimiter, jmespath,
+                                                data_ingestion_window]):
             resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
             self.apply_payload(
                 data_connection=data_connection,
@@ -324,6 +328,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 data_start_row=data_start_row,
                 delimiter=delimiter,
                 jmespath=jmespath,
+                data_ingestion_window=data_ingestion_window,
             )
 
         if placeholder_variables is not Unset:
@@ -386,6 +391,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
     ):
         """
         Create or update the payload settings attached to a data connection.
@@ -439,6 +445,48 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         else:
             raise NotImplementedError(f"Unsupported payload type {payload_type}")
 
+        if data_ingestion_window is not Unset:
+            window = {"start": None, "end": None} if data_ingestion_window is None else data_ingestion_window
+
+            for side in ("start", "end"):
+                if side not in window:
+                    continue
+
+                raw_boundary = window[side]
+
+                if raw_boundary is None or not current_payload:
+                    current = {"anchor": None, "lookback": None, "lookback_units": None, "timestamp": None}
+                else:
+                    current = {
+                        "anchor": getattr(current_payload, f"data_ingestion_window_{side}_anchor"),
+                        "lookback": getattr(current_payload, f"data_ingestion_window_{side}_lookback"),
+                        "lookback_units": getattr(current_payload, f"data_ingestion_window_{side}_lookback_unit"),
+                        "timestamp": getattr(current_payload, f"data_ingestion_window_{side}_timestamp"),
+                    }
+
+                boundary = {**current, **(raw_boundary or {})}
+
+                if (boundary["lookback"] is None) != (boundary["lookback_units"] is None):
+                    raise ValueError(
+                        f"lookback and lookback_unit must both be set or both be null for the {side} boundary."
+                    )
+
+                if boundary["anchor"] == "fixed_timestamp" and boundary["timestamp"] is None:
+                    raise ValueError(
+                        f"timestamp is required for the {side} boundary when anchor is 'fixed_timestamp'."
+                    )
+                if boundary["anchor"] != "fixed_timestamp" and boundary["timestamp"] is not None:
+                    raise ValueError(
+                        f"timestamp must be null for the {side} boundary unless anchor is 'fixed_timestamp'."
+                    )
+
+                fields.update({
+                    f"data_ingestion_window_{side}_anchor": boundary["anchor"],
+                    f"data_ingestion_window_{side}_lookback": boundary["lookback"],
+                    f"data_ingestion_window_{side}_lookback_unit": boundary["lookback_units"],
+                    f"data_ingestion_window_{side}_timestamp": boundary["timestamp"],
+                })
+
         if current_payload:
             for field, value in fields.items():
                 if value is not Unset:
@@ -464,10 +512,12 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         for pv in placeholder_variables:
             if pv.get("timestamp_format"):
-                if pv.get("variable_type") not in ("run_time", "latest_observation_timestamp"):
+                if pv.get("variable_type") not in (
+                    "run_time", "latest_observation_timestamp", "window_start", "window_end"
+                ):
                     raise ValueError(
-                        "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
-                        "placeholder variables."
+                        "timestamp_format is only allowed on 'run_time', 'latest_observation_timestamp', "
+                        "'window_start', and 'window_end' placeholder variables."
                     )
                 Timestamp._validate_strftime_format(pv["timestamp_format"])  # noqa
 

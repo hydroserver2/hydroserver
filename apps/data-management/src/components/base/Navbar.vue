@@ -12,7 +12,7 @@
       <v-app-bar-nav-icon
         v-if="sidebar.isOpen"
         :icon="mdiMenuOpen"
-        @click="sidebar.toggle"
+        @click.stop="sidebar.toggle"
         class="mx-3"
         variant="tonal"
         rounded="lg"
@@ -21,7 +21,7 @@
       <v-app-bar-nav-icon
         v-else
         :icon="mdiMenuClose"
-        @click="sidebar.toggle"
+        @click.stop="sidebar.toggle"
         class="mx-3"
         variant="tonal"
         rounded="lg"
@@ -65,8 +65,9 @@
           <v-list>
             <v-list-item
               v-for="menuItem of path.menu"
-              v-bind="menuItem.attrs"
+              v-bind="menuItem.attrs || {}"
               :title="menuItem.label"
+              @click="menuItem.onClick"
             />
           </v-list>
         </v-menu>
@@ -132,10 +133,13 @@
         <div v-else>
           <v-list-item
             v-for="menuItem of path.menu"
-            v-bind="menuItem.attrs"
+            v-bind="menuItem.attrs || {}"
             :title="menuItem.label"
             :prepend-icon="menuItem.icon"
-            :value="menuItem.attrs.to || menuItem.attrs.href"
+            :value="
+              menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label
+            "
+            @click="menuItem.onClick"
           />
         </div>
       </div>
@@ -178,7 +182,7 @@ import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { navbarLogo } from '@/config/navbarConfig'
-import { useRoute } from 'vue-router'
+import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import hs from '@hydroserver/client'
 import router from '@/router/router'
@@ -187,15 +191,16 @@ import {
   mdiAccountPlusOutline,
   mdiChartLine,
   mdiDatabaseCog,
-  mdiFileChart,
   mdiInformation,
-  mdiLayersSearch,
   mdiLogin,
   mdiLogout,
-  mdiMapMarkerMultiple,
+  mdiMapMarkerOutline,
   mdiMenuClose,
   mdiMenuDown,
   mdiMenuOpen,
+  mdiShieldCheckOutline,
+  // mdiShieldEditOutline,
+  mdiTransitConnectionVariant,
 } from '@mdi/js'
 
 const route = useRoute()
@@ -206,22 +211,32 @@ const { mdAndDown } = useDisplay()
 const sidebar = useSidebarStore()
 const drawer = ref(false)
 
-const paths: {
-  attrs?: { to?: string; href?: string }
+type NavItemAttrs = {
+  to?: RouteLocationRaw
+  href?: string
+}
+
+type NavMenuItem = {
+  attrs?: NavItemAttrs
   label: string
   icon?: string
-  menu?: any[]
   onClick?: () => void
-}[] = [
+}
+
+type NavItem = NavMenuItem & {
+  menu?: NavMenuItem[]
+}
+
+const paths: NavItem[] = [
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
-    icon: mdiLayersSearch,
+    icon: mdiMapMarkerOutline,
   },
   {
     attrs: { to: '/sites' },
     label: 'Your sites',
-    icon: mdiMapMarkerMultiple,
+    icon: mdiMapMarkerOutline,
   },
   {
     attrs: { to: '/visualize-data' },
@@ -240,8 +255,16 @@ const paths: {
       {
         attrs: { to: '/orchestration' },
         label: 'Job orchestration',
-        icon: mdiFileChart,
+        icon: mdiTransitConnectionVariant,
       },
+      // Re-enable for the v1.12 release.
+      // {
+      //   label: 'Quality Control',
+      //   icon: mdiShieldEditOutline,
+      //   onClick: () => {
+      //     window.location.href = '/qc/'
+      //   },
+      // },
     ],
   },
   {
@@ -264,4 +287,3 @@ async function onLogout() {
   border-bottom: 1px solid #e8e8e8 !important;
 }
 </style>
-

@@ -4,7 +4,7 @@ export type { ThingMarker, ThingSiteSummary }
 
 export type MapThing = Thing | ThingMarker | ThingSiteSummary
 
-export interface ThingWithColor extends Thing {
+interface ThingWithColor extends Thing {
   color?: {
     borderColor: string
     background: string
@@ -22,7 +22,7 @@ export interface ThingSiteSummaryWithColor extends ThingSiteSummary {
   tagValue?: string
 }
 
-export interface ThingMarkerWithColor extends ThingMarker {
+interface ThingMarkerWithColor extends ThingMarker {
   color?: {
     borderColor: string
     background: string

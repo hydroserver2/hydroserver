@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import Storage from '@/utils/storage'
 import { useUserStore } from './user'
 
-export const selectedWorkspaceStorage = new Storage<Workspace | null>(
+const selectedWorkspaceStorage = new Storage<Workspace | null>(
   'data-management-app:selectedWorkspace'
 )
 
@@ -22,7 +22,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const ownedWorkspaces = computed(() =>
     workspaces.value.filter(
-      (ws) => !!ws.owner && ws.owner.email === user.value.email
+      (ws) => !!ws.owner && ws.owner.email === user.value?.email
     )
   )
 

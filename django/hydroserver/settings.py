@@ -24,6 +24,7 @@ SECRET_KEY = config(
 
 # SECURITY WARNING: don"t run with debug turned on in production!
 DEBUG = config("DEBUG", default=DEPLOYMENT_BACKEND == "dev", cast=bool)
+NOINDEX = config("NOINDEX", default=False, cast=bool)
 
 
 # Default Superuser Settings
@@ -153,6 +154,7 @@ INSTALLED_APPS = [
     "processing.etl.apps.EtlConfig",
     "processing.products.apps.ProductsConfig",
     "processing.monitoring.apps.MonitoringConfig",
+    "processing.quality.apps.QualityConfig",
     "django.contrib.admin",
 ]
 
@@ -168,6 +170,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
+    "core.web.middleware.NoIndexMiddleware",
 ]
 
 ROOT_URLCONF = "hydroserver.urls"

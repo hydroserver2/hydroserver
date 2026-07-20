@@ -298,11 +298,13 @@ onMounted(async () => {
   if (!rolesResponse.ok)
     console.error('Error fetching collaborators for workspace', rolesResponse)
 
-  roles.value = rolesResponse.data.filter(
-    (r: CollaboratorRole) =>
-      r.workspaceId === null || r.workspaceId == props.workspace.id
-  )
-  setCollaboratorList(cRes.data)
+  roles.value = rolesResponse.ok
+    ? rolesResponse.data.filter(
+        (r: CollaboratorRole) =>
+          r.workspaceId === null || r.workspaceId == props.workspace.id
+      )
+    : []
+  setCollaboratorList(cRes.ok ? cRes.data : [])
 })
 </script>
 

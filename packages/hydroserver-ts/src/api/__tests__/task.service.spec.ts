@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
-import { Task } from '../Models/task.model'
 
 const jsonResponse = (data: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), {
@@ -88,29 +87,6 @@ describe('TaskService', () => {
     ])
     // first page + two remaining pages
     expect(fetchMock).toHaveBeenCalledTimes(3)
-  })
-
-  it('adds and removes mapping targets', () => {
-    const client = new HydroServer({ host: 'https://hydro.example.com' })
-    const task = new Task({
-      mappings: [
-        {
-          sourceIdentifier: 'source-1',
-          paths: [
-            { targetIdentifier: 'target-1', dataTransformations: [] },
-            { targetIdentifier: 'target-2', dataTransformations: [] },
-          ],
-        },
-      ],
-    })
-
-    client.tasks.addMapping(task)
-    expect(task.mappings).toHaveLength(2)
-
-    client.tasks.removeTarget(task, 'target-1')
-    expect(task.mappings[0]?.paths).toEqual([
-      { targetIdentifier: 'target-2', dataTransformations: [] },
-    ])
   })
 
   it('omits empty ids from create payloads', async () => {

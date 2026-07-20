@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { filterThingMarkers } from '../browseFilters'
+import {
+  buildBrowseFilterQuery,
+  filterThingMarkers,
+  parseBrowseFilterQuery,
+} from '../browseFilters'
 
 describe('filterThingMarkers', () => {
   const things = [
@@ -30,12 +34,21 @@ describe('filterThingMarkers', () => {
       latitude: 41.9,
       longitude: -111.6,
     },
+    {
+      id: 'thing-4',
+      workspaceId: 'workspace-1',
+      name: 'Reservoir Site',
+      siteType: 'Lake, Reservoir, Impoundment',
+      isPrivate: false,
+      latitude: 42.0,
+      longitude: -111.5,
+    },
   ]
 
   it('returns all things when no filters are selected', () => {
-    expect(filterThingMarkers(things as any, [], []).map((thing) => thing.id)).toEqual(
-      ['thing-1', 'thing-2', 'thing-3']
-    )
+    expect(
+      filterThingMarkers(things as any, [], []).map((thing) => thing.id)
+    ).toEqual(['thing-1', 'thing-2', 'thing-3', 'thing-4'])
   })
 
   it('filters things by selected workspaces', () => {
@@ -45,7 +58,7 @@ describe('filterThingMarkers', () => {
       filterThingMarkers(things as any, selectedWorkspaces as any, []).map(
         (thing) => thing.id
       )
-    ).toEqual(['thing-1', 'thing-3'])
+    ).toEqual(['thing-1', 'thing-3', 'thing-4'])
   })
 
   it('filters things by selected site types', () => {
@@ -56,13 +69,158 @@ describe('filterThingMarkers', () => {
     ).toEqual(['thing-1', 'thing-2'])
   })
 
+  it('filters things by custom site types that contain commas', () => {
+    expect(
+      filterThingMarkers(things as any, [], [
+        'Lake, Reservoir, Impoundment',
+      ]).map((thing) => thing.id)
+    ).toEqual(['thing-4'])
+  })
+
   it('requires a thing to match both workspace and site type filters', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, ['Spring']).map(
+      filterThingMarkers(things as any, selectedWorkspaces as any, [
+        'Spring',
+      ]).map((thing) => thing.id)
+    ).toEqual(['thing-3'])
+  })
+
+  it('filters things by selected site', () => {
+    expect(
+      filterThingMarkers(things as any, [], [], things[1] as any).map(
         (thing) => thing.id
       )
-    ).toEqual(['thing-3'])
+    ).toEqual(['thing-2'])
+  })
+
+  it('requires a selected site to match the other filters', () => {
+    const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
+
+    expect(
+      filterThingMarkers(
+        things as any,
+        selectedWorkspaces as any,
+        ['Stream'],
+        things[1] as any
+      ).map((thing) => thing.id)
+    ).toEqual([])
+  })
+})
+
+describe('parseBrowseFilterQuery', () => {
+  it('reads canonical query params', () => {
+    expect(
+      parseBrowseFilterQuery({
+        selectedSite: 'thing-1',
+        search: 'Logan',
+        workspaces: ['workspace-1', 'workspace-2'],
+        siteTypes: ['Lake', 'Stream'],
+        drawer: '0',
+      })
+    ).toEqual({
+      siteIds: ['thing-1'],
+      searchText: 'Logan',
+      workspaceIds: ['workspace-1', 'workspace-2'],
+      siteTypes: ['Lake', 'Stream'],
+      drawer: false,
+    })
+  })
+
+  it('deduplicates canonical values and accepts comma-separated non-site-type lists', () => {
+    expect(
+      parseBrowseFilterQuery({
+        selectedSite: ['thing-1', 'thing-1'],
+        workspaces: 'workspace-1,workspace-2',
+        siteTypes: ['Lake', 'Lake'],
+        search: 'Logan',
+        drawer: 'yes',
+      })
+    ).toEqual({
+      siteIds: ['thing-1'],
+      searchText: 'Logan',
+      workspaceIds: ['workspace-1', 'workspace-2'],
+      siteTypes: ['Lake'],
+      drawer: true,
+    })
+  })
+
+  it('preserves commas in site types because custom site type names can contain commas', () => {
+    expect(
+      parseBrowseFilterQuery({
+        siteTypes: 'Lake, Reservoir, Impoundment',
+      }).siteTypes
+    ).toEqual(['Lake, Reservoir, Impoundment'])
+  })
+
+  it('returns null for an absent or unrecognized drawer state', () => {
+    expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
+    expect(parseBrowseFilterQuery({}).drawer).toBeNull()
+  })
+
+  it('preserves commas in the search text instead of truncating', () => {
+    const searchText = 'Logan, UT'
+    const query = buildBrowseFilterQuery(
+      {},
+      { searchText, workspaceIds: [], siteTypes: [] }
+    )
+
+    expect(parseBrowseFilterQuery(query).searchText).toBe(searchText)
+  })
+
+  it('preserves comma-containing site types through query round trips', () => {
+    const siteType = 'Lake, Reservoir, Impoundment'
+    const query = buildBrowseFilterQuery(
+      {},
+      { searchText: '', workspaceIds: [], siteTypes: [siteType] }
+    )
+
+    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([siteType])
+  })
+})
+
+describe('buildBrowseFilterQuery', () => {
+  it('writes selected Browse state to canonical query params and omits an open drawer', () => {
+    expect(
+      buildBrowseFilterQuery(
+        {},
+        {
+          siteId: 'thing-1',
+          searchText: 'Logan',
+          workspaceIds: ['workspace-1', 'workspace-2'],
+          siteTypes: ['Lake'],
+          drawer: true,
+        }
+      )
+    ).toEqual({
+      selectedSite: 'thing-1',
+      search: 'Logan',
+      workspaces: ['workspace-1', 'workspace-2'],
+      siteTypes: 'Lake',
+    })
+  })
+
+  it('removes stale Browse query params while preserving unrelated query params', () => {
+    expect(
+      buildBrowseFilterQuery(
+        {
+          selectedSite: 'thing-1',
+          workspaces: 'workspace-1',
+          siteTypes: 'Lake',
+          page: '2',
+        },
+        {
+          siteId: null,
+          searchText: '',
+          workspaceIds: [],
+          siteTypes: [],
+          drawer: false,
+        }
+      )
+    ).toEqual({
+      page: '2',
+      drawer: '0',
+    })
   })
 })

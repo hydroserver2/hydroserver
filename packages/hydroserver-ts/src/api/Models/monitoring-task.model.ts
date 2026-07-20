@@ -52,8 +52,12 @@ export interface MonitoringTaskExpanded {
   name: string
   description?: string | null
   recipients: string[]
-  thing: { id: string; name: string; [key: string]: any }
-  monitoredDatastreams: Array<{ id: string; [key: string]: any }>
+  thing: { id: string; name: string; [key: string]: unknown }
+  monitoredDatastreams: Array<{
+    id: string
+    rules?: MonitoringRule[]
+    [key: string]: unknown
+  }>
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null
 }

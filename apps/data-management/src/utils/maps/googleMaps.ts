@@ -12,7 +12,7 @@ interface GoogleGeocodeResponse {
 
 let googleMapsPromise: Promise<typeof google.maps.Map> | null = null
 
-export function loadGoogleMapsApi(): Promise<typeof google.maps.Map> {
+function loadGoogleMapsApi(): Promise<typeof google.maps.Map> {
   if (googleMapsPromise) return googleMapsPromise
   const loader = new Loader({
     apiKey: import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY,

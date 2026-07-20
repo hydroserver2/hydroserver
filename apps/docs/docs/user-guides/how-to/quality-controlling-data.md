@@ -413,14 +413,14 @@ Every filter, edit, and add operation appends a row to **Edit history** in the r
 
 <img src="/qc-app/edit-history.png" alt="Edit history with one applied operation" class="img-white-bg">
 
-The header carries the count chip and four icon buttons (left to right): **undo**, **redo**, **save QC script** (tray-arrow-down), **load QC script** (tray-arrow-up), and **open in window** (the pop-out icon, which reopens the same panel inside a modal). Keyboard shortcuts: `Ctrl+Z` to undo, `Ctrl+Y` or `Ctrl+Shift+Z` to redo.
+The header carries the count chip and four icon buttons (left to right): **undo**, **redo**, **save QC history** (tray-arrow-down), **load QC history** (tray-arrow-up), and **open in window** (the pop-out icon, which reopens the same panel inside a modal). Keyboard shortcuts: `Ctrl+Z` to undo, `Ctrl+Y` or `Ctrl+Shift+Z` to redo.
 
 The body shows:
 
 - A baseline **Data loaded** row at the top, with a reload-from-server button.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
-  - A failure badge (red `!`) if the op threw at author time. Common after a script import that references something missing in this datastream.
+  - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
   - A **reload-from-this-step** button that replays history up to but not including this entry.
@@ -438,7 +438,7 @@ The QC history is the canonical save format. It's a JSON file you can keep, re-a
 In the Edit history header, click the tray-arrow-down icon ("Save QC history"). The browser downloads a file named like:
 
 ```
-qc-script-<datastream-name>-<isoTimestamp>.json
+qc-history-<datastream-name>-<isoTimestamp>.json
 ```
 
 The file contains:
@@ -450,19 +450,18 @@ A Snackbar confirms "QC history saved."
 
 ### Load
 
-Click the tray-arrow-up icon ("Load QC script") and pick a JSON file. The app will:
+Click the tray-arrow-up icon ("Load QC history") and pick a JSON file. The app will:
 
 1. Fetch the QC history's authored window into your current QC datastream (the indices in selection-coupled ops reference the *windowed* dataset, so the window has to match).
 2. Replay each operation in order.
 3. Show a Snackbar with `Loaded N operations`, plus a warning if any ops failed.
 
-Per-op failures do not abort the replay. The app keeps going. If your script targets columns that don't exist in the new datastream (e.g., a qualifier code that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
+Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier code that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
 
 ### When to use it
 
 - **Repeatable QC.** Apply the same QC routine to your raw dataset to generate the quality controlled dataset.
-- **Audit trail.** Save the QC History script before submitting, so you have a record of every transformation you applied.
-- **Iterate offline.** Edit the QC History script's JSON if you want to tweak a threshold without re-clicking through the panels.
+- **Audit trail.** Save the QC history before submitting, so you have a record of every transformation you applied.
 
 ## Submit (Save / Save & Close)
 
@@ -516,7 +515,7 @@ See the QC App [PERFORMANCE](https://github.com/hydroserver2/hydroserver-qc-app/
 
 1. Load the new week of data on the same datastream.
 2. Open the Edit history header → click the tray-arrow-up icon → pick last week's JSON.
-3. The script's authored window may differ from this week's; the app will fetch the script's window. To re-apply against the new window instead, save the new window first, edit the script's `window` field in a text editor, then re-import.
+3. The QC history's authored window may differ from this week's; the app will fetch the QC history's window. To re-apply against the new window instead, save the new window first, edit the QC history's `window` field in a text editor, then re-import.
 4. Review the history. Click **Save**.
 
 ### "I picked the wrong workspace."
@@ -532,7 +531,7 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 | Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream. The first becomes the QC target. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
-| The history shows a red failed entry after Load | The script referenced something missing in this datastream. | The rest of the script still ran. Click the chevron on the row to see its arguments. |
+| The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |
 
 ## See also
 

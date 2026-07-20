@@ -1,5 +1,4 @@
 import { HydroServerBaseService } from './base'
-import { apiMethods } from '../apiMethods'
 import { DataConnectionContract as C } from '../../generated/contracts'
 import { DataConnection as M } from '../Models/data-connection.model'
 

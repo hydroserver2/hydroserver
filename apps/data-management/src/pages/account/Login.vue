@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { rules } from '@/utils/rules'
 import OAuth from '@/components/account/OAuth.vue'
 import { Snackbar } from '@/utils/notifications'
@@ -83,6 +83,11 @@ import router from '@/router/router'
 import hs from '@hydroserver/client'
 import { useUserStore } from '@/store/user'
 import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
+import {
+  getPostLoginPath,
+  requiresHardNavigation,
+} from '@/utils/authRedirect'
 
 const email = ref('')
 const password = ref('')
@@ -93,9 +98,19 @@ const disableAccountCreation =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
 
 const { user } = storeToRefs(useUserStore())
+const route = useRoute()
+const postLoginPath = computed(() => getPostLoginPath(route.query.next))
+
+const redirectAfterLogin = async () => {
+  if (requiresHardNavigation(postLoginPath.value)) {
+    window.location.assign(postLoginPath.value)
+    return
+  }
+  await router.push(postLoginPath.value)
+}
 
 const formLogin = async () => {
-  if (!valid) return
+  if (!valid.value) return
   loading.value = true
   const res = await hs.session.login(email.value, password.value)
   if (res.ok) {
@@ -103,7 +118,7 @@ const formLogin = async () => {
     if (resUser) {
       user.value = resUser
       Snackbar.success('You have logged in!')
-      await router.push({ name: 'Sites' })
+      await redirectAfterLogin()
     }
   } else {
     if (hs.session.inEmailVerificationFlow) {

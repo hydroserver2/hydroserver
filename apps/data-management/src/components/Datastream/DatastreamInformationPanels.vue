@@ -141,7 +141,10 @@ onMounted(async () => {
   if (!Array.isArray(d.tags)) {
     try {
       const tagsResponse = await hs.datastreams.getTags(d.id)
-      datastreamTags = Array.isArray(tagsResponse.data) ? tagsResponse.data : []
+      datastreamTags =
+        tagsResponse.ok && Array.isArray(tagsResponse.data)
+          ? tagsResponse.data
+          : []
     } catch (error) {
       console.error('Error fetching datastream tags', error)
     }

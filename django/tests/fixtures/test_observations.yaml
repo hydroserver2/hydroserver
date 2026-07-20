@@ -13,8 +13,7 @@
     phenomenon_time: 2025-02-10 02:00:00.000 -0700
     result: 3.1
     quality_code: Public
-    result_qualifiers:
-      - 667b63fb-e7a9-4b10-b6d8-9a4bafdf11bf
+    result_qualifiers: ["SystemResultQualifier"]
 
 # Private Datastream / Public Thing / Public Workspace
 - model: sta.observation

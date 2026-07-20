@@ -56,6 +56,9 @@ const btnAttrs = {
 const menuDefaults = {
   menuProps: { maxHeight: 320 },
   virtualScroll: false,
+  // Disable browser/Google autofill suggestions, which overlay the dropdown
+  // options and make them hard to read (see issue #420).
+  autocomplete: 'off',
 }
 
 export default createVuetify({

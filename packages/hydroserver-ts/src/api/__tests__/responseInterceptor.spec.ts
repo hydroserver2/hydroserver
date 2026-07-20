@@ -90,10 +90,9 @@ describe('responseInterceptor', () => {
     })
 
     await expect(responseInterceptor(mockResponse)).resolves.toEqual({
-      data: mockErrorBody,
+      ok: false,
       status: 500,
       message: 'Bad response',
-      ok: false,
     })
   })
 })

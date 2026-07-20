@@ -22,10 +22,10 @@ export function useFormLogic<T extends WithId>(
     if (!valid.value) return
     if (initialItem) {
       const res = await updateItem(item.value, initialItem!)
-      return res.data
+      return res.ok ? res.data : undefined
     }
     const res = await createItem(item.value)
-    return res.data
+    return res.ok ? res.data : undefined
   }
 
   onMounted(() => {

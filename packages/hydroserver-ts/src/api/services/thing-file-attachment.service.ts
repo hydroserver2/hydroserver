@@ -40,6 +40,13 @@ export interface RatingCurvePreviewRow {
   outputValue: string
 }
 
+type NoContentResponse = null
+type PreviewFetchResponse = string | Blob | Record<string, unknown>
+
+function errorResponse(status: number, message: string): ApiResponse<never> {
+  return { ok: false, status, message }
+}
+
 export class ThingFileAttachmentService {
   private readonly _client: HydroServer
 
@@ -49,9 +56,8 @@ export class ThingFileAttachmentService {
 
   async list(thingId: string, params: ThingFileAttachmentListParams = {}) {
     const url = this.withQuery(this.baseAttachmentRoute(thingId), params)
-    const res = (await apiMethods.paginatedFetch(url)) as ApiResponse<
-      ThingFileAttachment[]
-    >
+    const res = await apiMethods.paginatedFetch<ThingFileAttachment[]>(url)
+    if (!res.ok) return res
     return {
       ...res,
       data: normalizeAttachmentCollection(
@@ -77,10 +83,11 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = (await apiMethods.post(
+    const res = await apiMethods.post<ThingFileAttachment>(
       this.baseAttachmentRoute(thingId),
       data
-    )) as ApiResponse<ThingFileAttachment>
+    )
+    if (!res.ok) return res
     return {
       ...res,
       data: normalizeAttachmentRecord(
@@ -98,22 +105,15 @@ export class ThingFileAttachmentService {
   ) {
     const attachment = await this.findAttachment(thingId, fileAttachmentId)
     if (!attachment) {
-      return {
-        data: undefined,
-        status: 404,
-        message: 'File attachment does not exist.',
-        ok: false,
-      } as unknown as ApiResponse<ThingFileAttachment>
+      return errorResponse(404, 'File attachment does not exist.')
     }
 
     const nextName = body.name?.trim() ?? attachment.name
     if (nextName !== attachment.name) {
-      return {
-        data: attachment,
-        status: 400,
-        message: 'Renaming existing thing file attachments is not supported.',
-        ok: false,
-      } as ApiResponse<ThingFileAttachment>
+      return errorResponse(
+        400,
+        'Renaming existing thing file attachments is not supported.'
+      )
     }
 
     try {
@@ -124,13 +124,13 @@ export class ThingFileAttachmentService {
         description:
           body.description ?? originalBody?.description ?? attachment.description,
       })
-    } catch (error: any) {
-      return {
-        data: attachment,
-        status: 0,
-        message: error?.message || 'Unable to load existing file attachment.',
-        ok: false,
-      } as ApiResponse<ThingFileAttachment>
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? '')
+      return errorResponse(
+        0,
+        message || 'Unable to load existing file attachment.'
+      )
     }
   }
 
@@ -145,19 +145,13 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = (await apiMethods.put(
+    const res = await apiMethods.put<ThingFileAttachment>(
       this.baseAttachmentRoute(thingId),
       data
-    )) as ApiResponse<ThingFileAttachment>
+    )
 
     if (!res.ok) {
-      return {
-        ...res,
-        data: normalizeAttachmentRecord(
-          res.data,
-          this._client.host
-        ) as ThingFileAttachment,
-      }
+      return res
     }
 
     const attachment = await this.findAttachment(thingId, uploadFile.name)
@@ -177,12 +171,7 @@ export class ThingFileAttachmentService {
   ) {
     const attachment = await this.findAttachment(thingId, fileAttachmentId)
     if (!attachment && !options.name) {
-      return {
-        data: undefined,
-        status: 404,
-        message: 'File attachment does not exist.',
-        ok: false,
-      } as unknown as ApiResponse<ThingFileAttachment>
+      return errorResponse(404, 'File attachment does not exist.')
     }
 
     return this.replace(thingId, file, {
@@ -196,7 +185,10 @@ export class ThingFileAttachmentService {
   async delete(thingId: string, fileAttachmentId: string | number) {
     const attachment = await this.findAttachment(thingId, fileAttachmentId)
     const name = attachment?.name ?? String(fileAttachmentId)
-    return apiMethods.delete(this.baseAttachmentRoute(thingId), { name })
+    return apiMethods.delete<NoContentResponse>(
+      this.baseAttachmentRoute(thingId),
+      { name }
+    )
   }
 
   async fetchRatingCurvePreview(
@@ -204,12 +196,7 @@ export class ThingFileAttachmentService {
     maxRows = 20
   ): Promise<ApiResponse<RatingCurvePreviewRow[]>> {
     if (!`${link ?? ''}`.trim()) {
-      return {
-        data: [],
-        status: 0,
-        message: 'Missing rating curve file link.',
-        ok: false,
-      }
+      return errorResponse(0, 'Missing rating curve file link.')
     }
 
     const fetchOptions = {
@@ -219,14 +206,23 @@ export class ThingFileAttachmentService {
     }
 
     const previewUrls = this.resolveAttachmentPreviewUrls(link)
-    let firstNonOkResponse: ApiResponse | null = null
-    let fallbackOkResponse: ApiResponse | null = null
+    let firstNonOkResponse: Extract<
+      ApiResponse<PreviewFetchResponse>,
+      { ok: false }
+    > | null = null
+    let fallbackOkResponse: Extract<
+      ApiResponse<PreviewFetchResponse>,
+      { ok: true }
+    > | null = null
     let fallbackRows: RatingCurvePreviewRow[] = []
     let onlyHtmlLikePayloads = true
 
     for (const previewUrl of previewUrls) {
       try {
-        const candidate = await apiMethods.fetch(previewUrl, fetchOptions)
+        const candidate = await apiMethods.fetch<PreviewFetchResponse>(
+          previewUrl,
+          fetchOptions
+        )
         if (!candidate.ok) {
           firstNonOkResponse ??= candidate
           continue
@@ -269,24 +265,14 @@ export class ThingFileAttachmentService {
     }
 
     if (onlyHtmlLikePayloads && previewUrls.length > 0) {
-      return {
-        data: [],
-        status: 0,
-        message: 'Unable to load rating curve preview.',
-        ok: false,
-      }
+      return errorResponse(0, 'Unable to load rating curve preview.')
     }
 
     if (firstNonOkResponse) {
-      return { ...firstNonOkResponse, data: [] }
+      return firstNonOkResponse
     }
 
-    return {
-      data: [],
-      status: 0,
-      message: 'Unable to load preview.',
-      ok: false,
-    }
+    return errorResponse(0, 'Unable to load preview.')
   }
 
   private async resolveCsvText(
@@ -301,7 +287,10 @@ export class ThingFileAttachmentService {
 
     for (const candidateUrl of this.resolveAttachmentPreviewUrls(followupUrl)) {
       try {
-        const followedResponse = await apiMethods.fetch(candidateUrl, fetchOptions)
+        const followedResponse = await apiMethods.fetch<PreviewFetchResponse>(
+          candidateUrl,
+          fetchOptions
+        )
         if (followedResponse.ok) {
           csvText = await normalizeCsvText(followedResponse.data)
           if (csvText.trim()) break
@@ -328,14 +317,16 @@ export class ThingFileAttachmentService {
   }
 
   private async fetchAttachmentBlob(link: string) {
-    const response = await apiMethods.fetch(link, {
+    const response = await apiMethods.fetch<Blob>(link, {
       headers: {
         Accept: 'text/csv, text/plain, application/octet-stream',
       },
     })
 
     if (!response.ok || !(response.data instanceof Blob)) {
-      throw new Error(response.message || 'Unable to load existing file attachment.')
+      throw new Error(
+        response.message || 'Unable to load existing file attachment.'
+      )
     }
 
     return response.data

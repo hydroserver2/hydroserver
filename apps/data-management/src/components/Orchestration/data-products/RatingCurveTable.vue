@@ -218,7 +218,7 @@
                     <template #activator="{ props: tooltipProps }">
                       <span v-bind="tooltipProps" class="inline-flex">
                         <v-btn
-                          :icon="mdiDelete"
+                          :icon="mdiTrashCanOutline"
                           variant="text"
                           color="delete"
                           :loading="isValidatingDelete(attachment.id)"
@@ -538,7 +538,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { mdiAlert, mdiDelete, mdiDownload, mdiPencil } from '@mdi/js'
+import { mdiAlert, mdiTrashCanOutline, mdiDownload, mdiPencil } from '@mdi/js'
 import hs, {
   type RatingCurve,
   type RatingCurveFittingMethod,
@@ -718,7 +718,7 @@ const attachmentCountLabel = computed(() => {
 const selectedFile = computed(() => {
   const value = attachmentFile.value
   if (!value) return null
-  return Array.isArray(value) ? value[0] ?? null : value
+  return Array.isArray(value) ? (value[0] ?? null) : value
 })
 
 const canCreateAttachment = computed(
@@ -731,7 +731,7 @@ const canCreateAttachment = computed(
 const selectedEditFile = computed(() => {
   const value = editAttachmentFile.value
   if (!value) return null
-  return Array.isArray(value) ? value[0] ?? null : value
+  return Array.isArray(value) ? (value[0] ?? null) : value
 })
 const canSaveEditAttachment = computed(
   () =>
@@ -1169,27 +1169,6 @@ function taskUsesRatingCurve(task: any, ratingCurveId: string) {
     })
   ) {
     return true
-  }
-
-  const mappings = Array.isArray(task?.mappings) ? task.mappings : []
-  for (const mapping of mappings) {
-    const paths = Array.isArray(mapping?.paths) ? mapping.paths : []
-    for (const path of paths) {
-      const transformations = Array.isArray(path?.dataTransformations)
-        ? path.dataTransformations
-        : []
-      for (const transformation of transformations) {
-        if (
-          String(
-            transformation?.ratingCurveId ??
-              transformation?.ratingCurve?.id ??
-              ''
-          ) === String(ratingCurveId)
-        ) {
-          return true
-        }
-      }
-    }
   }
   return false
 }

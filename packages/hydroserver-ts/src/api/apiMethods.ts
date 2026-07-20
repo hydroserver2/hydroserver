@@ -1,4 +1,4 @@
-import { requestInterceptor } from './requestInterceptor'
+import { requestInterceptor, RequestOptions } from './requestInterceptor'
 import { ApiResponse, responseInterceptor } from './responseInterceptor'
 import { createPatchObject } from './createPatchObject'
 import pLimit from 'p-limit'
@@ -6,67 +6,80 @@ import pLimit from 'p-limit'
 const limit = pLimit(10)
 const DEFAULT_PAGE_SIZE = 200
 
-async function interceptedFetch(endpoint: string, options: any) {
+async function interceptedFetch<T>(
+  endpoint: string,
+  options: RequestOptions
+): Promise<ApiResponse<T>> {
   const opts = requestInterceptor(options)
   const response = await fetch(endpoint, opts)
-  return await responseInterceptor(response)
+  return await responseInterceptor<T>(response)
 }
 
 export const apiMethods = {
-  async fetch(endpoint: string, options: any = {}): Promise<ApiResponse> {
-    options.method = 'GET'
-    return await limit(() => interceptedFetch(endpoint, options))
-  },
-  async patch(
+  async fetch<T = unknown>(
     endpoint: string,
-    body: any,
-    originalBody: any = null,
-    options: any = {}
-  ): Promise<ApiResponse> {
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
+    options.method = 'GET'
+    return await limit(() => interceptedFetch<T>(endpoint, options))
+  },
+  async patch<T = unknown>(
+    endpoint: string,
+    body: unknown,
+    originalBody: unknown = null,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     options.method = 'PATCH'
-    options.body = originalBody ? createPatchObject(originalBody, body) : body
+    options.body = originalBody
+      ? createPatchObject(
+          originalBody as Record<string, unknown>,
+          body as Record<string, unknown>
+        )
+      : body
     const bodyIsEmpty =
-      typeof options.body === 'object' && Object.keys(options.body).length === 0
+      typeof options.body === 'object' &&
+      options.body !== null &&
+      Object.keys(options.body).length === 0
 
     if (!options.body || bodyIsEmpty) {
       return {
-        data: originalBody ?? null,
+        ok: true,
+        data: (originalBody ?? null) as T,
         status: 204,
         message: 'No changes',
-        ok: true,
       }
     }
-    return await limit(() => interceptedFetch(endpoint, options))
+    return await limit(() => interceptedFetch<T>(endpoint, options))
   },
-  async post(
+  async post<T = unknown>(
     endpoint: string,
-    body: any = undefined,
-    options: any = {}
-  ): Promise<ApiResponse> {
+    body: unknown = undefined,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     options.method = 'POST'
     options.body = body
-    return await limit(() => interceptedFetch(endpoint, options))
+    return await limit(() => interceptedFetch<T>(endpoint, options))
   },
-  async put(
+  async put<T = unknown>(
     endpoint: string,
-    body: any = undefined,
-    options: any = {}
-  ): Promise<ApiResponse> {
+    body: unknown = undefined,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     options.method = 'PUT'
     options.body = body
-    return await limit(() => interceptedFetch(endpoint, options))
+    return await limit(() => interceptedFetch<T>(endpoint, options))
   },
-  async delete(
+  async delete<T = unknown>(
     endpoint: string,
-    body: any = undefined,
-    options: any = {}
-  ): Promise<ApiResponse> {
+    body: unknown = undefined,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     options.method = 'DELETE'
     options.body = body
-    return await limit(() => interceptedFetch(endpoint, options))
+    return await limit(() => interceptedFetch<T>(endpoint, options))
   },
 
-  async paginatedFetch<T>(base: string): Promise<ApiResponse> {
+  async paginatedFetch<T>(base: string): Promise<ApiResponse<T>> {
     const url = new URL(String(base), globalThis.location?.origin ?? undefined)
     const urlAlreadyHasPage = url.searchParams.has('page')
     if (!urlAlreadyHasPage) url.searchParams.set('page', '1')
@@ -79,12 +92,15 @@ export const apiMethods = {
     // fetch first page without response interceptor so we can read headers
     const firstResponse = await limit(() => fetch(url, opts))
     const totalPages = Number(firstResponse.headers.get('X-Total-Pages')) || 1
-    const res = await responseInterceptor(firstResponse)
+    const res = await responseInterceptor<T>(firstResponse)
 
     // If the caller explicitly asked for a single page, return it as-is
     if (urlAlreadyHasPage) return res
 
-    type Columnar = Record<string, any>
+    // Errors carry no `data` to merge; surface them to the caller unchanged.
+    if (!res.ok) return res
+
+    type Columnar = Record<string, unknown>
     const isColumnar = (x: unknown): x is Columnar =>
       !!x && typeof x === 'object' && !Array.isArray(x)
 
@@ -92,7 +108,7 @@ export const apiMethods = {
       for (const [k, v] of Object.entries(src)) {
         if (Array.isArray(v)) {
           if (!Array.isArray(target[k])) target[k] = []
-          ;(target[k] as any[]).push(...v)
+          ;(target[k] as unknown[]).push(...v)
         } else if (target[k] === undefined) {
           // keep scalar metadata (e.g., units) from the first page only
           target[k] = v
@@ -122,11 +138,15 @@ export const apiMethods = {
       Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) => {
         const pageUrl = new URL(url)
         pageUrl.searchParams.set('page', String(index + 2))
-        return limit(() => interceptedFetch(pageUrl.toString(), { method: 'GET' }))
+        return limit(() =>
+          interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
+        )
       })
     )
 
     for (const page of remainingPages) {
+      // A failed page has no data; stop merging to avoid silent gaps.
+      if (!page.ok) break
       if (mode === 'array') {
         if (Array.isArray(page.data)) {
           allArray.push(...(page.data as T[]))
@@ -143,7 +163,7 @@ export const apiMethods = {
         } else if (Array.isArray(page.data)) {
           // if a later page comes back as a plain array, tuck it under `results`
           if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
-          ;(allColumnar!.results as any[]).push(...page.data)
+          ;(allColumnar!.results as unknown[]).push(...page.data)
         } else {
           break
         }
@@ -156,11 +176,11 @@ export const apiMethods = {
         : (allColumnar as unknown as T)
 
     return {
+      ok: true,
       data: merged,
       status: res.status,
       message: res.message,
       meta: res.meta,
-      ok: res.ok,
     }
   },
 }

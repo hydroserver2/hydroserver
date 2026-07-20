@@ -33,14 +33,21 @@ HydroServer is organized as follows:
 - `deploy/dev`: local development deployment assets.
 - `deploy/prod`: production deployment assets.
 
-**System Tests** (`tests/`)
+**End-to-End Tests**
 
-- `tests/e2e`: end-to-end tests for the HydroServer product as a whole.
-  The Playwright suite boots the API and data-management app automatically against an isolated `hydroserver_e2e` database. The human release signoff list lives in `tests/manual/MANUAL_RELEASE_TESTING_CHECKLIST.md`.
+Each frontend owns its own Playwright suite and config — run `npm run e2e` from
+inside an app directory:
+
+- `apps/data-management/e2e`: boots the API and app automatically against an
+  isolated `hydroserver_e2e` database (needs local `postgres` + `redis`).
+- `apps/qc-app/e2e`: runs against the QC Vite dev server with mocked responses
+  (no API needed).
+
+From the repo root, `npm run e2e` runs both. The human release signoff list lives
+in `tests/manual/MANUAL_RELEASE_TESTING_CHECKLIST.md`.
 
 **Scripts** (`scripts/`)
 
-- `scripts/e2e`: canonical local and CI entrypoint for the browser E2E suite.
 - `scripts/release-test`: root runner for API, Python-client, and browser release regression suites.
 
 ## History

@@ -37,6 +37,8 @@ import hs from '@hydroserver/client'
 import { computed, ref } from 'vue'
 import { settings } from '@/config/settings'
 import type { Provider } from '@/models/settings'
+import { useRoute } from 'vue-router'
+import { getPostLoginPath } from '@/utils/authRedirect'
 
 const oAuthProviders = ref<Provider[]>(
   settings.authenticationConfiguration.providers
@@ -45,9 +47,11 @@ const oAuthProviders = ref<Provider[]>(
 const filteredOAuthProviders = computed(() =>
   oAuthProviders.value.filter((provider) => provider.signupEnabled)
 )
+const route = useRoute()
+const postLoginPath = computed(() => getPostLoginPath(route.query.next))
 
 const signupOrLoginWithOAuth = (providerId: string) => {
-  const callbackUrl = '/Sites'
+  const callbackUrl = postLoginPath.value
   hs.session.providerRedirect(providerId, callbackUrl, 'login')
 }
 </script>

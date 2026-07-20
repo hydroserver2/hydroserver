@@ -30,7 +30,7 @@ describe('orchestration store', () => {
     listAllItemsMock.mockReset()
   })
 
-  it('derives linked datastream ids from lean task target identifiers', async () => {
+  it('derives linked datastream ids from task mappings', async () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.selectedWorkspace = {
       id: 'workspace-1',
@@ -42,23 +42,34 @@ describe('orchestration store', () => {
     orchestrationStore.workspaceTasks = [
       {
         id: 'task-1',
-        targetIdentifiers: ['ds-1', 'ds-2'],
-        mappings: [],
-      },
-      {
-        id: 'task-2',
-        targetIdentifiers: [],
         mappings: [
           {
             sourceIdentifier: 'source-1',
-            paths: [{ targetIdentifier: 'ds-3', dataTransformations: [] }],
+            targetDatastream: { id: 'ds-1' },
+          },
+          {
+            sourceIdentifier: 'source-2',
+            targetDatastream: { id: 'ds-2' },
+          },
+        ],
+      },
+      {
+        id: 'task-2',
+        mappings: [
+          {
+            sourceIdentifier: 'source-3',
+            targetDatastream: { id: 'ds-3' },
           },
         ],
       },
       {
         id: 'task-3',
-        targetIdentifiers: ['ds-1'],
-        mappings: [],
+        mappings: [
+          {
+            sourceIdentifier: 'source-4',
+            targetDatastream: { id: 'ds-1' },
+          },
+        ],
       },
     ] as any
     orchestrationStore.workspaceDatastreams = [

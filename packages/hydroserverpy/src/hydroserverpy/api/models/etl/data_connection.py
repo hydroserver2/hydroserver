@@ -31,7 +31,9 @@ class JSONPayload(BaseModel):
 
 class PlaceholderVariable(BaseModel):
     name: str
-    variable_type: Literal["run_time", "latest_observation_timestamp", "per_task"] = Field(..., alias="type")
+    variable_type: Literal[
+        "run_time", "latest_observation_timestamp", "per_task", "window_start", "window_end"
+    ] = Field(..., alias="type")
     timestamp_format: Optional[str] = None
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)

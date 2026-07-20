@@ -38,7 +38,7 @@ export const useTagStore = defineStore('tags', () => {
       await Promise.all(requests)
 
       const res = await hs.things.getTags(thingId)
-      tags.value = res.data
+      tags.value = res.ok ? res.data : []
       previewTags.value = []
     } catch (error) {
       console.error('Error updating tags', error)

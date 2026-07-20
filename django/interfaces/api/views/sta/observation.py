@@ -13,6 +13,7 @@ from interfaces.api.schemas import (
     ObservationQueryParameters,
     ObservationPostBody,
     ObservationBulkPostBody,
+    ObservationBulkColumnarPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkDeleteBody,
 )
@@ -99,7 +100,7 @@ def insert_observations(
     request: HydroServerHttpRequest,
     datastream_id: Path[uuid.UUID],
     query: Query[ObservationBulkPostQueryParameters],
-    data: ObservationBulkPostBody,
+    data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
 ):
     """
     Insert Datastream Observations.

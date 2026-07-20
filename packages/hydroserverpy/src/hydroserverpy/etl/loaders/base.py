@@ -68,6 +68,8 @@ class Loader(ETLComponent, ABC):
     def load(
         self,
         payload: pd.DataFrame,
+        data_ingestion_window_start: Optional[datetime] = None,
+        data_ingestion_window_end: Optional[datetime] = None,
         **kwargs
     ) -> ETLLoaderResult:
         ...

@@ -1,0 +1,13 @@
+{
+  "name": "hydroserver-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/qc-app",
+    "packages/qc-utils"
+  ],
+  "scripts": {
+    "dev:qc": "npm run dev --workspace hydroserver-qc",
+    "build:qc-utils": "npm run build --workspace @uwrl/qc-utils",
+    "build:qc-app": "npm run build:qc-utils && npm run build --workspace hydroserver-qc"
+  }
+}

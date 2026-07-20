@@ -6,6 +6,22 @@ export type PlaceholderVariableType =
   | 'run_time'
   | 'latest_observation_timestamp'
   | 'per_task'
+  | 'window_start'
+  | 'window_end'
+
+export type WindowAnchorType = 'latest_observation_timestamp' | 'run_time' | 'fixed_timestamp'
+
+export interface WindowBoundary {
+  anchor: WindowAnchorType
+  lookback?: number | null
+  lookbackUnits?: 'minutes' | 'hours' | 'days' | null
+  timestamp?: string | null
+}
+
+export interface PayloadWindow {
+  start?: WindowBoundary | null
+  end?: WindowBoundary | null
+}
 export type TimezoneType = 'offset' | 'iana'
 export type CSVDelimiterType = ',' | '\t' | ';' | '|' | ' '
 
@@ -16,6 +32,7 @@ export interface CSVPayload {
   headerRow?: number | null
   dataStartRow?: number | null
   delimiter?: CSVDelimiterType | null
+  dataIngestionWindow?: PayloadWindow | null
 }
 
 export interface JSONPayload {
@@ -23,6 +40,7 @@ export interface JSONPayload {
   timestampKey: string
   timestampFormat?: string | null
   jmespath?: string | null
+  dataIngestionWindow?: PayloadWindow | null
 }
 
 export type Payload = CSVPayload | JSONPayload
@@ -85,50 +103,4 @@ export const INTERVAL_UNIT_OPTIONS = [
 ]
 export type IntervalUnitType = (typeof INTERVAL_UNIT_OPTIONS)[number]['value']
 
-// ---------------------------------------------------------------------------
-// Legacy stubs — form components referencing the old extractor/transformer/loader
-// API structure still import these. They need to be rewritten for the new API.
-// ---------------------------------------------------------------------------
-
-export const EXTRACTOR_OPTIONS = ['HTTP', 'local'] as const
-export type ExtractorType = (typeof EXTRACTOR_OPTIONS)[number]
-
-export interface HTTPExtractor { type: 'HTTP'; settings: Record<string, any> }
-export interface LocalFileExtractor { type: 'local'; settings: Record<string, any> }
-export type ExtractorConfig = HTTPExtractor | LocalFileExtractor
-
-export const extractorDefaults: Record<ExtractorType, ExtractorConfig> = {
-  HTTP: { type: 'HTTP', settings: { sourceUri: '', placeholderVariables: [] } },
-  local: { type: 'local', settings: { sourceUri: '', placeholderVariables: [] } },
-}
-export function switchExtractor(ds: any, newType: ExtractorType) {
-  ds.extractor = JSON.parse(JSON.stringify(extractorDefaults[newType]))
-}
-
-export const TRANSFORMER_OPTIONS = ['JSON', 'CSV'] as const
-export type TransformerType = (typeof TRANSFORMER_OPTIONS)[number]
-
 export enum IdentifierType { Name = 'name', Index = 'index' }
-
-export interface JSONtransformer { type: 'JSON'; settings: Record<string, any> }
-export interface CSVTransformer { type: 'CSV'; settings: Record<string, any> }
-export type TransformerConfig = JSONtransformer | CSVTransformer
-
-export function switchTransformer(ds: any, newType: TransformerType) {
-  ds.transformer = { type: newType, settings: {} }
-}
-
-export const LOADER_OPTIONS = ['HydroServer'] as const
-export type LoaderType = (typeof LOADER_OPTIONS)[number]
-export type LoaderConfig = { type: LoaderType; settings: Record<string, any> }
-export function switchLoader(ds: any, newType: LoaderType) {
-  ds.loader = { type: newType, settings: {} }
-}
-
-export interface PerTaskPlaceholder { name: string; type: 'perTask' }
-export interface RunTimePlaceholder {
-  name: string
-  type: 'runTime'
-  runTimeValue: 'startTime' | 'now'
-  timestamp?: any
-}

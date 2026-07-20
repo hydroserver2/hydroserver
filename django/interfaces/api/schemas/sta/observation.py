@@ -47,7 +47,7 @@ class ObservationQueryParameters(CollectionQueryParameters):
         description="Sets the minimum phenomenon time of filtered observations.",
         alias="phenomenon_time_min",
     )
-    result_qualifiers__code: list[str] = Query(
+    result_qualifier_codes: list[str] = Query(
         [],
         description="Filter observations by result qualifier code.",
         alias="result_qualifier_code",
@@ -124,6 +124,33 @@ class ObservationBulkPostBody(BasePostBody):
                 row[result_idx] = float(row[result_idx])
 
         return self
+
+
+class ObservationBulkColumnarPostBody(BasePostBody):
+    phenomenon_time: list[ISODatetime]
+    result: list[Optional[float]]
+    result_qualifier_codes: list[list[str]] = []
+
+    @model_validator(mode="after")
+    def validate_lengths(self):
+        n = len(self.phenomenon_time)
+        if len(self.result) != n:
+            raise ValueError("result must have the same length as phenomenonTime")
+        if self.result_qualifier_codes and len(self.result_qualifier_codes) != n:
+            raise ValueError(
+                "resultQualifierCodes must have the same length as phenomenonTime"
+            )
+        if not self.result_qualifier_codes:
+            self.result_qualifier_codes = [[] for _ in range(n)]
+        return self
+
+    @property
+    def fields(self) -> list[str]:
+        return ["phenomenonTime", "result", "resultQualifierCodes"]
+
+    @property
+    def data(self) -> list[tuple]:
+        return list(zip(self.phenomenon_time, self.result, self.result_qualifier_codes))
 
 
 class ObservationBulkDeleteBody(BasePostBody):

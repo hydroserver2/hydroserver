@@ -26,3 +26,7 @@ from interfaces.api.views.products.task import data_product_task_router
 
 from interfaces.api.views.monitoring.task import monitoring_task_router
 from interfaces.api.views.monitoring.rule import monitoring_rule_router
+
+from interfaces.api.views.quality.history import qc_history_router
+from interfaces.api.views.quality.session import qc_session_router
+from interfaces.api.views.quality.operation import qc_operation_router

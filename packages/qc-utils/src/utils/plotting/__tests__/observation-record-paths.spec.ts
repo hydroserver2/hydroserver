@@ -1,0 +1,598 @@
+/**
+ * Coverage-focused tests for `observation-record.ts` that exercise
+ * paths the baseline spec skips:
+ *
+ *   1. **Worker fan-out paths** — every `_operation` routes through
+ *      `shouldUseWorker()` and falls back to an inline core for small
+ *      inputs. The existing `observation-record.spec.ts` uses tiny
+ *      datasets, so only the inline branches run. Here we mock
+ *      `../calibration` so callers can flip `forceWorker = true` and
+ *      drive the worker branches without needing multi-MB fixtures.
+ *   2. **Bulk assignment ops** — `ASSIGN_VALUES_BULK` and
+ *      `ASSIGN_DATETIMES_BULK` aren't touched by the baseline spec.
+ *   3. **Undo / redo** — `undo()` / `redo()` have their own state
+ *      machines that aren't driven by the `dispatch()` tests.
+ *   4. **DATETIME_RANGE, SELECTION pop** — the remaining filter ops.
+ *
+ * Mocks are hoisted via `vi.mock`; the real calibration module is
+ * wrapped so non-mocked helpers (getCalibration, etc.) still work if
+ * anything reaches for them.
+ */
+
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+
+// Controls whether the mocked `shouldUseWorker` returns useWorker=true.
+// Toggle per-test via `forceWorker = <bool>` before calling dispatch.
+let forceWorker = false
+
+vi.mock('../calibration', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../calibration')>()
+  return {
+    ...real,
+    shouldUseWorker: () => ({
+      useWorker: forceWorker,
+      predictedInlineMs: forceWorker ? 100 : 0,
+      predictedWorkerMs: forceWorker ? 1 : 50,
+      reason: forceWorker ? 'forced worker (test)' : 'forced inline (test)',
+    }),
+  }
+})
+
+// Worker mocks — reuse the same shims as `observation-record.spec.ts`.
+vi.mock('../delete-data.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockDeleteDataWorker }))
+)
+vi.mock('../fill-gaps.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockFillGapsWorker }))
+)
+vi.mock('../interpolate.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockInterpolateWorker }))
+)
+vi.mock('../drift-correction.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockDriftCorrectionWorker }))
+)
+vi.mock('../add-data.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockAddDataWorker }))
+)
+vi.mock('../shift-datetimes.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockShiftDatetimesWorker }))
+)
+vi.mock('../find-gaps.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockFindGapsWorker }))
+)
+vi.mock('../persistence.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockPersistenceWorker }))
+)
+vi.mock('../change.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockChangeWorker }))
+)
+vi.mock('../rate-of-change.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockRateOfChangeWorker }))
+)
+vi.mock('../value-threshold.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockValueThresholdWorker }))
+)
+vi.mock('../change-values.worker?worker&inline', () =>
+  import('./workerMocks').then((m) => ({ default: m.MockChangeValuesWorker }))
+)
+
+import { ObservationRecord } from '../observation-record'
+import {
+  EnumEditOperations,
+  EnumFilterOperations,
+  FilterOperation,
+  Operator,
+  TimeUnit,
+} from '@/types'
+
+/**
+ * Some edit ops skip `await Promise.all(promises)` when `import.meta.env.MODE
+ * === "test"`. The mock workers post results via `queueMicrotask`, so we
+ * give the microtask queue one extra turn to drain before asserting on
+ * mutated buffers.
+ */
+async function flushMicrotasks() {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+/** Build a uniform-grid dataset. */
+function uniform(size: number, y0 = 0, step = 1) {
+  const spacingMs = 15 * 60 * 1000
+  const startMs = Date.UTC(2023, 0, 1)
+  const datetimes = new Array<number>(size)
+  const dataValues = new Array<number>(size)
+  for (let i = 0; i < size; i++) {
+    datetimes[i] = startMs + i * spacingMs
+    dataValues[i] = y0 + i * step
+  }
+  return { datetimes, dataValues }
+}
+
+describe('ObservationRecord — worker paths', () => {
+  let rec: ObservationRecord
+
+  beforeEach(async () => {
+    forceWorker = true
+    rec = new ObservationRecord(uniform(40, 0, 10))
+    await rec.reload()
+  })
+
+  afterEach(() => {
+    forceWorker = false
+  })
+
+  it('CHANGE_VALUES fans out to workers when calibration says useWorker=true', async () => {
+    // Calibration is the only gate now (the static N<1024 floor was
+    // redundant — the default profile already short-circuits well past
+    // any realistic edit). With `forceWorker=true` the dispatch routes
+    // straight through the worker path regardless of N.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1, 2]],
+      [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+    ])
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.method).toBe(EnumEditOperations.CHANGE_VALUES)
+    expect(last.execution.mode).toBe('worker')
+  })
+
+  it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
+    // Flip the calibration mock to the "inline wins" branch — that's
+    // the path the uncalibrated default profile produces for any
+    // realistic selection size, and the floor we relied on for tiny N.
+    forceWorker = false
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1, 2]],
+      [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 100],
+    ])
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('inline')
+    expect(rec.dataY[0]).toBe(100)
+  })
+
+  it('INTERPOLATE fans out to workers', async () => {
+    // Overwrite middle values so we can check interp recovers the line.
+    rec.dataY[10] = 999
+    rec.dataY[11] = 999
+    // Selection-consuming ops read indices off the preceding
+    // SELECTION; chain them in one dispatch call.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [10, 11]],
+      [EnumEditOperations.INTERPOLATE],
+    ])
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+  })
+
+  it('SHIFT_DATETIMES fans out to workers', async () => {
+    const originalLen = rec.dataX.length
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [5, 6, 7]],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+    ])
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+    expect(rec.dataX.length).toBe(originalLen)
+  })
+
+  it('DELETE_POINTS fans out to workers', async () => {
+    const originalLen = rec.dataX.length
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 5, 10]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+    expect(rec.dataX.length).toBe(originalLen - 3)
+  })
+
+  it('ADD_POINTS fans out to workers', async () => {
+    const before = rec.dataX.length
+    const pts: [number, number][] = [
+      [rec.dataX[2] + 1, 99],
+      [rec.dataX[20] + 1, 77],
+    ]
+    await rec.dispatch(EnumEditOperations.ADD_POINTS, pts)
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+    expect(rec.dataX.length).toBe(before + 2)
+  })
+
+  it('DRIFT_CORRECTION fans out to workers', async () => {
+    const baseline = Array.from(rec.dataY)
+    // Build a SELECTION covering [0, 20] (the consecutive-groups
+    // helper inside the dispatch wrapper rebuilds the same range).
+    const indices: number[] = []
+    for (let i = 0; i <= 20; i++) indices.push(i)
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, indices],
+      [EnumEditOperations.DRIFT_CORRECTION, 10],
+    ])
+    await flushMicrotasks()
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+    // Interior points should have shifted from their baseline.
+    expect(rec.dataY[5]).not.toBe(baseline[5])
+  })
+
+  it('FILL_GAPS fans out to workers', async () => {
+    // Build a dataset with a single large gap.
+    const spacingMs = 15 * 60 * 1000
+    const startMs = Date.UTC(2023, 0, 1)
+    const datetimes = [
+      startMs,
+      startMs + spacingMs,
+      startMs + spacingMs + 4 * 60 * 60 * 1000, // ~4-hour gap
+      startMs + spacingMs + 4 * 60 * 60 * 1000 + spacingMs,
+    ]
+    const dataValues = [0, 1, 2, 3]
+    const local = new ObservationRecord({ datetimes, dataValues })
+    await local.reload()
+    const before = local.dataX.length
+    await local.dispatch(
+      EnumEditOperations.FILL_GAPS,
+      [30, TimeUnit.MINUTE],
+      [1, TimeUnit.HOUR],
+      true,
+      -9999
+    )
+    await flushMicrotasks()
+    const last = local.history[local.history.length - 1]
+    expect(last.execution.mode).toBe('worker')
+    expect(local.dataX.length).toBeGreaterThan(before)
+  })
+
+  it('VALUE_THRESHOLD fans out to workers', async () => {
+    const selection = await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GTE]: 200 }
+    )
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
+    // dataY = [0, 10, 20, ...], so indexes 20..39 have y >= 200.
+    expect(selection[0]).toBe(20)
+    expect(selection[selection.length - 1]).toBe(39)
+  })
+
+  it('CHANGE fans out to workers', async () => {
+    const selection = await rec.dispatch(
+      EnumFilterOperations.CHANGE,
+      FilterOperation.GTE,
+      10
+    )
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
+    // Uniform step = 10, so every adjacent Δ matches.
+    expect(selection.length).toBe(rec.dataY.length - 1)
+  })
+
+  it('RATE_OF_CHANGE fans out to workers', async () => {
+    const selection = await rec.dispatch(
+      EnumFilterOperations.RATE_OF_CHANGE,
+      FilterOperation.GT,
+      0.5
+    )
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
+    // (10-0)/0 is Infinity → matches; (20-10)/10 = 1 > 0.5 → matches.
+    expect(selection.length).toBeGreaterThan(0)
+  })
+
+  it('FIND_GAPS fans out to workers', async () => {
+    // Insert one large gap in a uniform dataset.
+    const spacingMs = 15 * 60 * 1000
+    const startMs = Date.UTC(2023, 0, 1)
+    const datetimes = [
+      startMs,
+      startMs + spacingMs,
+      startMs + spacingMs + 4 * 60 * 60 * 1000,
+      startMs + spacingMs + 4 * 60 * 60 * 1000 + spacingMs,
+    ]
+    const dataValues = [0, 1, 2, 3]
+    const local = new ObservationRecord({ datetimes, dataValues })
+    await local.reload()
+    forceWorker = true
+    const selection = await local.dispatch(
+      EnumFilterOperations.FIND_GAPS,
+      30,
+      TimeUnit.MINUTE
+    )
+    expect(local.history[local.history.length - 1].execution.mode).toBe('worker')
+    expect(selection.sort((a, b) => a - b)).toEqual([1, 2])
+  })
+
+  it('PERSISTENCE fans out to workers and stitches boundary runs', async () => {
+    // Build a dataset dominated by a single long run so boundary stitching
+    // is exercised when the run crosses chunk edges.
+    const datetimes = Array.from({ length: 60 }, (_, i) => i * 1000)
+    const dataValues = Array(60).fill(7)
+    const local = new ObservationRecord({ datetimes, dataValues })
+    await local.reload()
+    const selection = await local.dispatch(
+      EnumFilterOperations.PERSISTENCE,
+      20
+    )
+    expect(local.history[local.history.length - 1].execution.mode).toBe('worker')
+    expect(selection.length).toBe(60)
+  })
+})
+
+describe('ObservationRecord — bulk ops', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(20, 0, 10))
+    await rec.reload()
+  })
+
+  it('ASSIGN_VALUES_BULK writes parallel values at the selected indexes', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [2, 5, 8]],
+      [EnumEditOperations.ASSIGN_VALUES_BULK, [111, 222, 333]],
+    ])
+    expect(rec.dataY[2]).toBe(111)
+    expect(rec.dataY[5]).toBe(222)
+    expect(rec.dataY[8]).toBe(333)
+  })
+
+  it('ASSIGN_VALUES_BULK is a no-op without a prior selection', async () => {
+    const before = Array.from(rec.dataY)
+    await rec.dispatch(EnumEditOperations.ASSIGN_VALUES_BULK, [1, 2, 3])
+    expect(Array.from(rec.dataY)).toEqual(before)
+  })
+
+  it('ASSIGN_VALUES_BULK is a no-op for empty values array', async () => {
+    const before = Array.from(rec.dataY)
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1]],
+      [EnumEditOperations.ASSIGN_VALUES_BULK, []],
+    ])
+    expect(Array.from(rec.dataY)).toEqual(before)
+  })
+
+  it('ASSIGN_DATETIMES_BULK moves rows to the new datetimes (delete+add)', async () => {
+    const originalLen = rec.dataX.length
+    const newDatetime = rec.dataX[rec.dataX.length - 1] + 60_000
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [3]],
+      [EnumEditOperations.ASSIGN_DATETIMES_BULK, [newDatetime]],
+    ])
+    expect(rec.dataX.length).toBe(originalLen)
+    // Row count unchanged; the moved row should now sit at the end.
+    expect(rec.dataX[rec.dataX.length - 1]).toBe(newDatetime)
+  })
+
+  it('ASSIGN_DATETIMES_BULK is a no-op without selection or datetimes', async () => {
+    const before = Array.from(rec.dataX)
+    await rec.dispatch(EnumEditOperations.ASSIGN_DATETIMES_BULK, [1])
+    expect(Array.from(rec.dataX)).toEqual(before)
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1]],
+      [EnumEditOperations.ASSIGN_DATETIMES_BULK, []],
+    ])
+    expect(Array.from(rec.dataX)).toEqual(before)
+  })
+})
+
+describe('ObservationRecord — undo / redo', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(15, 0, 10))
+    await rec.reload()
+  })
+
+  it('undo() on empty history returns []', async () => {
+    expect(await rec.undo()).toEqual([])
+  })
+
+  it('redo() on empty stack returns []', async () => {
+    expect(await rec.redo()).toEqual([])
+  })
+
+  it('undo then redo round-trips an edit', async () => {
+    const originalLen = rec.dataX.length
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0, 1]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    expect(rec.dataX.length).toBe(originalLen - 2)
+
+    await rec.undo()
+    expect(rec.dataX.length).toBe(originalLen)
+    // After undoing the DELETE_POINTS, the SELECTION remains.
+    expect(rec.history.length).toBe(1)
+
+    await rec.redo()
+    expect(rec.dataX.length).toBe(originalLen - 2)
+    expect(rec.history.length).toBe(2)
+  })
+
+  it('a fresh dispatch clears the redo stack (Word-style)', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [0]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    await rec.undo()
+    // Redo stack has one entry.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [1]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    // The new dispatch should have wiped the redo stack.
+    expect(await rec.redo()).toEqual([])
+  })
+})
+
+describe('ObservationRecord — miscellaneous filters', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(10, 0, 10))
+    await rec.reload()
+  })
+
+  it('DATETIME_RANGE selects all indexes inside [from, to]', async () => {
+    const from = rec.dataX[3]
+    const to = rec.dataX[6]
+    const selection = await rec.dispatch(
+      EnumFilterOperations.DATETIME_RANGE,
+      from,
+      to
+    )
+    expect(selection).toEqual([3, 4, 5, 6])
+  })
+
+  it('DATETIME_RANGE with both bounds omitted selects the full series', async () => {
+    const selection = await rec.dispatch(EnumFilterOperations.DATETIME_RANGE)
+    expect(selection.length).toBe(rec.dataX.length)
+  })
+
+  it('DATETIME_RANGE returns [] on empty datasets', async () => {
+    const empty = new ObservationRecord({ datetimes: [], dataValues: [] })
+    await empty.reload()
+    expect(
+      await empty.dispatch(EnumFilterOperations.DATETIME_RANGE, 0, 100)
+    ).toEqual([])
+  })
+
+  it('DATETIME_RANGE returns [] when from > to on the grid', async () => {
+    const from = rec.dataX[7]
+    const to = rec.dataX[2]
+    expect(
+      await rec.dispatch(EnumFilterOperations.DATETIME_RANGE, from, to)
+    ).toEqual([])
+  })
+})
+
+describe('ObservationRecord — SELECTION echo dedup', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(20, 0, 10))
+    await rec.reload()
+  })
+
+  it('drops the SELECTION when its indices match the preceding filter exactly (Plotly echo)', async () => {
+    // VALUE_THRESHOLD > 50 against y = 0,10,...,190 selects [6..19].
+    const indices = await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD)
+
+    // Echo the filter's own selection back — the dedup rule should
+    // pop the SELECTION so the filter alone owns the row.
+    await rec.dispatch(EnumFilterOperations.SELECTION, indices)
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD)
+  })
+
+  it('splices the preceding filter when the SELECTION differs (user manual override)', async () => {
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    // Override with a different selection — the filter row should
+    // get spliced out so the SELECTION represents the action.
+    await rec.dispatch(EnumFilterOperations.SELECTION, [0, 1, 2])
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(EnumFilterOperations.SELECTION)
+    expect(rec.history[0].selected).toEqual([0, 1, 2])
+  })
+
+  it('empty SELECTION after a non-empty filter pops both rows (selection cleared)', async () => {
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 50 },
+    )
+    expect(rec.history).toHaveLength(1)
+    // Empty SELECTION clears: drop self AND the filter that was
+    // showing a non-empty selection.
+    await rec.dispatch(EnumFilterOperations.SELECTION, [])
+    expect(rec.history).toHaveLength(0)
+  })
+
+  it('empty SELECTION after a zero-result filter pops only itself (no-op clear)', async () => {
+    // No y in the uniform fixture exceeds 999; the filter selects nothing.
+    await rec.dispatch(
+      EnumFilterOperations.VALUE_THRESHOLD,
+      { [FilterOperation.GT]: 999 },
+    )
+    expect(rec.history).toHaveLength(1)
+    const filterMethod = rec.history[0].method
+    await rec.dispatch(EnumFilterOperations.SELECTION, [])
+    // The empty echo is a no-op clear — only the SELECTION drops,
+    // the (empty) filter stays.
+    expect(rec.history).toHaveLength(1)
+    expect(rec.history[0].method).toBe(filterMethod)
+  })
+})
+
+describe('ObservationRecord — internal helpers via dispatch', () => {
+  let rec: ObservationRecord
+  beforeEach(async () => {
+    forceWorker = false
+    rec = new ObservationRecord(uniform(20, 0, 10))
+    await rec.reload()
+  })
+
+  it('DELETE_POINTS forms multiple consecutive-index groups for non-contiguous selections', async () => {
+    // Selection [1, 2, 3, 7, 8, 12] splits into three groups:
+    // [1,2,3], [7,8], [12]. The grouping reducer's else-branch
+    // (line ~1469) only fires when the input has a gap; a single
+    // contiguous range would never exercise it.
+    const before = rec.dataX.length
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [1, 2, 3, 7, 8, 12]],
+      [EnumEditOperations.DELETE_POINTS],
+    ])
+    expect(rec.dataX.length).toBe(before - 6)
+  })
+
+  it('INTERPOLATE splits non-contiguous selections into separate consecutive groups', async () => {
+    // `_interpolate` calls `_getConsecutiveGroups` to bucket the
+    // selection into discrete spans, each interpolated against its
+    // own surrounding endpoints. With selection [3, 4, 9, 10]
+    // the reducer's else-branch fires when 9 starts a new group
+    // after [3, 4].
+    rec.dataY[3] = 999
+    rec.dataY[4] = 999
+    rec.dataY[9] = 999
+    rec.dataY[10] = 999
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [3, 4, 9, 10]],
+      [EnumEditOperations.INTERPOLATE],
+    ])
+    // Each group interpolates between its own pair of surrounding
+    // values, so the 999 sentinels are gone.
+    expect(rec.dataY[3]).not.toBe(999)
+    expect(rec.dataY[4]).not.toBe(999)
+    expect(rec.dataY[9]).not.toBe(999)
+    expect(rec.dataY[10]).not.toBe(999)
+  })
+
+  it('DRIFT_CORRECTION emits one range per consecutive group in the selection', async () => {
+    // Same idea: with selection [2, 3, 8, 9] the
+    // `_driftCorrectionFromSelection` builder emits two range
+    // tuples, one per group, by walking the grouped output.
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [2, 3, 8, 9]],
+      [EnumEditOperations.DRIFT_CORRECTION, 1],
+    ])
+    // No assertion on exact values — the relevant invariant is
+    // that the dispatch completed without throwing, which means
+    // both groups were processed.
+    const last = rec.history[rec.history.length - 1]
+    expect(last.execution.status).not.toBe('failed')
+  })
+})

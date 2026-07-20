@@ -19,7 +19,7 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
   override create = async (
     body: M | RatingCurveCreateBody
   ): Promise<ApiResponse<M>> => {
-    return apiMethods.post(this._route, this.serializeCreate(body))
+    return apiMethods.post<M>(this._route, this.serializeCreate(body))
   }
 
   override createItem = async (
@@ -33,7 +33,7 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
     body: RatingCurvePatchBody,
     originalBody?: RatingCurvePatchBody
   ) => {
-    return apiMethods.patch(
+    return apiMethods.patch<M>(
       `${this._route}/${body.id}`,
       this.serializePatch(body),
       originalBody ? this.serializePatch(originalBody) : null

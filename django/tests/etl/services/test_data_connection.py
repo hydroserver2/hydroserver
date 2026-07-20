@@ -284,6 +284,52 @@ def test_update_data_connection_timestamp_format(get_principal):
     assert result.payload.timestamp_format == "%m/%d/%Y"
 
 
+@pytest.mark.parametrize("variable_type", ["window_start", "window_end"])
+def test_create_data_connection_allows_timestamp_format_on_window_placeholders(
+    get_principal, variable_type
+):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **{
+            **_create_params(),
+            "source_url": "https://example.com/test.csv?start={boundary}",
+            "placeholder_variables": [
+                {
+                    "name": "boundary",
+                    "variable_type": variable_type,
+                    "timestamp_format": "%Y-%m-%d",
+                }
+            ],
+        },
+    )
+    placeholder = result.placeholder_variables.get(name="boundary")
+    assert placeholder.variable_type == variable_type
+    assert placeholder.timestamp_format == "%Y-%m-%d"
+
+
+def test_create_data_connection_rejects_timestamp_format_on_per_task_placeholder(
+    get_principal,
+):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.create(
+            principal=get_principal("owner"),
+            workspace=uuid.UUID(PRIVATE_WORKSPACE),
+            **{
+                **_create_params(),
+                "source_url": "https://example.com/test.csv?id={site_id}",
+                "placeholder_variables": [
+                    {
+                        "name": "site_id",
+                        "variable_type": "per_task",
+                        "timestamp_format": "%Y-%m-%d",
+                    }
+                ],
+            },
+        )
+    assert "timestamp_format is only allowed on" in _err(exc_info)
+
+
 def test_update_data_connection_timezone(get_principal):
     result = data_connection_service.update(
         data_connection=uuid.UUID(DC1),
@@ -471,3 +517,248 @@ def test_update_json_data_connection_with_invalid_jmespath(get_principal):
             jmespath="[invalid",
         )
     assert "Invalid JMESPath expression" in _err(exc_info)
+
+
+def test_create_data_connection_with_window(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 0, "lookback_units": "hours"},
+        },
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+    assert p.data_ingestion_window_start_timestamp is None
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 0
+    assert p.data_ingestion_window_end_lookback_unit == "hours"
+    assert p.data_ingestion_window_end_timestamp is None
+
+
+def test_create_data_connection_with_start_boundary_only(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+        data_ingestion_window={"start": {"anchor": "latest_observation_timestamp", "lookback": 7, "lookback_units": "days"}},
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "latest_observation_timestamp"
+    assert p.data_ingestion_window_start_lookback == 7
+    assert p.data_ingestion_window_start_lookback_unit == "days"
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_create_data_connection_without_window_leaves_fields_null(get_principal):
+    result = data_connection_service.create(
+        principal=get_principal("owner"),
+        workspace=uuid.UUID(PRIVATE_WORKSPACE),
+        **_create_params(),
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_sets_window(get_principal):
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 48, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 0, "lookback_units": "hours"},
+        },
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 48
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 0
+
+
+def test_update_data_connection_clears_window(get_principal):
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}},
+    )
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window=None,
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_omitting_window_leaves_it_unchanged(get_principal):
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}},
+    )
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        name="Renamed DC",
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24
+
+
+def test_update_data_connection_partial_window_update_preserves_other_boundary(get_principal):
+    # Set both boundaries first.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 1, "lookback_units": "hours"},
+        },
+    )
+
+    # A PATCH that only includes "start" must not clear the existing "end" boundary.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 48, "lookback_units": "hours"}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_lookback == 48
+    assert p.data_ingestion_window_end_anchor == "run_time"
+    assert p.data_ingestion_window_end_lookback == 1
+    assert p.data_ingestion_window_end_lookback_unit == "hours"
+
+
+def test_update_data_connection_partial_boundary_update_preserves_other_fields(get_principal):
+    # Set a boundary with anchor, lookback, and timestamp fields all populated.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+        },
+    )
+
+    # A PATCH that only updates lookback/lookback_units on the "start" boundary must not
+    # clear the existing anchor (or any other field omitted from this PATCH).
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"lookback": 7, "lookback_units": "days"}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 7
+    assert p.data_ingestion_window_start_lookback_unit == "days"
+
+
+def test_update_data_connection_can_explicitly_clear_one_field_in_boundary(get_principal):
+    # Set a boundary with anchor, lookback, and timestamp fields all populated.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+        },
+    )
+
+    # Explicitly setting "anchor" to null within the boundary clears only that field;
+    # lookback/lookback_units are omitted from this PATCH and must be preserved.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": None}},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor is None
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_start_lookback_unit == "hours"
+
+
+def test_update_data_connection_can_explicitly_clear_one_boundary(get_principal):
+    # Set both boundaries first.
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={
+            "start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"},
+            "end": {"anchor": "run_time", "lookback": 1, "lookback_units": "hours"},
+        },
+    )
+
+    # Explicitly setting "end" to null clears only that boundary, leaving "start" intact.
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "run_time", "lookback": 24, "lookback_units": "hours"}, "end": None},
+    )
+
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "run_time"
+    assert p.data_ingestion_window_start_lookback == 24
+    assert p.data_ingestion_window_end_anchor is None
+
+
+def test_update_data_connection_fixed_timestamp_anchor_requires_timestamp(get_principal):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={"start": {"anchor": "fixed_timestamp"}},
+        )
+    assert "timestamp is required" in _err(exc_info)
+
+
+def test_update_data_connection_non_fixed_timestamp_anchor_rejects_timestamp(get_principal):
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={
+                "start": {"anchor": "run_time", "timestamp": timezone.now()},
+            },
+        )
+    assert "timestamp must be null" in _err(exc_info)
+
+
+def test_update_data_connection_fixed_timestamp_anchor_with_timestamp_succeeds(get_principal):
+    fixed = timezone.now()
+    result = data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "fixed_timestamp", "timestamp": fixed}},
+    )
+    p = result.payload
+    assert p.data_ingestion_window_start_anchor == "fixed_timestamp"
+    assert p.data_ingestion_window_start_timestamp == fixed
+
+
+def test_update_data_connection_switching_off_fixed_timestamp_requires_clearing_timestamp(get_principal):
+    fixed = timezone.now()
+    data_connection_service.update(
+        data_connection=uuid.UUID(DC1),
+        principal=get_principal("owner"),
+        data_ingestion_window={"start": {"anchor": "fixed_timestamp", "timestamp": fixed}},
+    )
+
+    # Switching the anchor away from fixed_timestamp without clearing the stale
+    # timestamp must be rejected rather than silently leaving it in place.
+    with pytest.raises(ValueError) as exc_info:
+        data_connection_service.update(
+            data_connection=uuid.UUID(DC1),
+            principal=get_principal("owner"),
+            data_ingestion_window={"start": {"anchor": "run_time"}},
+        )
+    assert "timestamp must be null" in _err(exc_info)

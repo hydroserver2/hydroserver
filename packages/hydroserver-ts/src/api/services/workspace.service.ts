@@ -1,7 +1,12 @@
 import { apiMethods } from '../apiMethods'
 import { HydroServerBaseService } from './base'
 import { WorkspaceContract as C } from '../../generated/contracts'
-import { ApiKey, Workspace as M } from '../../types'
+import {
+  ApiKey,
+  Collaborator,
+  CollaboratorRole,
+  Workspace as M,
+} from '../../types'
 import type * as Data from '../../generated/data.types'
 import { ApiResponse } from '../responseInterceptor'
 
@@ -22,47 +27,49 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: collaborators ----------
   getCollaborators(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<Collaborator[]>(url)
   }
 
   addCollaborator(workspaceId: string, email: string, roleId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.post(url, { email, roleId })
+    return apiMethods.post<Collaborator>(url, { email, roleId })
   }
 
   updateCollaboratorRole(workspaceId: string, email: string, roleId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.put(url, { email, roleId })
+    return apiMethods.put<Collaborator>(url, { email, roleId })
   }
 
   removeCollaborator = (workspaceId: string, email: string) =>
-    apiMethods.delete(`${this._route}/${workspaceId}/collaborators`, {
+    apiMethods.delete<null>(`${this._route}/${workspaceId}/collaborators`, {
       email,
     })
 
   // ---------- sub-resources: ownership transfer ----------
   transferOwnership = (workspaceId: string, newOwner: string) =>
-    apiMethods.post(`${this._route}/${workspaceId}/transfer`, { newOwner })
+    apiMethods.post<string>(`${this._route}/${workspaceId}/transfer`, {
+      newOwner,
+    })
 
   acceptOwnershipTransfer = (workspaceId: string) =>
-    apiMethods.put(`${this._route}/${workspaceId}/transfer`)
+    apiMethods.put<string>(`${this._route}/${workspaceId}/transfer`)
 
   rejectOwnershipTransfer = (id: string) =>
-    apiMethods.delete(`${this._route}/${id}/transfer`)
+    apiMethods.delete<string>(`${this._route}/${id}/transfer`)
 
   // ---------- sub-resources: keys/roles ----------
   getApiKeys(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/api-keys`
-    return apiMethods.fetch(url)
+    return apiMethods.fetch<ApiKey[]>(url)
   }
 
   getApiKey = (workspaceId: string, apiKeyId: string) =>
-    apiMethods.fetch(
+    apiMethods.fetch<ApiKey>(
       `${this._route}/${workspaceId}/api-keys/${apiKeyId}?expand_related=true`
     )
 
   createApiKey = async (apiKey: ApiKey): Promise<ApiResponse<ApiKey>> => {
-    return apiMethods.post(
+    return apiMethods.post<ApiKey>(
       `${this._route}/${apiKey.workspaceId}/api-keys?expand_related=true`,
       {
         name: apiKey.name,
@@ -77,7 +84,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
     newKey: ApiKey,
     oldKey?: ApiKey
   ): Promise<ApiResponse<ApiKey>> => {
-    return await apiMethods.patch(
+    return await apiMethods.patch<ApiKey>(
       `${this._route}/${newKey.workspaceId}/api-keys/${newKey.id}?expand_related=true`,
       {
         name: newKey.name,
@@ -97,18 +104,18 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   }
 
   regenerateApiKey = async (id: string, apiKeyId: string) =>
-    apiMethods.put(
+    apiMethods.put<ApiKey>(
       `${this._route}/${id}/api-keys/${apiKeyId}/regenerate?expand_related=true`
     )
 
   deleteApiKey = async (id: string, apiKeyId: string) =>
-    apiMethods.delete(`${this._route}/${id}/api-keys/${apiKeyId}`)
+    apiMethods.delete<null>(`${this._route}/${id}/api-keys/${apiKeyId}`)
 
   getRoles = (params?: RoleQueryParameters) => {
     const url = this.withQuery(`${this._client.baseRoute}/roles`, params)
-    return apiMethods.paginatedFetch(url)
+    return apiMethods.paginatedFetch<CollaboratorRole[]>(url)
   }
 
   getRole = (id: string) =>
-    apiMethods.fetch(`${this._client.baseRoute}/roles/${id}`)
+    apiMethods.fetch<CollaboratorRole>(`${this._client.baseRoute}/roles/${id}`)
 }

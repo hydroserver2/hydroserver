@@ -1,6 +1,6 @@
 {
   "name": "@hydroserver/client",
-  "version": "0.5.0",
+  "version": "1.0.0-beta.3",
   "description": "HydroServer TypeScript client",
   "type": "module",
   "main": "dist/@hydroserver-client.umd.cjs",
@@ -41,17 +41,16 @@
     "url": "git+https://github.com/hydroserver2/hydroserver.git",
     "directory": "packages/hydroserver-ts"
   },
-  "license": "ISC",
-  "dependencies": {
-    "cross-fetch": "^4.1.0",
-    "jszip": "^3.10.1",
-    "p-limit": "^6.2.0"
+  "license": "BSD-3-Clause",
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@vitest/coverage-v8": "^4.1.0",
     "jsdom": "^22.1.0",
     "openapi-zod-client": "^1.18.3",
+    "p-limit": "^6.2.0",
     "tsx": "^4.16.2",
     "typescript": "^5.8.3",
     "vite": "^7.3.1",

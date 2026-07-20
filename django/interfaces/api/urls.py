@@ -25,6 +25,9 @@ from interfaces.api.views import (
     data_product_task_router,
     monitoring_task_router,
     monitoring_rule_router,
+    qc_history_router,
+    qc_session_router,
+    qc_operation_router,
 )
 
 ANON_THROTTLE_RATE = config("ANON_THROTTLE_RATE", default="20/s")
@@ -65,6 +68,10 @@ data_product_task_router.add_router("/{task_id}/transformations/aggregation", ag
 
 monitoring_task_router.add_router("/{task_id}/rules", monitoring_rule_router)
 api.add_router("monitoring/tasks", monitoring_task_router)
+
+api.add_router("quality-control/histories", qc_history_router)
+qc_history_router.add_router("/{history_id}/sessions", qc_session_router)
+qc_session_router.add_router("/{session_id}/operations", qc_operation_router)
 
 urlpatterns = [
     path("data/", api.urls),

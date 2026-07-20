@@ -6,12 +6,12 @@ export interface Provider {
   connectEnabled: boolean
 }
 
-export interface AuthenticationConfiguration {
+interface AuthenticationConfiguration {
   hydroserverSignupEnabled: boolean
   providers: Provider[]
 }
 
-export interface ContactOption {
+interface ContactOption {
   title: string
   text: string | null
   action: string | null
@@ -19,7 +19,7 @@ export interface ContactOption {
   link: string | null
 }
 
-export interface AboutInformation {
+interface AboutInformation {
   showAboutInformation: boolean
   title: string | null
   text: string | null
@@ -36,14 +36,14 @@ export enum GeoService {
   Google = 'google',
 }
 
-export interface MapLayer {
+interface MapLayer {
   name: string
   source: string
   attribution: string
   priority?: number | null
 }
 
-export interface MapConfiguration {
+interface MapConfiguration {
   defaultLatitude: number
   defaultLongitude: number
   defaultZoomLevel: number
@@ -55,12 +55,12 @@ export interface MapConfiguration {
   overlayLayers: MapLayer[]
 }
 
-export interface AnalyticsConfiguration {
+interface AnalyticsConfiguration {
   enableClarityAnalytics: boolean
   clarityProjectId?: string | null
 }
 
-export interface LegalInformation {
+interface LegalInformation {
   termsOfUseLink?: string | null
   privacyPolicyLink?: string | null
   copyright?: string | null

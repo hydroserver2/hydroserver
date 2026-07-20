@@ -1,0 +1,259 @@
+import { usePlotlyStore } from '@/store/plotly'
+import Plotly from 'plotly.js-dist'
+import type {
+  Layout,
+  LayoutAxis,
+  PlotData,
+  PlotlyHTMLElement,
+  PlotMouseEvent,
+} from 'plotly.js-dist'
+import { storeToRefs } from 'pinia'
+import { useDataVisStore } from '@/store/dataVisualization'
+import { debounce } from 'lodash-es'
+import { handleSelected } from './selected'
+import { captureCurrentZoomState, installZoomTracking } from './zoom'
+import { handleRelayout } from './relayout'
+import {
+  handleMouseMove,
+  handleMouseOut,
+  handleWheel,
+  widenYAxisDragRects,
+  suppressHiddenAxisDragRects,
+  updateAxisChips,
+} from './interaction'
+import type { AppPlotlyTrace } from './options'
+
+const handleClick = async (eventData: PlotMouseEvent) => {
+  const { plotlyRef } = storeToRefs(usePlotlyStore())
+  const point = eventData.points[0]
+  if (point) {
+    // `PlotDatum.data` is `Partial<PlotData>`; `selectedpoints` is not in
+    // the published type but Plotly attaches it at runtime.
+    const pointData = point.data as Partial<PlotData> & {
+      selectedpoints?: number | number[]
+    }
+    let alreadySelected: number[] = []
+    if (pointData.selectedpoints != null) {
+      alreadySelected = Array.isArray(pointData.selectedpoints)
+        ? [...(pointData.selectedpoints as number[])]
+        : [pointData.selectedpoints as number]
+    }
+
+    const index = alreadySelected.indexOf(point.pointIndex)
+    index >= 0
+      ? alreadySelected.splice(index, 1)
+      : alreadySelected.push(point.pointIndex)
+    alreadySelected.sort()
+
+    // `selections` is a Plotly layout-level option that the published
+    // type omits from `Partial<Layout>`. Cast through `unknown` to
+    // bypass the gap.
+    await Plotly.update(
+      plotlyRef.value as Plotly.Root,
+      {},
+      { selections: [] } as unknown as Partial<Layout>,
+      [0]
+    )
+    await Plotly.restyle(plotlyRef.value as Plotly.Root, {
+      selectedpoints: [[...alreadySelected]],
+    })
+    handleSelected(eventData)
+  }
+}
+
+export const handleNewPlot = async (
+  element?: HTMLElement,
+  opts?: { preserveZoom?: boolean }
+) => {
+  const { plotlyOptions, plotlyRef, mainPlotEpoch, pendingShareZoom } =
+    storeToRefs(usePlotlyStore())
+
+  if (!element && plotlyRef.value?.data) {
+    const visibleBySeriesId: Record<string, boolean | 'legendonly'> = {}
+    for (const trace of plotlyRef.value.data) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const visible = (t as { visible?: boolean | 'legendonly' }).visible
+      // Plotly normalises an unset `visible` to `true`; only carry
+      // explicit non-default values to keep the preserve narrow.
+      if (visible === false || visible === 'legendonly') {
+        visibleBySeriesId[t.id] = visible
+      }
+    }
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      // Gap overlays expose `_gapOverlayFor` instead of `id` so the
+      // selection-by-id lookup keeps targeting the main trace; we still
+      // want them to inherit the user's hide/show choice so the line
+      // disappears with the markers it shadows.
+      const lookupId = t.id ?? t._gapOverlayFor
+      if (!lookupId) continue
+      const carried = visibleBySeriesId[lookupId]
+      if (carried !== undefined) {
+        ; (t as { visible?: boolean | 'legendonly' }).visible = carried
+      }
+    }
+  }
+
+  if (
+    opts?.preserveZoom &&
+    !element &&
+    plotlyRef.value?.layout &&
+    plotlyRef.value?.data
+  ) {
+    const oldLayout = plotlyRef.value.layout as unknown as Record<string, unknown>
+    const newLayout = plotlyOptions.value.layout as unknown as Record<string, unknown>
+
+    const oldXRange = (oldLayout.xaxis as Partial<LayoutAxis> | undefined)
+      ?.range as Array<string | number> | undefined
+    const newXAxis = newLayout.xaxis as Partial<LayoutAxis> | undefined
+    if (oldXRange && newXAxis) {
+      newXAxis.range = [...oldXRange]
+      newXAxis.autorange = false
+    }
+
+    const yAxisKey = (yref: string | undefined) =>
+      `yaxis${(yref ?? 'y').slice(1)}`
+
+    const yRangesBySeriesId: Record<string, Array<string | number>> = {}
+    for (const trace of plotlyRef.value.data) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const key = yAxisKey(t.yaxis as string | undefined)
+      const range = (oldLayout[key] as Partial<LayoutAxis> | undefined)
+        ?.range as Array<string | number> | undefined
+      if (range) yRangesBySeriesId[t.id] = range
+    }
+
+    for (const trace of plotlyOptions.value.traces) {
+      const t = trace as AppPlotlyTrace
+      if (!t.id) continue
+      const oldRange = yRangesBySeriesId[t.id]
+      if (!oldRange) continue
+      const key = yAxisKey(t.yaxis as string | undefined)
+      const nextAxis = newLayout[key] as Partial<LayoutAxis> | undefined
+      if (nextAxis) {
+        nextAxis.range = [...oldRange]
+        nextAxis.autorange = false
+      }
+    }
+  }
+
+  // `Plotly.newPlot` returns `Promise<PlotlyHTMLElement>`. The store's
+  // `plotlyRef` is now typed as `PlotlyHTMLElement | null`
+  const newElement = await Plotly.newPlot(
+    element || plotlyRef.value as Plotly.Root,
+    plotlyOptions.value.traces,
+    plotlyOptions.value.layout,
+    plotlyOptions.value.config
+  )
+  plotlyRef.value = newElement as unknown as typeof plotlyRef.value
+
+  // Share-URL zoom: one-shot directive set by the URL hydrator. Apply
+  // it via `Plotly.relayout` after `Plotly.newPlot` and clear the
+  // ref. The first `handleNewPlot` after mount usually has empty
+  // traces (the rebuild is queued behind the catalog fetch), so we
+  // gate on `traces.length` to skip until the rebuild lands with
+  // real data.
+  //
+  // Note: this does NOT need to preserve Plotly's `_rangeInitial0/1`
+  // for Reset Axes — the custom Reset button in `options.ts`
+  // computes the data extent directly from `trace.x` rather than
+  // relying on Plotly's internal anchors.
+  if (pendingShareZoom.value && plotlyOptions.value.traces.length) {
+    const snap = pendingShareZoom.value
+    const update: Record<string, [number, number] | boolean> = {}
+    if (snap.xRange) {
+      update['xaxis.range'] = [...snap.xRange]
+      update['xaxis.autorange'] = false
+    }
+    for (const [axisName, range] of Object.entries(snap.yRanges ?? {})) {
+      const layoutKey =
+        axisName === 'y' ? 'yaxis' : `yaxis${axisName.slice(1)}`
+      update[`${layoutKey}.range`] = [...range]
+      update[`${layoutKey}.autorange`] = false
+    }
+    if (Object.keys(update).length) {
+      await Plotly.relayout(
+        newElement as unknown as Plotly.Root,
+        update as unknown as Partial<Plotly.Layout>
+      )
+    }
+    pendingShareZoom.value = null
+  }
+  // Plotly.newPlot reuses the same DOM node, so `plotlyRef.value`'s
+  // identity is unchanged and Vue's ref watchers don't refire. It does
+  // wipe externally-attached listeners (the ContextPlot's brush sync,
+  // etc.) — bump an epoch so those subscribers know to re-attach.
+  mainPlotEpoch.value++
+
+  // Debounce long enough that a rapid scroll-wheel burst collapses
+  // into a single post-gesture sweep. 250 ms used to cut it off
+  // mid-burst, producing a visible "jump" when the downstream
+  // opacity restyle + tickvals relayout landed between wheel ticks.
+  const debounceDelay = 450
+
+  handleRelayout(null)
+
+  // Only listen to `plotly_relayout`. We used to also wire
+  // `plotly_redraw`, which fires on every Plotly re-paint — so each
+  // scroll tick routed through BOTH debouncers (one per event
+  // type) and handleRelayout ran twice per gesture, each heavy pass
+  // competing with the user's in-progress zoom. The relayout event
+  // covers every case we care about (range changes, autorange
+  // resets, modebar actions) without the duplicate work.
+  plotlyRef.value?.on(
+    'plotly_relayout',
+    debounce(handleRelayout, debounceDelay)
+  )
+  // Zoom-history recorder — runs on its own 350 ms debouncer so a single
+  // drag/scroll gesture collapses to one entry. Kept independent of the
+  // relayout handler above, which does tooltip/visible-point work.
+  installZoomTracking(plotlyRef.value)
+  // Seed the initial auto-fit state so the user can always undo back to
+  // the plot's starting viewport. Runs after `handleRelayout(null)`
+  // above so the layout ranges are populated.
+  {
+    const store = usePlotlyStore()
+    if (!store.zoomUndoStack.length) {
+      const initial = captureCurrentZoomState('init')
+      if (initial) store.pushZoomState(initial)
+    }
+  }
+  plotlyRef.value?.on('plotly_selected', () => {
+    storeToRefs(useDataVisStore()).hasSelectionShape.value = true
+  })
+  plotlyRef.value?.on('plotly_deselect', () => {
+    storeToRefs(useDataVisStore()).hasSelectionShape.value = false
+  })
+
+  plotlyRef.value?.on('plotly_click', handleClick)
+
+  plotlyRef.value?.removeEventListener('mousemove', handleMouseMove);
+  plotlyRef.value?.addEventListener('mousemove', handleMouseMove);
+  plotlyRef.value?.addEventListener('mouseout', handleMouseOut);
+
+  // Custom wheel handler replaces `scrollZoom` (disabled in config).
+  // Non-passive because we preventDefault when the cursor is over the
+  // plot area.
+  plotlyRef.value?.removeEventListener('wheel', handleWheel as EventListener)
+  plotlyRef.value?.addEventListener('wheel', handleWheel as EventListener, {
+    passive: false,
+  })
+
+  // Widen each y-axis's drag column (primary QC on the left + every
+  // right-side overlay) to span its full wheel-zoom zone, and
+  // populate the horizontal axis-title chips. Both depend on
+  // post-render layout state, so they run now and again after every
+  // replot (Plotly rebuilds drag rects back to DRAGGERSIZE on
+  // relayout; chip positions track axis lines that may have shifted).
+  const gdEl = plotlyRef.value as unknown as HTMLElement
+  widenYAxisDragRects(gdEl)
+  suppressHiddenAxisDragRects(gdEl)
+  updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
+  plotlyRef.value?.on('plotly_afterplot', () => {
+    widenYAxisDragRects(gdEl)
+    suppressHiddenAxisDragRects(gdEl)
+    updateAxisChips(plotlyRef.value as unknown as PlotlyHTMLElement)
+  })
+}

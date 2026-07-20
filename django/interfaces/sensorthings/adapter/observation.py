@@ -1,10 +1,8 @@
 import math
 from datetime import datetime, timezone
 from ninja.errors import HttpError
-from django.db.models import Min, Max, Count, Q, Value, OuterRef, Subquery, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Min, Max, Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
-from django.contrib.postgres.aggregates import ArrayAgg
 from psycopg.errors import UniqueViolation
 from sensorthings.types import Absent
 from core.sta.models import Observation, Datastream
@@ -34,24 +32,8 @@ class ObservationMixin(SensorThingsUtils):
             observations = observations.order_by("datastream_id", "phenomenon_time")
 
         if needs_result_quality:
-            result_qualifier_subquery = (
-                Observation.result_qualifiers.through.objects.filter(
-                    **{"observation": OuterRef("pk")}
-                )
-                .values("observation")
-                .annotate(
-                    codes=ArrayAgg(
-                        "resultqualifier__code",
-                        distinct=True,
-                        filter=~Q(**{"resultqualifier__code": None}),
-                    )
-                )
-                .values("codes")[:1]
-            )
             observations = observations.annotate(
-                result_qualifier_codes=Coalesce(
-                    Subquery(result_qualifier_subquery), Value([])
-                )
+                result_qualifier_codes=F("result_qualifiers")
             )
 
         observations = observations.distinct()

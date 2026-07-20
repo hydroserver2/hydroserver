@@ -273,7 +273,7 @@ onMounted(async () => {
 
   if (hs.session.inProviderSignupFlow) {
     const res = await hs.session.get()
-    const account = res.data?.account
+    const account = res.ok ? res.data?.account : undefined
     if (!!account) user.value = account
   }
 

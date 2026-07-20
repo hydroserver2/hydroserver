@@ -12,6 +12,11 @@ import { MonitoringTaskService } from './services/monitoring-task.service'
 import { DataProductTaskService } from './services/data-product-task.service'
 import { RatingCurveService } from './services/rating-curve.service'
 import { ThingFileAttachmentService } from './services/thing-file-attachment.service'
+import {
+  QualityControlHistoryService,
+  QualityControlOperationService,
+  QualityControlSessionService,
+} from './services/quality-control.service'
 
 export type AuthTuple = [string, string]
 
@@ -43,6 +48,9 @@ export class HydroServer {
   private _dataProductTasks?: DataProductTaskService
   private _ratingCurves?: RatingCurveService
   private _thingFileAttachments?: ThingFileAttachmentService
+  private _qualityControlHistories?: QualityControlHistoryService
+  private _qualityControlSessions?: QualityControlSessionService
+  private _qualityControlOperations?: QualityControlOperationService
 
   constructor(opts: HydroServerOptions) {
     const { host } = opts
@@ -59,13 +67,13 @@ export class HydroServer {
     return client
   }
 
-  private listeners: Record<string, Array<(...args: any[]) => void>> = {}
+  private listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
 
-  public on(eventName: string, callback: (...args: any[]) => void): void {
+  public on(eventName: string, callback: (...args: unknown[]) => void): void {
     ;(this.listeners[eventName] ??= []).push(callback)
   }
 
-  public emit(eventName: string, ...args: any[]): void {
+  public emit(eventName: string, ...args: unknown[]): void {
     for (const callback of this.listeners[eventName] ?? []) {
       callback(...args)
     }
@@ -112,6 +120,20 @@ export class HydroServer {
   }
   get thingFileAttachments(): ThingFileAttachmentService {
     return (this._thingFileAttachments ??= new ThingFileAttachmentService(this))
+  }
+  get qualityControlHistories(): QualityControlHistoryService {
+    return (this._qualityControlHistories ??= new QualityControlHistoryService(
+      this
+    ))
+  }
+  get qualityControlSessions(): QualityControlSessionService {
+    return (this._qualityControlSessions ??= new QualityControlSessionService(
+      this
+    ))
+  }
+  get qualityControlOperations(): QualityControlOperationService {
+    return (this._qualityControlOperations ??=
+      new QualityControlOperationService(this))
   }
   get session(): SessionService {
     return (this._session ??= new SessionService(this))

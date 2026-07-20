@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.static import serve
-from interfaces.web.views import index
+from interfaces.web.views import main_spa_view, qc_spa_view
 
 
 urlpatterns = [
@@ -14,7 +14,8 @@ urlpatterns = [
 ]
 
 urlpatterns += [
-    re_path(r"^(?!admin/|accounts/|api/|static/|media/).*$", index),
+    re_path(r"^qc/.*$", qc_spa_view),
+    re_path(r"^(?!admin/|accounts/|api/|static/|media/).*$", main_spa_view),
 ]
 
 urlpatterns += static(

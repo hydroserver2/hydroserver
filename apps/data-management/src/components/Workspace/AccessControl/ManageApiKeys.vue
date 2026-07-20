@@ -78,7 +78,7 @@
     <template v-slot:item.actions="{ item }">
       <v-icon :icon="mdiRefresh" @click="onOpenRegenerateDialog(item)" />
       <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiDelete" @click="openDialog(item, 'delete')" />
+      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
     </template>
   </v-data-table-virtual>
 
@@ -127,7 +127,7 @@ import DeleteApiKey from './DeleteApiKey.vue'
 import ApiKeyRegenerateForm from './ApiKeyRegenerateForm.vue'
 import {
   mdiContentCopy,
-  mdiDelete,
+  mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiPencil,
   mdiPlus,
@@ -152,7 +152,7 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   useTableLogic(
     async (wsId: string) => {
       const res = await hs.workspaces.getApiKeys(wsId)
-      return res.data
+      return res.ok ? res.data : []
     },
     async (keyId: string) => {
       await hs.workspaces.deleteApiKey(props.workspaceId, keyId)
@@ -188,6 +188,10 @@ const onRegenerate = async () => {
       props.workspaceId,
       item.value.id
     )
+    if (!res.ok) {
+      Snackbar.error('Failed to refresh API key')
+      return
+    }
     const responseKey = res.data
     const idx = items.value.findIndex((k) => k.id === responseKey.id)
     if (idx !== -1) {
@@ -217,7 +221,7 @@ onMounted(async () => {
       is_apikey_role: true,
       order_by: ['name'],
     })
-    roles.value = res.data
+    if (res.ok) roles.value = res.data
   } catch (error) {
     console.error('Error fetching collaborators for workspace', error)
   }

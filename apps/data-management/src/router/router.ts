@@ -6,6 +6,10 @@ import {
 } from 'vue-router'
 import { routes } from '@/router/routes'
 import hs from '@hydroserver/client'
+import {
+  getSafePostLoginPath,
+  requiresHardNavigation,
+} from '@/utils/authRedirect'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -44,8 +48,15 @@ router.beforeEach(
     if (!inProviderSignupFlow && to.name === 'CompleteProfile')
       return { name: 'Sites' }
 
-    if (hs.session.isAuthenticated && to.meta.requiresLoggedOut)
+    if (hs.session.isAuthenticated && to.meta.requiresLoggedOut) {
+      const nextPath = getSafePostLoginPath(to.query.next)
+      if (nextPath && requiresHardNavigation(nextPath)) {
+        window.location.assign(nextPath)
+        return false
+      }
+      if (nextPath) return nextPath
       return { name: 'Sites' }
+    }
     if (!hs.session.isAuthenticated && to.meta.requiresAuth)
       return { name: 'Login', query: { next: to.fullPath } }
   }

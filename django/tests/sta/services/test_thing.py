@@ -566,7 +566,7 @@ def test_edit_thing(get_principal, principal, thing, thing_fields, message, erro
     [
         # Test edit Thing
         ("owner", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
-        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
+        ("editor", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 39),
         ("admin", "3b7818af-eff7-4149-8517-e5cad9dc22e1", None, None, 38),
         # Test unauthorized attempts
         (

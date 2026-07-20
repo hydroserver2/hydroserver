@@ -41,7 +41,8 @@ export function useHydroShare() {
         'hydroshare',
         hydroShareProvider.value.id
       )
-      connectedProviders.value = providerResponse.data
+      if (providerResponse.ok)
+        connectedProviders.value = providerResponse.data as Provider[]
       Snackbar.info('Your HydroShare account has been disconnected.')
     } catch (error) {
       console.error('Error disconnecting HydroShare account', error)

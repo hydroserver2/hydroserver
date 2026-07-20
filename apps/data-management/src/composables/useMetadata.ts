@@ -43,6 +43,9 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   )
 
   const fetchMetadata = async (id: string | null) => {
+    const workspaceFilter = id
+      ? { workspace_id: [id, 'null'] as (string | 'null')[] }
+      : {}
     try {
       const [
         unitsResponse,
@@ -51,32 +54,30 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         sensorsResponse,
         resultQualifiersResponse,
       ] = await Promise.all([
-        hs.units.listAllItems({ order_by: ['name'] }),
-        hs.observedProperties.listAllItems({ order_by: ['name'] }),
-        hs.processingLevels.listAllItems({ order_by: ['code'] }),
-        hs.sensors.listAllItems({ order_by: ['name'] }),
-        hs.resultQualifiers.listAllItems({ order_by: ['code'] }),
+        hs.units.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.observedProperties.listAllItems({
+          order_by: ['name'],
+          ...workspaceFilter,
+        }),
+        hs.processingLevels.listAllItems({
+          order_by: ['code'],
+          ...workspaceFilter,
+        }),
+        hs.sensors.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.resultQualifiers.listAllItems({
+          order_by: ['code'],
+          ...workspaceFilter,
+        }),
       ])
 
       units.value = unitsResponse.filter(
-        (u) => (u.type !== 'Time' && !u.workspaceId) || u.workspaceId === id
+        (u) => u.workspaceId === id || u.type !== 'Time'
       )
 
-      sensors.value = sensorsResponse.filter(
-        (s) => s.workspaceId === null || s.workspaceId === id
-      )
-
-      observedProperties.value = observedPropertiesResponse.filter(
-        (op) => op.workspaceId === null || op.workspaceId === id
-      )
-
-      processingLevels.value = processingLevelsResponse.filter(
-        (p) => p.workspaceId === null || p.workspaceId === id
-      )
-
-      resultQualifiers.value = resultQualifiersResponse.filter(
-        (r) => r.workspaceId === null || r.workspaceId === id
-      )
+      sensors.value = sensorsResponse
+      observedProperties.value = observedPropertiesResponse
+      processingLevels.value = processingLevelsResponse
+      resultQualifiers.value = resultQualifiersResponse
     } catch (error) {
       console.error('Error fetching metadata', error)
     }

@@ -30,6 +30,7 @@ from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResp
 from interfaces.api.schemas.sta.thing import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
+    SiteTypeIconResponse,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
     ThingTaskSummaryResponse,
@@ -97,6 +98,7 @@ from interfaces.api.schemas.sta.observation import (
     ObservationPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkPostBody,
+    ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
 )
 from interfaces.api.schemas.sta.attachment import (
