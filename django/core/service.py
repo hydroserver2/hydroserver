@@ -5,7 +5,8 @@ from pydantic.alias_generators import to_snake
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet, Model, Q
-from core.iam.models import Workspace, APIKey
+from core.iam.models import Workspace, ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 
 User = get_user_model()
 
@@ -13,7 +14,7 @@ User = get_user_model()
 class ServiceUtils:
     @staticmethod
     def get_workspace(
-        principal: Union[User, APIKey],
+        principal: Union[User, ServiceAccount, AnonymousPrincipal],
         workspace_id: uuid.UUID,
         override_view_permissions=False,
     ):
@@ -22,16 +23,16 @@ class ServiceUtils:
         except Workspace.DoesNotExist:
             raise HttpError(404, "Workspace does not exist")
 
-        workspace_permissions = workspace.get_principal_permissions(principal=principal)
-
-        if (
-            "view" not in workspace_permissions
-            and workspace.is_private is True
-            and not override_view_permissions
-        ):
+        if not principal.can_view(workspace) and not override_view_permissions:
             raise HttpError(404, "Workspace does not exist")
 
-        return workspace, workspace_permissions
+        permissions = [
+            action
+            for action in ("view", "edit", "delete")
+            if getattr(principal, f"can_{action}")(workspace)
+        ]
+
+        return workspace, permissions
 
     @staticmethod
     def handle_http_404_error(operation, *args, **kwargs):

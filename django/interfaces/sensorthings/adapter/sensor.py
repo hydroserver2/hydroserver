@@ -1,6 +1,7 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Sensor
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, SensorDTO
 from .utils import SensorThingsUtils
@@ -11,11 +12,12 @@ class SensorMixin(SensorThingsUtils):
     def get_sensors(self, filters=None, orderby=None, group_by=None, select=None,
                     top=100, skip=0, count=False, context=None):
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
         sensors = Sensor.objects
         if needs_properties:
             sensors = sensors.select_related("workspace")
-        sensors = sensors.visible(principal=context.principal if context else None)
+        sensors = principal.filter_by_permission(sensors, "can_view")
 
         if filters:
             sensors = self.apply_filters(sensors, Sensor, filters)
@@ -65,7 +67,6 @@ class SensorMixin(SensorThingsUtils):
                                 {
                                     "id": sensor.workspace.id,
                                     "name": sensor.workspace.name,
-                                    "link": sensor.workspace.link,
                                     "is_private": sensor.workspace.is_private,
                                 }
                                 if sensor.workspace else None

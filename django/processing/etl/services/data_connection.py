@@ -17,7 +17,8 @@ from django.utils import timezone as django_tz
 from hydroserverpy.etl.models import Timestamp
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.orchestration.services import SchedulingService
@@ -78,7 +79,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def get(
         data_connection: uuid.UUID | DataConnection,
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> DataConnection:
         """
         Get a data connection.
@@ -86,17 +87,18 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if isinstance(data_connection, uuid.UUID):
             try:
-                data_connection = DataConnection.objects.get(pk=data_connection)
+                queryset = DataConnection.objects.filter(pk=data_connection)
+                if principal is not Unset:
+                    queryset = principal.annotate_permissions(queryset)
+                data_connection = queryset.get()
             except DataConnection.DoesNotExist:
                 raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
 
         if principal is not Unset:
-            permissions = data_connection.get_principal_permissions(principal=principal)
-
-            if "view" not in permissions:
+            if not principal.can_view(data_connection):
                 raise LookupError(f"Data connection with ID {str(data_connection.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(data_connection):
                 raise PermissionError(f"You do not have permission to {action} this data connection.")
 
         return data_connection
@@ -104,7 +106,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -138,7 +140,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         # Count before adding the task-count annotations so the COUNT(*) query does not have to
         # evaluate the per-connection task subqueries (they do not affect the row count).
@@ -154,7 +156,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str,
         workspace: uuid.UUID | Workspace,
         source_url: str,
@@ -187,7 +189,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             principal=principal, workspace_id=getattr(workspace, "pk", workspace)
         )
 
-        if not DataConnection.can_principal_create(principal=principal, workspace=workspace):
+        if not principal.can_create("DataConnection", workspace=workspace):
             raise PermissionError("You do not have permission to create this data connection.")
 
         if (auth_header_name is None) != (auth_header_value is None):
@@ -249,7 +251,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def update(
         self,
         data_connection: uuid.UUID | DataConnection,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         source_url: str | Unset = Unset,
         auth_header_name: str | None | Unset = Unset,
@@ -361,7 +363,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def delete(
         self,
         data_connection: uuid.UUID | DataConnection,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """
         Delete a data connection.

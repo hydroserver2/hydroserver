@@ -6,3 +6,6 @@ class IamConfig(AppConfig):
     name = "core.iam"
     label = "iam"
     verbose_name = "Identity and Access Management"
+
+    def ready(self):
+        import core.iam.signals  # noqa: F401

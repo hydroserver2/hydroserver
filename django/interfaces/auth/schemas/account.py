@@ -1,6 +1,6 @@
 from ninja import Schema, Field
 from pydantic import EmailStr
-from typing import Optional, Literal
+from typing import Optional
 from django.contrib.auth import get_user_model
 from interfaces.api.schemas import BaseGetResponse, BasePostBody, BasePatchBody
 
@@ -40,7 +40,6 @@ class UserFields(Schema):
 
 class AccountDetailResponse(BaseGetResponse, UserFields):
     email: EmailStr
-    account_type: Literal["admin", "standard", "limited"]
 
 
 class AccountPostBody(BasePostBody, UserFields):

@@ -3,7 +3,6 @@
 import django.contrib.auth.validators
 import django.db.models.deletion
 import django.utils.timezone
-import core.iam.models.utils
 import uuid
 from django.conf import settings
 from django.db import migrations, models
@@ -68,7 +67,7 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=255)),
                 ("description", models.TextField(blank=True, null=True)),
             ],
-            bases=(models.Model, core.iam.models.utils.PermissionChecker),
+
         ),
         migrations.CreateModel(
             name="UserType",
@@ -392,6 +391,6 @@ class Migration(migrations.Migration):
             options={
                 "unique_together": {("user", "workspace")},
             },
-            bases=(models.Model, core.iam.models.utils.PermissionChecker),
+
         ),
     ]

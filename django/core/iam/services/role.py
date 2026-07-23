@@ -4,7 +4,8 @@ from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
-from core.iam.models import APIKey, Role
+from core.iam.models import ServiceAccount, Role
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.schemas import RoleOrderByFields, RoleSummaryResponse, RoleDetailResponse
 from core.service import ServiceUtils
 
@@ -14,25 +15,25 @@ User = get_user_model()
 class RoleService(ServiceUtils):
     def get_role_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = Role.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            role = Role.objects
-            if expand_related:
-                role = self.select_expanded_fields(role)
-            role = role.get(pk=uid)
+            role = queryset.get()
         except Role.DoesNotExist:
             raise HttpError(404, "Role does not exist")
 
-        role_permissions = role.get_principal_permissions(principal=principal)
-
-        if "view" not in role_permissions:
+        if not principal.can_view(role):
             raise HttpError(404, "Role does not exist")
 
-        if action not in role_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(role):
             raise HttpError(403, f"You do not have permission to {action} this role")
 
         return role
@@ -43,7 +44,7 @@ class RoleService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -55,8 +56,6 @@ class RoleService(ServiceUtils):
 
         for field in [
             "workspace_id",
-            "is_user_role",
-            "is_apikey_role",
         ]:
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
@@ -71,7 +70,7 @@ class RoleService(ServiceUtils):
             queryset = queryset.order_by("id")
 
         queryset = (
-            queryset.visible(principal=principal)
+            principal.filter_by_permission(queryset, "can_view")
             .prefetch_related("permissions")
             .distinct()
         )
@@ -89,7 +88,7 @@ class RoleService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):

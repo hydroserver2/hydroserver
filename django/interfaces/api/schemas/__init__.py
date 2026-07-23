@@ -15,14 +15,14 @@ from interfaces.api.schemas.iam.collaborator import (
     CollaboratorPostBody,
     CollaboratorDeleteBody,
 )
-from interfaces.api.schemas.iam.api_key import (
-    APIKeySummaryResponse,
-    APIKeyDetailResponse,
-    APIKeyQueryParameters,
-    APIKeyPostBody,
-    APIKeyPatchBody,
-    APIKeySummaryPostResponse,
-    APIKeyDetailPostResponse,
+from interfaces.api.schemas.iam.service_account import (
+    ServiceAccountSummaryResponse,
+    ServiceAccountDetailResponse,
+    ServiceAccountQueryParameters,
+    ServiceAccountPostBody,
+    ServiceAccountPatchBody,
+    ServiceAccountSummaryPostResponse,
+    ServiceAccountDetailPostResponse,
 )
 from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters,
                                              RoleOrderByFields)
@@ -120,8 +120,8 @@ from interfaces.api.schemas.etl.data_connection import (
 WorkspaceDetailResponse.model_rebuild()
 RoleDetailResponse.model_rebuild()
 
-APIKeyDetailResponse.model_rebuild()
-APIKeyDetailPostResponse.model_rebuild()
+ServiceAccountDetailResponse.model_rebuild()
+ServiceAccountDetailPostResponse.model_rebuild()
 
 CollaboratorDetailResponse.model_rebuild()
 

@@ -1,0 +1,29 @@
+import pytest
+
+from tests.core.sta.factories import DatastreamFactory
+
+pytestmark = pytest.mark.django_db
+
+DATASTREAMS_URL = "/api/sensorthings/v1.1/Datastreams"
+
+
+def _detail_url(datastream_id):
+    return f"{DATASTREAMS_URL}('{datastream_id}')"
+
+
+def test_get_datastreams_collection_returns_200(client):
+    datastream = DatastreamFactory()
+
+    response = client.get(DATASTREAMS_URL)
+
+    assert response.status_code == 200
+    assert str(datastream.id) in [d["@iot.id"] for d in response.json()["value"]]
+
+
+def test_get_datastream_returns_200(client):
+    datastream = DatastreamFactory()
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["@iot.id"] == str(datastream.id)

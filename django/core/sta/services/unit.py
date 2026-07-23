@@ -1,12 +1,16 @@
 import uuid
-from typing import Optional, Literal, get_args
+
+from typing import Literal, get_args
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
-from core.iam.models import APIKey
+
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Unit, UnitType
+from core.service import ServiceUtils
 from interfaces.api.schemas import (
     UnitSummaryResponse,
     UnitDetailResponse,
@@ -14,7 +18,6 @@ from interfaces.api.schemas import (
     UnitPatchBody,
 )
 from interfaces.api.schemas.sta.unit import UnitFields, UnitOrderByFields
-from core.service import ServiceUtils
 
 User = get_user_model()
 
@@ -22,25 +25,25 @@ User = get_user_model()
 class UnitService(ServiceUtils):
     def get_unit_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
-        expand_related: Optional[bool] = None,
+        expand_related: bool | None = None,
     ):
+        queryset = Unit.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            unit = Unit.objects
-            if expand_related:
-                unit = self.select_expanded_fields(unit)
-            unit = unit.get(pk=uid)
+            unit = queryset.get()
         except Unit.DoesNotExist:
             raise HttpError(404, "Unit does not exist")
 
-        unit_permissions = unit.get_principal_permissions(principal=principal)
-
-        if "view" not in unit_permissions:
+        if not principal.can_view(unit):
             raise HttpError(404, "Unit does not exist")
 
-        if action not in unit_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(unit):
             raise HttpError(403, f"You do not have permission to {action} this unit")
 
         return unit
@@ -51,13 +54,13 @@ class UnitService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
-        filtering: Optional[dict] = None,
-        expand_related: Optional[bool] = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        order_by: list[str] | None = None,
+        filtering: dict | None = None,
+        expand_related: bool | None = None,
     ):
         queryset = Unit.objects
 
@@ -83,7 +86,7 @@ class UnitService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -98,9 +101,9 @@ class UnitService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        expand_related: Optional[bool] = None,
+        expand_related: bool | None = None,
     ):
         unit = self.get_unit_for_action(
             principal=principal, uid=uid, action="view", expand_related=expand_related
@@ -114,9 +117,9 @@ class UnitService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: UnitPostBody,
-        expand_related: Optional[bool] = None,
+        expand_related: bool | None = None,
     ):
         workspace, _ = (
             self.get_workspace(principal=principal, workspace_id=data.workspace_id)
@@ -127,7 +130,7 @@ class UnitService(ServiceUtils):
             )
         )
 
-        if not Unit.can_principal_create(principal=principal, workspace=workspace):
+        if not principal.can_create("Unit", workspace=workspace):
             raise HttpError(403, "You do not have permission to create this unit")
 
         try:
@@ -143,10 +146,10 @@ class UnitService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: UnitPatchBody,
-        expand_related: Optional[bool] = None,
+        expand_related: bool | None = None,
     ):
         unit = self.get_unit_for_action(principal=principal, uid=uid, action="edit")
         unit_data = data.dict(
@@ -160,7 +163,7 @@ class UnitService(ServiceUtils):
 
         return self.get(principal=principal, uid=unit.id, expand_related=expand_related)
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         unit = self.get_unit_for_action(principal=principal, uid=uid, action="delete")
 
         if unit.datastreams.exists():
@@ -173,8 +176,8 @@ class UnitService(ServiceUtils):
     def list_unit_types(
         self,
         response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+        page: int | None = None,
+        page_size: int | None = None,
         order_desc: bool = False,
     ):
         queryset = UnitType.objects.order_by(f"{'-' if order_desc else ''}name")

@@ -1,0 +1,6 @@
+[run]
+omit =
+    */migrations/*
+
+[report]
+skip_empty = True

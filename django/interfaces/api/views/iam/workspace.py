@@ -14,7 +14,7 @@ from interfaces.api.schemas import (
     WorkspaceQueryParameters,
 )
 from core.iam.services import WorkspaceService
-from interfaces.api.views.iam.api_key import api_key_router
+from interfaces.api.views.iam.service_account import service_account_router
 from interfaces.api.views.iam.collaborator import collaborator_router
 
 workspace_router = Router(tags=["Workspaces"])
@@ -228,4 +228,4 @@ def reject_workspace_transfer(
 
 
 workspace_router.add_router("{workspace_id}/collaborators", collaborator_router)
-workspace_router.add_router("{workspace_id}/api-keys", api_key_router)
+workspace_router.add_router("{workspace_id}/service-accounts", service_account_router)

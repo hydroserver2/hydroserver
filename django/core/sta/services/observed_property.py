@@ -5,7 +5,8 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ObservedProperty, VariableType
 from interfaces.api.schemas import (
     ObservedPropertySummaryResponse,
@@ -25,27 +26,25 @@ User = get_user_model()
 class ObservedPropertyService(ServiceUtils):
     def get_observed_property_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = ObservedProperty.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            observed_property = ObservedProperty.objects
-            if expand_related:
-                observed_property = self.select_expanded_fields(observed_property)
-            observed_property = observed_property.get(pk=uid)
+            observed_property = queryset.get()
         except ObservedProperty.DoesNotExist:
             raise HttpError(404, "Observed property does not exist")
 
-        observed_property_permissions = observed_property.get_principal_permissions(
-            principal=principal
-        )
-
-        if "view" not in observed_property_permissions:
+        if not principal.can_view(observed_property):
             raise HttpError(404, "Observed property does not exist")
 
-        if action not in observed_property_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(observed_property):
             raise HttpError(
                 403, f"You do not have permission to {action} this observed property"
             )
@@ -58,7 +57,7 @@ class ObservedPropertyService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -90,7 +89,7 @@ class ObservedPropertyService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -105,7 +104,7 @@ class ObservedPropertyService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -121,7 +120,7 @@ class ObservedPropertyService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ObservedPropertyPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -134,9 +133,7 @@ class ObservedPropertyService(ServiceUtils):
             )
         )
 
-        if not ObservedProperty.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("ObservedProperty", workspace=workspace):
             raise HttpError(
                 403, "You do not have permission to create this observed property"
             )
@@ -156,7 +153,7 @@ class ObservedPropertyService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ObservedPropertyPatchBody,
         expand_related: Optional[bool] = None,
@@ -177,7 +174,7 @@ class ObservedPropertyService(ServiceUtils):
             principal=principal, uid=observed_property.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         observed_property = self.get_observed_property_for_action(
             principal=principal, uid=uid, action="delete"
         )

@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
 from psycopg.errors import UniqueViolation
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ResultQualifier
 from interfaces.api.schemas import (
     ResultQualifierSummaryResponse,
@@ -26,27 +27,27 @@ User = get_user_model()
 class ResultQualifierService(ServiceUtils):
     def get_result_qualifier_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = ResultQualifier.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            result_qualifier = ResultQualifier.objects
-            if expand_related:
-                result_qualifier = self.select_expanded_fields(result_qualifier)
-            result_qualifier = result_qualifier.get(pk=uid)
+            result_qualifier = queryset.get()
         except ResultQualifier.DoesNotExist:
             raise HttpError(404, "Result qualifier does not exist")
 
-        result_qualifier_permissions = result_qualifier.get_principal_permissions(
-            principal=principal
-        )
-
-        if "view" not in result_qualifier_permissions:
+        if not principal.can_view(result_qualifier):
             raise HttpError(404, "Result qualifier does not exist")
 
-        if action not in result_qualifier_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(
+            result_qualifier
+        ):
             raise HttpError(
                 403, f"You do not have permission to {action} this result qualifier"
             )
@@ -59,7 +60,7 @@ class ResultQualifierService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -93,7 +94,7 @@ class ResultQualifierService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -108,7 +109,7 @@ class ResultQualifierService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -124,7 +125,7 @@ class ResultQualifierService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ResultQualifierPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -137,9 +138,7 @@ class ResultQualifierService(ServiceUtils):
             )
         )
 
-        if not ResultQualifier.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("ResultQualifier", workspace=workspace):
             raise HttpError(
                 403, "You do not have permission to create this result qualifier"
             )
@@ -162,7 +161,7 @@ class ResultQualifierService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ResultQualifierPatchBody,
         expand_related: Optional[bool] = None,
@@ -189,7 +188,7 @@ class ResultQualifierService(ServiceUtils):
             principal=principal, uid=result_qualifier.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         result_qualifier = self.get_result_qualifier_for_action(
             principal=principal, uid=uid, action="delete"
         )

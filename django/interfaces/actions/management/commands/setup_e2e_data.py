@@ -32,7 +32,7 @@ EXTRA_E2E_USERS = {
         "is_active": True,
         "is_staff": False,
         "is_superuser": False,
-        "is_ownership_allowed": True,
+        "owned_workspace_limit": None,
         "user_type": "Other",
         "organization": {
             "code": "E2E",
@@ -48,7 +48,7 @@ EXTRA_E2E_USERS = {
         "is_active": True,
         "is_staff": False,
         "is_superuser": False,
-        "is_ownership_allowed": False,
+        "owned_workspace_limit": 0,
         "user_type": "Other",
     },
 }
@@ -102,7 +102,7 @@ class Command(BaseCommand):
                 "is_active": attrs["is_active"],
                 "is_staff": attrs["is_staff"],
                 "is_superuser": attrs["is_superuser"],
-                "is_ownership_allowed": attrs["is_ownership_allowed"],
+                "owned_workspace_limit": attrs["owned_workspace_limit"],
                 "user_type": attrs["user_type"],
                 "organization": organization,
             }

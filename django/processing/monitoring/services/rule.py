@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Datastream
 from hydroserverpy.quality.check import check_range, check_rate_of_change, check_persistence
@@ -35,7 +36,7 @@ class MonitoringRuleService(ServiceUtils):
         rule: Union[uuid.UUID, MonitoringRule],
         task: Union[uuid.UUID, MonitoringTask],
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> MonitoringRule:
         """
         Get a monitoring rule, scoped to the given task.
@@ -51,12 +52,14 @@ class MonitoringRuleService(ServiceUtils):
                 raise LookupError(f"MonitoringRule with ID {str(rule)} does not exist.")
 
         if principal is not Unset:
-            permissions = rule.task.get_principal_permissions(principal=principal)
+            task_obj = principal.annotate_permissions(
+                MonitoringTask.objects.filter(pk=rule.task_id)
+            ).get()
 
-            if "view" not in permissions:
+            if not principal.can_view(task_obj):
                 raise LookupError(f"MonitoringRule with ID {str(rule.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(task_obj):
                 raise PermissionError(f"You do not have permission to {action} this rule.")
 
         return rule
@@ -65,7 +68,7 @@ class MonitoringRuleService(ServiceUtils):
     def get_collection(
         self,
         task: Union[uuid.UUID, MonitoringTask],
-        principal: Optional[User | APIKey] = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -82,10 +85,8 @@ class MonitoringRuleService(ServiceUtils):
             except MonitoringTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
-        if principal is not None:
-            permissions = task.get_principal_permissions(principal=principal)
-            if "view" not in permissions:
-                raise LookupError(f"Task with ID {str(task.id)} does not exist.")
+        if not principal.can_view(task):
+            raise LookupError(f"Task with ID {str(task.id)} does not exist.")
 
         queryset = MonitoringRule.objects.filter(task=task).select_related("datastream")
 
@@ -111,7 +112,7 @@ class MonitoringRuleService(ServiceUtils):
     def create(
         self,
         task: Union[uuid.UUID, MonitoringTask],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         datastream_id: uuid.UUID,
         rule_type: RuleType,
         uid: uuid.UUID = Field(default_factory=uuid.uuid7),
@@ -126,15 +127,15 @@ class MonitoringRuleService(ServiceUtils):
 
         if isinstance(task, uuid.UUID):
             try:
-                task = MonitoringTask.objects.select_related("thing__workspace").get(pk=task)
+                task = principal.annotate_permissions(
+                    MonitoringTask.objects.select_related("thing__workspace").filter(pk=task)
+                ).get()
             except MonitoringTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
-        permissions = task.get_principal_permissions(principal=principal)
-
-        if "view" not in permissions:
+        if not principal.can_view(task):
             raise LookupError(f"Task with ID {str(task.id)} does not exist.")
-        if "edit" not in permissions:
+        if not principal.can_edit(task):
             raise PermissionError("You do not have permission to edit this task.")
 
         try:
@@ -178,7 +179,7 @@ class MonitoringRuleService(ServiceUtils):
         self,
         rule: Union[uuid.UUID, MonitoringRule],
         task: Union[uuid.UUID, MonitoringTask],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         min_value: float | None | Unset = Unset,
         max_value: float | None | Unset = Unset,
         window_interval: int | None | Unset = Unset,
@@ -218,7 +219,7 @@ class MonitoringRuleService(ServiceUtils):
         self,
         rule: Union[uuid.UUID, MonitoringRule],
         task: Union[uuid.UUID, MonitoringTask],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """
         Delete a monitoring rule.

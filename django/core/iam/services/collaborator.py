@@ -3,7 +3,8 @@ from typing import Optional
 from ninja.errors import HttpError
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from core.iam.models import Collaborator, APIKey
+from core.iam.models import Collaborator, ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.schemas import CollaboratorPostBody, CollaboratorDeleteBody
 from core.service import ServiceUtils
 from .role import RoleService
@@ -15,20 +16,18 @@ role_service = RoleService()
 class CollaboratorService(ServiceUtils):
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         workspace_id: uuid.UUID,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         filtering: Optional[dict] = None,
     ):
-        queryset = Collaborator.objects
-
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=workspace_id
         )
 
-        queryset = queryset.filter(workspace=workspace)
+        queryset = Collaborator.objects.filter(workspace=workspace)
 
         for field in [
             "role_id",
@@ -36,7 +35,7 @@ class CollaboratorService(ServiceUtils):
             if field in filtering:
                 queryset = self.apply_filters(queryset, field, filtering[field])
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -44,7 +43,7 @@ class CollaboratorService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         data: CollaboratorPostBody,
     ):
@@ -52,9 +51,7 @@ class CollaboratorService(ServiceUtils):
             principal=principal, workspace_id=workspace_id
         )
 
-        if not Collaborator.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("Collaborator", workspace=workspace):
             raise HttpError(403, "You do not have permission to add this collaborator")
 
         try:
@@ -83,9 +80,6 @@ class CollaboratorService(ServiceUtils):
             principal=principal, uid=data.role_id, action="view", expand_related=True
         )
 
-        if not collaborator_role.is_user_role:
-            raise HttpError(400, "Role not supported for collaborator assignment")
-
         if collaborator_role.workspace and collaborator_role.workspace != workspace:
             raise HttpError(400, "Role does not belong to the workspace")
 
@@ -95,7 +89,7 @@ class CollaboratorService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         data: CollaboratorPostBody,
     ):
@@ -110,11 +104,9 @@ class CollaboratorService(ServiceUtils):
         except Collaborator.DoesNotExist:
             raise HttpError(400, f"No collaborator with email '{data.email}' found")
 
-        permissions = collaborator.get_principal_permissions(principal=principal)
-
-        if not any(permission in permissions for permission in ("*", "edit")):
+        if not principal.can_edit(collaborator):
             raise HttpError(
-                403, f"You do not have permission to modify this collaborator's role"
+                403, "You do not have permission to modify this collaborator's role"
             )
 
         if data.role_id:
@@ -124,9 +116,6 @@ class CollaboratorService(ServiceUtils):
                 action="view",
                 expand_related=True,
             )
-
-            if not collaborator_role.is_user_role:
-                raise HttpError(400, "Role not supported for collaborator assignment")
 
             if collaborator_role.workspace and collaborator_role.workspace != workspace:
                 raise HttpError(400, "Role does not belong to the workspace")
@@ -139,7 +128,7 @@ class CollaboratorService(ServiceUtils):
 
     def delete(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         data: CollaboratorDeleteBody,
     ):
@@ -154,14 +143,11 @@ class CollaboratorService(ServiceUtils):
         except Collaborator.DoesNotExist:
             raise HttpError(400, f"No collaborator with email '{data.email}' found")
 
-        permissions = collaborator.get_principal_permissions(principal=principal)
-
-        if not any(permission in permissions for permission in ("*", "delete")) and (
-            not principal
-            or getattr(principal, "email", None) != collaborator.user.email
-        ):
+        if not principal.can_delete(collaborator) and getattr(
+            principal, "email", None
+        ) != collaborator.user.email:
             raise HttpError(
-                403, f"You do not have permission to remove this collaborator"
+                403, "You do not have permission to remove this collaborator"
             )
 
         collaborator.delete()

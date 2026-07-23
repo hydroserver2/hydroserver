@@ -5,6 +5,7 @@ from django.db.models import Min, Max, Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
 from psycopg.errors import UniqueViolation
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Observation, Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ObservationDTO
 from core.sta.services.datastream import DatastreamService
@@ -18,10 +19,9 @@ class ObservationMixin(SensorThingsUtils):
     def get_observations(self, filters=None, orderby=None, group_by=None, select=None,
                          top=100, skip=0, count=False, context=None):
         needs_result_quality = select is None or "result_quality" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
-        observations = Observation.objects.visible(
-            principal=context.principal if context else None
-        )
+        observations = principal.filter_by_permission(Observation.objects, "can_view")
 
         if filters:
             observations = self.apply_filters(observations, Observation, filters)
@@ -64,8 +64,8 @@ class ObservationMixin(SensorThingsUtils):
             }
         else:
             if count and not filters:
-                entity_count = Datastream.objects.visible(
-                    principal=context.principal if context else None
+                entity_count = principal.filter_by_permission(
+                    Datastream.objects, "can_view"
                 ).aggregate(total=Sum("value_count"))["total"] or 0
             elif count:
                 entity_count = observations.count() if count else None
@@ -125,10 +125,7 @@ class ObservationMixin(SensorThingsUtils):
                 action="view",
             )
 
-            if not Observation.can_principal_create(
-                principal=principal,
-                workspace=datastream.thing.workspace,
-            ):
+            if not principal.can_create("Observation", workspace=datastream.thing.workspace):
                 raise HttpError(
                     403, "You do not have permission to create observations on this datastream."
                 )

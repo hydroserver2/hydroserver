@@ -1,7 +1,6 @@
 from django import forms
 from django.conf import settings
 from interfaces.auth.schemas import AccountPatchBody
-from core.iam.services import AccountService
 
 
 class UserSignupForm(forms.Form):
@@ -26,6 +25,7 @@ class UserSignupForm(forms.Form):
 
     def signup(self, request, user):
         account = AccountPatchBody(**self.cleaned_data)
-        AccountService.update(principal=user, data=account)
-        user.is_ownership_allowed = settings.ACCOUNT_OWNERSHIP_ENABLED
+        # AccountService.update(principal=user, data=account)
+        if not settings.ACCOUNT_OWNERSHIP_ENABLED:
+            user.owned_workspace_limit = 0
         user.save()
