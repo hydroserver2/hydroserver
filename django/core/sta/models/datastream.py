@@ -12,6 +12,15 @@ from .processing_level import ProcessingLevel
 from .observed_property import ObservedProperty
 
 
+class DatastreamQuerySet(models.QuerySet):
+    def delete(self):
+        from .observation import Observation
+
+        Observation.objects.filter(datastream__in=self).delete()
+
+        return super().delete()
+
+
 @register_resource_type(workspace_field="thing__workspace", privacy_chain=[
     "is_private", "thing__is_private",
     "thing__workspace__is_private"
@@ -54,8 +63,13 @@ class Datastream(models.Model):
     is_private = models.BooleanField(default=True)
     is_visible = models.BooleanField(default=True)
 
+    objects = DatastreamQuerySet.as_manager()
+
     def __str__(self):
         return f"{self.name} — {self.id}"
+
+    def delete(self, *args, **kwargs):
+        return type(self).objects.filter(pk=self.pk).delete()
 
 
 class DatastreamTag(models.Model):

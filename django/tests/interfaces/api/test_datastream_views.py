@@ -16,7 +16,6 @@ from tests.core.iam.factories import (
 )
 from tests.core.sta.factories import (
     DatastreamFactory,
-    LocationFactory,
     ObservationFactory,
     ObservedPropertyFactory,
     ProcessingLevelFactory,
@@ -46,12 +45,6 @@ def _collaborator_with_permission(workspace, **permissions):
 
 def _make_datastream(workspace, **kwargs):
     return DatastreamFactory(thing=ThingFactory(workspace=workspace), **kwargs)
-
-
-def _make_thing_with_location(workspace, **kwargs):
-    thing = ThingFactory(workspace=workspace, **kwargs)
-    LocationFactory(thing=thing, latitude=40.0, longitude=-111.0)
-    return thing
 
 
 def _datastream_body(thing, sensor, observed_property, processing_level, unit, **overrides):
@@ -119,7 +112,7 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
 def test_create_datastream_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -138,7 +131,7 @@ def test_create_datastream_succeeds_for_workspace_owner(client):
 
 def test_create_datastream_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -155,7 +148,7 @@ def test_create_datastream_returns_401_when_unauthenticated(client):
 
 def test_create_datastream_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -503,7 +496,7 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
 
 def test_get_datastream_csv_returns_csv_with_observations(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     datastream = DatastreamFactory(thing=thing)
     ObservationFactory(datastream=datastream, result=12.5)
 

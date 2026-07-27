@@ -11,6 +11,13 @@ class ThingQuerySet(models.QuerySet):
     def with_location(self):
         return self.prefetch_related("locations").annotate()
 
+    def delete(self):
+        from .datastream import Datastream
+
+        Datastream.objects.filter(thing__in=self).delete()
+
+        return super().delete()
+
 
 @register_resource_type(privacy_chain=["is_private", "workspace__is_private"])
 class Thing(models.Model):
@@ -31,11 +38,14 @@ class Thing(models.Model):
     def __str__(self):
         return f"{self.name} - {self.id}"
 
+    def delete(self, *args, **kwargs):
+        return type(self).objects.filter(pk=self.pk).delete()
+
     @property
     def location(self):
         if (
             hasattr(self, "_prefetched_objects_cache")
-            and "locations" in self._prefetched_objects_cache
+            and "locations" in self._prefetched_objects_cache  # noqa
         ):
             locations = self._prefetched_objects_cache["locations"]
             return locations[0] if locations else None
@@ -44,7 +54,7 @@ class Thing(models.Model):
 
 class ThingTag(models.Model):
     thing = models.ForeignKey(
-        Thing, related_name="thing_tags", on_delete=models.DO_NOTHING
+        Thing, related_name="thing_tags", on_delete=models.CASCADE
     )
     key = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
@@ -59,7 +69,7 @@ def thing_file_attachment_storage_path(instance, filename):
 
 class ThingFileAttachment(models.Model):
     thing = models.ForeignKey(
-        Thing, related_name="thing_file_attachments", on_delete=models.DO_NOTHING
+        Thing, related_name="thing_file_attachments", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)

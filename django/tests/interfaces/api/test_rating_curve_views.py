@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import LocationFactory, ThingFactory
+from tests.core.sta.factories import ThingFactory
 from tests.processing.products.factories import RatingCurveFactory
 
 pytestmark = pytest.mark.django_db
@@ -25,14 +25,8 @@ def _collaborator_with_permission(workspace, **permissions):
     return CollaboratorFactory(workspace=workspace, role=role)
 
 
-def _make_thing_with_location(workspace, **kwargs):
-    thing = ThingFactory(workspace=workspace, **kwargs)
-    LocationFactory(thing=thing, latitude=40.0, longitude=-111.0)
-    return thing
-
-
 def _make_rating_curve(workspace, **kwargs):
-    return RatingCurveFactory(thing=_make_thing_with_location(workspace), **kwargs)
+    return RatingCurveFactory(thing=ThingFactory(workspace=workspace), **kwargs)
 
 
 def _rating_curve_body(thing_id, **overrides):
@@ -84,7 +78,7 @@ def test_get_rating_curves_returns_401_when_unauthenticated(client):
 def test_create_rating_curve_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
@@ -101,7 +95,7 @@ def test_create_rating_curve_succeeds_for_workspace_owner(client):
 
 def test_create_rating_curve_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
 
     response = client.post(
         RATING_CURVES_URL,
@@ -114,7 +108,7 @@ def test_create_rating_curve_returns_401_when_unauthenticated(client):
 
 def test_create_rating_curve_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -130,7 +124,7 @@ def test_create_rating_curve_returns_403_without_create_permission(client):
 def test_create_rating_curve_returns_400_for_duplicate_input_value_in_points(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing_with_location(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(

@@ -35,6 +35,13 @@ class ThingFactory(DjangoModelFactory):
     site_type = "Stream"
     is_private = False
 
+    location = factory.RelatedFactory(
+        "tests.core.sta.factories.LocationFactory",
+        factory_related_name="thing",
+        latitude=40.0,
+        longitude=-111.0,
+    )
+
     class Params:
         private = factory.Trait(is_private=True)
 

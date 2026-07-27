@@ -13,19 +13,37 @@ if typing.TYPE_CHECKING:
     User = get_user_model()
 
 
+class WorkspaceQuerySet(models.QuerySet):
+    def delete(self):
+        from core.sta.models import Thing
+        from core.iam.models import ServiceAccount
+
+        ServiceAccount.objects.filter(workspace__in=self).update(
+            is_active=False, key_hash=""
+        )
+        Thing.objects.filter(workspace__in=self).delete()
+
+        return super().delete()
+
+
 @register_resource_type(workspace_field=None, privacy_chain=["is_private"])
 class Workspace(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="owned_workspaces",
     )
     is_private = models.BooleanField(default=False)
 
+    objects = WorkspaceQuerySet.as_manager()
+
     def __str__(self):
         return f"{self.name} — {self.id}"
+
+    def delete(self, *args, **kwargs):
+        return type(self).objects.filter(pk=self.pk).delete()
 
     class Meta:
         constraints = [

@@ -13,7 +13,17 @@ if TYPE_CHECKING:
     from .collaborator import Collaborator
 
 
-class UserManager(BaseUserManager):
+class UserQuerySet(models.QuerySet):
+    def delete(self):
+        from .workspace import Workspace
+
+        Workspace.objects.filter(owner__in=self).delete()
+
+        return super().delete()
+
+
+class UserManager(BaseUserManager.from_queryset(UserQuerySet)):
+    model: "User"
     use_in_migrations = True
 
     def get_queryset(self):
@@ -32,7 +42,7 @@ class UserManager(BaseUserManager):
             user.owned_workspace_limit = 0
 
         user.set_password(password)
-        user.save(using=self._db)
+        user.save(using=self._db)  # noqa
 
         return user
 
@@ -76,6 +86,9 @@ class User(AbstractUser, ResourcePermissionMixin):
 
     def __str__(self):
         return self.email
+
+    def delete(self, *args, **kwargs):
+        return type(self).objects.filter(pk=self.pk).delete()  # noqa
 
     @property
     def name(self):

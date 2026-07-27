@@ -13,7 +13,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import LocationFactory, ThingFactory
+from tests.core.sta.factories import ThingFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -32,12 +32,6 @@ def _collaborator_with_permission(workspace, **permissions):
     role = RoleFactory(workspace=workspace)
     PermissionFactory(role=role, resource_type="Thing", **permissions)
     return CollaboratorFactory(workspace=workspace, role=role)
-
-
-def _make_thing(workspace, **kwargs):
-    thing = ThingFactory(workspace=workspace, **kwargs)
-    LocationFactory(thing=thing, latitude=40.0, longitude=-111.0)
-    return thing
 
 
 def _thing_body(workspace_id, **overrides):
@@ -60,7 +54,7 @@ def _thing_body(workspace_id, **overrides):
 
 def test_get_things_includes_public_thing_for_anonymous(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
 
     response = client.get(THINGS_URL)
 
@@ -70,7 +64,7 @@ def test_get_things_includes_public_thing_for_anonymous(client):
 
 def test_get_things_excludes_private_thing_for_outsider(client):
     workspace = WorkspaceFactory()
-    _make_thing(workspace, private=True)
+    ThingFactory(workspace=workspace, private=True)
     outsider = UserFactory()
     client.force_login(outsider)
 
@@ -82,7 +76,7 @@ def test_get_things_excludes_private_thing_for_outsider(client):
 def test_get_things_includes_private_thing_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace, private=True)
+    thing = ThingFactory(workspace=workspace, private=True)
     client.force_login(owner)
 
     response = client.get(THINGS_URL)
@@ -181,7 +175,7 @@ def test_get_site_type_icons_returns_configured_icon_mappings(client):
 
 def test_get_thing_returns_public_thing_for_anonymous(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
 
     response = client.get(_detail_url(thing.id))
 
@@ -191,7 +185,7 @@ def test_get_thing_returns_public_thing_for_anonymous(client):
 
 def test_get_thing_returns_404_for_private_thing_when_outsider(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace, private=True)
+    thing = ThingFactory(workspace=workspace, private=True)
     outsider = UserFactory()
     client.force_login(outsider)
 
@@ -203,7 +197,7 @@ def test_get_thing_returns_404_for_private_thing_when_outsider(client):
 def test_get_thing_returns_200_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.get(_detail_url(thing.id))
@@ -223,7 +217,7 @@ def test_get_thing_returns_404_for_nonexistent_thing(client):
 def test_update_thing_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace, name="Original Name")
+    thing = ThingFactory(workspace=workspace, name="Original Name")
     client.force_login(owner)
 
     response = client.patch(
@@ -238,7 +232,7 @@ def test_update_thing_succeeds_for_workspace_owner(client):
 
 def test_update_thing_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -257,7 +251,7 @@ def test_update_thing_returns_403_for_viewer_collaborator(client):
 def test_delete_thing_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.delete(_detail_url(thing.id))
@@ -268,7 +262,7 @@ def test_delete_thing_succeeds_for_workspace_owner(client):
 
 def test_delete_thing_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -283,7 +277,7 @@ def test_delete_thing_returns_403_for_viewer_collaborator(client):
 def test_get_thing_tags_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     client.force_login(owner)
 
@@ -295,7 +289,7 @@ def test_get_thing_tags_succeeds_for_workspace_owner(client):
 
 def test_get_thing_tags_returns_404_for_private_thing_when_outsider(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace, private=True)
+    thing = ThingFactory(workspace=workspace, private=True)
     outsider = UserFactory()
     client.force_login(outsider)
 
@@ -307,7 +301,7 @@ def test_get_thing_tags_returns_404_for_private_thing_when_outsider(client):
 def test_add_thing_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
@@ -322,7 +316,7 @@ def test_add_thing_tag_succeeds_for_workspace_owner(client):
 
 def test_add_thing_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -338,7 +332,7 @@ def test_add_thing_tag_returns_403_for_viewer_collaborator(client):
 def test_add_thing_tag_returns_400_for_duplicate_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     client.force_login(owner)
 
@@ -354,7 +348,7 @@ def test_add_thing_tag_returns_400_for_duplicate_key(client):
 def test_edit_thing_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     client.force_login(owner)
 
@@ -370,7 +364,7 @@ def test_edit_thing_tag_succeeds_for_workspace_owner(client):
 
 def test_edit_thing_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
@@ -387,7 +381,7 @@ def test_edit_thing_tag_returns_403_for_viewer_collaborator(client):
 def test_remove_thing_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     client.force_login(owner)
 
@@ -403,7 +397,7 @@ def test_remove_thing_tag_succeeds_for_workspace_owner(client):
 
 def test_remove_thing_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
@@ -420,7 +414,7 @@ def test_remove_thing_tag_returns_403_for_viewer_collaborator(client):
 def test_remove_thing_tag_returns_404_for_unknown_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.delete(
@@ -437,7 +431,7 @@ def test_remove_thing_tag_returns_404_for_unknown_key(client):
 
 def test_get_thing_markers_returns_marker_for_public_thing(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
 
     response = client.get(f"{THINGS_URL}/markers")
 
@@ -447,7 +441,7 @@ def test_get_thing_markers_returns_marker_for_public_thing(client):
 
 def test_get_thing_site_summaries_returns_summary_for_public_thing(client):
     workspace = WorkspaceFactory()
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
 
     response = client.get(f"{THINGS_URL}/site-summaries")
 
@@ -472,7 +466,7 @@ def test_get_thing_task_summaries_returns_summary_for_workspace_owner(client):
 def test_get_thing_tag_keys_returns_keys_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = _make_thing(workspace)
+    thing = ThingFactory(workspace=workspace)
     ThingTag.objects.create(thing=thing, key="season", value="summer")
     client.force_login(owner)
 

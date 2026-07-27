@@ -8,7 +8,7 @@ from .thing import Thing
 class Location(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     thing = models.ForeignKey(
-        Thing, related_name="locations", on_delete=models.DO_NOTHING
+        Thing, related_name="locations", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
     description = models.TextField()
