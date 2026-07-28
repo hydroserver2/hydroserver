@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from processing.monitoring.services.task import MonitoringTaskService
 from processing.monitoring.tasks import run_monitoring_task
@@ -26,7 +26,7 @@ monitoring_task_service = MonitoringTaskService()
 
 @monitoring_task_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[MonitoringTaskSummaryResponse] | list[MonitoringTaskDetailResponse],
         401: str,
@@ -69,7 +69,7 @@ def get_monitoring_tasks(
 
 @monitoring_task_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: MonitoringTaskSummaryResponse,
         400: str,
@@ -101,7 +101,7 @@ def create_monitoring_task(
 
 @monitoring_task_router.get(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: MonitoringTaskSummaryResponse | MonitoringTaskDetailResponse,
         401: str,
@@ -133,7 +133,7 @@ def get_monitoring_task(
 
 @monitoring_task_router.patch(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: MonitoringTaskSummaryResponse,
         400: str,
@@ -175,7 +175,7 @@ def update_monitoring_task(
 
 @monitoring_task_router.delete(
     "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -203,7 +203,7 @@ def delete_monitoring_task(
 
 @monitoring_task_router.post(
     "/{task_id}/trigger",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         202: TaskRunResponse,
         401: str,
@@ -235,7 +235,7 @@ def trigger_monitoring_task(
 
 @monitoring_task_router.get(
     "/{task_id}/runs",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[TaskRunResponse],
         401: str,
@@ -274,7 +274,7 @@ def get_monitoring_task_runs(
 
 @monitoring_task_router.get(
     "/{task_id}/runs/{run_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,
         401: str,
