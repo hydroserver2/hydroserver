@@ -2,22 +2,17 @@
 export type FieldErrors = Record<string, string[]>
 
 /**
- * Envelope metadata returned alongside `data`. Today this carries Django
- * AllAuth auth-flow state; unknown keys are passed through untyped so the
+ * Envelope metadata optionally returned alongside `data`. Untyped so the
  * shape can evolve without breaking the client.
  */
 export interface Meta {
-  is_authenticated?: boolean
-  expires?: string | null
-  oAuthProviders?: unknown[]
-  signupEnabled?: boolean
   [key: string]: unknown
 }
 
 // TODO: Return FieldErrors in the error case so the backend can be the one source of truth for the error message
 export type ApiResponse<T> =
   | { ok: true; status: number; data: T; message?: string; meta?: Meta }
-  | { ok: false; status: number; message: string }
+  | { ok: false; status: number; message: string; data?: unknown }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -88,12 +83,7 @@ export async function responseInterceptor<T = unknown>(
     }
   }
 
-  // Django AllAuth doesn't consider 401 responses errors but rather an
-  // message to put the caller in an unauthenticated flow state.
-  // Pass the response to the calling component to handle the returned AllAuth flows.
-
-  // TODO: Clients and frontend apps shouldn't have to know anything about Django. Move AllAuth logic to the server
-  if (response.ok || response.status === 401) {
+  if (response.ok) {
     const record = asRecord(body)
     const looksEnveloped =
       record !== null && ('data' in record || 'meta' in record)
@@ -110,5 +100,6 @@ export async function responseInterceptor<T = unknown>(
     ok: false,
     status: response.status,
     message: extractErrorMessage(body),
+    data: body,
   }
 }

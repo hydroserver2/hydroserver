@@ -65,7 +65,7 @@ describe('responseInterceptor', () => {
     expect(textContent).toBe(csvData)
   })
 
-  it('returns errorBody for 401 status code without throwing', async () => {
+  it('returns an error envelope for 401 status codes', async () => {
     const errorJson = { error: 'Unauthorized' }
     const mockResponse = new Response(JSON.stringify(errorJson), {
       status: 401,
@@ -76,9 +76,8 @@ describe('responseInterceptor', () => {
     expect(result).toEqual({
       data: errorJson,
       status: 401,
-      message: 'OK',
-      meta: undefined,
-      ok: true,
+      message: 'Unauthorized',
+      ok: false,
     })
   })
 
@@ -93,6 +92,7 @@ describe('responseInterceptor', () => {
       ok: false,
       status: 500,
       message: 'Bad response',
+      data: mockErrorBody,
     })
   })
 })

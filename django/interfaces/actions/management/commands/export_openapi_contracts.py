@@ -5,12 +5,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from interfaces.api.urls import api
-from interfaces.auth.urls import auth_api
 
 
 SCHEMA_TARGETS = {
     "data.openapi.json": (api, "/api/data/"),
-    "auth.openapi.json": (auth_api, "/api/auth/"),
 }
 
 

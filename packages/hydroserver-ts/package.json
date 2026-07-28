@@ -27,12 +27,8 @@
     "test": "vitest",
     "coverage": "vitest run --coverage --environment jsdom",
     "gen:schemas": "DEBUG=True DEPLOYMENT_BACKEND=dev PROXY_BASE_URL=http://127.0.0.1:8000 python3.14 ../../django/manage.py export_openapi_contracts",
-    "gen:data-types": "npx --yes openapi-typescript@7.13.0 ../../django/contracts/openapi/data.openapi.json --output ./src/generated/data.types.d.ts",
-    "gen:auth-types": "npx --yes openapi-typescript@7.13.0 ../../django/contracts/openapi/auth.openapi.json --output ./src/generated/auth.types.d.ts",
-    "gen:types": "npm run gen:data-types && npm run gen:auth-types",
-    "gen:data-contracts": "tsx ./scripts/generate-contracts.data.ts",
-    "gen:auth-contracts": "tsx ./scripts/generate-contracts.auth.ts",
-    "gen:contracts": "npm run gen:data-contracts && npm run gen:auth-contracts",
+    "gen:types": "npx --yes openapi-typescript@7.13.0 ../../django/contracts/openapi/data.openapi.json --output ./src/generated/data.types.d.ts",
+    "gen:contracts": "tsx ./scripts/generate-contracts.data.ts",
     "gen": "npm run gen:schemas && npm run gen:types && npm run gen:contracts",
     "check:contract": "npm run gen && git diff --exit-code -- ../../django/contracts/openapi ./src/generated"
   },
@@ -45,12 +41,15 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "oidc-client-ts": "^3.5.0",
+    "p-limit": "^6.2.0"
+  },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@vitest/coverage-v8": "^4.1.0",
     "jsdom": "^22.1.0",
     "openapi-zod-client": "^1.18.3",
-    "p-limit": "^6.2.0",
     "tsx": "^4.16.2",
     "typescript": "^5.8.3",
     "vite": "^7.3.1",
