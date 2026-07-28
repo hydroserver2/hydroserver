@@ -1,0 +1,24 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Sign Out" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Sign Out" %}</h1>
+<p class="text-sm text-gray-600 mb-6">{% trans "Are you sure you want to sign out of HydroServer?" %}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+        {% if field.is_hidden %}{{ field }}{% endif %}
+    {% endfor %}
+    <div class="flex gap-3">
+        <button type="submit" name="action" value="logout"
+                class="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+            {% trans "Sign Out" %}
+        </button>
+        <button type="submit" name="action" value="stay"
+                class="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {% trans "Cancel" %}
+        </button>
+    </div>
+</form>
+{% endblock %}

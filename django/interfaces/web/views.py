@@ -1,7 +1,6 @@
 from allauth.socialaccount.models import SocialApp
 from django.templatetags.static import static
 from django.shortcuts import render
-from django.views.decorators.cache import cache_page
 from django.conf import settings
 from core.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
@@ -98,18 +97,32 @@ def get_app_settings_context():
     }
 
 
-@cache_page(60 * 10)
+def get_current_user_context(request):
+    user = request.user
+    if not user.is_authenticated:
+        return None
+
+    return user.to_profile_claims()
+
+
 def main_spa_view(request):
     context = get_app_settings_context()
+    current_user = get_current_user_context(request)
 
-    return render(request, "index.html", {"settings": context})
+    return render(
+        request, "index.html", {"settings": context, "current_user": current_user}
+    )
 
 
-@cache_page(60 * 10)
 def qc_spa_view(request):
     context = get_app_settings_context()
+    current_user = get_current_user_context(request)
 
-    return render(request, "qc/index.html", {"settings": context})
+    return render(
+        request,
+        "qc/index.html",
+        {"settings": context, "current_user": current_user},
+    )
 
 
 index = main_spa_view
