@@ -16,3 +16,4 @@ playwright-report/
 test-results/
 tests/e2e/.auth/
 .playwright-mcp/
+*.pem
