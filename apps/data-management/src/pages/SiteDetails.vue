@@ -24,6 +24,7 @@
           <HydroShareArchivalButton
             v-if="
               hasPermission(PermissionResource.Thing, PermissionAction.Edit) &&
+              hydroShareEnabled &&
               hydroShareConnected
             "
           />
@@ -275,7 +276,8 @@ const targetDatastreamId = computed(() => {
 const { photos, loading } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 
-const { isConnected: hydroShareConnected } = useHydroShare()
+const { isConnectionEnabled: hydroShareEnabled, isConnected: hydroShareConnected } =
+  useHydroShare()
 const { hydroShareArchive } = storeToRefs(useHydroShareStore())
 
 const { hasPermission } = useWorkspacePermissions(workspace)

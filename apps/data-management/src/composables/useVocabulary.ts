@@ -4,8 +4,6 @@ import hs from '@hydroserver/client'
 import type { SiteTypeIcon } from '@hydroserver/client'
 
 export const useVocabularyStore = defineStore('vocabulary', () => {
-  const userTypes = ref<string[]>([])
-  const organizationTypes = ref<string[]>([])
   const siteTypes = ref<string[]>([])
   const siteTypeIcons = ref<SiteTypeIcon[]>([])
   const samplingFeatureTypes = ref<string[]>([])
@@ -16,16 +14,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   const datastreamStatuses = ref<string[]>([])
   const datastreamAggregations = ref<string[]>([])
   const sampledMediums = ref<string[]>([])
-
-  async function fetchUserTypes() {
-    const res = await hs.user.getUserTypes()
-    if (res.ok) userTypes.value = res.data
-  }
-
-  async function fetchOrganizationTypes() {
-    const res = await hs.user.getOrganizationTypes()
-    if (res.ok) organizationTypes.value = res.data
-  }
 
   async function fetchSiteTypes() {
     const res = await hs.things.getSiteTypes()
@@ -80,8 +68,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   // Fetch all vocabularies in parallel
   async function fetchAllVocabularies() {
     await Promise.all([
-      fetchUserTypes(),
-      fetchOrganizationTypes(),
       fetchSiteTypes(),
       fetchSiteTypeIcons(),
       fetchSamplingFeatureTypes(),
@@ -96,8 +82,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   }
 
   return {
-    userTypes,
-    organizationTypes,
     siteTypes,
     siteTypeIcons,
     samplingFeatureTypes,
@@ -109,8 +93,6 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     datastreamAggregations,
     sampledMediums,
 
-    fetchUserTypes,
-    fetchOrganizationTypes,
     fetchSiteTypes,
     fetchSiteTypeIcons,
     fetchSamplingFeatureTypes,

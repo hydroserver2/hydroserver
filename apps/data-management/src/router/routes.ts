@@ -1,9 +1,7 @@
 import { RouteRecordRaw } from 'vue-router'
 import { enableHomePage } from '@/config/homeConfig'
 import { useWorkspaceStore } from '@/store/workspaces'
-
-const disableAccountCreation =
-  import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
+import hs from '@hydroserver/client'
 
 const validOrchestrationViews = new Set([
   'ingestion',
@@ -180,69 +178,14 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/HydroLoaderDownload.vue'),
   },
   {
-    // AllAuth emails will link users to this page if a password reset was requested but the email provided does not
-    // have an account associated with it yet.
-    path: '/sign-up',
-    name: 'SignUp',
-    component: () => {
-      if (disableAccountCreation === 'true') {
-        return import('@/pages/PageNotFound.vue')
-      } else {
-        return import('@/pages/account/Signup.vue')
-      }
-    },
-    meta: {
-      requiresLoggedOut: true,
-      title: 'Sign Up',
-      metaTags: [
-        {
-          name: 'keywords',
-          content: 'Sign Up, Account, User',
-        },
-      ],
-    },
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/pages/account/Login.vue'),
-    meta: {
-      title: 'Login',
-      requiresLoggedOut: true,
-    },
-  },
-  {
-    // AllAuth password reset emails will link users to this page. This page will need to request the user for a new
-    // password and then POST the password and reset key to the resetPassword endpoint complete the password reset
-    // process. Full docs here:
-    // https://docs.allauth.org/en/dev/headless/openapi-specification/#tag/Authentication:-Password-Reset/paths/~1_allauth~1%7Bclient%7D~1v1~1auth~1password~1reset/post
-    path: '/reset-password/:passwordResetKey?',
-    name: 'ResetPassword',
-    component: () => import('@/pages/account/ResetPassword.vue'),
-    meta: {
-      title: 'Reset Password',
-    },
-  },
-  {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/pages/account/Profile.vue'),
+    component: () => import('@/pages/Redirecting.vue'),
+    beforeEnter: () => {
+      window.location.assign(hs.session.accountProfileUrl)
+      return false
+    },
     meta: { requiresAuth: true, title: 'Profile' },
-  },
-  {
-    path: '/complete-profile',
-    name: 'CompleteProfile',
-    component: () => import('@/pages/account/CompleteProfile.vue'),
-    meta: { title: 'Complete Profile' },
-  },
-  {
-    // AllAuth verification emails will link users to this page. This page will need to POST a key to the verifyEmail
-    // endpoint to complete the verification process. Full docs here:
-    // https://docs.allauth.org/en/dev/headless/openapi-specification/#tag/Authentication:-Account/paths/~1_allauth~1%7Bclient%7D~1v1~1auth~1email~1verify/post
-    path: '/verify-email',
-    name: 'VerifyEmail',
-    component: () => import('@/pages/account/VerifyEmail.vue'),
-    meta: { title: 'Verify Email' },
   },
   {
     path: '/metadata',

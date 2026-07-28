@@ -19,10 +19,8 @@ const getQcReturnPath = (to: RouteLocationNormalized) => {
   return `/qc${fullPath}`
 }
 
-const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
-  const loginUrl = new URL('/login', window.location.origin)
-  loginUrl.searchParams.set('next', getQcReturnPath(to))
-  window.location.assign(loginUrl.toString())
+const redirectToLogin = async (to: RouteLocationNormalized) => {
+  await hs.session.login(getQcReturnPath(to))
   return false as const
 }
 
@@ -31,7 +29,7 @@ export const guards: RouteGuard[] = [
   (to) => {
     if (!to.meta?.hasAuthGuard) return null
     if (hs.session?.isAuthenticated) return null
-    return redirectToDataManagementLogin(to)
+    return redirectToLogin(to)
   },
 
   // Shared-link workspace switch. An incoming URL carrying `?ws=<id>`
