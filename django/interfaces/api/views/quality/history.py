@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.quality.services.history import QCHistoryService
 from interfaces.api.schemas.quality.history import (
     QualityControlHistorySummaryResponse,
@@ -16,15 +16,13 @@ from interfaces.api.schemas.quality.history import (
     QualityControlHistoryPostBody,
 )
 
-_auth = [session_auth, bearer_auth]
-
 qc_history_router = Router(tags=["Quality Control Histories"])
 qc_history_service = QCHistoryService()
 
 
 @qc_history_router.get(
     "",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[QualityControlHistorySummaryResponse] | list[QualityControlHistoryDetailResponse],
         401: str,
@@ -60,7 +58,7 @@ def get_qc_histories(
 
 @qc_history_router.post(
     "",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={201: QualityControlHistoryDetailResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -82,7 +80,7 @@ def create_qc_history(
 
 @qc_history_router.get(
     "/{history_id}",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: QualityControlHistorySummaryResponse | QualityControlHistoryDetailResponse,
         401: str,
@@ -111,7 +109,7 @@ def get_qc_history(
 
 @qc_history_router.delete(
     "/{history_id}",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )
