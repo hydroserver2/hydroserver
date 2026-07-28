@@ -1,7 +1,7 @@
 django==6.0.7
 django-ninja==1.6.2
 django-allauth==65.18.0
-django-allauth[socialaccount]==65.18.0
+django-allauth[socialaccount,headless,idp-oidc]==65.18.0
 django-cors-headers==4.9.0
 django-storages==1.14.6
 django-ratelimit==4.1.0

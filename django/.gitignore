@@ -5,12 +5,12 @@
 .pytest_cache
 __pycache__/
 db.sqlite3
-/static/
-!*/static/
+/static/*
+!/static/css/
+/static/css/*
+!/static/css/input.css
 /media/
 staticfiles/
-/static
-!/static/**/
 /web/static/web/*
 *.db
 *test.ipynb

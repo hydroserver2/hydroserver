@@ -136,7 +136,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "allauth",
     "allauth.account",
-    "allauth.headless",
+    "allauth.idp.oidc",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.orcid",
@@ -246,10 +246,11 @@ ACCOUNT_SIGNUP_ENABLED = config("ACCOUNT_SIGNUP_ENABLED", default=True, cast=boo
 ACCOUNT_OWNERSHIP_ENABLED = config("ACCOUNT_OWNERSHIP_ENABLED", default=True, cast=bool)
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGIN_METHODS = {"email"}
+
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
@@ -257,14 +258,6 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "htt
 ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
-HEADLESS_ONLY = True
-
-HEADLESS_FRONTEND_URLS = {
-    "account_confirm_email": f"{PROXY_BASE_URL}/verify-email/{{key}}",
-    "account_reset_password_from_key": f"{PROXY_BASE_URL}/reset-password/{{key}}",
-    "account_reset_password": f"{PROXY_BASE_URL}/reset-password",
-    "account_signup": f"{PROXY_BASE_URL}/sign-up",
-}
 
 
 # Social Account Settings
@@ -278,6 +271,20 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_STORE_TOKENS = True
+
+
+# OIDC Identity Provider Settings
+
+IDP_OIDC_PRIVATE_KEY = config("IDP_OIDC_PRIVATE_KEY", default="")
+
+if not IDP_OIDC_PRIVATE_KEY and DEPLOYMENT_BACKEND == "dev":
+    _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
+    if _dev_key_path.exists():
+        IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
+
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = 3600   # 1 hour
+IDP_OIDC_ROTATE_REFRESH_TOKEN = True
+IDP_OIDC_ADAPTER = "core.iam.auth.oidc_adapter.HydroServerOIDCAdapter"
 
 
 # Email Settings
@@ -343,8 +350,8 @@ PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
 
 # Storage settings
 
-APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
 STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
@@ -462,7 +469,8 @@ SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
 SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
 SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
     "interfaces.auth.security.session_auth",
-    "interfaces.auth.security.bearer_auth",
+    "interfaces.auth.security.oidc_auth",
+    "interfaces.auth.security.basic_auth",
     "interfaces.auth.security.apikey_auth",
     "interfaces.auth.security.anonymous_auth",
 ]
