@@ -221,13 +221,6 @@
               >
                 Ownership
               </v-tab>
-              <v-tab
-                value="danger"
-                :prepend-icon="mdiAlertOutline"
-                class="text-red-darken-2"
-              >
-                Danger zone
-              </v-tab>
             </v-tabs>
           </div>
 
@@ -318,31 +311,46 @@
               </v-window-item>
 
               <v-window-item value="metadata">
-                <v-text-field
-                  class="mb-4"
-                  clearable
-                  v-model="metadataSearch"
-                  :prepend-inner-icon="mdiMagnify"
-                  label="Search"
-                  hide-details
-                  density="compact"
-                  variant="underlined"
-                  rounded="xl"
-                  maxWidth="300"
-                />
+                <div
+                  class="d-flex flex-wrap align-center justify-space-between ga-4 mb-4"
+                >
+                  <v-btn-toggle
+                    v-model="metadataScope"
+                    mandatory
+                    density="comfortable"
+                    color="primary"
+                    variant="outlined"
+                    rounded="xl"
+                    divided
+                  >
+                    <v-btn value="workspace">Workspace metadata</v-btn>
+                    <v-btn value="system">System metadata</v-btn>
+                  </v-btn-toggle>
 
-                <div class="pb-6">
-                  <MetadataTable
-                    :key="selected.id"
-                    :workspace="selected"
-                    :toolbar-color="'brown'"
-                    :search="metadataSearch"
-                    useWorkspaceVariables
+                  <v-text-field
+                    class="metadata-search"
+                    clearable
+                    v-model="metadataSearch"
+                    :prepend-inner-icon="mdiMagnify"
+                    label="Search metadata"
+                    hide-details
+                    density="compact"
+                    variant="underlined"
+                    rounded="xl"
                   />
                 </div>
+
                 <MetadataTable
+                  v-if="metadataScope === 'workspace'"
+                  :key="`workspace-${selected.id}`"
                   :workspace="selected"
-                  :toolbar-color="'deep-orange-darken-4'"
+                  :search="metadataSearch"
+                  useWorkspaceVariables
+                />
+                <MetadataTable
+                  v-else
+                  :key="`system-${selected.id}`"
+                  :workspace="selected"
                   :search="metadataSearch"
                 />
               </v-window-item>
@@ -361,32 +369,6 @@
                   :workspace="selected"
                   @needs-refresh="refreshWorkspace(selected.id)"
                 />
-              </v-window-item>
-
-              <v-window-item value="danger">
-                <div
-                  class="d-flex align-center justify-space-between flex-wrap ga-4 pa-4 rounded border-error"
-                >
-                  <div>
-                    <div class="text-subtitle-1 font-weight-medium text-red-darken-2">
-                      Delete this workspace
-                    </div>
-                    <div class="text-body-2 text-medium-emphasis">
-                      Permanently deletes the workspace along with all sites,
-                      datastreams, metadata, and user permissions associated
-                      with it. This cannot be undone.
-                    </div>
-                  </div>
-                  <v-btn-delete
-                    :disabled="!canManageWorkspace(selected)"
-                    :title="canManageWorkspace(selected) ? '' : OWNER_ONLY_MESSAGE"
-                    variant="outlined"
-                    :prepend-icon="mdiTrashCanOutline"
-                    @click="openDialog(selected, 'delete')"
-                  >
-                    Delete workspace
-                  </v-btn-delete>
-                </div>
               </v-window-item>
             </v-window>
           </div>
@@ -458,7 +440,6 @@ import hs, {
 } from '@hydroserver/client'
 import {
   mdiAccountCircle,
-  mdiAlertOutline,
   mdiBriefcaseOutline,
   mdiCheck,
   mdiContentCopy,
@@ -497,7 +478,6 @@ const SECTIONS = [
   'metadata',
   'privacy',
   'ownership',
-  'danger',
 ]
 
 const route = useRoute()
@@ -519,6 +499,7 @@ const canManageWorkspace = (ws: Workspace | null) =>
 const isPageLoaded = ref(false)
 const search = ref('')
 const metadataSearch = ref()
+const metadataScope = ref<'workspace' | 'system'>('workspace')
 
 const selectedId = ref('')
 const section = ref('overview')
@@ -685,6 +666,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.metadata-search {
+  max-width: 260px;
+  flex-shrink: 0;
+}
+
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
    OrchestrationContextSidebar.vue) so the two workspace-management entry
    points feel like the same product surface. */
@@ -983,9 +969,5 @@ onMounted(async () => {
 }
 .no-workspace-actions {
   margin-top: 22px;
-}
-
-.border-error {
-  border: 1px solid rgb(var(--v-theme-error));
 }
 </style>

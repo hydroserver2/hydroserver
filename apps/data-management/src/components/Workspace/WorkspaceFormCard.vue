@@ -1,8 +1,9 @@
 <template>
   <v-card>
-    <v-toolbar color="secondary-darken-2">
+    <v-toolbar flat color="primary">
       <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} workspace </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-form
       @submit.prevent="onSubmit"

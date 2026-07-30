@@ -15,40 +15,54 @@ test.describe('metadata management', () => {
     await expect(
       page.getByRole('heading', { name: 'Manage workspaces' })
     ).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Methods' }).first()).toBeVisible()
+
+    // Workspace metadata is shown by default, with its own type tabs.
+    await expect(page.getByTestId('workspace-metadata-table')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Methods' })).toBeVisible()
     await expect(
-      page.getByRole('tab', { name: 'Observed properties' }).first()
+      page.getByRole('tab', { name: 'Observed properties' })
     ).toBeVisible()
     await expect(
-      page.getByRole('tab', { name: 'Processing levels' }).first()
+      page.getByRole('tab', { name: 'Processing levels' })
     ).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Units' }).first()).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Units' })).toBeVisible()
     await expect(
-      page.getByRole('tab', { name: 'Result qualifiers' }).first()
+      page.getByRole('tab', { name: 'Result qualifiers' })
     ).toBeVisible()
+    await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
+
+    // Switching scope swaps to the system-scoped table.
+    await page
+      .getByRole('button', { name: 'System metadata', exact: true })
+      .click()
     await expect(page.getByTestId('system-metadata-table')).toBeVisible()
-    await expect(page.getByText('System metadata')).toBeVisible()
+    await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
   })
 
-  test('system metadata entries are visible alongside workspace metadata', async ({
+  test('switching metadata scope shows workspace or system entries, not both at once', async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
+    await page.getByRole('tab', { name: 'Methods' }).click()
+
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    const systemTable = page.getByTestId('system-metadata-table')
-
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
-    await systemTable.getByRole('tab', { name: 'Methods' }).click()
-
     await expect(
       workspaceTable.locator('tr').filter({ hasText: 'Private Assigned Sensor' }).first()
     ).toBeVisible()
+    await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
+
+    await page
+      .getByRole('button', { name: 'System metadata', exact: true })
+      .click()
+
+    const systemTable = page.getByTestId('system-metadata-table')
     await expect(
       systemTable.locator('tr').filter({ hasText: 'System Sensor' }).first()
     ).toBeVisible()
+    await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
   })
 
   test('workspace method metadata can be created, updated, and deleted', async ({
@@ -62,7 +76,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
+    await page.getByRole('tab', { name: 'Methods' }).click()
     await workspaceTable.getByRole('button', { name: /Add new method/i }).click()
 
     await fillCombobox(page, 'Method Type *', 'E2E Method Type')
@@ -105,7 +119,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Observed properties' }).click()
+    await page.getByRole('tab', { name: 'Observed properties' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new observed property/i })
       .click()
@@ -151,7 +165,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Processing levels' }).click()
+    await page.getByRole('tab', { name: 'Processing levels' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new processing level/i })
       .click()
@@ -191,7 +205,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Units' }).click()
+    await page.getByRole('tab', { name: 'Units' }).click()
     await workspaceTable.getByRole('button', { name: /Add new unit/i }).click()
 
     await fillCombobox(page, 'Unit Type *', 'E2E Unit Type')
@@ -234,9 +248,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable
-      .getByRole('tab', { name: 'Result qualifiers' })
-      .click()
+    await page.getByRole('tab', { name: 'Result qualifiers' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new result qualifier/i })
       .click()
@@ -280,7 +292,7 @@ test.describe('metadata management', () => {
     const workspaceTable = page.getByTestId('workspace-metadata-table')
 
     const searchBox = page
-      .getByRole('textbox', { name: 'Search', exact: true })
+      .getByRole('textbox', { name: 'Search metadata', exact: true })
       .first()
     await expect(searchBox).toBeVisible()
 
@@ -310,7 +322,7 @@ test.describe('metadata management', () => {
     await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
+    await page.getByRole('tab', { name: 'Methods' }).click()
 
     const assignedSensorRow = workspaceTable
       .locator('tr')

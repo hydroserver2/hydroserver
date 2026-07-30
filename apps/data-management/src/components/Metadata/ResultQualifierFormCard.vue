@@ -1,10 +1,11 @@
 <template>
   <v-card>
-    <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
+    <v-toolbar flat color="primary">
       <v-card-title>
         {{ isEdit ? 'Edit' : 'Add' }} Result Qualifier
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-form
       @submit.prevent="onSubmit"

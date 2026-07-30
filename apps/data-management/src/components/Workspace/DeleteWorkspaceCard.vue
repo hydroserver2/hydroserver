@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar flat color="red-darken-4">
+    <v-toolbar flat color="delete">
       <v-card-title class="text-h5">
         <v-icon :icon="mdiAlert" /> Confirm workspace deletion
       </v-card-title>

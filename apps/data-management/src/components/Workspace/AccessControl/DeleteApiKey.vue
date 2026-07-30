@@ -1,11 +1,12 @@
 <template>
   <v-card>
-    <v-toolbar flat color="red-darken-4">
+    <v-toolbar flat color="delete">
       <v-card-title class="text-h5">
         <v-icon :icon="mdiAlert" />
         Confirm API key deletion
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-card-text>
       This action will permanently delete
@@ -15,7 +16,7 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete color="red" @click="onDelete"> Delete </v-btn-delete>
+      <v-btn-delete @click="onDelete"> Delete </v-btn-delete>
     </v-card-actions>
   </v-card>
 </template>

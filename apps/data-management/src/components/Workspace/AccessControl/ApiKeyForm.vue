@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="blue-darken-4">
+    <v-toolbar flat color="primary">
       <v-card-title>
         {{ isEdit ? 'Edit' : 'Create' }} API key
         <span v-if="isEdit" class="opacity-80">- {{ item.name }}</span>

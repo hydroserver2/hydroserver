@@ -1,32 +1,28 @@
 <template>
-  <v-card
+  <div
     v-if="activeWorkspace"
+    class="metadata-section"
     :data-testid="
       useWorkspaceVariables ? 'workspace-metadata-table' : 'system-metadata-table'
     "
   >
-    <v-toolbar
-      :color="toolbarColor"
-      :title="useWorkspaceVariables ? 'Workspace metadata' : 'System metadata'"
-    >
-      <v-spacer />
-
-      <template v-slot:extension>
-        <v-tabs
-          v-model="tab"
-          color="secondary-lighten-5"
-          scrollable
-          class="my-2"
-        >
-          <v-tab v-for="item in metaMap">{{ item.name }}</v-tab>
-        </v-tabs>
-      </template>
+    <div class="metadata-section-header">
+      <div>
+        <h3 class="metadata-section-title">
+          {{ useWorkspaceVariables ? 'Workspace metadata' : 'System metadata' }}
+        </h3>
+        <p class="metadata-section-subtitle">
+          {{
+            useWorkspaceVariables
+              ? 'Belongs only to this workspace. Editors and the owner can manage it.'
+              : 'Shared across every workspace and managed by administrators.'
+          }}
+        </p>
+      </div>
 
       <v-btn-add
         v-if="hasCRUDPermissions"
         :prependIcon="mdiPlus"
-        color="white"
-        class="mx-2"
         :data-testid="
           useWorkspaceVariables
             ? 'add-workspace-metadata-item'
@@ -35,11 +31,19 @@
         @click="metaMap[tab]?.openDialog()"
         >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
       >
-    </v-toolbar>
+    </div>
 
-    <v-toolbar :color="toolbarColor" height="5"></v-toolbar>
+    <v-tabs
+      v-model="tab"
+      color="primary"
+      density="comfortable"
+      class="metadata-type-tabs"
+      show-arrows
+    >
+      <v-tab v-for="item in metaMap" :key="item.name">{{ item.name }}</v-tab>
+    </v-tabs>
 
-    <v-window v-model="tab" class="elevation-3" v-if="activeWorkspace">
+    <v-window v-model="tab" class="metadata-window">
       <v-window-item :value="0">
         <SensorTable
           :key="sensorKey"
@@ -85,7 +89,7 @@
         />
       </v-window-item>
     </v-window>
-  </v-card>
+  </div>
 
   <v-dialog v-model="openSensorCreate" width="60rem">
     <SensorFormCard
@@ -147,14 +151,15 @@ import { Workspace } from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
 import { mdiPlus } from '@mdi/js'
 
+// The active metadata type (Methods/Observed properties/...) is shared
+// across both the workspace and system sections via this store, so
+// switching type in one keeps the other in sync.
 const { tab } = storeToRefs(useMetadata())
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const props = defineProps({
-  toolbarColor: String,
   useWorkspaceVariables: Boolean,
   search: String,
-  tab: Number,
   /** Workspace to show metadata for. Falls back to the globally selected workspace. */
   workspace: Object as () => Workspace,
 })
@@ -220,3 +225,33 @@ const metaMap: Record<string, any> = {
   },
 }
 </script>
+
+<style scoped>
+.metadata-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.metadata-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1c1b1f;
+}
+.metadata-section-subtitle {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin-top: 2px;
+  max-width: 520px;
+}
+.metadata-type-tabs {
+  border-bottom: 1px solid #e8e8e8;
+  margin: 12px 0 4px;
+}
+.metadata-window :deep(td),
+.metadata-window :deep(th) {
+  font-size: 13px;
+}
+</style>
