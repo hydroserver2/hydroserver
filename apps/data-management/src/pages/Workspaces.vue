@@ -102,16 +102,6 @@
               :data-testid="`workspace-list-item-${ws.id}`"
               @click="selectWorkspace(ws.id)"
             >
-              <span
-                class="sidebar-avatar"
-                :style="
-                  ws.id === selectedId
-                    ? { background: 'rgba(255,255,255,0.22)', color: 'white' }
-                    : { background: WORKSPACE_ACCENT_LIGHT, color: WORKSPACE_ACCENT }
-                "
-              >
-                {{ initials(ws.name) }}
-              </span>
               <div class="sidebar-item-body">
                 <div class="sidebar-item-title">{{ ws.name }}</div>
                 <div class="sidebar-item-meta">
@@ -499,7 +489,6 @@ import { Snackbar } from '@/utils/notifications'
 // Matches the accent used for the "Workspaces" entry in the orchestration nav
 // rail, so the two workspace-management entry points read as the same place.
 const WORKSPACE_ACCENT = '#2E7D32'
-const WORKSPACE_ACCENT_LIGHT = '#E8F5E9'
 
 const SECTIONS = [
   'overview',
@@ -561,15 +550,6 @@ const pendingWorkspaces = computed(() =>
       ws.pendingTransferTo?.email === user.value?.email
   )
 )
-
-const initials = (name: string) =>
-  name
-    .split(' ')
-    .filter(Boolean)
-    .map((word) => word[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 
 function selectWorkspace(id: string) {
   selectedId.value = id
@@ -821,17 +801,6 @@ onMounted(async () => {
 }
 .sidebar-item:not(.selected):hover {
   background: rgba(0, 0, 0, 0.035);
-}
-.sidebar-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
 }
 .sidebar-item-body {
   flex: 1;
