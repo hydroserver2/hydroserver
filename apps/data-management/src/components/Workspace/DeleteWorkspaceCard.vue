@@ -7,16 +7,22 @@
     </v-toolbar>
     <v-divider />
 
-    <v-card-text>
+    <v-card-text v-if="canTransfer">
       This action will permanently delete the workspace along with all sites,
       datastreams, metadata, and user permissions associated with this
       workspace. If you want to keep your data, you can backup to HydroShare or
       download a local copy before deletion. Alternatively, you can pass
       ownership of this workspace to someone else using the
-      <v-btn class="px-0" variant="text" @click="emit('switchToAccessControl')"
-        >Access Control</v-btn
+      <v-btn class="px-0" variant="text" @click="emit('switch-to-transfer')"
+        >Transfer ownership</v-btn
       >
-      dialog.
+      section.
+    </v-card-text>
+    <v-card-text v-else>
+      This action will permanently delete the workspace along with all sites,
+      datastreams, metadata, and user permissions associated with this
+      workspace. If you want to keep this data, back it up to HydroShare or
+      download a local copy before deletion.
     </v-card-text>
     <v-card-text>
       Please type the workspace name (<strong>{{ workspace?.name }}</strong
@@ -45,11 +51,18 @@ import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { mdiAlert } from '@mdi/js'
 
-const emit = defineEmits(['switchToAccessControl', 'delete', 'close'])
+const emit = defineEmits(['switch-to-transfer', 'delete', 'close'])
 const props = defineProps({
   workspace: {
     type: Object as () => Workspace,
     required: true,
+  },
+  /** Whether the acting user actually owns this workspace and can therefore
+   * transfer it away instead of deleting it (e.g. an admin deleting a
+   * workspace they don't own cannot). */
+  canTransfer: {
+    type: Boolean,
+    default: false,
   },
 })
 

@@ -1,8 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
-import { fixtures, users } from '../support/fixtures'
-import { selectWorkspace } from '../support/ui'
+import { users } from '../support/fixtures'
+import {
+  createWorkspaceFromManagePage,
+  deleteWorkspaceFromManagePage,
+  workspaceListItem,
+} from '../support/ui'
 
 test.describe('workspace management', () => {
   test('owner can create, validate, update, privatize, and delete a workspace', async ({
@@ -13,35 +17,23 @@ test.describe('workspace management', () => {
     const renamedWorkspaceName = `${workspaceName} Renamed`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await page.getByRole('button', { name: 'Add workspace' }).click()
+    await page.goto('/workspaces')
+    await createWorkspaceFromManagePage(page, workspaceName)
 
-    await page.getByLabel('Name *').fill(workspaceName)
-    await page.getByRole('button', { name: 'Save' }).click()
-
-    const workspaceRow = page.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
-    await expect(workspaceRow).toBeVisible()
-
-    await workspaceRow.getByRole('button').nth(1).click()
+    const workspaceItem = workspaceListItem(page, workspaceName)
+    await workspaceItem.locator('[data-testid^="workspace-edit-"]').click()
     await page.getByLabel('Name *').fill('')
     await page.getByRole('button', { name: 'Update' }).click()
     await expect(page.getByText('This field is required.')).toBeVisible()
 
     await page.getByLabel('Name *').fill(renamedWorkspaceName)
     await page.getByRole('button', { name: 'Update' }).click()
-    const renamedRow = page.getByRole('row', {
-      name: new RegExp(renamedWorkspaceName),
-    })
-    await expect(renamedRow).toBeVisible()
+    const renamedItem = workspaceListItem(page, renamedWorkspaceName)
+    await expect(renamedItem).toBeVisible()
 
-    await renamedRow.getByRole('button').nth(0).click()
-    await page.getByText('Workspace privacy').click()
+    await renamedItem.click()
+    await page.getByRole('tab', { name: 'Privacy' }).click()
     await page.getByLabel('Make this workspace private').click()
-    await page.getByRole('button', { name: 'Close' }).click()
 
     const anonymousContext = await browser.newContext()
     const anonymousPage = await anonymousContext.newPage()
@@ -50,39 +42,28 @@ test.describe('workspace management', () => {
     await expect(anonymousPage.getByText(renamedWorkspaceName)).toHaveCount(0)
     await anonymousContext.close()
 
-    await renamedRow.getByRole('button').nth(2).click()
-    await page.getByLabel('Workspace name').fill('wrong name')
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await renamedItem.locator('[data-testid^="workspace-delete-"]').click()
+    const deleteDialog = page.getByRole('dialog')
+    await deleteDialog.getByLabel('Workspace name').fill('wrong name')
+    await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(page.getByText('Workspace name does not match.')).toBeVisible()
 
-    await page.getByLabel('Workspace name').fill(renamedWorkspaceName)
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(
-      page.getByRole('cell', { name: renamedWorkspaceName, exact: true })
-    ).toHaveCount(0)
+    await deleteDialog.getByLabel('Workspace name').fill(renamedWorkspaceName)
+    await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(workspaceListItem(page, renamedWorkspaceName)).toHaveCount(0)
   })
 
-  test('owner can add, update, and remove collaborators through workspace access control', async ({
+  test('owner can add, update, and remove collaborators through the collaborators tab', async ({
     page,
   }) => {
     const workspaceName = `E2E Collaborators ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await page.getByRole('button', { name: 'Add workspace' }).click()
+    await page.goto('/workspaces')
+    await createWorkspaceFromManagePage(page, workspaceName)
 
-    await page.getByLabel('Name *').fill(workspaceName)
-    await page.getByRole('button', { name: 'Save' }).click()
-
-    const workspaceRow = page.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
-    await expect(workspaceRow).toBeVisible()
-    await workspaceRow
-      .locator('[data-testid^="workspace-access-control-"]')
-      .click()
+    await workspaceListItem(page, workspaceName).click()
+    await page.getByRole('tab', { name: 'Collaborators' }).click()
 
     await page.getByTestId('add-collaborator-button').click()
     await page.getByLabel("New collaborator's email").fill(users.viewer.email)
@@ -106,12 +87,6 @@ test.describe('workspace management', () => {
     await page.getByTestId(`remove-collaborator-${users.viewer.email}`).click()
     await expect(collaboratorRow).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Close' }).click()
-    await workspaceRow.locator('[data-testid^="workspace-delete-"]').click()
-    await page.getByLabel('Workspace name').fill(workspaceName)
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(
-      page.getByRole('cell', { name: workspaceName, exact: true })
-    ).toHaveCount(0)
+    await deleteWorkspaceFromManagePage(page, workspaceName)
   })
 })

@@ -1,6 +1,6 @@
 <template>
   <v-card
-    v-if="hasWorkspaces"
+    v-if="activeWorkspace"
     :data-testid="
       useWorkspaceVariables ? 'workspace-metadata-table' : 'system-metadata-table'
     "
@@ -39,7 +39,7 @@
 
     <v-toolbar :color="toolbarColor" height="5"></v-toolbar>
 
-    <v-window v-model="tab" class="elevation-3" v-if="selectedWorkspace">
+    <v-window v-model="tab" class="elevation-3" v-if="activeWorkspace">
       <v-window-item :value="0">
         <SensorTable
           :key="sensorKey"
@@ -148,24 +148,26 @@ import { useMetadata } from '@/store/metadata'
 import { mdiPlus } from '@mdi/js'
 
 const { tab } = storeToRefs(useMetadata())
-const { selectedWorkspace, hasWorkspaces } = storeToRefs(useWorkspaceStore())
-
-const workspaceRef = computed<Workspace | undefined>(
-  () => selectedWorkspace.value ?? undefined
-)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const props = defineProps({
   toolbarColor: String,
   useWorkspaceVariables: Boolean,
   search: String,
   tab: Number,
+  /** Workspace to show metadata for. Falls back to the globally selected workspace. */
+  workspace: Object as () => Workspace,
 })
 
-const workspaceId = computed(() =>
-  props.useWorkspaceVariables ? selectedWorkspace.value!.id : undefined
+const activeWorkspace = computed<Workspace | undefined>(
+  () => props.workspace ?? selectedWorkspace.value ?? undefined
 )
 
-const { isAdmin } = useWorkspacePermissions(workspaceRef)
+const workspaceId = computed(() =>
+  props.useWorkspaceVariables ? activeWorkspace.value!.id : undefined
+)
+
+const { isAdmin } = useWorkspacePermissions(activeWorkspace)
 
 const hasCRUDPermissions = computed(
   () => !!(props.useWorkspaceVariables || isAdmin())

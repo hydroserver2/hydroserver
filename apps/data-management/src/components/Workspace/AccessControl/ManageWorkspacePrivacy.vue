@@ -1,13 +1,5 @@
 <template>
-  <div
-    v-if="
-      hasPermission(
-        PermissionResource.Workspace,
-        PermissionAction.Edit,
-        workspace
-      )
-    "
-  >
+  <div v-if="isOwner(workspace) || isAdmin()">
     <v-row align="center">
       <v-col cols="auto" class="pr-0">
         <v-card-title class="text-h6"> Privacy </v-card-title>
@@ -43,17 +35,15 @@
 
   <div v-else>
     <v-row cols="12" md="6" class="py-0">
-      <v-col> You don't have permissions to edit a workspace. </v-col>
+      <v-col>
+        Only the workspace owner can change its privacy.
+      </v-col>
     </v-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import hs, {
-  Workspace,
-  PermissionAction,
-  PermissionResource,
-} from '@hydroserver/client'
+import hs, { Workspace } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { mdiHelpCircleOutline } from '@mdi/js'
@@ -64,7 +54,7 @@ const props = defineProps({
 })
 const emits = defineEmits(['privacy-updated'])
 
-const { hasPermission } = useWorkspacePermissions()
+const { isOwner, isAdmin } = useWorkspacePermissions()
 
 const isPrivate = ref(props.workspace.isPrivate)
 const openHydroSharePrivacy = ref(false)

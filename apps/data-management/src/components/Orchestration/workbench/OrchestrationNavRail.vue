@@ -6,9 +6,9 @@
         :key="tab.id"
         type="button"
         class="rail-btn"
-        :class="{ active: activeView === 'tasks' && activeTab === tab.id }"
+        :class="{ active: activeTab === tab.id }"
         :style="
-          activeView === 'tasks' && activeTab === tab.id
+          activeTab === tab.id
             ? { '--accent': tab.accent, '--accent-light': tab.accentLight }
             : {}
         "
@@ -16,29 +16,19 @@
       >
         <span
           class="rail-pill"
-          :style="
-            activeView === 'tasks' && activeTab === tab.id
-              ? { background: tab.accentLight }
-              : {}
-          "
+          :style="activeTab === tab.id ? { background: tab.accentLight } : {}"
         >
           <v-icon
             :icon="tab.icon"
             size="22"
-            :color="
-              activeView === 'tasks' && activeTab === tab.id
-                ? tab.accent
-                : undefined
-            "
+            :color="activeTab === tab.id ? tab.accent : undefined"
           />
           <span v-if="tab.issues > 0" class="rail-badge">{{ tab.issues }}</span>
         </span>
         <span
           class="rail-label"
           :style="
-            activeView === 'tasks' && activeTab === tab.id
-              ? { color: tab.accent, fontWeight: 600 }
-              : {}
+            activeTab === tab.id ? { color: tab.accent, fontWeight: 600 } : {}
           "
         >
           {{ tab.short }}
@@ -47,35 +37,11 @@
     </div>
 
     <div class="rail-bottom">
-      <button
-        type="button"
-        class="rail-btn"
-        @click="$emit('open-workspaces')"
-      >
-        <span
-          class="rail-pill"
-          :style="
-            activeView === 'workspaces'
-              ? { background: WORKSPACE_ACCENT_LIGHT }
-              : {}
-          "
-        >
-          <v-icon
-            :icon="mdiBriefcaseOutline"
-            size="22"
-            :color="activeView === 'workspaces' ? WORKSPACE_ACCENT : undefined"
-          />
+      <button type="button" class="rail-btn" @click="$emit('open-workspaces')">
+        <span class="rail-pill">
+          <v-icon :icon="mdiBriefcaseOutline" size="22" />
         </span>
-        <span
-          class="rail-label"
-          :style="
-            activeView === 'workspaces'
-              ? { color: WORKSPACE_ACCENT, fontWeight: 600 }
-              : {}
-          "
-        >
-          Workspaces
-        </span>
+        <span class="rail-label">Workspaces</span>
       </button>
 
       <button
@@ -96,12 +62,7 @@
 import { mdiBriefcaseOutline, mdiDownloadBoxOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
-import {
-  WORKSPACE_ACCENT,
-  WORKSPACE_ACCENT_LIGHT,
-  type TabDefinition,
-  type TabId,
-} from './orchestrationTabs'
+import { type TabDefinition, type TabId } from './orchestrationTabs'
 
 defineProps<{
   tabs: TabDefinition[]
@@ -113,7 +74,7 @@ defineEmits<{
   (e: 'open-hydro-loader'): void
 }>()
 
-const { activeTab, activeView } = storeToRefs(useOrchestrationStore())
+const { activeTab } = storeToRefs(useOrchestrationStore())
 </script>
 
 <style scoped>

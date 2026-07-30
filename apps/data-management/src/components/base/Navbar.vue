@@ -189,8 +189,8 @@ import router from '@/router/router'
 import {
   mdiAccountCircle,
   mdiAccountPlusOutline,
+  mdiBriefcaseOutline,
   mdiChartLine,
-  mdiDatabaseCog,
   mdiInformation,
   mdiLogin,
   mdiLogout,
@@ -229,6 +229,11 @@ type NavItem = NavMenuItem & {
 
 const paths: NavItem[] = [
   {
+    attrs: { to: '/workspaces' },
+    label: 'Manage workspaces',
+    icon: mdiBriefcaseOutline,
+  },
+  {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
     icon: mdiMapMarkerOutline,
@@ -247,11 +252,6 @@ const paths: NavItem[] = [
   {
     label: 'Data management',
     menu: [
-      {
-        attrs: { to: '/Metadata' },
-        label: 'Manage metadata',
-        icon: mdiDatabaseCog,
-      },
       {
         attrs: { to: '/orchestration' },
         label: 'Job orchestration',

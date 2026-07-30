@@ -159,7 +159,6 @@ import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
-import router from '@/router/router'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -174,6 +173,7 @@ import PermissionTooltip from '@/components/PermissionTooltip.vue'
 const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
+const emits = defineEmits(['self-removed'])
 
 const { user } = storeToRefs(useUserStore())
 const { hasPermission } = useWorkspacePermissions()
@@ -244,7 +244,7 @@ async function onRemoveCollaborator(email: string) {
     const index = collaboratorList.value.findIndex((c) => c.email === email)
     if (index !== -1) collaboratorList.value.splice(index, 1)
     Snackbar.success('Collaborator removed.')
-    if (email === user.value.email) await router.push({ name: 'Sites' })
+    if (email === user.value.email) emits('self-removed')
   } else {
     console.error('Error removing collaborator', res)
     Snackbar.error(res.message)

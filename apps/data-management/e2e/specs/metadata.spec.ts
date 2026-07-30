@@ -2,17 +2,19 @@ import { expect, test } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
-import { fillCombobox, selectWorkspace } from '../support/ui'
+import { fillCombobox, workspaceListItem } from '../support/ui'
 
 test.describe('metadata management', () => {
-  test('metadata page loads workspace and system tabs', async ({ page }) => {
+  test('the metadata route redirects to the workspaces page metadata tab', async ({
+    page,
+  }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
 
+    await expect(page).toHaveURL(/\/workspaces\?section=metadata/)
     await expect(
-      page.getByRole('heading', { name: 'Manage metadata' })
+      page.getByRole('heading', { name: 'Manage workspaces' })
     ).toBeVisible()
-    await expect(page.getByText('Selected workspace:', { exact: false })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Methods' }).first()).toBeVisible()
     await expect(
       page.getByRole('tab', { name: 'Observed properties' }).first()
@@ -33,7 +35,7 @@ test.describe('metadata management', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     const systemTable = page.getByTestId('system-metadata-table')
@@ -57,7 +59,7 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
@@ -85,7 +87,7 @@ test.describe('metadata management', () => {
 
     await renamedMethodRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText("isn't being used by any datastreams")).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedMethodName })
@@ -100,7 +102,7 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable.getByRole('tab', { name: 'Observed properties' }).click()
@@ -130,7 +132,7 @@ test.describe('metadata management', () => {
 
     await renamedPropRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedPropName })
@@ -146,7 +148,7 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable.getByRole('tab', { name: 'Processing levels' }).click()
@@ -170,7 +172,7 @@ test.describe('metadata management', () => {
 
     await renamedRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedCode })
@@ -186,7 +188,7 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable.getByRole('tab', { name: 'Units' }).click()
@@ -213,7 +215,7 @@ test.describe('metadata management', () => {
 
     await renamedUnitRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedUnitName })
@@ -229,7 +231,7 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable
@@ -263,7 +265,7 @@ test.describe('metadata management', () => {
 
     await renamedRow.locator('.v-icon').nth(1).click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedCode })
@@ -273,11 +275,13 @@ test.describe('metadata management', () => {
   test('metadata search box filters visible rows', async ({ page }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.public.name)
+    await workspaceListItem(page, fixtures.workspaces.public.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
 
-    const searchBox = page.getByRole('textbox', { name: /search/i }).first()
+    const searchBox = page
+      .getByRole('textbox', { name: 'Search', exact: true })
+      .first()
     await expect(searchBox).toBeVisible()
 
     await searchBox.fill('Public Assigned Sensor')
@@ -303,7 +307,7 @@ test.describe('metadata management', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
@@ -318,7 +322,7 @@ test.describe('metadata management', () => {
     await expect(
       page.getByText("cannot be deleted because it's being referenced")
     ).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Cancel' }).click()
   })
 })
