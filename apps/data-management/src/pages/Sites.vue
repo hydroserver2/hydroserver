@@ -80,7 +80,7 @@
           :search="search"
           multi-sort
           item-value="id"
-          class="elevation-3 owned-sites-table"
+          class="elevation-3 owned-sites-table hs-table-card"
           @click:row="onRowClick"
           color="primary"
           :hover="coloredThings?.length > 0 && isPageLoaded"

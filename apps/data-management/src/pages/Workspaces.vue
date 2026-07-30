@@ -245,7 +245,46 @@
                   </v-col>
                 </v-row>
 
-                <v-table>
+                <div class="overview-stats">
+                  <div class="stat-tile stat-tile--accent">
+                    <div class="stat-tile-head">
+                      <v-icon :icon="mdiAccountCircle" size="16" />
+                      <span>Members</span>
+                    </div>
+                    <div class="stat-tile-value">
+                      {{ overviewStatsLoaded ? overviewStats.members : '—' }}
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-tile-head">
+                      <v-icon :icon="mdiRadioTower" size="16" />
+                      <span>Sites</span>
+                    </div>
+                    <div class="stat-tile-value">
+                      {{ overviewStatsLoaded ? overviewStats.sites : '—' }}
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-tile-head">
+                      <v-icon :icon="mdiKeyVariant" size="16" />
+                      <span>API keys</span>
+                    </div>
+                    <div class="stat-tile-value">
+                      {{ overviewStatsLoaded ? overviewStats.keys : '—' }}
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-tile-head">
+                      <v-icon :icon="mdiDatabaseCog" size="16" />
+                      <span>Metadata items</span>
+                    </div>
+                    <div class="stat-tile-value">
+                      {{ overviewStatsLoaded ? overviewStats.metadata : '—' }}
+                    </div>
+                  </div>
+                </div>
+
+                <v-table class="hs-table-card">
                   <tbody>
                     <tr>
                       <td class="text-medium-emphasis" style="width: 200px">
@@ -323,6 +362,7 @@
                     rounded="xl"
                     divided
                   >
+                    <v-btn value="all">All</v-btn>
                     <v-btn value="workspace">Workspace metadata</v-btn>
                     <v-btn value="system">System metadata</v-btn>
                   </v-btn-toggle>
@@ -341,17 +381,10 @@
                 </div>
 
                 <MetadataTable
-                  v-if="metadataScope === 'workspace'"
-                  :key="`workspace-${selected.id}`"
+                  :key="`${metadataScope}-${selected.id}`"
                   :workspace="selected"
                   :search="metadataSearch"
-                  useWorkspaceVariables
-                />
-                <MetadataTable
-                  v-else
-                  :key="`system-${selected.id}`"
-                  :workspace="selected"
-                  :search="metadataSearch"
+                  :scope="metadataScope"
                 />
               </v-window-item>
 
@@ -450,6 +483,7 @@ import {
   mdiMagnify,
   mdiPencil,
   mdiPlus,
+  mdiRadioTower,
   mdiTransitTransfer,
   mdiTrashCanOutline,
 } from '@mdi/js'
@@ -499,7 +533,7 @@ const canManageWorkspace = (ws: Workspace | null) =>
 const isPageLoaded = ref(false)
 const search = ref('')
 const metadataSearch = ref()
-const metadataScope = ref<'workspace' | 'system'>('workspace')
+const metadataScope = ref<'all' | 'workspace' | 'system'>('all')
 
 const selectedId = ref('')
 const section = ref('overview')
@@ -511,6 +545,59 @@ const activeItem = ref<Workspace>({} as Workspace)
 
 const selected = computed(
   () => workspaces.value.find((ws) => ws.id === selectedId.value) ?? null
+)
+
+/** At-a-glance counts shown as the large stat tiles on the Overview tab. */
+const overviewStats = ref({ members: 0, sites: 0, keys: 0, metadata: 0 })
+const overviewStatsLoaded = ref(false)
+
+const loadOverviewStats = async (workspaceId: string) => {
+  overviewStatsLoaded.value = false
+  try {
+    const [
+      collaboratorsRes,
+      sitesRes,
+      keysRes,
+      sensors,
+      observedProperties,
+      processingLevels,
+      units,
+      resultQualifiers,
+    ] = await Promise.all([
+      hs.workspaces.getCollaborators(workspaceId),
+      hs.things.listSiteSummaries(workspaceId),
+      hs.workspaces.getApiKeys(workspaceId),
+      hs.sensors.listAllItems({ workspace_id: [workspaceId] }),
+      hs.observedProperties.listAllItems({ workspace_id: [workspaceId] }),
+      hs.processingLevels.listAllItems({ workspace_id: [workspaceId] }),
+      hs.units.listAllItems({ workspace_id: [workspaceId] }),
+      hs.resultQualifiers.listAllItems({ workspace_id: [workspaceId] }),
+    ])
+    overviewStats.value = {
+      // +1 for the owner, who isn't included in the collaborators list.
+      members: (collaboratorsRes.ok ? collaboratorsRes.data.length : 0) + 1,
+      sites: sitesRes.ok ? sitesRes.data.length : 0,
+      keys: keysRes.ok ? keysRes.data.length : 0,
+      metadata:
+        sensors.length +
+        observedProperties.length +
+        processingLevels.length +
+        units.length +
+        resultQualifiers.length,
+    }
+  } catch (error) {
+    console.error('Error loading workspace overview stats', error)
+  } finally {
+    overviewStatsLoaded.value = true
+  }
+}
+
+watch(
+  selected,
+  (ws) => {
+    if (ws) loadOverviewStats(ws.id)
+  },
+  { immediate: true }
 )
 
 const filteredWorkspaces = computed(() => {
@@ -669,6 +756,45 @@ onMounted(async () => {
 .metadata-search {
   max-width: 260px;
   flex-shrink: 0;
+}
+
+/* ── overview stat tiles ── */
+.overview-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-tile {
+  flex: 1;
+  min-width: 0;
+  padding: 15px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 11px;
+  background: #ffffff;
+}
+.stat-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #9ca3af;
+  margin-bottom: 9px;
+}
+.stat-tile-head span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #757575;
+}
+.stat-tile--accent .stat-tile-head,
+.stat-tile--accent .stat-tile-head span {
+  color: #1976d2;
+}
+.stat-tile-value {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1c1b1f;
 }
 
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /

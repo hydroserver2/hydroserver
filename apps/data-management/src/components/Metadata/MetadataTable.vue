@@ -2,32 +2,18 @@
   <div
     v-if="activeWorkspace"
     class="metadata-section"
-    :data-testid="
-      useWorkspaceVariables ? 'workspace-metadata-table' : 'system-metadata-table'
-    "
+    :data-testid="`${scope}-metadata-table`"
   >
     <div class="metadata-section-header">
       <div>
-        <h3 class="metadata-section-title">
-          {{ useWorkspaceVariables ? 'Workspace metadata' : 'System metadata' }}
-        </h3>
-        <p class="metadata-section-subtitle">
-          {{
-            useWorkspaceVariables
-              ? 'Belongs only to this workspace. Editors and the owner can manage it.'
-              : 'Shared across every workspace and managed by administrators.'
-          }}
-        </p>
+        <h3 class="metadata-section-title">{{ sectionTitle }}</h3>
+        <p class="metadata-section-subtitle">{{ sectionSubtitle }}</p>
       </div>
 
       <v-btn-add
         v-if="hasCRUDPermissions"
         :prependIcon="mdiPlus"
-        :data-testid="
-          useWorkspaceVariables
-            ? 'add-workspace-metadata-item'
-            : 'add-system-metadata-item'
-        "
+        :data-testid="`add-${scope}-metadata-item`"
         @click="metaMap[tab]?.openDialog()"
         >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
       >
@@ -50,6 +36,7 @@
           :search="search"
           :workspace-id="workspaceId"
           :can-edit="hasCRUDPermissions"
+          :scope="scope"
         />
       </v-window-item>
 
@@ -59,6 +46,7 @@
           :search="search"
           :workspace-id="workspaceId"
           :can-edit="hasCRUDPermissions"
+          :scope="scope"
         />
       </v-window-item>
 
@@ -68,6 +56,7 @@
           :search="search"
           :workspace-id="workspaceId"
           :can-edit="hasCRUDPermissions"
+          :scope="scope"
         />
       </v-window-item>
 
@@ -77,6 +66,7 @@
           :search="search"
           :workspace-id="workspaceId"
           :can-edit="hasCRUDPermissions"
+          :scope="scope"
         />
       </v-window-item>
 
@@ -86,6 +76,7 @@
           :search="search"
           :workspace-id="workspaceId"
           :can-edit="hasCRUDPermissions"
+          :scope="scope"
         />
       </v-window-item>
     </v-window>
@@ -143,13 +134,15 @@ import SensorFormCard from '@/components/Metadata/SensorFormCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, type PropType } from 'vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Workspace } from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
 import { mdiPlus } from '@mdi/js'
+
+export type MetadataScope = 'workspace' | 'system' | 'all'
 
 // The active metadata type (Methods/Observed properties/...) is shared
 // across both the workspace and system sections via this store, so
@@ -158,7 +151,10 @@ const { tab } = storeToRefs(useMetadata())
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const props = defineProps({
-  useWorkspaceVariables: Boolean,
+  scope: {
+    type: String as PropType<MetadataScope>,
+    default: 'workspace',
+  },
   search: String,
   /** Workspace to show metadata for. Falls back to the globally selected workspace. */
   workspace: Object as () => Workspace,
@@ -168,14 +164,31 @@ const activeWorkspace = computed<Workspace | undefined>(
   () => props.workspace ?? selectedWorkspace.value ?? undefined
 )
 
+// System-only tables don't need a workspace, but workspace and merged ("all")
+// tables both fetch this workspace's items alongside/instead of system ones.
 const workspaceId = computed(() =>
-  props.useWorkspaceVariables ? activeWorkspace.value!.id : undefined
+  props.scope === 'system' ? undefined : activeWorkspace.value!.id
 )
 
 const { isAdmin } = useWorkspacePermissions(activeWorkspace)
 
 const hasCRUDPermissions = computed(
-  () => !!(props.useWorkspaceVariables || isAdmin())
+  () => !!(props.scope !== 'system' || isAdmin())
+)
+
+const sectionTitle = computed(
+  () =>
+    ({ all: 'All metadata', workspace: 'Workspace metadata', system: 'System metadata' })[
+      props.scope
+    ]
+)
+const sectionSubtitle = computed(
+  () =>
+    ({
+      all: "This workspace's own metadata alongside the system-wide defaults available to it.",
+      workspace: 'Belongs only to this workspace. Editors and the owner can manage it.',
+      system: 'Shared across every workspace and managed by administrators.',
+    })[props.scope]
 )
 const openUnitCreate = ref(false)
 const unitKey = ref(0)

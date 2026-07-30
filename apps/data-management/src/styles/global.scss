@@ -2,3 +2,11 @@
   content: ' *';
   color: #f44336; /* Vuetify error color */
 }
+
+/* Thin border so tables read as a contained element rather than content that
+   just stops at the surrounding padding. */
+.hs-table-card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}

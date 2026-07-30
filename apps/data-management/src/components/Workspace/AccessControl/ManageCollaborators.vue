@@ -80,7 +80,7 @@
   </v-card-text>
 
   <v-card-text>
-    <v-table class="collaborator-table">
+    <v-table class="collaborator-table hs-table-card">
       <thead>
         <tr>
           <th>Member</th>

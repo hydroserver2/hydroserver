@@ -58,6 +58,7 @@
   </v-card-text>
 
   <v-data-table-virtual
+    class="hs-table-card"
     :headers="headers"
     :items="items"
     :sort-by="sortBy"
