@@ -73,7 +73,8 @@
           v-model="siteSearch"
           class="site-search"
           name="browse-site-search"
-          label="Search sites"
+          placeholder="Search sites"
+          aria-label="Search sites"
           :prepend-inner-icon="mdiMagnify"
           clearable
           hide-details
