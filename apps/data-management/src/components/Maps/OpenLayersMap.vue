@@ -29,15 +29,20 @@
       {{ selectedSiteLabel }}
     </div>
 
-    <div v-if="uniqueColoredThings.length" class="legend">
-      <h3>Legend</h3>
+    <div
+      v-if="uniqueColoredThings.length"
+      class="legend"
+      :class="{ 'legend--browse': selectable }"
+      data-testid="map-marker-legend"
+    >
+      <h3>{{ legendTitle }}</h3>
       <ul>
         <li v-for="thing in uniqueColoredThings" :key="thing.tagValue">
           <v-icon
             :icon="mdiMapMarker"
             :style="{ color: thing.color?.background }"
           ></v-icon>
-          {{ thing?.tagValue }}
+          {{ getLegendLabel(thing.tagValue) }}
         </li>
       </ul>
     </div>
@@ -100,6 +105,8 @@ import hs, { Thing } from '@hydroserver/client'
 import { MapThing, MapThingWithColor } from '@/types'
 import {
   addColorToMarkers,
+  addSiteTypeColorToMarkers,
+  addWorkspaceColorToMarkers,
   generateMarkerContent,
   hasThingTags,
   isThingMarker,
@@ -128,6 +135,16 @@ const props = defineProps({
     default: () => [],
   },
   colorKey: { type: String, default: '' },
+  colorMode: {
+    type: String as PropType<
+      'none' | 'workspace' | 'siteType' | 'metadata'
+    >,
+    default: 'none',
+  },
+  colorLabels: {
+    type: Object as PropType<Record<string, string>>,
+    default: () => ({}),
+  },
   startInSatellite: Boolean,
   singleMarkerMode: Boolean,
   fitPadding: {
@@ -251,6 +268,17 @@ const uniqueColoredThings = computed(() => {
     return a.tagValue.localeCompare(b.tagValue)
   })
 })
+
+const legendTitle = computed(() =>
+  props.colorMode === 'workspace'
+    ? 'Workspace'
+    : props.colorMode === 'siteType'
+      ? 'Site type'
+      : props.colorKey || 'Legend'
+)
+
+const getLegendLabel = (value?: string) =>
+  value ? (props.colorLabels[value] ?? value) : ''
 
 const getThingCoordinates = (thing: MapThingWithColor) => {
   if (isThingMarker(thing)) {
@@ -550,11 +578,19 @@ const focusThingById = (thingId?: string | null) => {
 
 async function updateFeatures() {
   // 1) Rebuild features
-  coloredThings.value = props.colorKey
-    ? props.things.every(hasThingTags)
-      ? addColorToMarkers(props.things, props.colorKey)
-      : props.things
-    : props.things
+  if (props.colorMode === 'workspace') {
+    coloredThings.value = addWorkspaceColorToMarkers(props.things)
+  } else if (props.colorMode === 'siteType') {
+    coloredThings.value = addSiteTypeColorToMarkers(props.things)
+  } else if (
+    props.colorMode === 'metadata' &&
+    props.colorKey &&
+    props.things.every(hasThingTags)
+  ) {
+    coloredThings.value = addColorToMarkers(props.things, props.colorKey)
+  } else {
+    coloredThings.value = props.things
+  }
 
   const features = coloredThings.value
     .map(createFeature)
@@ -732,7 +768,12 @@ onBeforeUnmount(() => {
   }
 })
 
-watch(() => [props.things] as const, updateFeatures, { deep: true })
+watch(
+  () =>
+    [props.things, props.colorMode, props.colorKey, props.colorLabels] as const,
+  updateFeatures,
+  { deep: true }
+)
 
 watch(
   () => props.selectedThingId,
@@ -821,6 +862,13 @@ watch(
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.legend--browse {
+  right: 64px;
+  bottom: 16px;
+  left: auto;
+  z-index: 4;
 }
 
 .selected-site-label {

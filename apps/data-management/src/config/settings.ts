@@ -37,15 +37,24 @@ const defaultSettings: AppSettings = {
 let scriptTag: HTMLScriptElement | null
 
 if (import.meta.env.DEV) {
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', devHost, false)
-  xhr.send(null)
-  const indexHtml = xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null
-  const parser = new DOMParser()
-  const doc = indexHtml
-    ? parser.parseFromString(indexHtml, 'text/html')
-    : document.implementation.createHTMLDocument('')
-  scriptTag = doc.getElementById('app-settings') as HTMLScriptElement
+  try {
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', devHost, false)
+    xhr.send(null)
+    const indexHtml =
+      xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null
+    const parser = new DOMParser()
+    const doc = indexHtml
+      ? parser.parseFromString(indexHtml, 'text/html')
+      : document.implementation.createHTMLDocument('')
+    scriptTag = doc.getElementById('app-settings') as HTMLScriptElement
+  } catch (error) {
+    console.warn(
+      `Could not load development settings from ${devHost}; using defaults.`,
+      error
+    )
+    scriptTag = null
+  }
 } else {
   scriptTag = document.getElementById('app-settings') as HTMLScriptElement
 }

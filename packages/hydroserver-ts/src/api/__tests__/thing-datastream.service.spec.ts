@@ -50,6 +50,16 @@ describe('ThingService', () => {
   })
 
   describe('listSiteSummaries', () => {
+    it('fetches visible site summaries without requiring a workspace filter', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([])))
+
+      const res = await client.things.listSiteSummaries()
+
+      expect(res.ok).toBe(true)
+      const [url] = (fetch as any).mock.calls[0]
+      expect(url).toMatch(/\/api\/data\/things\/site-summaries$/)
+    })
+
     it('passes workspace_id as a query param and returns summaries', async () => {
       const payload = [
         {

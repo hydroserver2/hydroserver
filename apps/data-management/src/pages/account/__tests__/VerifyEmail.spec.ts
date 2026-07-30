@@ -76,6 +76,6 @@ describe('VerifyEmail', () => {
     expect(mocks.hs.user.verifyEmailWithCode).toHaveBeenCalledWith('123456')
     expect(mocks.hs.user.get).toHaveBeenCalled()
     expect(userStore.user.email).toBe('new-user@example.com')
-    expect(mocks.router.push).toHaveBeenCalledWith({ name: 'Sites' })
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: 'Browse' })
   })
 })

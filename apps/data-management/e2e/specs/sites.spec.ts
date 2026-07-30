@@ -4,6 +4,7 @@ import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
 import {
   chooseAutocompleteOption,
+  chooseOverlayOption,
   fillCombobox,
   selectWorkspace,
 } from '../support/ui'
@@ -18,7 +19,9 @@ test.describe('sites and workspaces', () => {
     'base64'
   )
 
-  test('owner can create a workspace from the shared workspace toolbar', async ({ page }) => {
+  test('owner can create a workspace from the shared workspace toolbar', async ({
+    page,
+  }) => {
     const workspaceName = `E2E Workspace ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
@@ -65,30 +68,37 @@ test.describe('sites and workspaces', () => {
         exact: true,
       })
     ).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Site information' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Site information' })
+    ).toBeVisible()
     await expect(page.getByTestId('edit-site-button')).toHaveCount(0)
     await expect(page.getByTestId('site-access-control-button')).toHaveCount(0)
     await expect(page.getByTestId('add-datastream-button')).toHaveCount(0)
   })
 
-  test('sites page search and metadata filters narrow the selected workspace site list', async ({
+  test('Browse search, workspace, and metadata filters narrow the site list', async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/sites')
-    await selectWorkspace(page, fixtures.workspaces.public.name)
+    await page.goto('/browse')
+    await chooseAutocompleteOption(
+      page,
+      'Workspaces',
+      fixtures.workspaces.public.name
+    )
 
-    const publicThingRow = page.locator('tr').filter({
-      hasText: fixtures.things.public.name,
+    const publicThingRow = page.getByRole('button', {
+      name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+      exact: true,
     })
-    const privateWorkspaceRow = page.locator('tr').filter({
-      hasText: 'Private Thing Public Workspace',
+    const privateWorkspaceRow = page.getByRole('button', {
+      name: /Private Thing Public Workspace/,
     })
-    const mutableThingRow = page.locator('tr').filter({
-      hasText: fixtures.things.mutablePublic.name,
+    const mutableThingRow = page.getByRole('button', {
+      name: new RegExp(fixtures.things.mutablePublic.name),
     })
 
-    const searchBox = page.getByRole('textbox', { name: 'Search' }).first()
+    const searchBox = page.getByRole('textbox', { name: 'Search sites' })
     await expect(searchBox).toBeVisible()
 
     await searchBox.fill(fixtures.things.public.siteCode)
@@ -101,18 +111,52 @@ test.describe('sites and workspaces', () => {
     await expect(privateWorkspaceRow).toBeVisible()
     await expect(mutableThingRow).toBeVisible()
 
-    await page.getByRole('button', { name: 'Filter sites' }).click()
-    await chooseAutocompleteOption(page, 'Key', 'E2E')
-    await chooseAutocompleteOption(page, 'Value', 'Mutable')
+    await chooseAutocompleteOption(page, 'Metadata key', 'E2E')
+    await chooseAutocompleteOption(page, 'Metadata value', 'Mutable')
 
     await expect(mutableThingRow).toBeVisible()
     await expect(publicThingRow).toHaveCount(0)
     await expect(privateWorkspaceRow).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Clear filters' }).click()
+    await page.getByRole('button', { name: 'Reset', exact: true }).click()
     await expect(publicThingRow).toBeVisible()
     await expect(privateWorkspaceRow).toBeVisible()
     await expect(mutableThingRow).toBeVisible()
+
+    await page.getByRole('button', { name: 'Workspace', exact: true }).click()
+    const markerLegend = page.getByTestId('map-marker-legend')
+    await expect(markerLegend).toContainText(fixtures.workspaces.public.name)
+    await expect(markerLegend).toContainText(fixtures.workspaces.private.name)
+
+    await page.getByRole('button', { name: 'Site type', exact: true }).click()
+    await expect(markerLegend).toContainText('Public')
+    await expect(markerLegend).toContainText('Private')
+
+    await page.getByRole('button', { name: 'Metadata', exact: true }).click()
+    await chooseAutocompleteOption(page, 'Metadata tag', 'E2E')
+    await expect(markerLegend).toContainText('Mutable')
+
+    await page.getByRole('button', { name: 'Metadata', exact: true }).click()
+    await expect(markerLegend).toHaveCount(0)
+  })
+
+  test('Browse preserves space for site selections on a compact screen', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 640 })
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/browse')
+
+    const siteList = page.locator('.site-list')
+    await expect(siteList).toBeVisible()
+    const siteListBox = await siteList.boundingBox()
+    expect(siteListBox?.height ?? 0).toBeGreaterThanOrEqual(120)
+    await expect(
+      page.getByRole('button', {
+        name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+        exact: true,
+      })
+    ).toBeVisible()
   })
 
   test('owner can register a site with metadata and see the saved values on site details', async ({
@@ -123,9 +167,11 @@ test.describe('sites and workspaces', () => {
     const siteName = `E2E Registered Site ${stamp}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/sites')
-    await selectWorkspace(page, fixtures.workspaces.public.name)
-    await page.getByRole('button', { name: 'Register a new site' }).click()
+    await page.goto('/browse')
+    await page.getByTestId('register-site-button').click()
+    await page.getByTestId('registration-workspace-select').click()
+    await chooseOverlayOption(page, fixtures.workspaces.public.name)
+    const siteFormDialog = page.getByRole('dialog')
 
     await page.getByLabel('Site Code *').fill(siteCode)
     await page.getByLabel('Site Name *').fill(siteName)
@@ -136,23 +182,35 @@ test.describe('sites and workspaces', () => {
     await page.getByLabel('Latitude *').fill('41.7501')
     await page.getByLabel('Longitude *').fill('-111.8102')
     await page.getByLabel('Elevation (m) *').fill('1380')
-    await fillCombobox(page, 'Key', 'E2E')
-    await fillCombobox(page, 'Value', 'Registration')
-    await page.getByRole('button', { name: 'Add' }).click()
+    const tagKey = siteFormDialog.getByRole('combobox', { name: 'Key' })
+    await tagKey.fill('E2E')
+    await tagKey.press('Enter')
+    const tagValue = siteFormDialog.getByRole('combobox', { name: 'Value' })
+    await tagValue.fill('Registration')
+    await tagValue.press('Enter')
+    await siteFormDialog.getByRole('button', { name: 'Add' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
 
-    const siteRow = page.locator('tr').filter({ hasText: siteName }).first()
+    const siteRow = page.getByRole('button', {
+      name: new RegExp(siteName),
+    })
     await expect(siteRow).toBeVisible()
     await siteRow.click()
+    await page.getByRole('link', { name: 'View details' }).click()
 
-    await expect(page.getByRole('heading', { name: siteName, exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: siteName, exact: true })
+    ).toBeVisible()
     await expect(page.getByText(siteCode, { exact: true })).toBeVisible()
     await expect(page.getByText('E2E: Registration')).toBeVisible()
 
     await page.getByTestId('delete-site-button').click()
     await page.getByLabel('Site name').fill(siteName)
-    await page.getByRole('button', { name: 'Delete', exact: true }).last().click()
-    await expect(page).toHaveURL(/\/sites$/)
+    await page
+      .getByRole('button', { name: 'Delete', exact: true })
+      .last()
+      .click()
+    await expect(page).toHaveURL(/\/browse$/)
   })
 
   test('owner can edit, toggle privacy for, and delete a site with datastream CRUD', async ({
@@ -283,9 +341,12 @@ test.describe('sites and workspaces', () => {
 
     await page.getByTestId('delete-site-button').click()
     await page.getByLabel('Site name').fill(renamedSiteName)
-    await page.getByRole('button', { name: 'Delete', exact: true }).last().click()
+    await page
+      .getByRole('button', { name: 'Delete', exact: true })
+      .last()
+      .click()
 
-    await expect(page).toHaveURL(/\/sites$/)
+    await expect(page).toHaveURL(/\/browse$/)
   })
 
   test('owner privacy toggles affect anonymous site and datastream metadata access', async ({
@@ -430,9 +491,7 @@ test.describe('sites and workspaces', () => {
     ).first()
     await expect(datastreamRow).toBeVisible()
 
-    await datastreamRow
-      .locator('[data-testid^="datastream-actions-"]')
-      .click()
+    await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
 
     const downloadPromise = page.waitForEvent('download')
     await page.getByText('Download data').click()
@@ -447,10 +506,16 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(`/sites/${fixtures.things.public.id}`)
 
-    await page.getByTestId(`datastream-metadata-${fixtures.datastreams.public.id}`).click()
+    await page
+      .getByTestId(`datastream-metadata-${fixtures.datastreams.public.id}`)
+      .click()
     const metadataDialog = page.getByRole('dialog')
-    await expect(metadataDialog.getByText('Datastream information')).toBeVisible()
-    await expect(metadataDialog.getByText('General', { exact: true })).toBeVisible()
+    await expect(
+      metadataDialog.getByText('Datastream information')
+    ).toBeVisible()
+    await expect(
+      metadataDialog.getByText('General', { exact: true })
+    ).toBeVisible()
     await metadataDialog.getByText('Observed Property', { exact: true }).click()
     await expect(metadataDialog.getByText('Code')).toBeVisible()
 
@@ -475,24 +540,30 @@ test.describe('sites and workspaces', () => {
     await expect(page).toHaveURL(
       new RegExp(`/visualize-data\\?sites=${fixtures.things.public.id}`)
     )
-    await expect(page.getByText(fixtures.datastreams.public.name, { exact: true })).toBeVisible()
+    await expect(
+      page.getByText(fixtures.datastreams.public.name, { exact: true })
+    ).toBeVisible()
 
     await page.goto(`/sites/${fixtures.things.public.id}`)
     const datastreamRow = datastreamEntriesByName(
       page,
       fixtures.datastreams.public.name
     ).first()
-    await datastreamRow
-      .locator('[data-testid^="datastream-actions-"]')
+    await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
+    await page
+      .getByTestId(`visualize-datastream-${fixtures.datastreams.public.id}`)
       .click()
-    await page.getByTestId(`visualize-datastream-${fixtures.datastreams.public.id}`).click()
 
     await expect(page).toHaveURL(
       new RegExp(
         `/visualize-data\\?sites=${fixtures.things.public.id}&datastreams=${fixtures.datastreams.public.id}`
       )
     )
-    await expect(page.getByRole('button', { name: 'Copy State as URL' })).toBeVisible()
-    await expect(page.getByText(fixtures.datastreams.public.name, { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Copy State as URL' })
+    ).toBeVisible()
+    await expect(
+      page.getByText(fixtures.datastreams.public.name, { exact: true })
+    ).toBeVisible()
   })
 })

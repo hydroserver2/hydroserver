@@ -37,6 +37,25 @@
           </v-btn>
 
           <v-btn
+            v-if="showRegisterSite"
+            class="register-site-button"
+            icon
+            color="primary"
+            variant="flat"
+            data-testid="register-site-button"
+            aria-label="Register a monitoring site"
+            :disabled="!canRegisterSite"
+            :title="
+              canRegisterSite
+                ? 'Register a monitoring site'
+                : 'You need site creation permission in a workspace to register a site'
+            "
+            @click="$emit('register-site')"
+          >
+            <v-icon :icon="mdiPlus" size="16" />
+          </v-btn>
+
+          <v-btn
             icon
             variant="text"
             color="default"
@@ -58,6 +77,7 @@
           :prepend-inner-icon="mdiMagnify"
           clearable
           hide-details
+          density="compact"
           color="primary"
           autocomplete="off"
           :disabled="!thingsLoaded"
@@ -76,6 +96,7 @@
           multiple
           clearable
           hide-details
+          density="compact"
           color="primary"
           :prepend-inner-icon="mdiBriefcaseOutline"
           :disabled="!thingsLoaded"
@@ -97,6 +118,62 @@
             </span>
           </template>
         </v-autocomplete>
+
+        <section class="filter-section color-section">
+          <div class="filter-section-title">Color markers by</div>
+          <div
+            class="color-mode-buttons"
+            role="group"
+            aria-label="Color markers by"
+          >
+            <v-btn
+              class="color-mode-button"
+              color="grey-darken-1"
+              size="small"
+              :variant="markerColorMode === 'workspace' ? 'tonal' : 'outlined'"
+              :aria-pressed="markerColorMode === 'workspace'"
+              @click="toggleMarkerColorMode('workspace')"
+            >
+              Workspace
+            </v-btn>
+            <v-btn
+              class="color-mode-button"
+              color="grey-darken-1"
+              size="small"
+              :variant="markerColorMode === 'siteType' ? 'tonal' : 'outlined'"
+              :aria-pressed="markerColorMode === 'siteType'"
+              @click="toggleMarkerColorMode('siteType')"
+            >
+              Site type
+            </v-btn>
+            <v-btn
+              class="color-mode-button"
+              color="grey-darken-1"
+              size="small"
+              :variant="markerColorMode === 'metadata' ? 'tonal' : 'outlined'"
+              :aria-pressed="markerColorMode === 'metadata'"
+              :disabled="!availableTagKeys.length"
+              @click="toggleMarkerColorMode('metadata')"
+            >
+              Metadata
+            </v-btn>
+          </div>
+
+          <v-autocomplete
+            v-if="markerColorMode === 'metadata'"
+            v-model="colorTagKey"
+            :items="availableTagKeys"
+            class="color-tag-filter"
+            name="browse-marker-color-tag"
+            label="Metadata tag"
+            data-testid="marker-color-tag-select"
+            clearable
+            hide-details
+            density="compact"
+            color="primary"
+            :prepend-inner-icon="mdiTagOutline"
+          />
+        </section>
 
         <section v-if="availableSiteTypes.length" class="filter-section">
           <div class="filter-section-title">Site type</div>
@@ -122,6 +199,51 @@
               />
               <span>{{ siteType }}</span>
             </v-btn>
+          </div>
+        </section>
+
+        <section v-if="availableTagKeys.length" class="filter-section">
+          <div class="filter-section-title">Additional metadata</div>
+          <div class="metadata-filter-row">
+            <v-autocomplete
+              v-model="selectedTagKey"
+              :items="availableTagKeys"
+              class="metadata-filter"
+              name="browse-metadata-key-filter"
+              label="Metadata key"
+              clearable
+              hide-details
+              density="compact"
+              color="primary"
+              :prepend-inner-icon="mdiTagOutline"
+              @update:model-value="selectedTagValues = []"
+            />
+
+            <v-autocomplete
+              v-model="selectedTagValues"
+              :items="availableTagValues"
+              class="metadata-filter"
+              name="browse-metadata-value-filter"
+              label="Metadata value"
+              multiple
+              clearable
+              hide-details
+              density="compact"
+              color="primary"
+              :disabled="!selectedTagKey"
+            >
+              <template v-slot:selection="{ item, index }">
+                <span v-if="index === 0" class="metadata-value-selection">
+                  {{ item }}
+                </span>
+                <span
+                  v-else-if="index === 1"
+                  class="text-caption text-medium-emphasis ms-1"
+                >
+                  +{{ selectedTagValues.length - 1 }}
+                </span>
+              </template>
+            </v-autocomplete>
           </div>
         </section>
       </div>
@@ -162,6 +284,12 @@
             <span class="site-row-text">
               <span class="site-row-name">{{ site.name }}</span>
               <span class="site-row-workspace">
+                <span v-if="site.samplingFeatureCode" class="site-row-code">
+                  {{ site.samplingFeatureCode }}
+                </span>
+                <span v-if="site.samplingFeatureCode" aria-hidden="true">
+                  ·
+                </span>
                 {{ getWorkspaceName(site.workspaceId) }}
               </span>
             </span>
@@ -185,17 +313,20 @@ import {
   filterThingMarkers,
   parseBrowseFilterQuery,
 } from '@/utils/browseFilters'
+import type { MarkerColorMode } from '@/utils/browseFilters'
 import {
   buildSiteTypeIconRules,
   getSiteTypeIcon as resolveSiteTypeIcon,
 } from '@/utils/siteTypeIcons'
 import hs, { Workspace } from '@hydroserver/client'
-import type { ThingMarker } from '@/types'
+import type { ThingSiteSummary } from '@/types'
 import {
   mdiBriefcaseOutline,
   mdiChevronLeft,
   mdiFilterOffOutline,
   mdiMagnify,
+  mdiPlus,
+  mdiTagOutline,
 } from '@mdi/js'
 
 const route = useRoute()
@@ -204,6 +335,10 @@ const { siteTypeIcons } = storeToRefs(useVocabularyStore())
 
 const selectedSiteTypes = ref<string[]>([])
 const selectedWorkspaces = ref<Workspace[]>([])
+const selectedTagKey = ref('')
+const selectedTagValues = ref<string[]>([])
+const markerColorMode = ref<MarkerColorMode>('none')
+const colorTagKey = ref('')
 const siteSearch = ref('')
 const workspaces = ref<Workspace[]>([])
 const workspacesLoaded = ref(false)
@@ -213,13 +348,21 @@ const hasAppliedInitialRouteState = ref(false)
 let routeApplyId = 0
 
 const emit = defineEmits<{
-  filter: [ThingMarker[]]
+  filter: [ThingSiteSummary[]]
   'select-site': [string | undefined]
+  'color-settings': [
+    {
+      mode: MarkerColorMode
+      key: string
+      labels: Record<string, string>
+    },
+  ]
+  'register-site': []
 }>()
 
 const props = defineProps({
   things: {
-    type: Array as () => ThingMarker[],
+    type: Array as () => ThingSiteSummary[],
     required: true,
   },
   thingsLoaded: {
@@ -229,6 +372,14 @@ const props = defineProps({
   selectedSiteId: {
     type: String,
     default: undefined,
+  },
+  showRegisterSite: {
+    type: Boolean,
+    default: false,
+  },
+  canRegisterSite: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -254,9 +405,12 @@ const thingsMatchingSearch = computed(() => {
 
   return sortedThings.value.filter((thing) => {
     const workspaceName = getWorkspaceName(thing.workspaceId)
-    return [thing.name, workspaceName].some((value) =>
-      value.toLowerCase().includes(searchNeedle.value)
-    )
+    return [
+      thing.name,
+      thing.samplingFeatureCode,
+      thing.siteType,
+      workspaceName,
+    ].some((value) => value.toLowerCase().includes(searchNeedle.value))
   })
 })
 
@@ -264,7 +418,10 @@ const availableSites = computed(() =>
   filterThingMarkers(
     thingsMatchingSearch.value,
     selectedWorkspaces.value,
-    selectedSiteTypes.value
+    selectedSiteTypes.value,
+    undefined,
+    selectedTagKey.value,
+    selectedTagValues.value
   )
 )
 
@@ -273,7 +430,10 @@ const availableWorkspaces = computed(() => {
     filterThingMarkers(
       thingsMatchingSearch.value,
       [],
-      selectedSiteTypes.value
+      selectedSiteTypes.value,
+      undefined,
+      selectedTagKey.value,
+      selectedTagValues.value
     ).map((thing) => thing.workspaceId)
   )
 
@@ -285,18 +445,52 @@ const availableSiteTypes = computed(() => {
     filterThingMarkers(
       thingsMatchingSearch.value,
       selectedWorkspaces.value,
-      []
+      [],
+      undefined,
+      selectedTagKey.value,
+      selectedTagValues.value
     ).map((thing) => thing.siteType)
   )
 
   return [...siteTypes].filter(Boolean).sort((a, b) => a.localeCompare(b))
 })
 
+const thingsMatchingPrimaryFilters = computed(() =>
+  filterThingMarkers(
+    thingsMatchingSearch.value,
+    selectedWorkspaces.value,
+    selectedSiteTypes.value
+  )
+)
+
+const availableTagKeys = computed(() => {
+  const keys = new Set(
+    thingsMatchingPrimaryFilters.value.flatMap((thing) =>
+      thing.tags.map((tag) => tag.key)
+    )
+  )
+  return [...keys].filter(Boolean).sort((a, b) => a.localeCompare(b))
+})
+
+const availableTagValues = computed(() => {
+  if (!selectedTagKey.value) return []
+  const values = new Set(
+    thingsMatchingPrimaryFilters.value.flatMap((thing) =>
+      thing.tags
+        .filter((tag) => tag.key === selectedTagKey.value)
+        .map((tag) => tag.value)
+    )
+  )
+  return [...values].filter(Boolean).sort((a, b) => a.localeCompare(b))
+})
+
 const hasActiveFilters = computed(
   () =>
     Boolean((siteSearch.value ?? '').trim()) ||
     selectedWorkspaces.value.length > 0 ||
-    selectedSiteTypes.value.length > 0
+    selectedSiteTypes.value.length > 0 ||
+    Boolean(selectedTagKey.value) ||
+    selectedTagValues.value.length > 0
 )
 
 const getWorkspaceName = (workspaceId: string) =>
@@ -317,6 +511,10 @@ const toggleSiteType = (siteType: string) => {
 
 const setExpanded = (value: boolean) => {
   isExpanded.value = value
+}
+
+const toggleMarkerColorMode = (mode: Exclude<MarkerColorMode, 'none'>) => {
+  markerColorMode.value = markerColorMode.value === mode ? 'none' : mode
 }
 
 // Let the user quickly jump to a site: typing a query and pressing Enter
@@ -347,6 +545,10 @@ const syncRouteFromSelection = async (siteId = props.selectedSiteId) => {
     searchText: siteSearch.value,
     workspaceIds: selectedWorkspaces.value.map((workspace) => workspace.id),
     siteTypes: selectedSiteTypes.value,
+    tagKey: selectedTagKey.value,
+    tagValues: selectedTagValues.value,
+    colorBy: markerColorMode.value,
+    colorTagKey: colorTagKey.value,
     drawer: isExpanded.value,
   })
 
@@ -375,6 +577,10 @@ const applyRouteState = async () => {
       )
     : []
   selectedSiteTypes.value = state.siteTypes
+  selectedTagKey.value = state.tagKey
+  selectedTagValues.value = state.tagValues
+  markerColorMode.value = state.colorBy ?? 'none'
+  colorTagKey.value = state.colorTagKey
 
   if (state.drawer !== null) {
     isExpanded.value = state.drawer
@@ -396,6 +602,8 @@ const applyRouteState = async () => {
 const onClearFilters = () => {
   selectedSiteTypes.value = []
   selectedWorkspaces.value = []
+  selectedTagKey.value = ''
+  selectedTagValues.value = []
   siteSearch.value = ''
 }
 
@@ -408,14 +616,51 @@ onMounted(async () => {
   void applyRouteState()
 })
 
-watch([selectedSiteTypes, selectedWorkspaces, siteSearch], emitFilteredThings, {
-  deep: true,
-})
+watch(
+  [
+    selectedSiteTypes,
+    selectedWorkspaces,
+    selectedTagKey,
+    selectedTagValues,
+    siteSearch,
+  ],
+  emitFilteredThings,
+  { deep: true }
+)
 
 watch(
-  [selectedSiteTypes, selectedWorkspaces, siteSearch, isExpanded],
+  [
+    selectedSiteTypes,
+    selectedWorkspaces,
+    selectedTagKey,
+    selectedTagValues,
+    markerColorMode,
+    colorTagKey,
+    siteSearch,
+    isExpanded,
+  ],
   () => syncRouteFromSelection(),
   { deep: true }
+)
+
+watch(
+  [markerColorMode, colorTagKey, workspaces],
+  () =>
+    emit('color-settings', {
+      mode: markerColorMode.value,
+      key:
+        markerColorMode.value === 'metadata' ? (colorTagKey.value ?? '') : '',
+      labels:
+        markerColorMode.value === 'workspace'
+          ? Object.fromEntries(
+              workspaces.value.map((workspace) => [
+                workspace.id,
+                workspace.name,
+              ])
+            )
+          : {},
+    }),
+  { deep: true, immediate: true }
 )
 
 watch(
@@ -466,6 +711,35 @@ pruneSelectionToAvailable(
   availableSiteTypes,
   (siteType) => siteType,
   (siteType) => siteType
+)
+
+watch(availableTagKeys, (keys) => {
+  if (selectedTagKey.value && !keys.includes(selectedTagKey.value)) {
+    selectedTagKey.value = ''
+  }
+  if (colorTagKey.value && !keys.includes(colorTagKey.value)) {
+    colorTagKey.value = ''
+  }
+  if (
+    markerColorMode.value === 'metadata' &&
+    !colorTagKey.value &&
+    keys.length
+  ) {
+    colorTagKey.value = keys[0]
+  }
+})
+
+watch(markerColorMode, (mode) => {
+  if (mode === 'metadata' && !colorTagKey.value) {
+    colorTagKey.value = availableTagKeys.value[0] ?? ''
+  }
+})
+
+pruneSelectionToAvailable(
+  selectedTagValues,
+  availableTagValues,
+  (value) => value,
+  (value) => value
 )
 </script>
 
@@ -533,21 +807,37 @@ pruneSelectionToAvailable(
   flex-shrink: 0;
 }
 
+.register-site-button {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 6px;
+  padding: 0;
+}
+
 .filter-controls {
   display: flex;
+  min-height: 0;
+  flex: 0 1 auto;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0 20px 14px;
 }
 
 .site-search :deep(.v-field),
-.workspace-filter :deep(.v-field) {
+.workspace-filter :deep(.v-field),
+.metadata-filter :deep(.v-field),
+.color-tag-filter :deep(.v-field) {
   border-radius: 8px;
   font-size: 13px;
 }
 
 .site-search :deep(.v-field__input),
-.workspace-filter :deep(.v-field__input) {
+.workspace-filter :deep(.v-field__input),
+.metadata-filter :deep(.v-field__input),
+.color-tag-filter :deep(.v-field__input) {
   font-size: 13px;
 }
 
@@ -563,6 +853,35 @@ pruneSelectionToAvailable(
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
+}
+
+.color-mode-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.color-mode-button {
+  min-width: 0;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  padding-inline: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.metadata-filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metadata-value-selection {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip-grid {
@@ -604,8 +923,8 @@ pruneSelectionToAvailable(
 }
 
 .site-list {
-  flex: 1;
-  min-height: 0;
+  min-height: 140px;
+  flex: 1 0 140px;
   overflow: hidden auto;
   padding: 12px 20px 16px;
 }
@@ -717,6 +1036,11 @@ pruneSelectionToAvailable(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.site-row-code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10.5px;
 }
 
 .site-row-name {

@@ -234,11 +234,6 @@ const paths: NavItem[] = [
     icon: mdiMapMarkerOutline,
   },
   {
-    attrs: { to: '/sites' },
-    label: 'Your sites',
-    icon: mdiMapMarkerOutline,
-  },
-  {
     attrs: { to: '/visualize-data' },
     label: 'Visualize data',
     icon: mdiChartLine,

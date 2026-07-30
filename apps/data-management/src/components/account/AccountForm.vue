@@ -231,7 +231,7 @@ async function createUser() {
       await router.push({ name: 'VerifyEmail' })
     } else {
       Snackbar.success('Account created.')
-      await router.push({ name: 'Sites' })
+      await router.push({ name: 'Browse' })
     }
   } catch (error: any) {
     console.error('Error creating user', error)
@@ -244,7 +244,7 @@ async function completeSignup() {
   if (res.ok) {
     user.value = res.data?.account ?? userForm.value
     Snackbar.success('You have logged in!')
-    await router.push({ name: 'Sites' })
+    await router.push({ name: 'Browse' })
   } else {
     Snackbar.success(res.message)
     console.error('Error creating user', res)

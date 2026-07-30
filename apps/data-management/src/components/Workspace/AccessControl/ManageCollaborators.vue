@@ -244,7 +244,7 @@ async function onRemoveCollaborator(email: string) {
     const index = collaboratorList.value.findIndex((c) => c.email === email)
     if (index !== -1) collaboratorList.value.splice(index, 1)
     Snackbar.success('Collaborator removed.')
-    if (email === user.value.email) await router.push({ name: 'Sites' })
+    if (email === user.value.email) await router.push({ name: 'Browse' })
   } else {
     console.error('Error removing collaborator', res)
     Snackbar.error(res.message)

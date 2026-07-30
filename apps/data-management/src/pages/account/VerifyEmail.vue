@@ -116,7 +116,7 @@ const verifyCode = async () => {
 
     verified.value = true
     Snackbar.success('Your email has been verified.')
-    await router.push({ name: 'Sites' })
+    await router.push({ name: 'Browse' })
   } catch (e) {
     console.error('Error verifying email:', e)
     verificationError.value = true

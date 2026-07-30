@@ -3,6 +3,7 @@
     <v-card-title class="text-h5"
       >{{ thingId ? 'Edit' : 'Register a' }} Site</v-card-title
     >
+    <slot name="workspace" />
     <div class="flex-shrink-0" style="height: 20rem">
       <OpenLayersMap
         v-if="loaded"
