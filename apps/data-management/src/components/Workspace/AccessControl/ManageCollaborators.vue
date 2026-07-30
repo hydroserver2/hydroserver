@@ -80,77 +80,80 @@
   </v-card-text>
 
   <v-card-text>
-    <div class="collaborator-list-container">
-      <v-list lines="three" v-model:selected="selection" select-strategy="leaf">
-        <v-list-group v-for="item in collaboratorList" :key="item.value">
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              :title="item.name"
-              :value="item.value"
-              active-class="text-red"
-              :data-testid="`collaborator-row-${item.email}`"
-            >
-              <v-list-item-subtitle
-                v-if="item.isBeingEdited"
-                class="mb-1 text-high-emphasis opacity-100"
+    <v-table class="collaborator-table">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Organization</th>
+          <th style="width: 200px">Role</th>
+          <th class="text-right" style="width: 190px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="item in collaboratorList"
+          :key="item.email"
+          :data-testid="`collaborator-row-${item.email}`"
+        >
+          <td>
+            <div class="font-weight-medium">{{ item.name }}</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ item.email }}
+            </div>
+          </td>
+          <td>{{ item.organization }}</td>
+          <td>
+            <v-select
+              v-if="item.isBeingEdited"
+              v-model="item.pendingRole"
+              :items="roles"
+              item-title="name"
+              :return-object="true"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+            <span v-else>{{ item.role.name }}</span>
+          </td>
+          <td class="text-right">
+            <span v-if="item.isOwner" class="text-medium-emphasis">—</span>
+            <template v-else-if="item.isBeingEdited">
+              <v-btn-cancel size="small" class="mr-2" @click="onCancelEdit(item)"
+                >Cancel</v-btn-cancel
               >
-                <v-select
-                  v-model="item.pendingRole"
-                  :items="roles"
-                  item-title="name"
-                  @click.stop
-                  @mousedown.stop
-                  :return-object="true"
-                  variant="outlined"
-                  hide-details
-                />
-                <div class="d-flex my-2">
-                  <v-btn-cancel class="mr-2" @click="onCancelEdit(item)"
-                    >Cancel</v-btn-cancel
-                  >
-                  <v-btn
-                    :data-testid="`save-collaborator-${item.email}`"
-                    @click="onSaveRole(item)"
-                    >Save</v-btn
-                  >
-                </div>
-              </v-list-item-subtitle>
-              <v-list-item-subtitle
-                v-else
-                class="mb-1 text-high-emphasis opacity-100"
-              >
-                {{ item.role.name }}
-              </v-list-item-subtitle>
-
-              <v-list-item-subtitle class="mb-2 text-high-emphasis opacity-60">
-                {{ item.organization }}
-              </v-list-item-subtitle>
-            </v-list-item>
-          </template>
-
-          <v-list-item>
-            <template v-slot:append>
               <v-btn
-                variant="outlined"
-                class="mr-2"
-                :disabled="item.isOwner || item.isBeingEdited"
-                :data-testid="`edit-collaborator-${item.email}`"
-                @click="item.isBeingEdited = true"
-                >Edit role</v-btn
-              >
-              <v-btn-delete
-                variant="outlined"
-                :disabled="item.isOwner || item.isBeingEdited"
-                :data-testid="`remove-collaborator-${item.email}`"
-                @click="onRemoveCollaborator(item.email)"
-                >Remove collaborator</v-btn-delete
+                size="small"
+                :data-testid="`save-collaborator-${item.email}`"
+                @click="onSaveRole(item)"
+                >Save</v-btn
               >
             </template>
-          </v-list-item>
-        </v-list-group>
-      </v-list>
-    </div>
+            <template v-else>
+              <v-btn
+                variant="text"
+                :icon="mdiPencil"
+                :data-testid="`edit-collaborator-${item.email}`"
+                :aria-label="`Edit ${item.name}`"
+                @click="item.isBeingEdited = true"
+              />
+              <v-btn
+                variant="text"
+                color="red-darken-2"
+                :icon="mdiTrashCanOutline"
+                :data-testid="`remove-collaborator-${item.email}`"
+                :aria-label="`Remove ${item.name}`"
+                @click="onRemoveCollaborator(item.email)"
+              />
+            </template>
+          </td>
+        </tr>
+        <tr v-if="!collaboratorList.length">
+          <td colspan="4" class="text-center text-medium-emphasis">
+            No collaborators yet.
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
   </v-card-text>
 </template>
 
@@ -166,7 +169,12 @@ import hs, {
   CollaboratorRole,
   Workspace,
 } from '@hydroserver/client'
-import { mdiHelpCircleOutline, mdiPlus } from '@mdi/js'
+import {
+  mdiHelpCircleOutline,
+  mdiPencil,
+  mdiPlus,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
@@ -178,7 +186,6 @@ const emits = defineEmits(['self-removed'])
 const { user } = storeToRefs(useUserStore())
 const { hasPermission } = useWorkspacePermissions()
 
-const selection = ref([])
 const showAddCollaboratorHelp = ref(false)
 const showAddCollaborator = ref(false)
 const selectedRole = ref()
@@ -309,8 +316,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.collaborator-list-container {
-  max-height: 360px; /* max-height to about 4 collaborator items */
-  overflow-y: auto;
+.collaborator-table :deep(td) {
+  vertical-align: middle;
 }
 </style>
