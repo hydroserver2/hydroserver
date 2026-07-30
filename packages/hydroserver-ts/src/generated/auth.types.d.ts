@@ -238,11 +238,6 @@ export interface components {
     schemas: {
         /** AccountDetailResponse */
         AccountDetailResponse: {
-            /**
-             * Accounttype
-             * @enum {string}
-             */
-            accountType: "admin" | "standard" | "limited";
             /** Address */
             address?: string | null;
             /**

@@ -3,15 +3,6 @@
     "schemas": {
       "AccountDetailResponse": {
         "properties": {
-          "accountType": {
-            "enum": [
-              "admin",
-              "standard",
-              "limited"
-            ],
-            "title": "Accounttype",
-            "type": "string"
-          },
           "address": {
             "anyOf": [
               {
@@ -95,8 +86,7 @@
           "firstName",
           "lastName",
           "type",
-          "email",
-          "accountType"
+          "email"
         ],
         "title": "AccountDetailResponse",
         "type": "object"
