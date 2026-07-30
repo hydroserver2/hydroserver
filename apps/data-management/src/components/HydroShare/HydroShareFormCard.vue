@@ -122,7 +122,7 @@
                   closable
                   @click:close="removeKeyword(index)"
                 >
-                  <span>{{ item.title }}</span>
+                  <span>{{ item }}</span>
                 </v-chip>
               </template>
             </v-combobox>
@@ -161,7 +161,7 @@
               closable
               @click:close="removeDatastream(index)"
             >
-              <span>{{ item.title }}</span>
+              <span>{{ datastreamTitle(item) }}</span>
             </v-chip>
           </template>
         </v-autocomplete>
@@ -206,9 +206,8 @@ import { Snackbar } from '@/utils/notifications'
 import { mdiHelpCircleOutline, mdiUpload } from '@mdi/js'
 
 const emit = defineEmits(['close', 'delete'])
-const { hydroShareArchive: archive, loading } = storeToRefs(
-  useHydroShareStore()
-)
+const { hydroShareArchive: archive, loading } =
+  storeToRefs(useHydroShareStore())
 
 const { item, isEdit, valid, myForm, uploadItem } =
   useFormLogic<PostHydroShareArchive>(

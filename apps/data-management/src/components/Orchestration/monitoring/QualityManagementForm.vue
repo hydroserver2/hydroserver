@@ -89,7 +89,7 @@
               class="mr-1 mb-1 max-w-full"
               @click:close="removeRecipient(index)"
             >
-              <span class="truncate">{{ item.title }}</span>
+              <span class="truncate">{{ recipientEmails[index] }}</span>
             </v-chip>
           </template>
         </v-combobox>

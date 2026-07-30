@@ -221,10 +221,10 @@
             density="comfortable"
             closable
             class="mr-1 task-type-chip"
-            :style="taskTypeSelectionStyle(item.title)"
+            :style="taskTypeSelectionStyle(item)"
             @click:close="removeTaskTypeFilter(index)"
           >
-            <span>{{ item.title }}</span>
+            <span>{{ item }}</span>
           </v-chip>
         </template>
       </v-autocomplete>
