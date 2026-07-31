@@ -6,6 +6,174 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+RESOURCE_TYPE_RENAMES = {
+    "APIKey": "ServiceAccount",
+}
+REVERSE_RESOURCE_TYPE_RENAMES = {new: old for old, new in RESOURCE_TYPE_RENAMES.items()}
+
+ACTION_FOR_PERMISSION_TYPE = {
+    "view": "can_view",
+    "create": "can_create",
+    "edit": "can_edit",
+    "delete": "can_delete",
+}
+
+
+def consolidate_permissions(apps, schema_editor):
+    """
+    Collapse legacy permission_type rows into the new per-action boolean
+    flags before permission_type is dropped and the (role, resource_type)
+    uniqueness constraint is enforced, so neither existing grants nor rows
+    made duplicate by the constraint are silently lost.
+    """
+
+    Permission = apps.get_model("iam", "Permission")
+    db_alias = schema_editor.connection.alias
+
+    kept_by_key = {}
+    stale_ids = []
+
+    for permission in Permission.objects.using(db_alias).order_by("id"):
+        resource_type = RESOURCE_TYPE_RENAMES.get(
+            permission.resource_type, permission.resource_type
+        )
+        key = (permission.role_id, resource_type)
+
+        if permission.permission_type == "*":
+            flags = {field: True for field in ACTION_FOR_PERMISSION_TYPE.values()}
+        elif permission.permission_type in ACTION_FOR_PERMISSION_TYPE:
+            flags = {
+                field: permission.permission_type == action
+                for action, field in ACTION_FOR_PERMISSION_TYPE.items()
+            }
+        else:
+            flags = {field: False for field in ACTION_FOR_PERMISSION_TYPE.values()}
+
+        kept = kept_by_key.get(key)
+        if kept is None:
+            permission.resource_type = resource_type
+            for field, value in flags.items():
+                setattr(permission, field, value)
+            kept_by_key[key] = permission
+        else:
+            for field, value in flags.items():
+                if value:
+                    setattr(kept, field, True)
+            stale_ids.append(permission.pk)
+
+    for permission in kept_by_key.values():
+        permission.save(
+            update_fields=[
+                "resource_type",
+                "can_view",
+                "can_create",
+                "can_edit",
+                "can_delete",
+            ]
+        )
+
+    if stale_ids:
+        Permission.objects.using(db_alias).filter(pk__in=stale_ids).delete()
+
+
+def reverse_consolidate_permissions(apps, schema_editor):
+    """
+    Best-effort reverse of consolidate_permissions: expand each row's flags
+    back into one permission_type row per granted action ('*' if all four),
+    reversing the resource_type rename. Rows with no granted actions have
+    nothing to recover and are dropped. The role_id FK is DEFERRABLE
+    INITIALLY DEFERRED, so inserting extra rows here queues its check until
+    COMMIT; the following operation restores permission_type's NOT NULL
+    constraint, and Postgres refuses to ALTER a table with such a pending
+    check, hence the explicit flush below.
+    """
+
+    Permission = apps.get_model("iam", "Permission")
+    db_alias = schema_editor.connection.alias
+
+    new_rows = []
+    stale_ids = []
+
+    for permission in Permission.objects.using(db_alias).all():
+        resource_type = REVERSE_RESOURCE_TYPE_RENAMES.get(
+            permission.resource_type, permission.resource_type
+        )
+        granted = [
+            action
+            for action, field in ACTION_FOR_PERMISSION_TYPE.items()
+            if getattr(permission, field)
+        ]
+
+        if not granted:
+            stale_ids.append(permission.pk)
+            continue
+
+        permission.resource_type = resource_type
+        permission.permission_type = (
+            "*" if len(granted) == len(ACTION_FOR_PERMISSION_TYPE) else granted[0]
+        )
+        permission.save(update_fields=["resource_type", "permission_type"])
+
+        if permission.permission_type != "*":
+            new_rows.extend(
+                Permission(
+                    role_id=permission.role_id,
+                    resource_type=resource_type,
+                    permission_type=action,
+                )
+                for action in granted[1:]
+            )
+
+    if stale_ids:
+        Permission.objects.using(db_alias).filter(pk__in=stale_ids).delete()
+
+    if new_rows:
+        Permission.objects.using(db_alias).bulk_create(new_rows)
+        schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def translate_ownership_policy(apps, schema_editor):
+    """
+    Preserve each user's ownership policy encoded by the old
+    is_ownership_allowed flag (and superuser status, which always implied
+    unlimited ownership) as owned_workspace_limit, before is_ownership_allowed
+    is dropped and every row would otherwise default to owned_workspace_limit=1.
+    """
+
+    User = apps.get_model("iam", "User")
+    db_alias = schema_editor.connection.alias
+
+    User.objects.using(db_alias).filter(
+        models.Q(is_superuser=True) | models.Q(is_ownership_allowed=True)
+    ).update(owned_workspace_limit=None)
+
+    User.objects.using(db_alias).filter(
+        is_superuser=False, is_ownership_allowed=False
+    ).update(owned_workspace_limit=0)
+
+
+def reverse_translate_ownership_policy(apps, schema_editor):
+    """
+    Best-effort reverse of translate_ownership_policy: is_ownership_allowed
+    is True iff owned_workspace_limit is unlimited (None). Not bit-exact for
+    superusers whose original is_ownership_allowed was False, since forward
+    collapses both is_superuser+is_ownership_allowed combinations into
+    owned_workspace_limit=None -- that bit isn't recoverable. This is
+    behaviorally harmless: is_ownership_allowed was only ever consulted for
+    non-superusers.
+    """
+
+    User = apps.get_model("iam", "User")
+    db_alias = schema_editor.connection.alias
+
+    User.objects.using(db_alias).filter(owned_workspace_limit__isnull=True).update(
+        is_ownership_allowed=True
+    )
+    User.objects.using(db_alias).filter(owned_workspace_limit__isnull=False).update(
+        is_ownership_allowed=False
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -22,26 +190,6 @@ class Migration(migrations.Migration):
             managers=[
                 ('objects', core.iam.models.user.UserManager()),
             ],
-        ),
-        migrations.RemoveField(
-            model_name='permission',
-            name='permission_type',
-        ),
-        migrations.RemoveField(
-            model_name='role',
-            name='is_apikey_role',
-        ),
-        migrations.RemoveField(
-            model_name='role',
-            name='is_user_role',
-        ),
-        migrations.RemoveField(
-            model_name='user',
-            name='is_ownership_allowed',
-        ),
-        migrations.RemoveField(
-            model_name='workspacetransferconfirmation',
-            name='initiated',
         ),
         migrations.AddField(
             model_name='permission',
@@ -63,15 +211,53 @@ class Migration(migrations.Migration):
             name='can_view',
             field=models.BooleanField(default=False),
         ),
-        migrations.AddField(
-            model_name='serviceaccount',
-            name='deactivated_at',
-            field=models.DateTimeField(blank=True, null=True),
+        migrations.AlterField(
+            model_name='permission',
+            name='permission_type',
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('*', 'Full'),
+                    ('view', 'View'),
+                    ('create', 'Create'),
+                    ('edit', 'Edit'),
+                    ('delete', 'Delete'),
+                ],
+                max_length=50,
+                null=True,
+            ),
+        ),
+        migrations.RunPython(consolidate_permissions, reverse_consolidate_permissions),
+        migrations.RemoveField(
+            model_name='permission',
+            name='permission_type',
+        ),
+        migrations.RemoveField(
+            model_name='role',
+            name='is_apikey_role',
+        ),
+        migrations.RemoveField(
+            model_name='role',
+            name='is_user_role',
         ),
         migrations.AddField(
             model_name='user',
             name='owned_workspace_limit',
             field=models.PositiveSmallIntegerField(blank=True, default=1, null=True),
+        ),
+        migrations.RunPython(translate_ownership_policy, reverse_translate_ownership_policy),
+        migrations.RemoveField(
+            model_name='user',
+            name='is_ownership_allowed',
+        ),
+        migrations.RemoveField(
+            model_name='workspacetransferconfirmation',
+            name='initiated',
+        ),
+        migrations.AddField(
+            model_name='serviceaccount',
+            name='deactivated_at',
+            field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='permission',
