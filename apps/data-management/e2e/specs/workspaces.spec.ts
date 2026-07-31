@@ -69,7 +69,7 @@ test.describe('workspace management', () => {
     await page.getByLabel("New collaborator's email").fill(users.viewer.email)
     await page.getByTestId('new-collaborator-role').click()
     await page.getByRole('option', { name: /Viewer/ }).click()
-    await page.getByRole('button', { name: 'Add collaborator' }).last().click()
+    await page.getByTestId('submit-collaborator-button').click()
 
     const collaboratorRow = page.getByTestId(
       `collaborator-row-${users.viewer.email}`

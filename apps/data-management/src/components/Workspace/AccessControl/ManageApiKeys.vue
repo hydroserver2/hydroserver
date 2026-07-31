@@ -45,12 +45,10 @@
   <v-card class="hs-table-card api-keys-table-card" flat>
     <v-toolbar flat density="compact">
       <v-spacer />
-      <v-btn
-        variant="text"
-        :prepend-icon="mdiPlus"
+      <v-btn-add
         class="mr-2"
         @click="openCreate = true"
-        >Create API key</v-btn
+        >Create API key</v-btn-add
       >
     </v-toolbar>
 
@@ -128,7 +126,6 @@ import {
   mdiTrashCanOutline,
   mdiHelpCircleOutline,
   mdiPencil,
-  mdiPlus,
   mdiRefresh,
 } from '@mdi/js'
 

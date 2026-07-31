@@ -35,7 +35,12 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="cancelAddCollaborator">Cancel</v-btn-cancel>
-      <v-btn-primary @click="onAddCollaborator">Add collaborator</v-btn-primary>
+      <v-btn-primary
+        data-testid="submit-collaborator-button"
+        @click="onAddCollaborator"
+      >
+        Add collaborator
+      </v-btn-primary>
     </v-card-actions>
   </v-card-text>
 
@@ -53,25 +58,21 @@
         "
       >
         <template #default>
-          <v-btn
-            variant="text"
-            :prepend-icon="mdiPlus"
+          <v-btn-add
             class="mr-2"
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
-            >Add collaborator</v-btn
+            >Add collaborator</v-btn-add
           >
         </template>
 
         <template #denied>
-          <v-btn
+          <v-btn-add
             disabled
-            variant="text"
-            :prepend-icon="mdiPlus"
             class="mr-2"
             data-testid="add-collaborator-button"
             @click="showAddCollaborator = true"
-            >Add collaborator</v-btn
+            >Add collaborator</v-btn-add
           >
         </template>
       </PermissionTooltip>
@@ -169,7 +170,6 @@ import hs, {
 import {
   mdiHelpCircleOutline,
   mdiPencil,
-  mdiPlus,
   mdiTrashCanOutline,
 } from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'

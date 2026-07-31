@@ -53,7 +53,7 @@
           clearable
           v-model="search"
           :prepend-inner-icon="mdiMagnify"
-          label="Search"
+          label="Search metadata"
           hide-details
           variant="underlined"
           density="compact"
@@ -199,7 +199,7 @@ const props = defineProps({
   workspace: Object as () => Workspace,
 })
 
-const scope = ref<MetadataScope>('all')
+const scope = ref<MetadataScope>('workspace')
 const search = ref('')
 const showHelp = ref(false)
 

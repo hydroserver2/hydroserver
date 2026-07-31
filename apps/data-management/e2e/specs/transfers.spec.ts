@@ -16,8 +16,8 @@ async function initiateTransfer(
   await workspaceListItem(page, workspaceName).click()
   await page.getByRole('tab', { name: 'Ownership' }).click()
   await page.getByLabel("New owner's email").fill(newOwnerEmail)
-  await page.getByRole('button', { name: 'Submit' }).click()
-  await page.getByRole('button', { name: 'Confirm' }).click()
+  await page.getByRole('button', { name: 'Begin transfer' }).click()
+  await page.getByRole('button', { name: 'Confirm transfer' }).click()
   await expect(
     page.getByText(/An ownership transfer is pending to/)
   ).toBeVisible()

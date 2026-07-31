@@ -36,6 +36,7 @@
       </div>
       <v-switch
         v-model="isPrivate"
+        label="Make this workspace private"
         color="red-darken-2"
         hide-details
         :loading="isUpdating"
