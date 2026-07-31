@@ -111,8 +111,8 @@ test.describe('sites and workspaces', () => {
     await expect(privateWorkspaceRow).toBeVisible()
     await expect(mutableThingRow).toBeVisible()
 
-    await chooseAutocompleteOption(page, 'Metadata key', 'E2E')
-    await chooseAutocompleteOption(page, 'Metadata value', 'Mutable')
+    await chooseAutocompleteOption(page, 'Key', 'E2E')
+    await chooseAutocompleteOption(page, 'Value', 'Mutable')
 
     await expect(mutableThingRow).toBeVisible()
     await expect(publicThingRow).toHaveCount(0)
@@ -122,6 +122,17 @@ test.describe('sites and workspaces', () => {
     await expect(publicThingRow).toBeVisible()
     await expect(privateWorkspaceRow).toBeVisible()
     await expect(mutableThingRow).toBeVisible()
+
+    await publicThingRow.click()
+    const sidebarSiteTypeIconPath = await publicThingRow
+      .locator('.site-row-icon path')
+      .getAttribute('d')
+    const selectedSiteTypeIcon = page.getByTestId('selected-site-type-icon')
+    await expect(selectedSiteTypeIcon).toBeVisible()
+    await expect(selectedSiteTypeIcon.locator('path')).toHaveAttribute(
+      'd',
+      sidebarSiteTypeIconPath ?? ''
+    )
 
     await page.getByRole('button', { name: 'Workspace', exact: true }).click()
     const markerLegend = page.getByTestId('map-marker-legend')
@@ -151,6 +162,25 @@ test.describe('sites and workspaces', () => {
     await expect(siteList).toBeVisible()
     const siteListBox = await siteList.boundingBox()
     expect(siteListBox?.height ?? 0).toBeGreaterThanOrEqual(120)
+
+    const siteTypeChips = page.locator('.chip-grid')
+    await expect(siteTypeChips).toBeVisible()
+    const siteTypeChipsBox = await siteTypeChips.boundingBox()
+    expect(siteTypeChipsBox?.height ?? 0).toBeLessThanOrEqual(102)
+
+    const chipGridOverflow = await siteTypeChips.evaluate(
+      (element) => getComputedStyle(element).overflowY
+    )
+    expect(chipGridOverflow).toBe('auto')
+
+    const chipGridDimensions = await siteTypeChips.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }))
+    expect(chipGridDimensions.scrollHeight).toBeLessThanOrEqual(
+      chipGridDimensions.clientHeight
+    )
+
     await expect(
       page.getByRole('button', {
         name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,

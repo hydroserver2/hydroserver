@@ -55,7 +55,11 @@
             <div class="detail-heading">
               <h2 class="detail-name">{{ detailThing.name }}</h2>
               <div v-if="detailSubtitle" class="detail-meta">
-                <v-icon :icon="mdiMapMarker" size="14" />
+                <v-icon
+                  :icon="detailSiteTypeIcon"
+                  size="14"
+                  data-testid="selected-site-type-icon"
+                />
                 <span>{{ detailSubtitle }}</span>
               </div>
             </div>
@@ -101,8 +105,14 @@ import {
   computed,
   type PropType,
 } from 'vue'
+import { storeToRefs } from 'pinia'
 import hs, { Thing } from '@hydroserver/client'
 import { MapThing, MapThingWithColor } from '@/types'
+import { useVocabularyStore } from '@/composables/useVocabulary'
+import {
+  buildSiteTypeIconRules,
+  getSiteTypeIcon as resolveSiteTypeIcon,
+} from '@/utils/siteTypeIcons'
 import {
   addColorToMarkers,
   addSiteTypeColorToMarkers,
@@ -136,9 +146,7 @@ const props = defineProps({
   },
   colorKey: { type: String, default: '' },
   colorMode: {
-    type: String as PropType<
-      'none' | 'workspace' | 'siteType' | 'metadata'
-    >,
+    type: String as PropType<'none' | 'workspace' | 'siteType' | 'metadata'>,
     default: 'none',
   },
   colorLabels: {
@@ -161,6 +169,7 @@ const props = defineProps({
   selectable: Boolean,
 })
 const emit = defineEmits(['location-clicked', 'select'])
+const { siteTypeIcons } = storeToRefs(useVocabularyStore())
 
 interface ConfigTileSource {
   name: string
@@ -246,6 +255,15 @@ const detailSubtitle = computed(() => {
   }
   return parts.join(' · ')
 })
+const siteTypeIconRules = computed(() =>
+  buildSiteTypeIconRules(siteTypeIcons.value)
+)
+const detailSiteTypeIcon = computed(() =>
+  resolveSiteTypeIcon(
+    detailThing.value?.siteType ?? '',
+    siteTypeIconRules.value
+  )
+)
 
 const detailCoordinates = computed(() => {
   const thing = detailThing.value
@@ -987,7 +1005,9 @@ watch(
 
 .detail-card-enter-active,
 .detail-card-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
 .detail-card-enter-from,

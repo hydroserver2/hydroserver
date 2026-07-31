@@ -211,7 +211,7 @@
               :items="availableTagKeys"
               class="metadata-filter"
               name="browse-metadata-key-filter"
-              label="Metadata key"
+              label="Key"
               clearable
               hide-details
               density="compact"
@@ -225,7 +225,7 @@
               :items="availableTagValues"
               class="metadata-filter"
               name="browse-metadata-value-filter"
-              label="Metadata value"
+              label="Value"
               multiple
               clearable
               hide-details
@@ -888,11 +888,29 @@ pruneSelectionToAvailable(
 .chip-grid {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 6px;
+  max-height: 102px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chip-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chip-grid::-webkit-scrollbar-track {
+  border-radius: 3px;
+  background: #dfe3e6;
+}
+
+.chip-grid::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: #9aa0a6;
 }
 
 .filter-pill {
-  min-height: 30px;
+  height: 30px;
   padding-inline: 10px;
   color: #63676d;
   border-color: #dce0e5;
