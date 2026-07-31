@@ -39,6 +39,7 @@ class ServiceAccountQueryParameters(CollectionQueryParameters):
 
 
 class ServiceAccountGetFields(ServiceAccountFields):
+    email: str
     created_at: ISODatetime
     last_used_at: Optional[ISODatetime]
 
@@ -71,3 +72,9 @@ class ServiceAccountPostBody(BasePostBody, ServiceAccountFields):
 
 class ServiceAccountPatchBody(BasePatchBody, ServiceAccountFields):
     pass
+
+
+class ServiceAccountContactResponse(BaseGetResponse):
+    id: uuid.UUID
+    name: str
+    email: str

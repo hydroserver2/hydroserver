@@ -1,5 +1,7 @@
 import pytest
 
+from django.conf import settings
+
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -67,6 +69,25 @@ def test_create_service_account_succeeds_for_workspace_owner(client):
 
     assert response.status_code == 201
     assert response.json()["key"]
+
+
+def test_create_service_account_response_includes_email_and_no_role(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        _service_accounts_url(workspace.id),
+        data={"name": "New Service Account", "isActive": True},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["email"].endswith(
+        f"@service-accounts.{settings.SERVICE_ACCOUNT_EMAIL_DOMAIN}"
+    )
+    assert "role" not in body
 
 
 def test_create_service_account_returns_401_when_unauthenticated(client):

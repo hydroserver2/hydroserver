@@ -369,7 +369,7 @@ export enum PermissionResource {
   ObservedProperty = 'ObservedProperty',
   ProcessingLevel = 'ProcessingLevel',
   Observation = 'Observation',
-  ApiKey = 'ApiKey',
+  ServiceAccount = 'ServiceAccount',
 }
 
 export interface Permission {
@@ -382,24 +382,28 @@ export interface CollaboratorRole {
   description: string
   id: string
   workspaceId: string
-  isApikeyRole: boolean
-  isUserRole: boolean
   permissions: Permission[]
 }
 
-export class ApiKey {
+export interface ServiceAccountContact {
+  id: string
+  name: string
+  email: string
+}
+
+export class ServiceAccount {
   id = ''
   key = ''
+  email = ''
   name = ''
   description = ''
   isActive = true
-  expiresAt = ''
+  keyExpiresAt = ''
   createdAt = ''
-  lastUsed = ''
+  lastUsedAt = ''
   workspaceId = ''
-  role: CollaboratorRole | null = null
 
-  constructor(init?: Partial<ApiKey>) {
+  constructor(init?: Partial<ServiceAccount>) {
     Object.assign(this, init)
   }
 }
@@ -472,25 +476,17 @@ export interface ThingTaskSummary {
 }
 
 export class Collaborator {
-  user: UserInfo
+  user: UserInfo | null
+  serviceAccount: ServiceAccountContact | null
   role: CollaboratorRole
 
   constructor() {
-    this.user = {
-      phone: '',
-      address: '',
-      link: '',
-      type: '',
-      name: '',
-      email: '',
-      organizationName: '',
-    }
+    this.user = null
+    this.serviceAccount = null
     this.role = {
       name: '',
       description: '',
       id: '',
-      isApikeyRole: false,
-      isUserRole: false,
       workspaceId: '',
       permissions: [],
     }

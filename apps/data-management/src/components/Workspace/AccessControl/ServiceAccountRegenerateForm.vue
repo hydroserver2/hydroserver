@@ -2,12 +2,13 @@
   <v-card>
     <v-toolbar flat color="yellow-darken-4">
       <v-card-title class="text-h5">
-        Confirm API key regeneration
+        Confirm service account API key regeneration
       </v-card-title>
     </v-toolbar>
 
     <v-card-text>
-      This action will replace the existing api key with a new one.
+      This action will replace the existing service account API key with a new
+      one.
     </v-card-text>
 
     <v-card-actions>

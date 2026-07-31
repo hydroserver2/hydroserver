@@ -55,6 +55,9 @@
     roles. Viewers can see everything in the workspace but cannot edit. Editors
     can create, read, update, and delete all sites, metadata, and datastreams as
     well as set their visibility. Users can remove themselves as collaborators.
+    You can add either a user's email or a service account's email - service
+    accounts can collaborate on any workspace, not just the one they were
+    created under.
   </v-card-text>
 
   <v-card-text v-if="showAddCollaborator">
@@ -86,11 +89,24 @@
           <template v-slot:activator="{ props }">
             <v-list-item
               v-bind="props"
-              :title="item.name"
               :value="item.value"
               active-class="text-red"
               :data-testid="`collaborator-row-${item.email}`"
             >
+              <template v-slot:title>
+                {{ item.name }}
+                <v-chip
+                  v-if="item.isServiceAccount"
+                  size="x-small"
+                  class="ml-2"
+                  variant="tonal"
+                  color="blue-darken-2"
+                  data-testid="collaborator-service-account-chip"
+                >
+                  Service account
+                </v-chip>
+              </template>
+
               <v-list-item-subtitle
                 v-if="item.isBeingEdited"
                 class="mb-1 text-high-emphasis opacity-100"
@@ -261,6 +277,7 @@ const setCollaboratorList = (collaborators: Collaborator[]) => {
       name: props.workspace.owner.name,
       role: { name: 'Owner' },
       organization: props.workspace.owner.organizationName || 'No Organization',
+      isServiceAccount: false,
       isOwner: true,
       isBeingEdited: false,
     })
@@ -273,23 +290,38 @@ async function onCancelEdit(item: any) {
   item.isBeingEdited = false
 }
 
-const collaboratorToFormData = (c: Collaborator) => ({
-  email: c.user.email,
-  value: c.user.email,
-  name: c.user.name,
-  role: c.role,
-  pendingRole: c.role,
-  organization: c.user.organizationName || 'No Organization',
-  isOwner: false,
-  isBeingEdited: false,
-})
+const collaboratorToFormData = (c: Collaborator) => {
+  if (c.serviceAccount) {
+    return {
+      email: c.serviceAccount.email,
+      value: c.serviceAccount.email,
+      name: c.serviceAccount.name,
+      role: c.role,
+      pendingRole: c.role,
+      organization: '',
+      isServiceAccount: true,
+      isOwner: false,
+      isBeingEdited: false,
+    }
+  }
+  return {
+    email: c.user!.email,
+    value: c.user!.email,
+    name: c.user!.name,
+    role: c.role,
+    pendingRole: c.role,
+    organization: c.user!.organizationName || 'No Organization',
+    isServiceAccount: false,
+    isOwner: false,
+    isBeingEdited: false,
+  }
+}
 
 onMounted(async () => {
   const [cRes, rolesResponse] = await Promise.all([
     hs.workspaces.getCollaborators(props.workspace.id),
     hs.workspaces.getRoles({
       order_by: ['name'],
-      is_user_role: true,
     }),
   ])
 

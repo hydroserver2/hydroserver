@@ -2,13 +2,13 @@
   <v-row align="center">
     <v-col cols="auto" class="pr-0">
       <v-card-item>
-        <v-card-title> API keys </v-card-title>
+        <v-card-title> Service accounts </v-card-title>
       </v-card-item>
     </v-col>
     <v-col class="pl-0">
       <v-icon
         :icon="mdiHelpCircleOutline"
-        @click="showApiKeyHelp = !showApiKeyHelp"
+        @click="showServiceAccountHelp = !showServiceAccountHelp"
         color="grey"
         small
       />
@@ -21,13 +21,13 @@
       :prepend-icon="mdiPlus"
       class="mr-4"
       @click="openCreate = true"
-      >Create API key</v-btn
+      >Create service account</v-btn
     >
   </v-row>
 
-  <v-card-text v-if="showApiKeyHelp">
-    API keys are intended to provide remote systems with a subset of permissions
-    to this workspace.
+  <v-card-text v-if="showServiceAccountHelp">
+    Service accounts are intended to provide remote systems with a subset of
+    permissions to workspaces.
   </v-card-text>
 
   <v-card-text v-if="showNewKey && newKey">
@@ -38,8 +38,9 @@
       variant="tonal"
       class="mb-4"
     >
-      Your API key has been generated. Please copy it and store it somewhere
-      safe — you won’t be able to see it again after leaving this page.
+      Your service account API key has been generated. Please copy it and store it
+      somewhere safe — you won’t be able to see it again after leaving this
+      page.
     </v-alert>
 
     <v-sheet
@@ -52,7 +53,7 @@
         :icon="mdiContentCopy"
         variant="text"
         @click="copyKey(newKey.key)"
-        :aria-label="`Copy API key ${newKey.key}`"
+        :aria-label="`Copy service account API key ${newKey.key}`"
       />
     </v-sheet>
   </v-card-text>
@@ -63,7 +64,7 @@
     :sort-by="sortBy"
     :search="search"
     :style="{ 'max-height': `100vh` }"
-    no-data-text="No keys available"
+    no-data-text="No service accounts available"
     fixed-header
   >
     <template #item.id="{ item }">
@@ -83,7 +84,7 @@
   </v-data-table-virtual>
 
   <v-dialog v-model="openCreate" width="40rem">
-    <ApiKeyForm
+    <ServiceAccountForm
       @close="openCreate = false"
       @created="onCreate"
       :workspace-id="workspaceId"
@@ -92,24 +93,24 @@
   </v-dialog>
 
   <v-dialog v-model="openRefresh" width="40rem">
-    <ApiKeyRegenerateForm
+    <ServiceAccountRegenerateForm
       @close="openRefresh = false"
       @regenerated="onRegenerate"
     />
   </v-dialog>
 
   <v-dialog v-model="openEdit" width="40rem">
-    <ApiKeyForm
+    <ServiceAccountForm
       @close="openEdit = false"
       @updated="onUpdate"
       :workspace-id="workspaceId"
       :roles="roles"
-      :api-key="item"
+      :service-account="item"
     />
   </v-dialog>
 
   <v-dialog v-model="openDelete" width="40rem">
-    <DeleteApiKey
+    <DeleteServiceAccount
       :itemName="item.name"
       @delete="onDelete"
       @close="openDelete = false"
@@ -118,13 +119,13 @@
 </template>
 
 <script setup lang="ts">
-import hs, { ApiKey, CollaboratorRole } from '@hydroserver/client'
+import hs, { ServiceAccount, CollaboratorRole } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { onMounted, ref, toRef } from 'vue'
 import { useTableLogic } from '@/composables/useTableLogic'
-import ApiKeyForm from './ApiKeyForm.vue'
-import DeleteApiKey from './DeleteApiKey.vue'
-import ApiKeyRegenerateForm from './ApiKeyRegenerateForm.vue'
+import ServiceAccountForm from './ServiceAccountForm.vue'
+import DeleteServiceAccount from './DeleteServiceAccount.vue'
+import ServiceAccountRegenerateForm from './ServiceAccountRegenerateForm.vue'
 import {
   mdiContentCopy,
   mdiTrashCanOutline,
@@ -134,30 +135,54 @@ import {
   mdiRefresh,
 } from '@mdi/js'
 
+type ServiceAccountRow = ServiceAccount & { role?: CollaboratorRole }
+
 const props = defineProps({
   workspaceId: { type: String, required: true },
 })
 
 const openCreate = ref(false)
 const openRefresh = ref(false)
-const showApiKeyHelp = ref(false)
+const showServiceAccountHelp = ref(false)
 const sortBy = [{ key: 'OPName' }]
 const search = ref()
 const roles = ref<CollaboratorRole[]>([])
 
 const showNewKey = ref(false)
-const newKey = ref<ApiKey>()
+const newKey = ref<ServiceAccount>()
+
+async function fetchServiceAccountsWithRoles(
+  wsId: string
+): Promise<ServiceAccountRow[]> {
+  const [accountsRes, collaboratorsRes] = await Promise.all([
+    hs.workspaces.getServiceAccounts(wsId),
+    hs.workspaces.getCollaborators(wsId),
+  ])
+  if (!accountsRes.ok) return []
+
+  const roleByEmail = new Map<string, CollaboratorRole>()
+  if (collaboratorsRes.ok) {
+    for (const c of collaboratorsRes.data) {
+      if (c.serviceAccount) roleByEmail.set(c.serviceAccount.email, c.role)
+    }
+  }
+
+  return accountsRes.data.map((account) => ({
+    ...account,
+    role: roleByEmail.get(account.email),
+  }))
+}
 
 const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
-  useTableLogic(
-    async (wsId: string) => {
-      const res = await hs.workspaces.getApiKeys(wsId)
-      return res.ok ? res.data : []
+  useTableLogic<ServiceAccountRow>(
+    fetchServiceAccountsWithRoles,
+    async (serviceAccountId: string) => {
+      await hs.workspaces.deleteServiceAccount(
+        props.workspaceId,
+        serviceAccountId
+      )
     },
-    async (keyId: string) => {
-      await hs.workspaces.deleteApiKey(props.workspaceId, keyId)
-    },
-    ApiKey,
+    ServiceAccount,
     toRef(props, 'workspaceId')
   )
 
@@ -167,32 +192,35 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
 ] as const
 
-const onCreate = (key: ApiKey) => {
-  items.value.push(key)
-  displayNewKey(key)
+const onCreate = (account: ServiceAccountRow) => {
+  items.value.push(account)
+  displayNewKey(account)
 }
 
-const displayNewKey = (key: ApiKey) => {
-  newKey.value = key
+const displayNewKey = (account: ServiceAccount) => {
+  newKey.value = account
   showNewKey.value = true
 }
 
-function onOpenRegenerateDialog(selectedItem: ApiKey) {
+function onOpenRegenerateDialog(selectedItem: ServiceAccountRow) {
   item.value = selectedItem
   openRefresh.value = true
 }
 
 const onRegenerate = async () => {
   try {
-    const res = await hs.workspaces.regenerateApiKey(
+    const res = await hs.workspaces.regenerateServiceAccountKey(
       props.workspaceId,
       item.value.id
     )
     if (!res.ok) {
-      Snackbar.error('Failed to refresh API key')
+      Snackbar.error('Failed to refresh service account API key')
       return
     }
-    const responseKey = res.data
+    const responseKey: ServiceAccountRow = {
+      ...res.data,
+      role: item.value.role,
+    }
     const idx = items.value.findIndex((k) => k.id === responseKey.id)
     if (idx !== -1) {
       items.value.splice(idx, 1, responseKey)
@@ -201,15 +229,15 @@ const onRegenerate = async () => {
     }
     displayNewKey(responseKey)
   } catch (error) {
-    Snackbar.error('Failed to refresh API key')
-    console.error('Failed to refresh API key', error)
+    Snackbar.error('Failed to refresh service account API key')
+    console.error('Failed to refresh service account API key', error)
   }
 }
 
 async function copyKey(key: string) {
   try {
     await navigator.clipboard.writeText(key)
-    Snackbar.success('API key copied to clipboard')
+    Snackbar.success('Service account API key copied to clipboard')
   } catch {
     Snackbar.error('Failed to copy key')
   }
@@ -218,7 +246,6 @@ async function copyKey(key: string) {
 onMounted(async () => {
   try {
     const res = await hs.workspaces.getRoles({
-      is_apikey_role: true,
       order_by: ['name'],
     })
     if (res.ok) roles.value = res.data

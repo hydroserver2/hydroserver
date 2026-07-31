@@ -2253,23 +2253,18 @@ export interface components {
         };
         /** CollaboratorDeleteBody */
         CollaboratorDeleteBody: {
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
         };
         /** CollaboratorDetailResponse */
         CollaboratorDetailResponse: {
             role: components["schemas"]["RoleSummaryResponse"];
-            user: components["schemas"]["AccountContactDetailResponse"];
+            serviceAccount?: components["schemas"]["ServiceAccountContactResponse"] | null;
+            user?: components["schemas"]["AccountContactDetailResponse"] | null;
         };
         /** CollaboratorPostBody */
         CollaboratorPostBody: {
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
             /**
              * Roleid
@@ -5169,6 +5164,18 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
+        /** ServiceAccountContactResponse */
+        ServiceAccountContactResponse: {
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** ServiceAccountDetailPostResponse */
         ServiceAccountDetailPostResponse: {
             /**
@@ -5178,6 +5185,8 @@ export interface components {
             createdAt: string;
             /** Description */
             description?: string | null;
+            /** Email */
+            email: string;
             /**
              * Id
              * Format: uuid
@@ -5204,6 +5213,8 @@ export interface components {
             createdAt: string;
             /** Description */
             description?: string | null;
+            /** Email */
+            email: string;
             /**
              * Id
              * Format: uuid
@@ -5275,6 +5286,8 @@ export interface components {
             createdAt: string;
             /** Description */
             description?: string | null;
+            /** Email */
+            email: string;
             /**
              * Id
              * Format: uuid
@@ -5305,6 +5318,8 @@ export interface components {
             createdAt: string;
             /** Description */
             description?: string | null;
+            /** Email */
+            email: string;
             /**
              * Id
              * Format: uuid
