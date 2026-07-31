@@ -5253,6 +5253,8 @@ export interface components {
             keyExpiresAt?: string | null;
             /** Name */
             name: string;
+            /** Roleid */
+            roleId?: string | null;
         };
         /** ServiceAccountQueryParameters */
         ServiceAccountQueryParameters: {
