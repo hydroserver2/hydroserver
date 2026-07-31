@@ -19,22 +19,10 @@ class RatingCurveTransformation(BaseModel):
 class ExpressionTransformation(BaseModel):
     id: uuid.UUID
     output_datastream_id: uuid.UUID
-    input_datastream_id: uuid.UUID
-    variable_name: Optional[str] = None
-    formula: str
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
-class CompositeExpressionTransformation(BaseModel):
-    id: uuid.UUID
-    output_datastream_id: uuid.UUID
     input_datastream_ids: List[uuid.UUID]
     formula: str
-    output_interval_units: Period
-    output_interval: int
-    max_gap_interval: Optional[int] = None
-    max_gap_interval_units: Optional[Period] = None
+    stop_on_no_data: bool
+    stop_on_error: bool
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 

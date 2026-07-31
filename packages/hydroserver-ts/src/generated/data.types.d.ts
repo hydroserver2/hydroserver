@@ -996,58 +996,6 @@ export interface paths {
         patch: operations["interfaces_api_views_products_transformation_update_aggregation_transformation"];
         trace?: never;
     };
-    "/api/data/products/tasks/{task_id}/transformations/composite-expression": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Composite Expression Transformations
-         * @description Get composite expression transformations for a data product task.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_composite_expression_transformations"];
-        put?: never;
-        /**
-         * Create Composite Expression Transformation
-         * @description Create a composite expression transformation on a data product task.
-         */
-        post: operations["interfaces_api_views_products_transformation_create_composite_expression_transformation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/products/tasks/{task_id}/transformations/composite-expression/{transformation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Composite Expression Transformation
-         * @description Get a composite expression transformation.
-         */
-        get: operations["interfaces_api_views_products_transformation_get_composite_expression_transformation"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Composite Expression Transformation
-         * @description Delete a composite expression transformation.
-         */
-        delete: operations["interfaces_api_views_products_transformation_delete_composite_expression_transformation"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Composite Expression Transformation
-         * @description Update a composite expression transformation.
-         */
-        patch: operations["interfaces_api_views_products_transformation_update_composite_expression_transformation"];
-        trace?: never;
-    };
     "/api/data/products/tasks/{task_id}/transformations/expression": {
         parameters: {
             query?: never;
@@ -2470,109 +2418,6 @@ export interface components {
              */
             role_id: string[];
         };
-        /** CompositeExpressionTransformationPatchBody */
-        CompositeExpressionTransformationPatchBody: {
-            /** Formula */
-            formula?: string;
-            /** Inputdatastreams */
-            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
-            /** Maxgapinterval */
-            maxGapInterval?: number | null;
-            /** Maxgapintervalunits */
-            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId?: string;
-            /** Outputinterval */
-            outputInterval?: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits?: "minutes" | "hours" | "days" | "weeks" | "months";
-        };
-        /** CompositeExpressionTransformationPostBody */
-        CompositeExpressionTransformationPostBody: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
-            /** Maxgapinterval */
-            maxGapInterval?: number | null;
-            /** Maxgapintervalunits */
-            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-        };
-        /** CompositeExpressionTransformationResponse */
-        CompositeExpressionTransformationResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
-            /** Maxgapinterval */
-            maxGapInterval?: number | null;
-            /** Maxgapintervalunits */
-            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
-            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-        };
-        /** CompositeExpressionTransformationSummaryResponse */
-        CompositeExpressionTransformationSummaryResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreamids */
-            inputDatastreamIds: string[];
-            /** Maxgapinterval */
-            maxGapInterval?: number | null;
-            /** Maxgapintervalunits */
-            maxGapIntervalUnits?: ("minutes" | "hours" | "days" | "weeks" | "months") | null;
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Outputinterval */
-            outputInterval: number;
-            /**
-             * Outputintervalunits
-             * @enum {string}
-             */
-            outputIntervalUnits: "minutes" | "hours" | "days" | "weeks" | "months";
-        };
         /**
          * DataConnectionOrderBy
          * @enum {string}
@@ -2740,8 +2585,6 @@ export interface components {
         DataProductTaskDetailResponse: {
             /** Aggregationtransformations */
             aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
-            /** Compositeexpressiontransformations */
-            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationResponse"][];
             /** Description */
             description?: string | null;
             /** Expressiontransformations */
@@ -2860,8 +2703,6 @@ export interface components {
         DataProductTaskSummaryResponse: {
             /** Aggregationtransformations */
             aggregationTransformations: components["schemas"]["AggregationTransformationSummaryResponse"][];
-            /** Compositeexpressiontransformations */
-            compositeExpressionTransformations: components["schemas"]["CompositeExpressionTransformationSummaryResponse"][];
             /** Description */
             description?: string | null;
             /** Expressiontransformations */
@@ -3589,18 +3430,17 @@ export interface components {
         ExpressionTransformationPatchBody: {
             /** Formula */
             formula?: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId?: string;
+            /** Inputdatastreams */
+            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
             /**
              * Outputdatastreamid
              * Format: uuid
              */
             outputDatastreamId?: string;
-            /** Variablename */
-            variableName?: string | null;
+            /** Stoponerror */
+            stopOnError?: boolean;
+            /** Stoponnodata */
+            stopOnNoData?: boolean;
         };
         /** ExpressionTransformationPostBody */
         ExpressionTransformationPostBody: {
@@ -3611,18 +3451,23 @@ export interface components {
              * Format: uuid
              */
             id?: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
             /**
              * Outputdatastreamid
              * Format: uuid
              */
             outputDatastreamId: string;
-            /** Variablename */
-            variableName: string;
+            /**
+             * Stoponerror
+             * @default true
+             */
+            stopOnError: boolean;
+            /**
+             * Stoponnodata
+             * @default true
+             */
+            stopOnNoData: boolean;
         };
         /** ExpressionTransformationResponse */
         ExpressionTransformationResponse: {
@@ -3633,10 +3478,13 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            inputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
             outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Variablename */
-            variableName?: string | null;
+            /** Stoponerror */
+            stopOnError: boolean;
+            /** Stoponnodata */
+            stopOnNoData: boolean;
         };
         /** ExpressionTransformationSummaryResponse */
         ExpressionTransformationSummaryResponse: {
@@ -3647,18 +3495,17 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Inputdatastreamid
-             * Format: uuid
-             */
-            inputDatastreamId: string;
+            /** Inputdatastreamids */
+            inputDatastreamIds: string[];
             /**
              * Outputdatastreamid
              * Format: uuid
              */
             outputDatastreamId: string;
-            /** Variablename */
-            variableName?: string | null;
+            /** Stoponerror */
+            stopOnError: boolean;
+            /** Stoponnodata */
+            stopOnNoData: boolean;
         };
         /** FileAttachmentDeleteBody */
         FileAttachmentDeleteBody: {
@@ -10333,307 +10180,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AggregationTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_composite_expression_transformations: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "outputDatastreamId" | "-id" | "-outputDatastreamId")[];
-                /** @description Filter by output datastream ID. */
-                output_datastream_id?: string[];
-                /** @description Filter by input datastream ID. */
-                input_datastream_id?: string[];
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_create_composite_expression_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompositeExpressionTransformationPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_get_composite_expression_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_delete_composite_expression_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_products_transformation_update_composite_expression_transformation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-                transformation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompositeExpressionTransformationPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompositeExpressionTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */

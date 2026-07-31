@@ -58,14 +58,6 @@
             @updated="onFormUpdated"
             @deleted="deleteTask"
           />
-          <DerivationForm
-            v-else-if="taskLabel === 'derivation'"
-            :initial-thing-id="task.thing.id"
-            :edit-task-id="task.id"
-            @close="closeEditDialog"
-            @updated="onFormUpdated"
-            @deleted="deleteTask"
-          />
           <RatingCurveForm
             v-else
             :initial-thing-id="task.thing.id"
@@ -143,7 +135,6 @@ import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
-import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
 import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
 import ProductTaskSwimlanes from '@/components/Orchestration/data-products/ProductTaskSwimlanes.vue'
 import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
@@ -156,7 +147,7 @@ import {
 import { mdiPause, mdiPencil, mdiPlay, mdiTrashCanOutline } from '@mdi/js'
 
 const props = defineProps<{
-  taskLabel: 'aggregation' | 'expression' | 'derivation' | 'rating curve'
+  taskLabel: 'aggregation' | 'expression' | 'rating curve'
   taskId: string
   runId?: string | null
   embedded?: boolean
@@ -202,8 +193,6 @@ function toDataProductTaskType(
       return 'Aggregation'
     case 'expression':
       return 'Expression'
-    case 'derivation':
-      return 'Derivation'
     case 'rating curve':
       return 'Rating curve'
     default:

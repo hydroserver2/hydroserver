@@ -7,7 +7,6 @@ from ..orchestration.run import TaskRun
 from .transformation import (
     RatingCurveTransformation,
     ExpressionTransformation,
-    CompositeExpressionTransformation,
     AggregationTransformation,
     Period,
 )
@@ -31,7 +30,6 @@ class DataProductTask(HydroServerBaseModel):
     latest_run: Optional[TaskRun] = None
     rating_curve_transformations: List[RatingCurveTransformation] = []
     expression_transformations: List[ExpressionTransformation] = []
-    composite_expression_transformations: List[CompositeExpressionTransformation] = []
     aggregation_transformations: List[AggregationTransformation] = []
 
     _editable_fields: ClassVar[set[str]] = {"name", "description"}

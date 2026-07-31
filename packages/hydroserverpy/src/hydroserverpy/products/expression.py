@@ -4,13 +4,9 @@ import logging
 import numpy as np
 import pandas as pd
 
-from datetime import datetime
-from typing import Literal
-
 from pydantic import ConfigDict, validate_call
 
-from hydroserverpy.core.duration import Duration
-from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, align_timeseries
+from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, validate_timeseries
 
 
 logger = logging.getLogger(__name__)
@@ -110,102 +106,128 @@ def apply_expression(
     inputs: dict[str, pd.DataFrame],
     formula: str,
     *,
-    interval: Duration | None = None,
-    anchor: datetime | None = None,
-    on_missing: Literal["drop", "interpolate", "raise", "stop"] = "drop",
-    interpolation: Literal["linear", "nearest"] = "linear",
-    max_gap: Duration | None = None,
-    no_data_value: float | None = None,
+    stop_on_no_data: bool,
+    stop_on_error: bool,
+    input_no_data_values: dict[str, float] | None = None,
+    output_no_data_value: float | None = None,
 ) -> pd.DataFrame:
     """
     Apply a mathematical formula to one or more input timeseries DataFrames.
 
-    For a single input, timestamps carry across unchanged unless an interval is set,
-    in which case the time series is snapped to a regular grid before evaluation.
-    For multiple inputs, an interval is required — each input is independently aligned
-    to the grid, then inner-joined on timestamp before the formula is evaluated.
+    Inputs are matched on exact timestamp (sorted defensively first). If they
+    diverge — one has a timestamp the others don't — output stops before that
+    point, and it's logged; nothing after is evaluated, even if they realign
+    later.
+
+    Within the aligned rows, stop_on_no_data and stop_on_error each
+    independently control a bad row (an input at its own no-data value, per
+    input_no_data_values, or a non-finite formula result): True truncates
+    there and logs it, False fills it with output_no_data_value and
+    continues silently.
     """
 
     if not inputs:
         raise ValueError("At least one input DataFrame must be provided to run an expression.")
 
-    if len(inputs) > 1 and interval is None:
-        raise ValueError("interval is required when multiple inputs are provided.")
+    if not stop_on_no_data and output_no_data_value is None:
+        raise ValueError("output_no_data_value is required when stop_on_no_data is False.")
 
-    if interval is None and on_missing != "drop":
-        raise ValueError("on_missing requires interval to be set.")
+    if not stop_on_error and output_no_data_value is None:
+        raise ValueError("output_no_data_value is required when stop_on_error is False.")
 
-    if interval is None and interpolation != "linear":
-        raise ValueError("interpolation requires interval to be set.")
+    variables = list(inputs.keys())
+    validate_expression(formula, variables)
 
-    if interval is None and max_gap is not None:
-        raise ValueError("max_gap requires interval to be set.")
+    validated = {
+        var: validate_timeseries(df).sort_values(TIMESTAMP_COL).reset_index(drop=True)
+        for var, df in inputs.items()
+    }
 
-    if max_gap is not None and on_missing != "interpolate":
-        raise ValueError("max_gap requires on_missing='interpolate'.")
-
-    if interpolation != "linear" and on_missing != "interpolate":
-        raise ValueError("interpolation requires on_missing='interpolate'.")
-
-    validate_expression(formula, list(inputs.keys()))
-
-    input_rows = {k: len(v) for k, v in inputs.items()}
     logger.debug(
-        "Evaluating expression (formula=%r, variables=%r, interval=%r, noDataValue=%r, rows=%r).",
-        formula, list(inputs.keys()), interval, no_data_value, input_rows,
+        "Evaluating expression (formula=%r, variables=%r, stopOnNoData=%r, stopOnError=%r, "
+        "inputNoDataValues=%r, outputNoDataValue=%r, rows=%r).",
+        formula, variables, stop_on_no_data, stop_on_error, input_no_data_values, output_no_data_value,
+        {var: len(df) for var, df in validated.items()},
     )
 
-    if no_data_value is not None:
-        inputs = {k: v[v[RESULT_COL] != no_data_value].reset_index(drop=True) for k, v in inputs.items()}
-        for k, before in input_rows.items():
-            dropped = before - len(inputs[k])
-            if dropped:
-                logger.debug("Dropped %d no-data row(s) from %r (noDataValue=%r).", dropped, k, no_data_value)
+    timestamp_sets = [set(df[TIMESTAMP_COL]) for df in validated.values()]
+    aligned_timestamps = set.intersection(*timestamp_sets)
+    divergent_timestamps = set.union(*timestamp_sets) - aligned_timestamps
+    divergence_timestamp = min(divergent_timestamps) if divergent_timestamps else None
 
-    # When an interval is set, snap each input independently to the regular grid.
-    # on_missing, interpolation, and max_gap are handled per-input at this stage.
-    # Without interval, a single input passes through with its original timestamps.
-    if interval is not None:
-        aligned = {
-            var: align_timeseries(
-                df,
-                interval=interval,
-                anchor=anchor,
-                on_missing=on_missing,
-                interpolation=interpolation,
-                max_gap=max_gap,
-            )
-            for var, df in inputs.items()
-        }
-    else:
-        aligned = inputs
-
-    # Inner join all inputs on timestamp. For multiple aligned inputs this
-    # drops any timestamp where any input has no value (e.g., dropped by
-    # on_missing="drop" during alignment), ensuring the formula always
-    # receives a complete set of values at every output timestamp.
-    variables = list(inputs.keys())
-    combined = aligned[variables[0]][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: variables[0]})
+    combined_df = validated[variables[0]][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: variables[0]})
     for var in variables[1:]:
-        other = aligned[var][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: var})
-        combined = combined.merge(other, on=TIMESTAMP_COL, how="inner")
-    combined = combined.sort_values(TIMESTAMP_COL).reset_index(drop=True)
+        other = validated[var][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: var})
+        combined_df = combined_df.merge(other, on=TIMESTAMP_COL, how="inner")
+    combined_df = combined_df.sort_values(TIMESTAMP_COL).reset_index(drop=True)
 
-    # Compile the formula once, then evaluate it against numpy arrays extracted
-    # from each variable column. __builtins__ is stripped to prevent any access
-    # to Python builtins outside the approved math namespace.
-    compiled = compile(ast.parse(formula.strip(), mode="eval"), "<formula>", "eval")
-    namespace = {var: combined[var].to_numpy() for var in inputs}
+    if divergence_timestamp is not None:
+        combined_df = combined_df[combined_df[TIMESTAMP_COL] < divergence_timestamp].reset_index(drop=True)
+
+    if len(combined_df) == 0:
+        if divergence_timestamp is not None:
+            logger.warning(
+                "Expression stopped at %s: input timestamps are not aligned.", divergence_timestamp,
+            )
+        return pd.DataFrame({
+            TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
+            RESULT_COL: pd.Series([], dtype=np.float64),
+        })
+
+    ndv_mask = np.zeros(len(combined_df), dtype=bool)
+    if input_no_data_values:
+        for var in variables:
+            ndv = input_no_data_values.get(var)
+            if ndv is not None:
+                ndv_mask |= combined_df[var].to_numpy() == ndv
+
+    # __builtins__ is stripped so the formula can't reach outside the math
+    # namespace. Evaluated across all rows, including no-data ones; those
+    # results get overwritten below.
+    compiled_formula = compile(ast.parse(formula.strip(), mode="eval"), "<formula>", "eval")
+    namespace = {var: combined_df[var].to_numpy() for var in variables}
     namespace.update(_MATH_NAMESPACE)
 
-    try:
-        result_array = eval(compiled, {"__builtins__": {}}, namespace)
-    except Exception as e:
-        raise ValueError(f"Formula evaluation failed: {e}") from e
+    with np.errstate(invalid="ignore", divide="ignore"):
+        try:
+            result_array = np.asarray(eval(compiled_formula, {"__builtins__": {}}, namespace), dtype=np.float64)
+        except Exception as e:
+            raise ValueError(f"Formula evaluation failed: {e}") from e
+
+    # Excludes no-data rows, which stop_on_no_data already accounts for.
+    error_mask = ~ndv_mask & ~np.isfinite(result_array)
+
+    ndv_stop_idx = int(np.argmax(ndv_mask)) if stop_on_no_data and ndv_mask.any() else None
+    error_stop_idx = int(np.argmax(error_mask)) if stop_on_error and error_mask.any() else None
+
+    stop_idx = None
+    stop_reason = None
+    if ndv_stop_idx is not None and (error_stop_idx is None or ndv_stop_idx <= error_stop_idx):
+        stop_idx, stop_reason = ndv_stop_idx, "input(s) contained a no-data value"
+    elif error_stop_idx is not None:
+        stop_idx, stop_reason = error_stop_idx, "formula produced a non-finite result"
+
+    if stop_idx is not None:
+        stop_timestamp = combined_df[TIMESTAMP_COL].iloc[stop_idx]
+        combined_df = combined_df.iloc[:stop_idx].reset_index(drop=True)
+        result_array = result_array[:stop_idx]
+        ndv_mask = ndv_mask[:stop_idx]
+        error_mask = error_mask[:stop_idx]
+        logger.warning("Expression stopped at %s: %s.", stop_timestamp, stop_reason)
+    elif divergence_timestamp is not None:
+        logger.warning(
+            "Expression stopped at %s: input timestamps are not aligned.", divergence_timestamp,
+        )
+
+    if not stop_on_no_data and ndv_mask.any():
+        result_array = np.where(ndv_mask, output_no_data_value, result_array)
+
+    if not stop_on_error and error_mask.any():
+        result_array = np.where(error_mask, output_no_data_value, result_array)
 
     result = pd.DataFrame({
-        TIMESTAMP_COL: combined[TIMESTAMP_COL],
-        RESULT_COL: np.asarray(result_array, dtype=np.float64),
+        TIMESTAMP_COL: combined_df[TIMESTAMP_COL],
+        RESULT_COL: result_array,
     })
 
     logger.info(

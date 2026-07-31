@@ -1263,307 +1263,6 @@
         "title": "CollaboratorQueryParameters",
         "type": "object"
       },
-      "CompositeExpressionTransformationPatchBody": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputPostBody"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "maxGapInterval": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapinterval"
-          },
-          "maxGapIntervalUnits": {
-            "anyOf": [
-              {
-                "enum": [
-                  "minutes",
-                  "hours",
-                  "days",
-                  "weeks",
-                  "months"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapintervalunits"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "outputInterval": {
-            "title": "Outputinterval",
-            "type": "integer"
-          },
-          "outputIntervalUnits": {
-            "enum": [
-              "minutes",
-              "hours",
-              "days",
-              "weeks",
-              "months"
-            ],
-            "title": "Outputintervalunits",
-            "type": "string"
-          }
-        },
-        "title": "CompositeExpressionTransformationPatchBody",
-        "type": "object"
-      },
-      "CompositeExpressionTransformationPostBody": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputPostBody"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "maxGapInterval": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapinterval"
-          },
-          "maxGapIntervalUnits": {
-            "anyOf": [
-              {
-                "enum": [
-                  "minutes",
-                  "hours",
-                  "days",
-                  "weeks",
-                  "months"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapintervalunits"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "outputInterval": {
-            "title": "Outputinterval",
-            "type": "integer"
-          },
-          "outputIntervalUnits": {
-            "enum": [
-              "minutes",
-              "hours",
-              "days",
-              "weeks",
-              "months"
-            ],
-            "title": "Outputintervalunits",
-            "type": "string"
-          }
-        },
-        "required": [
-          "outputDatastreamId",
-          "inputDatastreams",
-          "formula",
-          "outputIntervalUnits",
-          "outputInterval"
-        ],
-        "title": "CompositeExpressionTransformationPostBody",
-        "type": "object"
-      },
-      "CompositeExpressionTransformationResponse": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputResponse"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "maxGapInterval": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapinterval"
-          },
-          "maxGapIntervalUnits": {
-            "anyOf": [
-              {
-                "enum": [
-                  "minutes",
-                  "hours",
-                  "days",
-                  "weeks",
-                  "months"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapintervalunits"
-          },
-          "outputDatastream": {
-            "$ref": "#/components/schemas/DatastreamSummaryResponse"
-          },
-          "outputInterval": {
-            "title": "Outputinterval",
-            "type": "integer"
-          },
-          "outputIntervalUnits": {
-            "enum": [
-              "minutes",
-              "hours",
-              "days",
-              "weeks",
-              "months"
-            ],
-            "title": "Outputintervalunits",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "outputDatastream",
-          "inputDatastreams",
-          "formula",
-          "outputIntervalUnits",
-          "outputInterval"
-        ],
-        "title": "CompositeExpressionTransformationResponse",
-        "type": "object"
-      },
-      "CompositeExpressionTransformationSummaryResponse": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreamIds": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Inputdatastreamids",
-            "type": "array"
-          },
-          "maxGapInterval": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapinterval"
-          },
-          "maxGapIntervalUnits": {
-            "anyOf": [
-              {
-                "enum": [
-                  "minutes",
-                  "hours",
-                  "days",
-                  "weeks",
-                  "months"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maxgapintervalunits"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "outputInterval": {
-            "title": "Outputinterval",
-            "type": "integer"
-          },
-          "outputIntervalUnits": {
-            "enum": [
-              "minutes",
-              "hours",
-              "days",
-              "weeks",
-              "months"
-            ],
-            "title": "Outputintervalunits",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "outputDatastreamId",
-          "inputDatastreamIds",
-          "formula",
-          "outputIntervalUnits",
-          "outputInterval"
-        ],
-        "title": "CompositeExpressionTransformationSummaryResponse",
-        "type": "object"
-      },
       "DataConnectionOrderBy": {
         "enum": [
           "id",
@@ -2195,13 +1894,6 @@
             "title": "Aggregationtransformations",
             "type": "array"
           },
-          "compositeExpressionTransformations": {
-            "items": {
-              "$ref": "#/components/schemas/CompositeExpressionTransformationResponse"
-            },
-            "title": "Compositeexpressiontransformations",
-            "type": "array"
-          },
           "description": {
             "anyOf": [
               {
@@ -2266,7 +1958,6 @@
           "thing",
           "ratingCurveTransformations",
           "expressionTransformations",
-          "compositeExpressionTransformations",
           "aggregationTransformations"
         ],
         "title": "DataProductTaskDetailResponse",
@@ -2537,13 +2228,6 @@
             "title": "Aggregationtransformations",
             "type": "array"
           },
-          "compositeExpressionTransformations": {
-            "items": {
-              "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
-            },
-            "title": "Compositeexpressiontransformations",
-            "type": "array"
-          },
           "description": {
             "anyOf": [
               {
@@ -2616,7 +2300,6 @@
           "workspaceId",
           "ratingCurveTransformations",
           "expressionTransformations",
-          "compositeExpressionTransformations",
           "aggregationTransformations"
         ],
         "title": "DataProductTaskSummaryResponse",
@@ -4540,26 +4223,25 @@
             "title": "Formula",
             "type": "string"
           },
-          "inputDatastreamId": {
-            "format": "uuid",
-            "title": "Inputdatastreamid",
-            "type": "string"
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputPostBody"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
           },
           "outputDatastreamId": {
             "format": "uuid",
             "title": "Outputdatastreamid",
             "type": "string"
           },
-          "variableName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Variablename"
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
           }
         },
         "title": "ExpressionTransformationPatchBody",
@@ -4576,25 +4258,32 @@
             "title": "Id",
             "type": "string"
           },
-          "inputDatastreamId": {
-            "format": "uuid",
-            "title": "Inputdatastreamid",
-            "type": "string"
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputPostBody"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
           },
           "outputDatastreamId": {
             "format": "uuid",
             "title": "Outputdatastreamid",
             "type": "string"
           },
-          "variableName": {
-            "title": "Variablename",
-            "type": "string"
+          "stopOnError": {
+            "default": true,
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "default": true,
+            "title": "Stoponnodata",
+            "type": "boolean"
           }
         },
         "required": [
           "outputDatastreamId",
-          "inputDatastreamId",
-          "variableName",
+          "inputDatastreams",
           "formula"
         ],
         "title": "ExpressionTransformationPostBody",
@@ -4611,29 +4300,32 @@
             "title": "Id",
             "type": "string"
           },
-          "inputDatastream": {
-            "$ref": "#/components/schemas/DatastreamSummaryResponse"
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputResponse"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
           },
           "outputDatastream": {
             "$ref": "#/components/schemas/DatastreamSummaryResponse"
           },
-          "variableName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Variablename"
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "outputDatastream",
-          "inputDatastream",
-          "formula"
+          "inputDatastreams",
+          "formula",
+          "stopOnNoData",
+          "stopOnError"
         ],
         "title": "ExpressionTransformationResponse",
         "type": "object"
@@ -4649,33 +4341,35 @@
             "title": "Id",
             "type": "string"
           },
-          "inputDatastreamId": {
-            "format": "uuid",
-            "title": "Inputdatastreamid",
-            "type": "string"
+          "inputDatastreamIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Inputdatastreamids",
+            "type": "array"
           },
           "outputDatastreamId": {
             "format": "uuid",
             "title": "Outputdatastreamid",
             "type": "string"
           },
-          "variableName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Variablename"
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "outputDatastreamId",
-          "inputDatastreamId",
-          "formula"
+          "inputDatastreamIds",
+          "formula",
+          "stopOnNoData",
+          "stopOnError"
         ],
         "title": "ExpressionTransformationSummaryResponse",
         "type": "object"
@@ -21637,576 +21331,6 @@
         "summary": "Update Aggregation Transformation",
         "tags": [
           "Aggregation Transformations"
-        ]
-      }
-    },
-    "/api/data/products/tasks/{task_id}/transformations/composite-expression": {
-      "get": {
-        "description": "Get composite expression transformations for a data product task.",
-        "operationId": "interfaces_api_views_products_transformation_get_composite_expression_transformations",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "task_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Task Id",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Page number (1-based).",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
-            }
-          },
-          {
-            "description": "The number of items per page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            }
-          },
-          {
-            "description": "Select one or more fields to order the response by.",
-            "in": "query",
-            "name": "order_by",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "items": {
-                "enum": [
-                  "id",
-                  "outputDatastreamId",
-                  "-id",
-                  "-outputDatastreamId"
-                ],
-                "title": "DataProductTransformationOrderBy",
-                "type": "string"
-              },
-              "title": "Order By",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter by output datastream ID.",
-            "in": "query",
-            "name": "output_datastream_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter by output datastream ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Output Datastream Id",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Filter by input datastream ID.",
-            "in": "query",
-            "name": "input_datastream_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter by input datastream ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Input Datastream Id",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Get Composite Expression Transformations",
-        "tags": [
-          "Composite Expression Transformations"
-        ]
-      },
-      "post": {
-        "description": "Create a composite expression transformation on a data product task.",
-        "operationId": "interfaces_api_views_products_transformation_create_composite_expression_transformation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "task_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Task Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompositeExpressionTransformationPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Create Composite Expression Transformation",
-        "tags": [
-          "Composite Expression Transformations"
-        ]
-      }
-    },
-    "/api/data/products/tasks/{task_id}/transformations/composite-expression/{transformation_id}": {
-      "delete": {
-        "description": "Delete a composite expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_delete_composite_expression_transformation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "task_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Task Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "transformation_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Transformation Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Delete Composite Expression Transformation",
-        "tags": [
-          "Composite Expression Transformations"
-        ]
-      },
-      "get": {
-        "description": "Get a composite expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_get_composite_expression_transformation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "task_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Task Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "transformation_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Transformation Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Get Composite Expression Transformation",
-        "tags": [
-          "Composite Expression Transformations"
-        ]
-      },
-      "patch": {
-        "description": "Update a composite expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_update_composite_expression_transformation",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "task_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Task Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "transformation_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Transformation Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompositeExpressionTransformationPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompositeExpressionTransformationSummaryResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Update Composite Expression Transformation",
-        "tags": [
-          "Composite Expression Transformations"
         ]
       }
     },

@@ -100,7 +100,6 @@ const makeDataProductTask = () => ({
   description: null,
   thing: { id: 'thing-1', name: 'Site 1', workspaceId: 'workspace-1' },
   aggregationTransformations: [],
-  compositeExpressionTransformations: [],
   expressionTransformations: [],
   ratingCurveTransformations: [{ id: 'rating-transform-1' }],
   latestRun: null,

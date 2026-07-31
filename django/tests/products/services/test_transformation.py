@@ -335,21 +335,19 @@ def test_create_aggregation_transformation_time_weighted_mean(get_principal, ds_
     assert result.aggregation_method == "time_weighted_mean"
 
 
-def test_create_composite_expression_transformation(get_principal, ds_free):
+def test_create_expression_transformation_with_multiple_inputs(get_principal, ds_free):
     result = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=get_principal("owner"),
-        transformation_type="composite_expression",
+        transformation_type="expression",
         output_datastream=ds_free,
         formula="a + b",
-        output_interval_units="hours",
-        output_interval=1,
         input_datastreams=[
             TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="a"),
             TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="b"),
         ],
     )
-    assert result.transformation_type == "composite_expression"
+    assert result.transformation_type == "expression"
     assert result.input_datastreams.count() == 2
 
 
@@ -393,11 +391,9 @@ def test_create_duplicate_variable_names_rejected(get_principal, ds_free):
         transformation_service.create(
             task=uuid.UUID(TASK1),
             principal=get_principal("owner"),
-            transformation_type="composite_expression",
+            transformation_type="expression",
             output_datastream=ds_free,
             formula="x + x",
-            output_interval_units="hours",
-            output_interval=1,
             input_datastreams=[
                 TransformationInput(datastream=uuid.UUID(DS_IN_RC), variable_name="x"),
                 TransformationInput(datastream=uuid.UUID(DS_OUT_RC), variable_name="x"),
@@ -768,12 +764,12 @@ def test_run_rating_curve(run_context):
     np.testing.assert_allclose(results, [2.0, 4.0])
 
 
-def test_run_composite_expression(run_context):
+def test_run_expression_with_multiple_inputs(run_context):
     """
-    formula "a + b", 1-hour grid (UTC).
+    formula "a + b", inputs matched on exact timestamp.
     ds_a: 08:00→2.0, 09:00→4.0
     ds_b: 08:00→1.0, 09:00→2.0
-    Grid points at 08:00 and 09:00 UTC → a+b = [3.0, 6.0].
+    Both inputs agree at 08:00 and 09:00 → a+b = [3.0, 6.0].
     """
     ctx = run_context
     kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
@@ -791,11 +787,9 @@ def test_run_composite_expression(run_context):
     t = transformation_service.create(
         task=uuid.UUID(TASK1),
         principal=ctx["owner"],
-        transformation_type="composite_expression",
+        transformation_type="expression",
         output_datastream=ds_out.pk,
         formula="a + b",
-        output_interval_units="hours",
-        output_interval=1,
         input_datastreams=[
             TransformationInput(datastream=ds_a.pk, variable_name="a"),
             TransformationInput(datastream=ds_b.pk, variable_name="b"),
@@ -807,6 +801,45 @@ def test_run_composite_expression(run_context):
     from core.sta.models.observation import Observation
     results = sorted(Observation.objects.filter(datastream=ds_out).values_list("result", flat=True))
     np.testing.assert_allclose(results, [3.0, 6.0])
+
+
+def test_run_expression_stops_at_first_misaligned_timestamp(run_context):
+    """
+    formula "a + b". ds_b is missing the 09:00 reading ds_a has, so the run
+    should load only the 08:00 row and stop before the misaligned one.
+    """
+    ctx = run_context
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_a   = _make_datastream(**kwargs)
+    ds_b   = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+
+    t1 = datetime(2025, 2, 10, 8, 0, tzinfo=dt_timezone.utc)
+    t2 = datetime(2025, 2, 10, 9, 0, tzinfo=dt_timezone.utc)
+    _add_obs(ds_a, t1, 2.0)
+    _add_obs(ds_a, t2, 4.0)
+    _set_end_time(ds_a, t2)
+    _add_obs(ds_b, t1, 1.0)
+    _set_end_time(ds_b, t2)
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="expression",
+        output_datastream=ds_out.pk,
+        formula="a + b",
+        input_datastreams=[
+            TransformationInput(datastream=ds_a.pk, variable_name="a"),
+            TransformationInput(datastream=ds_b.pk, variable_name="b"),
+        ],
+    )
+    loaded = transformation_service.run(t)
+    assert loaded == 1
+
+    from core.sta.models.observation import Observation
+    out_obs = list(Observation.objects.filter(datastream=ds_out))
+    assert len(out_obs) == 1
+    np.testing.assert_allclose(out_obs[0].result, 3.0)
 
 
 def test_run_aggregation_local_timezone_watermark(run_context):

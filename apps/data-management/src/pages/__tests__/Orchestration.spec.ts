@@ -136,10 +136,6 @@ vi.mock('@/components/Orchestration/data-products/ExpressionForm.vue', () => ({
   default: { template: '<div />' },
 }))
 
-vi.mock('@/components/Orchestration/data-products/DerivationForm.vue', () => ({
-  default: { template: '<div />' },
-}))
-
 vi.mock('@/components/Orchestration/data-products/RatingCurveForm.vue', () => ({
   default: { template: '<div />' },
 }))
@@ -180,9 +176,6 @@ const stubs = {
     template: '<div />',
   },
   ExpressionForm: {
-    template: '<div />',
-  },
-  DerivationForm: {
     template: '<div />',
   },
   RatingCurveForm: {

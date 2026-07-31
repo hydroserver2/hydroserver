@@ -20,7 +20,6 @@ from interfaces.api.views import (
     rating_curve_router,
     rating_curve_transformation_router,
     expression_transformation_router,
-    composite_expression_transformation_router,
     aggregation_transformation_router,
     data_product_task_router,
     monitoring_task_router,
@@ -63,7 +62,6 @@ api.add_router("products/rating-curves", rating_curve_router)
 api.add_router("products/tasks", data_product_task_router)
 data_product_task_router.add_router("/{task_id}/transformations/rating-curve", rating_curve_transformation_router)
 data_product_task_router.add_router("/{task_id}/transformations/expression", expression_transformation_router)
-data_product_task_router.add_router("/{task_id}/transformations/composite-expression", composite_expression_transformation_router)
 data_product_task_router.add_router("/{task_id}/transformations/aggregation", aggregation_transformation_router)
 
 monitoring_task_router.add_router("/{task_id}/rules", monitoring_rule_router)

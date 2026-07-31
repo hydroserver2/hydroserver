@@ -16,7 +16,6 @@ export type OrchestrationTaskDetailType =
   | 'ingestion'
   | 'aggregation'
   | 'expression'
-  | 'derivation'
   | 'rating-curve'
   | 'quality'
 
@@ -29,7 +28,6 @@ export const ORCHESTRATION_DETAIL_ROUTE_NAMES: Record<
   ingestion: 'OrchestrationIngestionDetails',
   aggregation: 'OrchestrationAggregationDetails',
   expression: 'OrchestrationExpressionDetails',
-  derivation: 'OrchestrationDerivationDetails',
   'rating-curve': 'OrchestrationRatingCurveDetails',
   quality: 'OrchestrationQualityDetails',
 }
@@ -45,7 +43,6 @@ const VALID_DETAIL_TYPES = new Set<OrchestrationTaskDetailType>([
   'ingestion',
   'aggregation',
   'expression',
-  'derivation',
   'rating-curve',
   'quality',
 ])
@@ -54,7 +51,6 @@ const DETAIL_VIEW: Record<OrchestrationTaskDetailType, OrchestrationView> = {
   ingestion: 'ingestion',
   aggregation: 'aggregation',
   expression: 'aggregation',
-  derivation: 'aggregation',
   'rating-curve': 'aggregation',
   quality: 'quality',
 }
@@ -63,7 +59,6 @@ const DETAIL_KIND: Record<OrchestrationTaskDetailType, TaskKind> = {
   ingestion: 'etl',
   aggregation: 'dataProduct',
   expression: 'dataProduct',
-  derivation: 'dataProduct',
   'rating-curve': 'dataProduct',
   quality: 'monitoring',
 }
@@ -74,7 +69,6 @@ const DATA_PRODUCT_DETAIL_TYPE: Record<
 > = {
   Aggregation: 'aggregation',
   Expression: 'expression',
-  Derivation: 'derivation',
   'Rating curve': 'rating-curve',
 }
 

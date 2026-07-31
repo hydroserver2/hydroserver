@@ -3,7 +3,6 @@ from .task import DataProductTask
 from .transformation import (
     RatingCurveTransformation,
     ExpressionTransformation,
-    CompositeExpressionTransformation,
     AggregationTransformation,
 )
 
@@ -12,6 +11,5 @@ __all__ = [
     "DataProductTask",
     "RatingCurveTransformation",
     "ExpressionTransformation",
-    "CompositeExpressionTransformation",
     "AggregationTransformation",
 ]

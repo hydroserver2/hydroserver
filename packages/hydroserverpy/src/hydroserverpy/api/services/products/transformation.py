@@ -5,7 +5,6 @@ from uuid import UUID
 from hydroserverpy.api.models.products.transformation import (
     RatingCurveTransformation,
     ExpressionTransformation,
-    CompositeExpressionTransformation,
     AggregationTransformation,
     AggregationMethod,
     Period,
@@ -156,97 +155,16 @@ class DataProductTransformationService:
         self,
         task_id: Union[UUID, str],
         output_datastream: Union[UUID, str],
-        input_datastream: Union[UUID, str],
-        formula: str,
-        variable_name: Optional[str] = None,
-        uid: Optional[UUID] = None,
-    ) -> ExpressionTransformation:
-        """Create an expression transformation on a data product task."""
-
-        body = {
-            "outputDatastreamId": normalize_uuid(output_datastream),
-            "inputDatastreamId": normalize_uuid(input_datastream),
-            "formula": formula,
-            "variableName": variable_name,
-        }
-        if uid is not None:
-            body["id"] = normalize_uuid(uid)
-
-        return ExpressionTransformation(**self._post(task_id, "expression", body))
-
-    def update_expression(
-        self,
-        task_id: Union[UUID, str],
-        uid: Union[UUID, str],
-        input_datastream: Union[UUID, str],
-        formula: str,
-        variable_name: Optional[str] = None,
-    ) -> ExpressionTransformation:
-        """Update an expression transformation."""
-
-        body = {
-            "inputDatastreamId": normalize_uuid(input_datastream),
-            "formula": formula,
-            "variableName": variable_name,
-        }
-
-        return ExpressionTransformation(**self._patch(task_id, "expression", uid, body))
-
-    def delete_expression(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
-        """Delete an expression transformation."""
-
-        self.client.request("delete", f"{self._route(task_id, 'expression')}/{str(uid)}")
-
-    # ---------------------------------------------------------------------------
-    # Composite Expression Transformations
-    # ---------------------------------------------------------------------------
-
-    def list_composite_expression(
-        self,
-        task_id: Union[UUID, str],
-        output_datastream: Optional[Union[UUID, str]] = None,
-        input_datastream: Optional[Union[UUID, str]] = None,
-    ) -> List[CompositeExpressionTransformation]:
-        """List composite expression transformations for a data product task."""
-
-        params = {}
-        if output_datastream is not None:
-            params["output_datastream_id"] = normalize_uuid(output_datastream)
-        if input_datastream is not None:
-            params["input_datastream_id"] = normalize_uuid(input_datastream)
-
-        response = self.client.request(
-            "get", self._route(task_id, "composite-expression"), params=params
-        )
-
-        return [CompositeExpressionTransformation(**t) for t in response.json()]
-
-    def get_composite_expression(
-        self, task_id: Union[UUID, str], uid: Union[UUID, str]
-    ) -> CompositeExpressionTransformation:
-        """Get a composite expression transformation."""
-
-        response = self.client.request(
-            "get", f"{self._route(task_id, 'composite-expression')}/{str(uid)}"
-        ).json()
-
-        return CompositeExpressionTransformation(**response)
-
-    def create_composite_expression(
-        self,
-        task_id: Union[UUID, str],
-        output_datastream: Union[UUID, str],
         input_datastreams: List[dict],
         formula: str,
-        output_interval: int,
-        output_interval_units: Period,
-        max_gap_interval: Optional[int] = None,
-        max_gap_interval_units: Optional[Period] = None,
+        stop_on_no_data: bool = True,
+        stop_on_error: bool = True,
         uid: Optional[UUID] = None,
-    ) -> CompositeExpressionTransformation:
-        """Create a composite expression transformation on a data product task.
+    ) -> ExpressionTransformation:
+        """
+        Create an expression transformation on a data product task.
 
-        Each item in input_datastreams should have 'datastream_id' and optionally 'variable_name'.
+        Each item in input_datastreams should have 'datastream_id' and 'variable_name'.
         """
 
         body = {
@@ -259,30 +177,28 @@ class DataProductTransformationService:
                 for inp in input_datastreams
             ],
             "formula": formula,
-            "outputInterval": output_interval,
-            "outputIntervalUnits": output_interval_units,
-            "maxGapInterval": max_gap_interval,
-            "maxGapIntervalUnits": max_gap_interval_units,
+            "stopOnNoData": stop_on_no_data,
+            "stopOnError": stop_on_error,
         }
         if uid is not None:
             body["id"] = normalize_uuid(uid)
 
-        return CompositeExpressionTransformation(
-            **self._post(task_id, "composite-expression", body)
-        )
+        return ExpressionTransformation(**self._post(task_id, "expression", body))
 
-    def update_composite_expression(
+    def update_expression(
         self,
         task_id: Union[UUID, str],
         uid: Union[UUID, str],
         input_datastreams: List[dict],
         formula: str,
-        output_interval: int,
-        output_interval_units: Period,
-        max_gap_interval: Optional[int] = None,
-        max_gap_interval_units: Optional[Period] = None,
-    ) -> CompositeExpressionTransformation:
-        """Update a composite expression transformation."""
+        stop_on_no_data: bool = True,
+        stop_on_error: bool = True,
+    ) -> ExpressionTransformation:
+        """
+        Update an expression transformation.
+
+        Each item in input_datastreams should have 'datastream_id' and 'variable_name'.
+        """
 
         body = {
             "inputDatastreams": [
@@ -293,22 +209,16 @@ class DataProductTransformationService:
                 for inp in input_datastreams
             ],
             "formula": formula,
-            "outputInterval": output_interval,
-            "outputIntervalUnits": output_interval_units,
-            "maxGapInterval": max_gap_interval,
-            "maxGapIntervalUnits": max_gap_interval_units,
+            "stopOnNoData": stop_on_no_data,
+            "stopOnError": stop_on_error,
         }
 
-        return CompositeExpressionTransformation(
-            **self._patch(task_id, "composite-expression", uid, body)
-        )
+        return ExpressionTransformation(**self._patch(task_id, "expression", uid, body))
 
-    def delete_composite_expression(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
-        """Delete a composite expression transformation."""
+    def delete_expression(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
+        """Delete an expression transformation."""
 
-        self.client.request(
-            "delete", f"{self._route(task_id, 'composite-expression')}/{str(uid)}"
-        )
+        self.client.request("delete", f"{self._route(task_id, 'expression')}/{str(uid)}")
 
     # ---------------------------------------------------------------------------
     # Aggregation Transformations

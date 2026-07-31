@@ -117,9 +117,9 @@
     timezone_type: null
     timezone: null
     aggregation_method: null
-    max_gap_interval_units: null
-    max_gap_interval: null
     min_values: null
+    stop_on_no_data: true
+    stop_on_error: true
 
 - model: products.dataproducttransformationinput
   pk: 019c0006-0000-7000-8000-000000000001
@@ -142,9 +142,9 @@
     timezone_type: null
     timezone: null
     aggregation_method: null
-    max_gap_interval_units: null
-    max_gap_interval: null
     min_values: null
+    stop_on_no_data: true
+    stop_on_error: true
 
 - model: products.dataproducttransformationinput
   pk: 019c0006-0000-7000-8000-000000000002

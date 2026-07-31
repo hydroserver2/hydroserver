@@ -86,23 +86,6 @@
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
-                  @click="$emit('add-derivation')"
-                >
-                  + Derivation
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
-          </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="outlined"
-                  class="detail-action-btn detail-action-btn--header text-none"
-                  :style="{ color: '#1565C0', borderColor: '#1565C0' }"
-                  :disabled="!canEdit"
-                  rounded="lg"
                   @click="$emit('add-rating-curve')"
                 >
                   + Rating curve
@@ -647,7 +630,6 @@ defineEmits<{
   (e: 'add-task'): void
   (e: 'add-aggregation'): void
   (e: 'add-expression'): void
-  (e: 'add-derivation'): void
   (e: 'add-rating-curve'): void
   (e: 'add-quality'): void
 }>()

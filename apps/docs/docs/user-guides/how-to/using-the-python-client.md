@@ -620,7 +620,6 @@ hs_api.ratingcurves.create(name, thing, fitting_method, description=None, points
 | `latest_run` | `TaskRun \| None` | No | |
 | `rating_curve_transformations` | `List[RatingCurveTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
 | `expression_transformations` | `List[ExpressionTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
-| `composite_expression_transformations` | `List[CompositeExpressionTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
 | `aggregation_transformations` | `List[AggregationTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
 
 #### Service methods
@@ -647,7 +646,7 @@ Same as ETL Tasks: `trigger()`, `list_runs(...)`, `get_run(run_id)`.
 
 **Property:** `hs_api.dataproducttransformations`
 
-Transformations are always scoped to a specific data product task via `task_id`. All four types share a consistent set of CRUD methods.
+Transformations are always scoped to a specific data product task via `task_id`. All three types share a consistent set of CRUD methods.
 
 #### Rating Curve Transformations
 
@@ -668,54 +667,32 @@ hs_api.dataproducttransformations.delete_rating_curve(task_id, uid)
 
 #### Expression Transformations
 
+Combines one or more input datastreams using a formula. Each input datastream is assigned a variable name used in the formula; with a single input, this is equivalent to applying the formula to each observation independently. Multiple inputs are matched by exact timestamp — if they stop lining up, a run stops there until the inputs are back in sync.
+
 | Field | Type | Description |
 |---|---|---|
 | `id` | `UUID` | |
-| `output_datastream` | `DatastreamSummary` | |
-| `input_datastream` | `DatastreamSummary` | |
-| `formula` | `str` | Python expression evaluated per observation |
-| `variable_name` | `str \| None` | Name of the variable representing the input value in the formula |
+| `output_datastream_id` | `UUID` | |
+| `input_datastream_ids` | `List[UUID]` | |
+| `formula` | `str` | Python expression referencing the input variable name(s) |
+| `stop_on_no_data` | `bool` | If `True`, stop the run when an input holds its no-data value; if `False`, fill the output with its no-data value and continue |
+| `stop_on_error` | `bool` | If `True`, stop the run when the formula produces a non-finite result; if `False`, fill the output with its no-data value and continue |
 
 ```python
 hs_api.dataproducttransformations.list_expression(task_id, output_datastream=None, input_datastream=None)
 hs_api.dataproducttransformations.get_expression(task_id, uid)
-hs_api.dataproducttransformations.create_expression(task_id, output_datastream, input_datastream, formula, variable_name=None, uid=None)
-hs_api.dataproducttransformations.update_expression(task_id, uid, input_datastream, formula, variable_name=None)
+hs_api.dataproducttransformations.create_expression(
+    task_id, output_datastream, input_datastreams, formula,
+    stop_on_no_data=True, stop_on_error=True, uid=None
+)
+hs_api.dataproducttransformations.update_expression(
+    task_id, uid, input_datastreams, formula,
+    stop_on_no_data=True, stop_on_error=True
+)
 hs_api.dataproducttransformations.delete_expression(task_id, uid)
 ```
 
-#### Composite Expression Transformations
-
-Like expression transformations, but combine multiple input datastreams. Each input datastream is assigned a variable name used in the formula.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `UUID` | |
-| `output_datastream` | `DatastreamSummary` | |
-| `input_datastreams` | `List[TransformationInput]` | Each has `datastream` (`id`, `name`) and `variable_name` |
-| `formula` | `str` | |
-| `output_interval` | `int` | |
-| `output_interval_units` | `str` | `"minutes"`, `"hours"`, `"days"`, `"weeks"`, `"months"` |
-| `max_gap_interval` | `int \| None` | Max gap in input data before output is suppressed |
-| `max_gap_interval_units` | `str \| None` | |
-
-```python
-hs_api.dataproducttransformations.list_composite_expression(task_id, output_datastream=None, input_datastream=None)
-hs_api.dataproducttransformations.get_composite_expression(task_id, uid)
-hs_api.dataproducttransformations.create_composite_expression(
-    task_id, output_datastream, input_datastreams, formula,
-    output_interval, output_interval_units,
-    max_gap_interval=None, max_gap_interval_units=None, uid=None
-)
-hs_api.dataproducttransformations.update_composite_expression(
-    task_id, uid, input_datastreams, formula,
-    output_interval, output_interval_units,
-    max_gap_interval=None, max_gap_interval_units=None
-)
-hs_api.dataproducttransformations.delete_composite_expression(task_id, uid)
-```
-
-`input_datastreams` is a list of dicts with `datastream_id` and optionally `variable_name`.
+`input_datastreams` is a list of dicts with `datastream_id` and `variable_name`.
 
 #### Aggregation Transformations
 

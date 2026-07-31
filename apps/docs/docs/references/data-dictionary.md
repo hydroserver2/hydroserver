@@ -487,16 +487,16 @@ A DataProductTransformation describes how a single derived (output) Datastream i
 | M        | id                     | A primary key unique identifier for the DataProductTransformation.                                                                  | UUID      |
 | M        | task_id                | A foreign key identifier for the DataProductTask to which the transformation belongs.                                               | UUID      |
 | M        | output_datastream_id   | A one-to-one foreign key identifier for the Datastream that receives the transformation output.                                     | UUID      |
-| M        | transformation_type    | The type of transformation: `rating_curve`, `expression`, `composite_expression`, or `aggregation`.                                 | String    |
+| M        | transformation_type    | The type of transformation: `rating_curve`, `expression`, or `aggregation`.                                                          | String    |
 | O        | rating_curve_id        | A foreign key identifier for the RatingCurve used when `transformation_type` is `rating_curve`.                                     | UUID      |
-| O        | formula                | An expression string used when `transformation_type` is `expression` or `composite_expression`.                                     | Text      |
+| O        | formula                | An expression string used when `transformation_type` is `expression`, referencing one or more input variable names.                 | Text      |
+| O        | stop_on_no_data        | For `expression` transformations, whether a run stops when an input holds its no-data value (vs. filling the output and continuing). | Boolean   |
+| O        | stop_on_error          | For `expression` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
 | O        | output_interval_units  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
 | O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |
 | O        | timezone_type          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |
 | O        | timezone               | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.                                     | String    |
 | O        | aggregation_method     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, or `last`.                       | String    |
-| O        | max_gap_interval_units | For `aggregation` transformations, the unit of the maximum allowed gap within a window.                                             | String    |
-| O        | max_gap_interval       | For `aggregation` transformations, the positive count of `max_gap_interval_units` allowed within a window before the bin is dropped. | Integer   |
 | O        | min_values             | For `aggregation` transformations, the minimum number of input observations required per window.                                    | Integer   |
 
 ## DataProductTransformationInput

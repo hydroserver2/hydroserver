@@ -17,11 +17,9 @@ from interfaces.api.schemas.orchestration.run import TaskRunResponse
 from interfaces.api.schemas.products.transformation import (
     RatingCurveTransformationSummaryResponse,
     ExpressionTransformationSummaryResponse,
-    CompositeExpressionTransformationSummaryResponse,
     AggregationTransformationSummaryResponse,
     RatingCurveTransformationResponse,
     ExpressionTransformationResponse,
-    CompositeExpressionTransformationResponse,
     AggregationTransformationResponse,
 )
 
@@ -108,7 +106,6 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
     latest_run: TaskRunResponse | None = None
     rating_curve_transformations: list[RatingCurveTransformationSummaryResponse]
     expression_transformations: list[ExpressionTransformationSummaryResponse]
-    composite_expression_transformations: list[CompositeExpressionTransformationSummaryResponse]
     aggregation_transformations: list[AggregationTransformationSummaryResponse]
 
     @staticmethod
@@ -138,12 +135,6 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
         return [t for t in obj.transformations.all() if t.transformation_type == "expression"]
 
     @staticmethod
-    def resolve_composite_expression_transformations(obj):
-        if not hasattr(obj, "transformations"):
-            return getattr(obj, "composite_expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "composite_expression"]
-
-    @staticmethod
     def resolve_aggregation_transformations(obj):
         if not hasattr(obj, "transformations"):
             return getattr(obj, "aggregation_transformations", [])
@@ -159,7 +150,6 @@ class DataProductTaskDetailResponse(BaseGetResponse):
     latest_run: TaskRunResponse | None = None
     rating_curve_transformations: list[RatingCurveTransformationResponse]
     expression_transformations: list[ExpressionTransformationResponse]
-    composite_expression_transformations: list[CompositeExpressionTransformationResponse]
     aggregation_transformations: list[AggregationTransformationResponse]
 
     @staticmethod
@@ -181,12 +171,6 @@ class DataProductTaskDetailResponse(BaseGetResponse):
         if not hasattr(obj, "transformations"):
             return getattr(obj, "expression_transformations", [])
         return [t for t in obj.transformations.all() if t.transformation_type == "expression"]
-
-    @staticmethod
-    def resolve_composite_expression_transformations(obj):
-        if not hasattr(obj, "transformations"):
-            return getattr(obj, "composite_expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "composite_expression"]
 
     @staticmethod
     def resolve_aggregation_transformations(obj):

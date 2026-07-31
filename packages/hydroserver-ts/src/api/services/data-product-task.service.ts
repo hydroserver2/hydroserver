@@ -10,8 +10,8 @@ import type * as Data from '../../generated/data.types'
 import type {
   AggregationTransformationPatchPayload,
   AggregationTransformationPayload,
-  CompositeExpressionTransformationPatchPayload,
-  CompositeExpressionTransformationPayload,
+  ExpressionTransformationPatchPayload,
+  ExpressionTransformationPayload,
 } from './data-product-transformation.types'
 
 type AggregationTransformationResponse =
@@ -26,10 +26,6 @@ type RatingCurveTransformationResponse =
   Data.components['schemas']['RatingCurveTransformationResponse']
 type RatingCurveTransformationSummaryResponse =
   Data.components['schemas']['RatingCurveTransformationSummaryResponse']
-type CompositeExpressionTransformationResponse =
-  Data.components['schemas']['CompositeExpressionTransformationResponse']
-type CompositeExpressionTransformationSummaryResponse =
-  Data.components['schemas']['CompositeExpressionTransformationSummaryResponse']
 
 export class DataProductTaskService extends HydroServerBaseService<
   typeof C,
@@ -61,12 +57,7 @@ export class DataProductTaskService extends HydroServerBaseService<
 
   createExpressionTransformation(
     taskId: string,
-    payload: {
-      outputDatastreamId: string
-      inputDatastreamId: string
-      variableName: string
-      formula: string
-    }
+    payload: ExpressionTransformationPayload
   ) {
     return apiMethods.post<ExpressionTransformationSummaryResponse>(
       `${this._route}/${taskId}/transformations/expression`,
@@ -83,12 +74,7 @@ export class DataProductTaskService extends HydroServerBaseService<
   updateExpressionTransformation(
     taskId: string,
     transformationId: string,
-    payload: Partial<{
-      outputDatastreamId: string
-      inputDatastreamId: string
-      variableName: string | null
-      formula: string
-    }>
+    payload: ExpressionTransformationPatchPayload
   ) {
     return apiMethods.patch<ExpressionTransformationSummaryResponse>(
       `${this._route}/${taskId}/transformations/expression/${transformationId}`,
@@ -177,44 +163,6 @@ export class DataProductTaskService extends HydroServerBaseService<
   deleteAggregationTransformation(taskId: string, transformationId: string) {
     return apiMethods.delete<null>(
       `${this._route}/${taskId}/transformations/aggregation/${transformationId}`
-    )
-  }
-
-  /* ------------- Composite Expression Transformations ---------------- */
-
-  createCompositeExpressionTransformation(
-    taskId: string,
-    payload: CompositeExpressionTransformationPayload
-  ) {
-    return apiMethods.post<CompositeExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/composite-expression`,
-      payload
-    )
-  }
-
-  listCompositeExpressionTransformations(taskId: string) {
-    return apiMethods.fetch<CompositeExpressionTransformationResponse[]>(
-      `${this._route}/${taskId}/transformations/composite-expression`
-    )
-  }
-
-  updateCompositeExpressionTransformation(
-    taskId: string,
-    transformationId: string,
-    payload: CompositeExpressionTransformationPatchPayload
-  ) {
-    return apiMethods.patch<CompositeExpressionTransformationSummaryResponse>(
-      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`,
-      payload
-    )
-  }
-
-  deleteCompositeExpressionTransformation(
-    taskId: string,
-    transformationId: string
-  ) {
-    return apiMethods.delete<null>(
-      `${this._route}/${taskId}/transformations/composite-expression/${transformationId}`
     )
   }
 }

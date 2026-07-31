@@ -8,8 +8,7 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
-from processing.products.services.transformation import (DataProductTransformationService, TransformationInput,
-                                                         TransformationInputPatch)
+from processing.products.services.transformation import DataProductTransformationService, TransformationInput
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
     RatingCurveTransformationSummaryResponse,
@@ -18,9 +17,6 @@ from interfaces.api.schemas.products.transformation import (
     ExpressionTransformationSummaryResponse,
     ExpressionTransformationPostBody,
     ExpressionTransformationPatchBody,
-    CompositeExpressionTransformationSummaryResponse,
-    CompositeExpressionTransformationPostBody,
-    CompositeExpressionTransformationPatchBody,
     AggregationTransformationSummaryResponse,
     AggregationTransformationPostBody,
     AggregationTransformationPatchBody,
@@ -220,15 +216,10 @@ def create_expression_transformation(
             principal=request.principal,
             transformation_type="expression",
             output_datastream=data.output_datastream,
-            input_datastreams=[
-                TransformationInput(
-                    datastream=data.input_datastream,
-                    variable_name=data.variable_name
-                )
-            ],
+            input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
             **data.model_dump(
                 exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastream", "variable_name"},
+                exclude={"uid", "output_datastream", "input_datastreams"},
             ),
             **({"uid": data.uid} if data.uid is not Unset else {}),
         )
@@ -271,15 +262,10 @@ def update_expression_transformation(
 ):
     """Update an expression transformation."""
 
-    update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastream", "variable_name"})
+    update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastreams"})
 
-    if "input_datastream" in data.model_fields_set or "variable_name" in data.model_fields_set:
-        patch_kwargs = {}
-        if "input_datastream" in data.model_fields_set:
-            patch_kwargs["datastream"] = data.input_datastream
-        if "variable_name" in data.model_fields_set:
-            patch_kwargs["variable_name"] = data.variable_name
-        update_kwargs["input_datastreams"] = [TransformationInputPatch(**patch_kwargs)]
+    if "input_datastreams" in data.model_fields_set:
+        update_kwargs["input_datastreams"] = [TransformationInput(**inp.model_dump()) for inp in data.input_datastreams]
 
     with raise_http_errors():
         transformation = _service.update(
@@ -301,140 +287,6 @@ def delete_expression_transformation(
     transformation_id: Path[uuid.UUID],
 ):
     """Delete an expression transformation."""
-
-    with raise_http_errors():
-        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
-
-    return 204, None
-
-
-# ---------------------------------------------------------------------------
-# Composite Expression
-# ---------------------------------------------------------------------------
-
-composite_expression_transformation_router = Router(tags=["Composite Expression Transformations"])
-
-
-@composite_expression_transformation_router.get(
-    "",
-    auth=_auth,
-    response={200: list[CompositeExpressionTransformationSummaryResponse], 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def get_composite_expression_transformations(
-    request: HydroServerHttpRequest,
-    response: HttpResponse,
-    task_id: Path[uuid.UUID],
-    query: Query[DataProductTransformationTypeQueryParameters],
-):
-    """Get composite expression transformations for a data product task."""
-
-    with raise_http_errors():
-        count, transformations = _service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            transformation_type=["composite_expression"],
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-        )
-
-    apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
-
-    return 200, transformations
-
-
-@composite_expression_transformation_router.post(
-    "",
-    auth=_auth,
-    response={201: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
-    by_alias=True,
-)
-def create_composite_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    data: CompositeExpressionTransformationPostBody,
-):
-    """Create a composite expression transformation on a data product task."""
-
-    with raise_http_errors():
-        transformation = _service.create(
-            task=task_id,
-            principal=request.principal,
-            transformation_type="composite_expression",
-            output_datastream=data.output_datastream,
-            input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
-            **data.model_dump(
-                exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastreams"},
-            ),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
-
-    return 201, transformation
-
-
-@composite_expression_transformation_router.get(
-    "/{transformation_id}",
-    auth=_auth,
-    response={200: CompositeExpressionTransformationSummaryResponse, 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def get_composite_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-):
-    """Get a composite expression transformation."""
-
-    with raise_http_errors():
-        transformation = _service.get(
-            transformation=transformation_id, task=task_id, principal=request.principal, action="view",
-        )
-
-    return 200, transformation
-
-
-@composite_expression_transformation_router.patch(
-    "/{transformation_id}",
-    auth=_auth,
-    response={200: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
-    by_alias=True,
-)
-def update_composite_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-    data: CompositeExpressionTransformationPatchBody,
-):
-    """Update a composite expression transformation."""
-
-    update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastreams"})
-
-    if "input_datastreams" in data.model_fields_set:
-        update_kwargs["input_datastreams"] = [TransformationInput(**inp.model_dump()) for inp in data.input_datastreams]
-
-    with raise_http_errors():
-        transformation = _service.update(
-            transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
-        )
-
-    return 200, transformation
-
-
-@composite_expression_transformation_router.delete(
-    "/{transformation_id}",
-    auth=_auth,
-    response={204: None, 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def delete_composite_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-):
-    """Delete a composite expression transformation."""
 
     with raise_http_errors():
         _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)

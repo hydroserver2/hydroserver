@@ -19,8 +19,6 @@ const aggregationTaskDetailsComponent = () =>
   import('@/components/Orchestration/data-products/AggregationTaskDetails.vue')
 const expressionTaskDetailsComponent = () =>
   import('@/components/Orchestration/data-products/ExpressionTaskDetails.vue')
-const derivationTaskDetailsComponent = () =>
-  import('@/components/Orchestration/data-products/DerivationTaskDetails.vue')
 const ratingCurveTaskDetailsComponent = () =>
   import('@/components/Orchestration/data-products/RatingCurveTaskDetails.vue')
 const qualityTaskDetailsComponent = () =>
@@ -143,15 +141,6 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           orchestrationView: 'aggregation',
           orchestrationTaskDetail: 'expression',
-        },
-      },
-      {
-        path: 'details/derivation',
-        name: 'OrchestrationDerivationDetails',
-        component: derivationTaskDetailsComponent,
-        meta: {
-          orchestrationView: 'aggregation',
-          orchestrationTaskDetail: 'derivation',
         },
       },
       {

@@ -24,7 +24,6 @@ from .products.task import DataProductTask
 from .products.transformation import (
     RatingCurveTransformation,
     ExpressionTransformation,
-    CompositeExpressionTransformation,
     AggregationTransformation,
 )
 
