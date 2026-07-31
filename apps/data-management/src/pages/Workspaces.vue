@@ -174,6 +174,9 @@
 
         <section v-if="selected" class="detail" data-testid="workspace-detail">
           <header class="detail-header">
+            <div class="detail-header-icon">
+              <v-icon :icon="mdiBriefcaseOutline" size="20" />
+            </div>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="detail-title">{{ selected.name }}</h2>
@@ -230,36 +233,44 @@
                 <h6 class="text-h6 mb-1">Overview</h6>
 
                 <div class="overview-stats">
-                  <div class="stat-tile">
+                  <div class="stat-tile stat-tile--members">
                     <div class="stat-tile-head">
-                      <v-icon :icon="mdiAccountCircle" size="16" />
+                      <span class="stat-tile-icon">
+                        <v-icon :icon="mdiAccountCircle" size="14" />
+                      </span>
                       <span>Members</span>
                     </div>
                     <div class="stat-tile-value">
                       {{ overviewStatsLoaded ? overviewStats.members : '—' }}
                     </div>
                   </div>
-                  <div class="stat-tile">
+                  <div class="stat-tile stat-tile--sites">
                     <div class="stat-tile-head">
-                      <v-icon :icon="mdiRadioTower" size="16" />
+                      <span class="stat-tile-icon">
+                        <v-icon :icon="mdiRadioTower" size="14" />
+                      </span>
                       <span>Sites</span>
                     </div>
                     <div class="stat-tile-value">
                       {{ overviewStatsLoaded ? overviewStats.sites : '—' }}
                     </div>
                   </div>
-                  <div class="stat-tile">
+                  <div class="stat-tile stat-tile--keys">
                     <div class="stat-tile-head">
-                      <v-icon :icon="mdiKeyVariant" size="16" />
+                      <span class="stat-tile-icon">
+                        <v-icon :icon="mdiKeyVariant" size="14" />
+                      </span>
                       <span>API keys</span>
                     </div>
                     <div class="stat-tile-value">
                       {{ overviewStatsLoaded ? overviewStats.keys : '—' }}
                     </div>
                   </div>
-                  <div class="stat-tile">
+                  <div class="stat-tile stat-tile--metadata">
                     <div class="stat-tile-head">
-                      <v-icon :icon="mdiDatabaseCog" size="16" />
+                      <span class="stat-tile-icon">
+                        <v-icon :icon="mdiDatabaseCog" size="14" />
+                      </span>
                       <span>Metadata items</span>
                     </div>
                     <div class="stat-tile-value">
@@ -358,6 +369,9 @@
 
         <section v-else class="no-workspace-state">
           <div class="no-workspace-state-content">
+            <div class="no-workspace-icon">
+              <v-icon :icon="mdiBriefcaseOutline" size="28" />
+            </div>
             <p class="no-workspace-eyebrow">Manage workspaces</p>
             <h2>
               {{
@@ -713,26 +727,69 @@ onMounted(async () => {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 11px;
   background: #ffffff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .stat-tile-head {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #9ca3af;
+  gap: 8px;
   margin-bottom: 9px;
 }
-.stat-tile-head span {
+.stat-tile-head span:last-child {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #757575;
 }
+.stat-tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 .stat-tile-value {
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #1c1b1f;
+}
+/* A little color per metric instead of one uniform grey, so the overview
+   reads as more than a wall of numbers. */
+.stat-tile--members .stat-tile-icon {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.stat-tile--members .stat-tile-value {
+  color: #1565c0;
+}
+.stat-tile--sites .stat-tile-icon {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.stat-tile--sites .stat-tile-value {
+  color: #2e7d32;
+}
+.stat-tile--keys .stat-tile-icon {
+  background: #fff3e0;
+  color: #e65100;
+}
+.stat-tile--keys .stat-tile-value {
+  color: #e65100;
+}
+.stat-tile--metadata .stat-tile-icon {
+  background: #e0f7fa;
+  color: #00838f;
+}
+.stat-tile--metadata .stat-tile-value {
+  color: #00838f;
 }
 
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
@@ -750,8 +807,8 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .workspaces-header {
-  background: #ffffff;
-  border-bottom: 1px solid #ebebeb;
+  background: linear-gradient(120deg, #eaf5fd 0%, #eefaf0 100%);
+  border-bottom: 1px solid #dfe8e2;
 }
 .workspaces-header-inner {
   padding: 12px 24px;
@@ -783,6 +840,7 @@ onMounted(async () => {
 
 /* ── left-hand workspace selection sidebar ── */
 .sidebar {
+  position: relative;
   width: 260px;
   border-right: 1px solid #e8e8e8;
   background: #fafafa;
@@ -790,6 +848,15 @@ onMounted(async () => {
   flex-direction: column;
   flex-shrink: 0;
   min-height: 0;
+}
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2196f3, #4caf50);
 }
 .sidebar-header {
   padding: 11px 14px 10px;
@@ -850,7 +917,7 @@ onMounted(async () => {
   transition: background 0.1s;
 }
 .sidebar-item:not(.selected):hover {
-  background: rgba(0, 0, 0, 0.035);
+  background: rgba(33, 150, 243, 0.06);
 }
 .sidebar-item-body {
   flex: 1;
@@ -978,6 +1045,17 @@ onMounted(async () => {
   background: white;
   flex-shrink: 0;
 }
+.detail-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 .detail-title {
   font-size: 17px;
   font-weight: 400;
@@ -1013,6 +1091,17 @@ onMounted(async () => {
 .no-workspace-state-content {
   max-width: 560px;
   color: #3c4043;
+}
+.no-workspace-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
 }
 .no-workspace-eyebrow {
   margin: 0 0 8px;
