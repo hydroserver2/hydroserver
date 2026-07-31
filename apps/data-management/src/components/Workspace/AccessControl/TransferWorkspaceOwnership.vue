@@ -11,7 +11,12 @@
             <strong>{{ workspace.pendingTransferTo?.name }}</strong>
           </span>
         </div>
-        <v-btn-cancel class="mt-4" @click="onCancelTransfer">
+        <v-btn-cancel
+          class="mt-4"
+          :loading="isCancelling"
+          :disabled="isCancelling"
+          @click="onCancelTransfer"
+        >
           Cancel transfer
         </v-btn-cancel>
       </template>
@@ -35,7 +40,8 @@
           />
           <v-btn-primary
             v-if="showTransferConfirmation"
-            :disabled="!emailFormValid"
+            :loading="isTransferring"
+            :disabled="!emailFormValid || isTransferring"
             @click="onTransferOwnership"
           >
             Confirm transfer
@@ -89,36 +95,59 @@ const showPendingTransferText = computed(
 const newOwnerEmail = ref('')
 const emailFormValid = ref(false)
 const showTransferConfirmation = ref(false)
+const isTransferring = ref(false)
+const isCancelling = ref(false)
 
 async function onTransferOwnership() {
-  if (!newOwnerEmail.value || !emailFormValid.value) return
+  if (!newOwnerEmail.value || !emailFormValid.value || isTransferring.value)
+    return
 
-  const res = await hs.workspaces.transferOwnership(
-    props.workspace!.id,
-    newOwnerEmail.value
-  )
+  isTransferring.value = true
+  try {
+    const res = await hs.workspaces.transferOwnership(
+      props.workspace!.id,
+      newOwnerEmail.value
+    )
 
-  if (res.ok) {
-    emits('needs-refresh')
-    Snackbar.success('Workspace transfer initiated.')
-    newOwnerEmail.value = ''
-    showTransferConfirmation.value = false
-  } else {
-    // Keep what they typed so they can fix it rather than starting over -
-    // most commonly this means the email doesn't match an existing account.
-    console.error('Error transferring workspace.', res)
-    Snackbar.error(res.message)
-    showTransferConfirmation.value = false
+    if (res.ok) {
+      emits('needs-refresh')
+      Snackbar.success('Workspace transfer initiated.')
+      newOwnerEmail.value = ''
+      showTransferConfirmation.value = false
+    } else {
+      // Keep what they typed so they can fix it rather than starting over -
+      // most commonly this means the email doesn't match an existing account.
+      console.error('Error transferring workspace.', res)
+      Snackbar.error(res.message || 'Unable to start the workspace transfer.')
+      showTransferConfirmation.value = false
+    }
+  } catch (error) {
+    console.error('Error transferring workspace.', error)
+    Snackbar.error('Unable to start the workspace transfer.')
+  } finally {
+    isTransferring.value = false
   }
 }
 
 async function onCancelTransfer() {
-  const res = await hs.workspaces.rejectOwnershipTransfer(props.workspace!.id)
+  if (isCancelling.value) return
+  isCancelling.value = true
+  try {
+    const res = await hs.workspaces.rejectOwnershipTransfer(props.workspace!.id)
 
-  if (res.ok) {
-    emits('needs-refresh')
-    Snackbar.success('Workspace transfer cancelled.')
-  } else console.error('Error cancelling workspace transfer.', res)
+    if (res.ok) {
+      emits('needs-refresh')
+      Snackbar.success('Workspace transfer cancelled.')
+    } else {
+      console.error('Error cancelling workspace transfer.', res)
+      Snackbar.error(res.message || 'Unable to cancel the workspace transfer.')
+    }
+  } catch (error) {
+    console.error('Error cancelling workspace transfer.', error)
+    Snackbar.error('Unable to cancel the workspace transfer.')
+  } finally {
+    isCancelling.value = false
+  }
 }
 </script>
 
@@ -152,5 +181,14 @@ async function onCancelTransfer() {
   gap: 9px;
   font-size: 13.5px;
   color: #1c1b1f;
+}
+
+@media (max-width: 600px) {
+  .ownership-card {
+    padding: 16px;
+  }
+  .ownership-form {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -1,12 +1,15 @@
 <template>
   <div class="collaborators-header">
     <h6 class="text-h6">Collaborators</h6>
-    <v-icon
+    <v-btn
       @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
-      color="grey"
-      size="18"
-      class="collaborators-help-icon"
       :icon="mdiHelpCircleOutline"
+      variant="text"
+      density="compact"
+      size="x-small"
+      class="collaborators-help-icon"
+      aria-label="Toggle collaborator help"
+      :aria-expanded="showAddCollaboratorHelp"
     />
   </div>
 
@@ -16,6 +19,23 @@
     can create, read, update, and delete all sites, metadata, and datastreams as
     well as set their visibility. Users can remove themselves as collaborators.
   </p>
+
+  <v-alert
+    v-if="loadError"
+    type="error"
+    variant="tonal"
+    density="compact"
+    class="mb-3"
+  >
+    <div class="d-flex align-center ga-2">
+      <span>{{ loadError }}</span>
+      <v-spacer />
+      <v-btn variant="text" size="small" @click="loadCollaboratorData">
+        Retry
+      </v-btn>
+    </div>
+  </v-alert>
+  <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
 
   <v-card-text v-if="showAddCollaborator">
     <v-text-field
@@ -37,6 +57,8 @@
       <v-btn-cancel @click="cancelAddCollaborator">Cancel</v-btn-cancel>
       <v-btn-primary
         data-testid="submit-collaborator-button"
+        :loading="isAdding"
+        :disabled="isAdding"
         @click="onAddCollaborator"
       >
         Add collaborator
@@ -119,6 +141,8 @@
               >
               <v-btn
                 size="small"
+                :loading="item.isSaving"
+                :disabled="item.isSaving"
                 :data-testid="`save-collaborator-${item.email}`"
                 @click="onSaveRole(item)"
                 >Save</v-btn
@@ -137,7 +161,8 @@
                 variant="text"
                 color="red-darken-2"
                 :icon="mdiTrashCanOutline"
-                :disabled="!canRemove(item)"
+                :loading="removingEmail === item.email"
+                :disabled="!canRemove(item) || !!removingEmail"
                 :data-testid="`remove-collaborator-${item.email}`"
                 :aria-label="`Remove ${item.name}`"
                 @click="onRemoveCollaborator(item.email)"
@@ -174,23 +199,28 @@ import PermissionTooltip from '@/components/PermissionTooltip.vue'
 const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
-const emits = defineEmits(['self-removed'])
+const emits = defineEmits(['self-removed', 'changed'])
 
 const { user } = storeToRefs(useUserStore())
 const { hasPermission } = useWorkspacePermissions()
-const canCreate = computed(() =>
-  hasPermission(
-    PermissionResource.Collaborator,
-    PermissionAction.Create,
-    props.workspace
-  )
+const isDataReady = ref(false)
+const canCreate = computed(
+  () =>
+    isDataReady.value &&
+    hasPermission(
+      PermissionResource.Collaborator,
+      PermissionAction.Create,
+      props.workspace
+    )
 )
-const canEdit = computed(() =>
-  hasPermission(
-    PermissionResource.Collaborator,
-    PermissionAction.Edit,
-    props.workspace
-  )
+const canEdit = computed(
+  () =>
+    isDataReady.value &&
+    hasPermission(
+      PermissionResource.Collaborator,
+      PermissionAction.Edit,
+      props.workspace
+    )
 )
 const canDelete = computed(() =>
   hasPermission(
@@ -208,25 +238,38 @@ const selectedRole = ref()
 const newCollaboratorEmail = ref('')
 const roles = ref<CollaboratorRole[]>([])
 const collaboratorList = ref<any[]>([])
+const isLoading = ref(false)
+const loadError = ref('')
+const isAdding = ref(false)
+const removingEmail = ref('')
 
 /**
  * Save the new role, then reset editing state
  */
 async function onSaveRole(item: any) {
-  if (!canEdit.value) return
-  const res = await hs.workspaces.updateCollaboratorRole(
-    props.workspace.id,
-    item.email,
-    item.pendingRole.id
-  )
-  if (res.ok) {
-    item.role = res.data.role
-    item.isBeingEdited = false
-    Snackbar.success('Collaborator role updated.')
-  } else {
-    console.error('Error updating collaborator role:', res)
-    Snackbar.error(res.message)
-    item.isBeingEdited = true
+  if (!canEdit.value || item.isSaving) return
+  item.isSaving = true
+  try {
+    const res = await hs.workspaces.updateCollaboratorRole(
+      props.workspace.id,
+      item.email,
+      item.pendingRole.id
+    )
+    if (res.ok) {
+      item.role = res.data.role
+      item.isBeingEdited = false
+      Snackbar.success('Collaborator role updated.')
+      emits('changed')
+    } else {
+      console.error('Error updating collaborator role:', res)
+      Snackbar.error(res.message || 'Unable to update the collaborator role.')
+      item.isBeingEdited = true
+    }
+  } catch (error) {
+    console.error('Error updating collaborator role:', error)
+    Snackbar.error('Unable to update the collaborator role.')
+  } finally {
+    item.isSaving = false
   }
 }
 
@@ -237,43 +280,64 @@ function cancelAddCollaborator() {
 }
 
 async function onAddCollaborator() {
-  if (!canCreate.value) return
+  if (!canCreate.value || isAdding.value) return
   if (!newCollaboratorEmail.value || !selectedRole.value) {
     Snackbar.warn('Please fill out collaborator email and role.')
     return
   }
 
-  const res = await hs.workspaces.addCollaborator(
-    props.workspace!.id,
-    newCollaboratorEmail.value,
-    selectedRole.value.id
-  )
-  if (res.ok) {
-    collaboratorList.value.push(collaboratorToFormData(res.data))
-    collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
-    Snackbar.success('Collaborator added to workspace.')
-    showAddCollaborator.value = false
-  } else {
-    console.error('Error adding secondary owner', res)
-    Snackbar.error(res.message)
-    return
+  isAdding.value = true
+  try {
+    const res = await hs.workspaces.addCollaborator(
+      props.workspace!.id,
+      newCollaboratorEmail.value,
+      selectedRole.value.id
+    )
+    if (res.ok) {
+      collaboratorList.value.push(collaboratorToFormData(res.data))
+      collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
+      Snackbar.success('Collaborator added to workspace.')
+      showAddCollaborator.value = false
+      newCollaboratorEmail.value = ''
+      selectedRole.value = ''
+      emits('changed')
+    } else {
+      console.error('Error adding collaborator', res)
+      Snackbar.error(res.message || 'Unable to add the collaborator.')
+    }
+  } catch (error) {
+    console.error('Error adding collaborator', error)
+    Snackbar.error('Unable to add the collaborator.')
+  } finally {
+    isAdding.value = false
   }
-  newCollaboratorEmail.value = ''
-  selectedRole.value = ''
 }
 
 async function onRemoveCollaborator(email: string) {
-  if (!canDelete.value && email !== user.value?.email) return
-  const res = await hs.workspaces.removeCollaborator(props.workspace!.id, email)
+  if (removingEmail.value || (!canDelete.value && email !== user.value?.email))
+    return
+  removingEmail.value = email
+  try {
+    const res = await hs.workspaces.removeCollaborator(
+      props.workspace!.id,
+      email
+    )
 
-  if (res.ok) {
-    const index = collaboratorList.value.findIndex((c) => c.email === email)
-    if (index !== -1) collaboratorList.value.splice(index, 1)
-    Snackbar.success('Collaborator removed.')
-    if (email === user.value.email) emits('self-removed')
-  } else {
-    console.error('Error removing collaborator', res)
-    Snackbar.error(res.message)
+    if (res.ok) {
+      const index = collaboratorList.value.findIndex((c) => c.email === email)
+      if (index !== -1) collaboratorList.value.splice(index, 1)
+      Snackbar.success('Collaborator removed.')
+      emits('changed')
+      if (email === user.value.email) emits('self-removed')
+    } else {
+      console.error('Error removing collaborator', res)
+      Snackbar.error(res.message || 'Unable to remove the collaborator.')
+    }
+  } catch (error) {
+    console.error('Error removing collaborator', error)
+    Snackbar.error('Unable to remove the collaborator.')
+  } finally {
+    removingEmail.value = ''
   }
 }
 
@@ -289,6 +353,7 @@ const setCollaboratorList = (collaborators: Collaborator[]) => {
       organization: props.workspace.owner.organizationName || 'No Organization',
       isOwner: true,
       isBeingEdited: false,
+      isSaving: false,
     })
   }
   collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
@@ -308,30 +373,49 @@ const collaboratorToFormData = (c: Collaborator) => ({
   organization: c.user.organizationName || 'No Organization',
   isOwner: false,
   isBeingEdited: false,
+  isSaving: false,
 })
 
-onMounted(async () => {
-  const [cRes, rolesResponse] = await Promise.all([
-    hs.workspaces.getCollaborators(props.workspace.id),
-    hs.workspaces.getRoles({
-      order_by: ['name'],
-      is_user_role: true,
-    }),
-  ])
+async function loadCollaboratorData() {
+  isLoading.value = true
+  loadError.value = ''
+  isDataReady.value = false
+  try {
+    const [cRes, rolesResponse] = await Promise.all([
+      hs.workspaces.getCollaborators(props.workspace.id),
+      hs.workspaces.getRoles({
+        order_by: ['name'],
+        is_user_role: true,
+      }),
+    ])
 
-  if (!cRes.ok)
-    console.error('Error fetching collaborators for workspace', cRes)
-  if (!rolesResponse.ok)
-    console.error('Error fetching collaborators for workspace', rolesResponse)
+    if (!cRes.ok || !rolesResponse.ok) {
+      console.error('Error fetching workspace collaborators', {
+        collaborators: cRes,
+        roles: rolesResponse,
+      })
+      loadError.value = 'Unable to load all collaborator data.'
+    }
 
-  roles.value = rolesResponse.ok
-    ? rolesResponse.data.filter(
-        (r: CollaboratorRole) =>
-          r.workspaceId === null || r.workspaceId == props.workspace.id
-      )
-    : []
-  setCollaboratorList(cRes.ok ? cRes.data : [])
-})
+    roles.value = rolesResponse.ok
+      ? rolesResponse.data.filter(
+          (role: CollaboratorRole) =>
+            role.workspaceId === null || role.workspaceId === props.workspace.id
+        )
+      : []
+    setCollaboratorList(cRes.ok ? cRes.data : [])
+    isDataReady.value = cRes.ok && rolesResponse.ok
+  } catch (error) {
+    console.error('Error fetching workspace collaborators', error)
+    loadError.value = 'Unable to load collaborator data.'
+    roles.value = []
+    setCollaboratorList([])
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadCollaboratorData)
 </script>
 
 <style scoped>

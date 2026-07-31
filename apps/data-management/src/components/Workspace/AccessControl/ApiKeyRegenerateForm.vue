@@ -15,7 +15,12 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary color="warning" @click="onDelete">
+      <v-btn-primary
+        color="warning"
+        :loading="loading"
+        :disabled="loading"
+        @click="onDelete"
+      >
         Regenerate key
       </v-btn-primary>
     </v-card-actions>
@@ -26,9 +31,9 @@
 import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['regenerated', 'close'])
+defineProps({ loading: Boolean })
 
 const onDelete = () => {
   emit('regenerated')
-  emit('close')
 }
 </script>

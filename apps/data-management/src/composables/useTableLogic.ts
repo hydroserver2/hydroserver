@@ -31,13 +31,15 @@ export function useTableLogic<T extends WithId>(
   }
 
   const onDelete = async () => {
-    if (!item.value) return
+    if (!item.value) return false
     try {
       await deleteFn(item.value.id)
       items.value = items.value.filter((u: any) => u.id !== item.value.id)
       openDelete.value = false
+      return true
     } catch (error) {
       console.error(`Error deleting table item`, error)
+      return false
     }
   }
 
@@ -70,5 +72,6 @@ export function useTableLogic<T extends WithId>(
     openDialog,
     onUpdate,
     onDelete,
+    loadData,
   }
 }

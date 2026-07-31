@@ -40,7 +40,14 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete color="delete" @click="onDelete">Delete</v-btn-delete>
+      <v-btn-delete
+        color="delete"
+        :loading="loading"
+        :disabled="loading"
+        @click="onDelete"
+      >
+        Delete
+      </v-btn-delete>
     </v-card-actions>
   </v-card>
 </template>
@@ -64,16 +71,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const deleteInput = ref('')
 
 const onDelete = () => {
+  if (props.loading) return
   if (deleteInput.value.toLowerCase() !== props.workspace.name.toLowerCase()) {
     Snackbar.warn('Workspace name does not match.')
     return
   }
   emit('delete')
-  emit('close')
 }
 </script>

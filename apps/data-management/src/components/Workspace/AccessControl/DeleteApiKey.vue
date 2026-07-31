@@ -16,7 +16,9 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete @click="onDelete"> Delete </v-btn-delete>
+      <v-btn-delete :loading="loading" :disabled="loading" @click="onDelete">
+        Delete
+      </v-btn-delete>
     </v-card-actions>
   </v-card>
 </template>
@@ -25,10 +27,9 @@
 import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['delete', 'close'])
-defineProps({ itemName: String })
+defineProps({ itemName: String, loading: Boolean })
 
 const onDelete = () => {
   emit('delete')
-  emit('close')
 }
 </script>

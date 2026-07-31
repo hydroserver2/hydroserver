@@ -26,16 +26,59 @@
             transfer ownership of this workspace to you.
           </span>
           <v-spacer />
-          <v-btn-cancel density="comfortable" @click="onCancelTransfer(ws)">
+          <v-btn-cancel
+            density="comfortable"
+            :loading="
+              pendingTransferActionId === ws.id &&
+              pendingTransferActionType === 'decline'
+            "
+            :disabled="
+              !!pendingTransferActionId &&
+              (pendingTransferActionId !== ws.id ||
+                pendingTransferActionType !== 'decline')
+            "
+            :aria-label="`Decline transfer of ${ws.name}`"
+            @click="onCancelTransfer(ws)"
+          >
             Decline
           </v-btn-cancel>
           <v-btn
             color="green-darken-2"
             density="comfortable"
             :prepend-icon="mdiCheck"
+            :loading="
+              pendingTransferActionId === ws.id &&
+              pendingTransferActionType === 'accept'
+            "
+            :disabled="
+              !!pendingTransferActionId &&
+              (pendingTransferActionId !== ws.id ||
+                pendingTransferActionType !== 'accept')
+            "
+            :aria-label="`Accept transfer of ${ws.name}`"
             @click="onAcceptTransfer(ws)"
           >
             Accept transfer
+          </v-btn>
+        </div>
+      </v-alert>
+
+      <v-alert
+        v-if="workspaceLoadError && selected"
+        class="workspace-load-alert"
+        type="error"
+        variant="tonal"
+        border="start"
+      >
+        <div class="d-flex align-center flex-wrap ga-2">
+          <span>{{ workspaceLoadError }}</span>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            :loading="isRetryingWorkspaceLoad"
+            @click="retryWorkspaceLoad"
+          >
+            Retry
           </v-btn>
         </div>
       </v-alert>
@@ -43,7 +86,7 @@
 
     <div class="workspaces-page-body">
       <div class="workspaces-shell">
-        <aside class="sidebar">
+        <aside class="sidebar" data-testid="workspace-sidebar">
           <div class="sidebar-header">
             <div class="flex items-center">
               <span class="sidebar-title">Workspaces</span>
@@ -104,9 +147,14 @@
                   : {}
               "
               :data-testid="`workspace-list-item-${ws.id}`"
-              @click="selectWorkspace(ws.id)"
             >
-              <div class="sidebar-item-body">
+              <button
+                type="button"
+                class="sidebar-item-body"
+                :aria-label="`Select ${ws.name} workspace`"
+                :aria-current="ws.id === selectedId ? 'true' : undefined"
+                @click="selectWorkspace(ws.id)"
+              >
                 <div class="sidebar-item-title">{{ ws.name }}</div>
                 <div class="sidebar-item-meta">
                   <span class="sidebar-item-meta-text">
@@ -114,7 +162,7 @@
                     {{ ws.isPrivate ? 'Private' : 'Public' }}
                   </span>
                 </div>
-              </div>
+              </button>
               <span class="sidebar-item-actions">
                 <button
                   type="button"
@@ -256,8 +304,15 @@
                       </span>
                       <span>Members</span>
                     </div>
-                    <div class="stat-tile-value">
-                      {{ overviewStatsLoaded ? overviewStats.members : '—' }}
+                    <div
+                      class="stat-tile-value"
+                      data-testid="overview-members-count"
+                    >
+                      {{
+                        overviewStatsLoaded
+                          ? (overviewStats.members ?? '—')
+                          : '—'
+                      }}
                     </div>
                   </div>
                   <div class="stat-tile stat-tile--sites">
@@ -267,8 +322,13 @@
                       </span>
                       <span>Sites</span>
                     </div>
-                    <div class="stat-tile-value">
-                      {{ overviewStatsLoaded ? overviewStats.sites : '—' }}
+                    <div
+                      class="stat-tile-value"
+                      data-testid="overview-sites-count"
+                    >
+                      {{
+                        overviewStatsLoaded ? (overviewStats.sites ?? '—') : '—'
+                      }}
                     </div>
                   </div>
                   <div class="stat-tile stat-tile--keys">
@@ -278,8 +338,13 @@
                       </span>
                       <span>API keys</span>
                     </div>
-                    <div class="stat-tile-value">
-                      {{ overviewStatsLoaded ? overviewStats.keys : '—' }}
+                    <div
+                      class="stat-tile-value"
+                      data-testid="overview-api-keys-count"
+                    >
+                      {{
+                        overviewStatsLoaded ? (overviewStats.keys ?? '—') : '—'
+                      }}
                     </div>
                   </div>
                   <div class="stat-tile stat-tile--metadata">
@@ -289,10 +354,24 @@
                       </span>
                       <span>Metadata items</span>
                     </div>
-                    <div class="stat-tile-value">
-                      {{ overviewStatsLoaded ? overviewStats.metadata : '—' }}
+                    <div
+                      class="stat-tile-value"
+                      data-testid="overview-metadata-count"
+                    >
+                      {{
+                        overviewStatsLoaded
+                          ? (overviewStats.metadata ?? '—')
+                          : '—'
+                      }}
                     </div>
                   </div>
+                </div>
+
+                <div v-if="overviewStatsError" class="overview-stats-error">
+                  Some totals could not be loaded.
+                  <button type="button" @click="loadOverviewStats(selected.id)">
+                    Retry
+                  </button>
                 </div>
 
                 <v-table class="hs-table-card">
@@ -320,12 +399,14 @@
                     </tr>
                     <tr>
                       <td class="text-medium-emphasis">Workspace ID</td>
-                      <td>
-                        {{ selected.id }}
-                        <v-icon
+                      <td class="workspace-id-cell">
+                        <span>{{ selected.id }}</span>
+                        <v-btn
                           size="x-small"
-                          class="ml-2"
+                          variant="text"
+                          density="comfortable"
                           :icon="mdiContentCopy"
+                          aria-label="Copy workspace ID"
                           @click="copyId(selected.id)"
                         />
                       </td>
@@ -391,19 +472,42 @@
             <p class="no-workspace-eyebrow">Manage workspaces</p>
             <h2>
               {{
-                workspaces.length
-                  ? 'Select a workspace to manage it'
-                  : 'Create your first workspace'
+                workspaceLoadError
+                  ? 'Unable to load workspaces'
+                  : workspaces.length
+                    ? 'Select a workspace to manage it'
+                    : !canCreateWorkspace
+                      ? 'No workspaces available'
+                      : 'Create your first workspace'
               }}
             </h2>
-            <p>
+            <p v-if="workspaceLoadError">
+              We could not load your workspaces. Check your connection and try
+              again.
+            </p>
+            <p v-else-if="!workspaces.length && !canCreateWorkspace">
+              You do not belong to a workspace yet. Ask a workspace owner to
+              invite you as a collaborator.
+            </p>
+            <p v-else>
               Workspaces control who can access your sites, datastreams, and
               metadata. After creating one, assign roles like Editor or Viewer
               to collaborators who need access.
             </p>
             <div class="no-workspace-actions">
               <v-btn
+                v-if="workspaceLoadError"
                 color="primary-darken-2"
+                variant="flat"
+                rounded="xl"
+                :loading="isRetryingWorkspaceLoad"
+                @click="retryWorkspaceLoad"
+              >
+                Retry
+              </v-btn>
+              <v-btn
+                v-else-if="canCreateWorkspace"
+                color="green-darken-2"
                 variant="flat"
                 rounded="xl"
                 @click="openCreate = true"
@@ -437,6 +541,7 @@
       @switch-to-transfer="onSwitchToTransfer"
       :workspace="activeItem"
       :can-transfer="isOwner(activeItem)"
+      :loading="isDeletingWorkspace"
     />
   </v-dialog>
 </template>
@@ -491,13 +596,16 @@ const SECTIONS = [
   'metadata',
   'privacy',
   'ownership',
-]
+] as const
+
+type WorkspaceSection = (typeof SECTIONS)[number]
 
 const route = useRoute()
 const router = useRouter()
 
-const { selectedWorkspace, workspaces } = storeToRefs(useWorkspaceStore())
-const { setWorkspaces } = useWorkspaceStore()
+const workspaceStore = useWorkspaceStore()
+const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
+const { setWorkspaces } = workspaceStore
 const { hasPermission, getUserRoleName, isOwner, isAdmin } =
   useWorkspacePermissions()
 const { user } = storeToRefs(useUserStore())
@@ -509,14 +617,19 @@ const OWNER_ONLY_MESSAGE = 'Only the workspace owner can do this.'
 const canManageWorkspace = (ws: Workspace | null) => isOwner(ws) || isAdmin()
 
 const isPageLoaded = ref(false)
+const workspaceLoadError = ref('')
+const isRetryingWorkspaceLoad = ref(false)
 const search = ref('')
 
 const selectedId = ref('')
-const section = ref('overview')
+const section = ref<WorkspaceSection>('overview')
 
 const openCreate = ref(false)
 const openEdit = ref(false)
 const openDelete = ref(false)
+const isDeletingWorkspace = ref(false)
+const pendingTransferActionId = ref<string | null>(null)
+const pendingTransferActionType = ref<'accept' | 'decline' | null>(null)
 const activeItem = ref<Workspace>({} as Workspace)
 
 const selected = computed(
@@ -524,58 +637,106 @@ const selected = computed(
 )
 
 /** At-a-glance counts shown as the large stat tiles on the Overview tab. */
-const overviewStats = ref({ members: 0, sites: 0, keys: 0, metadata: 0 })
+const overviewStats = ref<{
+  members: number | null
+  sites: number | null
+  keys: number | null
+  metadata: number | null
+}>({ members: null, sites: null, keys: null, metadata: null })
 const overviewStatsLoaded = ref(false)
+const overviewStatsError = ref(false)
+let overviewRequestId = 0
+
+function responseCount(result: PromiseSettledResult<unknown>): number | null {
+  if (result.status === 'rejected') return null
+  const response = result.value as {
+    ok?: boolean
+    data?: unknown[]
+  } | null
+  return response?.ok && Array.isArray(response.data)
+    ? response.data.length
+    : null
+}
 
 const loadOverviewStats = async (workspaceId: string) => {
+  const requestId = ++overviewRequestId
   overviewStatsLoaded.value = false
-  try {
-    const [
-      collaboratorsRes,
-      sitesRes,
-      keysRes,
-      sensors,
-      observedProperties,
-      processingLevels,
-      units,
-      resultQualifiers,
-    ] = await Promise.all([
-      hs.workspaces.getCollaborators(workspaceId),
-      hs.things.listSiteSummaries(workspaceId),
-      hs.workspaces.getApiKeys(workspaceId),
-      hs.sensors.listAllItems({ workspace_id: [workspaceId] }),
-      hs.observedProperties.listAllItems({ workspace_id: [workspaceId] }),
-      hs.processingLevels.listAllItems({ workspace_id: [workspaceId] }),
-      hs.units.listAllItems({ workspace_id: [workspaceId] }),
-      hs.resultQualifiers.listAllItems({ workspace_id: [workspaceId] }),
-    ])
-    overviewStats.value = {
-      // +1 for the owner, who isn't included in the collaborators list.
-      members:
-        (collaboratorsRes.ok ? (collaboratorsRes.data?.length ?? 0) : 0) + 1,
-      sites: sitesRes.ok ? (sitesRes.data?.length ?? 0) : 0,
-      keys: keysRes.ok ? (keysRes.data?.length ?? 0) : 0,
-      metadata:
-        sensors.length +
-        observedProperties.length +
-        processingLevels.length +
-        units.length +
-        resultQualifiers.length,
-    }
-  } catch (error) {
-    console.error('Error loading workspace overview stats', error)
-  } finally {
-    overviewStatsLoaded.value = true
+  overviewStatsError.value = false
+  overviewStats.value = {
+    members: null,
+    sites: null,
+    keys: null,
+    metadata: null,
   }
+
+  const workspace = workspaces.value.find((item) => item.id === workspaceId)
+  const canViewApiKeys =
+    !!workspace &&
+    hasPermission(PermissionResource.ApiKey, PermissionAction.View, workspace)
+  const keyRequest = canViewApiKeys
+    ? hs.workspaces.getApiKeys(workspaceId)
+    : Promise.resolve(null)
+
+  const results = await Promise.allSettled([
+    hs.workspaces.getCollaborators(workspaceId),
+    hs.things.listSiteSummaries(workspaceId),
+    keyRequest,
+    hs.sensors.list({ workspace_id: [workspaceId], fetch_all: true }),
+    hs.observedProperties.list({
+      workspace_id: [workspaceId],
+      fetch_all: true,
+    }),
+    hs.processingLevels.list({
+      workspace_id: [workspaceId],
+      fetch_all: true,
+    }),
+    hs.units.list({ workspace_id: [workspaceId], fetch_all: true }),
+    hs.resultQualifiers.list({
+      workspace_id: [workspaceId],
+      fetch_all: true,
+    }),
+  ])
+
+  if (requestId !== overviewRequestId || selectedId.value !== workspaceId)
+    return
+
+  const counts = results.map(responseCount)
+  const metadataCounts = counts.slice(3)
+  const metadata = metadataCounts.every((count) => count !== null)
+    ? metadataCounts.reduce<number>((total, count) => total + (count ?? 0), 0)
+    : null
+
+  overviewStats.value = {
+    // +1 for the owner, who isn't included in the collaborators list.
+    members: counts[0] === null ? null : counts[0] + 1,
+    sites: counts[1],
+    keys: canViewApiKeys ? counts[2] : null,
+    metadata,
+  }
+  overviewStatsError.value =
+    counts[0] === null ||
+    counts[1] === null ||
+    (canViewApiKeys && counts[2] === null) ||
+    metadata === null
+  overviewStatsLoaded.value = true
 }
 
 watch(
   selected,
   (ws) => {
-    if (ws) loadOverviewStats(ws.id)
+    if (!ws) return
+    if (selectedWorkspace.value?.id !== ws.id) selectedWorkspace.value = ws
+    if (section.value === 'ownership' && !isOwner(ws))
+      section.value = 'overview'
+    else if (section.value === 'overview') void loadOverviewStats(ws.id)
   },
   { immediate: true }
 )
+
+watch(section, (value) => {
+  if (value === 'overview' && selected.value)
+    void loadOverviewStats(selected.value.id)
+})
 
 const filteredWorkspaces = computed(() => {
   const term = (search.value || '').toLowerCase()
@@ -606,31 +767,59 @@ function openDialog(item: Workspace, dialog: 'edit' | 'delete') {
   if (dialog === 'delete') openDelete.value = true
 }
 
-/** Sync the local list with the db and the global workspaces array, which
- * should always be the source of truth. */
-const refreshWorkspaces = async (workspace?: Workspace) => {
-  const res = await hs.workspaces.listItems({
-    is_associated: true,
-    fetch_all: true,
-  })
-  setWorkspaces(res)
+async function loadWorkspaceList() {
+  try {
+    const response = await hs.workspaces.list({
+      is_associated: true,
+      fetch_all: true,
+    })
+    if (!response.ok) {
+      workspaceLoadError.value =
+        response.message || 'We could not load your workspaces.'
+      return false
+    }
 
-  if (
-    workspace &&
-    (!selectedWorkspace.value || selectedWorkspace.value.id === workspace.id)
-  )
-    selectedWorkspace.value = workspace
+    setWorkspaces(response.data)
+    workspaceLoadError.value = ''
+    return true
+  } catch (error) {
+    console.error('Error fetching workspaces', error)
+    workspaceLoadError.value = 'We could not load your workspaces.'
+    return false
+  }
+}
+
+/** Sync the local list with the database and the global workspace store. */
+const refreshWorkspaces = async (fallbackWorkspace?: Workspace) => {
+  const refreshed = await loadWorkspaceList()
+
+  // The mutation already succeeded, so keep its result usable even when the
+  // follow-up list request is temporarily unavailable.
+  if (!refreshed && fallbackWorkspace) {
+    setWorkspaces([
+      ...workspaces.value.filter((ws) => ws.id !== fallbackWorkspace.id),
+      fallbackWorkspace,
+    ])
+  }
 
   if (!selected.value) selectedId.value = workspaces.value[0]?.id ?? ''
+  return refreshed
 }
 
 const refreshWorkspace = async (workspaceId: string) => {
   try {
-    const workspace = (await hs.workspaces.getItem(workspaceId)) as Workspace
+    const workspace = await hs.workspaces.getItem(workspaceId)
+    if (!workspace) {
+      Snackbar.error('Unable to refresh the workspace.')
+      return false
+    }
     const index = workspaces.value.findIndex((ws) => ws.id === workspaceId)
     if (index !== -1) workspaces.value.splice(index, 1, workspace)
+    return true
   } catch (error) {
     console.error('Error refreshing workspace', error)
+    Snackbar.error('Unable to refresh the workspace.')
+    return false
   }
 }
 
@@ -640,12 +829,26 @@ const onCreated = async (workspace: Workspace) => {
 }
 
 async function onDelete() {
-  if (!activeItem.value) return
-  const res = await hs.workspaces.delete(activeItem.value.id)
-  if (res.ok) {
-    Snackbar.success('Workspace deleted')
-    await refreshWorkspaces()
-  } else Snackbar.error(res.message)
+  if (!activeItem.value || isDeletingWorkspace.value) return
+  isDeletingWorkspace.value = true
+  try {
+    const res = await hs.workspaces.delete(activeItem.value.id)
+    if (res.ok) {
+      setWorkspaces(
+        workspaces.value.filter(
+          (workspace) => workspace.id !== activeItem.value.id
+        )
+      )
+      openDelete.value = false
+      Snackbar.success('Workspace deleted')
+      await refreshWorkspaces()
+    } else Snackbar.error(res.message || 'Unable to delete the workspace.')
+  } catch (error) {
+    console.error('Error deleting workspace', error)
+    Snackbar.error('Unable to delete the workspace.')
+  } finally {
+    isDeletingWorkspace.value = false
+  }
 }
 
 // DeleteWorkspaceCard only offers this link when the acting user owns the
@@ -657,23 +860,61 @@ function onSwitchToTransfer() {
 }
 
 const onSelfRemoved = async () => {
+  const removedWorkspaceId = selectedId.value
+  setWorkspaces(
+    workspaces.value.filter((workspace) => workspace.id !== removedWorkspaceId)
+  )
   await refreshWorkspaces()
 }
 
 async function onCancelTransfer(ws: Workspace) {
-  const res = await hs.workspaces.rejectOwnershipTransfer(ws.id)
-  if (res.ok) {
-    await refreshWorkspaces()
-    Snackbar.success('Workspace transfer cancelled.')
-  } else console.error('Error cancelling workspace transfer.', res)
+  if (pendingTransferActionId.value) return
+  pendingTransferActionId.value = ws.id
+  pendingTransferActionType.value = 'decline'
+  try {
+    const res = await hs.workspaces.rejectOwnershipTransfer(ws.id)
+    if (res.ok) {
+      await refreshWorkspaces()
+      Snackbar.success('Workspace transfer declined.')
+    } else {
+      console.error('Error declining workspace transfer.', res)
+      Snackbar.error(res.message || 'Unable to decline the workspace transfer.')
+    }
+  } catch (error) {
+    console.error('Error declining workspace transfer.', error)
+    Snackbar.error('Unable to decline the workspace transfer.')
+  } finally {
+    pendingTransferActionId.value = null
+    pendingTransferActionType.value = null
+  }
 }
 
 async function onAcceptTransfer(ws: Workspace) {
-  const res = await hs.workspaces.acceptOwnershipTransfer(ws.id)
-  if (res.ok) {
-    await refreshWorkspaces()
-    Snackbar.success('Workspace transfer accepted.')
-  } else console.error('Error accepting workspace transfer.', res)
+  if (pendingTransferActionId.value) return
+  pendingTransferActionId.value = ws.id
+  pendingTransferActionType.value = 'accept'
+  try {
+    const res = await hs.workspaces.acceptOwnershipTransfer(ws.id)
+    if (res.ok) {
+      await refreshWorkspaces()
+      Snackbar.success('Workspace transfer accepted.')
+    } else {
+      console.error('Error accepting workspace transfer.', res)
+      Snackbar.error(res.message || 'Unable to accept the workspace transfer.')
+    }
+  } catch (error) {
+    console.error('Error accepting workspace transfer.', error)
+    Snackbar.error('Unable to accept the workspace transfer.')
+  } finally {
+    pendingTransferActionId.value = null
+    pendingTransferActionType.value = null
+  }
+}
+
+async function retryWorkspaceLoad() {
+  isRetryingWorkspaceLoad.value = true
+  await refreshWorkspaces()
+  isRetryingWorkspaceLoad.value = false
 }
 
 async function copyId(id: string) {
@@ -685,47 +926,81 @@ async function copyId(id: string) {
   }
 }
 
-// The ownership tab is only rendered for owners; fall back to the overview
-// tab whenever the current selection makes the active section unavailable.
-watch(selected, (ws) => {
-  if (section.value === 'ownership' && (!ws || !isOwner(ws)))
-    section.value = 'overview'
-})
+function queryString(value: unknown) {
+  return `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+}
 
-// Keep the selected workspace and section shareable through the URL.
-watch([selectedId, section], () => {
+function availableSection(value: string, workspace: Workspace | null) {
+  const requested = SECTIONS.includes(value as WorkspaceSection)
+    ? (value as WorkspaceSection)
+    : 'overview'
+  return requested === 'ownership' && (!workspace || !isOwner(workspace))
+    ? 'overview'
+    : requested
+}
+
+function syncRouteQuery() {
   if (!isPageLoaded.value) return
-  router.replace({
+  const workspaceQuery = selectedId.value || undefined
+  const sectionQuery = section.value !== 'overview' ? section.value : undefined
+  if (
+    queryString(route.query.workspace) === (workspaceQuery ?? '') &&
+    queryString(route.query.section) === (sectionQuery ?? '')
+  )
+    return
+
+  void router.replace({
     query: {
       ...route.query,
-      workspace: selectedId.value || undefined,
-      section: section.value !== 'overview' ? section.value : undefined,
+      workspace: workspaceQuery,
+      section: sectionQuery,
     },
   })
-})
+}
+
+// Respond to browser history and links that update the query while this page
+// is already mounted.
+watch(
+  () => [route.query.workspace, route.query.section],
+  ([workspaceQuery, sectionQuery]) => {
+    if (!isPageLoaded.value) return
+
+    const requestedWorkspace = queryString(workspaceQuery)
+    if (
+      requestedWorkspace &&
+      requestedWorkspace !== selectedId.value &&
+      workspaces.value.some((workspace) => workspace.id === requestedWorkspace)
+    )
+      selectedId.value = requestedWorkspace
+
+    const nextSection = availableSection(
+      queryString(sectionQuery),
+      selected.value
+    )
+    if (section.value !== nextSection) section.value = nextSection
+    syncRouteQuery()
+  }
+)
+
+// Keep the selected workspace and section shareable through the URL.
+watch([selectedId, section], syncRouteQuery)
 
 onMounted(async () => {
-  try {
-    const workspacesResponse = await hs.workspaces.listAllItems({
-      is_associated: true,
-    })
-    setWorkspaces(workspacesResponse)
-  } catch (error) {
-    console.error('Error fetching workspaces', error)
-  } finally {
-    const queryWorkspace = `${route.query.workspace ?? ''}`
-    const querySection = `${route.query.section ?? ''}`
+  await loadWorkspaceList()
 
-    if (workspaces.value.some((ws) => ws.id === queryWorkspace))
-      selectedId.value = queryWorkspace
-    else
-      selectedId.value =
-        selectedWorkspace.value?.id ?? workspaces.value[0]?.id ?? ''
+  const queryWorkspace = queryString(route.query.workspace)
+  if (workspaces.value.some((ws) => ws.id === queryWorkspace))
+    selectedId.value = queryWorkspace
+  else
+    selectedId.value =
+      selectedWorkspace.value?.id ?? workspaces.value[0]?.id ?? ''
 
-    if (SECTIONS.includes(querySection)) section.value = querySection
-
-    isPageLoaded.value = true
-  }
+  section.value = availableSection(
+    queryString(route.query.section),
+    selected.value
+  )
+  isPageLoaded.value = true
+  syncRouteQuery()
 })
 </script>
 
@@ -771,6 +1046,16 @@ onMounted(async () => {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #1c1b1f;
+}
+.overview-stats-error {
+  margin: -6px 0 14px;
+  color: #8a5a00;
+  font-size: 12px;
+}
+.overview-stats-error button {
+  margin-left: 4px;
+  color: #1565c0;
+  font-weight: 600;
 }
 /* A little color per metric instead of one uniform grey, so the overview
    reads as more than a wall of numbers. */
@@ -832,6 +1117,10 @@ onMounted(async () => {
   line-height: 1.2;
 }
 .pending-transfer-alert {
+  margin: 0;
+  border-radius: 0;
+}
+.workspace-load-alert {
   margin: 0;
   border-radius: 0;
 }
@@ -920,7 +1209,7 @@ onMounted(async () => {
 .sidebar-item {
   position: relative;
   padding: 10px 14px;
-  cursor: pointer;
+  cursor: default;
   border-bottom: 1px solid #ebebeb;
   display: flex;
   align-items: flex-start;
@@ -933,6 +1222,13 @@ onMounted(async () => {
 .sidebar-item-body {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 .sidebar-item--workspace .sidebar-item-body {
   padding-right: 62px;
@@ -1077,6 +1373,12 @@ onMounted(async () => {
   overflow-y: auto;
   padding: 16px 22px;
 }
+.workspace-id-cell {
+  overflow-wrap: anywhere;
+}
+.workspace-id-cell span {
+  vertical-align: middle;
+}
 
 .no-workspace-state {
   flex: 1;
@@ -1122,5 +1424,73 @@ onMounted(async () => {
 }
 .no-workspace-actions {
   margin-top: 22px;
+}
+
+@media (hover: none) {
+  .sidebar-item-actions {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspaces-page {
+    height: auto;
+    min-height: calc(
+      100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px)
+    );
+    overflow: visible;
+  }
+  .workspaces-page-body,
+  .workspaces-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+  .workspaces-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .sidebar-list {
+    display: flex;
+    flex: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .sidebar-item {
+    min-width: 175px;
+    border-right: 1px solid #ebebeb;
+    border-bottom: 0;
+  }
+  .sidebar-footer {
+    display: none;
+  }
+  .detail {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+  .detail-header {
+    padding: 12px 16px;
+  }
+  .detail-tabbar {
+    padding: 0 8px;
+  }
+  .detail-body {
+    overflow: visible;
+    padding: 16px;
+  }
+  .overview-stats {
+    flex-wrap: wrap;
+  }
+  .stat-tile {
+    flex: 1 1 calc(50% - 6px);
+  }
 }
 </style>

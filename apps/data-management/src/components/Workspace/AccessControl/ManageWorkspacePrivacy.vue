@@ -154,4 +154,14 @@ async function togglePrivacy() {
   line-height: 1.55;
   max-width: 520px;
 }
+
+@media (max-width: 600px) {
+  .privacy-card {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .privacy-card .v-switch {
+    flex-basis: 100%;
+  }
+}
 </style>
