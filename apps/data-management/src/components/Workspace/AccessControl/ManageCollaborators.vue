@@ -1,61 +1,21 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-item>
-        <v-card-title> Collaborators </v-card-title>
-      </v-card-item>
-    </v-col>
-    <v-col class="pl-0">
-      <v-icon
-        @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
-        color="grey"
-        small
-        :icon="mdiHelpCircleOutline"
-      />
-    </v-col>
+  <div class="collaborators-header">
+    <h6 class="text-h6">Collaborators</h6>
+    <v-icon
+      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+      color="grey"
+      size="18"
+      class="collaborators-help-icon"
+      :icon="mdiHelpCircleOutline"
+    />
+  </div>
 
-    <v-spacer />
-
-    <PermissionTooltip
-      :has-permission="
-        hasPermission(
-          PermissionResource.Collaborator,
-          PermissionAction.Create,
-          workspace
-        )
-      "
-    >
-      <template #default>
-        <v-btn
-          variant="text"
-          :prepend-icon="mdiPlus"
-          class="mr-4"
-          data-testid="add-collaborator-button"
-          @click="showAddCollaborator = true"
-          >Add collaborator</v-btn
-        >
-      </template>
-
-      <template #denied>
-        <v-btn
-          disabled
-          variant="text"
-          :prepend-icon="mdiPlus"
-          class="mr-4"
-          data-testid="add-collaborator-button"
-          @click="showAddCollaborator = true"
-          >Add collaborator</v-btn
-        >
-      </template>
-    </PermissionTooltip>
-  </v-row>
-
-  <v-card-text v-if="showAddCollaboratorHelp">
+  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
     You can add collaborators to this workspace with either Editor or Viewer
     roles. Viewers can see everything in the workspace but cannot edit. Editors
     can create, read, update, and delete all sites, metadata, and datastreams as
     well as set their visibility. Users can remove themselves as collaborators.
-  </v-card-text>
+  </p>
 
   <v-card-text v-if="showAddCollaborator">
     <v-text-field
@@ -79,8 +39,45 @@
     </v-card-actions>
   </v-card-text>
 
-  <v-card-text>
-    <v-table class="collaborator-table hs-table-card">
+  <v-card class="hs-table-card collaborators-table-card" flat>
+    <v-toolbar flat density="compact">
+      <v-spacer />
+
+      <PermissionTooltip
+        :has-permission="
+          hasPermission(
+            PermissionResource.Collaborator,
+            PermissionAction.Create,
+            workspace
+          )
+        "
+      >
+        <template #default>
+          <v-btn
+            variant="text"
+            :prepend-icon="mdiPlus"
+            class="mr-2"
+            data-testid="add-collaborator-button"
+            @click="showAddCollaborator = true"
+            >Add collaborator</v-btn
+          >
+        </template>
+
+        <template #denied>
+          <v-btn
+            disabled
+            variant="text"
+            :prepend-icon="mdiPlus"
+            class="mr-2"
+            data-testid="add-collaborator-button"
+            @click="showAddCollaborator = true"
+            >Add collaborator</v-btn
+          >
+        </template>
+      </PermissionTooltip>
+    </v-toolbar>
+
+    <v-table class="collaborator-table">
       <thead>
         <tr>
           <th>Member</th>
@@ -154,7 +151,7 @@
         </tr>
       </tbody>
     </v-table>
-  </v-card-text>
+  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -316,6 +313,25 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.collaborators-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.collaborators-help-icon {
+  cursor: pointer;
+}
+.collaborators-help-text {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 640px;
+  margin-bottom: 10px;
+}
+.collaborators-table-card {
+  margin-top: 6px;
+}
 .collaborator-table :deep(td) {
   vertical-align: middle;
 }

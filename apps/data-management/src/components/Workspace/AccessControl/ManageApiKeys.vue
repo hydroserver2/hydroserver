@@ -1,34 +1,19 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-item>
-        <v-card-title> API keys </v-card-title>
-      </v-card-item>
-    </v-col>
-    <v-col class="pl-0">
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showApiKeyHelp = !showApiKeyHelp"
-        color="grey"
-        small
-      />
-    </v-col>
+  <div class="api-keys-header">
+    <h6 class="text-h6">API keys</h6>
+    <v-icon
+      :icon="mdiHelpCircleOutline"
+      @click="showApiKeyHelp = !showApiKeyHelp"
+      color="grey"
+      size="18"
+      class="api-keys-help-icon"
+    />
+  </div>
 
-    <v-spacer />
-
-    <v-btn
-      variant="text"
-      :prepend-icon="mdiPlus"
-      class="mr-4"
-      @click="openCreate = true"
-      >Create API key</v-btn
-    >
-  </v-row>
-
-  <v-card-text v-if="showApiKeyHelp">
+  <p v-if="showApiKeyHelp" class="api-keys-help-text">
     API keys are intended to provide remote systems with a subset of permissions
     to this workspace.
-  </v-card-text>
+  </p>
 
   <v-card-text v-if="showNewKey && newKey">
     <v-alert
@@ -57,31 +42,43 @@
     </v-sheet>
   </v-card-text>
 
-  <v-data-table-virtual
-    class="hs-table-card"
-    :headers="headers"
-    :items="items"
-    :sort-by="sortBy"
-    :search="search"
-    :style="{ 'max-height': `100vh` }"
-    no-data-text="No keys available"
-    fixed-header
-  >
-    <template #item.id="{ item }">
-      <div class="d-flex align-center">
-        {{ item.id }}
-        <v-icon size="x-small" class="ml-2" @click="copyKey(item.id)">
-          <v-icon :icon="mdiContentCopy" />
-        </v-icon>
-      </div>
-    </template>
+  <v-card class="hs-table-card api-keys-table-card" flat>
+    <v-toolbar flat density="compact">
+      <v-spacer />
+      <v-btn
+        variant="text"
+        :prepend-icon="mdiPlus"
+        class="mr-2"
+        @click="openCreate = true"
+        >Create API key</v-btn
+      >
+    </v-toolbar>
 
-    <template v-slot:item.actions="{ item }">
-      <v-icon :icon="mdiRefresh" @click="onOpenRegenerateDialog(item)" />
-      <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
-    </template>
-  </v-data-table-virtual>
+    <v-data-table-virtual
+      :headers="headers"
+      :items="items"
+      :sort-by="sortBy"
+      :search="search"
+      :style="{ 'max-height': `100vh` }"
+      no-data-text="No keys available"
+      fixed-header
+    >
+      <template #item.id="{ item }">
+        <div class="d-flex align-center">
+          {{ item.id }}
+          <v-icon size="x-small" class="ml-2" @click="copyKey(item.id)">
+            <v-icon :icon="mdiContentCopy" />
+          </v-icon>
+        </div>
+      </template>
+
+      <template v-slot:item.actions="{ item }">
+        <v-icon :icon="mdiRefresh" @click="onOpenRegenerateDialog(item)" />
+        <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
+        <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
+      </template>
+    </v-data-table-virtual>
+  </v-card>
 
   <v-dialog v-model="openCreate" width="40rem">
     <ApiKeyForm
@@ -228,3 +225,25 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.api-keys-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.api-keys-help-icon {
+  cursor: pointer;
+}
+.api-keys-help-text {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 640px;
+  margin-bottom: 10px;
+}
+.api-keys-table-card {
+  margin-top: 6px;
+}
+</style>

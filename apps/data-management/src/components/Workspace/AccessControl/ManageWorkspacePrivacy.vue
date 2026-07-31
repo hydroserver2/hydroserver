@@ -1,9 +1,5 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-title class="text-h6"> Privacy </v-card-title>
-    </v-col>
-  </v-row>
+  <h6 class="text-h6 privacy-title">Privacy</h6>
 
   <v-card-text>
     <div v-if="!canManage" class="hs-gate-note">
@@ -88,6 +84,10 @@ async function togglePrivacy() {
 </script>
 
 <style scoped>
+.privacy-title {
+  margin-bottom: 4px;
+}
+
 /* Inline note explaining why the toggle below is disabled (permission-denied
    context). */
 .hs-gate-note {

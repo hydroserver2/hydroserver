@@ -1,11 +1,5 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-title class="text-h6">
-        Transfer workspace ownership
-      </v-card-title>
-    </v-col>
-  </v-row>
+  <h6 class="text-h6 ownership-title">Transfer workspace ownership</h6>
 
   <v-card-text>
     <div class="ownership-card hs-table-card">
@@ -129,6 +123,9 @@ async function onCancelTransfer() {
 </script>
 
 <style scoped>
+.ownership-title {
+  margin-bottom: 4px;
+}
 .ownership-card {
   padding: 18px 20px;
 }

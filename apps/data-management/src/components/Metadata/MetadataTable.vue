@@ -4,131 +4,126 @@
     class="metadata-section"
     :data-testid="`${scope}-metadata-table`"
   >
-    <v-row align="center">
-      <v-col cols="auto" class="pr-0">
-        <v-card-title class="text-h6">Metadata</v-card-title>
-      </v-col>
-      <v-col cols="auto" class="pl-0">
-        <v-icon
-          :icon="mdiHelpCircleOutline"
-          @click="showHelp = !showHelp"
-          color="grey"
-          small
-        />
-      </v-col>
-    </v-row>
+    <div class="metadata-header">
+      <h6 class="text-h6">Metadata</h6>
+      <v-icon
+        :icon="mdiHelpCircleOutline"
+        @click="showHelp = !showHelp"
+        color="grey"
+        size="18"
+        class="metadata-help-icon"
+      />
+    </div>
 
-    <v-card-text v-if="showHelp" class="py-0">
+    <p v-if="showHelp" class="metadata-help-text">
       Methods, units, and other reference metadata used by this workspace's
       datastreams. Workspace items are yours to edit; system items are shared
       platform defaults managed by administrators.
-    </v-card-text>
+    </p>
 
-    <v-card-text>
-      <v-btn-toggle
-        v-model="scope"
-        mandatory
-        density="comfortable"
-        color="primary"
-        variant="outlined"
-        rounded="xl"
-        divided
-        class="mb-4"
-      >
-        <v-btn value="all">All</v-btn>
-        <v-btn value="workspace">Workspace metadata</v-btn>
-        <v-btn value="system">System metadata</v-btn>
-      </v-btn-toggle>
+    <v-btn-toggle
+      v-model="scope"
+      mandatory
+      density="compact"
+      color="primary"
+      variant="outlined"
+      rounded="xl"
+      divided
+      class="mb-2"
+    >
+      <v-btn value="all">All</v-btn>
+      <v-btn value="workspace">Workspace metadata</v-btn>
+      <v-btn value="system">System metadata</v-btn>
+    </v-btn-toggle>
 
-      <v-tabs
-        v-model="tab"
-        color="primary"
-        density="comfortable"
-        class="metadata-type-tabs"
-        show-arrows
-      >
-        <v-tab v-for="item in metaMap" :key="item.name">{{ item.name }}</v-tab>
-      </v-tabs>
+    <v-tabs
+      v-model="tab"
+      color="primary"
+      density="compact"
+      class="metadata-type-tabs"
+      show-arrows
+    >
+      <v-tab v-for="item in metaMap" :key="item.name">{{ item.name }}</v-tab>
+    </v-tabs>
 
-      <v-card class="hs-table-card metadata-table-card" flat>
-        <v-toolbar flat density="compact">
-          <v-text-field
-            class="mx-4 metadata-search"
-            clearable
-            v-model="search"
-            :prepend-inner-icon="mdiMagnify"
-            label="Search"
-            hide-details
-            variant="underlined"
-            density="compact"
-            rounded="xl"
+    <v-card class="hs-table-card metadata-table-card" flat>
+      <v-toolbar flat density="compact">
+        <v-text-field
+          class="mx-4 metadata-search"
+          clearable
+          v-model="search"
+          :prepend-inner-icon="mdiMagnify"
+          label="Search"
+          hide-details
+          variant="underlined"
+          density="compact"
+          rounded="xl"
+        />
+
+        <v-spacer />
+
+        <v-btn-add
+          v-if="hasCRUDPermissions"
+          class="mr-2"
+          :prependIcon="mdiPlus"
+          :data-testid="`add-${scope}-metadata-item`"
+          @click="metaMap[tab]?.openDialog()"
+          >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
+        >
+      </v-toolbar>
+
+      <v-window v-model="tab" class="metadata-window">
+        <v-window-item :value="0">
+          <SensorTable
+            :key="`${scope}-${sensorKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="hasCRUDPermissions"
+            :scope="scope"
           />
+        </v-window-item>
 
-          <v-spacer />
+        <v-window-item :value="1">
+          <ObservedPropertyTable
+            :key="`${scope}-${OPKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="hasCRUDPermissions"
+            :scope="scope"
+          />
+        </v-window-item>
 
-          <v-btn-add
-            v-if="hasCRUDPermissions"
-            class="mr-2"
-            :prependIcon="mdiPlus"
-            :data-testid="`add-${scope}-metadata-item`"
-            @click="metaMap[tab]?.openDialog()"
-            >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
-          >
-        </v-toolbar>
+        <v-window-item :value="2">
+          <ProcessingLevelTable
+            :key="`${scope}-${PLKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="hasCRUDPermissions"
+            :scope="scope"
+          />
+        </v-window-item>
 
-        <v-window v-model="tab" class="metadata-window">
-          <v-window-item :value="0">
-            <SensorTable
-              :key="`${scope}-${sensorKey}`"
-              :search="search"
-              :workspace-id="workspaceId"
-              :can-edit="hasCRUDPermissions"
-              :scope="scope"
-            />
-          </v-window-item>
+        <v-window-item :value="3">
+          <UnitTable
+            :key="`${scope}-${unitKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="hasCRUDPermissions"
+            :scope="scope"
+          />
+        </v-window-item>
 
-          <v-window-item :value="1">
-            <ObservedPropertyTable
-              :key="`${scope}-${OPKey}`"
-              :search="search"
-              :workspace-id="workspaceId"
-              :can-edit="hasCRUDPermissions"
-              :scope="scope"
-            />
-          </v-window-item>
-
-          <v-window-item :value="2">
-            <ProcessingLevelTable
-              :key="`${scope}-${PLKey}`"
-              :search="search"
-              :workspace-id="workspaceId"
-              :can-edit="hasCRUDPermissions"
-              :scope="scope"
-            />
-          </v-window-item>
-
-          <v-window-item :value="3">
-            <UnitTable
-              :key="`${scope}-${unitKey}`"
-              :search="search"
-              :workspace-id="workspaceId"
-              :can-edit="hasCRUDPermissions"
-              :scope="scope"
-            />
-          </v-window-item>
-
-          <v-window-item :value="4">
-            <ResultQualifierTable
-              :key="`${scope}-${qualifierKey}`"
-              :search="search"
-              :workspace-id="workspaceId"
-              :can-edit="hasCRUDPermissions"
-              :scope="scope"
-            />
-          </v-window-item>
-        </v-window>
-      </v-card>
-    </v-card-text>
+        <v-window-item :value="4">
+          <ResultQualifierTable
+            :key="`${scope}-${qualifierKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="hasCRUDPermissions"
+            :scope="scope"
+          />
+        </v-window-item>
+      </v-window>
+    </v-card>
   </div>
 
   <v-dialog v-model="openSensorCreate" width="60rem">
@@ -274,11 +269,27 @@ const metaMap: Record<string, any> = {
 </script>
 
 <style scoped>
+.metadata-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.metadata-help-icon {
+  cursor: pointer;
+}
+.metadata-help-text {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 640px;
+  margin-bottom: 10px;
+}
 .metadata-type-tabs {
-  margin: 4px 0;
+  margin: 0 0 2px;
 }
 .metadata-table-card {
-  margin-top: 12px;
+  margin-top: 6px;
 }
 .metadata-search {
   max-width: 260px;
