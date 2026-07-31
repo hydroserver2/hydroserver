@@ -28,13 +28,30 @@ def _make_datastream(workspace, **kwargs):
     return DatastreamFactory(thing=ThingFactory(workspace=workspace), **kwargs)
 
 
-def _collaborator_blocking_edit(workspace):
-    """A collaborator who can view but not edit the datastream, blocking every
-    write action on its observations (they all gate on Datastream edit access
-    before checking Observation-specific permissions)."""
+def _collaborator_without_observation_permissions(workspace):
+    """A collaborator who can view the datastream but holds no Observation
+    permissions, blocking every write action on its observations."""
 
     role = RoleFactory(workspace=workspace)
     PermissionFactory(role=role, resource_type="Datastream", can_view=True)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def _data_loader_collaborator(workspace, can_create=False, can_delete=False):
+    """A collaborator shaped like the default Data Loader role: can view (but
+    not edit) the datastream, plus specific Observation permissions -- the
+    shape that should be able to push/remove data without datastream edit
+    access."""
+
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Datastream", can_view=True)
+    PermissionFactory(
+        role=role,
+        resource_type="Observation",
+        can_view=True,
+        can_create=can_create,
+        can_delete=can_delete,
+    )
     return CollaboratorFactory(workspace=workspace, role=role)
 
 
@@ -140,7 +157,7 @@ def test_create_observation_returns_401_when_unauthenticated(client):
 def test_create_observation_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
-    collaborator = _collaborator_blocking_edit(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
     client.force_login(collaborator.user)
 
     response = client.post(
@@ -150,6 +167,21 @@ def test_create_observation_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
+
+
+def test_create_observation_succeeds_with_datastream_view_only_and_observation_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _data_loader_collaborator(workspace, can_create=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _observations_url(datastream.id),
+        data={"phenomenonTime": _iso(timezone.now()), "result": 12.3},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
 
 
 def test_create_observation_returns_409_for_duplicate_phenomenon_time(client):
@@ -257,12 +289,24 @@ def test_delete_observation_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
     observation = ObservationFactory(datastream=datastream)
-    collaborator = _collaborator_blocking_edit(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
     client.force_login(collaborator.user)
 
     response = client.delete(_detail_url(datastream.id, observation.id))
 
     assert response.status_code == 403
+
+
+def test_delete_observation_succeeds_with_datastream_view_only_and_observation_delete_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _data_loader_collaborator(workspace, can_delete=True)
+    client.force_login(collaborator.user)
+
+    response = client.delete(_detail_url(datastream.id, observation.id))
+
+    assert response.status_code == 204
 
 
 # --- insert_observations (bulk-create) --------------------------------------------------
@@ -407,7 +451,7 @@ def test_insert_observations_replace_mode_succeeds(client):
 def test_insert_observations_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
-    collaborator = _collaborator_blocking_edit(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
     client.force_login(collaborator.user)
 
     response = client.post(
@@ -420,6 +464,24 @@ def test_insert_observations_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
+
+
+def test_insert_observations_succeeds_with_datastream_view_only_and_observation_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _data_loader_collaborator(workspace, can_create=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        f"{_observations_url(datastream.id)}/bulk-create?mode=insert",
+        data={
+            "fields": ["phenomenonTime", "result"],
+            "data": [[_iso(timezone.now()), 1.0]],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
 
 
 # --- delete_observations (bulk-delete) --------------------------------------------------
@@ -450,11 +512,11 @@ def test_delete_observations_succeeds_for_workspace_owner(client):
     assert remaining.get().phenomenon_time == keep_time
 
 
-def test_delete_observations_returns_403_without_edit_permission(client):
+def test_delete_observations_returns_403_without_delete_permission(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
     observation = ObservationFactory(datastream=datastream)
-    collaborator = _collaborator_blocking_edit(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
     client.force_login(collaborator.user)
 
     response = client.post(
@@ -464,3 +526,20 @@ def test_delete_observations_returns_403_without_edit_permission(client):
     )
 
     assert response.status_code == 403
+
+
+def test_delete_observations_succeeds_with_datastream_view_only_and_observation_delete_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _data_loader_collaborator(workspace, can_delete=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        f"{_observations_url(datastream.id)}/bulk-delete",
+        data={"phenomenonTimeStart": _iso(observation.phenomenon_time)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    assert not Observation.objects.filter(pk=observation.pk).exists()
