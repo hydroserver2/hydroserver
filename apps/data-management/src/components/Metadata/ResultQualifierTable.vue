@@ -1,6 +1,5 @@
 <template>
   <v-data-table-virtual
-    class="hs-table-card"
     :headers="headers"
     :items="items"
     :search="search"

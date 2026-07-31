@@ -5,27 +5,7 @@
         Transfer workspace ownership
       </v-card-title>
     </v-col>
-    <v-col cols="auto" class="pl-0">
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showTransferHelp = !showTransferHelp"
-        color="grey"
-        small
-      />
-    </v-col>
   </v-row>
-
-  <v-card-text v-if="showTransferHelp" class="py-0">
-    This action will irreversibly de-elevate your permission level to
-    collaborator and elevate the chosen user's permission level to owner once
-    the chosen user has accepted the transfer request. Permissions unique to the
-    owner are:
-    <ul class="ml-5 mt-1">
-      <li>Rename a workspace</li>
-      <li>Delete a workspace</li>
-      <li>Make a workspace public or private</li>
-    </ul>
-  </v-card-text>
 
   <v-card-text>
     <div class="ownership-card hs-table-card">
@@ -97,7 +77,7 @@ import hs, { Workspace } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
 import { computed, ref } from 'vue'
-import { mdiHelpCircleOutline, mdiTransitTransfer } from '@mdi/js'
+import { mdiTransitTransfer } from '@mdi/js'
 
 const permissionsStore = useWorkspacePermissions()
 
@@ -105,8 +85,6 @@ const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
 const emits = defineEmits(['needs-refresh'])
-
-const showTransferHelp = ref(false)
 
 const showPendingTransferText = computed(
   () =>

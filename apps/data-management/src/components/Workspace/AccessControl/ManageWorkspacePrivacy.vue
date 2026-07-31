@@ -3,24 +3,7 @@
     <v-col cols="auto" class="pr-0">
       <v-card-title class="text-h6"> Privacy </v-card-title>
     </v-col>
-    <v-col cols="auto" class="pl-0">
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showPrivacyHelp = !showPrivacyHelp"
-        color="grey"
-        small
-      />
-    </v-col>
   </v-row>
-
-  <v-card-text v-if="showPrivacyHelp" class="py-0">
-    Setting your workspace to private will make it and all related sites,
-    datastreams, and workspace metadata visible to only you and other
-    collaborators of your workspace. Setting your workspace to public will make
-    it visible to all users and guests of the system. By default, all related
-    sites and datastreams will also be public, but can be made private from on
-    the Site Details page.
-  </v-card-text>
 
   <v-card-text>
     <div v-if="!canManage" class="hs-gate-note">
@@ -57,7 +40,7 @@
       </div>
       <v-switch
         v-model="isPrivate"
-        color="primary"
+        color="red-darken-2"
         hide-details
         :loading="isUpdating"
         :disabled="!canManage || isUpdating"
@@ -84,7 +67,6 @@ const canManage = computed(() => isOwner(props.workspace) || isAdmin())
 
 const isPrivate = ref(props.workspace.isPrivate)
 const isUpdating = ref(false)
-const showPrivacyHelp = ref(false)
 
 async function togglePrivacy() {
   isUpdating.value = true

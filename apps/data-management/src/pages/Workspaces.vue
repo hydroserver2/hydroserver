@@ -334,42 +334,7 @@
               </v-window-item>
 
               <v-window-item value="metadata">
-                <div
-                  class="d-flex flex-wrap align-center justify-space-between ga-4 mb-4"
-                >
-                  <v-btn-toggle
-                    v-model="metadataScope"
-                    mandatory
-                    density="comfortable"
-                    color="primary"
-                    variant="outlined"
-                    rounded="xl"
-                    divided
-                  >
-                    <v-btn value="all">All</v-btn>
-                    <v-btn value="workspace">Workspace metadata</v-btn>
-                    <v-btn value="system">System metadata</v-btn>
-                  </v-btn-toggle>
-
-                  <v-text-field
-                    class="metadata-search"
-                    clearable
-                    v-model="metadataSearch"
-                    :prepend-inner-icon="mdiMagnify"
-                    label="Search metadata"
-                    hide-details
-                    density="compact"
-                    variant="underlined"
-                    rounded="xl"
-                  />
-                </div>
-
-                <MetadataTable
-                  :key="`${metadataScope}-${selected.id}`"
-                  :workspace="selected"
-                  :search="metadataSearch"
-                  :scope="metadataScope"
-                />
+                <MetadataTable :key="selected.id" :workspace="selected" />
               </v-window-item>
 
               <v-window-item value="privacy">
@@ -516,8 +481,6 @@ const canManageWorkspace = (ws: Workspace | null) =>
 
 const isPageLoaded = ref(false)
 const search = ref('')
-const metadataSearch = ref()
-const metadataScope = ref<'all' | 'workspace' | 'system'>('all')
 
 const selectedId = ref('')
 const section = ref('overview')
@@ -737,11 +700,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.metadata-search {
-  max-width: 260px;
-  flex-shrink: 0;
-}
-
 /* ── overview stat tiles ── */
 .overview-stats {
   display: flex;
