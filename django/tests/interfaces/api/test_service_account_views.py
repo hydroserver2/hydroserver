@@ -2,6 +2,7 @@ import pytest
 
 from django.conf import settings
 
+from core.iam.models import Collaborator, ServiceAccount
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -114,6 +115,62 @@ def test_create_service_account_returns_403_without_create_permission(client):
     )
 
     assert response.status_code == 403
+
+
+def test_create_service_account_with_role_id_creates_collaborator(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    role = RoleFactory(workspace=None)
+    client.force_login(owner)
+
+    response = client.post(
+        _service_accounts_url(workspace.id),
+        data={"name": "New Service Account", "isActive": True, "roleId": str(role.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    service_account_id = response.json()["id"]
+    assert Collaborator.objects.filter(
+        workspace=workspace, service_account_id=service_account_id, role=role
+    ).exists()
+
+
+def test_create_service_account_with_role_from_other_workspace_returns_400_without_orphaning(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    other_workspace = WorkspaceFactory(owner=owner)
+    other_role = RoleFactory(workspace=other_workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _service_accounts_url(workspace.id),
+        data={
+            "name": "New Service Account",
+            "isActive": True,
+            "roleId": str(other_role.id),
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert not ServiceAccount.objects.filter(workspace=workspace).exists()
+
+
+def test_create_service_account_with_role_id_without_collaborator_permission_returns_403_without_orphaning(client):
+    workspace = WorkspaceFactory()
+    role = RoleFactory(workspace=workspace)
+    collaborator = _collaborator_with_permission(workspace, can_create=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _service_accounts_url(workspace.id),
+        data={"name": "New Service Account", "isActive": True, "roleId": str(role.id)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    assert not ServiceAccount.objects.filter(workspace=workspace).exists()
 
 
 # --- get_service_account --------------------------------------------------------

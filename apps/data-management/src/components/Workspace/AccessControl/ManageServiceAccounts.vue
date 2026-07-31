@@ -246,6 +246,7 @@ async function copyKey(key: string) {
 onMounted(async () => {
   try {
     const res = await hs.workspaces.getRoles({
+      workspace_id: [props.workspaceId, 'null'],
       order_by: ['name'],
     })
     if (res.ok) roles.value = res.data

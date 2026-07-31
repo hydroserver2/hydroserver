@@ -68,6 +68,7 @@ class ServiceAccountDetailPostResponse(
 
 class ServiceAccountPostBody(BasePostBody, ServiceAccountFields):
     id: Optional[uuid.UUID] = None
+    role_id: Optional[uuid.UUID] = None
 
 
 class ServiceAccountPatchBody(BasePatchBody, ServiceAccountFields):

@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
 
-from core.iam.models import ServiceAccount
+from core.iam.models import Collaborator, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from interfaces.api.schemas import (
@@ -22,8 +22,10 @@ from interfaces.api.schemas.iam.service_account import (
     ServiceAccountFields,
     ServiceAccountOrderByFields,
 )
+from .role import RoleService
 
 User = get_user_model()
+role_service = RoleService()
 
 
 class ServiceAccountService(ServiceUtils):
@@ -142,6 +144,22 @@ class ServiceAccountService(ServiceUtils):
                 403, "You do not have permission to create this service account"
             )
 
+        collaborator_role = None
+        if data.role_id is not None:
+            if not principal.can_create("Collaborator", workspace=workspace):
+                raise HttpError(
+                    403, "You do not have permission to add this collaborator"
+                )
+
+            collaborator_role = role_service.get_role_for_action(
+                principal=principal,
+                uid=data.role_id,
+                action="view",
+                expand_related=True,
+            )
+            if collaborator_role.workspace and collaborator_role.workspace != workspace:
+                raise HttpError(400, "Role does not belong to the workspace")
+
         service_account = ServiceAccount(
             pk=data.id,
             workspace=workspace,
@@ -153,6 +171,13 @@ class ServiceAccountService(ServiceUtils):
             service_account.save()
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
+
+        if collaborator_role is not None:
+            Collaborator.objects.create(
+                workspace=workspace,
+                service_account=service_account,
+                role_id=collaborator_role.id,
+            )
 
         service_account = self.get_service_account_for_action(
             principal=principal,

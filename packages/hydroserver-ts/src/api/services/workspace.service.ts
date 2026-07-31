@@ -72,25 +72,16 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
     serviceAccount: ServiceAccount,
     roleId: string
   ): Promise<ApiResponse<ServiceAccount>> => {
-    const res = await apiMethods.post<ServiceAccount>(
+    return apiMethods.post<ServiceAccount>(
       `${this._route}/${serviceAccount.workspaceId}/service-accounts?expand_related=true`,
       {
         name: serviceAccount.name,
         description: serviceAccount.description,
         isActive: serviceAccount.isActive,
         keyExpiresAt: serviceAccount.keyExpiresAt || null,
+        roleId,
       }
     )
-    if (!res.ok) return res
-
-    const collaboratorRes = await this.addCollaborator(
-      serviceAccount.workspaceId,
-      res.data.email,
-      roleId
-    )
-    if (!collaboratorRes.ok) return collaboratorRes
-
-    return res
   }
 
   updateServiceAccount = async (
