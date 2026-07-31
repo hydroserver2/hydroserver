@@ -45,11 +45,19 @@
   <v-card class="hs-table-card api-keys-table-card" flat>
     <v-toolbar flat density="compact">
       <v-spacer />
-      <v-btn-add
-        class="mr-2"
-        @click="openCreate = true"
-        >Create API key</v-btn-add
+      <PermissionTooltip
+        :has-permission="canCreate"
+        message="You don't have permission to create API keys for this workspace."
       >
+        <template #default>
+          <v-btn-add class="mr-2" @click="openCreate = true">
+            Create API key
+          </v-btn-add>
+        </template>
+        <template #denied>
+          <v-btn-add class="mr-2" disabled>Create API key</v-btn-add>
+        </template>
+      </PermissionTooltip>
     </v-toolbar>
 
     <v-data-table-virtual
@@ -71,9 +79,31 @@
       </template>
 
       <template v-slot:item.actions="{ item }">
-        <v-icon :icon="mdiRefresh" @click="onOpenRegenerateDialog(item)" />
-        <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-        <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
+        <v-btn
+          :icon="mdiRefresh"
+          variant="text"
+          size="small"
+          :disabled="!canEdit"
+          :aria-label="`Regenerate ${item.name}`"
+          @click="onOpenRegenerateDialog(item)"
+        />
+        <v-btn
+          :icon="mdiPencil"
+          variant="text"
+          size="small"
+          :disabled="!canEdit"
+          :aria-label="`Edit ${item.name}`"
+          @click="openDialog(item, 'edit')"
+        />
+        <v-btn
+          :icon="mdiTrashCanOutline"
+          variant="text"
+          size="small"
+          color="red-darken-2"
+          :disabled="!canDelete"
+          :aria-label="`Delete ${item.name}`"
+          @click="openDialog(item, 'delete')"
+        />
       </template>
     </v-data-table-virtual>
   </v-card>
@@ -114,10 +144,18 @@
 </template>
 
 <script setup lang="ts">
-import hs, { ApiKey, CollaboratorRole } from '@hydroserver/client'
+import hs, {
+  ApiKey,
+  CollaboratorRole,
+  PermissionAction,
+  PermissionResource,
+  Workspace,
+} from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
-import { onMounted, ref, toRef } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useTableLogic } from '@/composables/useTableLogic'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import PermissionTooltip from '@/components/PermissionTooltip.vue'
 import ApiKeyForm from './ApiKeyForm.vue'
 import DeleteApiKey from './DeleteApiKey.vue'
 import ApiKeyRegenerateForm from './ApiKeyRegenerateForm.vue'
@@ -130,8 +168,32 @@ import {
 } from '@mdi/js'
 
 const props = defineProps({
-  workspaceId: { type: String, required: true },
+  workspace: { type: Object as () => Workspace, required: true },
 })
+
+const workspaceId = computed(() => props.workspace.id)
+const { hasPermission } = useWorkspacePermissions()
+const canCreate = computed(() =>
+  hasPermission(
+    PermissionResource.ApiKey,
+    PermissionAction.Create,
+    props.workspace
+  )
+)
+const canEdit = computed(() =>
+  hasPermission(
+    PermissionResource.ApiKey,
+    PermissionAction.Edit,
+    props.workspace
+  )
+)
+const canDelete = computed(() =>
+  hasPermission(
+    PermissionResource.ApiKey,
+    PermissionAction.Delete,
+    props.workspace
+  )
+)
 
 const openCreate = ref(false)
 const openRefresh = ref(false)
@@ -150,10 +212,10 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
       return res.ok ? res.data : []
     },
     async (keyId: string) => {
-      await hs.workspaces.deleteApiKey(props.workspaceId, keyId)
+      await hs.workspaces.deleteApiKey(workspaceId.value, keyId)
     },
     ApiKey,
-    toRef(props, 'workspaceId')
+    workspaceId
   )
 
 const headers = [
@@ -173,6 +235,7 @@ const displayNewKey = (key: ApiKey) => {
 }
 
 function onOpenRegenerateDialog(selectedItem: ApiKey) {
+  if (!canEdit.value) return
   item.value = selectedItem
   openRefresh.value = true
 }
@@ -180,7 +243,7 @@ function onOpenRegenerateDialog(selectedItem: ApiKey) {
 const onRegenerate = async () => {
   try {
     const res = await hs.workspaces.regenerateApiKey(
-      props.workspaceId,
+      workspaceId.value,
       item.value.id
     )
     if (!res.ok) {

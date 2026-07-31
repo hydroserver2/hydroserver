@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
-import { users } from '../support/fixtures'
+import { fixtures, users } from '../support/fixtures'
 import {
   createWorkspaceFromManagePage,
   deleteWorkspaceFromManagePage,
@@ -45,11 +45,15 @@ test.describe('workspace management', () => {
     await renamedItem.locator('[data-testid^="workspace-delete-"]').click()
     const deleteDialog = page.getByRole('dialog')
     await deleteDialog.getByLabel('Workspace name').fill('wrong name')
-    await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await deleteDialog
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
     await expect(page.getByText('Workspace name does not match.')).toBeVisible()
 
     await deleteDialog.getByLabel('Workspace name').fill(renamedWorkspaceName)
-    await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await deleteDialog
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
     await expect(workspaceListItem(page, renamedWorkspaceName)).toHaveCount(0)
   })
 
@@ -88,5 +92,50 @@ test.describe('workspace management', () => {
     await expect(collaboratorRow).toHaveCount(0)
 
     await deleteWorkspaceFromManagePage(page, workspaceName)
+  })
+
+  test('viewer sees read-only workspace management controls', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.viewer.email, users.viewer.password)
+    await page.goto('/workspaces')
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
+
+    await page.getByRole('tab', { name: 'Collaborators' }).click()
+    await expect(page.getByTestId('add-collaborator-button')).toBeDisabled()
+
+    const viewerRow = page.getByTestId(`collaborator-row-${users.viewer.email}`)
+    await expect(
+      viewerRow.getByTestId(`edit-collaborator-${users.viewer.email}`)
+    ).toBeDisabled()
+    await expect(
+      viewerRow.getByTestId(`remove-collaborator-${users.viewer.email}`)
+    ).toBeEnabled()
+
+    const editorRow = page.getByTestId(`collaborator-row-${users.editor.email}`)
+    await expect(
+      editorRow.getByTestId(`edit-collaborator-${users.editor.email}`)
+    ).toBeDisabled()
+    await expect(
+      editorRow.getByTestId(`remove-collaborator-${users.editor.email}`)
+    ).toBeDisabled()
+
+    await page.getByRole('tab', { name: 'API keys' }).click()
+    await expect(
+      page.getByRole('button', { name: 'Create API key' })
+    ).toBeDisabled()
+    await expect(
+      page.getByText("You don't have permission to view API keys")
+    ).toHaveCount(0)
+
+    await page.getByRole('tab', { name: 'Metadata' }).click()
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    await expect(page.getByTestId('add-workspace-metadata-item')).toHaveCount(0)
+    await expect(
+      page.getByTestId('edit-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+    ).toHaveCount(0)
+    await expect(
+      page.getByTestId('delete-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+    ).toHaveCount(0)
   })
 })

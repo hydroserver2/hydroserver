@@ -63,7 +63,7 @@
         <v-spacer />
 
         <v-btn-add
-          v-if="hasCRUDPermissions"
+          v-if="canCreateMetadata"
           class="mr-2"
           :prependIcon="mdiPlus"
           :data-testid="`add-${scope}-metadata-item`"
@@ -78,7 +78,8 @@
             :key="`${scope}-${sensorKey}`"
             :search="search"
             :workspace-id="workspaceId"
-            :can-edit="hasCRUDPermissions"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -88,7 +89,8 @@
             :key="`${scope}-${OPKey}`"
             :search="search"
             :workspace-id="workspaceId"
-            :can-edit="hasCRUDPermissions"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -98,7 +100,8 @@
             :key="`${scope}-${PLKey}`"
             :search="search"
             :workspace-id="workspaceId"
-            :can-edit="hasCRUDPermissions"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -108,7 +111,8 @@
             :key="`${scope}-${unitKey}`"
             :search="search"
             :workspace-id="workspaceId"
-            :can-edit="hasCRUDPermissions"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -118,7 +122,8 @@
             :key="`${scope}-${qualifierKey}`"
             :search="search"
             :workspace-id="workspaceId"
-            :can-edit="hasCRUDPermissions"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
             :scope="scope"
           />
         </v-window-item>
@@ -182,7 +187,11 @@ import { computed, ref } from 'vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { Workspace } from '@hydroserver/client'
+import {
+  PermissionAction,
+  PermissionResource,
+  Workspace,
+} from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
 import { mdiHelpCircleOutline, mdiMagnify, mdiPlus } from '@mdi/js'
 
@@ -213,11 +222,7 @@ const workspaceId = computed(() =>
   scope.value === 'system' ? undefined : activeWorkspace.value!.id
 )
 
-const { isAdmin } = useWorkspacePermissions(activeWorkspace)
-
-const hasCRUDPermissions = computed(
-  () => !!(scope.value !== 'system' || isAdmin())
-)
+const { hasPermission, isAdmin } = useWorkspacePermissions(activeWorkspace)
 
 const openUnitCreate = ref(false)
 const unitKey = ref(0)
@@ -244,28 +249,54 @@ const metaMap: Record<string, any> = {
     name: 'Methods',
     openDialog: () => (openSensorCreate.value = true),
     singularName: 'method',
+    resource: PermissionResource.Sensor,
   },
   1: {
     name: 'Observed properties',
     openDialog: () => (openOPCreate.value = true),
     singularName: 'observed property',
+    resource: PermissionResource.ObservedProperty,
   },
   2: {
     name: 'Processing levels',
     openDialog: () => (openPLCreate.value = true),
     singularName: 'processing level',
+    resource: PermissionResource.ProcessingLevel,
   },
   3: {
     name: 'Units',
     openDialog: () => (openUnitCreate.value = true),
     singularName: 'unit',
+    resource: PermissionResource.Unit,
   },
   4: {
     name: 'Result qualifiers',
     openDialog: () => (openRQCreate.value = true),
     singularName: 'result qualifier',
+    resource: PermissionResource.ResultQualifier,
   },
 }
+
+const hasMetadataPermission = (action: PermissionAction) => {
+  if (scope.value === 'system') return isAdmin()
+  const resource = metaMap[tab.value]?.resource as
+    PermissionResource | undefined
+  return !!(
+    resource &&
+    activeWorkspace.value &&
+    hasPermission(resource, action, activeWorkspace.value)
+  )
+}
+
+const canCreateMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Create)
+)
+const canEditMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Edit)
+)
+const canDeleteMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Delete)
+)
 </script>
 
 <style scoped>

@@ -9,9 +9,21 @@
     <template v-slot:item.scope="{ item }">
       <MetadataScopeChip :scope="item._scope" />
     </template>
-    <template v-slot:item.actions="{ item }" v-if="canEdit && item._scope !== 'system'">
-      <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
+    <template v-slot:item.actions="{ item }">
+      <v-icon
+        v-if="canEdit && item._scope !== 'system'"
+        :icon="mdiPencil"
+        :data-testid="`edit-metadata-${item.id}`"
+        aria-label="Edit metadata item"
+        @click="openDialog(item, 'edit')"
+      />
+      <v-icon
+        v-if="canDelete && item._scope !== 'system'"
+        :icon="mdiTrashCanOutline"
+        :data-testid="`delete-metadata-${item.id}`"
+        aria-label="Delete metadata item"
+        @click="openDialog(item, 'delete')"
+      />
     </template>
   </v-data-table-virtual>
 
@@ -54,6 +66,7 @@ const props = defineProps<{
   search: string | undefined
   workspaceId?: string
   canEdit: Boolean
+  canDelete: Boolean
   scope?: 'workspace' | 'system' | 'all'
 }>()
 
@@ -68,18 +81,18 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
         toRef(props, 'workspaceId')
       )
     : props.workspaceId
-    ? useTableLogic(
-        async (wsId: string) =>
-          await hs.processingLevels.listAllItems({ workspace_id: [wsId] }),
-        hs.processingLevels.delete,
-        ProcessingLevel,
-        toRef(props, 'workspaceId')
-      )
-    : useSystemTableLogic(
-        () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
-        (id: string) => hs.processingLevels.delete(id),
-        ProcessingLevel
-      )
+      ? useTableLogic(
+          async (wsId: string) =>
+            await hs.processingLevels.listAllItems({ workspace_id: [wsId] }),
+          hs.processingLevels.delete,
+          ProcessingLevel,
+          toRef(props, 'workspaceId')
+        )
+      : useSystemTableLogic(
+          () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
+          (id: string) => hs.processingLevels.delete(id),
+          ProcessingLevel
+        )
 
 const ProcLevelHeaders = computed(() => {
   const base: {
@@ -92,7 +105,8 @@ const ProcLevelHeaders = computed(() => {
     { title: 'Definition', key: 'definition' },
     { title: 'Explanation', key: 'explanation' },
   ]
-  if (props.scope === 'all') base.push({ title: 'Scope', key: 'scope', sortable: false })
+  if (props.scope === 'all')
+    base.push({ title: 'Scope', key: 'scope', sortable: false })
   base.push({ title: 'Actions', key: 'actions', sortable: false, align: 'end' })
   return base
 })

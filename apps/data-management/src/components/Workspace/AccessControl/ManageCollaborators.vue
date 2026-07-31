@@ -49,13 +49,8 @@
       <v-spacer />
 
       <PermissionTooltip
-        :has-permission="
-          hasPermission(
-            PermissionResource.Collaborator,
-            PermissionAction.Create,
-            workspace
-          )
-        "
+        :has-permission="canCreate"
+        message="You don't have permission to add collaborators to this workspace."
       >
         <template #default>
           <v-btn-add
@@ -116,7 +111,10 @@
           <td class="text-right">
             <span v-if="item.isOwner" class="text-medium-emphasis">—</span>
             <template v-else-if="item.isBeingEdited">
-              <v-btn-cancel size="small" class="mr-2" @click="onCancelEdit(item)"
+              <v-btn-cancel
+                size="small"
+                class="mr-2"
+                @click="onCancelEdit(item)"
                 >Cancel</v-btn-cancel
               >
               <v-btn
@@ -130,6 +128,7 @@
               <v-btn
                 variant="text"
                 :icon="mdiPencil"
+                :disabled="!canEdit"
                 :data-testid="`edit-collaborator-${item.email}`"
                 :aria-label="`Edit ${item.name}`"
                 @click="item.isBeingEdited = true"
@@ -138,6 +137,7 @@
                 variant="text"
                 color="red-darken-2"
                 :icon="mdiTrashCanOutline"
+                :disabled="!canRemove(item)"
                 :data-testid="`remove-collaborator-${item.email}`"
                 :aria-label="`Remove ${item.name}`"
                 @click="onRemoveCollaborator(item.email)"
@@ -159,7 +159,7 @@
 import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -167,11 +167,7 @@ import hs, {
   CollaboratorRole,
   Workspace,
 } from '@hydroserver/client'
-import {
-  mdiHelpCircleOutline,
-  mdiPencil,
-  mdiTrashCanOutline,
-} from '@mdi/js'
+import { mdiHelpCircleOutline, mdiPencil, mdiTrashCanOutline } from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
@@ -182,6 +178,29 @@ const emits = defineEmits(['self-removed'])
 
 const { user } = storeToRefs(useUserStore())
 const { hasPermission } = useWorkspacePermissions()
+const canCreate = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Create,
+    props.workspace
+  )
+)
+const canEdit = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Edit,
+    props.workspace
+  )
+)
+const canDelete = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Delete,
+    props.workspace
+  )
+)
+const canRemove = (item: { email: string }) =>
+  canDelete.value || item.email === user.value?.email
 
 const showAddCollaboratorHelp = ref(false)
 const showAddCollaborator = ref(false)
@@ -194,6 +213,7 @@ const collaboratorList = ref<any[]>([])
  * Save the new role, then reset editing state
  */
 async function onSaveRole(item: any) {
+  if (!canEdit.value) return
   const res = await hs.workspaces.updateCollaboratorRole(
     props.workspace.id,
     item.email,
@@ -217,6 +237,7 @@ function cancelAddCollaborator() {
 }
 
 async function onAddCollaborator() {
+  if (!canCreate.value) return
   if (!newCollaboratorEmail.value || !selectedRole.value) {
     Snackbar.warn('Please fill out collaborator email and role.')
     return
@@ -242,6 +263,7 @@ async function onAddCollaborator() {
 }
 
 async function onRemoveCollaborator(email: string) {
+  if (!canDelete.value && email !== user.value?.email) return
   const res = await hs.workspaces.removeCollaborator(props.workspace!.id, email)
 
   if (res.ok) {

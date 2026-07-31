@@ -78,7 +78,11 @@
               </PermissionTooltip>
             </div>
             <div class="sidebar-search">
-              <v-icon :icon="mdiMagnify" size="16" class="sidebar-search-icon" />
+              <v-icon
+                :icon="mdiMagnify"
+                size="16"
+                class="sidebar-search-icon"
+              />
               <input
                 :value="search"
                 placeholder="Search workspaces…"
@@ -115,7 +119,9 @@
                 <button
                   type="button"
                   class="sidebar-item-action"
-                  :class="{ 'sidebar-item-action--selected': ws.id === selectedId }"
+                  :class="{
+                    'sidebar-item-action--selected': ws.id === selectedId,
+                  }"
                   :disabled="!canManageWorkspace(ws)"
                   :title="canManageWorkspace(ws) ? '' : OWNER_ONLY_MESSAGE"
                   :aria-label="`Edit ${ws.name}`"
@@ -127,7 +133,9 @@
                 <button
                   type="button"
                   class="sidebar-item-action sidebar-item-action--danger"
-                  :class="{ 'sidebar-item-action--selected': ws.id === selectedId }"
+                  :class="{
+                    'sidebar-item-action--selected': ws.id === selectedId,
+                  }"
                   :disabled="!canManageWorkspace(ws)"
                   :title="canManageWorkspace(ws) ? '' : OWNER_ONLY_MESSAGE"
                   :aria-label="`Delete ${ws.name}`"
@@ -138,7 +146,10 @@
                 </button>
               </span>
             </div>
-            <div v-if="workspaces.length && !filteredWorkspaces.length" class="sidebar-empty">
+            <div
+              v-if="workspaces.length && !filteredWorkspaces.length"
+              class="sidebar-empty"
+            >
               No matching workspaces.
             </div>
             <div v-else-if="!workspaces.length" class="sidebar-empty">
@@ -155,7 +166,10 @@
                 <button
                   type="button"
                   class="sidebar-footer-btn"
-                  :style="{ color: WORKSPACE_ACCENT, borderColor: WORKSPACE_ACCENT + '66' }"
+                  :style="{
+                    color: WORKSPACE_ACCENT,
+                    borderColor: WORKSPACE_ACCENT + '66',
+                  }"
                   @click="openCreate = true"
                 >
                   <v-icon :icon="mdiPlus" size="16" class="mr-1" />
@@ -200,7 +214,12 @@
           </header>
 
           <div class="detail-tabbar">
-            <v-tabs v-model="section" color="primary" density="comfortable" show-arrows>
+            <v-tabs
+              v-model="section"
+              color="primary"
+              density="comfortable"
+              show-arrows
+            >
               <v-tab value="overview" :prepend-icon="mdiBriefcaseOutline">
                 Overview
               </v-tab>
@@ -328,16 +347,16 @@
                   v-if="
                     hasPermission(
                       PermissionResource.ApiKey,
-                      PermissionAction.Create,
+                      PermissionAction.View,
                       selected
                     )
                   "
                   :key="selected.id"
-                  :workspace-id="selected.id"
+                  :workspace="selected"
                 />
                 <p v-else>
-                  You don't have permissions to create or edit API Keys for this
-                  workspace. If you need one, contact the workspace owner.
+                  You don't have permission to view API keys for this workspace.
+                  If you need one, contact the workspace owner.
                 </p>
               </v-window-item>
 
@@ -487,8 +506,7 @@ const { user } = storeToRefs(useUserStore())
 // for its actual owner (or a system admin) — a collaborator role granted
 // broad permissions on the workspace should not be able to take them over.
 const OWNER_ONLY_MESSAGE = 'Only the workspace owner can do this.'
-const canManageWorkspace = (ws: Workspace | null) =>
-  isOwner(ws) || isAdmin()
+const canManageWorkspace = (ws: Workspace | null) => isOwner(ws) || isAdmin()
 
 const isPageLoaded = ref(false)
 const search = ref('')
@@ -533,9 +551,10 @@ const loadOverviewStats = async (workspaceId: string) => {
     ])
     overviewStats.value = {
       // +1 for the owner, who isn't included in the collaborators list.
-      members: (collaboratorsRes.ok ? collaboratorsRes.data?.length ?? 0 : 0) + 1,
-      sites: sitesRes.ok ? sitesRes.data?.length ?? 0 : 0,
-      keys: keysRes.ok ? keysRes.data?.length ?? 0 : 0,
+      members:
+        (collaboratorsRes.ok ? (collaboratorsRes.data?.length ?? 0) : 0) + 1,
+      sites: sitesRes.ok ? (sitesRes.data?.length ?? 0) : 0,
+      keys: keysRes.ok ? (keysRes.data?.length ?? 0) : 0,
       metadata:
         sensors.length +
         observedProperties.length +
