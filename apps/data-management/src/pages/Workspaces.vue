@@ -230,7 +230,7 @@
                 <h6 class="text-h6 mb-1">Overview</h6>
 
                 <div class="overview-stats">
-                  <div class="stat-tile stat-tile--accent">
+                  <div class="stat-tile">
                     <div class="stat-tile-head">
                       <v-icon :icon="mdiAccountCircle" size="16" />
                       <span>Members</span>
@@ -559,9 +559,9 @@ const loadOverviewStats = async (workspaceId: string) => {
     ])
     overviewStats.value = {
       // +1 for the owner, who isn't included in the collaborators list.
-      members: (collaboratorsRes.ok ? collaboratorsRes.data.length : 0) + 1,
-      sites: sitesRes.ok ? sitesRes.data.length : 0,
-      keys: keysRes.ok ? keysRes.data.length : 0,
+      members: (collaboratorsRes.ok ? collaboratorsRes.data?.length ?? 0 : 0) + 1,
+      sites: sitesRes.ok ? sitesRes.data?.length ?? 0 : 0,
+      keys: keysRes.ok ? keysRes.data?.length ?? 0 : 0,
       metadata:
         sensors.length +
         observedProperties.length +
@@ -769,10 +769,6 @@ onMounted(async () => {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #757575;
-}
-.stat-tile--accent .stat-tile-head,
-.stat-tile--accent .stat-tile-head span {
-  color: #1976d2;
 }
 .stat-tile-value {
   font-size: 26px;
