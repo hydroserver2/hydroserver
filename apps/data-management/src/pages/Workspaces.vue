@@ -174,9 +174,6 @@
 
         <section v-if="selected" class="detail" data-testid="workspace-detail">
           <header class="detail-header">
-            <div class="detail-header-icon">
-              <v-icon :icon="mdiBriefcaseOutline" size="20" />
-            </div>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="detail-title">{{ selected.name }}</h2>
@@ -727,11 +724,6 @@ onMounted(async () => {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 11px;
   background: #ffffff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.stat-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .stat-tile-head {
   display: flex;
@@ -1043,17 +1035,6 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   background: white;
-  flex-shrink: 0;
-}
-.detail-header-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
-  color: #2e7d32;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 .detail-title {
