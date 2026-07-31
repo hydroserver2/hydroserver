@@ -69,59 +69,145 @@
       </div>
 
       <div class="filter-controls">
-        <v-text-field
-          v-model="siteSearch"
-          class="site-search"
-          name="browse-site-search"
-          placeholder="Search sites"
-          aria-label="Search sites"
-          :prepend-inner-icon="mdiMagnify"
-          clearable
-          hide-details
-          density="compact"
-          color="primary"
-          autocomplete="off"
-          :disabled="!thingsLoaded"
-          @keydown.enter.prevent="onSiteSearchEnter"
-          @click:clear="siteSearch = ''"
-        />
-
-        <v-autocomplete
-          v-model="selectedWorkspaces"
-          :items="availableWorkspaces"
-          class="workspace-filter"
-          name="browse-workspace-filter"
-          label="Workspaces"
-          item-title="name"
-          return-object
-          multiple
-          clearable
-          hide-details
-          density="compact"
-          color="primary"
-          :prepend-inner-icon="mdiBriefcaseOutline"
-          :disabled="!thingsLoaded"
+        <section
+          class="filter-control-group"
+          aria-labelledby="site-filters-heading"
         >
-          <template v-slot:selection="{ item, index }">
-            <v-chip
-              v-if="index < 2"
-              size="small"
-              closable
-              @click:close="selectedWorkspaces.splice(index, 1)"
-            >
-              <span>{{ item.name }}</span>
-            </v-chip>
-            <span
-              v-else-if="index === 2"
-              class="text-caption text-medium-emphasis ms-1"
-            >
-              +{{ selectedWorkspaces.length - 2 }} more
-            </span>
-          </template>
-        </v-autocomplete>
+          <div id="site-filters-heading" class="filter-group-title">
+            Filter sites
+          </div>
 
-        <section class="filter-section color-section">
-          <div class="filter-section-title">Color markers by</div>
+          <v-text-field
+            v-model="siteSearch"
+            class="site-search"
+            name="browse-site-search"
+            placeholder="Search sites"
+            aria-label="Search sites"
+            :prepend-inner-icon="mdiMagnify"
+            clearable
+            hide-details
+            density="compact"
+            color="primary"
+            autocomplete="off"
+            :disabled="!thingsLoaded"
+            @keydown.enter.prevent="onSiteSearchEnter"
+            @click:clear="siteSearch = ''"
+          />
+
+          <v-autocomplete
+            v-model="selectedWorkspaces"
+            :items="availableWorkspaces"
+            class="workspace-filter"
+            name="browse-workspace-filter"
+            label="Workspaces"
+            item-title="name"
+            return-object
+            multiple
+            clearable
+            hide-details
+            density="compact"
+            color="primary"
+            :prepend-inner-icon="mdiBriefcaseOutline"
+            :disabled="!thingsLoaded"
+          >
+            <template v-slot:selection="{ item, index }">
+              <v-chip
+                v-if="index < 2"
+                size="small"
+                closable
+                @click:close="selectedWorkspaces.splice(index, 1)"
+              >
+                <span>{{ item.name }}</span>
+              </v-chip>
+              <span
+                v-else-if="index === 2"
+                class="text-caption text-medium-emphasis ms-1"
+              >
+                +{{ selectedWorkspaces.length - 2 }} more
+              </span>
+            </template>
+          </v-autocomplete>
+
+          <section v-if="availableSiteTypes.length" class="filter-section">
+            <div class="filter-section-title">Site type</div>
+            <div class="chip-grid">
+              <v-btn
+                v-for="siteType in availableSiteTypes"
+                :key="siteType"
+                class="filter-pill"
+                :class="{ selected: selectedSiteTypes.includes(siteType) }"
+                :variant="
+                  selectedSiteTypes.includes(siteType) ? 'tonal' : 'outlined'
+                "
+                color="default"
+                rounded="pill"
+                @click="toggleSiteType(siteType)"
+              >
+                <v-icon
+                  :icon="getSiteTypeIcon(siteType)"
+                  :color="
+                    selectedSiteTypes.includes(siteType) ? 'primary' : 'default'
+                  "
+                  size="16"
+                />
+                <span>{{ siteType }}</span>
+              </v-btn>
+            </div>
+          </section>
+
+          <section v-if="availableTagKeys.length" class="filter-section">
+            <div class="filter-section-title">Additional metadata</div>
+            <div class="metadata-filter-row">
+              <v-autocomplete
+                v-model="selectedTagKey"
+                :items="availableTagKeys"
+                class="metadata-filter"
+                name="browse-metadata-key-filter"
+                label="Key"
+                clearable
+                hide-details
+                density="compact"
+                color="primary"
+                :prepend-inner-icon="mdiTagOutline"
+                @update:model-value="selectedTagValues = []"
+              />
+
+              <v-autocomplete
+                v-model="selectedTagValues"
+                :items="availableTagValues"
+                class="metadata-filter"
+                name="browse-metadata-value-filter"
+                label="Value"
+                multiple
+                clearable
+                hide-details
+                density="compact"
+                color="primary"
+                :disabled="!selectedTagKey"
+              >
+                <template v-slot:selection="{ item, index }">
+                  <span v-if="index === 0" class="metadata-value-selection">
+                    {{ item }}
+                  </span>
+                  <span
+                    v-else-if="index === 1"
+                    class="text-caption text-medium-emphasis ms-1"
+                  >
+                    +{{ selectedTagValues.length - 1 }}
+                  </span>
+                </template>
+              </v-autocomplete>
+            </div>
+          </section>
+        </section>
+
+        <section
+          class="filter-control-group"
+          aria-labelledby="marker-colors-heading"
+        >
+          <div id="marker-colors-heading" class="filter-group-title">
+            Color markers by
+          </div>
           <div
             class="color-mode-buttons"
             role="group"
@@ -174,78 +260,6 @@
             color="primary"
             :prepend-inner-icon="mdiTagOutline"
           />
-        </section>
-
-        <section v-if="availableSiteTypes.length" class="filter-section">
-          <div class="filter-section-title">Site type</div>
-          <div class="chip-grid">
-            <v-btn
-              v-for="siteType in availableSiteTypes"
-              :key="siteType"
-              class="filter-pill"
-              :class="{ selected: selectedSiteTypes.includes(siteType) }"
-              :variant="
-                selectedSiteTypes.includes(siteType) ? 'tonal' : 'outlined'
-              "
-              color="default"
-              rounded="pill"
-              @click="toggleSiteType(siteType)"
-            >
-              <v-icon
-                :icon="getSiteTypeIcon(siteType)"
-                :color="
-                  selectedSiteTypes.includes(siteType) ? 'primary' : 'default'
-                "
-                size="16"
-              />
-              <span>{{ siteType }}</span>
-            </v-btn>
-          </div>
-        </section>
-
-        <section v-if="availableTagKeys.length" class="filter-section">
-          <div class="filter-section-title">Additional metadata</div>
-          <div class="metadata-filter-row">
-            <v-autocomplete
-              v-model="selectedTagKey"
-              :items="availableTagKeys"
-              class="metadata-filter"
-              name="browse-metadata-key-filter"
-              label="Key"
-              clearable
-              hide-details
-              density="compact"
-              color="primary"
-              :prepend-inner-icon="mdiTagOutline"
-              @update:model-value="selectedTagValues = []"
-            />
-
-            <v-autocomplete
-              v-model="selectedTagValues"
-              :items="availableTagValues"
-              class="metadata-filter"
-              name="browse-metadata-value-filter"
-              label="Value"
-              multiple
-              clearable
-              hide-details
-              density="compact"
-              color="primary"
-              :disabled="!selectedTagKey"
-            >
-              <template v-slot:selection="{ item, index }">
-                <span v-if="index === 0" class="metadata-value-selection">
-                  {{ item }}
-                </span>
-                <span
-                  v-else-if="index === 1"
-                  class="text-caption text-medium-emphasis ms-1"
-                >
-                  +{{ selectedTagValues.length - 1 }}
-                </span>
-              </template>
-            </v-autocomplete>
-          </div>
         </section>
       </div>
 
@@ -840,6 +854,20 @@ pruneSelectionToAvailable(
 .metadata-filter :deep(.v-field__input),
 .color-tag-filter :deep(.v-field__input) {
   font-size: 13px;
+}
+
+.filter-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-group-title {
+  color: #3c4043;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .filter-section {
