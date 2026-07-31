@@ -4,7 +4,9 @@
 }
 
 /* Thin border so tables read as a contained element rather than content that
-   just stops at the surrounding padding. */
+   just stops at the surrounding padding. Used widely enough (every workspace
+   table, metadata table, sites table) to live here rather than be repeated
+   per-component. */
 .hs-table-card {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;

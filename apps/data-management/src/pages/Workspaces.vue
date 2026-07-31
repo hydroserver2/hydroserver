@@ -227,23 +227,7 @@
           <div class="detail-body">
             <v-window v-model="section">
               <v-window-item value="overview">
-                <v-row align="center" class="mb-1" no-gutters>
-                  <v-col cols="auto">
-                    <h6 class="text-h6">Overview</h6>
-                  </v-col>
-                  <v-spacer />
-                  <v-col cols="auto">
-                    <v-btn
-                      :disabled="!canManageWorkspace(selected)"
-                      :title="canManageWorkspace(selected) ? '' : OWNER_ONLY_MESSAGE"
-                      variant="outlined"
-                      :prepend-icon="mdiPencil"
-                      @click="openDialog(selected, 'edit')"
-                    >
-                      Edit details
-                    </v-btn>
-                  </v-col>
-                </v-row>
+                <h6 class="text-h6 mb-1">Overview</h6>
 
                 <div class="overview-stats">
                   <div class="stat-tile stat-tile--accent">
