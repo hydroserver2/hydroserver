@@ -23,6 +23,7 @@ from interfaces.api.schemas.iam.service_account import (
     ServiceAccountPatchBody,
     ServiceAccountSummaryPostResponse,
     ServiceAccountDetailPostResponse,
+    ServiceAccountContactResponse,
 )
 from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters,
                                              RoleOrderByFields)

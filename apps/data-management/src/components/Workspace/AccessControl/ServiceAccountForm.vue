@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar color="blue-darken-4">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Create' }} API key
+        {{ isEdit ? 'Edit' : 'Create' }} service account
         <span v-if="isEdit" class="opacity-80">- {{ item.name }}</span>
       </v-card-title>
     </v-toolbar>
@@ -22,9 +22,9 @@
         />
         <v-text-field v-model="item.description" label="Description" />
         <v-select
-          v-model="item.role"
+          v-model="selectedRole"
           :items="roles"
-          label="New API key's role *"
+          label="Service account's role *"
           item-title="name"
           :return-object="true"
           variant="outlined"
@@ -48,22 +48,63 @@
 <script setup lang="ts">
 import { required, rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
+import { ref } from 'vue'
 import { useFormLogic } from '@/composables/useFormLogic'
-import hs, { ApiKey, CollaboratorRole } from '@hydroserver/client'
+import hs, {
+  ServiceAccount,
+  CollaboratorRole,
+  ApiResponse,
+} from '@hydroserver/client'
+
+type ServiceAccountRow = ServiceAccount & { role?: CollaboratorRole }
 
 const props = defineProps<{
-  apiKey?: ApiKey
+  serviceAccount?: ServiceAccountRow
   workspaceId: string
   roles: CollaboratorRole[]
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
 
+const selectedRole = ref<CollaboratorRole | undefined>(
+  props.serviceAccount?.role
+)
+
+async function createItem(
+  newAccount: ServiceAccount
+): Promise<ApiResponse<ServiceAccount>> {
+  return hs.workspaces.createServiceAccount(newAccount, selectedRole.value!.id)
+}
+
+async function updateItem(
+  newAccount: ServiceAccount,
+  originalAccount: ServiceAccount
+): Promise<ApiResponse<ServiceAccount>> {
+  const res = await hs.workspaces.updateServiceAccount(
+    newAccount,
+    originalAccount
+  )
+  if (!res.ok) return res
+
+  if (
+    selectedRole.value &&
+    selectedRole.value.id !== props.serviceAccount?.role?.id
+  ) {
+    const roleRes = await hs.workspaces.updateCollaboratorRole(
+      props.workspaceId,
+      res.data.email,
+      selectedRole.value.id
+    )
+    if (!roleRes.ok) return roleRes
+  }
+  return res
+}
+
 const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
-  hs.workspaces.createApiKey,
-  hs.workspaces.updateApiKey,
-  ApiKey,
-  props.apiKey || undefined
+  createItem,
+  updateItem,
+  ServiceAccount,
+  props.serviceAccount || undefined
 )
 
 async function onSubmit() {
@@ -74,10 +115,11 @@ async function onSubmit() {
       if (isEdit.value) emit('close')
       return
     }
-    if (isEdit.value) emit('updated', newItem)
-    else emit('created', newItem)
+    const row: ServiceAccountRow = { ...newItem, role: selectedRole.value }
+    if (isEdit.value) emit('updated', row)
+    else emit('created', row)
   } catch (error) {
-    console.error('Error uploading API key', error)
+    console.error('Error uploading service account', error)
   }
   emit('close')
 }

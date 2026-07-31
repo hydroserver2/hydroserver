@@ -35,11 +35,11 @@
           :workspace="workspace"
           @privacy-updated="emits('privacy-updated', $event)"
         />
-        <ManageApiKeys
+        <ManageServiceAccounts
           v-else-if="
-            selected === 'api-keys' &&
+            selected === 'service-accounts' &&
             hasPermission(
-              PermissionResource.ApiKey,
+              PermissionResource.ServiceAccount,
               PermissionAction.Create,
               workspace
             )
@@ -48,9 +48,9 @@
         />
         <v-row
           v-else-if="
-            selected === 'api-keys' &&
+            selected === 'service-accounts' &&
             !hasPermission(
-              PermissionResource.ApiKey,
+              PermissionResource.ServiceAccount,
               PermissionAction.Create,
               workspace
             )
@@ -58,8 +58,8 @@
           :workspace-id="workspace.id"
         >
           <v-col>
-            You don't have permissions to create or edit API Keys for this
-            workspace. If you need one, contact the workspace owner.
+            You don't have permissions to create or edit service accounts for
+            this workspace. If you need one, contact the workspace owner.
           </v-col></v-row
         >
       </v-col>
@@ -83,7 +83,7 @@ import {
 import ManageCollaborators from './ManageCollaborators.vue'
 import TransferWorkspaceOwnership from './TransferWorkspaceOwnership.vue'
 import ManageWorkspacePrivacy from './ManageWorkspacePrivacy.vue'
-import ManageApiKeys from './ManageApiKeys.vue'
+import ManageServiceAccounts from './ManageServiceAccounts.vue'
 import { computed, ref } from 'vue'
 import {
   mdiAccountCircle,
@@ -110,7 +110,12 @@ const items = [
     icon: mdiAccountCircle,
     isVisible: true,
   },
-  { title: 'API keys', name: 'api-keys', icon: mdiKeyVariant, isVisible: true },
+  {
+    title: 'Service accounts',
+    name: 'service-accounts',
+    icon: mdiKeyVariant,
+    isVisible: true,
+  },
   {
     title: 'Workspace privacy',
     name: 'privacy',

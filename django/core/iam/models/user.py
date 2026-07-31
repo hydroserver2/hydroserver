@@ -98,6 +98,14 @@ class User(AbstractUser, ResourcePermissionMixin):
     def organization_name(self):
         return self.organization.name if self.organization else None
 
+    @property
+    def account_type(self):
+        if self.is_superuser:
+            return "admin"
+        if self.owned_workspace_limit == 0:
+            return "limited"
+        return "standard"
+
     def save(self, *args, **kwargs):
         self.email = self.email.lower()
         super().save(*args, **kwargs)

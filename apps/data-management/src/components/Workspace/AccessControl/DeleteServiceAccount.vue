@@ -3,7 +3,7 @@
     <v-toolbar flat color="red-darken-4">
       <v-card-title class="text-h5">
         <v-icon :icon="mdiAlert" />
-        Confirm API key deletion
+        Confirm service account deletion
       </v-card-title>
     </v-toolbar>
 

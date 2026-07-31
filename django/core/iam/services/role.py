@@ -13,6 +13,33 @@ User = get_user_model()
 
 
 class RoleService(ServiceUtils):
+    _permission_actions = ("view", "create", "edit", "delete")
+
+    @staticmethod
+    def expand_permissions(role: Role) -> list[dict]:
+        """Permission rows store one boolean flag per action on a single
+        resource_type row; PermissionDetailResponse expects one entry per
+        (resource, action) pair, so expand the flags into that shape here."""
+        return [
+            {"resource": permission.resource_type, "action": action}
+            for permission in role.permissions.all()
+            for action in RoleService._permission_actions
+            if getattr(permission, f"can_{action}")
+        ]
+
+    def serialize_role(self, role: Role, expand_related: Optional[bool]):
+        payload = {
+            "id": role.id,
+            "workspace_id": role.workspace_id,
+            "name": role.name,
+            "description": role.description,
+            "permissions": self.expand_permissions(role),
+        }
+        if expand_related:
+            payload["workspace"] = role.workspace
+            return RoleDetailResponse.model_validate(payload)
+        return RoleSummaryResponse.model_validate(payload)
+
     def get_role_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -78,12 +105,7 @@ class RoleService(ServiceUtils):
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
         return [
-            (
-                RoleDetailResponse.model_validate(role)
-                if expand_related
-                else RoleSummaryResponse.model_validate(role)
-            )
-            for role in queryset.all()
+            self.serialize_role(role, expand_related) for role in queryset.all()
         ]
 
     def get(
@@ -99,8 +121,4 @@ class RoleService(ServiceUtils):
             expand_related=expand_related,
         )
 
-        return (
-            RoleDetailResponse.model_validate(role)
-            if expand_related
-            else RoleSummaryResponse.model_validate(role)
-        )
+        return self.serialize_role(role, expand_related)

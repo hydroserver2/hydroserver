@@ -573,7 +573,6 @@
       "CollaboratorDeleteBody": {
         "properties": {
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           }
@@ -589,12 +588,28 @@
           "role": {
             "$ref": "#/components/schemas/RoleSummaryResponse"
           },
+          "serviceAccount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAccountContactResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "user": {
-            "$ref": "#/components/schemas/AccountContactDetailResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountContactDetailResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "user",
           "role"
         ],
         "title": "CollaboratorDetailResponse",
@@ -603,7 +618,6 @@
       "CollaboratorPostBody": {
         "properties": {
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           },
@@ -9041,6 +9055,30 @@
         "title": "SensorSummaryResponse",
         "type": "object"
       },
+      "ServiceAccountContactResponse": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "title": "ServiceAccountContactResponse",
+        "type": "object"
+      },
       "ServiceAccountDetailPostResponse": {
         "properties": {
           "createdAt": {
@@ -9058,6 +9096,10 @@
               }
             ],
             "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -9109,6 +9151,7 @@
         "required": [
           "name",
           "isActive",
+          "email",
           "createdAt",
           "lastUsedAt",
           "id",
@@ -9135,6 +9178,10 @@
               }
             ],
             "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -9181,6 +9228,7 @@
         "required": [
           "name",
           "isActive",
+          "email",
           "createdAt",
           "lastUsedAt",
           "id",
@@ -9375,6 +9423,10 @@
             ],
             "title": "Description"
           },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -9427,6 +9479,7 @@
         "required": [
           "name",
           "isActive",
+          "email",
           "createdAt",
           "lastUsedAt",
           "id",
@@ -9453,6 +9506,10 @@
               }
             ],
             "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -9501,6 +9558,7 @@
         "required": [
           "name",
           "isActive",
+          "email",
           "createdAt",
           "lastUsedAt",
           "id",
