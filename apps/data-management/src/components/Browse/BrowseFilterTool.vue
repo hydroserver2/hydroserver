@@ -87,7 +87,12 @@
             @click:clear="siteSearch = ''"
           />
 
-          <div class="workspace-filter-row">
+          <div
+            class="workspace-filter-row"
+            :class="{
+              'workspace-filter-row--with-my-sites': showMySitesFilter,
+            }"
+          >
             <v-autocomplete
               v-model="selectedWorkspaces"
               :items="availableWorkspaces"
@@ -894,8 +899,12 @@ pruneSelectionToAvailable(
 
 .workspace-filter-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+}
+
+.workspace-filter-row--with-my-sites {
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
