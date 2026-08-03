@@ -5,6 +5,8 @@
       :things="things"
       :things-loaded="loaded"
       :selected-site-id="selectedThingId"
+      :show-my-sites-filter="hs.session.isAuthenticated"
+      :my-workspace-ids="myWorkspaceIds"
       :show-register-site="hs.session.isAuthenticated"
       :can-register-site="canRegisterSite"
       @filter="updateFilteredThings"
@@ -96,6 +98,9 @@ const creatableWorkspaces = computed(() =>
   )
 )
 const canRegisterSite = computed(() => creatableWorkspaces.value.length > 0)
+const myWorkspaceIds = computed(() =>
+  workspaces.value.map((workspace) => workspace.id)
+)
 const mapFitPadding = computed<[number, number, number, number]>(() =>
   isCompactMapViewport.value ? compactMapFitPadding : desktopMapFitPadding
 )

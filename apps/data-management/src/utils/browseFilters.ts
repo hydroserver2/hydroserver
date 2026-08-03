@@ -11,6 +11,7 @@ export interface BrowseFilterRouteState {
   siteTypes: string[]
   tagKey: string
   tagValues: string[]
+  mySites: boolean | null
   colorBy: MarkerColorMode | null
   colorTagKey: string
   drawer: boolean | null
@@ -23,6 +24,7 @@ export interface BrowseFilterSelectionState {
   siteTypes: string[]
   tagKey?: string | null
   tagValues?: string[]
+  mySites?: boolean
   colorBy?: MarkerColorMode
   colorTagKey?: string | null
   drawer?: boolean
@@ -35,6 +37,7 @@ const BROWSE_FILTER_QUERY_KEYS = [
   'siteTypes',
   'tagKey',
   'tagValues',
+  'mySites',
   'colorBy',
   'colorTagKey',
   'colorByTag',
@@ -110,6 +113,7 @@ export function parseBrowseFilterQuery(
     siteTypes: readExactQueryValues(query, ['siteTypes']),
     tagKey: querySingleValue(query.tagKey),
     tagValues: readExactQueryValues(query, ['tagValues']),
+    mySites: parseBooleanQuery(query.mySites),
     colorBy: parseMarkerColorMode(query.colorBy),
     colorTagKey: querySingleValue(query.colorTagKey),
     drawer: parseBooleanQuery(query.drawer),
@@ -139,6 +143,7 @@ export function buildBrowseFilterQuery(
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes
   if (tagKey) nextQuery.tagKey = tagKey
   if (tagValues !== undefined) nextQuery.tagValues = tagValues
+  if (state.mySites) nextQuery.mySites = '1'
   if (state.colorBy && state.colorBy !== 'none')
     nextQuery.colorBy = state.colorBy
   if (state.colorBy === 'metadata' && colorTagKey)

@@ -151,6 +151,75 @@ test.describe('sites and workspaces', () => {
     await expect(markerLegend).toHaveCount(0)
   })
 
+  test('Browse only offers the My sites filter to authenticated users', async ({
+    page,
+  }) => {
+    await page.goto('/browse')
+    await expect(page.getByTestId('my-sites-filter')).toHaveCount(0)
+
+    await authenticateSession(
+      page,
+      users.unaffiliated.email,
+      users.unaffiliated.password
+    )
+    await page.goto('/browse')
+
+    const mySitesFilter = page.getByTestId('my-sites-filter')
+    const publicThingRow = page.getByRole('button', {
+      name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+      exact: true,
+    })
+
+    await expect(mySitesFilter).toBeVisible()
+    await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'false')
+    await expect(publicThingRow).toBeVisible()
+
+    await mySitesFilter.click()
+    await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'true')
+    await expect(page).toHaveURL(/mySites=1/)
+    await expect(page.getByText('0 sites', { exact: true })).toBeVisible()
+    await expect(publicThingRow).toHaveCount(0)
+
+    await mySitesFilter.click()
+    await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'false')
+    await expect(page).not.toHaveURL(/mySites=/)
+    await expect(publicThingRow).toBeVisible()
+  })
+
+  test('Browse metadata controls stay on one line with multiple values', async ({
+    page,
+  }) => {
+    await page.route('**/api/data/things/site-summaries*', async (route) => {
+      const response = await route.fetch()
+      const summaries = (await response.json()) as Array<{
+        tags: Array<{ key: string; value: string }>
+      }>
+      summaries[0]?.tags.push({ key: 'E2E', value: 'Additional value' })
+      await route.fulfill({ response, json: summaries })
+    })
+
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(
+      '/browse?tagKey=E2E&tagValues=Mutable&tagValues=Additional%20value'
+    )
+
+    const metadataControls = page.locator(
+      '.metadata-filter-row .metadata-filter'
+    )
+    await expect(metadataControls).toHaveCount(2)
+    await expect(metadataControls.nth(1).getByText('+1')).toBeVisible()
+
+    const controlHeights = await metadataControls.evaluateAll((controls) =>
+      controls.map((control) => control.getBoundingClientRect().height)
+    )
+    expect(controlHeights).toEqual([40, 40])
+
+    await expect(metadataControls.nth(1).locator('.v-field__input')).toHaveCSS(
+      'flex-wrap',
+      'nowrap'
+    )
+  })
+
   test('Browse preserves space for site selections on a compact screen', async ({
     page,
   }) => {

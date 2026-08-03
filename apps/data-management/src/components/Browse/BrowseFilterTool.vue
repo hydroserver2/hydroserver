@@ -69,14 +69,7 @@
       </div>
 
       <div class="filter-controls">
-        <section
-          class="filter-control-group"
-          aria-labelledby="site-filters-heading"
-        >
-          <div id="site-filters-heading" class="filter-group-title">
-            Filter sites
-          </div>
-
+        <section class="filter-control-group" aria-label="Filter sites">
           <v-text-field
             v-model="siteSearch"
             class="site-search"
@@ -94,39 +87,55 @@
             @click:clear="siteSearch = ''"
           />
 
-          <v-autocomplete
-            v-model="selectedWorkspaces"
-            :items="availableWorkspaces"
-            class="workspace-filter"
-            name="browse-workspace-filter"
-            label="Workspaces"
-            item-title="name"
-            return-object
-            multiple
-            clearable
-            hide-details
-            density="compact"
-            color="primary"
-            :prepend-inner-icon="mdiBriefcaseOutline"
-            :disabled="!thingsLoaded"
-          >
-            <template v-slot:selection="{ item, index }">
-              <v-chip
-                v-if="index < 2"
-                size="small"
-                closable
-                @click:close="selectedWorkspaces.splice(index, 1)"
-              >
-                <span>{{ item.name }}</span>
-              </v-chip>
-              <span
-                v-else-if="index === 2"
-                class="text-caption text-medium-emphasis ms-1"
-              >
-                +{{ selectedWorkspaces.length - 2 }} more
-              </span>
-            </template>
-          </v-autocomplete>
+          <div class="workspace-filter-row">
+            <v-autocomplete
+              v-model="selectedWorkspaces"
+              :items="availableWorkspaces"
+              class="workspace-filter"
+              name="browse-workspace-filter"
+              label="Workspaces"
+              item-title="name"
+              return-object
+              multiple
+              clearable
+              hide-details
+              density="compact"
+              color="primary"
+              :prepend-inner-icon="mdiBriefcaseOutline"
+              :disabled="!thingsLoaded"
+            >
+              <template v-slot:selection="{ item, index }">
+                <v-chip
+                  v-if="index < 2"
+                  size="small"
+                  closable
+                  @click:close="selectedWorkspaces.splice(index, 1)"
+                >
+                  <span>{{ item.name }}</span>
+                </v-chip>
+                <span
+                  v-else-if="index === 2"
+                  class="text-caption text-medium-emphasis ms-1"
+                >
+                  +{{ selectedWorkspaces.length - 2 }} more
+                </span>
+              </template>
+            </v-autocomplete>
+
+            <v-btn
+              v-if="showMySitesFilter"
+              class="my-sites-filter"
+              color="primary"
+              :variant="showOnlyMySites ? 'tonal' : 'outlined'"
+              :aria-pressed="showOnlyMySites"
+              data-testid="my-sites-filter"
+              title="Show only sites in my workspaces"
+              @click="showOnlyMySites = !showOnlyMySites"
+            >
+              <v-icon :icon="mdiAccountOutline" size="16" />
+              My sites
+            </v-btn>
+          </div>
 
           <section v-if="availableSiteTypes.length" class="filter-section">
             <div class="filter-section-title">Site type</div>
@@ -187,13 +196,13 @@
               >
                 <template v-slot:selection="{ item, index }">
                   <span v-if="index === 0" class="metadata-value-selection">
-                    {{ item }}
-                  </span>
-                  <span
-                    v-else-if="index === 1"
-                    class="text-caption text-medium-emphasis ms-1"
-                  >
-                    +{{ selectedTagValues.length - 1 }}
+                    <span class="metadata-value-label">{{ item }}</span>
+                    <span
+                      v-if="selectedTagValues.length > 1"
+                      class="metadata-value-count text-medium-emphasis"
+                    >
+                      +{{ selectedTagValues.length - 1 }}
+                    </span>
                   </span>
                 </template>
               </v-autocomplete>
@@ -336,6 +345,7 @@ import {
 import hs, { Workspace } from '@hydroserver/client'
 import type { ThingSiteSummary } from '@/types'
 import {
+  mdiAccountOutline,
   mdiBriefcaseOutline,
   mdiChevronLeft,
   mdiFilterOffOutline,
@@ -352,6 +362,7 @@ const selectedSiteTypes = ref<string[]>([])
 const selectedWorkspaces = ref<Workspace[]>([])
 const selectedTagKey = ref('')
 const selectedTagValues = ref<string[]>([])
+const showOnlyMySites = ref(false)
 const markerColorMode = ref<MarkerColorMode>('none')
 const colorTagKey = ref('')
 const siteSearch = ref('')
@@ -387,6 +398,14 @@ const props = defineProps({
   selectedSiteId: {
     type: String,
     default: undefined,
+  },
+  showMySitesFilter: {
+    type: Boolean,
+    default: false,
+  },
+  myWorkspaceIds: {
+    type: Array as () => string[],
+    default: () => [],
   },
   showRegisterSite: {
     type: Boolean,
@@ -429,9 +448,18 @@ const thingsMatchingSearch = computed(() => {
   })
 })
 
+const thingsMatchingMySites = computed(() => {
+  if (!showOnlyMySites.value) return thingsMatchingSearch.value
+
+  const workspaceIds = new Set(props.myWorkspaceIds)
+  return thingsMatchingSearch.value.filter((thing) =>
+    workspaceIds.has(thing.workspaceId)
+  )
+})
+
 const availableSites = computed(() =>
   filterThingMarkers(
-    thingsMatchingSearch.value,
+    thingsMatchingMySites.value,
     selectedWorkspaces.value,
     selectedSiteTypes.value,
     undefined,
@@ -443,7 +471,7 @@ const availableSites = computed(() =>
 const availableWorkspaces = computed(() => {
   const workspaceIds = new Set(
     filterThingMarkers(
-      thingsMatchingSearch.value,
+      thingsMatchingMySites.value,
       [],
       selectedSiteTypes.value,
       undefined,
@@ -458,7 +486,7 @@ const availableWorkspaces = computed(() => {
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
     filterThingMarkers(
-      thingsMatchingSearch.value,
+      thingsMatchingMySites.value,
       selectedWorkspaces.value,
       [],
       undefined,
@@ -472,7 +500,7 @@ const availableSiteTypes = computed(() => {
 
 const thingsMatchingPrimaryFilters = computed(() =>
   filterThingMarkers(
-    thingsMatchingSearch.value,
+    thingsMatchingMySites.value,
     selectedWorkspaces.value,
     selectedSiteTypes.value
   )
@@ -504,6 +532,7 @@ const hasActiveFilters = computed(
     Boolean((siteSearch.value ?? '').trim()) ||
     selectedWorkspaces.value.length > 0 ||
     selectedSiteTypes.value.length > 0 ||
+    showOnlyMySites.value ||
     Boolean(selectedTagKey.value) ||
     selectedTagValues.value.length > 0
 )
@@ -562,6 +591,7 @@ const syncRouteFromSelection = async (siteId = props.selectedSiteId) => {
     siteTypes: selectedSiteTypes.value,
     tagKey: selectedTagKey.value,
     tagValues: selectedTagValues.value,
+    mySites: showOnlyMySites.value,
     colorBy: markerColorMode.value,
     colorTagKey: colorTagKey.value,
     drawer: isExpanded.value,
@@ -594,6 +624,7 @@ const applyRouteState = async () => {
   selectedSiteTypes.value = state.siteTypes
   selectedTagKey.value = state.tagKey
   selectedTagValues.value = state.tagValues
+  showOnlyMySites.value = props.showMySitesFilter && state.mySites === true
   markerColorMode.value = state.colorBy ?? 'none'
   colorTagKey.value = state.colorTagKey
 
@@ -619,6 +650,7 @@ const onClearFilters = () => {
   selectedWorkspaces.value = []
   selectedTagKey.value = ''
   selectedTagValues.value = []
+  showOnlyMySites.value = false
   siteSearch.value = ''
 }
 
@@ -637,6 +669,7 @@ watch(
     selectedWorkspaces,
     selectedTagKey,
     selectedTagValues,
+    showOnlyMySites,
     siteSearch,
   ],
   emitFilteredThings,
@@ -649,6 +682,7 @@ watch(
     selectedWorkspaces,
     selectedTagKey,
     selectedTagValues,
+    showOnlyMySites,
     markerColorMode,
     colorTagKey,
     siteSearch,
@@ -689,6 +723,8 @@ watch(
       route.query,
       props.things,
       props.thingsLoaded,
+      props.showMySitesFilter,
+      props.myWorkspaceIds,
       workspacesLoaded.value,
     ] as const,
   applyRouteState,
@@ -856,6 +892,32 @@ pruneSelectionToAvailable(
   font-size: 13px;
 }
 
+.workspace-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.workspace-filter {
+  min-width: 0;
+}
+
+.my-sites-filter {
+  min-width: 0;
+  height: 40px;
+  border-radius: 8px;
+  padding-inline: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.my-sites-filter :deep(.v-btn__content) {
+  gap: 5px;
+}
+
 .filter-control-group {
   display: flex;
   flex-direction: column;
@@ -904,13 +966,48 @@ pruneSelectionToAvailable(
 .metadata-filter-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 8px;
 }
 
+.metadata-filter {
+  min-width: 0;
+}
+
+.metadata-filter :deep(.v-field),
+.metadata-filter :deep(.v-field__input) {
+  height: 40px;
+}
+
+.metadata-filter :deep(.v-field__input) {
+  min-height: 40px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.metadata-filter :deep(.v-autocomplete__selection) {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .metadata-value-selection {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.metadata-value-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.metadata-value-count {
+  flex: 0 0 auto;
+  font-size: 12px;
 }
 
 .chip-grid {
