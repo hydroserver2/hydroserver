@@ -1,12 +1,11 @@
 <template>
   <div class="collaborators-header">
     <h6 class="text-h6">Collaborators</h6>
-    <v-btn
-      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+    <v-icon
       :icon="mdiHelpCircleOutline"
-      variant="text"
-      density="compact"
-      size="x-small"
+      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+      color="grey"
+      size="18"
       class="collaborators-help-icon"
       aria-label="Toggle collaborator help"
       :aria-expanded="showAddCollaboratorHelp"

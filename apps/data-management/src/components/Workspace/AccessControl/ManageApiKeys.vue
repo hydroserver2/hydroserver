@@ -1,12 +1,11 @@
 <template>
   <div class="api-keys-header">
     <h6 class="text-h6">API keys</h6>
-    <v-btn
-      @click="showApiKeyHelp = !showApiKeyHelp"
+    <v-icon
       :icon="mdiHelpCircleOutline"
-      variant="text"
-      density="compact"
-      size="x-small"
+      @click="showApiKeyHelp = !showApiKeyHelp"
+      color="grey"
+      size="18"
       class="api-keys-help-icon"
       aria-label="Toggle API key help"
       :aria-expanded="showApiKeyHelp"
