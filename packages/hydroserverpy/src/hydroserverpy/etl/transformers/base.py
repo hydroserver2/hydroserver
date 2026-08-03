@@ -55,8 +55,15 @@ class Transformer(ETLComponent, Timestamp, ABC):
 
         Expects a DataFrame with columns 'timestamp', 'value', and 'target_id' as
         produced by transform(). For each target group, normalizes the timestamp
-        column to UTC, coerces values to numeric, applies the configured data
-        operations in order, and deduplicates on timestamp keeping the last occurrence.
+        column to UTC, sorts by timestamp, coerces values to numeric, applies the
+        configured data operations in order, and deduplicates on timestamp keeping
+        the last occurrence.
+
+        Sorting happens before data operations run so that operations relying on
+        chronological order (e.g., temporal aggregation) see correctly ordered input,
+        and so that loaders chunking by row position upload chunks with a narrow,
+        predictable timestamp range instead of an arbitrary one inherited from the
+        source payload's original row order.
 
         Returns a long-format DataFrame with the same three columns.
         """
@@ -120,7 +127,7 @@ class Transformer(ETLComponent, Timestamp, ABC):
         result_frames = []
 
         for target_id, group in df.groupby("target_id", sort=False):
-            target_df = group[["timestamp", "value"]].copy()
+            target_df = group[["timestamp", "value"]].copy().sort_values("timestamp", kind="stable")
             path = target_path_map.get(str(target_id))
             if path is not None:
                 target_df = self.apply_data_transformations(target_df, path)

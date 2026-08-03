@@ -12,7 +12,7 @@
       <v-app-bar-nav-icon
         v-if="sidebar.isOpen"
         :icon="mdiMenuOpen"
-        @click="sidebar.toggle"
+        @click.stop="sidebar.toggle"
         class="mx-3"
         variant="tonal"
         rounded="lg"
@@ -21,7 +21,7 @@
       <v-app-bar-nav-icon
         v-else
         :icon="mdiMenuClose"
-        @click="sidebar.toggle"
+        @click.stop="sidebar.toggle"
         class="mx-3"
         variant="tonal"
         rounded="lg"
@@ -136,7 +136,9 @@
             v-bind="menuItem.attrs || {}"
             :title="menuItem.label"
             :prepend-icon="menuItem.icon"
-            :value="menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label"
+            :value="
+              menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label
+            "
             @click="menuItem.onClick"
           />
         </div>
@@ -180,7 +182,7 @@ import { Snackbar } from '@/utils/notifications'
 import { ref } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { navbarLogo } from '@/config/navbarConfig'
-import { useRoute } from 'vue-router'
+import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
 import hs from '@hydroserver/client'
 import router from '@/router/router'
@@ -188,17 +190,17 @@ import {
   mdiAccountCircle,
   mdiAccountPlusOutline,
   mdiChartLine,
-  mdiCheckCircleOutline,
   mdiDatabaseCog,
-  mdiFileChart,
   mdiInformation,
-  mdiLayersSearch,
   mdiLogin,
   mdiLogout,
-  mdiMapMarkerMultiple,
+  mdiMapMarkerOutline,
   mdiMenuClose,
   mdiMenuDown,
   mdiMenuOpen,
+  mdiShieldCheckOutline,
+  // mdiShieldEditOutline,
+  mdiTransitConnectionVariant,
 } from '@mdi/js'
 
 const route = useRoute()
@@ -210,7 +212,7 @@ const sidebar = useSidebarStore()
 const drawer = ref(false)
 
 type NavItemAttrs = {
-  to?: string
+  to?: RouteLocationRaw
   href?: string
 }
 
@@ -229,12 +231,12 @@ const paths: NavItem[] = [
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
-    icon: mdiLayersSearch,
+    icon: mdiMapMarkerOutline,
   },
   {
     attrs: { to: '/sites' },
     label: 'Your sites',
-    icon: mdiMapMarkerMultiple,
+    icon: mdiMapMarkerOutline,
   },
   {
     attrs: { to: '/visualize-data' },
@@ -253,15 +255,16 @@ const paths: NavItem[] = [
       {
         attrs: { to: '/orchestration' },
         label: 'Job orchestration',
-        icon: mdiFileChart,
+        icon: mdiTransitConnectionVariant,
       },
-      {
-        label: 'Quality Control',
-        icon: mdiCheckCircleOutline,
-        onClick: () => {
-          window.location.href = '/qc/'
-        },
-      },
+      // Re-enable for the v1.12 release.
+      // {
+      //   label: 'Quality Control',
+      //   icon: mdiShieldEditOutline,
+      //   onClick: () => {
+      //     window.location.href = '/qc/'
+      //   },
+      // },
     ],
   },
   {

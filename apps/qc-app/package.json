@@ -17,8 +17,7 @@
     "e2e:live": "cross-env E2E_LIVE=1 playwright test qc-golden-path --headed",
     "coverage": "vitest run --coverage --environment jsdom",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "link-qc-utils": "npm link @uwrl/qc-utils"
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",

@@ -229,34 +229,32 @@ dedicated client.
 
 ## Contributing
 
-Clone, `npm install`, `npm run dev` (alias of `watch`) rebuilds
-`dist/` on every source change so an `npm link`-ed consumer picks up
-edits in ~1 s. The watch build skips `.d.ts` emit; run `npm run build`
-once if the consumer surfaces stale type errors. CI runs
+Clone the HydroServer repo, run `npm install` from the root, then `cd`
+into `packages/qc-utils` before running package scripts. When working
+inside this package, `npm run dev` rebuilds `dist/` on every source
+change. The watch build skips `.d.ts` emit; run `npm run build` when you
+need to verify published package artifacts. CI runs
 `tsc --noEmit → coverage → lint → build` on every push and PR to main.
 
 | Script              | Purpose                                                |
 |---------------------|--------------------------------------------------------|
-| `npm run dev`       | Watch-mode bundler for linked-dev workflow.            |
+| `npm run dev`       | Watch-mode bundler for local package development.      |
 | `npm run build`     | Production build — bundle + emit `.d.ts` declarations. |
 | `npm run test`      | Vitest suite.                                          |
 | `npm run coverage`  | Vitest with v8 coverage and the 80 % threshold.        |
 | `npm run lint`      | ESLint over `src/`.                                    |
 
-Linking into a sibling `hydroserver-qc-app` checkout:
+Using local changes in the QC app:
+
+From `apps/qc-app`:
 
 ```sh
-# qc-utils (terminal 1)
-npm link
-npm run dev
-
-# hydroserver-qc-app (terminal 2)
-npm run link-qc-utils
 npm run dev
 ```
 
-HMR doesn't propagate through linked packages — refresh the consumer
-browser to pick up changes.
+The QC app dev server aliases `@uwrl/qc-utils` directly to
+`packages/qc-utils/src`, so local source edits do not require a
+`qc-utils` build.
 
 ## License
 

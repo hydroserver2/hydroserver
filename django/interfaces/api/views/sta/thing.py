@@ -10,6 +10,7 @@ from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
     ThingMarkerResponse,
     ThingMarkerQueryParameters,
+    SiteTypeIconResponse,
     ThingSiteSummaryResponse,
     ThingSiteSummaryQueryParameters,
     ThingTaskSummaryResponse,
@@ -28,6 +29,7 @@ from interfaces.api.schemas import (
     FileAttachmentDeleteBody,
 )
 from core.sta.services import ThingService
+from core.web.models import SiteTypeIcon
 
 thing_router = Router(tags=["Things"])
 thing_service = ThingService()
@@ -198,6 +200,19 @@ def get_site_types(
         page_size=query.page_size,
         order_desc=query.order_desc,
     )
+
+
+@thing_router.get(
+    "/site-type-icons",
+    response={200: list[SiteTypeIconResponse]},
+    by_alias=True,
+)
+def get_site_type_icons(request: HydroServerHttpRequest):
+    """
+    Get the configured site type icon mappings.
+    """
+
+    return 200, SiteTypeIcon.objects.values("icon", "site_types")
 
 
 @thing_router.get("/sampling-feature-types", response={200: list[str]}, by_alias=True)

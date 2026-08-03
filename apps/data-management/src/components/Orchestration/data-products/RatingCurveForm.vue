@@ -213,6 +213,7 @@ import hs, {
   type Datastream,
   type RatingCurve,
   type DataProductTask,
+  type DataProductTaskExpanded,
   type TaskSchedule,
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
@@ -332,32 +333,34 @@ async function loadOptions() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  try {
-    const [taskRes, transformRes] = await Promise.all([
-      hs.dataProductTasks.get(props.editTaskId),
-      hs.dataProductTasks.listRatingCurveTransformations(props.editTaskId),
-    ])
-
-    if (taskRes.ok && taskRes.data?.name) {
-      taskName.value = taskRes.data.name
-      schedule.value = taskRes.data.schedule ?? null
-    }
-
-    if (transformRes.ok && transformRes.data?.length) {
-      const t = transformRes.data[0]
-      existingTransformationId.value = t.id
-      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
-      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-      selectedRatingCurveId.value = (t.ratingCurve as any)?.id ?? null
-      ratingCurveInputMode.value = 'existing'
-    }
-  } catch (error: any) {
+  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
+    expand_related: true,
+  })
+  if (!taskRes.ok) {
     Snackbar.error(
-      error?.message || 'Unable to load existing rating curve task.'
+      taskRes.message || 'Unable to load existing rating curve task.'
     )
-  } finally {
     loadingExisting.value = false
+    return
   }
+
+  const task = taskRes.data as unknown as DataProductTaskExpanded
+
+  if (task?.name) {
+    taskName.value = task.name
+    schedule.value = task.schedule ?? null
+  }
+
+  if (task?.ratingCurveTransformations?.length) {
+    const t = task.ratingCurveTransformations[0]
+    existingTransformationId.value = t.id
+    inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+    selectedRatingCurveId.value = (t.ratingCurve as any)?.id ?? null
+    ratingCurveInputMode.value = 'existing'
+  }
+
+  loadingExisting.value = false
 }
 
 async function loadRatingCurves(thingId: string) {

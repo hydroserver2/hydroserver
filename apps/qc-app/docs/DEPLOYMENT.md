@@ -91,14 +91,18 @@ For a self-hosted instance pointed at your own HydroServer:
 
 ```bash
 # 1. Build with your config baked in
-git clone https://github.com/hydroserver2/hydroserver-qc-app.git
-cd hydroserver-qc-app
+git clone https://github.com/hydroserver2/hydroserver.git
+cd hydroserver
 npm ci
 
-cat > .env.local <<'EOF'
+cat > apps/qc-app/.env.local <<'EOF'
 VITE_APP_DISABLE_COOP=                 # leave blank unless backend lacks CORP
 EOF
 
+cd packages/qc-utils
+npm run build
+
+cd ../../apps/qc-app
 npm run build                          # → dist/
 
 # 2. Serve dist/ behind a CDN or nginx
@@ -186,6 +190,7 @@ to npm. The QC App pins it in `package.json` (`"@uwrl/qc-utils": "^0.0.x"`).
 Upgrades:
 
 ```bash
+cd apps/qc-app
 npm install @uwrl/qc-utils@<version>
 npm test
 npm run build
@@ -195,21 +200,17 @@ npm run build
 The package is pre-1.0, so assume any minor bump may require code
 changes in the consumer — read the qc-utils commit log and re-run E2E.
 
-For local development against an unreleased qc-utils:
+For local development against unreleased qc-utils changes, run the QC app
+dev server. It aliases `@uwrl/qc-utils` to `packages/qc-utils/src`, so no
+qc-utils build is needed:
 
 ```bash
-# qc-utils
-npm link
-npm run dev          # vite watch
-
-# hydroserver-qc-app
-npm run link-qc-utils
+cd apps/qc-app
 npm run dev
 ```
 
-HMR doesn't propagate through linked packages — refresh the browser to
-pick up changes. See [ONBOARDING.md](./ONBOARDING.md) for the full
-linked-dev workflow.
+Build `qc-utils` first only when running a production-style QC app build.
+See [ONBOARDING.md](./ONBOARDING.md) for the full local workflow.
 
 ### 2. HydroServer backend / schema migrations
 
@@ -220,9 +221,10 @@ matters here is **how the QC App weathers them**:
   Schema changes that break the response shape will manifest as type
   errors at build time (good — won't deploy) or runtime Snackbar errors
   (bad but visible).
-- The QC App pins a `@hydroserver/client` version in `package.json`. When
-  the backend ships a schema change, bump the client version, run
-  `npx vue-tsc --noEmit` to see the breakage, and patch the call sites.
+- The QC App consumes the local `@hydroserver/client` package from
+  `packages/hydroserver-ts`. When the backend ships a schema change,
+  update that client, run `npx vue-tsc --noEmit` to see the breakage, and
+  patch the call sites.
 - The observation upload path uses `mode: 'replace'` on the bulk POST.
   Replace semantics are stable across HydroServer versions — if you ever
   need to change to append-only or upsert semantics, that's a coordinated
@@ -233,8 +235,8 @@ matters here is **how the QC App weathers them**:
 | Component                 | Pinned via             | Owned by                |
 |---------------------------|------------------------|-------------------------|
 | Vue / Vuetify / Pinia     | `package.json`         | This repo               |
-| `@uwrl/qc-utils`          | `package.json`         | `qc-utils/` (sibling)   |
-| `@hydroserver/client`     | `package.json`         | HydroServer project     |
+| `@uwrl/qc-utils`          | workspace package      | `packages/qc-utils/`    |
+| `@hydroserver/client`     | local file package     | `packages/hydroserver-ts/` |
 | HydroServer REST schema   | (implicit via client)  | HydroServer project     |
 | Browser baseline (SAB)    | Chrome 111+ / FF 119+ / Safari 16.4+ | Browser vendors |
 

@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timezone
 from ninja.errors import HttpError
 from django.db.models import Min, Max, Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
@@ -25,13 +26,10 @@ class ObservationMixin(SensorThingsUtils):
         if filters:
             observations = self.apply_filters(observations, Observation, filters)
 
-        if not orderby or not all(
-            field in ["/".join(f.path) for f in orderby]
-            for field in ["Datastream/id", "phenomenonTime"]
-        ):
-            observations = observations.order_by("datastream_id", "phenomenon_time")
-        else:
+        if orderby:
             observations = self.apply_order(observations, Observation, orderby)
+        else:
+            observations = observations.order_by("datastream_id", "phenomenon_time")
 
         if needs_result_quality:
             observations = observations.annotate(
@@ -112,6 +110,7 @@ class ObservationMixin(SensorThingsUtils):
 
     def create_observations(self, payload, context=None):
         principal = context.principal if context else None
+        now = datetime.now(timezone.utc)
 
         by_datastream = {}
         for dto in payload:
@@ -138,13 +137,13 @@ class ObservationMixin(SensorThingsUtils):
                 new_observations = Observation.objects.bulk_copy([
                     Observation(
                         datastream_id=datastream_id,
-                        phenomenon_time=dto.phenomenon_time,
+                        phenomenon_time=now if dto.phenomenon_time is Absent else dto.phenomenon_time,
                         result=(
                             dto.result
                             if not (isinstance(dto.result, float) and math.isnan(dto.result))
                             else datastream.no_data_value
                         ),
-                        result_time=dto.result_time if dto.result_time is not None else None,
+                        result_time=dto.result_time if dto.result_time not in (None, Absent) else None,
                         quality_code=(
                             dto.result_quality.get("quality_code")
                             if dto.result_quality

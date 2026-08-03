@@ -204,6 +204,7 @@ import { storeToRefs } from 'pinia'
 import hs, {
   type Datastream,
   type DataProductTask,
+  type DataProductTaskExpanded,
   type AggregationMethod,
   type AggregationTransformationValues,
   type IntervalUnit,
@@ -253,7 +254,7 @@ const taskName = ref('')
 const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
-const aggregationMethod = ref<AggregationMethod>('mean')
+const aggregationMethod = ref<AggregationMethod>('time_weighted_mean')
 const outputInterval = ref<number | null>(1)
 const outputIntervalUnits = ref<IntervalUnit>('hours')
 const minValues = ref<number | null>(null)
@@ -263,12 +264,13 @@ const timezone = ref<string | null>(null)
 const selectedThingId = computed(() => props.initialThingId ?? null)
 
 const aggregationMethodOptions = [
-  { title: 'Mean', value: 'mean' },
-  { title: 'Sum', value: 'sum' },
-  { title: 'Min', value: 'min' },
-  { title: 'Max', value: 'max' },
+  { title: 'Arithmetic Mean', value: 'mean' },
   { title: 'First', value: 'first' },
   { title: 'Last', value: 'last' },
+  { title: 'Max', value: 'max' },
+  { title: 'Min', value: 'min' },
+  { title: 'Sum', value: 'sum' },
+  { title: 'Time-weighted mean', value: 'time_weighted_mean' },
 ]
 
 const intervalUnitOptions = [
@@ -377,35 +379,37 @@ async function loadDatastreams() {
 async function loadExistingTask() {
   if (!props.editTaskId) return
   loadingExisting.value = true
-  try {
-    const [taskRes, transformRes] = await Promise.all([
-      hs.dataProductTasks.get(props.editTaskId),
-      hs.dataProductTasks.listAggregationTransformations(props.editTaskId),
-    ])
-
-    if (taskRes.ok && taskRes.data?.name) {
-      taskName.value = taskRes.data.name
-      schedule.value = taskRes.data.schedule ?? null
-    }
-
-    if (transformRes.ok && transformRes.data?.length) {
-      const t = transformRes.data[0]
-      existingTransformationId.value = t.id
-      inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
-      outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
-      aggregationMethod.value = t.aggregationMethod
-      outputInterval.value = t.outputInterval
-      outputIntervalUnits.value = t.outputIntervalUnits
-      minValues.value = t.minValues ?? null
-      timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
-      timezone.value = t.timezone ?? null
-      originalTransformation.value = currentTransformationValues()
-    }
-  } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to load existing task.')
-  } finally {
+  const taskRes = await hs.dataProductTasks.get(props.editTaskId, {
+    expand_related: true,
+  })
+  if (!taskRes.ok) {
+    Snackbar.error(taskRes.message || 'Unable to load existing task.')
     loadingExisting.value = false
+    return
   }
+
+  const task = taskRes.data as unknown as DataProductTaskExpanded
+
+  if (task?.name) {
+    taskName.value = task.name
+    schedule.value = task.schedule ?? null
+  }
+
+  if (task?.aggregationTransformations?.length) {
+    const t = task.aggregationTransformations[0]
+    existingTransformationId.value = t.id
+    inputDatastreamId.value = (t.inputDatastream as any)?.id ?? null
+    outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
+    aggregationMethod.value = t.aggregationMethod
+    outputInterval.value = t.outputInterval
+    outputIntervalUnits.value = t.outputIntervalUnits
+    minValues.value = t.minValues ?? null
+    timezoneType.value = (t.timezoneType ?? null) as 'offset' | 'iana' | null
+    timezone.value = t.timezone ?? null
+    originalTransformation.value = currentTransformationValues()
+  }
+
+  loadingExisting.value = false
 }
 
 async function onSubmit() {

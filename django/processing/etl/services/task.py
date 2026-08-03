@@ -1,6 +1,6 @@
 import uuid
 import uuid6
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Literal
 
 from pydantic import Field, ConfigDict, ValidationError, validate_call
@@ -12,6 +12,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from core.types import Unset
 from core.iam.models import APIKey, Workspace
 from core.service import ServiceUtils
+from core.sta.models import Thing
 from core.sta.services import DatastreamService
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, EtlMapping, DataConnection
@@ -73,6 +74,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
+        thing: list[uuid.UUID | Thing] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
         data_connection: list[uuid.UUID | DataConnection] | Unset = Unset,
         latest_run_status: list[str] | Unset = Unset,
@@ -100,6 +102,11 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         if search_term is not Unset:
             search_vector = SearchVector("name", "description", "data_connection__name")
             queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
+
+        if thing is not Unset:
+            queryset = queryset.filter(etl_mappings__target_datastream__thing__in=[
+                getattr(t, "pk", t) for t in thing
+            ])
 
         if workspace is not Unset:
             queryset = queryset.filter(data_connection__workspace__in=[
@@ -392,6 +399,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                 header_row=data_connection.payload.header_row,
                 data_start_row=data_connection.payload.data_start_row,
                 delimiter=data_connection.payload.delimiter,  # noqa
+                identifier_type="index" if data_connection.payload.header_row is None else "name",
             )
 
         elif data_connection.payload.payload_type == "JSON":
@@ -422,12 +430,35 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             target_identifiers=[str(etl_mapping.target_datastream_id) for etl_mapping in etl_mappings]
         )
 
+        placeholder_timestamps = {"run_time": execution_time, "latest_observation_timestamp": earliest_loaded_through}
+        payload = data_connection.payload
+
+        for side in ("start", "end"):
+            anchor = getattr(payload, f"data_ingestion_window_{side}_anchor")
+            boundary = (
+                getattr(payload, f"data_ingestion_window_{side}_timestamp")
+                if anchor == "fixed_timestamp" else placeholder_timestamps.get(anchor)
+            )
+            if anchor == "fixed_timestamp" and boundary is None:
+                raise ValueError(
+                    f"data_ingestion_window_{side}_timestamp is required when "
+                    f"data_ingestion_window_{side}_anchor is 'fixed_timestamp'."
+                )
+            lookback = getattr(payload, f"data_ingestion_window_{side}_lookback")
+            lookback_unit = getattr(payload, f"data_ingestion_window_{side}_lookback_unit")
+            if boundary is not None and lookback and lookback_unit:
+                boundary -= timedelta(**{lookback_unit: lookback})
+            placeholder_timestamps[f"window_{side}"] = boundary
+
+        data_ingestion_window_start = placeholder_timestamps["window_start"]
+        data_ingestion_window_end = placeholder_timestamps["window_end"]
+
         placeholder_kwargs = {}
         for pv in data_connection.placeholder_variables.all():
             if pv.variable_type == "per_task":
                 placeholder_kwargs[pv.name] = task.task_variables.get(pv.name)
-            elif pv.variable_type in ("run_time", "latest_observation_timestamp"):
-                dt = execution_time if pv.variable_type == "run_time" else earliest_loaded_through
+            elif pv.variable_type in placeholder_timestamps:
+                dt = placeholder_timestamps[pv.variable_type]
                 pv_timestamp = (
                     Timestamp(
                         timestamp_type="custom",
@@ -451,6 +482,8 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                     ],
                 ) for mapping in etl_mappings
             ],
+            data_ingestion_window_start=data_ingestion_window_start,
+            data_ingestion_window_end=data_ingestion_window_end,
             **placeholder_kwargs,
         )
 

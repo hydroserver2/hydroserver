@@ -36,9 +36,8 @@ Data Management app's authenticated session. Endpoint groups used:
 | Result qualifiers  | `/data/result-qualifiers`              | Qualifier code lookups per workspace.               |
 | Observed props / processing levels / units / sensors | `/data/observed-properties`, `/data/processing-levels`, `/data/units`, `/data/sensors` | Filter taxonomy. |
 
-The full method list lives in `qc-utils/src/services/api.ts` (the client
-is carried in qc-utils for legacy reasons; the QC App uses
-`@hydroserver/client` for the same endpoints).
+The QC App uses `@hydroserver/client` for these endpoints; the legacy
+qc-utils service layer lives under `packages/qc-utils/src/services/`.
 
 ### Standards support
 

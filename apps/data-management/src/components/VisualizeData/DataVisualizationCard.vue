@@ -81,10 +81,11 @@
                         </v-card-title>
                         <v-divider />
                         <v-card-text class="px-4 py-2 text-body-2">
-                          Tooltips and markers are disabled to keep the plot
-                          responsive. This happens when visible points exceed
-                          {{ largeSeriesVisibleThreshold }} or total points
-                          exceed {{ largeSeriesTotalThreshold }}.
+                          Tooltips are disabled when total points exceed
+                          {{ largeSeriesTotalThreshold }}. Markers are hidden
+                          when visible points exceed
+                          {{ largeSeriesVisibleThreshold }}. Zoom in below the
+                          marker limit to show them again.
                         </v-card-text>
                       </v-card>
                     </v-tooltip>
@@ -149,7 +150,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
-import { getXRangeBounds } from '@/utils/plotting/plotly'
+import { getXRangeBounds, supportsWebgl } from '@/utils/plotting/plotly'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
 
 const emit = defineEmits(['copy-state'])
@@ -199,16 +200,23 @@ const parseDateAxisValue = (value: unknown) => {
   return null
 }
 
-const LARGE_SERIES_VISIBLE_THRESHOLD = 50_000
+// scattergl (WebGL) draws markers on the GPU and stays usable into the
+// hundreds of thousands of visible points, so we push close to that bound.
+// Without WebGL, Plotly falls back to SVG markers, which choke at a few
+// thousand — so cap far lower in that case.
+const LARGE_SERIES_VISIBLE_THRESHOLD = supportsWebgl() ? 200_000 : 5_000
 const LARGE_SERIES_TOTAL_THRESHOLD = 150_000
 const DEFAULT_HOVER_TEMPLATE = '<b>%{y}</b><extra></extra>'
 const currentHoverInfo = ref<'y' | 'skip'>('y')
 const isLargeSeriesMode = ref(false)
+const isHoverDisabled = ref(false)
 const defaultTraceModes = ref<string[]>([])
 const defaultMarkerSizes = ref<number[]>([])
 const defaultHoverMode = ref<'x' | false>('x')
 const lastStyledTraceCount = ref(0)
-const showLargeSeriesDisclaimer = computed(() => isLargeSeriesMode.value)
+const showLargeSeriesDisclaimer = computed(
+  () => isLargeSeriesMode.value || isHoverDisabled.value
+)
 const largeSeriesVisibleThreshold = computed(() =>
   LARGE_SERIES_VISIBLE_THRESHOLD.toLocaleString()
 )
@@ -297,33 +305,40 @@ const normalizeTraceArray = <T>(values: T[], length: number, fallback: T) => {
 const applyLargeSeriesMode = async (visiblePoints: number) => {
   if (!plotlyRef.value || !plotlyApi) return
   const totalPoints = getTotalPointCount()
+  // Markers are a viewport concern: hide them only when the *visible* window is
+  // too dense to draw meaningfully. scattergl renders markers on the GPU, so
+  // zooming into a sparse window restores them even on a huge series. This is
+  // how points reappear for datasets whose line is broken by intended-spacing
+  // gaps (the "large dataset shows nothing" case) — previously markers were
+  // force-disabled by total count at every zoom level.
+  const hideMarkers = visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD
+  // Hover (nearest-point search) is the genuinely total-sensitive cost, so keep
+  // it gated on the total point count.
   const forceLargeMode = totalPoints > LARGE_SERIES_TOTAL_THRESHOLD
-  const shouldEnable =
-    visiblePoints > LARGE_SERIES_VISIBLE_THRESHOLD || forceLargeMode
 
   const traceCount = plotlyRef.value.data?.length ?? 0
   if (!traceCount) return
   const needsEnforcement =
-    shouldEnable &&
+    hideMarkers &&
     plotlyRef.value.data?.some((trace: any) => {
       if (trace?.mode !== 'lines') return true
       const size = trace?.marker?.size
       return typeof size === 'number' ? size !== 0 : false
     })
-  const nextModes = shouldEnable
+  const nextModes = hideMarkers
     ? new Array(traceCount).fill('lines')
     : normalizeTraceArray(defaultTraceModes.value, traceCount, 'lines+markers')
-  const nextMarkerSizes = shouldEnable
+  const nextMarkerSizes = hideMarkers
     ? new Array(traceCount).fill(0)
     : normalizeTraceArray(defaultMarkerSizes.value, traceCount, 6)
-  const nextHoverInfo: 'y' | 'skip' = shouldEnable ? 'skip' : 'y'
+  const nextHoverInfo: 'y' | 'skip' = hideMarkers ? 'skip' : 'y'
   const nextHoverMode = forceLargeMode ? false : defaultHoverMode.value
   const traceCountChanged = traceCount !== lastStyledTraceCount.value
 
   if (
     traceCountChanged ||
     needsEnforcement ||
-    shouldEnable !== isLargeSeriesMode.value ||
+    hideMarkers !== isLargeSeriesMode.value ||
     nextHoverInfo !== currentHoverInfo.value
   ) {
     const nextTemplate = nextHoverInfo === 'skip' ? '' : DEFAULT_HOVER_TEMPLATE
@@ -333,10 +348,12 @@ const applyLargeSeriesMode = async (visiblePoints: number) => {
       hoverinfo: nextHoverInfo,
       hovertemplate: nextTemplate,
     })
-    isLargeSeriesMode.value = shouldEnable
+    isLargeSeriesMode.value = hideMarkers
     currentHoverInfo.value = nextHoverInfo
     lastStyledTraceCount.value = traceCount
   }
+
+  isHoverDisabled.value = forceLargeMode
 
   if (
     plotlyRef.value &&
@@ -381,8 +398,10 @@ const captureAxisRangesFromPlotly = () => {
   if (Array.isArray(xRange) && xRange.length === 2) {
     const start = parseDateAxisValue(xRange[0])
     const end = parseDateAxisValue(xRange[1])
-    if (start !== null && end !== null) {
-      xAxisRange.value = { start, end }
+    if (start !== null && end !== null && start < end) {
+      xAxisRange.value = isImplicitXAxisRange(start, end)
+        ? null
+        : { start, end }
     }
   }
 
@@ -484,6 +503,34 @@ const RANGE_MATCH_TOLERANCE_MS = 5 * 60 * 1000
 const isWithinTolerance = (value: number, target: number, tolerance: number) =>
   Math.abs(value - target) <= tolerance
 
+const rangeMatchesCurrentDateRange = (rangeStart: number, rangeEnd: number) => {
+  const currentStart = beginDate.value?.getTime()
+  const currentEnd = endDate.value?.getTime()
+  return (
+    currentStart !== undefined &&
+    currentEnd !== undefined &&
+    isWithinTolerance(rangeStart, currentStart, RANGE_MATCH_TOLERANCE_MS) &&
+    isWithinTolerance(rangeEnd, currentEnd, RANGE_MATCH_TOLERANCE_MS)
+  )
+}
+
+const rangeMatchesFullDataView = (rangeStart: number, rangeEnd: number) => {
+  if (dataZoomStart.value !== 0 || dataZoomEnd.value !== 100) return false
+
+  const bounds =
+    plotlyOptions.value?.xRange || getXRangeBounds(graphSeriesArray.value)
+  if (!bounds) return false
+
+  return (
+    isWithinTolerance(rangeStart, bounds.min, RANGE_MATCH_TOLERANCE_MS) &&
+    isWithinTolerance(rangeEnd, bounds.max, RANGE_MATCH_TOLERANCE_MS)
+  )
+}
+
+const isImplicitXAxisRange = (rangeStart: number, rangeEnd: number) =>
+  rangeMatchesFullDataView(rangeStart, rangeEnd) ||
+  rangeMatchesCurrentDateRange(rangeStart, rangeEnd)
+
 const preserveLiveAxisRanges = () => {
   if (!plotlyRef.value || !plotlyOptions.value) return
   if (!xAxisRange.value && !Object.keys(yAxisRanges.value).length) return
@@ -521,7 +568,7 @@ const handleRelayout = async (eventData: any) => {
   const normalizeAxisKey = (key: string) => (key === 'yaxis1' ? 'yaxis' : key)
 
   eventKeys.forEach((key) => {
-    const autorangeMatch = key.match(/^(yaxis\\d*)\\.autorange$/)
+    const autorangeMatch = key.match(/^(yaxis\d*)\.autorange$/)
     if (autorangeMatch && eventData[key] === true) {
       if (!isResizeEvent) {
         delete nextYRanges[normalizeAxisKey(autorangeMatch[1])]
@@ -530,7 +577,7 @@ const handleRelayout = async (eventData: any) => {
       return
     }
 
-    const rangeArrayMatch = key.match(/^(yaxis\\d*)\\.range$/)
+    const rangeArrayMatch = key.match(/^(yaxis\d*)\.range$/)
     if (rangeArrayMatch && Array.isArray(eventData[key])) {
       const [start, end] = eventData[key]
       const parsedStart = parseNumericAxisValue(start)
@@ -545,7 +592,7 @@ const handleRelayout = async (eventData: any) => {
       return
     }
 
-    const rangeMatch = key.match(/^(yaxis\\d*)\\.range\\[(0|1)\\]$/)
+    const rangeMatch = key.match(/^(yaxis\d*)\.range\[(0|1)\]$/)
     if (!rangeMatch) return
     const axisKey = normalizeAxisKey(rangeMatch[1])
     const index = Number(rangeMatch[2])
@@ -599,6 +646,7 @@ const handleRelayout = async (eventData: any) => {
       ? Date.parse(eventRangeEnd)
       : eventRangeEnd
   if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd)) return
+  if (rangeStart >= rangeEnd) return
 
   const bounds =
     plotlyOptions.value?.xRange || getXRangeBounds(graphSeriesArray.value)
@@ -613,28 +661,26 @@ const handleRelayout = async (eventData: any) => {
   dataZoomEnd.value = Math.round(
     clampPercent(((rangeEnd - bounds.min) / span) * 100)
   )
-  xAxisRange.value = { start: rangeStart, end: rangeEnd }
+  xAxisRange.value = isImplicitXAxisRange(rangeStart, rangeEnd)
+    ? null
+    : { start: rangeStart, end: rangeEnd }
 
   const visiblePoints = getVisiblePointCount(rangeStart, rangeEnd)
   await applyLargeSeriesMode(visiblePoints)
-
-  const currentStart = beginDate.value?.getTime()
-  const currentEnd = endDate.value?.getTime()
-  const rangeMatchesCurrent =
-    currentStart !== undefined &&
-    currentEnd !== undefined &&
-    isWithinTolerance(rangeStart, currentStart, RANGE_MATCH_TOLERANCE_MS) &&
-    isWithinTolerance(rangeEnd, currentEnd, RANGE_MATCH_TOLERANCE_MS)
-
-  if (rangeMatchesCurrent) xAxisRange.value = null
 }
 
-const debouncedRelayout = debounce(handleRelayout, 450)
+// Debounced so it runs only AFTER a zoom/pan gesture settles. Reconciling
+// (which issues restyle/relayout) mid-gesture interrupts Plotly's interaction
+// and makes zoom jitter and snap back, so keep this window comfortably long.
+const debouncedRelayout = debounce(handleRelayout, 400)
 
 const attachHandlers = () => {
   if (!plotlyRef.value || handlersAttached.value) return
+  // NB: we deliberately do NOT hook `plotly_afterplot`. It fires on every frame
+  // during a drag/zoom, and reconciling there mutates the plot mid-gesture,
+  // which fought the zoom (jitter + snap-back). Marker/hover reconciliation runs
+  // on render (below) and after the debounced relayout instead.
   plotlyRef.value.on('plotly_relayout', debouncedRelayout)
-  plotlyRef.value.on('plotly_afterplot', applyLargeSeriesModeForCurrentRange)
   handlersAttached.value = true
 }
 

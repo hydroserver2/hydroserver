@@ -125,6 +125,41 @@ class TestStandardizeDataframeTimestamp:
 
         assert len(result) == 2
 
+    def test_output_is_sorted_by_timestamp_per_target(self):
+        # Loaders chunk rows by position and can upload/replace by the chunk's
+        # timestamp range, so out-of-order source rows must be sorted here.
+        transformer = _make_transformer()
+        df = pd.DataFrame({
+            "timestamp": ["2024-01-03T00:00:00Z", "2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z"],
+            "value": [3.0, 1.0, 2.0],
+            "target_id": "target_1",
+        })
+        mapping = _make_mapping("value", "target_1")
+
+        result = transformer.standardize_dataframe(df, [mapping])
+
+        assert result["timestamp"].is_monotonic_increasing
+        assert result["value"].tolist() == [1.0, 2.0, 3.0]
+
+    def test_sorting_is_per_target_not_global(self):
+        transformer = _make_transformer()
+        df = pd.DataFrame({
+            "timestamp": [
+                "2024-01-02T00:00:00Z", "2024-01-01T00:00:00Z",
+                "2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z",
+            ],
+            "value": [1.2, 1.1, 2.1, 2.2],
+            "target_id": ["target_1", "target_1", "target_2", "target_2"],
+        })
+        mappings = [_make_mapping("value", "target_1"), _make_mapping("value", "target_2")]
+
+        result = transformer.standardize_dataframe(df, mappings)
+
+        target_1 = result[result["target_id"] == "target_1"]
+        target_2 = result[result["target_id"] == "target_2"]
+        assert target_1["value"].tolist() == [1.1, 1.2]
+        assert target_2["value"].tolist() == [2.1, 2.2]
+
 
 # ---------------------------------------------------------------------------
 # standardize_dataframe – output structure

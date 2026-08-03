@@ -75,7 +75,7 @@
             @deleted="deleteTask"
           />
         </v-dialog>
-        <v-dialog width="34rem">
+        <v-dialog v-model="deleteTaskDialogOpen" width="34rem">
           <template #activator="{ props }">
             <button
               v-bind="props"
@@ -87,7 +87,11 @@
               <span>Delete</span>
             </button>
           </template>
-          <DeleteTaskCard :task="task" @delete="deleteTask" />
+          <DeleteTaskCard
+            :task="task"
+            @close="deleteTaskDialogOpen = false"
+            @delete="deleteTask"
+          />
         </v-dialog>
         <button
           type="button"
@@ -101,25 +105,32 @@
       </div>
     </header>
 
-    <v-tabs v-if="taskLabel === 'rating curve'" v-model="tab" density="compact">
+    <v-tabs v-model="tab" density="compact">
       <v-tab value="runs">Run history</v-tab>
       <v-tab value="mappings">Mappings</v-tab>
     </v-tabs>
     <section class="body">
-      <TaskRunHistory
-        v-if="tab === 'runs'"
-        :rows="runRows"
-        :show-loading="loadingRuns"
-        :has-loaded-full-run-history="true"
-        :loading-full-run-history="loadingRuns"
-        highlighted-run-id=""
-        @fetch-full="fetchRuns"
-        @copy="copy"
-        @copy-run-link="() => null"
-      />
+      <div v-if="tab === 'runs'" class="run-history-list">
+        <TaskRunHistory
+          :rows="runRows"
+          :show-loading="loadingRuns"
+          :has-loaded-full-run-history="true"
+          :loading-full-run-history="loadingRuns"
+          highlighted-run-id=""
+          @fetch-full="fetchRuns"
+          @copy="copy"
+        />
+      </div>
       <RatingCurveSwimlanes
-        v-else
+        v-else-if="taskLabel === 'rating curve'"
         :transformations="task.ratingCurveTransformations ?? []"
+        :thing-id="task.thing?.id"
+      />
+      <ProductTaskSwimlanes
+        v-else
+        :task="task"
+        :task-label="taskLabel"
+        :thing-id="task.thing?.id"
       />
     </section>
   </div>
@@ -134,6 +145,7 @@ import AggregationForm from '@/components/Orchestration/data-products/Aggregatio
 import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
 import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
+import ProductTaskSwimlanes from '@/components/Orchestration/data-products/ProductTaskSwimlanes.vue'
 import RatingCurveSwimlanes from '@/components/Orchestration/data-products/RatingCurveSwimlanes.vue'
 import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue'
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
@@ -153,6 +165,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
 const editDialogOpen = ref(false)
+const deleteTaskDialogOpen = ref(false)
 
 const taskTypePillStyle = computed(() => {
   const label = toDataProductTaskType(props.taskLabel)
@@ -217,7 +230,8 @@ function onFormUpdated() {
 }
 .bar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
   gap: 10px;
   padding: 14px 22px 12px;
   border-bottom: 1px solid #e8e8e8;
@@ -232,7 +246,8 @@ function onFormUpdated() {
 }
 .title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
 }
@@ -255,11 +270,17 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: flex-start;
+  align-self: start;
+  justify-content: flex-end;
+  justify-self: end;
 }
 .header-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
@@ -274,6 +295,7 @@ h2 {
   line-height: 1.1;
   transition: background-color 0.12s, border-color 0.12s, color 0.12s;
   white-space: nowrap;
+  width: auto;
 }
 .header-btn :deep(.v-icon) {
   flex: 0 0 auto;
@@ -311,9 +333,24 @@ h2 {
   padding: 16px 22px;
   background: #f5f7fa;
 }
+.run-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .loading {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
+}
+
+@media (max-width: 760px) {
+  .bar {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    justify-self: start;
+    justify-content: flex-start;
+  }
 }
 </style>

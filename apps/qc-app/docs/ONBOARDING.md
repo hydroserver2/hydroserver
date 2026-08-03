@@ -8,7 +8,7 @@ where the documentation gaps are so they don't waste a day finding out.
 
 | Tool      | Version                                   | Notes                                                        |
 | --------- | ----------------------------------------- | ------------------------------------------------------------ |
-| Node.js   | 20 LTS or 23.x                            | CI runs 20; the demo deploy workflow runs 23. Either works.  |
+| Node.js   | 20 LTS or 23.x                            | CI runs 20. Either works.                                   |
 | npm       | 10+                                       | Ships with Node.                                             |
 | Git       | any recent                                |                                                              |
 | A browser | Chrome 111+ / Firefox 119+ / Safari 16.4+ | Required for `SharedArrayBuffer` and typed-array `resize()`. |
@@ -20,12 +20,13 @@ Management app and QC app against a deployed HydroServer
 ## First-day setup
 
 ```bash
-git clone https://github.com/hydroserver2/hydroserver-qc-app.git
-cd hydroserver-qc-app
+git clone https://github.com/hydroserver2/hydroserver.git
+cd hydroserver
 npm install
 ```
 
 ```bash
+cd apps/qc-app
 npm run dev          # internal QC dev server at http://127.0.0.1:5173
 ```
 
@@ -58,44 +59,46 @@ Read these files in order:
    stores that hold "what the user sees on the plot."
 6. `src/composables/useFilterDispatch.ts` and `useQcSubmission.ts` —
    the two end-to-end flows worth tracing.
-7. `qc-utils/src/utils/plotting/observation-record.ts` — the QC engine's
+7. `packages/qc-utils/src/utils/plotting/observation-record.ts` — the QC engine's
    dispatch surface. You don't need to read the kernels; the dispatcher
    is the contract.
 
 ## Day-to-day workflow
 
+From `apps/qc-app`:
+
 ```bash
-npm run dev               # QC vite dev server, http://127.0.0.1:5173
+npm run dev          # QC vite dev server, http://127.0.0.1:5173
 npm test                  # vitest, watch mode
 npm run coverage          # vitest one-shot + v8 coverage (80% threshold)
 npm run e2e               # playwright, headless (CI mode); add -- --ui or -- --headed
-npm run build             # vue-tsc + vite build → dist/
+```
+
+For a production-style QC app build, build `qc-utils` first:
+
+```bash
+cd packages/qc-utils
+npm run build
+
+cd ../../apps/qc-app
+npm run build
 ```
 
 Run `npm run coverage` before you push — that's what CI gates on.
 
-### Working with linked qc-utils
+### Working with qc-utils changes
 
-When you need to change qc-utils alongside the app:
+The QC app dev server aliases `@uwrl/qc-utils` directly to
+`packages/qc-utils/src`, so you do not need to build `qc-utils` while
+developing locally:
 
 ```bash
-# Terminal 1 — qc-utils sibling repo
-cd ../qc-utils
-npm install
-npm link              # registers @uwrl/qc-utils in the local npm registry
-npm run dev           # vite build --watch
-
-# Terminal 2 — qc-app
-cd ../hydroserver-qc-app
-npm run link-qc-utils # npm link @uwrl/qc-utils
 npm run dev
 ```
 
-Refresh the browser to pick up `qc-utils` changes — HMR doesn't propagate
-through linked packages. If type errors look stale after editing qc-utils
-types, run `npm run build` once in `qc-utils` to refresh `.d.ts`.
-
-To unlink: `npm unlink @uwrl/qc-utils && npm install`.
+Edits under `packages/qc-utils/src` are served from source in dev mode.
+Build `qc-utils` only before running the QC app production build or when
+you need to verify the published package artifacts.
 
 ## Coding conventions
 

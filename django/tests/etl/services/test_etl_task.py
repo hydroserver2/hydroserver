@@ -1,9 +1,15 @@
 import uuid
 import pytest
 from collections import Counter
+from datetime import datetime, timedelta, timezone
+from io import BytesIO
+from unittest.mock import patch
 from ninja.errors import HttpError
 from processing.etl.services.task import EtlTaskService
-from processing.etl.models import EtlTask
+from processing.etl.models import EtlTask, Payload, PlaceholderVariable
+from processing.etl.loader import HydroServerInternalLoader
+from hydroserverpy.etl.loaders import ETLLoaderResult
+from hydroserverpy.etl.extractors import HTTPExtractor
 
 etl_task_service = EtlTaskService()
 
@@ -12,10 +18,18 @@ DC1 = "019adb5c-da8b-7970-877d-c3b4ca37cc60"    # private workspace
 DC2 = "019bbd9d-ee62-7669-8db0-3ef50802f1d8"    # public workspace
 PRIVATE_WORKSPACE = "b27c51a0-7374-462d-8a53-d97d47176c10"
 PUBLIC_WORKSPACE = "6e0deaf2-a92b-421b-9ece-86783265596f"
+PRIVATE_WS_THING = "819260c8-2543-4046-b8c4-7431243ed7c5"  # thing that DS_PRIVATE_WS belongs to (mapped by TASK1)
+PUBLIC_WS_THING = "3b7818af-eff7-4149-8517-e5cad9dc22e1"   # thing in public workspace (no ETL mapping)
 DS_PRIVATE_WS = "dd1f9293-ce29-4b6a-88e6-d65110d1be65"   # public datastream, public thing, private workspace (mapped by TASK1)
 DS_PRIVATE_WS_2 = "1c9a797e-6fd8-4e99-b1ae-87ab4affc0a2"  # private datastream, public thing, private workspace
 DS_PUBLIC_WS = "27c70b41-e845-40ea-8cc7-d1b40f89816b"   # public datastream, public thing, public workspace
 NONEXISTENT = "00000000-0000-0000-0000-000000000000"
+
+# phenomenon_end_time fixture value for DS_PRIVATE_WS, normalized to UTC
+# (fixture stores "2025-02-10 02:00:00.000 -0700")
+DS_PRIVATE_WS_PHENOMENON_END_TIME = datetime(2025, 2, 10, 9, 0, 0, tzinfo=timezone.utc)
+
+DC1_CSV_PAYLOAD = b"timestamp,test_value\n2025-02-11T00:00:00Z,1.23\n"
 
 
 @pytest.mark.parametrize(
@@ -39,6 +53,9 @@ NONEXISTENT = "00000000-0000-0000-0000-000000000000"
         # Data connection filter
         ("owner", {"data_connection": [uuid.UUID(DC1)]}, ["Test ETL Task"], 10),
         ("owner", {"data_connection": [uuid.UUID(DC2)]}, [], 10),
+        # Thing filter (via ETL mapping → target datastream → thing)
+        ("owner", {"thing": [uuid.UUID(PRIVATE_WS_THING)]}, ["Test ETL Task"], 10),
+        ("owner", {"thing": [uuid.UUID(PUBLIC_WS_THING)]}, [], 10),
     ],
 )
 def test_list_etl_tasks(
@@ -335,3 +352,121 @@ def test_apply_mappings_rejects_already_mapped_datastream(get_principal):
             principal=get_principal("owner"),
         )
     assert "already mapped to by another task" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# run – data ingestion window / lookback timestamp computation
+# ---------------------------------------------------------------------------
+
+def _run_task_and_capture_window(get_principal, **payload_overrides):
+    """Run TASK1 with the extractor and loader stubbed out, returning every
+    kwarg the (stubbed) HydroServerInternalLoader.load received.
+
+    This isolates EtlTaskService.run's window/anchor/lookback computation
+    from the real HTTP fetch and the real observation upload.
+    """
+
+    payload = Payload.objects.get(data_connection_id=uuid.UUID(DC1))
+    for field, value in payload_overrides.items():
+        setattr(payload, field, value)
+    payload.save()
+
+    captured = {}
+
+    def _fake_load(self, payload, **kwargs):
+        captured.update(kwargs)
+        return ETLLoaderResult(success_count=1, values_loaded_total=1, target_results={})
+
+    with patch.object(HTTPExtractor, "extract", return_value=BytesIO(DC1_CSV_PAYLOAD)), \
+            patch.object(HydroServerInternalLoader, "load", _fake_load):
+        etl_task_service.run(task=uuid.UUID(TASK1), principal=get_principal("owner"))
+
+    return captured
+
+
+class TestEtlTaskRunDataIngestionWindow:
+
+    def test_window_is_none_when_anchors_not_configured(self, get_principal):
+        captured = _run_task_and_capture_window(get_principal)
+
+        assert captured["data_ingestion_window_start"] is None
+        assert captured["data_ingestion_window_end"] is None
+
+    def test_run_time_anchor_computes_window_relative_to_now(self, get_principal):
+        before = datetime.now(timezone.utc)
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_start_anchor="run_time",
+            data_ingestion_window_start_lookback=2,
+            data_ingestion_window_start_lookback_unit="hours",
+        )
+        after = datetime.now(timezone.utc)
+
+        window_start = captured["data_ingestion_window_start"]
+        assert (before - timedelta(hours=2)) <= window_start <= (after - timedelta(hours=2))
+
+    def test_latest_observation_timestamp_anchor_uses_datastream_cutoff(self, get_principal):
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_start_anchor="latest_observation_timestamp",
+        )
+
+        assert captured["data_ingestion_window_start"] == DS_PRIVATE_WS_PHENOMENON_END_TIME
+
+    def test_latest_observation_timestamp_anchor_applies_lookback(self, get_principal):
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_start_anchor="latest_observation_timestamp",
+            data_ingestion_window_start_lookback=1,
+            data_ingestion_window_start_lookback_unit="days",
+        )
+
+        assert captured["data_ingestion_window_start"] == (
+            DS_PRIVATE_WS_PHENOMENON_END_TIME - timedelta(days=1)
+        )
+
+    def test_fixed_timestamp_anchor_applies_lookback(self, get_principal):
+        fixed = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_end_anchor="fixed_timestamp",
+            data_ingestion_window_end_timestamp=fixed,
+            data_ingestion_window_end_lookback=3,
+            data_ingestion_window_end_lookback_unit="hours",
+        )
+
+        assert captured["data_ingestion_window_end"] == fixed - timedelta(hours=3)
+
+    def test_fixed_timestamp_anchor_with_no_timestamp_raises(self, get_principal):
+        with pytest.raises(ValueError, match="timestamp is required"):
+            _run_task_and_capture_window(
+                get_principal,
+                data_ingestion_window_end_anchor="fixed_timestamp",
+                data_ingestion_window_end_timestamp=None,
+            )
+
+    def test_lookback_is_ignored_when_unit_is_missing(self, get_principal):
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_start_anchor="latest_observation_timestamp",
+            data_ingestion_window_start_lookback=5,
+            data_ingestion_window_start_lookback_unit=None,
+        )
+
+        assert captured["data_ingestion_window_start"] == DS_PRIVATE_WS_PHENOMENON_END_TIME
+
+    def test_window_start_placeholder_variable_receives_computed_value(self, get_principal):
+        fixed = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        PlaceholderVariable.objects.create(
+            data_connection_id=uuid.UUID(DC1),
+            name="win_start",
+            variable_type="window_start",
+        )
+
+        captured = _run_task_and_capture_window(
+            get_principal,
+            data_ingestion_window_start_anchor="fixed_timestamp",
+            data_ingestion_window_start_timestamp=fixed,
+        )
+
+        assert captured["win_start"] == fixed.isoformat()

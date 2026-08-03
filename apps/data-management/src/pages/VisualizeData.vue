@@ -106,6 +106,16 @@ const handleDrawerChange = () => {
   }, 250)
 }
 
+const isValidAxisRange = (
+  range: { start: number; end: number } | null
+): range is { start: number; end: number } =>
+  Boolean(
+    range &&
+      Number.isFinite(range.start) &&
+      Number.isFinite(range.end) &&
+      range.start < range.end
+  )
+
 const generateStateUrl = () => {
   const BASE_URL = new URL('/visualize-data', window.location.origin).toString()
 
@@ -142,7 +152,7 @@ const generateStateUrl = () => {
   if (dataZoomEnd.value !== 0 && dataZoomEnd.value !== 100)
     queryParams.append('dataZoomEnd', dataZoomEnd.value.toString())
 
-  if (xAxisRange.value) {
+  if (isValidAxisRange(xAxisRange.value)) {
     queryParams.append('xStart', xAxisRange.value.start.toString())
     queryParams.append('xEnd', xAxisRange.value.end.toString())
   }
@@ -291,7 +301,11 @@ const parseUrlAndSetState = () => {
   const xEndRaw = Array.isArray(xEndParam) ? xEndParam[0] : xEndParam
   const xStart = xStartRaw ? Number(xStartRaw) : null
   const xEnd = xEndRaw ? Number(xEndRaw) : null
-  if (Number.isFinite(xStart) && Number.isFinite(xEnd)) {
+  if (
+    Number.isFinite(xStart) &&
+    Number.isFinite(xEnd) &&
+    (xStart as number) < (xEnd as number)
+  ) {
     xAxisRange.value = { start: xStart as number, end: xEnd as number }
   } else {
     xAxisRange.value = null

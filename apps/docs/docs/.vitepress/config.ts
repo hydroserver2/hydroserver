@@ -4,13 +4,13 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "HydroServer",
   description: "The official docs for HydroServer",
-  base: "/hydroserver/",
+  base: "/",
   head: [
     [
       "link",
       {
         rel: "icon",
-        href: "/hydroserver/favicon.ico",
+        href: "/favicon.ico",
       },
     ],
   ],
@@ -265,7 +265,7 @@ export default defineConfig({
                 link: "/hosting-and-deployment/how-to/setting-up-a-production-deployment",
               },
               {
-                text: "Using the Administrator Dashboard",
+                text: "Using the Django Admin Dashboard",
                 link: "/hosting-and-deployment/how-to/using-the-administrator-dashboard",
               },
             ],

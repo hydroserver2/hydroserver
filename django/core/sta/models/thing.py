@@ -233,8 +233,17 @@ class SamplingFeatureType(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
 
+class SiteTypeManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class SiteType(models.Model):
     name = models.CharField(max_length=200, unique=True)
+    objects = SiteTypeManager()
+
+    def natural_key(self):
+        return (self.name,)
 
 
 class FileAttachmentType(models.Model):

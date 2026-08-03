@@ -15,7 +15,7 @@ from interfaces.api.schemas import (
 from interfaces.api.schemas.products.rating_curve import RatingCurveSummaryResponse
 
 
-AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last"]
+AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 Period = Literal["minutes", "hours", "days", "weeks", "months"]
 TimezoneType = Literal["offset", "iana"]
 

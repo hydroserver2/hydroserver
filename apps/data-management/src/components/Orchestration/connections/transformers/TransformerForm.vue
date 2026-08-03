@@ -19,6 +19,7 @@
 
       <JSONTransformerForm v-if="payloadType === 'JSON'" />
       <CSVTransformerForm v-else-if="payloadType === 'CSV'" />
+      <PayloadWindowForm />
     </v-card>
   </v-form>
 </template>
@@ -29,6 +30,7 @@ import { useDataConnectionStore } from '@/store/dataConnection'
 import { storeToRefs } from 'pinia'
 import JSONTransformerForm from './JSONTransformerForm.vue'
 import CSVTransformerForm from './CSVTransformerForm.vue'
+import PayloadWindowForm from './PayloadWindowForm.vue'
 import { VForm } from 'vuetify/lib/components/index.mjs'
 
 const localForm = ref<VForm>()
@@ -46,10 +48,19 @@ const { dataConnection } = storeToRefs(useDataConnectionStore())
 const payloadType = computed({
   get: () => dataConnection.value.payload.type,
   set: (newType: 'CSV' | 'JSON') => {
+    const currentWindow = dataConnection.value.payload.dataIngestionWindow
     if (newType === 'CSV') {
-      dataConnection.value.payload = { type: 'CSV', timestampKey: '' }
+      dataConnection.value.payload = {
+        type: 'CSV',
+        timestampKey: '',
+        dataIngestionWindow: currentWindow,
+      }
     } else {
-      dataConnection.value.payload = { type: 'JSON', timestampKey: '' }
+      dataConnection.value.payload = {
+        type: 'JSON',
+        timestampKey: '',
+        dataIngestionWindow: currentWindow,
+      }
     }
   },
 })

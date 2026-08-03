@@ -24,6 +24,7 @@ SECRET_KEY = config(
 
 # SECURITY WARNING: don"t run with debug turned on in production!
 DEBUG = config("DEBUG", default=DEPLOYMENT_BACKEND == "dev", cast=bool)
+NOINDEX = config("NOINDEX", default=False, cast=bool)
 
 
 # Default Superuser Settings
@@ -91,6 +92,7 @@ CELERY_BROKER_HEARTBEAT = 10
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     "socket_keepalive": True,
     "retry_on_timeout": True,
+    "socket_timeout": 30,
 }
 
 DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
@@ -168,6 +170,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
+    "core.web.middleware.NoIndexMiddleware",
 ]
 
 ROOT_URLCONF = "hydroserver.urls"

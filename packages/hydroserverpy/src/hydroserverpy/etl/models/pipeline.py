@@ -171,6 +171,8 @@ class ETLPipeline(BaseModel):
     def run(
         self,
         data_mappings: list[ETLDataMapping],
+        data_ingestion_window_start: Optional[datetime] = None,
+        data_ingestion_window_end: Optional[datetime] = None,
         raise_on_error: bool = True,
         **kwargs
     ) -> ETLContext:
@@ -262,6 +264,8 @@ class ETLPipeline(BaseModel):
                 logger.info("Starting load")
                 context.results = self.loader.load(
                     payload=transformed_payload,
+                    data_ingestion_window_start=data_ingestion_window_start,
+                    data_ingestion_window_end=data_ingestion_window_end,
                     **kwargs
                 )
             except Exception as e:

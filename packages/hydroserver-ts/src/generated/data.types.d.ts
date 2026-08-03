@@ -1632,6 +1632,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/things/site-type-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Type Icons
+         * @description Get the configured site type icon mappings.
+         */
+        get: operations["interfaces_api_views_sta_thing_get_site_type_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/data/things/site-types": {
         parameters: {
             query?: never;
@@ -2238,7 +2258,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod?: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Inputdatastreamid
              * Format: uuid
@@ -2269,7 +2289,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid
@@ -2305,7 +2325,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid
@@ -2333,7 +2353,7 @@ export interface components {
              * Aggregationmethod
              * @enum {string}
              */
-            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last";
+            aggregationMethod: "mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean";
             /**
              * Id
              * Format: uuid
@@ -2365,6 +2385,7 @@ export interface components {
         };
         /** CSVPayloadPostBody */
         CSVPayloadPostBody: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -2384,6 +2405,7 @@ export interface components {
         };
         /** CSVPayloadResponse */
         CSVPayloadResponse: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowResponse"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -2681,6 +2703,38 @@ export interface components {
             /** Timezonetype */
             timezoneType?: ("offset" | "iana") | null;
             workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /** DataIngestionWindowBoundaryPostBody */
+        DataIngestionWindowBoundaryPostBody: {
+            /** Anchor */
+            anchor?: ("latest_observation_timestamp" | "run_time" | "fixed_timestamp") | null;
+            /** Lookback */
+            lookback?: number | null;
+            /** Lookbackunits */
+            lookbackUnits?: ("minutes" | "hours" | "days") | null;
+            /** Timestamp */
+            timestamp?: string | null;
+        };
+        /** DataIngestionWindowBoundaryResponse */
+        DataIngestionWindowBoundaryResponse: {
+            /** Anchor */
+            anchor?: ("latest_observation_timestamp" | "run_time" | "fixed_timestamp") | null;
+            /** Lookback */
+            lookback?: number | null;
+            /** Lookbackunits */
+            lookbackUnits?: ("minutes" | "hours" | "days") | null;
+            /** Timestamp */
+            timestamp?: string | null;
+        };
+        /** DataIngestionWindowPostBody */
+        DataIngestionWindowPostBody: {
+            end?: components["schemas"]["DataIngestionWindowBoundaryPostBody"] | null;
+            start?: components["schemas"]["DataIngestionWindowBoundaryPostBody"] | null;
+        };
+        /** DataIngestionWindowResponse */
+        DataIngestionWindowResponse: {
+            end?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
+            start?: components["schemas"]["DataIngestionWindowBoundaryResponse"] | null;
         };
         /** DataProductTaskDetailResponse */
         DataProductTaskDetailResponse: {
@@ -3493,6 +3547,12 @@ export interface components {
              */
             page_size: number | null;
             /**
+             * Thing Id
+             * @description Filter ETL tasks by thing ID.
+             * @default []
+             */
+            thing_id: string[];
+            /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
              * @default []
@@ -3641,6 +3701,7 @@ export interface components {
         };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Jmespath */
             jmespath?: string | null;
             /** Timestampformat */
@@ -3656,6 +3717,7 @@ export interface components {
         };
         /** JSONPayloadResponse */
         JSONPayloadResponse: {
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowResponse"] | null;
             /** Jmespath */
             jmespath?: string | null;
             /** Timestampformat */
@@ -4016,6 +4078,18 @@ export interface components {
             recipientEmails: string[];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
         };
+        /** ObservationBulkColumnarPostBody */
+        ObservationBulkColumnarPostBody: {
+            /** Phenomenontime */
+            phenomenonTime: (string)[];
+            /** Result */
+            result: (number | null)[];
+            /**
+             * Resultqualifiercodes
+             * @default []
+             */
+            resultQualifierCodes: string[][];
+        };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
             /** Phenomenontimeend */
@@ -4276,6 +4350,8 @@ export interface components {
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {
+            /** Dataingestionwindow */
+            dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
             /** Datastartrow */
             dataStartRow?: number | null;
             /** Delimiter */
@@ -4314,7 +4390,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type?: "run_time" | "latest_observation_timestamp" | "per_task";
+            type?: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariablePostBody */
         PlaceholderVariablePostBody: {
@@ -4326,7 +4402,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "run_time" | "latest_observation_timestamp" | "per_task";
+            type: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariableResponse */
         PlaceholderVariableResponse: {
@@ -4338,7 +4414,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "run_time" | "latest_observation_timestamp" | "per_task";
+            type: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** ProcessingLevelDetailResponse */
         ProcessingLevelDetailResponse: {
@@ -5273,6 +5349,13 @@ export interface components {
             name: string;
             /** Workspaceid */
             workspaceId: string | null;
+        };
+        /** SiteTypeIconResponse */
+        SiteTypeIconResponse: {
+            /** Icon */
+            icon: string;
+            /** Sitetypes */
+            siteTypes: string[];
         };
         /** TagDeleteBody */
         TagDeleteBody: {
@@ -6910,7 +6993,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ObservationBulkPostBody"];
+                "application/json": components["schemas"]["ObservationBulkPostBody"] | components["schemas"]["ObservationBulkColumnarPostBody"];
             };
         };
         responses: {
@@ -7574,6 +7657,8 @@ export interface operations {
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter ETL tasks by thing ID. */
+                thing_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter ETL tasks by data connection ID. */
@@ -13001,6 +13086,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_thing_get_site_type_icons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
                 };
             };
         };
