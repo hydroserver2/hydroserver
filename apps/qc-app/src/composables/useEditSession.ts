@@ -30,6 +30,7 @@ import {
   persistSessionOperations,
   commitQcSession,
   reconstructSession,
+  reconstructCommittedSession,
   observationsBulkBody,
 } from '@/services/qualityControl'
 
@@ -70,6 +71,7 @@ function clampSpecToSource(
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { selectedSeries } = storeToRefs(usePlotlyStore())
+  const { redraw } = usePlotlyStore()
   const { hs } = storeToRefs(useHydroServer())
   const { fetchObservationsInRange } = useObservationStore()
   const sessionStore = useQcSessionStore()
@@ -83,19 +85,27 @@ export function useEditSession() {
   // Snapshot (by item reference) of the operation history at the last
   // load/save, so the editor knows whether there are unsaved edits.
   const savedEdits = ref<HistoryItem[]>([])
+  // Comments are edited in place on the existing history entry, so the
+  // reference comparison below can't see them; snapshot their text too.
+  const savedComments = ref<string[]>([])
   const currentEdits = (): HistoryItem[] =>
     (selectedSeries.value?.data as ObservationRecord | undefined)?.history ?? []
+  const commentOf = (item: HistoryItem) => item.comment?.trim() ?? ''
   const snapshotSavedEdits = () => {
-    savedEdits.value = [...currentEdits()]
+    const current = currentEdits()
+    savedEdits.value = [...current]
+    savedComments.value = current.map(commentOf)
   }
 
   /** True when the working copy has edits not in the last saved snapshot
-   *  (additions or removals). */
+   *  (additions, removals, or an edited comment). */
   const hasUnsavedChanges = computed(() => {
     const current = currentEdits()
     const saved = savedEdits.value
     if (current.length !== saved.length) return true
-    return current.some((item, i) => item !== saved[i])
+    return current.some(
+      (item, i) => item !== saved[i] || commentOf(item) !== savedComments.value[i]
+    )
   })
 
   /** Count of edits added since the last save (the common append case). */
@@ -143,11 +153,65 @@ export function useEditSession() {
         inProgress.id
       )
       if (selectedSeries.value) selectedSeries.value.data = reconstructed
+      // Nothing watches for a swapped-in record; resume has no caller that
+      // redraws, unlike the start-session path.
+      await redraw()
       // The replayed draft operations are the saved baseline.
       snapshotSavedEdits()
       needsSession.value = false
     } else {
       needsSession.value = true
+    }
+  }
+
+  /**
+   * Load a committed session for read-only viewing: the data as that
+   * session left it, and its own operations in the panel. Returns to the
+   * in-progress session when given the editable one.
+   */
+  async function viewSession(sessionId: string): Promise<void> {
+    const historyId = sessionStore.historyId
+    const source = sourceDatastream.value
+    if (!historyId || !source) {
+      throw new Error('Load a managed datastream for editing first.')
+    }
+    if (sessionId === sessionStore.currentSessionId) {
+      sessionStore.returnToCurrent()
+      sessionStore.isSwitchingSession = true
+      try {
+        await beginEditing()
+      } finally {
+        sessionStore.isSwitchingSession = false
+      }
+      return
+    }
+    // Move the selection first so the loading state appears under the
+    // session being opened. Reverted if the load fails.
+    const previousSessionId = sessionStore.viewedSessionId
+    sessionStore.viewSession(sessionId)
+    sessionStore.isSwitchingSession = true
+    try {
+      const { record } = await reconstructCommittedSession(
+        {
+          qcSessions: hs.value.qualityControlSessions,
+          qcOperations: hs.value.qualityControlOperations,
+          fetchInRange: fetchObservationsInRange,
+          applyHistory,
+        },
+        source,
+        historyId,
+        sessionId
+      )
+      if (selectedSeries.value) selectedSeries.value.data = record
+      // Nothing watches for a swapped-in record; rebuild the plot explicitly.
+      await redraw()
+      // Viewing is read-only, so there is nothing unsaved to track.
+      snapshotSavedEdits()
+    } catch (e) {
+      if (previousSessionId) sessionStore.viewSession(previousSessionId)
+      throw e
+    } finally {
+      sessionStore.isSwitchingSession = false
     }
   }
 
@@ -249,6 +313,7 @@ export function useEditSession() {
     unsavedEditCount,
     beginEditing,
     startSession,
+    viewSession,
     saveDraft,
     commit,
   }

@@ -23,9 +23,39 @@ describe('formatDateInput', () => {
 })
 
 describe('formatDateRange', () => {
-  it('joins both bounds with "to"', () => {
-    expect(
-      formatDateRange('2025-01-05T00:00:00', '2025-01-15T09:05:00')
-    ).toBe('01/05/2025 00:00 to 01/15/2025 09:05')
+  it('states the year once when both bounds share it', () => {
+    expect(formatDateRange('2025-01-05T00:00:00', '2025-02-01T00:00:00')).toBe(
+      'Jan 5 – Feb 1, 2025'
+    )
+  })
+
+  it('states both years when the window crosses one', () => {
+    expect(formatDateRange('2024-12-01T00:00:00', '2025-01-15T00:00:00')).toBe(
+      'Dec 1, 2024 – Jan 15, 2025'
+    )
+  })
+
+  it('collapses a single day to one date with a time span', () => {
+    expect(formatDateRange('2025-01-05T09:00:00', '2025-01-05T14:30:00')).toBe(
+      'Jan 5, 2025, 9:00 AM – 2:30 PM'
+    )
+  })
+
+  it('keeps clock times when the bounds are not whole days', () => {
+    expect(formatDateRange('2025-01-05T09:00:00', '2025-02-01T14:30:00')).toBe(
+      'Jan 5, 9:00 AM – Feb 1, 2025, 2:30 PM'
+    )
+  })
+
+  it('drops the clock when the window sits on midnight at both ends', () => {
+    expect(formatDateRange('2025-01-05T00:00:00', '2025-01-06T00:00:00')).toBe(
+      'Jan 5 – Jan 6, 2025'
+    )
+  })
+
+  it('returns a dash for nullish or unparseable bounds', () => {
+    expect(formatDateRange(null, '2025-01-05T00:00:00')).toBe('–')
+    expect(formatDateRange('2025-01-05T00:00:00', undefined)).toBe('–')
+    expect(formatDateRange('not-a-date', '2025-01-05T00:00:00')).toBe('–')
   })
 })

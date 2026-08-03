@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { useHydroServer } from '@/store/hydroserver'
 import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
@@ -100,5 +100,90 @@ describe('useQcSessionStore', () => {
     expect(store.currentSessionId).toBeNull()
     expect(store.viewedSessionId).toBe(b.id)
     expect(store.isReadOnly).toBe(true)
+  })
+
+  it('keeps the resume pointer out of reset, so a reload can still reopen', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    await qc.sessions.create(h.id, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
+
+    const store = useQcSessionStore()
+    await store.loadSessions(h.id)
+    store.resumeDatastreamId = 'm-1'
+
+    // `reset` clears the live session context (leaving a datastream), but the
+    // resume pointer is owned by the editor's enter/exit, not by reset.
+    store.reset()
+    expect(store.historyId).toBeNull()
+    expect(store.sessions).toEqual([])
+    expect(store.resumeDatastreamId).toBe('m-1')
+  })
+
+  // A backend that ignores `expand_related` on this route returns the
+  // summary shape, and the session-list previews then claim "No operations"
+  // for sessions that plainly have some.
+  it('backfills operations when the list response omits them', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const s = unwrap(
+      await qc.sessions.create(h.id, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
+    )
+    await qc.operations.create(h.id, s.id, [
+      { operationType: 'SELECTION' as any, order: 0 },
+      { operationType: 'DELETE_POINTS' as any, order: 1 },
+    ])
+
+    // Stand in for a backend that ignores the flag.
+    const listWithoutOperations = async (historyId: string, query?: any) => {
+      const res = await qc.sessions.list(historyId, { ...query, expand_related: false })
+      return res
+    }
+    useHydroServer().hs = {
+      ...useHydroServer().hs,
+      qualityControlSessions: { ...qc.sessions, list: listWithoutOperations },
+      qualityControlOperations: qc.operations,
+    } as any
+
+    const store = useQcSessionStore()
+    await store.loadSessions(h.id)
+
+    const loaded = store.sessions.find((x) => x.id === s.id) as any
+    expect(loaded.operations.map((o: any) => o.operationType)).toEqual([
+      'SELECTION',
+      'DELETE_POINTS',
+    ])
+  })
+
+  it('does not re-fetch operations the list already embedded', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const s = unwrap(
+      await qc.sessions.create(h.id, win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'))
+    )
+    await qc.operations.create(h.id, s.id, [
+      { operationType: 'SELECTION' as any, order: 0 },
+    ])
+
+    const opsList = vi.fn(qc.operations.list)
+    useHydroServer().hs = {
+      ...useHydroServer().hs,
+      qualityControlSessions: qc.sessions,
+      qualityControlOperations: { ...qc.operations, list: opsList },
+    } as any
+
+    await useQcSessionStore().loadSessions(h.id)
+    expect(opsList).not.toHaveBeenCalled()
   })
 })

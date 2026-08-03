@@ -10,8 +10,9 @@ vi.mock('@/store/dataVisualization', () => ({
 }))
 
 const selectedSeries = ref<any>(null)
+const redraw = vi.fn()
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({ selectedSeries }),
+  usePlotlyStore: () => ({ selectedSeries, redraw }),
 }))
 
 const getItem = vi.fn()
@@ -48,10 +49,15 @@ const WIN = {
   phenomenonTimeEnd: '2025-02-01T00:00:00Z',
 }
 
+// Mirrors a real ObservationRecord closely enough for the session layer:
+// `redoStack` and `reload` exist on every record and are used when a cached
+// one is reset back to its stored state.
 const makeRecord = (history: any[] = []) => ({
   history,
+  redoStack: [] as any[],
   dataX: [Date.UTC(2025, 0, 1)],
   dataY: [10],
+  reload: vi.fn(async () => {}),
 })
 
 let qc: ReturnType<typeof makeQcFake>
@@ -123,6 +129,9 @@ describe('useEditSession', () => {
     // The QC-target series now shows the reconstructed session, not the
     // empty managed datastream.
     expect(selectedSeries.value.data).toEqual(reconstructed)
+    // Nothing watches for a swapped-in record, so resume has to rebuild the
+    // plot itself or it keeps rendering the pre-reconstruction trace.
+    expect(redraw).toHaveBeenCalled()
   })
 
   it('startSession loads the managed datastream as the working base', async () => {
@@ -163,17 +172,16 @@ describe('useEditSession', () => {
 
   it('saveDraft persists the record operations to the session', async () => {
     await seedHistory()
-    // The working copy comes from startSession's base load; give it the ops.
-    fetchObservationsInRange.mockResolvedValue(
-      makeRecord([
-        { method: 'VALUE_THRESHOLD', args: [] },
-        { method: 'DELETE_POINTS', args: [] },
-      ])
-    )
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     await session.beginEditing()
     await session.startSession(WIN)
+    // A new session starts from a clean base, so the operations are the ones
+    // the user applies afterwards.
+    selectedSeries.value.data.history.push(
+      { method: 'VALUE_THRESHOLD', args: [] },
+      { method: 'DELETE_POINTS', args: [] }
+    )
     await session.saveDraft()
 
     const store = useQcSessionStore()
@@ -255,5 +263,100 @@ describe('useEditSession', () => {
 
     const store = useQcSessionStore()
     expect(store.committedSessions[0]?.description).toBe('Reviewed January spike')
+  })
+})
+
+describe('useEditSession.viewSession', () => {
+  it('loads a committed session and marks the editor read-only', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.operations.create(h.id, committed.id, [
+      { operationType: 'SELECTION' as any, order: 0 },
+    ])
+    await qc.sessions.commit(h.id, committed.id)
+    await qc.sessions.create(h.id, WIN)
+
+    const viewed = makeRecord([])
+    fetchObservationsInRange.mockResolvedValue(viewed)
+
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const store = useQcSessionStore()
+    const session = useEditSession()
+    await session.beginEditing()
+
+    await session.viewSession(committed.id)
+
+    expect(selectedSeries.value.data).toEqual(viewed)
+    expect(store.viewedSessionId).toBe(committed.id)
+    expect(store.isReadOnly).toBe(true)
+    expect(redraw).toHaveBeenCalled()
+  })
+
+  it('moves the selection before loading, so the spinner sits on the new session', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, committed.id)
+    await qc.sessions.create(h.id, WIN)
+
+    const store = useQcSessionStore()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+
+    const seen: Array<{ viewed: string | null; switching: boolean }> = []
+    fetchObservationsInRange.mockImplementation(async () => {
+      seen.push({
+        viewed: store.viewedSessionId,
+        switching: store.isSwitchingSession,
+      })
+      return makeRecord([])
+    })
+
+    await session.viewSession(committed.id)
+
+    // While loading, the list already points at the incoming session.
+    expect(seen[0]).toEqual({ viewed: committed.id, switching: true })
+    expect(store.isSwitchingSession).toBe(false)
+  })
+
+  it('restores the previous selection when loading a session fails', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    await qc.sessions.commit(h.id, committed.id)
+    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+
+    const store = useQcSessionStore()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    expect(store.viewedSessionId).toBe(inProgress.id)
+
+    fetchObservationsInRange.mockRejectedValueOnce(new Error('network'))
+    await expect(session.viewSession(committed.id)).rejects.toThrow('network')
+
+    expect(store.viewedSessionId).toBe(inProgress.id)
+    expect(store.isSwitchingSession).toBe(false)
+  })
+
+  it('rejects before a managed datastream is loaded', async () => {
+    const { useEditSession } = await import('@/composables/useEditSession')
+    await expect(useEditSession().viewSession('s-1')).rejects.toThrow(
+      /Load a managed datastream/
+    )
   })
 })

@@ -112,6 +112,7 @@
         :loading="chooserLoading"
         @edit="editManaged"
         @delete="onChooserDelete"
+        @delete-session="onChooserDeleteSession"
         @create="onChooserCreate"
         @cancel="showChooser = false"
       />
@@ -325,6 +326,7 @@
             <EditHistory
               v-model:collapsed="historyCollapsed"
               @pop-out="historyModalOpen = true"
+              @view-session="onViewSession"
             />
           </div>
 
@@ -357,7 +359,11 @@
          ask to open the modal we're already in. -->
     <v-dialog v-model="historyModalOpen" max-width="720">
       <v-card class="d-flex flex-column" style="max-height: 80vh">
-        <EditHistory :collapsible="false" :pop-out-enabled="false" />
+        <EditHistory
+          :collapsible="false"
+          :pop-out-enabled="false"
+          @view-session="onViewSession"
+        />
       </v-card>
     </v-dialog>
 
@@ -463,6 +469,8 @@ import { useRoute, useRouter } from 'vue-router'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useEditSession } from '@/composables/useEditSession'
+import { useUnsavedChangesWarning } from '@/composables/useUnsavedChangesWarning'
+import { useResumeEditSession } from '@/composables/useResumeEditSession'
 import { useQcSessionStore } from '@/store/qcSession'
 import { useQcPreferencesStore } from '@/store/qcPreferences'
 import CreateDatastreamForm from '@/components/EditData/CreateDatastreamForm.vue'
@@ -521,6 +529,7 @@ const { redraw } = usePlotlyStore()
 const {
   setPlottedDatastreams,
   adoptManagedDatastream,
+  releaseManagedDatastream,
   addQcHistory,
   removeManagedDatastream,
 } = useDataVisStore()
@@ -534,14 +543,42 @@ const {
   needsHistory,
   hasUnsavedChanges,
   unsavedEditCount,
+  viewSession,
 } = useEditSession()
+useUnsavedChangesWarning(hasUnsavedChanges)
+
+// Selecting a session in the list loads the data as that session left it,
+// plus its own operations. Guarded so unsaved edits aren't dropped silently.
+const isViewingSession = ref(false)
+async function onViewSession(sessionId: string) {
+  if (isViewingSession.value) return
+  if (
+    hasUnsavedChanges.value &&
+    !window.confirm(
+      'You have unsaved edits. Viewing another session will discard them. Continue?'
+    )
+  ) {
+    return
+  }
+  isViewingSession.value = true
+  try {
+    await viewSession(sessionId)
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not load that session.'
+    )
+  } finally {
+    isViewingSession.value = false
+  }
+}
 const qcSessionStore = useQcSessionStore()
-const { isReadOnly, inProgressSession } = storeToRefs(qcSessionStore)
+const { isReadOnly, inProgressSession, resumeDatastreamId } =
+  storeToRefs(qcSessionStore)
 const { create: createManaged } = useCreateManagedDatastream()
 const qcPreferences = useQcPreferencesStore()
 const { canEdit, canCreateDatastream, roleName } = useWorkspacePermissions()
 const { createProcessingLevel } = useProcessingLevels()
-const { loadForSource, deleteManaged } = useManagedDatastreams()
+const { loadForSource, deleteManaged, deleteSession } = useManagedDatastreams()
 
 // Permission gating: QC editing writes to the selected workspace (creates
 // the managed datastream, pushes observations). Gate the editor entry
@@ -665,6 +702,12 @@ function exitToSelect() {
   currentView.value = DrawerType.Select
   selectedDrawer.value = DrawerType.Select
   isDrawerOpen.value = true
+  // Leaving the editor deliberately, so a later reload shouldn't reopen it.
+  resumeDatastreamId.value = null
+  // Put the source back in the plot so the catalog table shows the row the
+  // user had selected; the managed datastream it was swapped for is hidden
+  // from that table.
+  void releaseManagedDatastream()
 }
 
 // No in-progress session yet: open one over the window already chosen by the
@@ -1038,6 +1081,27 @@ async function onChooserDelete(option: ManagedDatastreamOption) {
   }
 }
 
+// Discard an in-progress session from the chooser, dropping its draft edits.
+// Only that session goes; the managed datastream and its commits remain.
+async function onChooserDeleteSession(
+  option: ManagedDatastreamOption,
+  sessionId: string
+) {
+  try {
+    await deleteSession(option.historyId, sessionId)
+    chooserOptions.value = chooserOptions.value.map((o) =>
+      o.historyId === option.historyId
+        ? { ...o, sessions: o.sessions.filter((s) => s.id !== sessionId) }
+        : o
+    )
+    Snackbar.success('Session discarded.')
+  } catch (e) {
+    Snackbar.error(
+      e instanceof Error ? e.message : 'Could not discard the session.'
+    )
+  }
+}
+
 // Enter the editor on the current QC-target managed datastream: resume its
 // in-progress session, or start a new one over the selected time range.
 async function enterEdit() {
@@ -1049,8 +1113,13 @@ async function enterEdit() {
   currentView.value = DrawerType.Edit
   selectedDrawer.value = DrawerType.Edit
   isDrawerOpen.value = true
+  // Remember the target so a page reload can come back to this session.
+  resumeDatastreamId.value = qcDatastream.value?.id ?? null
   if (needsSession.value) await startSessionForWindow()
 }
+
+// Reopens the editor after a page reload; waits for the catalog to land.
+useResumeEditSession(enterEdit)
 </script>
 
 <style scoped>

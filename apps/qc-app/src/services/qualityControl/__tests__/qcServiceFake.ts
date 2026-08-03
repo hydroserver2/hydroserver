@@ -124,6 +124,9 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       const id = nextId('s')
       const start = body.phenomenonTimeStart
       const end = body.phenomenonTimeEnd
+      // Distinct, increasing creation stamps so ordering by `createdAt` is
+      // meaningful even when sessions share a phenomenon-time window.
+      const createdAt = new Date(Date.UTC(2025, 0, 1, 0, 0, seq)).toISOString()
       const dependencyIds = forHistory(historyId)
         .filter(
           (s) =>
@@ -136,7 +139,7 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
         id,
         historyId,
         createdBy,
-        createdAt: '2025-01-01T00:00:00Z',
+        createdAt,
         phenomenonTimeStart: start,
         phenomenonTimeEnd: end,
         status: 'in_progress',
@@ -167,6 +170,11 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
         list = list.filter((s) => ids.has(s.id))
       }
       if (query?.status) list = list.filter((s) => s.status === query.status)
+      // Mirrors the API: `expand_related` returns the detail shape, which
+      // embeds each session's operations.
+      if (query?.expand_related) {
+        return ok(list.map((s) => ({ ...s, operations: [...s.operations] })))
+      }
       return ok(list.map(summary))
     },
 
@@ -191,7 +199,9 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       const s = find(sessionId)
       if (!s) return fail('session not found', 404)
       s.status = 'committed'
-      s.committedAt = '2025-06-01T00:00:00Z'
+      // Increasing stamps so commit order is distinguishable, which is what
+      // orders a session's ancestor chain on reconstruction.
+      s.committedAt = new Date(Date.UTC(2025, 5, 1, 0, 0, (seq += 1))).toISOString()
       s.managedChecksum = `mchk-${sessionId}`
       return ok({ ...s, operations: [...s.operations] } as QcSessionDetail)
     },
@@ -226,8 +236,21 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       return ok(created)
     },
 
-    async update() {
-      return fail('not implemented')
+    async update(
+      _historyId: string,
+      sessionId: string,
+      operationId: string,
+      body: { comment?: string | null; order?: number }
+    ) {
+      const s = find(sessionId)
+      if (s?.status === 'committed') {
+        return fail('Operations can only be updated in an in-progress session.')
+      }
+      const op = s?.operations.find((o) => o.id === operationId)
+      if (!op) return fail('operation not found', 404)
+      if (body.comment !== undefined) (op as any).comment = body.comment
+      if (body.order !== undefined) (op as any).order = body.order
+      return ok(op)
     },
 
     async delete(_historyId: string, sessionId: string, operationId: string) {

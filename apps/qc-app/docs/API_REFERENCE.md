@@ -112,6 +112,35 @@ await setSelected([0, 1, 2, 5])      // dispatches SELECTION
 await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ```
 
+### `useResumeEditSession()`
+
+```ts
+const { resume } = useResumeEditSession(enterEdit)
+```
+
+Reopens the editor after a page reload, using the persisted
+`qcSession.resumeDatastreamId`: replots that datastream, makes it the QC
+target, then calls the supplied `enterEdit`. The workspace catalog loads
+asynchronously and is empty at mount, so it waits for the catalog to arrive
+and resumes at most once. A pointer to a datastream missing from the catalog
+(deleted, or another workspace) is dropped rather than retried.
+
+Note the watcher must not use Vue's `once` together with `immediate`: the
+immediate call fires on the initial empty catalog and stops the watcher, so
+the resume would never run on the cold reload it exists for.
+
+### `useUnsavedChangesWarning()`
+
+```ts
+useUnsavedChangesWarning(hasUnsavedChanges) // Ref<boolean>
+```
+
+Asks the browser for its native "leave site?" confirmation while the ref is
+true, so a reload mid-session can't silently drop edits that never reached
+the server. Registers on mount and removes the listener on unmount. Browsers
+ignore any custom message and only honour the prompt once the user has
+interacted with the page.
+
 ### `useQcHistory()`
 
 ```ts
@@ -282,6 +311,7 @@ on boot.
 | `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
 | `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
 | `adoptManagedDatastream`            | action   | `(managed: Datastream, sourceId: string) => Promise<void>` | Enter editing on a freshly-created managed datastream: replace the source in the plot and re-key its already-loaded series as the managed datastream's working copy (no second, empty item; no re-fetch). |
+| `releaseManagedDatastream`          | action   | `() => Promise<void>`                             | Inverse of `adoptManagedDatastream`, for leaving the editor: swap the managed datastream back to its source (resolved through `qcHistories`), drop the editor's working copy and rebuild, so the plot shows the source as stored rather than the session's uncommitted edits. Managed datastreams are hidden from the catalog table, so without this the Select view shows a plot with nothing selected. No-op when the QC target isn't managed or its source isn't in the catalog. |
 | `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
 
 ### `usePlotlyStore()` — `src/store/plotly.ts`
@@ -490,11 +520,13 @@ puts the editor in read-only mode.
 | Name                | Kind     | Type / signature                        | Notes |
 |---------------------|----------|-----------------------------------------|-------|
 | `historyId`         | state    | `string \| null`                        | The managed datastream's QC history being navigated. |
+| `resumeDatastreamId`| state    | `string \| null`                        | Managed datastream the editor was last open on. The only persisted field: a page reload replots it and resumes its session from the last save. Set on entering the editor, cleared on exit. |
 | `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
 | `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
 | `isLoading`         | state    | `boolean`                               | True while `loadSessions` is in flight. |
-| `isReadOnly`        | computed | `boolean`                               | True unless viewing the in-progress session. |
+| `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
+| `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
 | `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
 | `committedSessions` | computed | `QualityControlSession[]`               | Sessions with status `committed`. |
 | `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |

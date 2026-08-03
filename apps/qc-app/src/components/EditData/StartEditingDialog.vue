@@ -43,13 +43,14 @@
             </div>
             <v-spacer />
             <v-btn
+              v-if="!hasInProgress(opt)"
               size="small"
               color="primary"
               variant="flat"
               :data-testid="`edit-managed-${opt.managed.id}`"
               @click="emit('edit', opt)"
             >
-              {{ hasInProgress(opt) ? 'Continue session' : 'Start new session' }}
+              Start new session
             </v-btn>
             <v-btn
               icon="mdi-trash-can-outline"
@@ -125,18 +126,76 @@
               <v-list-item-title class="text-body-small">
                 {{ sessionLabel(s) }}
               </v-list-item-title>
+              <v-list-item-subtitle v-if="s.description" class="text-body-small">
+                {{ sessionPeriod(s) }}
+              </v-list-item-subtitle>
               <template #append>
-                <v-chip
-                  size="x-small"
-                  :color="s.status === 'in_progress' ? 'warning' : 'grey'"
-                  variant="tonal"
-                  label
-                >
-                  {{ s.status === 'in_progress' ? 'In progress' : 'Committed' }}
-                </v-chip>
+                <div class="d-flex align-center ga-2">
+                  <v-chip
+                    size="x-small"
+                    :color="s.status === 'in_progress' ? 'warning' : 'grey'"
+                    variant="tonal"
+                    label
+                  >
+                    {{ s.status === 'in_progress' ? 'In progress' : 'Committed' }}
+                  </v-chip>
+                  <template v-if="s.status === 'in_progress'">
+                    <v-btn
+                      size="small"
+                      color="primary"
+                      variant="flat"
+                      :data-testid="`continue-session-${s.id}`"
+                      @click="emit('edit', opt)"
+                    >
+                      Continue
+                    </v-btn>
+                    <v-btn
+                      icon="mdi-trash-can-outline"
+                      size="x-small"
+                      variant="text"
+                      color="error"
+                      :data-testid="`delete-session-${s.id}`"
+                      title="Discard this in-progress session"
+                      @click="confirmingSessionId = s.id"
+                    />
+                  </template>
+                </div>
               </template>
             </v-list-item>
           </v-list>
+
+          <v-alert
+            v-if="confirmingSession(opt)"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mx-3 my-2"
+          >
+            <div class="d-flex align-center flex-wrap ga-2">
+              <span class="text-body-small">
+                Discard this in-progress session and its unsaved edits? Committed
+                sessions are unaffected. This can't be undone.
+              </span>
+              <v-spacer />
+              <v-btn
+                size="x-small"
+                variant="text"
+                data-testid="cancel-delete-session"
+                @click="confirmingSessionId = null"
+              >
+                Cancel
+              </v-btn>
+              <v-btn
+                size="x-small"
+                color="error"
+                variant="flat"
+                :data-testid="`confirm-delete-session-${confirmingSessionId}`"
+                @click="onDeleteSession(opt)"
+              >
+                Discard
+              </v-btn>
+            </div>
+          </v-alert>
         </v-card>
 
         <v-btn
@@ -178,16 +237,30 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'edit', option: ManagedDatastreamOption): void
   (e: 'delete', option: ManagedDatastreamOption): void
+  (e: 'deleteSession', option: ManagedDatastreamOption, sessionId: string): void
   (e: 'create'): void
   (e: 'cancel'): void
 }>()
 
 // historyId of the managed datastream whose delete is awaiting confirmation.
 const confirmingDeleteId = ref<string | null>(null)
+// id of the in-progress session whose discard is awaiting confirmation.
+const confirmingSessionId = ref<string | null>(null)
 
 function onDelete(opt: ManagedDatastreamOption) {
   confirmingDeleteId.value = null
   emit('delete', opt)
+}
+
+/** True when this option owns the session awaiting discard confirmation. */
+const confirmingSession = (opt: ManagedDatastreamOption) =>
+  !!confirmingSessionId.value &&
+  opt.sessions.some((s) => s.id === confirmingSessionId.value)
+
+function onDeleteSession(opt: ManagedDatastreamOption) {
+  const sessionId = confirmingSessionId.value
+  confirmingSessionId.value = null
+  if (sessionId) emit('deleteSession', opt, sessionId)
 }
 
 const NUMBER = new Intl.NumberFormat()
@@ -215,13 +288,12 @@ function summary(opt: ManagedDatastreamOption): string {
 const hasInProgress = (opt: ManagedDatastreamOption) =>
   opt.sessions.some((s) => s.status === 'in_progress')
 
-// Newest first by phenomenon start (ISO sorts chronologically).
 const orderedSessions = (sessions: QualityControlSession[]) =>
-  [...sessions].sort((a, b) =>
-    b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart)
-  )
+  [...sessions].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+
+const sessionPeriod = (s: QualityControlSession) =>
+  formatDateRange(s.phenomenonTimeStart, s.phenomenonTimeEnd)
 
 const sessionLabel = (s: QualityControlSession) =>
-  s.description ||
-  formatDateRange(s.phenomenonTimeStart, s.phenomenonTimeEnd)
+  s.description || sessionPeriod(s)
 </script>

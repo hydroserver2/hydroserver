@@ -152,6 +152,10 @@ export function serializeHistory(
       method: h.method,
       args: h.args ? [...h.args] : [],
     };
+    const comment = h.comment?.trim();
+    if (comment) op.comment = comment;
+    const performedBy = h.performedBy?.trim();
+    if (performedBy) op.performedBy = performedBy;
     const exec = projectExecution(h.execution);
     if (exec) op.execution = exec;
     return op;
@@ -218,10 +222,20 @@ export function parseHistory(json: unknown): QcHistory {
     if (!Array.isArray(o.args)) {
       throw new Error(`Operation ${i} \`args\` must be an array.`);
     }
+    if (o.comment !== undefined && typeof o.comment !== "string") {
+      throw new Error(`Operation ${i} \`comment\` must be a string when present.`);
+    }
+    if (o.performedBy !== undefined && typeof o.performedBy !== "string") {
+      throw new Error(
+        `Operation ${i} \`performedBy\` must be a string when present.`
+      );
+    }
     const op: QcHistoryOperation = {
       method: o.method as EnumEditOperations | EnumFilterOperations,
       args: [...o.args],
     };
+    if (o.comment) op.comment = o.comment as string;
+    if (o.performedBy) op.performedBy = o.performedBy as string;
     const exec = parseExecution(o.execution, i);
     if (exec) op.execution = exec;
     return op;
@@ -279,6 +293,11 @@ export async function applyHistory(
       // `historyItem.execution.status = "failed"` on throw. Read it
       // back to decide whether to count as applied.
       const last = record.history[record.history.length - 1];
+      // Unlike `execution` (runtime telemetry, re-stamped per dispatch),
+      // the comment is authored intent and belongs to the operation, so
+      // it is carried onto the replayed entry.
+      if (last && op.comment) last.comment = op.comment;
+      if (last && op.performedBy) last.performedBy = op.performedBy;
       if (last?.execution.status === "failed") {
         report.failed.push({
           index: i,

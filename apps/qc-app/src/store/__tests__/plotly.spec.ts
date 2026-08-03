@@ -512,3 +512,45 @@ describe('usePlotlyStore.requestTableScroll', () => {
     expect(store.tableScrollRequest).toEqual({ time: 500, seq: 2 })
   })
 })
+
+describe('usePlotlyStore.editHistory', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    qcId.value = null
+  })
+
+  it('is empty when no series is selected for QC', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    expect(usePlotlyStore().editHistory).toEqual([])
+  })
+
+  it('reads the selected series record history', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    const series = makeSeries('qc', COLORS[0]) as any
+    series.data = { history: [{ method: 'SELECTION' }] }
+    store.graphSeriesArray.push(series)
+    qcId.value = 'qc'
+    expect(store.editHistory).toHaveLength(1)
+  })
+
+  // Resuming a session swaps in a freshly reconstructed record without
+  // redrawing. When this was rebound inside createPlotlyOption it kept
+  // pointing at the previous record and the operations panel read empty.
+  it('follows a record swapped in without a redraw', async () => {
+    const { usePlotlyStore } = await import('@/store/plotly')
+    const store = usePlotlyStore()
+    const series = makeSeries('qc', COLORS[0]) as any
+    series.data = { history: [] }
+    store.graphSeriesArray.push(series)
+    qcId.value = 'qc'
+    expect(store.editHistory).toEqual([])
+
+    store.graphSeriesArray[0].data = {
+      history: [{ method: 'SELECTION' }, { method: 'DELETE_POINTS' }],
+    } as any
+
+    expect(store.editHistory).toHaveLength(2)
+  })
+})

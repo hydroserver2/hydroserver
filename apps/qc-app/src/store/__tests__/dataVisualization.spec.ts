@@ -635,3 +635,70 @@ describe('useDataVisStore.adoptManagedDatastream', () => {
     expect(mockFetchObservationsInRange).not.toHaveBeenCalled()
   })
 })
+
+describe('useDataVisStore.releaseManagedDatastream', () => {
+  const withHistory = (store: any) => {
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'src' },
+    ] as any
+    store.datastreams = [
+      makeDs({ id: 'src', name: 'Raw' }),
+      makeDs({ id: 'mgd', name: 'Raw (QC)' }),
+    ] as any
+  }
+
+  // Managed datastreams are hidden from the catalog table, so leaving the
+  // editor with one plotted shows a plot with no row selected.
+  it('swaps the managed datastream back to its source and refetches its data', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withHistory(store)
+    const working = { tag: 'uncommitted-edits' }
+    store.plottedDatastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
+    store.qcDatastreamId = 'mgd'
+    mockGraphSeriesArray.value = [
+      { id: 'mgd', name: 'Raw (QC)', data: working, color: '#1', yAxisLabel: 'T' },
+    ]
+
+    await store.releaseManagedDatastream()
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
+    expect(store.qcDatastreamId).toBe('src')
+    // The editor's working copy carries uncommitted edits, so it is dropped
+    // and the source's stored data fetched instead.
+    expect(
+      mockGraphSeriesArray.value.some((s: any) => s.data === working)
+    ).toBe(false)
+    expect(mockFetchGraphSeries).toHaveBeenCalled()
+    expect(mockFetchGraphSeries.mock.calls[0][0].id).toBe('src')
+  })
+
+  it('is a no-op when the plotted datastream is not a managed one', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    withHistory(store)
+    store.plottedDatastreams = [makeDs({ id: 'src', name: 'Raw' })] as any
+    store.qcDatastreamId = 'src'
+
+    await store.releaseManagedDatastream()
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['src'])
+    expect(store.qcDatastreamId).toBe('src')
+  })
+
+  it('leaves the plot alone when the source is missing from the catalog', async () => {
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.qcHistories = [
+      { id: 'h-1', managedDatastreamId: 'mgd', sourceDatastreamId: 'gone' },
+    ] as any
+    store.datastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
+    store.plottedDatastreams = [makeDs({ id: 'mgd', name: 'Raw (QC)' })] as any
+    store.qcDatastreamId = 'mgd'
+
+    await store.releaseManagedDatastream()
+
+    expect(store.plottedDatastreams.map((d: any) => d.id)).toEqual(['mgd'])
+    expect(store.qcDatastreamId).toBe('mgd')
+  })
+})

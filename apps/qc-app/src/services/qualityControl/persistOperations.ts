@@ -18,12 +18,17 @@ import { unwrap } from './unwrap'
 type QcOperationPostBody = QualityControlOperationContract.PostBody[number]
 
 function operationBody(op: QcHistoryOperation, order: number): QcOperationPostBody {
-  return {
+  const body: QcOperationPostBody = {
     operationType: op.method as unknown as QcOperationPostBody['operationType'],
     arguments: op.args,
     order,
   }
+  if (op.comment) body.comment = op.comment
+  return body
 }
+
+/** Normalized comment for comparison: blank and absent are both "no comment". */
+const commentOf = (value?: string | null): string | null => value?.trim() || null
 
 /**
  * Map qc-utils serialized operations to QC API operation bodies: rename
@@ -64,6 +69,19 @@ export async function persistSessionOperations(
   for (let i = existing.length - 1; i >= operations.length; i--) {
     const op = existing[i]
     if (op) unwrap(await qcOperations.delete(historyId, sessionId, op.id))
+  }
+
+  // Comments are patched in place; the rest of an operation is append-only.
+  const retained = Math.min(existing.length, operations.length)
+  for (let i = 0; i < retained; i++) {
+    const persisted = existing[i]
+    const local = operations[i]
+    if (!persisted || !local) continue
+    const comment = commentOf(local.comment)
+    if (commentOf(persisted.comment) === comment) continue
+    unwrap(
+      await qcOperations.update(historyId, sessionId, persisted.id, { comment })
+    )
   }
 
   // Append the operations added since the last save (server stamps creator).

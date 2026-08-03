@@ -69,5 +69,21 @@ export function useManagedDatastreams() {
     }
   }
 
-  return { loadForSource, deleteManaged }
+  /**
+   * Discard an in-progress session, dropping its draft operations. Committed
+   * sessions are immutable server-side, so only the draft can be deleted.
+   * Throws on failure.
+   */
+  async function deleteSession(
+    historyId: string,
+    sessionId: string
+  ): Promise<void> {
+    const { hs } = useHydroServer()
+    const res = await hs.qualityControlSessions.delete(historyId, sessionId)
+    if (!res.ok) {
+      throw new Error(res.message || 'Could not discard the session.')
+    }
+  }
+
+  return { loadForSource, deleteManaged, deleteSession }
 }

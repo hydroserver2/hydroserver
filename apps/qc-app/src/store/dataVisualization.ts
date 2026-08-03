@@ -254,6 +254,37 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     }
   }
 
+  /**
+   * Inverse of `adoptManagedDatastream`, for leaving the editor. Managed
+   * datastreams are hidden from the catalog, so without this the Select
+   * view shows a plot with no row selected. No-op when the QC target isn't
+   * managed or its source isn't in the catalog.
+   */
+  async function releaseManagedDatastream() {
+    const managedId = qcDatastreamId.value
+    if (!managedId) return
+    const history = qcHistories.value.find(
+      (h) => historyManagedId(h) === managedId
+    )
+    const sourceId = history ? historySourceId(history) : undefined
+    const source = sourceId
+      ? datastreams.value.find((d) => d.id === sourceId)
+      : undefined
+    if (!source) return
+
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === managedId)
+    if (idx < 0) return
+    plottedDatastreams.value.splice(idx, 1, source)
+    qcDatastreamId.value = source.id
+
+    // The working copy holds uncommitted edits; `rebuildPlot` refetches.
+    graphSeriesArray.value = graphSeriesArray.value.filter(
+      (s) => s.id !== managedId
+    )
+
+    await rebuildPlot()
+  }
+
   // Coalescing lock for `rebuildPlot`. Rapid checkbox toggles in the
   // Select view call `plotDatastream` in quick succession; each call
   // pushes into `plottedDatastreams` and then awaits `rebuildPlot`.
@@ -670,6 +701,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     setPlottedDatastreams,
     setQcDatastream,
     adoptManagedDatastream,
+    releaseManagedDatastream,
     rebuildPlot,
     // updateOrFetchGraphSeries,
   }

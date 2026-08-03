@@ -254,6 +254,14 @@ Two contract notes worth keeping in mind:
   `{ method, args }`; the QC API speaks `{ operationType, arguments, order }`.
   The enum values are identical, so `persistOperations`/`reconstructSession`
   rename the fields when crossing between qc-utils and the API.
+- **Operation comments are part of the history, not app-side metadata.**
+  `HistoryItem.comment` is authored in the operations panel, so it rides
+  through `serializeHistory` into `persistOperations` and lands on the API's
+  `comment` field, and exported QC History files carry it. Comments are the one
+  part of a persisted operation that is patched in place, since they are
+  written after the operation ran; everything else stays append-only. The API
+  refuses updates on committed sessions, so the panel renders their comments
+  read-only.
 - **Sessions start/resume from the latest committed state, not the raw source.**
   Because each commit replays its session into the managed datastream (in-range
   `replace`), the managed datastream's observations already carry every
@@ -261,6 +269,46 @@ Two contract notes worth keeping in mind:
   managed datastream as the working base (via `loadLatestBase`, falling back to
   the source only when nothing has been committed yet) and replay just the
   current session's own draft operations on top.
+- **A reload resumes from the last save, not from memory.** Only
+  `qcSession.resumeDatastreamId` is persisted; on load the editor replots that
+  datastream and re-runs `beginEditing`, which rebuilds the working copy from
+  the server via `reconstructSession`. Edits made since the last save are not
+  recoverable, so `useUnsavedChangesWarning` raises the browser's native
+  confirmation while `hasUnsavedChanges` is true. A deliberate exit clears the
+  pointer, so only an interrupted session reopens.
+- **Viewing a past session replays its ancestor chain from the source.**
+  The managed datastream carries every commit, so it cannot be the base for a
+  historical view: replaying an older session's operations on top of it would
+  reproduce the final state. `reconstructCommittedSession` instead fetches the
+  ancestor closure (`ancestor_of`), loads the raw source over the union of
+  every window in the chain, and replays the chain in **commit order**
+  (`committedAt`, falling back to `createdAt`) — committing is what writes
+  observations into the managed datastream, so it is commit order, not
+  authoring order, that decides what a later session built on. The union
+  window matters because operations replay against array indices: loading
+  only the viewed session's window would misalign a wider ancestor's
+  selections and corrupt the result silently. The panel then shows just the
+  viewed session's own operations; the ancestors produced the data, but the
+  history is about what this session did.
+- **Operations are attributed by the server.** Every `QCOperation` carries a
+  `created_by`, stamped from the authenticated user on create, and the
+  response resolves a deleted account to a placeholder contact rather than
+  null. `reconstructSession`/`reconstructCommittedSession` map it onto
+  `HistoryItem.performedBy` (name, falling back to email) so the operations
+  panel can attribute each row. It is never sent back: the field is
+  provenance, not input. Operations applied in the current session show no
+  attribution until they are saved and reloaded. Comments have no author of
+  their own — `comment` is a plain nullable column that can be rewritten
+  later — so "who wrote this note" is a pending backend ask.
+- **A commit is terminal.** The API rejects updating, deleting, adding
+  operations to, or re-committing a committed session, and its PATCH body
+  carries only `description`. Continuing work after a commit means starting a
+  new session; the backend links it to every committed session its window
+  overlaps, which is how the DAG gets built. Reopening the most recent commit
+  is a pending backend ask (see the TODO in `store/qcSession.ts`) and needs
+  more than lifting the status guard, since a commit also writes observations
+  to the managed datastream and rolls the history's checksum and extent
+  forward.
 
 Tests stub the three services with `makeQcFake()` (a stateful in-memory double
 under `services/qualityControl/__tests__/` that returns

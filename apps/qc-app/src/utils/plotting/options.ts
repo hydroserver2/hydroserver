@@ -504,8 +504,6 @@ export const createPlotlyOption = (
         tickformat: '~s',
       } as Partial<LayoutAxis>
 
-      const { editHistory } = storeToRefs(usePlotlyStore())
-      editHistory.value = s.data.history
     } else {
       // Plotly applies a global selection-fade once any trace has
       // `selectedpoints` set: every other trace's "unselected" markers

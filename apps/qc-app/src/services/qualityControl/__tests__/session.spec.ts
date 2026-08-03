@@ -90,8 +90,16 @@ describe('loadLatestBase', () => {
   const source = { id: 's-1' } as unknown as Datastream
   const start = new Date('2025-01-01T00:00:00Z')
   const end = new Date('2025-02-01T00:00:00Z')
+  // Real records always carry `history`/`redoStack`; `loadLatestBase` clears
+  // them, since the store hands back a cached instance.
   const recWith = (n: number) =>
-    ({ dataX: Array(n).fill(0), dataY: Array(n).fill(0) }) as unknown as ObservationRecord
+    ({
+      dataX: Array(n).fill(0),
+      dataY: Array(n).fill(0),
+      history: [],
+      redoStack: [],
+      reload: vi.fn(async () => {}),
+    }) as unknown as ObservationRecord
 
   it('uses the managed datastream when it has committed data', async () => {
     const managedRec = recWith(3)
@@ -112,5 +120,89 @@ describe('loadLatestBase', () => {
     expect(result).toBe(sourceRec)
     expect(fetchInRange).toHaveBeenCalledTimes(2)
     expect(fetchInRange.mock.calls[1][0]).toBe(source)
+  })
+})
+
+describe('loadLatestBase — cached record', () => {
+  // The observation store keeps one record per datastream and returns the
+  // same instance, so a new session's base can arrive carrying the previous
+  // session's replayed operations.
+  const makeRecord = (history: any[], dataX = [1, 2, 3]) => {
+    const reload = vi.fn(async () => {})
+    return {
+      dataX,
+      history,
+      redoStack: [] as any[],
+      reload,
+    } as any
+  }
+
+  it('clears operations left on the cached record and reloads from raw', async () => {
+    const cached = makeRecord([{ method: 'SELECTION' }, { method: 'DELETE_POINTS' }])
+    const fetchInRange = vi.fn().mockResolvedValue(cached)
+
+    const base = await loadLatestBase(
+      fetchInRange,
+      { id: 'm-1' } as any,
+      { id: 's-1' } as any,
+      new Date('2025-01-01T00:00:00Z'),
+      new Date('2025-02-01T00:00:00Z')
+    )
+
+    expect(base.history).toHaveLength(0)
+    expect(base.redoStack).toHaveLength(0)
+    // Data was mutated by the previous session's replay, so raw is restored.
+    expect(cached.reload).toHaveBeenCalled()
+  })
+
+  it('keeps the array reference so bound consumers stay connected', async () => {
+    const history: any[] = [{ method: 'SELECTION' }]
+    const cached = makeRecord(history)
+    const fetchInRange = vi.fn().mockResolvedValue(cached)
+
+    const base = await loadLatestBase(
+      fetchInRange,
+      { id: 'm-1' } as any,
+      { id: 's-1' } as any,
+      new Date('2025-01-01T00:00:00Z'),
+      new Date('2025-02-01T00:00:00Z')
+    )
+
+    expect(base.history).toBe(history)
+  })
+
+  it('leaves a clean record untouched', async () => {
+    const cached = makeRecord([])
+    const fetchInRange = vi.fn().mockResolvedValue(cached)
+
+    await loadLatestBase(
+      fetchInRange,
+      { id: 'm-1' } as any,
+      { id: 's-1' } as any,
+      new Date('2025-01-01T00:00:00Z'),
+      new Date('2025-02-01T00:00:00Z')
+    )
+
+    expect(cached.reload).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the source when the managed datastream is empty', async () => {
+    const empty = makeRecord([], [])
+    const sourceRecord = makeRecord([{ method: 'SELECTION' }])
+    const fetchInRange = vi
+      .fn()
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(sourceRecord)
+
+    const base = await loadLatestBase(
+      fetchInRange,
+      { id: 'm-1' } as any,
+      { id: 's-1' } as any,
+      new Date('2025-01-01T00:00:00Z'),
+      new Date('2025-02-01T00:00:00Z')
+    )
+
+    expect(base).toBe(sourceRecord)
+    expect(base.history).toHaveLength(0)
   })
 })

@@ -7,8 +7,12 @@ import {
 } from '../persistOperations'
 import { unwrap } from '../unwrap'
 
-const op = (method: string, args: unknown[] = []): QcHistoryOperation =>
-  ({ method, args }) as unknown as QcHistoryOperation
+const op = (
+  method: string,
+  args: unknown[] = [],
+  comment?: string
+): QcHistoryOperation =>
+  ({ method, args, ...(comment ? { comment } : {}) }) as unknown as QcHistoryOperation
 
 const WIN = {
   phenomenonTimeStart: '2025-01-01T00:00:00Z',
@@ -42,6 +46,45 @@ describe('sessionOperationsFromSerialized', () => {
       { operationType: 'VALUE_THRESHOLD', arguments: [{ min: 0 }], order: 0 },
       { operationType: 'DELETE_POINTS', arguments: [], order: 1 },
     ])
+  })
+})
+
+describe('persistSessionOperations — comments', () => {
+  it('sends a comment with a newly-appended operation', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('VALUE_THRESHOLD', [{ min: 0 }], 'sensor fouling'),
+    ])
+    const [saved] = await listOps(qc, historyId, sessionId)
+    expect(saved.comment).toBe('sensor fouling')
+  })
+
+  it('patches a comment written onto an already-persisted operation', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    const ops = [op('VALUE_THRESHOLD', [{ min: 0 }])]
+    await persistSessionOperations(qc.operations, historyId, sessionId, ops)
+    expect((await listOps(qc, historyId, sessionId))[0].comment).toBeNull()
+
+    // Same operation, annotated after the fact.
+    const annotated = [op('VALUE_THRESHOLD', [{ min: 0 }], 'sensor fouling')]
+    await persistSessionOperations(qc.operations, historyId, sessionId, annotated)
+    const saved = await listOps(qc, historyId, sessionId)
+    expect(saved).toHaveLength(1)
+    expect(saved[0].comment).toBe('sensor fouling')
+  })
+
+  it('clears a comment that was removed, treating blank as none', async () => {
+    const qc = makeQcFake()
+    const { historyId, sessionId } = await sessionWith(qc)
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('VALUE_THRESHOLD', [], 'sensor fouling'),
+    ])
+    await persistSessionOperations(qc.operations, historyId, sessionId, [
+      op('VALUE_THRESHOLD', [], '   '),
+    ])
+    expect((await listOps(qc, historyId, sessionId))[0].comment).toBeNull()
   })
 })
 

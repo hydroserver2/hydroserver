@@ -38,7 +38,7 @@
             variant="text"
             density="comfortable"
             icon="mdi-undo-variant"
-            :disabled="isUpdating || !canUndo"
+            :disabled="isUpdating || isReadOnly || !canUndo"
             @click.stop="onUndo"
           />
         </template>
@@ -54,7 +54,7 @@
             variant="text"
             density="comfortable"
             icon="mdi-redo-variant"
-            :disabled="isUpdating || !canRedo"
+            :disabled="isUpdating || isReadOnly || !canRedo"
             @click.stop="onRedo"
           />
         </template>
@@ -86,7 +86,7 @@
             variant="text"
             density="comfortable"
             icon="mdi-tray-arrow-up"
-            :disabled="isUpdating"
+            :disabled="isUpdating || isReadOnly"
             @click.stop="onLoadHistoryClick"
           />
         </template>
@@ -122,9 +122,9 @@
       class="flex-grow-1 overflow-y-auto pa-2"
       style="min-height: 0"
     >
-      <SessionList class="mb-2" />
-
-     <div class="rounded border bg-surface overflow-hidden">
+      <SessionList @view="emit('view-session', $event)">
+        <template #operations>
+          <div class="rounded border bg-surface overflow-hidden">
       <div
         class="edit-history__row edit-history__row--baseline px-3 py-2 d-flex align-center"
       >
@@ -162,7 +162,7 @@
               variant="text"
               density="comfortable"
               icon="mdi-reload"
-              :disabled="isUpdating"
+              :disabled="isUpdating || isReadOnly"
               @click="onReload"
             />
           </template>
@@ -171,7 +171,19 @@
 
       <v-divider />
 
-      <div v-if="editCount === 0" class="pa-4 text-center">
+      <!-- Or the outgoing session's operations linger as if they were these. -->
+      <div
+        v-if="isSwitchingSession"
+        class="pa-4 text-center"
+        data-testid="history-loading"
+      >
+        <v-progress-circular indeterminate color="primary" size="24" />
+        <div class="text-body-small text-medium-emphasis mt-2">
+          Loading session…
+        </div>
+      </div>
+
+      <div v-else-if="editCount === 0" class="pa-4 text-center">
         <v-icon icon="mdi-clock-outline" size="28" color="grey" class="mb-2" />
         <div class="text-body-small text-medium-emphasis">
           Edit operations will appear here.
@@ -189,6 +201,7 @@
             :class="{
               'edit-history__row--loading': entry.execution?.inFlight,
               'edit-history__row--open': openIndex === index,
+              'edit-history__row--loaded': shownStepIndex === index,
             }"
           >
             <button
@@ -226,7 +239,47 @@
               {{ formatMethod(entry.method) }}
             </span>
 
+            <v-chip
+              v-if="shownStepIndex === index"
+              size="x-small"
+              color="primary"
+              variant="tonal"
+              label
+              class="mr-1 flex-shrink-0"
+              :data-testid="`history-loaded-${index}`"
+            >
+              Showing
+            </v-chip>
+
             <div class="d-flex align-center ga-2 flex-shrink-0">
+              <v-tooltip
+                v-if="entry.performedBy"
+                location="start"
+                :text="`Applied by ${entry.performedBy}`"
+              >
+                <template #activator="{ props: tp }">
+                  <span
+                    v-bind="tp"
+                    class="edit-history__author text-body-small text-medium-emphasis text-truncate"
+                    :data-testid="`history-author-${index}`"
+                  >
+                    {{ entry.performedBy }}
+                  </span>
+                </template>
+              </v-tooltip>
+
+              <v-tooltip v-if="entry.comment" location="start" :text="entry.comment">
+                <template #activator="{ props: tp }">
+                  <v-icon
+                    v-bind="tp"
+                    :data-testid="`history-comment-badge-${index}`"
+                    icon="mdi-comment-text-outline"
+                    size="14"
+                    color="primary"
+                  />
+                </template>
+              </v-tooltip>
+
               <v-tooltip
                 v-if="entry.execution?.status === 'failed'"
                 location="start"
@@ -288,10 +341,10 @@
                 </template>
               </v-tooltip>
 
-              <!-- Per-item undo only on the trailing entry; middle
-                   entries use "Reload from this step". -->
+              <!-- Trailing entry only; middle entries use "Reload from this
+                   step". Never on a committed session. -->
               <v-tooltip
-                v-if="index === editHistory.length - 1"
+                v-if="index === editHistory.length - 1 && !isReadOnly"
                 location="start"
                 text="Undo this step"
               >
@@ -325,12 +378,47 @@
                 <code class="text-body-small">{{ formatArg(arg) }}</code>
               </li>
             </ul>
+
+            <div
+              v-if="entry.performedBy"
+              class="text-body-small text-medium-emphasis mt-3"
+              :data-testid="`history-author-detail-${index}`"
+            >
+              Applied by {{ entry.performedBy }}
+            </div>
+
+            <div class="text-body-small text-medium-emphasis mt-3 mb-1">
+              Comment
+            </div>
+            <v-textarea
+              v-if="!isReadOnly"
+              :model-value="entry.comment ?? ''"
+              :data-testid="`history-comment-${index}`"
+              placeholder="Why was this operation applied?"
+              variant="outlined"
+              density="compact"
+              rows="2"
+              auto-grow
+              hide-details
+              class="text-body-small"
+              @update:model-value="setComment(entry, $event)"
+            />
+            <div
+              v-else
+              class="text-body-small"
+              :class="{ 'text-medium-emphasis font-italic': !entry.comment }"
+              :data-testid="`history-comment-readonly-${index}`"
+            >
+              {{ entry.comment || 'No comment.' }}
+            </div>
           </div>
 
           <v-divider />
         </div>
       </div>
-     </div>
+          </div>
+        </template>
+      </SessionList>
     </div>
   </div>
 </template>
@@ -346,7 +434,9 @@ import { useUIStore } from '@/store/userInterface'
 import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
 import SessionList from '@/components/EditData/SessionList.vue'
 import { useQcHistory } from '@/composables/useQcHistory'
+import { useQcSessionStore } from '@/store/qcSession'
 import { Snackbar } from '@uwrl/qc-utils'
+import type { HistoryItem } from '@uwrl/qc-utils'
 
 const props = withDefaults(
   defineProps<{
@@ -364,6 +454,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void
   (e: 'pop-out'): void
+  (e: 'view-session', sessionId: string): void
 }>()
 
 const isCollapsed = computed(() => props.collapsible && !!props.collapsed)
@@ -391,6 +482,25 @@ const { exportHistory, importHistory } = useQcHistory()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const openIndex = ref<number | null>(null)
+
+/** Invalidated by any mutation of the history. */
+const loadedStepIndex = ref<number | null>(null)
+
+/** The step the plot reflects: the explicit choice, else the last entry. */
+const shownStepIndex = computed<number | null>(() => {
+  const last = editHistory.value.length - 1
+  if (last < 0) return null
+  const chosen = loadedStepIndex.value
+  return chosen !== null && chosen <= last ? chosen : last
+})
+
+// Committed sessions are immutable server-side, so their comments are shown
+// but not editable.
+const { isReadOnly, isSwitchingSession } = storeToRefs(useQcSessionStore())
+
+function setComment(entry: HistoryItem, value: string) {
+  entry.comment = value
+}
 
 const isDev = import.meta.env.DEV
 
@@ -437,6 +547,8 @@ function formatArg(arg: unknown): string {
 }
 
 const onReload = async () => {
+  loadedStepIndex.value = null
+  if (isReadOnly.value || isUpdating.value) return
   isUpdating.value = true
   closeStaleStagingPanel()
 
@@ -461,14 +573,19 @@ const onReloadHistory = async (index: number) => {
   if (index < editHistory.value.length) {
     isUpdating.value = true
     closeStaleStagingPanel()
+    // `reloadHistory` truncates to `0..index`; a committed session's
+    // operations must survive stepping through them.
+    const record = selectedSeries.value?.data
+    const preserved = isReadOnly.value ? [...(record?.history ?? [])] : null
+    loadedStepIndex.value = index
     setTimeout(async () => {
-      const newSelection = await selectedSeries.value?.data.reloadHistory(index)
+      const newSelection = await record?.reloadHistory(index)
+      if (preserved && record) {
+        record.history.splice(0, record.history.length, ...preserved)
+      }
 
       isUpdating.value = false
-      await redraw()
-      if (newSelection) {
-        setPlotSelection(newSelection)
-      }
+      await applyReplayedSelection(newSelection)
     })
   }
 }
@@ -538,7 +655,9 @@ const closeStaleStagingPanel = () => {
 }
 
 const onUndo = async () => {
-  if (!canUndo.value || isUpdating.value) return
+  loadedStepIndex.value = null
+  // Also guards the Ctrl+Z shortcut, which bypasses the disabled button.
+  if (isReadOnly.value || !canUndo.value || isUpdating.value) return
   isUpdating.value = true
   closeStaleStagingPanel()
   setTimeout(async () => {
@@ -552,7 +671,8 @@ const onUndo = async () => {
 }
 
 const onRedo = async () => {
-  if (!canRedo.value || isUpdating.value) return
+  loadedStepIndex.value = null
+  if (isReadOnly.value || !canRedo.value || isUpdating.value) return
   isUpdating.value = true
   closeStaleStagingPanel()
   setTimeout(async () => {
@@ -617,6 +737,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .edit-history__row:hover {
   background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+.edit-history__author {
+  max-width: 8rem;
+}
+
+.edit-history__row--loaded {
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  box-shadow: inset 3px 0 0 0 rgb(var(--v-theme-primary));
 }
 
 .edit-history__row--open {

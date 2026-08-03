@@ -3,6 +3,12 @@ import { ref } from 'vue'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
+// The per-operation comment textarea (Vuetify auto-grow) observes resizes.
+;(globalThis as any).ResizeObserver ||= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 
 const editHistory = ref<any[]>([])
 const selectedSeries = ref<any>(null)
@@ -369,5 +375,243 @@ describe('EditHistory.vue actions', () => {
     const wrapper = createWrapper({ collapsible: true, collapsed: false })
     await wrapper.find('.edit-history__header').trigger('keydown.enter')
     expect(wrapper.emitted('update:collapsed')).toBeTruthy()
+  })
+
+  // A committed session's operations are a record of what happened, not a
+  // draft: nothing in the panel may rewrite them.
+  describe('read-only session', () => {
+    const readOnly = async () => {
+      const { useQcSessionStore } = await import('@/store/qcSession')
+      const store = useQcSessionStore()
+      // `createdAt` is required: SessionList orders on it.
+      store.sessions = [
+        {
+          id: 'a',
+          status: 'committed',
+          createdAt: '2025-01-01T00:00:00Z',
+          phenomenonTimeStart: '2025-01-01T00:00:00Z',
+          phenomenonTimeEnd: '2025-02-01T00:00:00Z',
+        },
+        {
+          id: 'b',
+          status: 'in_progress',
+          createdAt: '2025-02-01T00:00:00Z',
+          phenomenonTimeStart: '2025-02-01T00:00:00Z',
+          phenomenonTimeEnd: '2025-03-01T00:00:00Z',
+        },
+      ] as any
+      store.currentSessionId = 'b'
+      store.viewedSessionId = 'a'
+      return store
+    }
+
+    it('hides the per-entry undo and disables the toolbar undo/redo', async () => {
+      editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
+      selectedSeries.value = { data: { history: editHistory.value, redoStack: [{}] } }
+      const w = createWrapper()
+      await readOnly()
+      await flushPromises()
+
+      expect(w.find('[data-testid="history-undo-0"]').exists()).toBe(false)
+      expect(
+        w.find('[data-testid="history-undo-btn"]').attributes('disabled')
+      ).toBeDefined()
+      expect(
+        w.find('[data-testid="history-redo-btn"]').attributes('disabled')
+      ).toBeDefined()
+      expect(
+        w.find('[data-testid="history-load-btn"]').attributes('disabled')
+      ).toBeDefined()
+    })
+
+    it('disables reload-from-server, which would wipe the record', async () => {
+      editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
+      selectedSeries.value = { data: { history: editHistory.value, redoStack: [] } }
+      const w = createWrapper()
+      await readOnly()
+      await flushPromises()
+
+      const baseline = w.find('.edit-history__row--baseline')
+      expect(baseline.find('button').attributes('disabled')).toBeDefined()
+    })
+
+    it('keeps the entries below when reloading from a step', async () => {
+      const history = [
+        { method: 'SELECTION', args: [], execution: {} },
+        { method: 'DELETE_POINTS', args: [], execution: {} },
+        { method: 'INTERPOLATE', args: [], execution: {} },
+      ]
+      editHistory.value = history
+      // Stand in for the engine: truncate to `0..index`, as qc-utils does.
+      const reloadHistory = vi.fn(async (index: number) => {
+        history.splice(index + 1)
+        return []
+      })
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+
+      const w = createWrapper()
+      await readOnly()
+      await flushPromises()
+
+      await w.find('[data-testid="history-item-0"]').findAll('button').at(-1)!.trigger('click')
+      await vi.waitFor(() => expect(reloadHistory).toHaveBeenCalledWith(0))
+
+      // Data stepped back, but the record of what the session did survives.
+      // Polled: the restore runs after an await inside the handler's timeout.
+      await vi.waitFor(() =>
+        expect(history.map((h) => h.method)).toEqual([
+          'SELECTION',
+          'DELETE_POINTS',
+          'INTERPOLATE',
+        ])
+      )
+    })
+  })
+
+  describe('loaded step', () => {
+    it('marks the step the plot reflects, and clears it on undo', async () => {
+      const history = [
+        { method: 'SELECTION', args: [], execution: {} },
+        { method: 'DELETE_POINTS', args: [], execution: {} },
+      ]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      const undo = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory, undo } }
+
+      const w = createWrapper()
+      await flushPromises()
+      // With no step singled out the plot reflects the whole history, so the
+      // last entry carries the marker.
+      expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
+      expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
+
+      await w.find('[data-testid="history-item-0"]').findAll('button').at(-1)!.trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(true)
+      )
+
+      // Undoing changes the history, so "showing step 0" no longer holds and
+      // the marker returns to the end of the list.
+      // Wait for the step reload to settle: the button is disabled while
+      // `isUpdating`, and a click on a disabled button never reaches the handler.
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await w.find('[data-testid="history-undo-btn"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
+      )
+      expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
+    })
+  })
+
+  describe('session switch', () => {
+    it('shows a loading state instead of the outgoing session operations', async () => {
+      editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
+      selectedSeries.value = { data: { history: editHistory.value, redoStack: [] } }
+      const w = createWrapper()
+      await flushPromises()
+      expect(w.find('[data-testid="history-item-0"]').exists()).toBe(true)
+
+      const { useQcSessionStore } = await import('@/store/qcSession')
+      useQcSessionStore().isSwitchingSession = true
+      await flushPromises()
+
+      expect(w.find('[data-testid="history-loading"]').exists()).toBe(true)
+      expect(w.find('[data-testid="history-item-0"]').exists()).toBe(false)
+    })
+  })
+
+  describe('shown step fallback', () => {
+    it('marks nothing when the history is empty', async () => {
+      editHistory.value = []
+      selectedSeries.value = { data: { history: [], redoStack: [] } }
+      const w = createWrapper()
+      await flushPromises()
+      expect(w.find('[data-testid^="history-loaded-"]').exists()).toBe(false)
+    })
+
+    it('falls back to the last entry when the chosen step is out of range', async () => {
+      const history = [
+        { method: 'SELECTION', args: [], execution: {} },
+        { method: 'DELETE_POINTS', args: [], execution: {} },
+        { method: 'INTERPOLATE', args: [], execution: {} },
+      ]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const w = createWrapper()
+      await flushPromises()
+
+      await w.find('[data-testid="history-item-2"]').findAll('button').at(-2)!.trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-loaded-2"]').exists()).toBe(true)
+      )
+
+      // The history shrinks under the chosen step. Splice through the ref's
+      // proxy: mutating the raw array wouldn't trigger reactivity.
+      editHistory.value.splice(1)
+      await flushPromises()
+      expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(true)
+    })
+  })
+
+  describe('attribution', () => {
+    it('shows who applied an operation, on the row and in the detail', async () => {
+      editHistory.value = [
+        { method: 'ADD_POINTS', args: [], execution: {}, performedBy: 'Ada Lovelace' },
+        { method: 'DELETE_POINTS', args: [], execution: {} },
+      ]
+      selectedSeries.value = { data: { history: editHistory.value, redoStack: [] } }
+      const w = createWrapper()
+      await flushPromises()
+
+      expect(w.find('[data-testid="history-author-0"]').text()).toBe('Ada Lovelace')
+      // Unsaved operations have no server attribution yet.
+      expect(w.find('[data-testid="history-author-1"]').exists()).toBe(false)
+
+      await w.find('[data-testid="history-item-0"]').find('button').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-testid="history-author-detail-0"]').text()).toContain(
+        'Applied by Ada Lovelace'
+      )
+    })
+  })
+
+  describe('selection after loading a step', () => {
+    const stepBackTo = async (returned: number[] | undefined) => {
+      const history = [
+        { method: 'SELECTION', args: [], execution: {} },
+        { method: 'DELETE_POINTS', args: [], execution: {} },
+      ]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => returned as any)
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+      const w = createWrapper()
+      await flushPromises()
+      // Item 0 isn't the trailing entry, so its buttons are expand + reload.
+      await w.find('[data-testid="history-item-0"]').findAll('button').at(-1)!.trigger('click')
+      await vi.waitFor(() => expect(reloadHistory).toHaveBeenCalledWith(0))
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await flushPromises()
+    }
+
+    it('applies the selection the replay produced', async () => {
+      await stepBackTo([3, 4, 5])
+      expect(setPlotSelection).toHaveBeenCalledWith([3, 4, 5])
+      expect(clearSelected).not.toHaveBeenCalled()
+    })
+
+    // Without this the previous selection stayed painted on the plot.
+    it('clears the selection when the replay produced none', async () => {
+      await stepBackTo(undefined)
+      expect(setPlotSelection).not.toHaveBeenCalled()
+      expect(clearSelected).toHaveBeenCalledWith({ recordHistory: false })
+    })
+
+    it('clears the selection when the replay produced an empty one', async () => {
+      await stepBackTo([])
+      expect(setPlotSelection).not.toHaveBeenCalled()
+      expect(clearSelected).toHaveBeenCalledWith({ recordHistory: false })
+    })
   })
 })

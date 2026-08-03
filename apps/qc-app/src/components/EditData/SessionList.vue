@@ -1,6 +1,6 @@
 <template>
   <div class="qc-session-list">
-    <div class="qc-session-list__header px-3 py-2 d-flex align-center ga-2">
+    <div class="qc-session-list__header px-1 py-1 d-flex align-center ga-2">
       <v-icon icon="mdi-source-branch" color="primary" size="16" />
       <span class="text-body-small font-weight-medium">Sessions</span>
       <v-spacer />
@@ -16,8 +16,6 @@
       </v-btn>
     </div>
 
-    <v-divider />
-
     <div
       v-if="!sessions.length"
       class="pa-3 text-center text-body-small text-medium-emphasis"
@@ -25,32 +23,46 @@
       No sessions yet.
     </div>
 
-    <v-list v-else density="compact" class="py-0" :lines="false">
-      <v-list-item
+    <v-timeline
+      v-else
+      side="end"
+      density="compact"
+      truncate-line="both"
+      line-thickness="2"
+      class="qc-session-list__timeline px-2 py-2"
+    >
+      <v-timeline-item
         v-for="session of orderedSessions"
         :key="session.id"
-        :active="session.id === viewedSessionId"
+        :dot-color="session.status === 'in_progress' ? 'warning' : 'success'"
+        :icon="
+          session.status === 'in_progress' ? 'mdi-pencil' : 'mdi-check'
+        "
+        size="x-small"
+        width="100%"
         :data-testid="`session-${session.id}`"
-        @click="onSelect(session)"
+        class="qc-session-list__item"
+        :class="{
+          'qc-session-list__item--viewed': session.id === viewedSessionId,
+        }"
       >
-        <template #prepend>
-          <v-icon
-            :icon="
-              session.status === 'in_progress'
-                ? 'mdi-pencil-circle'
-                : 'mdi-check-circle'
-            "
-            :color="session.status === 'in_progress' ? 'warning' : 'success'"
-            size="16"
-            class="mr-2"
-          />
-        </template>
-
-        <v-list-item-title class="text-body-small">
-          {{ sessionLabel(session) }}
-        </v-list-item-title>
-
-        <template #append>
+        <!-- Only the header selects; clicks inside the nested panel must not. -->
+        <div
+          class="d-flex align-center ga-2 cursor-pointer"
+          :data-testid="`session-header-${session.id}`"
+          @click="onSelect(session)"
+        >
+          <div class="flex-grow-1" style="min-width: 0">
+            <div class="text-body-small font-weight-medium text-truncate">
+              {{ sessionLabel(session) }}
+            </div>
+            <div
+              v-if="session.description"
+              class="text-body-small text-medium-emphasis text-truncate"
+            >
+              {{ sessionPeriod(session) }}
+            </div>
+          </div>
           <v-chip
             v-if="session.id === currentSessionId"
             size="x-small"
@@ -63,9 +75,32 @@
           <v-chip v-else size="x-small" color="grey" variant="tonal" label>
             View
           </v-chip>
-        </template>
-      </v-list-item>
-    </v-list>
+        </div>
+
+        <div v-if="session.id === viewedSessionId" class="mt-2">
+          <slot name="operations" />
+        </div>
+        <div
+          v-else-if="operationCount(session)"
+          class="text-body-small text-medium-emphasis mt-1 cursor-pointer"
+          :data-testid="`session-preview-${session.id}`"
+          @click="onSelect(session)"
+        >
+          {{ previewLabel(session) }}
+        </div>
+        <div
+          v-else
+          class="text-body-small text-medium-emphasis font-italic mt-1"
+          :data-testid="`session-preview-${session.id}`"
+        >
+          No operations.
+        </div>
+      </v-timeline-item>
+    </v-timeline>
+
+    <div v-if="!viewedSessionId" class="pa-2">
+      <slot name="operations" />
+    </div>
   </div>
 </template>
 
@@ -80,37 +115,58 @@ const store = useQcSessionStore()
 const { sessions, currentSessionId, viewedSessionId, isReadOnly } =
   storeToRefs(store)
 
-// Newest first, by phenomenon start (ISO sorts chronologically).
+// Oldest first by creation time. Phenomenon start orders by the edited
+// window, which says nothing about recency and ties on equal windows.
 const orderedSessions = computed(() =>
-  [...sessions.value].sort((a, b) =>
-    b.phenomenonTimeStart.localeCompare(a.phenomenonTimeStart)
-  )
+  [...sessions.value].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 )
 
-function sessionLabel(session: QualityControlSession): string {
-  if (session.description) return session.description
-  return formatDateRange(
-    session.phenomenonTimeStart,
-    session.phenomenonTimeEnd
-  )
+const sessionPeriod = (session: QualityControlSession): string =>
+  formatDateRange(session.phenomenonTimeStart, session.phenomenonTimeEnd)
+
+const operationCount = (session: QualityControlSession): number =>
+  (session as { operations?: unknown[] }).operations?.length ?? 0
+
+function previewLabel(session: QualityControlSession): string {
+  const total = operationCount(session)
+  return `${total} operation${total === 1 ? '' : 's'}`
 }
 
+function sessionLabel(session: QualityControlSession): string {
+  return session.description || sessionPeriod(session)
+}
+
+const emit = defineEmits<{ (e: 'view', sessionId: string): void }>()
+
 function onSelect(session: QualityControlSession): void {
-  if (session.id === store.currentSessionId) {
-    store.returnToCurrent()
-  } else {
-    store.viewSession(session.id)
-  }
+  emit('view', session.id)
 }
 
 function returnToCurrent(): void {
-  store.returnToCurrent()
+  if (currentSessionId.value) emit('view', currentSessionId.value)
 }
 </script>
 
 <style scoped>
 .qc-session-list__header {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  min-height: 32px;
+  min-height: 28px;
+}
+
+.qc-session-list__timeline :deep(.v-timeline-item__body) {
+  padding-block: 2px;
+}
+
+.qc-session-list__item :deep(.v-timeline-item__body) {
+  border-radius: 6px;
+  padding-inline: 6px;
+  transition: background-color 120ms ease;
+}
+
+.qc-session-list__item:hover :deep(.v-timeline-item__body) {
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+
+.qc-session-list__item--viewed :deep(.v-timeline-item__body) {
+  background-color: rgba(var(--v-theme-primary), 0.12);
 }
 </style>

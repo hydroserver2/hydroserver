@@ -86,6 +86,22 @@ export async function loadLatestBase(
   end: Date
 ): Promise<ObservationRecord> {
   const base = await fetchInRange(managed, start, end)
-  if ((base.dataX?.length ?? 0) > 0) return base
-  return fetchInRange(source, start, end)
+  const record =
+    (base.dataX?.length ?? 0) > 0 ? base : await fetchInRange(source, start, end)
+  return resetToStoredState(record)
+}
+
+/**
+ * The observation store keeps one `ObservationRecord` per datastream and
+ * hands back the same instance, so this may be the one a previous session
+ * was editing. Truncated in place to keep bound references.
+ */
+async function resetToStoredState(
+  record: ObservationRecord
+): Promise<ObservationRecord> {
+  if (!record.history.length && !record.redoStack.length) return record
+  record.history.length = 0
+  record.redoStack.length = 0
+  await record.reload()
+  return record
 }
