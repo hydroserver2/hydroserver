@@ -167,7 +167,12 @@ const { managedDatastream, history } = await create({ source, processingLevelId,
 ```
 
 Delegates to the tested `createManagedDatastream` orchestration with the
-live client (`hs.datastreams` + `hs.qualityControlHistories`).
+live client (`hs.datastreams` + `hs.qualityControlHistories`). The datastream
+is created with `expand_related: true`, so `managedDatastream` comes back in
+the same `Datastream & DatastreamExtended` shape as the `datastreams` catalog
+and can be appended to it directly. Without the flag the 201 body is the flat
+model (FK ids only) and catalog consumers reading `ds.processingLevel.id`
+would break.
 
 ### `useManagedDatastreams()`
 

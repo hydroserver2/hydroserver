@@ -710,10 +710,7 @@ async function onCreateDatastream(spec: CreateManagedDatastreamSpec) {
     // Register the new history + datastream so it's hidden from the catalog
     // and the chooser can resolve it (by its name, not id) without a reload.
     addQcHistory(history)
-    datastreams.value = [
-      ...datastreams.value,
-      managedDatastream as (typeof datastreams.value)[number],
-    ]
+    datastreams.value = [...datastreams.value, managedDatastream]
     // Reuse the source's already-loaded series as the managed datastream's
     // working copy instead of adding a second, empty plotted item.
     await adoptManagedDatastream(managedDatastream, spec.source.id)

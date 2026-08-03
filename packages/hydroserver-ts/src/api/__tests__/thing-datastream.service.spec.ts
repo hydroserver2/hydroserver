@@ -96,6 +96,30 @@ describe('DatastreamService', () => {
 
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
+  describe('create', () => {
+    it('forwards expand_related so the 201 body carries nested relations', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 'ds-1' }, 201)))
+
+      await client.datastreams.create({ name: 'DS 1' } as any, {
+        expand_related: true,
+      })
+
+      const [url] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/api/data/datastreams')
+      expect(parsed.searchParams.get('expand_related')).toBe('true')
+    })
+
+    it('omits the query string when no params are given', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 'ds-1' }, 201)))
+
+      await client.datastreams.create({ name: 'DS 1' } as any)
+
+      const [url] = (fetch as any).mock.calls[0]
+      expect(url).toMatch(/\/api\/data\/datastreams$/)
+    })
+  })
+
   describe('getVisualizationBootstrap', () => {
     it('maps bootstrap payloads into model instances and resolves workspaceId', async () => {
       vi.stubGlobal(

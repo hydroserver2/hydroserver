@@ -114,6 +114,30 @@ describe('createManagedDatastream', () => {
     })
   })
 
+  it('requests the expanded datastream so the catalog keeps its nested relations', async () => {
+    // The data-vis catalog is loaded with `expand_related`, and its consumers
+    // read `ds.processingLevel.id` / `ds.thing.id`. A flat create response
+    // appended to that list would blow up on the missing nested objects.
+    const created = {
+      id: 'managed-1',
+      name: 'Raw Temperature (QC)',
+      thing: { id: 'thing-1' },
+      observedProperty: { id: 'op-1' },
+      processingLevel: { id: 'pl-qc' },
+    } as any
+    const { hs, create } = makeHs(created)
+    const qc = makeQcFake()
+
+    const result = await createManagedDatastream(hs, qc.histories, {
+      source: makeSource(),
+      processingLevelId: 'pl-qc',
+    })
+
+    expect(create.mock.calls[0][1]).toEqual({ expand_related: true })
+    expect(result.managedDatastream.processingLevel.id).toBe('pl-qc')
+    expect(result.managedDatastream.thing.id).toBe('thing-1')
+  })
+
   it('rejects a processing level equal to the source', async () => {
     const { hs } = makeHs(makeSource({ id: 'managed-1' }))
     const qc = makeQcFake()

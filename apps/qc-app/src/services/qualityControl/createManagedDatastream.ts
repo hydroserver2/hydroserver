@@ -33,7 +33,8 @@ export interface CreateManagedDatastreamInput {
 }
 
 export interface CreateManagedDatastreamResult {
-  managedDatastream: Datastream
+  /** Expanded shape, so it can be appended to the data-vis catalog as-is. */
+  managedDatastream: Datastream & DatastreamExtended
   history: QcHistoryDetail
 }
 
@@ -93,7 +94,9 @@ export async function createManagedDatastream(
   }
 
   const body = buildManagedDatastreamBody(source, processingLevelId, overrides)
-  const response = await hs.datastreams.create(body)
+  // Without `expand_related` the 201 body is the flat shape (FK ids only);
+  // the data-vis catalog this datastream joins is expanded.
+  const response = await hs.datastreams.create(body, { expand_related: true })
   if (!response.ok) {
     throw new Error(
       `Datastream creation failed (HTTP ${response.status}): ${
@@ -101,7 +104,9 @@ export async function createManagedDatastream(
       }`
     )
   }
-  const managedDatastream = response.data
+  // The SDK types every create response as the flat model; `expand_related`
+  // above is what actually makes the nested relations present.
+  const managedDatastream = response.data as Datastream & DatastreamExtended
   if (!managedDatastream?.id) {
     throw new Error(
       'Datastream creation failed: the backend returned no datastream id.'
