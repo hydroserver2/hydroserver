@@ -49,6 +49,24 @@ describe('useWorkspacePermissions', () => {
     ).toBe(false)
   })
 
+  it('matches the APIKey resource value returned by the API', () => {
+    const workspace = workspaceWithPermissions([
+      {
+        action: PermissionAction.View,
+        resource: 'APIKey' as PermissionResource,
+      },
+    ])
+
+    expect(PermissionResource.ApiKey).toBe('APIKey')
+    expect(
+      useWorkspacePermissions().hasPermission(
+        PermissionResource.ApiKey,
+        PermissionAction.View,
+        workspace
+      )
+    ).toBe(true)
+  })
+
   it('applies an action wildcard to the requested action', () => {
     const workspace = workspaceWithPermissions([
       {

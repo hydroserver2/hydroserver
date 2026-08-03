@@ -26,7 +26,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: collaborators ----------
   getCollaborators(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.fetch<Collaborator[]>(url)
+    return apiMethods.paginatedFetch<Collaborator[]>(url)
   }
 
   addCollaborator(workspaceId: string, email: string, roleId: string) {
@@ -59,7 +59,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: keys/roles ----------
   getApiKeys(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/api-keys?expand_related=true`
-    return apiMethods.fetch<ApiKey[]>(url)
+    return apiMethods.paginatedFetch<ApiKey[]>(url)
   }
 
   getApiKey = (workspaceId: string, apiKeyId: string) =>

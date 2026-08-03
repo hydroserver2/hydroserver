@@ -23,10 +23,11 @@
 
       <template v-else>
         <p class="ownership-copy">
-          Transfer is irreversible once accepted: your role drops to
-          collaborator and the new owner gains the owner-only powers to
+          Transfer is irreversible once accepted: the new owner gains the
+          owner-only powers to
           <strong>rename</strong>, <strong>delete</strong>, and
-          <strong>change the privacy</strong> of this workspace.
+          <strong>change the privacy</strong> of this workspace. Unless the new
+          owner adds you as a collaborator, you may lose access to it entirely.
         </p>
 
         <v-form v-model="emailFormValid" class="ownership-form">
@@ -64,7 +65,8 @@
           density="compact"
           class="mt-4"
         >
-          Once accepted, you'll lose access to administer this workspace.
+          Once accepted, you will no longer own this workspace and may lose
+          access to it entirely.
         </v-alert>
       </template>
     </div>
