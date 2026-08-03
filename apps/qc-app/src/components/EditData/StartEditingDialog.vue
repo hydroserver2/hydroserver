@@ -167,6 +167,7 @@
 import { ref } from 'vue'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'
+import { formatDateRange } from '@/utils/time'
 
 defineProps<{
   source: Datastream
@@ -222,5 +223,5 @@ const orderedSessions = (sessions: QualityControlSession[]) =>
 
 const sessionLabel = (s: QualityControlSession) =>
   s.description ||
-  `${s.phenomenonTimeStart.slice(0, 10)} to ${s.phenomenonTimeEnd.slice(0, 10)}`
+  formatDateRange(s.phenomenonTimeStart, s.phenomenonTimeEnd)
 </script>

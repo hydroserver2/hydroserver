@@ -63,6 +63,13 @@ describe('StartEditingDialog', () => {
     )
   })
 
+  it('formats session date ranges like the date inputs (MM/DD/YYYY HH:MM)', () => {
+    const w = mountDialog()
+    expect(w.text()).toMatch(
+      /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} to \d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/
+    )
+  })
+
   it('shows a recap line with processing level, observations, and sessions', () => {
     const w = mountDialog()
     expect(w.text()).toContain('Quality Controlled')

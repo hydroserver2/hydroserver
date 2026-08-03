@@ -242,18 +242,6 @@
             Save
           </v-btn>
           <v-btn
-            data-testid="exit-save-close-btn"
-            class="ml-1"
-            size="small"
-            variant="tonal"
-            color="primary"
-            prepend-icon="mdi-content-save-move-outline"
-            :disabled="saveDisabled"
-            @click="onSaveAndClose"
-          >
-            Save &amp; Close
-          </v-btn>
-          <v-btn
             data-testid="exit-commit-btn"
             class="ml-1"
             size="small"
@@ -428,7 +416,11 @@
           <div class="d-flex flex-column">
             <div class="text-title-large font-weight-bold">Save before closing?</div>
             <div class="text-body-small text-medium-emphasis">
-              {{ editCount }} edit{{ editCount === 1 ? '' : 's' }} not yet saved to the session
+              <template v-if="unsavedEditCount > 0">
+                {{ unsavedEditCount }} edit{{ unsavedEditCount === 1 ? '' : 's' }}
+                not yet saved to the session
+              </template>
+              <template v-else> You have unsaved changes </template>
             </div>
           </div>
         </div>
@@ -540,6 +532,8 @@ const {
   commit,
   needsSession,
   needsHistory,
+  hasUnsavedChanges,
+  unsavedEditCount,
 } = useEditSession()
 const qcSessionStore = useQcSessionStore()
 const { isReadOnly, inProgressSession } = storeToRefs(qcSessionStore)
@@ -774,7 +768,9 @@ async function onCommit() {
 }
 
 function requestClose() {
-  if (editCount.value > 0) {
+  // Only prompt to save when there are edits not yet persisted to the
+  // session; otherwise close straight back to the select view.
+  if (hasUnsavedChanges.value) {
     showCloseConfirm.value = true
   } else {
     exitToSelect()

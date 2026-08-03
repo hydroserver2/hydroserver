@@ -73,6 +73,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useQcSessionStore } from '@/store/qcSession'
+import { formatDateRange } from '@/utils/time'
 import type { QualityControlSession } from '@hydroserver/client'
 
 const store = useQcSessionStore()
@@ -88,7 +89,10 @@ const orderedSessions = computed(() =>
 
 function sessionLabel(session: QualityControlSession): string {
   if (session.description) return session.description
-  return `${session.phenomenonTimeStart.slice(0, 10)} to ${session.phenomenonTimeEnd.slice(0, 10)}`
+  return formatDateRange(
+    session.phenomenonTimeStart,
+    session.phenomenonTimeEnd
+  )
 }
 
 function onSelect(session: QualityControlSession): void {

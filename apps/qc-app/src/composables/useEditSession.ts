@@ -13,11 +13,11 @@
  * operation/session with the authenticated user.
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { serializeHistory, applyHistory } from '@uwrl/qc-utils'
 import type { Datastream, QualityControlSessionContract } from '@hydroserver/client'
-import type { ObservationRecord } from '@uwrl/qc-utils'
+import type { ObservationRecord, HistoryItem } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { usePlotlyStore } from '@/store/plotly'
 import { useHydroServer } from '@/store/hydroserver'
@@ -26,7 +26,7 @@ import { useQcSessionStore } from '@/store/qcSession'
 import {
   findHistoryForDatastream,
   startOrResumeSession,
-  loadSourceWindow,
+  loadLatestBase,
   persistSessionOperations,
   commitQcSession,
   reconstructSession,
@@ -80,6 +80,30 @@ export function useEditSession() {
   /** True when the selected datastream has no QC history (not a managed datastream). */
   const needsHistory = ref(false)
 
+  // Snapshot (by item reference) of the operation history at the last
+  // load/save, so the editor knows whether there are unsaved edits.
+  const savedEdits = ref<HistoryItem[]>([])
+  const currentEdits = (): HistoryItem[] =>
+    (selectedSeries.value?.data as ObservationRecord | undefined)?.history ?? []
+  const snapshotSavedEdits = () => {
+    savedEdits.value = [...currentEdits()]
+  }
+
+  /** True when the working copy has edits not in the last saved snapshot
+   *  (additions or removals). */
+  const hasUnsavedChanges = computed(() => {
+    const current = currentEdits()
+    const saved = savedEdits.value
+    if (current.length !== saved.length) return true
+    return current.some((item, i) => item !== saved[i])
+  })
+
+  /** Count of edits added since the last save (the common append case). */
+  const unsavedEditCount = computed(
+    () =>
+      currentEdits().filter((item) => !savedEdits.value.includes(item)).length
+  )
+
   async function beginEditing(): Promise<void> {
     const managed = qcDatastream.value
     if (!managed) return
@@ -113,11 +137,14 @@ export function useEditSession() {
           fetchInRange: fetchObservationsInRange,
           applyHistory,
         },
+        managed,
         sourceDatastream.value,
         history.id,
         inProgress.id
       )
       if (selectedSeries.value) selectedSeries.value.data = reconstructed
+      // The replayed draft operations are the saved baseline.
+      snapshotSavedEdits()
       needsSession.value = false
     } else {
       needsSession.value = true
@@ -127,7 +154,8 @@ export function useEditSession() {
   async function startSession(spec: QcSessionPostBody): Promise<void> {
     const historyId = sessionStore.historyId
     const source = sourceDatastream.value
-    if (!historyId || !source) {
+    const managed = qcDatastream.value
+    if (!historyId || !source || !managed) {
       throw new Error('Load a managed datastream for editing first.')
     }
     const session = await startOrResumeSession(
@@ -136,8 +164,19 @@ export function useEditSession() {
       clampSpecToSource(spec, source)
     )
     await sessionStore.loadSessions(historyId)
-    await loadSourceWindow(fetchObservationsInRange, source, session)
+    // Start from the latest committed state (the managed datastream), or the
+    // raw source when nothing has been committed yet.
+    const base = await loadLatestBase(
+      fetchObservationsInRange,
+      managed,
+      source,
+      new Date(session.phenomenonTimeStart),
+      new Date(session.phenomenonTimeEnd)
+    )
+    if (selectedSeries.value) selectedSeries.value.data = base
     needsSession.value = false
+    // Fresh session: the loaded working copy is the saved baseline.
+    snapshotSavedEdits()
   }
 
   async function saveDraft(): Promise<void> {
@@ -157,6 +196,7 @@ export function useEditSession() {
       session.id,
       operations
     )
+    snapshotSavedEdits()
   }
 
   async function commit(description?: string): Promise<void> {
@@ -198,12 +238,15 @@ export function useEditSession() {
       },
     })
     await sessionStore.loadSessions(historyId)
+    snapshotSavedEdits()
   }
 
   return {
     sourceDatastream,
     needsSession,
     needsHistory,
+    hasUnsavedChanges,
+    unsavedEditCount,
     beginEditing,
     startSession,
     saveDraft,

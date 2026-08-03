@@ -22,6 +22,26 @@ const formatTime = (time?: string | null): string => {
   return `${day} ${month} ${year}, ${hour}:${minute} ${period}`
 }
 
+/** Local date+time matching the time-range date inputs: `MM/DD/YYYY HH:MM`. */
+export function formatDateInput(iso?: string | null): string {
+  if (!iso) return '–'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}/${dd}/${d.getFullYear()} ${hh}:${min}`
+}
+
+/** A session's phenomenon-time window, formatted like the date inputs. */
+export function formatDateRange(
+  start?: string | null,
+  end?: string | null
+): string {
+  return `${formatDateInput(start)} to ${formatDateInput(end)}`
+}
+
 function getLocalTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || '–'
 }

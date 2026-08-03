@@ -254,6 +254,13 @@ Two contract notes worth keeping in mind:
   `{ method, args }`; the QC API speaks `{ operationType, arguments, order }`.
   The enum values are identical, so `persistOperations`/`reconstructSession`
   rename the fields when crossing between qc-utils and the API.
+- **Sessions start/resume from the latest committed state, not the raw source.**
+  Because each commit replays its session into the managed datastream (in-range
+  `replace`), the managed datastream's observations already carry every
+  committed session. `startSession`/`reconstructSession` therefore load the
+  managed datastream as the working base (via `loadLatestBase`, falling back to
+  the source only when nothing has been committed yet) and replay just the
+  current session's own draft operations on top.
 
 Tests stub the three services with `makeQcFake()` (a stateful in-memory double
 under `services/qualityControl/__tests__/` that returns

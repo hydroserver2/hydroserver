@@ -125,15 +125,19 @@ describe('useEditSession', () => {
     expect(selectedSeries.value.data).toEqual(reconstructed)
   })
 
-  it('startSession creates a session and copies the source window', async () => {
+  it('startSession loads the managed datastream as the working base', async () => {
     await seedHistory()
+    const managedBase = makeRecord()
+    fetchObservationsInRange.mockResolvedValue(managedBase)
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     await session.beginEditing()
     await session.startSession({ ...WIN, description: 'Jan' })
     expect(session.needsSession.value).toBe(false)
     expect(useQcSessionStore().inProgressSession?.description).toBe('Jan')
-    expect(fetchObservationsInRange.mock.calls.at(-1)?.[0].id).toBe('s-1')
+    // Working copy comes from the managed datastream (latest committed state).
+    expect(fetchObservationsInRange.mock.calls[0]?.[0].id).toBe('m-1')
+    expect(selectedSeries.value.data).toEqual(managedBase)
   })
 
   it('startSession clamps the window to the source datastream extent', async () => {
@@ -159,12 +163,13 @@ describe('useEditSession', () => {
 
   it('saveDraft persists the record operations to the session', async () => {
     await seedHistory()
-    selectedSeries.value = {
-      data: makeRecord([
+    // The working copy comes from startSession's base load; give it the ops.
+    fetchObservationsInRange.mockResolvedValue(
+      makeRecord([
         { method: 'VALUE_THRESHOLD', args: [] },
         { method: 'DELETE_POINTS', args: [] },
-      ]),
-    }
+      ])
+    )
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     await session.beginEditing()
@@ -198,6 +203,43 @@ describe('useEditSession', () => {
     const store = useQcSessionStore()
     expect(store.committedSessions.length).toBe(1)
     expect(store.inProgressSession).toBeNull()
+  })
+
+  it('tracks unsaved edits against the last saved snapshot', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    // Fresh session: working copy matches the saved baseline.
+    expect(session.hasUnsavedChanges.value).toBe(false)
+    expect(session.unsavedEditCount.value).toBe(0)
+    // A new edit on the working copy is unsaved.
+    selectedSeries.value.data.history.push({ method: 'DELETE_POINTS', args: [] })
+    expect(session.hasUnsavedChanges.value).toBe(true)
+    expect(session.unsavedEditCount.value).toBe(1)
+    // Saving re-baselines.
+    await session.saveDraft()
+    expect(session.hasUnsavedChanges.value).toBe(false)
+    expect(session.unsavedEditCount.value).toBe(0)
+  })
+
+  it('resuming a session starts with no unsaved changes', async () => {
+    const h = unwrap(
+      await qc.histories.create({
+        managedDatastreamId: 'm-1',
+        sourceDatastreamId: 's-1',
+      })
+    )
+    await qc.sessions.create(h.id, WIN)
+    fetchObservationsInRange.mockResolvedValue(
+      makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
+    )
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    expect(session.hasUnsavedChanges.value).toBe(false)
+    expect(session.unsavedEditCount.value).toBe(0)
   })
 
   it('commit saves the description provided at commit time', async () => {

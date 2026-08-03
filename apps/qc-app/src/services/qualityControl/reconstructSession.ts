@@ -1,19 +1,14 @@
 /**
- * Reconstruct the datastream state "as of" a session for resume/read-only
- * viewing (spec section 4 / 7.3).
+ * Reconstruct a session's working state for resume/read-only viewing
+ * (spec section 4 / 7.3).
  *
- * Fetch the source window, then replay the session's operations preceded
- * by its ancestors' operations (chronological order) via qc-utils
- * `applyHistory`. `fetchInRange` and `applyHistory` are injected so this
+ * Base = the latest committed state (the managed datastream's observations,
+ * which already carry every previously-committed session via commit's
+ * in-range replace), then replay this session's own draft operations on top.
+ * Previously-committed sessions are NOT replayed here; they are already baked
+ * into the managed datastream. Falls back to the raw source only when nothing
+ * has been committed yet. `fetchInRange` / `applyHistory` are injected so this
  * unit-tests without a real ObservationRecord.
- *
- * Operations are read from the operations endpoint, not off the session: a
- * session GET can return the summary shape (no embedded `operations`).
- *
- * Caveat (deferred): operations are index-coupled to the exact dataset
- * they were authored against, so reconstructing across sessions authored
- * over different windows can mis-target. This loads the target session's
- * window only; full multi-window reconstruction is a later task.
  */
 
 import type {
@@ -29,7 +24,7 @@ import type {
   QcHistoryOperation,
 } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
-import type { FetchObservationsInRange } from './session'
+import { loadLatestBase, type FetchObservationsInRange } from './session'
 
 /** API operation -> qc-utils replayable operation (rename operationType/arguments). */
 const toSerialized = (op: QualityControlOperation): QcHistoryOperation =>
@@ -37,42 +32,6 @@ const toSerialized = (op: QualityControlOperation): QcHistoryOperation =>
     method: op.operationType as unknown as QcHistoryOperation['method'],
     args: Array.isArray(op.arguments) ? op.arguments : [],
   }) as QcHistoryOperation
-
-/**
- * The ordered operations needed to reconstruct a session: every ancestor's
- * operations (oldest first) followed by the target session's operations.
- */
-export async function collectSessionOperations(
-  qcSessions: QualityControlSessionService,
-  qcOperations: QualityControlOperationService,
-  historyId: string,
-  sessionId: string
-): Promise<QcHistoryOperation[]> {
-  const ancestors = unwrap(
-    await qcSessions.list(historyId, {
-      ancestor_of: sessionId,
-      fetch_all: true,
-    })
-  )
-  const ordered = [...ancestors].sort(
-    (a, b) =>
-      new Date(a.phenomenonTimeStart).getTime() -
-      new Date(b.phenomenonTimeStart).getTime()
-  )
-
-  const operations: QcHistoryOperation[] = []
-  for (const ancestor of ordered) {
-    const ops = unwrap(
-      await qcOperations.list(historyId, ancestor.id, { fetch_all: true })
-    )
-    operations.push(...ops.map(toSerialized))
-  }
-  const sessionOps = unwrap(
-    await qcOperations.list(historyId, sessionId, { fetch_all: true })
-  )
-  operations.push(...sessionOps.map(toSerialized))
-  return operations
-}
 
 export interface ReconstructSessionDeps {
   qcSessions: QualityControlSessionService
@@ -91,26 +50,21 @@ export interface ReconstructSessionResult {
 
 export async function reconstructSession(
   deps: ReconstructSessionDeps,
+  managed: Datastream,
   source: Datastream,
   historyId: string,
   sessionId: string
 ): Promise<ReconstructSessionResult> {
   const { qcSessions, qcOperations, fetchInRange, applyHistory } = deps
 
-  // The session GET supplies the window; operations come from the
-  // operations endpoint (the GET may omit them in the summary shape).
   const session = unwrap(await qcSessions.get(historyId, sessionId))
-  const operations = await collectSessionOperations(
-    qcSessions,
-    qcOperations,
-    historyId,
-    sessionId
-  )
+  const start = new Date(session.phenomenonTimeStart)
+  const end = new Date(session.phenomenonTimeEnd)
 
-  const record = await fetchInRange(
-    source,
-    new Date(session.phenomenonTimeStart),
-    new Date(session.phenomenonTimeEnd)
+  // Latest committed state as the base, then this session's own operations.
+  const record = await loadLatestBase(fetchInRange, managed, source, start, end)
+  const ops = unwrap(
+    await qcOperations.list(historyId, sessionId, { fetch_all: true })
   )
 
   const history: QcHistory = {
@@ -120,7 +74,7 @@ export async function reconstructSession(
       startDate: session.phenomenonTimeStart,
       endDate: session.phenomenonTimeEnd,
     },
-    operations,
+    operations: ops.map(toSerialized),
   }
 
   const report = await applyHistory(record, history)

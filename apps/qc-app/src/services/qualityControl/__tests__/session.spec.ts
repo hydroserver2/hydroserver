@@ -6,6 +6,7 @@ import {
   getInProgressSession,
   startOrResumeSession,
   loadSourceWindow,
+  loadLatestBase,
 } from '../session'
 import { unwrap } from '../unwrap'
 
@@ -81,5 +82,35 @@ describe('loadSourceWindow', () => {
     expect(ds).toBe(source)
     expect((begin as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect((end as Date).toISOString()).toBe('2025-02-01T00:00:00.000Z')
+  })
+})
+
+describe('loadLatestBase', () => {
+  const managed = { id: 'm-1' } as unknown as Datastream
+  const source = { id: 's-1' } as unknown as Datastream
+  const start = new Date('2025-01-01T00:00:00Z')
+  const end = new Date('2025-02-01T00:00:00Z')
+  const recWith = (n: number) =>
+    ({ dataX: Array(n).fill(0), dataY: Array(n).fill(0) }) as unknown as ObservationRecord
+
+  it('uses the managed datastream when it has committed data', async () => {
+    const managedRec = recWith(3)
+    const fetchInRange = vi.fn().mockResolvedValue(managedRec)
+    const result = await loadLatestBase(fetchInRange, managed, source, start, end)
+    expect(result).toBe(managedRec)
+    expect(fetchInRange).toHaveBeenCalledTimes(1)
+    expect(fetchInRange.mock.calls[0][0]).toBe(managed)
+  })
+
+  it('falls back to the source when the managed datastream is empty', async () => {
+    const sourceRec = recWith(2)
+    const fetchInRange = vi
+      .fn()
+      .mockResolvedValueOnce(recWith(0))
+      .mockResolvedValueOnce(sourceRec)
+    const result = await loadLatestBase(fetchInRange, managed, source, start, end)
+    expect(result).toBe(sourceRec)
+    expect(fetchInRange).toHaveBeenCalledTimes(2)
+    expect(fetchInRange.mock.calls[1][0]).toBe(source)
   })
 })

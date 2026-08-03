@@ -178,9 +178,22 @@
                 >
                   QC
                 </span>
+                <span
+                  v-if="managedCount(item) > 0"
+                  class="managed-count ml-1 d-inline-flex align-center justify-center"
+                  :title="`${managedCount(item)} managed (QC) datastream${
+                    managedCount(item) === 1 ? '' : 's'
+                  } from this source`"
+                >
+                  {{ managedCount(item) }}
+                </span>
               </div>
             </template>
           </v-tooltip>
+        </template>
+
+        <template #item.name="{ item }">
+          <span class="name-cell" :title="item.name">{{ item.name || '-' }}</span>
         </template>
 
         <template #item.siteCodeName="{ item }">
@@ -243,7 +256,7 @@ import { Datastream } from '@hydroserver/client'
 import type { DatastreamExtended } from '@hydroserver/client'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 
-const { filteredDatastreams, plottedDatastreams, qcDatastream } =
+const { filteredDatastreams, plottedDatastreams, qcDatastream, historiesBySource } =
   storeToRefs(useDataVisStore())
 const { toggleDatastream, clearPlottedDatastreams } = useDataVisStore()
 
@@ -338,6 +351,10 @@ const isChecked = (item: Datastream) =>
 
 const isQc = (item: Datastream) => qcDatastream.value?.id === item.id
 
+// How many managed (QC) datastreams exist for this source datastream.
+const managedCount = (item: Datastream) =>
+  historiesBySource.value.get(item.id)?.length ?? 0
+
 const isAtCap = (item: Datastream) =>
   plottedDatastreams.value.length >= 5 && !isChecked(item)
 
@@ -351,7 +368,12 @@ const getRowProps = ({ item }: { item: Datastream }) => ({
 
 const search = ref()
 const headers = reactive([
-  { title: 'Plot', key: 'plot', visible: true, width: 64, sortable: false },
+  { title: 'Plot', key: 'plot', visible: true, width: 96, sortable: false },
+  {
+    title: 'Name',
+    key: 'name',
+    visible: true,
+  },
   {
     title: 'Site',
     key: 'siteCodeName',
@@ -496,6 +518,15 @@ const resetSort = () => {
   white-space: nowrap;
 }
 
+.name-cell {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .num-cell {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -535,6 +566,19 @@ const resetSort = () => {
   color: rgba(var(--v-theme-on-surface), 0.25);
   background-color: transparent;
   cursor: not-allowed !important;
+}
+
+/* Count badge next to the plot checkbox showing how many managed (QC)
+   datastreams exist for that source datastream. */
+.managed-count {
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.14);
+  border-radius: 9px;
 }
 
 /* Compact "QC" pill rendered next to the plot checkbox on the QC row.

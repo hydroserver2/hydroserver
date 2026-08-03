@@ -2,10 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import type { Datastream } from '@hydroserver/client'
 import type { ObservationRecord, QcHistory } from '@uwrl/qc-utils'
 import { makeQcFake } from './qcServiceFake'
-import {
-  collectSessionOperations,
-  reconstructSession,
-} from '../reconstructSession'
+import { reconstructSession } from '../reconstructSession'
 import { unwrap } from '../unwrap'
 
 const win = (start: string, end: string) => ({
@@ -13,27 +10,8 @@ const win = (start: string, end: string) => ({
   phenomenonTimeEnd: end,
 })
 
-/** Create a committed session with the given operations. */
-const committedSession = async (
-  qc: ReturnType<typeof makeQcFake>,
-  historyId: string,
-  range: { phenomenonTimeStart: string; phenomenonTimeEnd: string },
-  ops: string[]
-) => {
-  const s = unwrap(await qc.sessions.create(historyId, range))
-  if (ops.length) {
-    await qc.operations.create(
-      historyId,
-      s.id,
-      ops.map((operationType, i) => ({
-        operationType: operationType as any,
-        order: i,
-      }))
-    )
-  }
-  await qc.sessions.commit(historyId, s.id)
-  return s
-}
+const rec = (dataX: number[]) =>
+  ({ dataX, dataY: dataX.map(() => 0), history: [] }) as unknown as ObservationRecord
 
 const newHistory = async (qc: ReturnType<typeof makeQcFake>) =>
   unwrap(
@@ -43,86 +21,46 @@ const newHistory = async (qc: ReturnType<typeof makeQcFake>) =>
     })
   ).id
 
-describe('collectSessionOperations', () => {
-  it('returns just the session ops when there are no ancestors', async () => {
-    const qc = makeQcFake()
-    const historyId = await newHistory(qc)
-    const s = await committedSession(
-      qc,
-      historyId,
-      win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z'),
-      ['SELECTION', 'DELETE_POINTS']
-    )
-    const ops = await collectSessionOperations(
-      qc.sessions,
-      qc.operations,
-      historyId,
-      s.id
-    )
-    expect(ops.map((o) => o.method)).toEqual(['SELECTION', 'DELETE_POINTS'])
-  })
-
-  it('prepends ancestor ops (oldest first) before the target session ops', async () => {
-    const qc = makeQcFake()
-    const historyId = await newHistory(qc)
-    // A (Jan-Mar) then B (Feb-Apr) overlaps A -> B depends on A
-    await committedSession(
-      qc,
-      historyId,
-      win('2025-01-01T00:00:00Z', '2025-03-01T00:00:00Z'),
-      ['VALUE_THRESHOLD']
-    )
-    const b = await committedSession(
-      qc,
-      historyId,
-      win('2025-02-01T00:00:00Z', '2025-04-01T00:00:00Z'),
-      ['CHANGE_VALUES']
-    )
-
-    const ops = await collectSessionOperations(
-      qc.sessions,
-      qc.operations,
-      historyId,
-      b.id
-    )
-    expect(ops.map((o) => o.method)).toEqual(['VALUE_THRESHOLD', 'CHANGE_VALUES'])
-  })
-})
+const managed = { id: 'm-1' } as unknown as Datastream
+const source = { id: 's-1' } as unknown as Datastream
 
 describe('reconstructSession', () => {
-  it('fetches the source window and replays the ordered operations via applyHistory', async () => {
+  it('uses the managed datastream as the base and replays only this session ops', async () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
     const range = win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z')
-    const s = await committedSession(qc, historyId, range, [
-      'SELECTION',
-      'INTERPOLATE',
+    const s = unwrap(await qc.sessions.create(historyId, range))
+    await qc.operations.create(historyId, s.id, [
+      { operationType: 'SELECTION' as any, order: 0 },
+      { operationType: 'INTERPOLATE' as any, order: 1 },
     ])
 
-    const record = {} as ObservationRecord
-    const fetchInRange = vi.fn().mockResolvedValue(record)
+    const managedBase = rec([Date.UTC(2025, 0, 1)])
+    const fetchInRange = vi.fn().mockResolvedValue(managedBase)
     let captured: QcHistory | undefined
-    const applyHistory = vi.fn(async (_rec: ObservationRecord, history: QcHistory) => {
-      captured = history
-      return { applied: history.operations.length, failed: [] }
-    })
-    const source = { id: 's-1' } as unknown as Datastream
+    const applyHistory = vi.fn(
+      async (_rec: ObservationRecord, history: QcHistory) => {
+        captured = history
+        return { applied: history.operations.length, failed: [] }
+      }
+    )
 
     const result = await reconstructSession(
       { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      managed,
       source,
       historyId,
       s.id
     )
 
-    // fetched the source over the session window
+    // Base comes from the managed datastream (latest committed state).
     const [ds, begin, end] = fetchInRange.mock.calls[0]
-    expect(ds).toBe(source)
+    expect(ds).toBe(managed)
     expect((begin as Date).toISOString()).toBe('2025-01-01T00:00:00.000Z')
     expect((end as Date).toISOString()).toBe('2025-02-01T00:00:00.000Z')
 
-    // replayed the ordered ops over that window
-    expect(captured?.version).toBe('1')
+    // Only this session's own ops are replayed (ancestors are baked into
+    // the managed datastream).
     expect(captured?.window).toEqual({
       startDate: range.phenomenonTimeStart,
       endDate: range.phenomenonTimeEnd,
@@ -131,7 +69,38 @@ describe('reconstructSession', () => {
       'SELECTION',
       'INTERPOLATE',
     ])
-    expect(result.record).toBe(record)
+    expect(result.record).toBe(managedBase)
     expect(result.report.applied).toBe(2)
+  })
+
+  it('falls back to the source when the managed datastream has no committed data', async () => {
+    const qc = makeQcFake()
+    const historyId = await newHistory(qc)
+    const s = unwrap(
+      await qc.sessions.create(
+        historyId,
+        win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z')
+      )
+    )
+
+    const sourceRec = rec([Date.UTC(2025, 0, 1)])
+    const fetchInRange = vi
+      .fn()
+      .mockResolvedValueOnce(rec([])) // managed: nothing committed yet
+      .mockResolvedValueOnce(sourceRec) // source fallback
+    const applyHistory = vi.fn(async () => ({ applied: 0, failed: [] }))
+
+    const result = await reconstructSession(
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      managed,
+      source,
+      historyId,
+      s.id
+    )
+
+    expect(fetchInRange).toHaveBeenCalledTimes(2)
+    expect(fetchInRange.mock.calls[0][0]).toBe(managed)
+    expect(fetchInRange.mock.calls[1][0]).toBe(source)
+    expect(result.record).toBe(sourceRec)
   })
 })

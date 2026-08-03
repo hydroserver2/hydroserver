@@ -71,3 +71,21 @@ export async function loadSourceWindow(
     new Date(session.phenomenonTimeEnd)
   )
 }
+
+/**
+ * The latest committed state for a window. Every commit replays its session
+ * into the managed datastream (in-range replace), so the managed datastream's
+ * observations already carry all previously-committed sessions. Falls back to
+ * the raw source when nothing has been committed yet (the first session).
+ */
+export async function loadLatestBase(
+  fetchInRange: FetchObservationsInRange,
+  managed: Datastream,
+  source: Datastream,
+  start: Date,
+  end: Date
+): Promise<ObservationRecord> {
+  const base = await fetchInRange(managed, start, end)
+  if ((base.dataX?.length ?? 0) > 0) return base
+  return fetchInRange(source, start, end)
+}
