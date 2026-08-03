@@ -17,7 +17,12 @@ async function initiateTransfer(
   await page.getByRole('tab', { name: 'Ownership' }).click()
   await page.getByLabel("New owner's email").fill(newOwnerEmail)
   await page.getByRole('button', { name: 'Begin transfer' }).click()
-  await expect(page.getByText(/may lose access to it entirely/i)).toBeVisible()
+  await expect(
+    page.getByText(
+      'Once accepted, you will no longer own this workspace and may lose access to it entirely.',
+      { exact: true }
+    )
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Confirm transfer' }).click()
   await expect(
     page.getByText(/An ownership transfer is pending to/)

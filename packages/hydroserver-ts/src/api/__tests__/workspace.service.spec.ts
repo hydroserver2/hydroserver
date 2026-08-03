@@ -57,6 +57,43 @@ describe('WorkspaceService', () => {
     ])
   })
 
+  it('reports a later collaborator page failure instead of returning partial data', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: string | URL) => {
+        const page = new URL(String(input)).searchParams.get('page')
+
+        if (page === '1') {
+          return new Response(
+            JSON.stringify([{ email: 'first@example.com' }]),
+            {
+              status: 200,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Total-Pages': '2',
+              },
+            }
+          )
+        }
+
+        return new Response(JSON.stringify({ detail: 'Page unavailable' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    const response = await client.workspaces.getCollaborators('workspace-1')
+
+    expect(response).toEqual({
+      ok: false,
+      status: 503,
+      message: 'Page unavailable',
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('fetches every page of API keys while expanding their roles', async () => {
     const fetchMock = vi
       .fn()

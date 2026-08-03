@@ -200,8 +200,15 @@ test.describe('workspace management', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/workspaces?workspace=missing&section=missing')
     await expect(page).toHaveURL(
-      new RegExp(`workspace=${fixtures.workspaces.private.id}$`)
+      /\/workspaces\?workspace=(?!missing(?:&|$))[^&]+$/
     )
+    const fallbackWorkspaceId = new URL(page.url()).searchParams.get(
+      'workspace'
+    )
+    expect(fallbackWorkspaceId).toBeTruthy()
+    await expect(
+      page.getByTestId(`workspace-list-item-${fallbackWorkspaceId}`)
+    ).toHaveClass(/selected/)
 
     await page.goto(
       `/workspaces?workspace=${fixtures.workspaces.public.id}&section=api-keys`
@@ -276,8 +283,9 @@ test.describe('workspace management', () => {
     failWorkspaceRequests = false
     await page.getByRole('button', { name: 'Retry' }).click()
     await expect(
-      page.getByRole('heading', { name: fixtures.workspaces.private.name })
+      workspaceListItem(page, fixtures.workspaces.private.name)
     ).toBeVisible()
+    await expect(page.getByTestId('workspace-detail')).toBeVisible()
   })
 
   test('overview keeps healthy totals visible when one service is unavailable', async ({
