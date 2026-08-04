@@ -216,6 +216,7 @@ type NavItem = {
   label: string
   icon?: string
   onClick?: () => void
+  requiresAuth?: boolean
 }
 
 // The base nav items, before filtering out anything that requires a login.
@@ -249,6 +250,7 @@ const basePaths: NavItem[] = [
   {
     label: 'Quality Control',
     icon: mdiShieldEditOutline,
+    requiresAuth: true,
     onClick: () => {
       window.location.href = '/qc/'
     },
@@ -273,7 +275,8 @@ function itemRequiresAuth(attrs?: NavItemAttrs): boolean {
 function visiblePaths(): NavItem[] {
   const authenticated = hs.session.isAuthenticated
   const items = basePaths.filter(
-    (item) => authenticated || !itemRequiresAuth(item.attrs)
+    (item) =>
+      authenticated || !(item.requiresAuth || itemRequiresAuth(item.attrs))
   )
 
   // Logged-in visitors reach About through the account menu instead.

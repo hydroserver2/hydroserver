@@ -15,6 +15,9 @@ test.describe('authentication', () => {
     await expect(
       page.locator('main').getByRole('button', { name: 'Log in' })
     ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Quality Control' })
+    ).toHaveCount(0)
   })
 
   test('login with seeded owner user reaches Browse monitoring sites', async ({
@@ -27,6 +30,9 @@ test.describe('authentication', () => {
       page.getByRole('heading', { name: 'Monitoring sites', level: 1 })
     ).toBeVisible()
     await expect(page.getByTestId('register-site-button')).toBeEnabled()
+    await expect(
+      page.getByRole('button', { name: 'Quality Control' })
+    ).toBeVisible()
   })
 
   test('authenticated users can log out from the account menu', async ({
