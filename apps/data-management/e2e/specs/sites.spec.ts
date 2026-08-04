@@ -4,6 +4,8 @@ import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
 import {
   chooseAutocompleteOption,
+  createWorkspaceFromManagePage,
+  deleteWorkspaceFromManagePage,
   fillCombobox,
   selectWorkspace,
 } from '../support/ui'
@@ -18,21 +20,19 @@ test.describe('sites and workspaces', () => {
     'base64'
   )
 
-  test('owner can create a workspace from the shared workspace toolbar', async ({ page }) => {
+  test('owner can reach workspace management from orchestration and create a workspace', async ({
+    page,
+  }) => {
     const workspaceName = `E2E Workspace ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/orchestration')
     await selectWorkspace(page, fixtures.workspaces.private.name)
     await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await page.getByRole('button', { name: 'Add workspace' }).click()
+    await expect(page).toHaveURL(/\/workspaces/)
 
-    await page.getByLabel('Name *').fill(workspaceName)
-    await page.getByRole('button', { name: 'Save' }).click()
-
-    await expect(
-      page.getByRole('cell', { name: workspaceName, exact: true })
-    ).toBeVisible()
+    await createWorkspaceFromManagePage(page, workspaceName)
+    await deleteWorkspaceFromManagePage(page, workspaceName)
   })
 
   test('public site details render seeded datastreams', async ({ page }) => {

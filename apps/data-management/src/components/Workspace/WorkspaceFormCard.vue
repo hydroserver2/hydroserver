@@ -1,8 +1,9 @@
 <template>
   <v-card>
-    <v-toolbar color="secondary-darken-2">
+    <v-toolbar flat color="primary">
       <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} workspace </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-form
       @submit.prevent="onSubmit"
@@ -27,9 +28,12 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
-          isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        <v-btn-primary
+          type="submit"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+        >
       </v-card-actions>
     </v-form>
   </v-card>
@@ -49,24 +53,34 @@ const item = ref(JSON.parse(JSON.stringify(props.workspace ?? new Workspace())))
 const isEdit = computed(() => !!props.workspace || undefined)
 const valid = ref(false)
 const myForm = ref<VForm>()
+const isSubmitting = ref(false)
 
 async function onSubmit() {
+  if (isSubmitting.value) return
   await myForm.value?.validate()
   if (!valid.value) return
+  isSubmitting.value = true
 
-  const res = isEdit.value
-    ? await hs.workspaces.update(item.value, props.workspace)
-    : await hs.workspaces.create(item.value)
+  try {
+    const res = isEdit.value
+      ? await hs.workspaces.update(item.value, props.workspace)
+      : await hs.workspaces.create(item.value)
 
-  if (!res.ok) {
-    console.error('Error uploading workspace', res)
-    Snackbar.error(res.message)
-    return
+    if (!res.ok) {
+      console.error('Error uploading workspace', res)
+      Snackbar.error(res.message || 'Unable to save the workspace.')
+      return
+    }
+
+    const updatedOrCreated = isEdit.value ? 'updated' : 'created'
+    Snackbar.success(`Workspace ${updatedOrCreated}`)
+    emit(`${updatedOrCreated}`, res.data)
+    emit('close')
+  } catch (error) {
+    console.error('Error uploading workspace', error)
+    Snackbar.error('Unable to save the workspace.')
+  } finally {
+    isSubmitting.value = false
   }
-
-  const updatedOrCreated = isEdit.value ? 'updated' : 'created'
-  Snackbar.success(`Workspace ${updatedOrCreated}`)
-  emit(`${updatedOrCreated}`, res.data)
-  emit('close')
 }
 </script>

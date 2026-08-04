@@ -20,6 +20,7 @@ class AggregationMethod(models.TextChoices):
     MAX = "max"
     FIRST = "first"
     LAST = "last"
+    TIME_WEIGHTED_MEAN = "time_weighted_mean"
 
 
 class IntervalUnits(models.TextChoices):

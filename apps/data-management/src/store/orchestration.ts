@@ -8,7 +8,6 @@ import hs, {
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 import type {
-  ActiveView,
   DataProductTaskType,
   TabId,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
@@ -29,7 +28,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   )
 
   const activeTab = ref<TabId>('ingestion')
-  const activeView = ref<ActiveView>('tasks')
   const selectedConnectionId = ref<string | null>(null)
   const selectedThingId = ref<string | null>(null)
   const sidebarSearch = ref('')
@@ -156,7 +154,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     orchestrationStatusFilter,
     orchestrationTaskTypeFilter,
     activeTab,
-    activeView,
     selectedConnectionId,
     selectedThingId,
     sidebarSearch,

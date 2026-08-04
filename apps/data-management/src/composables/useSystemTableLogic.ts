@@ -1,4 +1,5 @@
 import { onMounted, Ref, ref } from 'vue'
+import { Scoped } from './tableScope'
 
 interface WithId {
   id: string
@@ -12,8 +13,8 @@ export function useSystemTableLogic<T extends WithId>(
   const openEdit = ref(false)
   const openDelete = ref(false)
   const openAccessControl = ref(false)
-  const item = ref(new ItemClass()) as Ref<T>
-  const items: Ref<T[]> = ref([])
+  const item = ref(new ItemClass()) as Ref<Scoped<T>>
+  const items: Ref<Scoped<T>[]> = ref([])
 
   function openDialog(selectedItem: T, dialog: string) {
     item.value = selectedItem

@@ -10,10 +10,9 @@ import {
 import type * as Data from '../../generated/data.types'
 import { ApiResponse } from '../responseInterceptor'
 
-type RoleQueryParameters =
-  NonNullable<
-    Data.operations['interfaces_api_views_iam_role_get_roles']['parameters']['query']
-  >
+type RoleQueryParameters = NonNullable<
+  Data.operations['interfaces_api_views_iam_role_get_roles']['parameters']['query']
+>
 
 /**
  * Transport layer for /workspaces routes. Builds URLs, handles pagination,
@@ -27,7 +26,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: collaborators ----------
   getCollaborators(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.fetch<Collaborator[]>(url)
+    return apiMethods.paginatedFetch<Collaborator[]>(url)
   }
 
   addCollaborator(workspaceId: string, email: string, roleId: string) {
@@ -60,7 +59,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: service accounts ----------
   getServiceAccounts(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/service-accounts`
-    return apiMethods.fetch<ServiceAccount[]>(url)
+    return apiMethods.paginatedFetch<ServiceAccount[]>(url)
   }
 
   getServiceAccount = (workspaceId: string, serviceAccountId: string) =>

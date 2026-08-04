@@ -368,6 +368,7 @@ export enum PermissionResource {
   Unit = 'Unit',
   ObservedProperty = 'ObservedProperty',
   ProcessingLevel = 'ProcessingLevel',
+  ResultQualifier = 'ResultQualifier',
   Observation = 'Observation',
   ServiceAccount = 'ServiceAccount',
 }

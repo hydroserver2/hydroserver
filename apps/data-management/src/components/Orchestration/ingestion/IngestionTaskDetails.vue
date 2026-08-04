@@ -1,5 +1,8 @@
 <template>
-  <div v-if="task" class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden">
+  <div
+    v-if="task"
+    class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden"
+  >
     <header class="pt-[14px] border-b border-[#e8e8e8] bg-white shrink-0">
       <button class="task-details-back" type="button" @click="close">
         <v-icon :icon="mdiArrowLeft" size="16" />
@@ -10,7 +13,9 @@
         <div class="flex items-center gap-[10px] flex-wrap min-w-0">
           <h2 class="task-details-title">{{ task.name }}</h2>
           <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
-          <span v-if="scheduleText" class="schedule-pill">{{ scheduleText }}</span>
+          <span v-if="scheduleText" class="schedule-pill">{{
+            scheduleText
+          }}</span>
         </div>
 
         <div class="ml-auto flex gap-2 shrink-0 flex-wrap">
@@ -55,7 +60,7 @@
             />
           </v-dialog>
 
-          <v-dialog width="34rem">
+          <v-dialog v-model="deleteTaskDialogOpen" width="34rem">
             <template #activator="{ props }">
               <button
                 v-bind="props"
@@ -67,7 +72,11 @@
                 <span>Delete</span>
               </button>
             </template>
-            <DeleteTaskCard :task="task" @close="null" @delete="deleteTask" />
+            <DeleteTaskCard
+              :task="task"
+              @close="deleteTaskDialogOpen = false"
+              @delete="deleteTask"
+            />
           </v-dialog>
 
           <button
@@ -150,6 +159,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'deleted', 'updated'])
 const tab = ref('runs')
 const editTaskDialogOpen = ref(false)
+const deleteTaskDialogOpen = ref(false)
 const {
   task,
   loadingRuns,

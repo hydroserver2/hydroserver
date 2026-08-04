@@ -37,10 +37,20 @@
             color="primary"
             density="compact"
             hide-details
-            label="Advanced features"
+            label="Use advanced features"
           />
 
           <div v-if="advancedFeaturesEnabled" class="advanced-features-body">
+            <p class="font-weight-bold mb-2">Description</p>
+            <v-textarea
+              v-model="formDataConnection.description"
+              label="Data connection description"
+              :rules="rules.description"
+              rows="3"
+              auto-grow
+              density="compact"
+            />
+
             <p class="font-weight-bold mb-2">Authentication header</p>
             <div class="auth-header-grid">
               <v-combobox
@@ -106,7 +116,9 @@
                   class="mr-1 mb-1 max-w-full"
                   @click:close="removeNotificationRecipient(index)"
                 >
-                  <span class="truncate">{{ item.title }}</span>
+                  <span class="truncate">{{
+                    notificationRecipientEmails[index]
+                  }}</span>
                 </v-chip>
               </template>
             </v-combobox>
@@ -228,6 +240,7 @@ function hasAdvancedFeatures(dataConnection?: DataConnection) {
   if (!dataConnection) return false
 
   return !!(
+    toRecipientString(dataConnection.description) ||
     toRecipientString(dataConnection.authHeaderName) ||
     toRecipientString(dataConnection.authHeaderValue) ||
     (dataConnection as any).notification?.recipientEmails?.length
@@ -338,15 +351,18 @@ async function onSubmit() {
 
 function normalizeAdvancedFields(dataConnection: DataConnection) {
   if (!advancedFeaturesEnabled.value) {
+    dataConnection.description = null
     dataConnection.authHeaderName = null
     dataConnection.authHeaderValue = null
     dataConnection.notification = null
     return
   }
 
+  const description = `${dataConnection.description ?? ''}`.trim()
   const authHeaderName = `${dataConnection.authHeaderName ?? ''}`.trim()
   const authHeaderValue = `${dataConnection.authHeaderValue ?? ''}`.trim()
 
+  dataConnection.description = description || null
   dataConnection.authHeaderName = authHeaderName || null
   dataConnection.authHeaderValue = authHeaderValue || null
 

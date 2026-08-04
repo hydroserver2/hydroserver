@@ -11,6 +11,18 @@
     <div class="my-4 mx-6">
       <WorkspaceToolbar />
 
+      <v-card v-if="!hasWorkspaces" class="text-center pa-6 mb-4" elevation="2">
+        <v-icon :icon="mdiBriefcaseOutline" size="48" color="grey" />
+        <h4 class="mt-2">No workspaces found</h4>
+        <p class="mb-4">
+          All sites belong to a workspace. Create one from the Manage
+          workspaces page to start registering sites.
+        </p>
+        <v-btn color="primary" :to="{ name: 'Workspaces' }">
+          Create a workspace
+        </v-btn>
+      </v-card>
+
       <v-row class="my-2" v-if="hasWorkspaces && selectedWorkspace !== null">
         <v-col cols="auto">
           <h5 class="text-h5">Your registered sites</h5>
@@ -68,7 +80,7 @@
           :search="search"
           multi-sort
           item-value="id"
-          class="elevation-3 owned-sites-table"
+          class="elevation-3 owned-sites-table hs-table-card"
           @click:row="onRowClick"
           color="primary"
           :hover="coloredThings?.length > 0 && isPageLoaded"
@@ -151,6 +163,7 @@ import { useWorkspaceStore } from '@/store/workspaces'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import {
+  mdiBriefcaseOutline,
   mdiFilterRemoveOutline,
   mdiMagnify,
   mdiMenuDown,

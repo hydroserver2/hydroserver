@@ -24,6 +24,7 @@
         <v-select
           v-model="selectedRole"
           :items="roles"
+          data-testid="service-account-role"
           label="Service account's role *"
           item-title="name"
           :return-object="true"
@@ -37,9 +38,12 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
-          isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        <v-btn-primary
+          type="submit"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+        >
       </v-card-actions>
     </v-form>
   </v-card>
@@ -50,6 +54,7 @@ import { required, rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
 import { ref } from 'vue'
 import { useFormLogic } from '@/composables/useFormLogic'
+import { Snackbar } from '@/utils/notifications'
 import hs, {
   ServiceAccount,
   CollaboratorRole,
@@ -65,6 +70,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
+const isSubmitting = ref(false)
 
 const selectedRole = ref<CollaboratorRole | undefined>(
   props.serviceAccount?.role
@@ -108,19 +114,33 @@ const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
 )
 
 async function onSubmit() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
   try {
     item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
+    if (!valid.value) return
     if (!newItem) {
-      if (isEdit.value) emit('close')
+      Snackbar.error(
+        isEdit.value
+          ? 'Unable to update service account.'
+          : 'Unable to create service account.'
+      )
       return
     }
     const row: ServiceAccountRow = { ...newItem, role: selectedRole.value }
     if (isEdit.value) emit('updated', row)
     else emit('created', row)
+    emit('close')
   } catch (error) {
     console.error('Error uploading service account', error)
+    Snackbar.error(
+      isEdit.value
+        ? 'Unable to update service account.'
+        : 'Unable to create service account.'
+    )
+  } finally {
+    isSubmitting.value = false
   }
-  emit('close')
 }
 </script>

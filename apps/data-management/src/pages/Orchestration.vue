@@ -17,12 +17,8 @@
           @open-hydro-loader="goToHydroLoader"
         />
 
-        <section v-if="activeView === 'workspaces'" class="workspace-detail">
-          <OrchestrationWorkspaceManager table-height="calc(100vh - 230px)" />
-        </section>
-
         <section
-          v-else-if="!selectedWorkspace"
+          v-if="!selectedWorkspace"
           class="no-workspace-state"
           data-testid="no-selected-workspace"
         >
@@ -235,7 +231,6 @@ import OrchestrationNavRail from '@/components/Orchestration/workbench/Orchestra
 import OrchestrationContextSidebar from '@/components/Orchestration/workbench/OrchestrationContextSidebar.vue'
 import TaskListPanel from '@/components/Orchestration/workbench/TaskListPanel.vue'
 import DataConnectionForm from '@/components/Orchestration/connections/DataConnectionForm.vue'
-import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationWorkspaceManager.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
@@ -293,7 +288,6 @@ const {
   orchestrationStatusFilter,
   orchestrationTaskTypeFilter,
   activeTab,
-  activeView,
   selectedConnectionId,
   selectedThingId,
   sidebarSearch,
@@ -340,12 +334,7 @@ watch(
 watch(
   routeView,
   (view) => {
-    if (view === 'workspaces') {
-      activeView.value = 'workspaces'
-    } else {
-      activeView.value = 'tasks'
-      activeTab.value = view
-    }
+    activeTab.value = view
   },
   { immediate: true }
 )
@@ -681,11 +670,7 @@ const selectedGroupIdForTab = (tab: TabId) =>
   tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
 
 const fetchVisibleTasks = async (force = false) => {
-  if (
-    !selectedWorkspaceId.value ||
-    activeView.value === 'workspaces' ||
-    hasTaskDetails.value
-  ) {
+  if (!selectedWorkspaceId.value || hasTaskDetails.value) {
     return
   }
 
@@ -699,12 +684,6 @@ const fetchVisibleTasks = async (force = false) => {
 
 const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
   if (hasTaskDetails.value) return
-  if (activeView.value === 'workspaces') {
-    if (overrideWorkspaceId !== undefined) {
-      await replaceView('workspaces', null, overrideWorkspaceId)
-    }
-    return
-  }
   await replaceSelectedGroup(
     activeTab.value,
     selectedGroupIdForTab(activeTab.value),
@@ -733,7 +712,7 @@ const setActiveTab = async (tab: TabId) => {
 }
 
 const openWorkspaceManager = async () => {
-  await replaceView('workspaces')
+  await router.push({ name: 'Workspaces' })
 }
 
 const goToHydroLoader = async () => {
@@ -801,11 +780,7 @@ watch(
 )
 
 watch([routeDataConnectionId, routeSiteId, routeView], async () => {
-  if (
-    loading.value ||
-    activeView.value === 'workspaces' ||
-    hasTaskDetails.value
-  ) {
+  if (loading.value || hasTaskDetails.value) {
     return
   }
 
@@ -981,14 +956,6 @@ const goToTask = async (row: TaskRow) => {
   min-height: 0;
   background: #ffffff;
   overflow: hidden;
-}
-
-.workspace-detail {
-  flex: 1;
-  min-width: 0;
-  overflow: auto;
-  background: white;
-  padding: 16px 22px;
 }
 
 .no-workspace-state {
