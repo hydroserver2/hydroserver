@@ -69,7 +69,6 @@
           multi-sort
           item-value="id"
           class="elevation-3 owned-sites-table"
-          @click:row="onRowClick"
           color="primary"
           :hover="coloredThings?.length > 0 && isPageLoaded"
           :style="{ 'max-height': `200vh` }"
@@ -106,15 +105,45 @@
               </p>
             </div>
           </template>
+          <template v-slot:item.samplingFeatureCode="{ item }">
+            <RouterLink
+              :to="siteDetailsRoute(item.id)"
+              class="site-details-link"
+            >
+              {{ item.samplingFeatureCode }}
+            </RouterLink>
+          </template>
+          <template v-slot:item.name="{ item }">
+            <RouterLink
+              :to="siteDetailsRoute(item.id)"
+              class="site-details-link"
+            >
+              {{ item.name }}
+            </RouterLink>
+          </template>
+          <template v-slot:item.siteType="{ item }">
+            <RouterLink
+              :to="siteDetailsRoute(item.id)"
+              class="site-details-link"
+            >
+              {{ item.siteType }}
+            </RouterLink>
+          </template>
           <template v-slot:item.tagValue="{ item }">
-            <template v-for="(tag, index) in item.tags">
-              <v-chip
-                :color="item.color?.background"
-                v-if="tag.key === filterCriteria.key"
-              >
-                {{ item.tagValue }}
-              </v-chip>
-            </template>
+            <RouterLink
+              :to="siteDetailsRoute(item.id)"
+              class="site-details-link"
+            >
+              <template v-for="tag in item.tags">
+                <v-chip
+                  :color="item.color?.background"
+                  v-if="tag.key === filterCriteria.key"
+                  :key="`${tag.key}:${tag.value}`"
+                >
+                  {{ item.tagValue }}
+                </v-chip>
+              </template>
+            </RouterLink>
           </template>
         </v-data-table-virtual>
       </v-card>
@@ -132,7 +161,6 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { ref, onMounted, computed, watch } from 'vue'
 import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import SiteForm from '@/components/Site/SiteForm.vue'
@@ -225,7 +253,6 @@ const coloredThings = computed<ThingSiteSummaryWithColor[]>(() =>
 
 const showSiteForm = ref(false)
 const showFilter = ref(false)
-const router = useRouter()
 
 const headers = computed(() => {
   const baseHeaders = [
@@ -249,9 +276,10 @@ const handleFilter = (criteria: { key: string; values: string[] }) => {
   filterCriteria.value = criteria
 }
 
-const onRowClick = (event: Event, item: any) => {
-  router.push({ name: 'SiteDetails', params: { id: item.item.id } })
-}
+const siteDetailsRoute = (id: string) => ({
+  name: 'SiteDetails',
+  params: { id },
+})
 
 const loadThings = async () => {
   const res = await hs.things.listSiteSummaries(selectedWorkspace.value!.id)
@@ -281,5 +309,15 @@ onMounted(async () => {
   /* The legend won't appear without a relative position */
   position: relative;
   height: 33rem;
+}
+
+.site-details-link {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  margin: 0 -16px;
+  min-height: var(--v-table-row-height);
+  padding: 0 16px;
+  text-decoration: none;
 }
 </style>
