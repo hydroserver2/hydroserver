@@ -2,7 +2,6 @@
 
 import django.db.models.deletion
 import django.utils.timezone
-import core.iam.models.utils
 import uuid
 from django.db import migrations, models
 
@@ -88,6 +87,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "API Key",
                 "verbose_name_plural": "API Keys",
             },
-            bases=(models.Model, core.iam.models.utils.PermissionChecker),
+
         ),
     ]

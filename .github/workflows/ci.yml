@@ -215,7 +215,7 @@ jobs:
         run: python -m pytest --import-mode=append tests/
 
   api:
-    name: API Service
+    name: API Service 80% Coverage
     runs-on: ubuntu-latest
 
     services:
@@ -263,7 +263,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r django/requirements.txt
           pip install -e packages/hydroserverpy
-          pip install pytest pytest-django pytest-cov
+          pip install pytest pytest-django pytest-cov factory-boy
 
       - name: Run API test suite
         working-directory: django
@@ -271,7 +271,7 @@ jobs:
           DATABASE_URL: postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver
           CELERY_BROKER_URL: redis://127.0.0.1:6379/0
           SMTP_URL: smtp://127.0.0.1:1025
-        run: python -m pytest
+        run: python -m pytest --cov=. --cov-report=term-missing
 
   e2e-data-management:
     name: Data Management E2E

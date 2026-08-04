@@ -6,7 +6,7 @@ describe('WorkspaceService', () => {
     vi.restoreAllMocks()
   })
 
-  it('expands API key roles used by the workspace management table', async () => {
+  it('uses the service-account endpoint for the workspace management table', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify([]), {
         status: 200,
@@ -16,10 +16,10 @@ describe('WorkspaceService', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    await client.workspaces.getApiKeys('workspace-1')
+    await client.workspaces.getServiceAccounts('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/api-keys?expand_related=true&page=1&page_size=200'
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=1&page_size=200'
     )
   })
 
@@ -94,12 +94,13 @@ describe('WorkspaceService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('fetches every page of API keys while expanding their roles', async () => {
+  it('fetches every page of service accounts', async () => {
     const fetchMock = vi
       .fn()
       .mockImplementation(async (input: string | URL) => {
         const page = new URL(String(input)).searchParams.get('page')
-        const data = page === '1' ? [{ id: 'key-1' }] : [{ id: 'key-2' }]
+        const data =
+          page === '1' ? [{ id: 'account-1' }] : [{ id: 'account-2' }]
 
         return new Response(JSON.stringify(data), {
           status: 200,
@@ -112,13 +113,13 @@ describe('WorkspaceService', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    const response = await client.workspaces.getApiKeys('workspace-1')
+    const response = await client.workspaces.getServiceAccounts('workspace-1')
 
-    expect(response.data).toEqual([{ id: 'key-1' }, { id: 'key-2' }])
+    expect(response.data).toEqual([{ id: 'account-1' }, { id: 'account-2' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/api-keys?expand_related=true&page=1&page_size=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/api-keys?expand_related=true&page=2&page_size=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=1&page_size=200',
+      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?page=2&page_size=200',
     ])
   })
 })

@@ -99,28 +99,30 @@ test.describe('workspace management', () => {
     await deleteWorkspaceFromManagePage(page, workspaceName)
   })
 
-  test('owner can create, edit, regenerate, and delete an API key', async ({
+  test('owner can create, edit, regenerate, and delete a service account', async ({
     page,
   }) => {
-    const keyName = `E2E API Key ${Date.now()}`
+    const keyName = `E2E Service Account ${Date.now()}`
     const renamedKeyName = `${keyName} Renamed`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto(
-      `/workspaces?workspace=${fixtures.workspaces.public.id}&section=api-keys`
+      `/workspaces?workspace=${fixtures.workspaces.public.id}&section=service-accounts`
     )
 
-    await page.getByRole('button', { name: 'Create API key' }).click()
+    await page.getByRole('button', { name: 'Create service account' }).click()
     let dialog = page.getByRole('dialog')
     await dialog.getByLabel('Name *').fill(keyName)
-    await dialog.getByTestId('api-key-role').click()
+    await dialog.getByTestId('service-account-role').click()
     await chooseOverlayOption(page, 'Data Loader')
     await dialog.getByRole('button', { name: 'Save', exact: true }).click()
 
     let keyRow = page.getByRole('row', { name: new RegExp(keyName) })
     await expect(keyRow).toBeVisible()
     await expect(
-      page.getByText('Your API key has been generated.', { exact: false })
+      page.getByText('Your service account API key has been generated.', {
+        exact: false,
+      })
     ).toBeVisible()
 
     await keyRow.getByRole('button', { name: `Edit ${keyName}` }).click()
@@ -145,7 +147,9 @@ test.describe('workspace management', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect(keyRow).toHaveCount(0)
     await expect(
-      page.getByText('Your API key has been generated.', { exact: false })
+      page.getByText('Your service account API key has been generated.', {
+        exact: false,
+      })
     ).toHaveCount(0)
   })
 
@@ -175,12 +179,12 @@ test.describe('workspace management', () => {
       editorRow.getByTestId(`remove-collaborator-${users.editor.email}`)
     ).toBeDisabled()
 
-    await page.getByRole('tab', { name: 'API keys' }).click()
+    await page.getByRole('tab', { name: 'Service accounts' }).click()
     await expect(
-      page.getByRole('button', { name: 'Create API key' })
+      page.getByRole('button', { name: 'Create service account' })
     ).toBeDisabled()
     await expect(
-      page.getByText("You don't have permission to view API keys")
+      page.getByText("You don't have permission to view service accounts")
     ).toHaveCount(0)
 
     await page.getByRole('tab', { name: 'Metadata' }).click()
@@ -211,16 +215,15 @@ test.describe('workspace management', () => {
     ).toHaveClass(/selected/)
 
     await page.goto(
-      `/workspaces?workspace=${fixtures.workspaces.public.id}&section=api-keys`
+      `/workspaces?workspace=${fixtures.workspaces.public.id}&section=service-accounts`
     )
 
     await expect(
       page.getByRole('heading', { name: fixtures.workspaces.public.name })
     ).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'API keys' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    )
+    await expect(
+      page.getByRole('tab', { name: 'Service accounts' })
+    ).toHaveAttribute('aria-selected', 'true')
     await expect(
       page.getByRole('row', { name: /apikey Data Loader/ })
     ).toBeVisible()
@@ -292,7 +295,7 @@ test.describe('workspace management', () => {
     page,
   }) => {
     await page.route(
-      `**/api/data/workspaces/${fixtures.workspaces.private.id}/api-keys?**`,
+      `**/api/data/workspaces/${fixtures.workspaces.private.id}/service-accounts?**`,
       (route) =>
         route.fulfill({
           status: 503,
@@ -305,7 +308,9 @@ test.describe('workspace management', () => {
 
     await expect(page.getByTestId('overview-members-count')).toHaveText('3')
     await expect(page.getByTestId('overview-sites-count')).toHaveText('2')
-    await expect(page.getByTestId('overview-api-keys-count')).toHaveText('—')
+    await expect(
+      page.getByTestId('overview-service-accounts-count')
+    ).toHaveText('—')
     await expect(page.getByTestId('overview-metadata-count')).toHaveText('9')
     await expect(
       page.getByText('Some totals could not be loaded.')

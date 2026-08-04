@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet, Q, Count, Max, Func, F
 from django.db.utils import IntegrityError
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream, Observation, ResultQualifier
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
@@ -42,35 +43,34 @@ class ObservationService(ServiceUtils):
 
     def get_observation_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         datastream_id: Optional[uuid.UUID] = None,
         expand_related: Optional[bool] = None,
     ):
+        queryset = Observation.objects.annotate(
+            result_qualifier_codes=F("result_qualifiers")
+        )
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        else:
+            queryset = queryset.select_related("datastream__thing")
+        if datastream_id:
+            queryset = queryset.filter(id=uid, datastream__id=datastream_id)
+        else:
+            queryset = queryset.filter(id=uid)
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            observation = Observation.objects.annotate(
-                result_qualifier_codes=F("result_qualifiers")
-            )
-            if expand_related:
-                observation = self.select_expanded_fields(observation)
-            else:
-                observation = observation.select_related("datastream__thing")
-            if datastream_id:
-                observation = observation.get(id=uid, datastream__id=datastream_id)
-            else:
-                observation = observation.get(id=uid)
+            observation = queryset.get()
         except Observation.DoesNotExist:
             raise HttpError(404, "Observation does not exist")
 
-        observation_permissions = observation.get_principal_permissions(
-            principal=principal
-        )
-
-        if "view" not in observation_permissions:
+        if not principal.can_view(observation):
             raise HttpError(404, "Observation does not exist")
 
-        if action not in observation_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(observation):
             raise HttpError(
                 403, f"You do not have permission to {action} this observation"
             )
@@ -85,7 +85,7 @@ class ObservationService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         datastream_id: Optional[uuid.UUID] = None,
         page: Optional[int] = None,
@@ -113,7 +113,7 @@ class ObservationService(ServiceUtils):
                 code_filter |= Q(result_qualifiers__contains=[code])
             queryset = queryset.filter(code_filter)
 
-        queryset = queryset.visible(principal=principal)
+        queryset = principal.filter_by_permission(queryset, "can_view")
 
         # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
         checksum_result = queryset.aggregate(
@@ -180,7 +180,7 @@ class ObservationService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         datastream_id: Optional[uuid.UUID] = None,
         expand_related: Optional[bool] = None,
@@ -201,22 +201,20 @@ class ObservationService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ObservationPostBody,
         datastream_id: uuid.UUID,
         expand_related: Optional[bool] = None,
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.thing.workspace_id
         )
 
-        if not Observation.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("Observation", workspace=workspace):
             raise HttpError(
                 403, "You do not have permission to create this observation"
             )
@@ -235,13 +233,13 @@ class ObservationService(ServiceUtils):
 
         if data.result_qualifier_codes:
             valid_codes = set(
-                ResultQualifier.objects.filter(
-                    Q(workspace_id=datastream.thing.workspace_id)
-                    | Q(workspace__isnull=True)
-                )
-                .filter(code__in=data.result_qualifier_codes)
-                .visible(principal=principal)
-                .values_list("code", flat=True)
+                principal.filter_by_permission(
+                    ResultQualifier.objects.filter(
+                        Q(workspace_id=datastream.thing.workspace_id)
+                        | Q(workspace__isnull=True)
+                    ).filter(code__in=data.result_qualifier_codes),
+                    "can_view",
+                ).values_list("code", flat=True)
             )
             invalid_codes = set(data.result_qualifier_codes) - valid_codes
             if invalid_codes:
@@ -267,13 +265,13 @@ class ObservationService(ServiceUtils):
 
     def delete(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         datastream_id: Optional[uuid.UUID] = None,
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         observation = self.get_observation_for_action(
             principal=principal,
@@ -291,22 +289,20 @@ class ObservationService(ServiceUtils):
 
     def bulk_create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
         datastream_id: uuid.UUID,
         mode: Literal["insert", "append", "backfill", "replace"],
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.thing.workspace_id
         )
 
-        if not Observation.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("Observation", workspace=workspace):
             raise HttpError(
                 403, "You do not have permission to create these observations"
             )
@@ -341,13 +337,13 @@ class ObservationService(ServiceUtils):
                 code for row in data.data for code in row[idx_result_qualifier_codes]
             }
             valid_codes = set(
-                ResultQualifier.objects.filter(
-                    Q(workspace_id=datastream.thing.workspace_id)
-                    | Q(workspace__isnull=True)
-                )
-                .filter(code__in=result_qualifier_code_set)
-                .visible(principal=principal)
-                .values_list("code", flat=True)
+                principal.filter_by_permission(
+                    ResultQualifier.objects.filter(
+                        Q(workspace_id=datastream.thing.workspace_id)
+                        | Q(workspace__isnull=True)
+                    ).filter(code__in=result_qualifier_code_set),
+                    "can_view",
+                ).values_list("code", flat=True)
             )
             invalid_codes = result_qualifier_code_set - valid_codes
             if invalid_codes:
@@ -407,21 +403,20 @@ class ObservationService(ServiceUtils):
 
     def bulk_delete(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ObservationBulkDeleteBody,
         datastream_id: uuid.UUID,
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
-
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.thing.workspace_id
         )
 
-        if not Observation.can_principal_delete(
-            principal=principal, workspace=workspace
+        if not principal.has_permission(
+            workspace, resource_type="Observation", permission_field="can_delete"
         ):
             raise HttpError(
                 403, "You do not have permission to delete these observations"

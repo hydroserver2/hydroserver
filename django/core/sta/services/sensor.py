@@ -5,7 +5,8 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Sensor, SensorEncodingType, MethodType
 from interfaces.api.schemas import (
     SensorSummaryResponse,
@@ -22,25 +23,27 @@ User = get_user_model()
 class SensorService(ServiceUtils):
     def get_sensor_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = Sensor.objects.filter(pk=uid)
+
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            sensor = Sensor.objects
-            if expand_related:
-                sensor = self.select_expanded_fields(sensor)
-            sensor = sensor.get(pk=uid)
+            sensor = queryset.get()
         except Sensor.DoesNotExist:
             raise HttpError(404, "Sensor does not exist")
 
-        sensor_permissions = sensor.get_principal_permissions(principal=principal)
-
-        if "view" not in sensor_permissions:
+        if not principal.can_view(sensor):
             raise HttpError(404, "Sensor does not exist")
 
-        if action not in sensor_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(sensor):
             raise HttpError(403, f"You do not have permission to {action} this sensor")
 
         return sensor
@@ -51,7 +54,7 @@ class SensorService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -85,7 +88,7 @@ class SensorService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -100,7 +103,7 @@ class SensorService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -116,7 +119,7 @@ class SensorService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: SensorPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -129,7 +132,7 @@ class SensorService(ServiceUtils):
             )
         )
 
-        if not Sensor.can_principal_create(principal=principal, workspace=workspace):
+        if not principal.can_create("Sensor", workspace=workspace):
             raise HttpError(403, "You do not have permission to create this sensor")
 
         try:
@@ -147,7 +150,7 @@ class SensorService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: SensorPatchBody,
         expand_related: Optional[bool] = None,
@@ -166,7 +169,7 @@ class SensorService(ServiceUtils):
             principal=principal, uid=sensor.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         sensor = self.get_sensor_for_action(
             principal=principal, uid=uid, action="delete"
         )

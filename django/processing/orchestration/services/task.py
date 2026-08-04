@@ -9,7 +9,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from processing.orchestration.models import Task, TaskRun
 from processing.orchestration.services.scheduling import SchedulingService
 
@@ -29,23 +30,24 @@ class TaskService(SchedulingService, Generic[T]):
         self,
         task: Union[uuid.UUID, T],
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> T:
         """Get a task."""
 
         if isinstance(task, uuid.UUID):
             try:
-                task = self.task_model.objects.get(pk=task)
+                queryset = self.task_model.objects.filter(pk=task)
+                if principal is not Unset:
+                    queryset = principal.annotate_permissions(queryset)
+                task = queryset.get()
             except self.task_model.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
         if principal is not Unset:
-            permissions = task.get_principal_permissions(principal=principal)
-
-            if "view" not in permissions:
+            if not principal.can_view(task):
                 raise LookupError(f"Task with ID {str(task.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(task):
                 raise PermissionError(f"You do not have permission to {action} this task.")
 
         return task
@@ -55,7 +57,7 @@ class TaskService(SchedulingService, Generic[T]):
     def delete(
         self,
         task: Union[uuid.UUID, T],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """Delete a task."""
 
@@ -102,7 +104,7 @@ class TaskService(SchedulingService, Generic[T]):
         self,
         task: Union[T, uuid.UUID],
         run: uuid.UUID,
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> TaskRun:
         """
         Return a single TaskRun by ID, scoped to the given task.
@@ -119,7 +121,7 @@ class TaskService(SchedulingService, Generic[T]):
     def get_run_collection(
         self,
         task: Union[T, uuid.UUID],
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),

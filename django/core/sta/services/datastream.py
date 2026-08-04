@@ -9,7 +9,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 from core.service import ServiceUtils
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
     Datastream,
     Observation,
@@ -63,32 +64,30 @@ class DatastreamService(ServiceUtils):
 
     def get_datastream_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
         raise_400: bool = False,
     ):
+        queryset = Datastream.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        else:
+            queryset = queryset.select_related("thing").prefetch_related(
+                "datastream_tags", "datastream_file_attachments"
+            )
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            datastream = Datastream.objects
-            if expand_related:
-                datastream = self.select_expanded_fields(datastream)
-            else:
-                datastream = datastream.select_related("thing").prefetch_related(
-                    "datastream_tags", "datastream_file_attachments"
-                )
-            datastream = datastream.get(pk=uid)
+            datastream = queryset.get()
         except Datastream.DoesNotExist:
             raise HttpError(404 if not raise_400 else 400, "Datastream does not exist")
 
-        datastream_permissions = datastream.get_principal_permissions(
-            principal=principal
-        )
-
-        if "view" not in datastream_permissions:
+        if not principal.can_view(datastream):
             raise HttpError(404 if not raise_400 else 400, "Datastream does not exist")
 
-        if action not in datastream_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(datastream):
             raise HttpError(
                 403 if not raise_400 else 400,
                 f"You do not have permission to {action} this datastream",
@@ -124,7 +123,7 @@ class DatastreamService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -192,7 +191,7 @@ class DatastreamService(ServiceUtils):
                 "datastream_tags", "datastream_file_attachments"
             )
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -207,11 +206,11 @@ class DatastreamService(ServiceUtils):
 
     def list_visualization_bootstrap(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
     ) -> dict[str, Sequence[dict]]:
         filtering = filtering or {}
-        queryset = Datastream.objects.visible(principal=principal)
+        queryset = principal.filter_by_permission(Datastream.objects, "can_view")
 
         if "thing__workspace_id" in filtering:
             queryset = self.apply_filters(
@@ -306,7 +305,7 @@ class DatastreamService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -322,7 +321,7 @@ class DatastreamService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: DatastreamPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -333,9 +332,7 @@ class DatastreamService(ServiceUtils):
             principal=principal, workspace_id=thing.workspace_id
         )
 
-        if not Datastream.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("Datastream", workspace=workspace):
             raise HttpError(403, "You do not have permission to create this datastream")
 
         observed_property = self.handle_http_404_error(
@@ -411,7 +408,7 @@ class DatastreamService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: DatastreamPatchBody,
         expand_related: Optional[bool] = None,
@@ -511,7 +508,7 @@ class DatastreamService(ServiceUtils):
             principal=principal, uid=datastream.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="delete", expand_related=True
         )
@@ -519,7 +516,7 @@ class DatastreamService(ServiceUtils):
 
         return "Datastream deleted"
 
-    def get_tags(self, principal: Optional[User | APIKey], uid: uuid.UUID):
+    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="view"
         )
@@ -528,11 +525,13 @@ class DatastreamService(ServiceUtils):
 
     @staticmethod
     def get_tag_keys(
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
         datastream_id: Optional[uuid.UUID],
     ):
-        queryset = DatastreamTag.objects
+        queryset = DatastreamTag.objects.filter(
+            datastream__in=principal.filter_by_permission(Datastream.objects, "can_view")
+        )
 
         if workspace_id:
             queryset = queryset.filter(datastream__thing__workspace_id=workspace_id)
@@ -540,15 +539,11 @@ class DatastreamService(ServiceUtils):
         if datastream_id:
             queryset = queryset.filter(datastream_id=datastream_id)
 
-        tags = (
-            queryset.visible(principal=principal)
-            .values("key")
-            .annotate(values=ArrayAgg(F("value"), distinct=True))
-        )
+        tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
 
         return {entry["key"]: entry["values"] for entry in tags}
 
-    def add_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagPostBody):
+    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
         )
@@ -560,7 +555,7 @@ class DatastreamService(ServiceUtils):
             datastream=datastream, key=data.key, value=data.value
         )
 
-    def update_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagPostBody):
+    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
         )
@@ -575,7 +570,7 @@ class DatastreamService(ServiceUtils):
 
         return tag
 
-    def remove_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagDeleteBody):
+    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
         )
@@ -594,7 +589,7 @@ class DatastreamService(ServiceUtils):
 
     def get_file_attachments(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         filtering: Optional[dict] = None,
     ):
@@ -610,7 +605,7 @@ class DatastreamService(ServiceUtils):
         return queryset.all()
 
     def add_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
@@ -630,7 +625,7 @@ class DatastreamService(ServiceUtils):
         )
 
     def replace_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         self.remove_file_attachment(
             principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
@@ -641,7 +636,7 @@ class DatastreamService(ServiceUtils):
         )
 
     def remove_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, data: FileAttachmentDeleteBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
     ):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="edit"
@@ -739,7 +734,7 @@ class DatastreamService(ServiceUtils):
             f"# Workspace:\n"
             f"# -------------------------------------\n"
             f"# Name: {datastream.thing.workspace.name}\n"
-            f"# Owner: {datastream.thing.workspace.owner.name()}\n"
+            f"# Owner: {datastream.thing.workspace.owner.name}\n"
             f"# Contact Email: {datastream.thing.workspace.owner.email}\n"
             f"#\n"
             f"# Site Information:\n"
@@ -826,11 +821,13 @@ class DatastreamService(ServiceUtils):
             else:
                 yield f"{observation[0].isoformat()},{observation[1]},\n"
 
-    def get_csv(self, principal: User | APIKey, uid: uuid.UUID):
+    def get_csv(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         datastream = self.get_datastream_for_action(
             principal=principal, uid=uid, action="view"
         )
-        visible_observations = Observation.objects.visible(principal=principal).filter(
+        visible_observations = principal.filter_by_permission(
+            Observation.objects, "can_view"
+        ).filter(
             datastream=datastream
         ).order_by("phenomenon_time")
 

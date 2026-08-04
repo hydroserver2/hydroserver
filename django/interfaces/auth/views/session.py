@@ -52,8 +52,9 @@ def get_session(request, client: Path[Literal["browser", "app"]]):
         user = dict(request.session).get("socialaccount_sociallogin", {}).get("user")
         if user:
             response_content = json.loads(response.content)
+            account_data = {"account_type": "standard", **user}
             response_content["data"]["account"] = AccountDetailResponse.construct(
-                **user
+                **account_data
             ).dict(by_alias=True)
             response.content = json.dumps(response_content)
 

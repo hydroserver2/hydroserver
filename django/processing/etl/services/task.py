@@ -9,7 +9,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from core.sta.services import DatastreamService
@@ -43,7 +44,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         self,
         task: Union[uuid.UUID, EtlTask],
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         expand_related: Optional[bool] = None,
     ) -> EtlTask:
         """Get an ETL task with related data and the latest run annotations."""
@@ -68,7 +69,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: Optional[User | APIKey] = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -149,7 +150,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
                 "data_connection", "periodic_task__crontab", "periodic_task__interval"
             )
 
-        queryset = queryset.visible(principal=principal).distinct()  # noqa
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         count = queryset.count()
         offset = (page - 1) * page_size
@@ -206,7 +207,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str,
         data_connection: Union[uuid.UUID, DataConnection],
         uid: uuid.UUID = Field(default_factory=uuid.uuid7),
@@ -229,9 +230,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             except DataConnection.DoesNotExist:
                 raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
 
-        if not self.task_model.can_principal_create(
-            principal=principal, workspace=data_connection.workspace
-        ):
+        if not principal.can_create("EtlTask", workspace=data_connection.workspace):
             raise PermissionError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
@@ -261,7 +260,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
     def update(
         self,
         task: Union[uuid.UUID, EtlTask],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
         task_variables: dict | Unset = Unset,
@@ -311,7 +310,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         self,
         task: Union[uuid.UUID, EtlTask],
         mappings: list[dict],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """
         Replace the mappings on an ETL task, preserving existing ones that match.
@@ -368,7 +367,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
     def run(
         self,
         task: Union[uuid.UUID, EtlTask],
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ):
         """
         Build and run an ETL Pipeline.

@@ -1,7 +1,7 @@
 from interfaces.api.views.iam.workspace import workspace_router
 from interfaces.api.views.iam.role import role_router
 from interfaces.api.views.iam.collaborator import collaborator_router
-from interfaces.api.views.iam.api_key import api_key_router
+from interfaces.api.views.iam.service_account import service_account_router
 
 from interfaces.api.views.sta.thing import thing_router
 from interfaces.api.views.sta.observed_property import observed_property_router

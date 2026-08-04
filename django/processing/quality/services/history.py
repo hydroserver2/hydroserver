@@ -8,7 +8,8 @@ from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Datastream
 from processing.quality.models import QCHistory
@@ -60,7 +61,7 @@ class QCHistoryService(ServiceUtils):
     def get(
         self,
         history: uuid.UUID | QCHistory,
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit", "delete"] = "view",
         expand_related: bool | None = None,
     ) -> QCHistory:
@@ -75,12 +76,14 @@ class QCHistoryService(ServiceUtils):
                 raise LookupError(f"QC history with ID {str(history)} does not exist.")
 
         if principal is not Unset:
-            permissions = history.get_principal_permissions(principal=principal)
+            managed_datastream = principal.annotate_permissions(
+                Datastream.objects.filter(pk=history.managed_datastream_id)
+            ).get()
 
-            if "view" not in permissions:
+            if not principal.can_view(managed_datastream):
                 raise LookupError(f"QC history with ID {str(history.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(managed_datastream):
                 raise PermissionError(f"You do not have permission to {action} this QC history.")
 
         return history
@@ -88,7 +91,7 @@ class QCHistoryService(ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -111,7 +114,9 @@ class QCHistoryService(ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = self.select_related_fields(queryset, expand_related=expand_related)
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = queryset.filter(
+            managed_datastream__in=principal.filter_by_permission(Datastream.objects, "can_view")
+        ).distinct()
 
         count = queryset.count()
         offset = (page - 1) * page_size
@@ -123,7 +128,7 @@ class QCHistoryService(ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         managed_datastream: uuid.UUID | Datastream,
         source_datastream: uuid.UUID | Datastream,
         uid: uuid.UUID = Field(default_factory=uuid.uuid7),
@@ -146,9 +151,7 @@ class QCHistoryService(ServiceUtils):
             except Datastream.DoesNotExist:
                 raise LookupError("Source datastream does not exist.")
 
-        if not QCHistory.can_principal_create(
-            principal=principal, managed_datastream=managed_datastream
-        ):
+        if not principal.can_edit(managed_datastream):
             raise PermissionError(
                 "You do not have permission to create a QC history for this datastream."
             )
@@ -179,7 +182,7 @@ class QCHistoryService(ServiceUtils):
     def delete(
         self,
         history: uuid.UUID | QCHistory,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """Delete a QC history and all associated sessions."""
 

@@ -112,9 +112,9 @@ export class UserService {
     if (isOwner(user, workspace)) return true
 
     const perms: Permission[] = workspace.collaboratorRole?.permissions ?? []
-    const allowed =
-      hasGlobalPermission(perms) ||
-      perms.some((p) => p.action === action && p.resource === resource)
+    const allowed = perms.some(
+      (p) => p.action === action && (p.resource === '*' || p.resource === resource)
+    )
 
     return allowed
   }
@@ -130,10 +130,6 @@ function isOwner(
 ): boolean {
   if (!user?.email || !workspace?.owner?.email) return false
   return workspace.owner.email === user.email
-}
-
-function hasGlobalPermission(perms: Permission[]): boolean {
-  return perms.some((p) => p.resource === '*' && p.action === '*')
 }
 
 function toUrl(

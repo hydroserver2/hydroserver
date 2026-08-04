@@ -16,7 +16,8 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.utils import timezone
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from core.sta.models.observation import Observation
@@ -50,7 +51,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         self,
         task: Union[uuid.UUID, MonitoringTask],
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         expand_related: Optional[bool] = None,
     ) -> MonitoringTask:
         """
@@ -77,7 +78,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: Optional[User | APIKey] = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -136,7 +137,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
                 "thing", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related("rules", "recipients")
 
-        queryset = queryset.visible(principal=principal).distinct()  # noqa
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         count = queryset.count()
         offset = (page - 1) * page_size
@@ -148,7 +149,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         thing: uuid.UUID | Thing,
         name: str,
         uid: uuid.UUID = Field(default_factory=uuid.uuid7),
@@ -170,7 +171,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             except Thing.DoesNotExist:
                 raise HttpError(404, "Thing does not exist.")
 
-        if not self.task_model.can_principal_create(principal=principal, workspace=thing.workspace):
+        if not principal.can_create("MonitoringTask", workspace=thing.workspace):
             raise PermissionError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
@@ -199,7 +200,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     def update(
         self,
         task: Union[uuid.UUID, MonitoringTask],
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
         recipients: list[str] | Unset = Unset,
@@ -315,7 +316,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     def run(
         self,
         task: Union[uuid.UUID, MonitoringTask],
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> dict:
         """
         Run all monitoring rules for this task.

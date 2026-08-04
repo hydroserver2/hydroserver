@@ -1,73 +1,56 @@
-import typing
-from typing import Literal, Optional
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
-from django.conf import settings
-from .utils import PermissionChecker
 
-if typing.TYPE_CHECKING:
-    from django.contrib.auth import get_user_model
-    from core.iam.models import Workspace
-
-    User = get_user_model()
+from ..permissions.registry import register_resource_type
+from .role import Role
+from .service_account import ServiceAccount
+from .workspace import Workspace
 
 
-class CollaboratorQueryset(models.QuerySet):
-    def visible(self, principal: Optional["User"]):
-        if principal is None:
-            return self.filter(Q(workspace__is_private=False))
-        elif hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                return self.filter(
-                    Q(workspace__is_private=False)
-                    | Q(workspace__owner=principal)
-                    | Q(
-                        workspace__collaborators__user=principal,
-                        workspace__collaborators__role__permissions__resource_type__in=[
-                            "*",
-                            "Collaborator",
-                        ],
-                        workspace__collaborators__role__permissions__permission_type__in=[
-                            "*",
-                            "view",
-                        ],
-                    )
-                )
-        else:
-            return self.filter(Q(workspace__is_private=False))
-
-
-class Collaborator(models.Model, PermissionChecker):
+@register_resource_type()
+class Collaborator(models.Model):
     workspace = models.ForeignKey(
-        "Workspace", on_delete=models.DO_NOTHING, related_name="collaborators"
+        Workspace, on_delete=models.CASCADE, related_name="collaborators"
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.DO_NOTHING,
-        related_name="workspace_roles",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="collaborations",
+    )
+    service_account = models.ForeignKey(
+        ServiceAccount,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="collaborations",
     )
     role = models.ForeignKey(
-        "Role", on_delete=models.DO_NOTHING, related_name="collaborator_assignments"
+        Role, on_delete=models.CASCADE, related_name="collaborator_assignments"
     )
 
-    objects = CollaboratorQueryset.as_manager()
-
-    @classmethod
-    def can_principal_create(cls, principal: Optional["User"], workspace: "Workspace"):
-        return cls.check_create_permissions(
-            principal=principal, workspace=workspace, resource_type="Collaborator"
-        )
-
-    def get_principal_permissions(
-        self, principal: Optional["User"]
-    ) -> list[Literal["edit", "delete", "view"]]:
-        permissions = self.check_object_permissions(
-            principal=principal, workspace=self.workspace, resource_type="Collaborator"
-        )
-
-        return permissions
-
     class Meta:
-        unique_together = ("user", "workspace")
+        verbose_name = "Collaborator"
+        verbose_name_plural = "Collaborators"
+
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(user__isnull=False, service_account__isnull=True) |
+                    Q(user__isnull=True, service_account__isnull=False)
+                ),
+                name="collaborator_principal_is_user_xor_service_account",
+            ),
+            models.UniqueConstraint(
+                fields=["workspace", "user"],
+                condition=Q(user__isnull=False),
+                name="unique_workspace_user_collaborator",
+            ),
+            models.UniqueConstraint(
+                fields=["workspace", "service_account"],
+                condition=Q(service_account__isnull=False),
+                name="unique_workspace_service_account_collaborator",
+            ),
+        ]

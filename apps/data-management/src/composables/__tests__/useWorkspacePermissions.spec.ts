@@ -35,32 +35,32 @@ describe('useWorkspacePermissions', () => {
 
     expect(
       useWorkspacePermissions().hasPermission(
-        PermissionResource.ApiKey,
+        PermissionResource.ServiceAccount,
         PermissionAction.View,
         workspace
       )
     ).toBe(true)
     expect(
       useWorkspacePermissions().hasPermission(
-        PermissionResource.ApiKey,
+        PermissionResource.ServiceAccount,
         PermissionAction.Create,
         workspace
       )
     ).toBe(false)
   })
 
-  it('matches the APIKey resource value returned by the API', () => {
+  it('matches the ServiceAccount resource value returned by the API', () => {
     const workspace = workspaceWithPermissions([
       {
         action: PermissionAction.View,
-        resource: 'APIKey' as PermissionResource,
+        resource: 'ServiceAccount' as PermissionResource,
       },
     ])
 
-    expect(PermissionResource.ApiKey).toBe('APIKey')
+    expect(PermissionResource.ServiceAccount).toBe('ServiceAccount')
     expect(
       useWorkspacePermissions().hasPermission(
-        PermissionResource.ApiKey,
+        PermissionResource.ServiceAccount,
         PermissionAction.View,
         workspace
       )
@@ -84,7 +84,7 @@ describe('useWorkspacePermissions', () => {
     ).toBe(true)
     expect(
       useWorkspacePermissions().hasPermission(
-        PermissionResource.ApiKey,
+        PermissionResource.ServiceAccount,
         PermissionAction.Delete,
         workspace
       )

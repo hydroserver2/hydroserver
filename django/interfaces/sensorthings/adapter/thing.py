@@ -1,6 +1,7 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Thing, Location
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ThingDTO
 from .utils import SensorThingsUtils
@@ -17,14 +18,15 @@ class ThingMixin(SensorThingsUtils):
     def get_things(self, filters=None, orderby=None, group_by=None, select=None,
                    top=100, skip=0, count=False, context=None):
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
         things = Thing.objects
         if needs_properties:
             things = things.select_related("workspace").prefetch_related(
                 "thing_file_attachments", "thing_tags"
             )
-        things = things.prefetch_related("locations").visible(
-            principal=context.principal if context else None
+        things = principal.filter_by_permission(
+            things.prefetch_related("locations"), "can_view"
         )
 
         if filters:
@@ -79,7 +81,6 @@ class ThingMixin(SensorThingsUtils):
                             "workspace": {
                                 "id": thing.workspace.id,
                                 "name": thing.workspace.name,
-                                "link": thing.workspace.link,
                                 "is_private": thing.workspace.is_private,
                             },
                             "tags": {tag.key: tag.value for tag in thing.thing_tags.all()},

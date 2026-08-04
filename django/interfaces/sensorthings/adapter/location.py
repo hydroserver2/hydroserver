@@ -1,7 +1,8 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from sensorthings.types import Absent
-from core.sta.models import Location
+from core.iam.permissions.anonymous import AnonymousPrincipal
+from core.sta.models import Location, Thing
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, LocationDTO
 from .utils import SensorThingsUtils
 
@@ -17,11 +18,12 @@ class LocationMixin(SensorThingsUtils):
     def get_locations(self, filters=None, orderby=None, group_by=None, select=None,
                       top=100, skip=0, count=False, context=None):
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
-        locations = Location.objects
+        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
+        locations = Location.objects.filter(thing__in=visible_things)
         if needs_properties:
             locations = locations.select_related("thing__workspace")
-        locations = locations.visible(principal=context.principal if context else None)
 
         if filters:
             locations = self.apply_filters(locations, Location, filters)
@@ -86,7 +88,6 @@ class LocationMixin(SensorThingsUtils):
                             "workspace": {
                                 "id": location.thing.workspace.id,
                                 "name": location.thing.workspace.name,
-                                "link": location.thing.workspace.link,
                                 "is_private": location.thing.workspace.is_private,
                             },
                         }

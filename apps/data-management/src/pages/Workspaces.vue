@@ -274,8 +274,8 @@
               <v-tab value="collaborators" :prepend-icon="mdiAccountCircle">
                 Collaborators
               </v-tab>
-              <v-tab value="api-keys" :prepend-icon="mdiKeyVariant">
-                API keys
+              <v-tab value="service-accounts" :prepend-icon="mdiKeyVariant">
+                Service accounts
               </v-tab>
               <v-tab value="metadata" :prepend-icon="mdiDatabaseCog">
                 Metadata
@@ -336,14 +336,16 @@
                       <span class="stat-tile-icon">
                         <v-icon :icon="mdiKeyVariant" size="14" />
                       </span>
-                      <span>API keys</span>
+                      <span>Service accounts</span>
                     </div>
                     <div
                       class="stat-tile-value"
-                      data-testid="overview-api-keys-count"
+                      data-testid="overview-service-accounts-count"
                     >
                       {{
-                        overviewStatsLoaded ? (overviewStats.keys ?? '—') : '—'
+                        overviewStatsLoaded
+                          ? (overviewStats.serviceAccounts ?? '—')
+                          : '—'
                       }}
                     </div>
                   </div>
@@ -423,11 +425,11 @@
                 />
               </v-window-item>
 
-              <v-window-item value="api-keys">
-                <ManageApiKeys
+              <v-window-item value="service-accounts">
+                <ManageServiceAccounts
                   v-if="
                     hasPermission(
-                      PermissionResource.ApiKey,
+                      PermissionResource.ServiceAccount,
                       PermissionAction.View,
                       selected
                     )
@@ -436,8 +438,8 @@
                   :workspace="selected"
                 />
                 <p v-else>
-                  You don't have permission to view API keys for this workspace.
-                  If you need one, contact the workspace owner.
+                  You don't have permission to view service accounts for this
+                  workspace. Contact the workspace owner if you need access.
                 </p>
               </v-window-item>
 
@@ -576,7 +578,7 @@ import PermissionTooltip from '@/components/PermissionTooltip.vue'
 import WorkspaceFormCard from '@/components/Workspace/WorkspaceFormCard.vue'
 import DeleteWorkspaceCard from '@/components/Workspace/DeleteWorkspaceCard.vue'
 import ManageCollaborators from '@/components/Workspace/AccessControl/ManageCollaborators.vue'
-import ManageApiKeys from '@/components/Workspace/AccessControl/ManageApiKeys.vue'
+import ManageServiceAccounts from '@/components/Workspace/AccessControl/ManageServiceAccounts.vue'
 import ManageWorkspacePrivacy from '@/components/Workspace/AccessControl/ManageWorkspacePrivacy.vue'
 import TransferWorkspaceOwnership from '@/components/Workspace/AccessControl/TransferWorkspaceOwnership.vue'
 import MetadataTable from '@/components/Metadata/MetadataTable.vue'
@@ -592,7 +594,7 @@ const WORKSPACE_ACCENT = '#2E7D32'
 const SECTIONS = [
   'overview',
   'collaborators',
-  'api-keys',
+  'service-accounts',
   'metadata',
   'privacy',
   'ownership',
@@ -640,9 +642,9 @@ const selected = computed(
 const overviewStats = ref<{
   members: number | null
   sites: number | null
-  keys: number | null
+  serviceAccounts: number | null
   metadata: number | null
-}>({ members: null, sites: null, keys: null, metadata: null })
+}>({ members: null, sites: null, serviceAccounts: null, metadata: null })
 const overviewStatsLoaded = ref(false)
 const overviewStatsError = ref(false)
 let overviewRequestId = 0
@@ -665,22 +667,26 @@ const loadOverviewStats = async (workspaceId: string) => {
   overviewStats.value = {
     members: null,
     sites: null,
-    keys: null,
+    serviceAccounts: null,
     metadata: null,
   }
 
   const workspace = workspaces.value.find((item) => item.id === workspaceId)
-  const canViewApiKeys =
+  const canViewServiceAccounts =
     !!workspace &&
-    hasPermission(PermissionResource.ApiKey, PermissionAction.View, workspace)
-  const keyRequest = canViewApiKeys
-    ? hs.workspaces.getApiKeys(workspaceId)
+    hasPermission(
+      PermissionResource.ServiceAccount,
+      PermissionAction.View,
+      workspace
+    )
+  const serviceAccountRequest = canViewServiceAccounts
+    ? hs.workspaces.getServiceAccounts(workspaceId)
     : Promise.resolve(null)
 
   const results = await Promise.allSettled([
     hs.workspaces.getCollaborators(workspaceId),
     hs.things.listSiteSummaries(workspaceId),
-    keyRequest,
+    serviceAccountRequest,
     hs.sensors.list({ workspace_id: [workspaceId], fetch_all: true }),
     hs.observedProperties.list({
       workspace_id: [workspaceId],
@@ -710,13 +716,13 @@ const loadOverviewStats = async (workspaceId: string) => {
     // +1 for the owner, who isn't included in the collaborators list.
     members: counts[0] === null ? null : counts[0] + 1,
     sites: counts[1],
-    keys: canViewApiKeys ? counts[2] : null,
+    serviceAccounts: canViewServiceAccounts ? counts[2] : null,
     metadata,
   }
   overviewStatsError.value =
     counts[0] === null ||
     counts[1] === null ||
-    (canViewApiKeys && counts[2] === null) ||
+    (canViewServiceAccounts && counts[2] === null) ||
     metadata === null
   overviewStatsLoaded.value = true
 }
@@ -931,8 +937,9 @@ function queryString(value: unknown) {
 }
 
 function availableSection(value: string, workspace: Workspace | null) {
-  const requested = SECTIONS.includes(value as WorkspaceSection)
-    ? (value as WorkspaceSection)
+  const normalized = value === 'api-keys' ? 'service-accounts' : value
+  const requested = SECTIONS.includes(normalized as WorkspaceSection)
+    ? (normalized as WorkspaceSection)
     : 'overview'
   return requested === 'ownership' && (!workspace || !isOwner(workspace))
     ? 'overview'

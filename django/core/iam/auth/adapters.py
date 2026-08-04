@@ -2,7 +2,6 @@ from django.http import HttpRequest
 from django.conf import settings
 from allauth.account.adapter import DefaultAccountAdapter
 from interfaces.auth.schemas import AccountPatchBody
-from core.iam.services import AccountService
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -23,8 +22,9 @@ class AccountAdapter(DefaultAccountAdapter):
                 "organization": data.get("organization") or None,
             }
         )
-        user = AccountService.update(principal=user, data=account)
-        user.is_ownership_allowed = settings.ACCOUNT_OWNERSHIP_ENABLED
+        # user = AccountService.update(principal=user, data=account)
+        if not settings.ACCOUNT_OWNERSHIP_ENABLED:
+            user.owned_workspace_limit = 0
         user.save()
 
         return user
