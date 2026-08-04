@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="blue-darken-4">
+    <v-toolbar flat color="primary">
       <v-card-title>
         {{ isEdit ? 'Edit' : 'Create' }} API key
         <span v-if="isEdit" class="opacity-80">- {{ item.name }}</span>
@@ -24,6 +24,7 @@
         <v-select
           v-model="item.role"
           :items="roles"
+          data-testid="api-key-role"
           label="New API key's role *"
           item-title="name"
           :return-object="true"
@@ -37,9 +38,12 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
-          isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        <v-btn-primary
+          type="submit"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          >{{ isEdit ? 'Update' : 'Save' }}</v-btn-primary
+        >
       </v-card-actions>
     </v-form>
   </v-card>
@@ -49,7 +53,9 @@
 import { required, rules } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
 import { useFormLogic } from '@/composables/useFormLogic'
+import { Snackbar } from '@/utils/notifications'
 import hs, { ApiKey, CollaboratorRole } from '@hydroserver/client'
+import { ref } from 'vue'
 
 const props = defineProps<{
   apiKey?: ApiKey
@@ -58,6 +64,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
+const isSubmitting = ref(false)
 
 const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
   hs.workspaces.createApiKey,
@@ -67,18 +74,28 @@ const { item, isEdit, valid, myForm, uploadItem } = useFormLogic(
 )
 
 async function onSubmit() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
   try {
     item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
+    if (!valid.value) return
     if (!newItem) {
-      if (isEdit.value) emit('close')
+      Snackbar.error(
+        isEdit.value ? 'Unable to update API key.' : 'Unable to create API key.'
+      )
       return
     }
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem)
+    emit('close')
   } catch (error) {
     console.error('Error uploading API key', error)
+    Snackbar.error(
+      isEdit.value ? 'Unable to update API key.' : 'Unable to create API key.'
+    )
+  } finally {
+    isSubmitting.value = false
   }
-  emit('close')
 }
 </script>

@@ -2,7 +2,6 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { useWorkspaceStore } from '@/store/workspaces'
 import { routes } from '@/router/routes'
 
 const { routeMock, replaceMock } = vi.hoisted(() => ({
@@ -106,10 +105,6 @@ vi.mock('@/components/Orchestration/workbench/TaskListPanel.vue', () => ({
   default: { template: '<section />' },
 }))
 
-vi.mock('@/components/Workspace/OrchestrationWorkspaceManager.vue', () => ({
-  default: { template: '<div data-testid="workspace-manager" />' },
-}))
-
 vi.mock(
   '@/components/Orchestration/connections/DataConnectionForm.vue',
   () => ({
@@ -164,9 +159,6 @@ const stubs = {
   TaskListPanel: {
     template: '<section />',
   },
-  OrchestrationWorkspaceManager: {
-    template: '<div data-testid="workspace-manager" />',
-  },
   DataConnectionForm: {
     template: '<div />',
   },
@@ -220,49 +212,19 @@ describe('Orchestration page', () => {
 
     await flushPromises()
 
-    expect(useOrchestrationStore().activeView).toBe('tasks')
+    expect(useOrchestrationStore().activeTab).toBe('ingestion')
     expect(wrapper.find('[data-testid="nav-rail"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="no-selected-workspace"]').exists()).toBe(
       true
     )
     expect(wrapper.text()).toContain('Create a new workspace')
     expect(wrapper.text()).toContain('edit permissions')
-    expect(wrapper.find('[data-testid="workspace-manager"]').exists()).toBe(
-      false
-    )
     expect(replaceMock).not.toHaveBeenCalled()
   })
 
-  it('renders workspace management when the workspaces view is selected', async () => {
-    routeMock.params = { view: 'workspaces' }
-    const { default: Orchestration } = await import('@/pages/Orchestration.vue')
-
-    const wrapper = shallowMount(Orchestration, {
-      global: {
-        stubs,
-      },
-    })
-
-    await flushPromises()
-
-    expect(useOrchestrationStore().activeView).toBe('workspaces')
-    expect(wrapper.find('[data-testid="nav-rail"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="workspace-manager"]').exists()).toBe(
-      true
-    )
-    expect(wrapper.find('[data-testid="no-selected-workspace"]').exists()).toBe(
-      false
-    )
-  })
-
-  it('opens workspaces from the base orchestration route when no workspace is selected', () => {
+  it('redirects the base orchestration route to the ingestion view', () => {
     const route = routes.find((item) => item.name === 'Orchestration')
-    const redirect = route?.redirect as () => string
 
-    expect(redirect()).toBe('/orchestration/workspaces')
-
-    useWorkspaceStore().selectedWorkspace = { id: 'workspace-1' } as any
-
-    expect(redirect()).toBe('/orchestration/ingestion')
+    expect(route?.redirect).toBe('/orchestration/ingestion')
   })
 })

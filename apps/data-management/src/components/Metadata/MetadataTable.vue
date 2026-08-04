@@ -1,91 +1,135 @@
 <template>
-  <v-card
-    v-if="hasWorkspaces"
-    :data-testid="
-      useWorkspaceVariables ? 'workspace-metadata-table' : 'system-metadata-table'
-    "
+  <div
+    v-if="activeWorkspace"
+    class="metadata-section"
+    :data-testid="`${scope}-metadata-table`"
   >
-    <v-toolbar
-      :color="toolbarColor"
-      :title="useWorkspaceVariables ? 'Workspace metadata' : 'System metadata'"
+    <div class="metadata-header">
+      <h6 class="text-h6">Metadata</h6>
+      <v-icon
+        :icon="mdiHelpCircleOutline"
+        @click="showHelp = !showHelp"
+        color="grey"
+        size="18"
+        class="metadata-help-icon"
+      />
+    </div>
+
+    <p v-if="showHelp" class="metadata-help-text">
+      Methods, units, and other reference metadata used by this workspace's
+      datastreams. Workspace items are yours to edit; system items are shared
+      platform defaults managed by administrators.
+    </p>
+
+    <v-btn-toggle
+      v-model="scope"
+      mandatory
+      density="compact"
+      color="primary"
+      variant="outlined"
+      rounded="xl"
+      divided
+      class="mb-2"
     >
-      <v-spacer />
+      <v-btn value="all">All</v-btn>
+      <v-btn value="workspace">Workspace metadata</v-btn>
+      <v-btn value="system">System metadata</v-btn>
+    </v-btn-toggle>
 
-      <template v-slot:extension>
-        <v-tabs
-          v-model="tab"
-          color="secondary-lighten-5"
-          scrollable
-          class="my-2"
+    <v-tabs
+      v-model="tab"
+      color="primary"
+      density="compact"
+      class="metadata-type-tabs"
+      show-arrows
+    >
+      <v-tab v-for="item in metaMap" :key="item.name">{{ item.name }}</v-tab>
+    </v-tabs>
+
+    <v-card class="hs-table-card metadata-table-card" flat>
+      <v-toolbar flat density="compact">
+        <v-text-field
+          class="mx-4 metadata-search"
+          clearable
+          v-model="search"
+          :prepend-inner-icon="mdiMagnify"
+          label="Search metadata"
+          hide-details
+          variant="underlined"
+          density="compact"
+          rounded="xl"
+        />
+
+        <v-spacer />
+
+        <v-btn-add
+          v-if="canCreateMetadata"
+          class="mr-2"
+          :prependIcon="mdiPlus"
+          :data-testid="`add-${scope}-metadata-item`"
+          @click="metaMap[tab]?.openDialog()"
+          >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
         >
-          <v-tab v-for="item in metaMap">{{ item.name }}</v-tab>
-        </v-tabs>
-      </template>
+      </v-toolbar>
 
-      <v-btn-add
-        v-if="hasCRUDPermissions"
-        :prependIcon="mdiPlus"
-        color="white"
-        class="mx-2"
-        :data-testid="
-          useWorkspaceVariables
-            ? 'add-workspace-metadata-item'
-            : 'add-system-metadata-item'
-        "
-        @click="metaMap[tab]?.openDialog()"
-        >Add new {{ metaMap[tab]?.singularName }}</v-btn-add
-      >
-    </v-toolbar>
+      <v-window v-model="tab" class="metadata-window">
+        <v-window-item :value="0">
+          <SensorTable
+            :key="`${scope}-${sensorKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
+            :scope="scope"
+          />
+        </v-window-item>
 
-    <v-toolbar :color="toolbarColor" height="5"></v-toolbar>
+        <v-window-item :value="1">
+          <ObservedPropertyTable
+            :key="`${scope}-${OPKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
+            :scope="scope"
+          />
+        </v-window-item>
 
-    <v-window v-model="tab" class="elevation-3" v-if="selectedWorkspace">
-      <v-window-item :value="0">
-        <SensorTable
-          :key="sensorKey"
-          :search="search"
-          :workspace-id="workspaceId"
-          :can-edit="hasCRUDPermissions"
-        />
-      </v-window-item>
+        <v-window-item :value="2">
+          <ProcessingLevelTable
+            :key="`${scope}-${PLKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
+            :scope="scope"
+          />
+        </v-window-item>
 
-      <v-window-item :value="1">
-        <ObservedPropertyTable
-          :key="OPKey"
-          :search="search"
-          :workspace-id="workspaceId"
-          :can-edit="hasCRUDPermissions"
-        />
-      </v-window-item>
+        <v-window-item :value="3">
+          <UnitTable
+            :key="`${scope}-${unitKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
+            :scope="scope"
+          />
+        </v-window-item>
 
-      <v-window-item :value="2">
-        <ProcessingLevelTable
-          :key="PLKey"
-          :search="search"
-          :workspace-id="workspaceId"
-          :can-edit="hasCRUDPermissions"
-        />
-      </v-window-item>
-
-      <v-window-item :value="3">
-        <UnitTable
-          :key="unitKey"
-          :search="search"
-          :workspace-id="workspaceId"
-          :can-edit="hasCRUDPermissions"
-        />
-      </v-window-item>
-
-      <v-window-item :value="4">
-        <ResultQualifierTable
-          :key="qualifierKey"
-          :search="search"
-          :workspace-id="workspaceId"
-          :can-edit="hasCRUDPermissions"
-        />
-      </v-window-item>
-    </v-window>
-  </v-card>
+        <v-window-item :value="4">
+          <ResultQualifierTable
+            :key="`${scope}-${qualifierKey}`"
+            :search="search"
+            :workspace-id="workspaceId"
+            :can-edit="canEditMetadata"
+            :can-delete="canDeleteMetadata"
+            :scope="scope"
+          />
+        </v-window-item>
+      </v-window>
+    </v-card>
+  </div>
 
   <v-dialog v-model="openSensorCreate" width="60rem">
     <SensorFormCard
@@ -143,33 +187,43 @@ import { computed, ref } from 'vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { Workspace } from '@hydroserver/client'
+import {
+  PermissionAction,
+  PermissionResource,
+  Workspace,
+} from '@hydroserver/client'
 import { useMetadata } from '@/store/metadata'
-import { mdiPlus } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiMagnify, mdiPlus } from '@mdi/js'
 
+type MetadataScope = 'workspace' | 'system' | 'all'
+
+// The active metadata type (Methods/Observed properties/...) lives in a
+// store rather than local state so it survives this component remounting
+// when the selected workspace changes.
 const { tab } = storeToRefs(useMetadata())
-const { selectedWorkspace, hasWorkspaces } = storeToRefs(useWorkspaceStore())
-
-const workspaceRef = computed<Workspace | undefined>(
-  () => selectedWorkspace.value ?? undefined
-)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const props = defineProps({
-  toolbarColor: String,
-  useWorkspaceVariables: Boolean,
-  search: String,
-  tab: Number,
+  /** Workspace to show metadata for. Falls back to the globally selected workspace. */
+  workspace: Object as () => Workspace,
 })
 
+const scope = ref<MetadataScope>('workspace')
+const search = ref('')
+const showHelp = ref(false)
+
+const activeWorkspace = computed<Workspace | undefined>(
+  () => props.workspace ?? selectedWorkspace.value ?? undefined
+)
+
+// System-only tables don't need a workspace, but workspace and merged ("all")
+// tables both fetch this workspace's items alongside/instead of system ones.
 const workspaceId = computed(() =>
-  props.useWorkspaceVariables ? selectedWorkspace.value!.id : undefined
+  scope.value === 'system' ? undefined : activeWorkspace.value!.id
 )
 
-const { isAdmin } = useWorkspacePermissions(workspaceRef)
+const { hasPermission, isAdmin } = useWorkspacePermissions(activeWorkspace)
 
-const hasCRUDPermissions = computed(
-  () => !!(props.useWorkspaceVariables || isAdmin())
-)
 const openUnitCreate = ref(false)
 const unitKey = ref(0)
 const refreshUnitTable = () => (unitKey.value += 1)
@@ -195,26 +249,85 @@ const metaMap: Record<string, any> = {
     name: 'Methods',
     openDialog: () => (openSensorCreate.value = true),
     singularName: 'method',
+    resource: PermissionResource.Sensor,
   },
   1: {
     name: 'Observed properties',
     openDialog: () => (openOPCreate.value = true),
     singularName: 'observed property',
+    resource: PermissionResource.ObservedProperty,
   },
   2: {
     name: 'Processing levels',
     openDialog: () => (openPLCreate.value = true),
     singularName: 'processing level',
+    resource: PermissionResource.ProcessingLevel,
   },
   3: {
     name: 'Units',
     openDialog: () => (openUnitCreate.value = true),
     singularName: 'unit',
+    resource: PermissionResource.Unit,
   },
   4: {
     name: 'Result qualifiers',
     openDialog: () => (openRQCreate.value = true),
     singularName: 'result qualifier',
+    resource: PermissionResource.ResultQualifier,
   },
 }
+
+const hasMetadataPermission = (action: PermissionAction) => {
+  if (scope.value === 'system') return isAdmin()
+  const resource = metaMap[tab.value]?.resource as
+    PermissionResource | undefined
+  return !!(
+    resource &&
+    activeWorkspace.value &&
+    hasPermission(resource, action, activeWorkspace.value)
+  )
+}
+
+const canCreateMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Create)
+)
+const canEditMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Edit)
+)
+const canDeleteMetadata = computed(() =>
+  hasMetadataPermission(PermissionAction.Delete)
+)
 </script>
+
+<style scoped>
+.metadata-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.metadata-help-icon {
+  cursor: pointer;
+}
+.metadata-help-text {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 640px;
+  margin-bottom: 10px;
+}
+.metadata-type-tabs {
+  margin: 0 0 2px;
+}
+.metadata-table-card {
+  margin-top: 6px;
+}
+.metadata-search {
+  max-width: 260px;
+  flex-shrink: 0;
+}
+.metadata-window :deep(td),
+.metadata-window :deep(th) {
+  font-size: 13px;
+}
+</style>

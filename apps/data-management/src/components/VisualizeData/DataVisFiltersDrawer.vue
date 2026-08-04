@@ -52,7 +52,7 @@
                   @click:close="selectedWorkspaces.splice(index, 1)"
                 >
                   <span class="truncate">
-                    {{ item.title }}
+                    {{ item.name }}
                   </span>
                 </v-chip>
               </template>
@@ -88,7 +88,7 @@
                   @click:close="selectedThings.splice(index, 1)"
                 >
                   <span class="truncate">
-                    {{ item.title }}
+                    {{ item.name }}
                   </span>
                 </v-chip>
               </template>
@@ -126,7 +126,7 @@
                   @click:close="selectedObservedPropertyNames.splice(index, 1)"
                 >
                   <span class="truncate">
-                    {{ item.title }}
+                    {{ item }}
                   </span>
                 </v-chip>
               </template>
@@ -164,7 +164,7 @@
                   @click:close="selectedProcessingLevelNames.splice(index, 1)"
                 >
                   <span class="truncate">
-                    {{ item.title }}
+                    {{ item }}
                   </span>
                 </v-chip>
               </template>

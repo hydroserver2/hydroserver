@@ -1,6 +1,6 @@
 <template>
   <v-card v-if="loaded">
-    <v-toolbar color="red-darken-4">
+    <v-toolbar flat color="delete">
       <v-card-title class="text-h5">
         <v-icon :icon="mdiAlert" />
         {{
@@ -10,6 +10,7 @@
         }}
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-card-text v-if="hasDatastreams">
       This {{ itemName }} cannot be deleted because it's being referenced by
