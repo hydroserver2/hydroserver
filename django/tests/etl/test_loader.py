@@ -6,8 +6,13 @@ from unittest.mock import patch
 
 from core.sta.models import Datastream
 from processing.etl.loader import HydroServerInternalLoader
-from processing.etl.models import EtlTask
 from hydroserverpy.etl.exceptions import ETLError
+from tests.core.iam.factories import WorkspaceFactory
+from tests.core.sta.factories import DatastreamFactory
+from tests.processing.etl.factories import DataConnectionFactory, EtlTaskFactory
+
+
+pytestmark = pytest.mark.django_db
 
 
 TASK1 = "019adbc3-35e8-7f25-bc68-171fb66d446e"  # private workspace, via DC1
@@ -24,9 +29,28 @@ CUTOFF = datetime(2025, 2, 10, 9, 0, 0, tzinfo=timezone.utc)
 # Fixtures and helpers
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def loader_models():
+    workspace = WorkspaceFactory()
+    DatastreamFactory(
+        id=uuid.UUID(DS1),
+        thing__workspace=workspace,
+        phenomenon_end_time=CUTOFF,
+    )
+    DatastreamFactory(
+        id=uuid.UUID(DS2),
+        thing__workspace=workspace,
+        phenomenon_end_time=CUTOFF,
+    )
+    return EtlTaskFactory(
+        id=uuid.UUID(TASK1),
+        data_connection=DataConnectionFactory(workspace=workspace),
+    )
+
+
 @pytest.fixture
-def task_instance():
-    return EtlTask.objects.get(pk=uuid.UUID(TASK1))
+def task_instance(loader_models):
+    return loader_models
 
 
 def _make_payload(target_id=DS1, timestamps=None, values=None):

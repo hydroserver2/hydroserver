@@ -4,7 +4,9 @@
   <v-card-text>
     <div v-if="!canManage" class="hs-gate-note">
       <v-icon :icon="mdiLock" size="16" />
-      <span>Only the workspace owner can change this workspace's privacy.</span>
+      <span
+        >You do not have permission to change this workspace's privacy.</span
+      >
     </div>
 
     <div class="privacy-card hs-table-card">
@@ -48,7 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import hs, { Workspace } from '@hydroserver/client'
+import hs, {
+  PermissionAction,
+  PermissionResource,
+  Workspace,
+} from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { computed, ref } from 'vue'
 import { mdiHelpCircleOutline, mdiLock, mdiEarth } from '@mdi/js'
@@ -59,8 +65,14 @@ const props = defineProps({
 })
 const emits = defineEmits(['privacy-updated'])
 
-const { isOwner, isAdmin } = useWorkspacePermissions()
-const canManage = computed(() => isOwner(props.workspace) || isAdmin())
+const { hasPermission } = useWorkspacePermissions()
+const canManage = computed(() =>
+  hasPermission(
+    PermissionResource.Workspace,
+    PermissionAction.Edit,
+    props.workspace
+  )
+)
 
 const isPrivate = ref(props.workspace.isPrivate)
 const isUpdating = ref(false)

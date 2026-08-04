@@ -16,6 +16,7 @@ from interfaces.api.schemas import (
     WorkspaceTransferBody,
 )
 from interfaces.api.schemas.iam.workspace import WorkspaceOrderByFields
+from core.iam.services.role import RoleService
 from core.service import ServiceUtils
 
 User = get_user_model()
@@ -42,7 +43,13 @@ class WorkspaceService(ServiceUtils):
             )
 
             if collaborator:
-                workspace.collaborator_role = collaborator.role
+                # Permission rows now store one resource with boolean action
+                # flags, while the public role contract exposes one
+                # resource/action pair per granted permission. Nested roles
+                # must use the same expansion as the roles endpoints.
+                workspace.collaborator_role = RoleService().serialize_role(
+                    collaborator.role, expand_related=True
+                )
 
         return workspace
 
@@ -101,7 +108,15 @@ class WorkspaceService(ServiceUtils):
                 "owner", "transfer_confirmation", "transfer_confirmation__new_owner"
             )
 
-        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
+        permitted_queryset = principal.filter_by_permission(queryset, "can_view")
+        if filtering.get("is_associated") is True and isinstance(principal, User):
+            # A transfer recipient must be able to discover the workspace in
+            # order to accept or reject it, even though they do not have the
+            # workspace's normal view permission yet.
+            permitted_queryset = permitted_queryset | queryset.filter(
+                transfer_confirmation__new_owner=principal
+            )
+        queryset = permitted_queryset.distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 

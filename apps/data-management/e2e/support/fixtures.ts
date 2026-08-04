@@ -57,6 +57,11 @@ export const fixtures = {
       name: 'Private Thing',
       siteCode: 'TSC',
     },
+    privatePublic: {
+      id: '92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7',
+      name: 'Private Thing Public Workspace',
+      siteCode: 'MAIN',
+    },
     privateWorkspacePublic: {
       id: '819260c8-2543-4046-b8c4-7431243ed7c5',
       name: 'Public Thing Private Workspace',

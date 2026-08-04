@@ -97,12 +97,12 @@ test.describe('sites and workspaces', () => {
       name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
       exact: true,
     })
-    const privateWorkspaceRow = page.getByRole('button', {
-      name: /Private Thing Public Workspace/,
-    })
-    const mutableThingRow = page.getByRole('button', {
-      name: new RegExp(fixtures.things.mutablePublic.name),
-    })
+    const privateWorkspaceRow = page
+      .locator(`[data-site-id="${fixtures.things.privatePublic.id}"]`)
+      .locator('.site-row-main')
+    const mutableThingRow = page
+      .locator(`[data-site-id="${fixtures.things.mutablePublic.id}"]`)
+      .locator('.site-row-main')
 
     const searchBox = page.getByRole('textbox', { name: 'Search sites' })
     await expect(searchBox).toBeVisible()
@@ -281,6 +281,29 @@ test.describe('sites and workspaces', () => {
         name: `Delete ${fixtures.things.privateWorkspacePublic.name}`,
       })
     ).toHaveCount(0)
+  })
+
+  test('Browse shows site mutation controls to editors with Thing permissions', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.editor.email, users.editor.password)
+    await page.goto('/browse')
+
+    const siteRow = page.locator(
+      `[data-site-id="${fixtures.things.privateWorkspacePublic.id}"]`
+    )
+    await expect(siteRow).toBeVisible()
+    await siteRow.hover()
+    await expect(
+      siteRow.getByRole('button', {
+        name: `Edit ${fixtures.things.privateWorkspacePublic.name}`,
+      })
+    ).toBeVisible()
+    await expect(
+      siteRow.getByRole('button', {
+        name: `Delete ${fixtures.things.privateWorkspacePublic.name}`,
+      })
+    ).toBeVisible()
   })
 
   test('Browse metadata controls stay on one line with multiple values', async ({

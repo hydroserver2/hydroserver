@@ -57,7 +57,7 @@ export function useWorkspacePermissions(
     return perms.some(
       (permission) =>
         [PermissionResource.Global, resource].includes(permission.resource) &&
-        [PermissionAction.Global, action].includes(permission.action)
+        permission.action === action
     )
   }
 

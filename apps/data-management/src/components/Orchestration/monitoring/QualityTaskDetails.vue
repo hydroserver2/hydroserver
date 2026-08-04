@@ -23,8 +23,8 @@
             !task.schedule
               ? 'No schedule'
               : task.schedule.enabled
-              ? 'Pause'
-              : 'Resume'
+                ? 'Pause'
+                : 'Resume'
           }}</span>
         </button>
         <v-dialog v-model="editDialogOpen" width="64rem">
@@ -53,7 +53,7 @@
               v-bind="props"
               type="button"
               class="header-btn header-btn--danger"
-              :disabled="!canEdit"
+              :disabled="!canDelete"
             >
               <v-icon :icon="mdiTrashCanOutline" size="16" />
               <span>Delete</span>
@@ -123,6 +123,7 @@ const {
   loadingRuns,
   runRows,
   canEdit,
+  canDelete,
   backLabel,
   scheduleText,
   pauseDisabledReason,
@@ -211,7 +212,10 @@ h2 {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.1;
-  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s;
   white-space: nowrap;
 }
 .header-btn :deep(.v-icon) {

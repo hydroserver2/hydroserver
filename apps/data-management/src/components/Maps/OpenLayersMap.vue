@@ -85,7 +85,7 @@
               variant="flat"
               style="flex: 1"
               :append-icon="mdiChevronRight"
-              :href="`/sites/${detailThing.id}`"
+              :to="{ name: 'SiteDetails', params: { id: detailThing.id } }"
             >
               View details
             </v-btn>

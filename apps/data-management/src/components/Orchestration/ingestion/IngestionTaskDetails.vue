@@ -35,8 +35,8 @@
               !task.schedule
                 ? 'No schedule'
                 : task.schedule.enabled
-                ? 'Pause'
-                : 'Resume'
+                  ? 'Pause'
+                  : 'Resume'
             }}</span>
           </button>
 
@@ -66,7 +66,7 @@
                 v-bind="props"
                 type="button"
                 class="header-btn header-btn--danger"
-                :disabled="!canEdit"
+                :disabled="!canDelete"
               >
                 <v-icon :icon="mdiTrashCanOutline" size="16" />
                 <span>Delete</span>
@@ -165,6 +165,7 @@ const {
   loadingRuns,
   runRows,
   canEdit,
+  canDelete,
   backLabel,
   statusName,
   scheduleText,
@@ -243,7 +244,10 @@ h2.task-details-title {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.1;
-  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s;
   white-space: nowrap;
 }
 .header-btn :deep(.v-icon) {
@@ -286,7 +290,9 @@ h2.task-details-title {
   color: #49454f;
   padding: 8px 14px;
   margin-bottom: -1px;
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
 }
 .task-details-tab:hover {
   color: #1c1b1f;

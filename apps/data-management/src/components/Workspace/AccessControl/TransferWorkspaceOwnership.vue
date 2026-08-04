@@ -24,7 +24,8 @@
       <template v-else>
         <p class="ownership-copy">
           Transfer is irreversible once accepted: the new owner gains the
-          owner-only powers to
+          ownership rights for this workspace, and its permissions will then
+          determine who can
           <strong>rename</strong>, <strong>delete</strong>, and
           <strong>change the privacy</strong> of this workspace. Unless the new
           owner adds you as a collaborator, you may lose access to it entirely.

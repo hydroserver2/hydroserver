@@ -64,9 +64,8 @@ const props = defineProps({
     type: Object as () => Workspace,
     required: true,
   },
-  /** Whether the acting user actually owns this workspace and can therefore
-   * transfer it away instead of deleting it (e.g. an admin deleting a
-   * workspace they don't own cannot). */
+  /** Whether the acting user can edit this workspace and can therefore
+   * transfer it instead of deleting it. */
   canTransfer: {
     type: Boolean,
     default: false,

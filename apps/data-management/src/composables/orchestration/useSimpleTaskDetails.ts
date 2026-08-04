@@ -68,10 +68,17 @@ export function useSimpleTaskDetails(
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { hasPermission } = useWorkspacePermissions()
 
+  const permissionResource =
+    kind === 'etl'
+      ? PermissionResource.EtlTask
+      : kind === 'dataProduct'
+        ? PermissionResource.DataProductTask
+        : PermissionResource.MonitoringTask
+
   const taskId = computed(() => {
     if (props.taskId) return props.taskId
     const param = route.params.id
-    return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
+    return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
   })
 
   const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
@@ -79,8 +86,17 @@ export function useSimpleTaskDetails(
   const canEdit = computed(() => {
     if (!selectedWorkspace.value) return false
     return hasPermission(
-      PermissionResource.Workspace,
+      permissionResource,
       PermissionAction.Edit,
+      selectedWorkspace.value
+    )
+  })
+
+  const canDelete = computed(() => {
+    if (!selectedWorkspace.value) return false
+    return hasPermission(
+      permissionResource,
+      PermissionAction.Delete,
       selectedWorkspace.value
     )
   })
@@ -203,7 +219,7 @@ export function useSimpleTaskDetails(
       try {
         const response = await service.getTaskRun(task.value.id, runId)
         const updatedRun = response.ok
-          ? (response.data as TaskRun) ?? null
+          ? ((response.data as TaskRun) ?? null)
           : null
         if (updatedRun?.id) {
           upsertRun(updatedRun)
@@ -308,7 +324,7 @@ export function useSimpleTaskDetails(
   }
 
   async function deleteTask() {
-    if (!canEdit.value || !task.value?.id) return
+    if (!canDelete.value || !task.value?.id) return
     const response = await service.delete(task.value.id)
     if (!response.ok) {
       Snackbar.error(response.message || 'Unable to delete task.')
@@ -349,6 +365,7 @@ export function useSimpleTaskDetails(
     loadingRuns,
     runRows,
     canEdit,
+    canDelete,
     readOnlyTooltip,
     backLabel,
     statusName,

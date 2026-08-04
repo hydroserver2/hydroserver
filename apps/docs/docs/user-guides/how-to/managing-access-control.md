@@ -23,27 +23,27 @@ Each collaborator on a workspace is assigned a role. A role is a set of permissi
 
 ## Adding Collaborators to a Workspace
 
-To add a collaborator to a workspace, you should first navigate to the 'Your Sites' page and expand the workspaces by clicking the 'Manage workspaces' button. Click the blue lock icon in the right column for the workspace. This will launch the 'Workspace access control' window.
+To add a collaborator, open **Manage workspaces**, select the workspace, and open the **Collaborators** tab.
 
 <img src="/data-management-app/workspace-access-control.png" alt="Workspace access control dialog" class="img-white-bg">
 
-If your workspace is new and you are the owner, you will be the only collaborator in your workspace. To add a new collaborator, click on the 'Add collaborator' link at the top right of the window. Enter the collaborator's email address and choose the role that collaborator will have for the workspace (either 'Editor' or 'Viewer'). Clicking the 'Add collaborator' button will add them as a collaborator to the workspace.
+If your workspace is new and you are the owner, you will be the only member. Click **Add collaborator**, enter the collaborator's email address, choose an available role, and click **Add collaborator** again to save.
 
 **NOTE**: A person must have a HydroServer user account affiliated with their email address before you can add them as a collaborator on a workspace.
 
-To edit a user's role or remove a collaborator from a workspace, you can click the down arrow next to their name in the collaborators list and click the 'Edit role' or 'Remove collaborator' buttons.
+Use the actions in a collaborator's row to edit their role or remove them from the workspace.
 
-## API Keys
+## Service Accounts and API Keys
 
-Sometimes you want to provide access to a workspace without using a username and password. This is especially true when using code for working with a workspace. It is a security risk to embed your username and password in code. For this reason, HydroServer enables you to create API keys for working with HydroServer's APIs.
+Sometimes you want to provide access to a workspace without using a person's username and password. HydroServer uses service accounts for these automated clients. Each service account has its own API key and receives permissions through a workspace role.
 
-API keys are unique codes that let remote systems connect to and interact with HydroServer. You can create API keys and assign them the minimum permissions they need to do the job (e.g., read only, or just for loading data, etc.). 
+API keys are unique secrets that let remote systems connect to HydroServer. Assign the service account the minimum permissions it needs, such as the Data Loader role for uploading observations.
 
-To create an API key, click on the 'API Keys' link in the left column of the Workspace Access control window. Then, click the 'Create API key' button at the top right of the form. Give your API key a name and description and assign it a role.
+To create one, open **Manage workspaces**, select the workspace, choose **Service accounts**, and click **Create service account**. Give it a name and description, assign a role, and save.
 
 <img src="/data-management-app/api-keys.png" alt="Create API key" class="img-white-bg">
 
-When you first create an API key, it will be shown to you in the 'Manage access control' window. Make sure you copy it and keep it in a safe space. This is the only time you will see it. If you lose the value of your API key, you will have to re-generate it or generate a new one.
+The generated API key is shown once. Copy it immediately and store it securely. If it is lost, regenerate the service account's key; the previous key will stop working.
 
 <img src="/data-management-app/api-key-created.png" alt="Created API key" class="img-white-bg">
 

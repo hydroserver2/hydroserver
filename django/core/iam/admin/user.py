@@ -26,6 +26,7 @@ class UserAdmin(DjangoUserAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "owned_workspace_limit",
                     "groups",
                     "user_permissions",
                 )

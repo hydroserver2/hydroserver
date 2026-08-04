@@ -351,7 +351,6 @@ export class OAuthProvider {
 }
 
 export enum PermissionAction {
-  Global = '*',
   View = 'view',
   Create = 'create',
   Edit = 'edit',
@@ -361,16 +360,22 @@ export enum PermissionAction {
 export enum PermissionResource {
   Global = '*',
   Workspace = 'Workspace',
+  Role = 'Role',
+  ServiceAccount = 'ServiceAccount',
   Collaborator = 'Collaborator',
   Thing = 'Thing',
-  Datastream = 'Datastream',
-  Sensor = 'Sensor',
-  Unit = 'Unit',
   ObservedProperty = 'ObservedProperty',
   ProcessingLevel = 'ProcessingLevel',
   ResultQualifier = 'ResultQualifier',
+  Sensor = 'Sensor',
+  Unit = 'Unit',
+  Datastream = 'Datastream',
   Observation = 'Observation',
-  ServiceAccount = 'ServiceAccount',
+  DataConnection = 'DataConnection',
+  EtlTask = 'EtlTask',
+  RatingCurve = 'RatingCurve',
+  DataProductTask = 'DataProductTask',
+  MonitoringTask = 'MonitoringTask',
 }
 
 export interface Permission {
