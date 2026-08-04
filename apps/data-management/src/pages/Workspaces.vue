@@ -170,8 +170,8 @@
                   :class="{
                     'sidebar-item-action--selected': ws.id === selectedId,
                   }"
-                  :disabled="!canManageWorkspace(ws)"
-                  :title="canManageWorkspace(ws) ? '' : OWNER_ONLY_MESSAGE"
+                  :disabled="!canEditWorkspace(ws)"
+                  :title="canEditWorkspace(ws) ? '' : EDIT_DENIED_MESSAGE"
                   :aria-label="`Edit ${ws.name}`"
                   :data-testid="`workspace-edit-${ws.id}`"
                   @click.stop="openDialog(ws, 'edit')"
@@ -184,8 +184,8 @@
                   :class="{
                     'sidebar-item-action--selected': ws.id === selectedId,
                   }"
-                  :disabled="!canManageWorkspace(ws)"
-                  :title="canManageWorkspace(ws) ? '' : OWNER_ONLY_MESSAGE"
+                  :disabled="!canDeleteWorkspace(ws)"
+                  :title="canDeleteWorkspace(ws) ? '' : DELETE_DENIED_MESSAGE"
                   :aria-label="`Delete ${ws.name}`"
                   :data-testid="`workspace-delete-${ws.id}`"
                   @click.stop="openDialog(ws, 'delete')"
@@ -282,7 +282,7 @@
               </v-tab>
               <v-tab value="privacy" :prepend-icon="mdiLock">Privacy</v-tab>
               <v-tab
-                v-if="isOwner(selected)"
+                v-if="canEditWorkspace(selected)"
                 value="ownership"
                 :prepend-icon="mdiTransitTransfer"
               >
@@ -455,7 +455,10 @@
                 />
               </v-window-item>
 
-              <v-window-item v-if="isOwner(selected)" value="ownership">
+              <v-window-item
+                v-if="canEditWorkspace(selected)"
+                value="ownership"
+              >
                 <TransferWorkspaceOwnership
                   :key="selected.id"
                   :workspace="selected"
@@ -542,7 +545,7 @@
       @delete="onDelete"
       @switch-to-transfer="onSwitchToTransfer"
       :workspace="activeItem"
-      :can-transfer="isOwner(activeItem)"
+      :can-transfer="canEditWorkspace(activeItem)"
       :loading="isDeletingWorkspace"
     />
   </v-dialog>
@@ -608,15 +611,17 @@ const router = useRouter()
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { setWorkspaces } = workspaceStore
-const { hasPermission, getUserRoleName, isOwner, isAdmin } =
-  useWorkspacePermissions()
+const { hasPermission, getUserRoleName, isOwner } = useWorkspacePermissions()
 const { user } = storeToRefs(useUserStore())
 
-// Renaming, deleting, and toggling the privacy of a workspace are reserved
-// for its actual owner (or a system admin) — a collaborator role granted
-// broad permissions on the workspace should not be able to take them over.
-const OWNER_ONLY_MESSAGE = 'Only the workspace owner can do this.'
-const canManageWorkspace = (ws: Workspace | null) => isOwner(ws) || isAdmin()
+const EDIT_DENIED_MESSAGE = 'You do not have permission to edit this workspace.'
+const DELETE_DENIED_MESSAGE =
+  'You do not have permission to delete this workspace.'
+const canEditWorkspace = (ws: Workspace | null) =>
+  !!ws && hasPermission(PermissionResource.Workspace, PermissionAction.Edit, ws)
+const canDeleteWorkspace = (ws: Workspace | null) =>
+  !!ws &&
+  hasPermission(PermissionResource.Workspace, PermissionAction.Delete, ws)
 
 const isPageLoaded = ref(false)
 const workspaceLoadError = ref('')
@@ -732,7 +737,7 @@ watch(
   (ws) => {
     if (!ws) return
     if (selectedWorkspace.value?.id !== ws.id) selectedWorkspace.value = ws
-    if (section.value === 'ownership' && !isOwner(ws))
+    if (section.value === 'ownership' && !canEditWorkspace(ws))
       section.value = 'overview'
     else if (section.value === 'overview') void loadOverviewStats(ws.id)
   },
@@ -768,6 +773,11 @@ function selectWorkspace(id: string) {
 }
 
 function openDialog(item: Workspace, dialog: 'edit' | 'delete') {
+  if (
+    (dialog === 'edit' && !canEditWorkspace(item)) ||
+    (dialog === 'delete' && !canDeleteWorkspace(item))
+  )
+    return
   activeItem.value = item
   if (dialog === 'edit') openEdit.value = true
   if (dialog === 'delete') openDelete.value = true
@@ -835,7 +845,12 @@ const onCreated = async (workspace: Workspace) => {
 }
 
 async function onDelete() {
-  if (!activeItem.value || isDeletingWorkspace.value) return
+  if (
+    !activeItem.value ||
+    !canDeleteWorkspace(activeItem.value) ||
+    isDeletingWorkspace.value
+  )
+    return
   isDeletingWorkspace.value = true
   try {
     const res = await hs.workspaces.delete(activeItem.value.id)
@@ -857,7 +872,7 @@ async function onDelete() {
   }
 }
 
-// DeleteWorkspaceCard only offers this link when the acting user owns the
+// DeleteWorkspaceCard only offers this link when the acting user can edit the
 // workspace (see :can-transfer above), so the Ownership tab always exists.
 function onSwitchToTransfer() {
   openDelete.value = false
@@ -941,7 +956,8 @@ function availableSection(value: string, workspace: Workspace | null) {
   const requested = SECTIONS.includes(normalized as WorkspaceSection)
     ? (normalized as WorkspaceSection)
     : 'overview'
-  return requested === 'ownership' && (!workspace || !isOwner(workspace))
+  return requested === 'ownership' &&
+    (!workspace || !canEditWorkspace(workspace))
     ? 'overview'
     : requested
 }

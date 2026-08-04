@@ -48,7 +48,9 @@
           <OrchestrationContextSidebar
             :connections="filteredConnections"
             :sites="filteredSites"
-            :can-edit="canEditOrchestration"
+            :can-create="canCreateDataConnections"
+            :can-edit="canEditDataConnections"
+            :can-delete="canDeleteDataConnections"
             :task-count-for-connection="taskCountForConnection"
             :issue-count-for-connection="issueCountForConnection"
             :task-count-for-site="taskCountForSite"
@@ -82,7 +84,9 @@
 
             <TaskListPanel
               v-else
-              :can-edit="canEditOrchestration"
+              :can-create="canCreateActiveTasks"
+              :can-create-rating-curve="canCreateRatingCurves"
+              :can-edit="canEditActiveTasks"
               :loading="listLoading"
               :has-selection="hasSelection"
               :detail-title="detailTitle"
@@ -97,11 +101,11 @@
               @run-now="onRunNow"
               @open-task="goToTask"
               @add-task="openCreateTaskDialog(selectedConnection!)"
-              @add-aggregation="openAggregationForm = true"
-              @add-expression="openExpressionForm = true"
-              @add-derivation="openDerivationForm = true"
-              @add-rating-curve="openRatingCurveForm = true"
-              @add-quality="openQualityForm = true"
+              @add-aggregation="openDataProductForm('aggregation')"
+              @add-expression="openDataProductForm('expression')"
+              @add-derivation="openDataProductForm('derivation')"
+              @add-rating-curve="openRatingCurveTaskForm"
+              @add-quality="openQualityTaskForm"
             />
           </RouterView>
         </template>
@@ -294,7 +298,7 @@ const {
   draftDatastreams,
 } = storeToRefs(orchestrationStore)
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
-const { hasPermission, isAdmin, isOwner } = useWorkspacePermissions()
+const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
 const applyRouteWorkspace = () => {
@@ -382,13 +386,55 @@ const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
     runNowTriggeredByTaskId,
   })
 
-const canEditOrchestration = computed(() => {
+const hasWorkspacePermission = (
+  resource: PermissionResource,
+  action: PermissionAction
+) => {
   const ws = selectedWorkspace.value
   if (!ws) return false
-  const roleName = `${ws.collaboratorRole?.name ?? ''}`.toLowerCase()
-  if (isAdmin() || isOwner(ws) || roleName === 'editor') return true
-  return hasPermission(PermissionResource.Workspace, PermissionAction.Edit, ws)
-})
+  return hasPermission(resource, action, ws)
+}
+
+const activeTaskResource = computed(() =>
+  activeTab.value === 'ingestion'
+    ? PermissionResource.EtlTask
+    : activeTab.value === 'aggregation'
+      ? PermissionResource.DataProductTask
+      : PermissionResource.MonitoringTask
+)
+
+const canCreateDataConnections = computed(() =>
+  hasWorkspacePermission(
+    PermissionResource.DataConnection,
+    PermissionAction.Create
+  )
+)
+const canEditDataConnections = computed(() =>
+  hasWorkspacePermission(
+    PermissionResource.DataConnection,
+    PermissionAction.Edit
+  )
+)
+const canDeleteDataConnections = computed(() =>
+  hasWorkspacePermission(
+    PermissionResource.DataConnection,
+    PermissionAction.Delete
+  )
+)
+const canCreateActiveTasks = computed(() =>
+  hasWorkspacePermission(activeTaskResource.value, PermissionAction.Create)
+)
+const canEditActiveTasks = computed(() =>
+  hasWorkspacePermission(activeTaskResource.value, PermissionAction.Edit)
+)
+const canCreateRatingCurves = computed(
+  () =>
+    canCreateActiveTasks.value &&
+    hasWorkspacePermission(
+      PermissionResource.RatingCurve,
+      PermissionAction.Create
+    )
+)
 
 const tabs = computed<TabDefinition[]>(() => [
   {
@@ -517,13 +563,13 @@ const dotColorForSite = (thingId: string) =>
 
 const selectedConnection = computed<DataConnection | null>(() =>
   selectedConnectionId.value
-    ? connectionsById.value.get(selectedConnectionId.value) ?? null
+    ? (connectionsById.value.get(selectedConnectionId.value) ?? null)
     : null
 )
 
 const selectedSite = computed(() =>
   selectedThingId.value
-    ? thingsById.value.get(selectedThingId.value) ?? null
+    ? (thingsById.value.get(selectedThingId.value) ?? null)
     : null
 )
 
@@ -594,8 +640,8 @@ const emptyHeading = computed(() =>
       ? 'No data connections have been registered yet.'
       : 'Select a data connection'
     : things.value.length === 0
-    ? 'No sites registered in this workspace.'
-    : 'Select a site'
+      ? 'No sites registered in this workspace.'
+      : 'Select a site'
 )
 
 const emptyMessage = computed(() => {
@@ -799,12 +845,12 @@ watch([routeDataConnectionId, routeSiteId, routeView], async () => {
 })
 
 const openCreateDialog = () => {
-  if (!canEditOrchestration.value) return
+  if (!canCreateDataConnections.value) return
   openCreateDataConnection.value = true
 }
 
 const openCreateTaskDialog = (dc: DataConnection) => {
-  if (!canEditOrchestration.value) return
+  if (!canCreateActiveTasks.value) return
   selectedTaskDataConnection.value = dc
   openCreateTask.value = true
 }
@@ -820,15 +866,34 @@ const closeCreateTaskDialog = () => {
 }
 
 const openEditDialog = (dc: DataConnection) => {
-  if (!canEditOrchestration.value) return
+  if (!canEditDataConnections.value) return
   selectedDataConnection.value = dc
   openEditDataConnection.value = true
 }
 
 const openDeleteDialog = (dc: DataConnection) => {
-  if (!canEditOrchestration.value) return
+  if (!canDeleteDataConnections.value) return
   selectedDataConnection.value = dc
   openDeleteDataConnection.value = true
+}
+
+const openDataProductForm = (
+  form: 'aggregation' | 'expression' | 'derivation'
+) => {
+  if (!canCreateActiveTasks.value) return
+  if (form === 'aggregation') openAggregationForm.value = true
+  if (form === 'expression') openExpressionForm.value = true
+  if (form === 'derivation') openDerivationForm.value = true
+}
+
+const openRatingCurveTaskForm = () => {
+  if (!canCreateRatingCurves.value) return
+  openRatingCurveForm.value = true
+}
+
+const openQualityTaskForm = () => {
+  if (!canCreateActiveTasks.value) return
+  openQualityForm.value = true
 }
 
 const onDataConnectionCreated = async () => {
@@ -897,7 +962,7 @@ const onDataConnectionUpdated = (updated: DataConnection) => {
 }
 
 const onDataConnectionDeleted = async () => {
-  if (!selectedDataConnection.value) return
+  if (!selectedDataConnection.value || !canDeleteDataConnections.value) return
   const id = selectedDataConnection.value.id
   try {
     await hs.dataConnections.delete(id)
@@ -914,12 +979,12 @@ const onDataConnectionDeleted = async () => {
 }
 
 const onRunNow = async (row: TaskRow) => {
-  if (!canEditOrchestration.value) return
+  if (!canEditActiveTasks.value) return
   await runTaskNow(row.kind, row.id)
 }
 
 const onTogglePaused = async (row: TaskRow) => {
-  if (!canEditOrchestration.value) return
+  if (!canEditActiveTasks.value) return
   if (!row.schedule) return
   await toggleSchedulePaused(row.kind, row.id, row.schedule)
 }

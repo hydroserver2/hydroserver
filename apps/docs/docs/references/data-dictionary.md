@@ -108,26 +108,26 @@ An Organization is a body of people having a particular purpose, such as a busin
 
 Individual users who own workspaces, collaborate on data management, or manage account information in HydroServer.
 
-| Required | Attribute            | Definition                                                                                                                                                                                                | Data Type  |
-| -------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the User.                                                                                                                                                             | BigInteger |
-| M        | username             | The Django username field. HydroServer keeps this synchronized to the user's email address.                                                                                                               | String     |
-| M        | password             | The stored password hash.                                                                                                                                                                                 | String     |
-| O        | last_login           | The datetime when the User last logged in.                                                                                                                                                                | Datetime   |
-| M        | is_superuser         | A boolean value indicating whether the User bypasses explicit permission assignments.                                                                                                                     | Boolean    |
-| O        | first_name           | The User's first name.                                                                                                                                                                                    | String     |
-| O        | middle_name          | The User's middle name.                                                                                                                                                                                   | String     |
-| O        | last_name            | The User's last name.                                                                                                                                                                                     | String     |
-| M        | email                | The User's contact email address.                                                                                                                                                                         | String     |
-| M        | is_staff             | A boolean value indicating whether the User can access the Django admin site.                                                                                                                             | Boolean    |
-| M        | is_active            | A boolean value indicating whether the account is active.                                                                                                                                                 | Boolean    |
-| M        | date_joined          | The datetime when the User account was created.                                                                                                                                                           | Datetime   |
-| O        | phone                | The User's contact phone number.                                                                                                                                                                          | String     |
-| O        | address              | The User's physical mailing address.                                                                                                                                                                      | String     |
-| O        | link                 | A URL pointing to a website for the User.                                                                                                                                                                 | URL        |
-| M        | user_type            | A text string indicating the type of User.                                                                                                                                                                | String     |
-| O        | organization_id      | A one-to-one identifier for the Organization with which the User is affiliated. Each User may be affiliated with at most one Organization, and each Organization may be affiliated with at most one User. | BigInteger |
-| M        | is_ownership_allowed | A boolean value indicating whether the User may own workspaces.                                                                                                                                           | Boolean    |
+| Required | Attribute             | Definition                                                                                                                                                                                                | Data Type              |
+| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| M        | id                    | A primary key unique identifier for the User.                                                                                                                                                             | BigInteger             |
+| M        | username              | The Django username field. HydroServer keeps this synchronized to the user's email address.                                                                                                               | String                 |
+| M        | password              | The stored password hash.                                                                                                                                                                                 | String                 |
+| O        | last_login            | The datetime when the User last logged in.                                                                                                                                                                | Datetime               |
+| M        | is_superuser          | A boolean value indicating whether the User bypasses explicit permission assignments.                                                                                                                     | Boolean                |
+| O        | first_name            | The User's first name.                                                                                                                                                                                    | String                 |
+| O        | middle_name           | The User's middle name.                                                                                                                                                                                   | String                 |
+| O        | last_name             | The User's last name.                                                                                                                                                                                     | String                 |
+| M        | email                 | The User's contact email address.                                                                                                                                                                         | String                 |
+| M        | is_staff              | A boolean value indicating whether the User can access the Django admin site.                                                                                                                             | Boolean                |
+| M        | is_active             | A boolean value indicating whether the account is active.                                                                                                                                                 | Boolean                |
+| M        | date_joined           | The datetime when the User account was created.                                                                                                                                                           | Datetime               |
+| O        | phone                 | The User's contact phone number.                                                                                                                                                                          | String                 |
+| O        | address               | The User's physical mailing address.                                                                                                                                                                      | String                 |
+| O        | link                  | A URL pointing to a website for the User.                                                                                                                                                                 | URL                    |
+| M        | user_type             | A text string indicating the type of User.                                                                                                                                                                | String                 |
+| O        | organization_id       | A one-to-one identifier for the Organization with which the User is affiliated. Each User may be affiliated with at most one Organization, and each Organization may be affiliated with at most one User. | BigInteger             |
+| O        | owned_workspace_limit | The maximum number of workspaces the User may own. `0` prevents ownership and `NULL` allows unlimited ownership.                                                                                          | Positive Small Integer |
 
 **NOTE**: `groups` and `user_permissions` are also persisted through Django auth many-to-many join tables, but they are not columns on the `User` row itself.
 
@@ -248,76 +248,70 @@ A Workspace is the ownership and access-control boundary for most HydroServer-ma
 
 A pending transfer record used when ownership of a Workspace is being transferred to another User.
 
-| Required | Attribute    | Definition                                                                                                | Data Type  |
-| -------- | ------------ | --------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation.                                    | BigInteger |
+| Required | Attribute    | Definition                                                                                                                     | Data Type  |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation.                                                         | BigInteger |
 | M        | workspace_id | A one-to-one foreign key identifier for the Workspace being transferred. Each Workspace may have at most one pending transfer. | UUID       |
-| M        | new_owner_id | A foreign key identifier for the new owner.                                                               | BigInteger |
-| M        | initiated    | The datetime when the transfer was initiated.                                                             | Datetime   |
-
-## WorkspaceDeleteConfirmation
-
-A pending confirmation record used when a Workspace deletion has been initiated.
-
-| Required | Attribute    | Definition                                                                                                       | Data Type  |
-| -------- | ------------ | ---------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceDeleteConfirmation.                                             | BigInteger |
-| M        | workspace_id | A one-to-one foreign key identifier for the Workspace to be deleted. Each Workspace may have at most one pending delete confirmation. | UUID       |
-| M        | initiated    | The datetime when deletion confirmation was initiated.                                                           | Datetime   |
+| M        | new_owner_id | A foreign key identifier for the new owner.                                                                                    | BigInteger |
 
 ## Role
 
-A Role is a named collection of permissions that can be assigned to collaborators or API keys.
+A Role is a named collection of permissions that can be assigned to user or service-account collaborators.
 
-| Required | Attribute      | Definition                                                                                                 | Data Type |
-| -------- | -------------- | ---------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id             | A primary key unique identifier for the Role.                                                              | UUID      |
-| O        | workspace_id   | A foreign key identifier for the Workspace that owns the Role. If omitted, the Role is shared system-wide. | UUID      |
-| M        | name           | A descriptive name for the Role.                                                                           | String    |
-| O        | description    | A text description of the Role.                                                                            | Text      |
-| M        | is_user_role   | A boolean value indicating whether the Role may be assigned to a User collaborator.                        | Boolean   |
-| M        | is_apikey_role | A boolean value indicating whether the Role may be assigned to an API key.                                 | Boolean   |
+| Required | Attribute    | Definition                                                                                                 | Data Type |
+| -------- | ------------ | ---------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id           | A primary key unique identifier for the Role.                                                              | UUID      |
+| O        | workspace_id | A foreign key identifier for the Workspace that owns the Role. If omitted, the Role is shared system-wide. | UUID      |
+| M        | name         | A descriptive name for the Role.                                                                           | String    |
+| O        | description  | A text description of the Role.                                                                            | Text      |
 
 ## Permission
 
-A Permission associates a Role with an allowed action on a resource type.
+A Permission associates a Role with the actions it may perform on a resource type.
 
-| Required | Attribute       | Definition                                                                                                                                                                                                              | Data Type  |
-| -------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id              | A primary key unique identifier for the Permission.                                                                                                                                                                     | BigInteger |
-| M        | role_id         | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                  | UUID       |
-| M        | permission_type | The permitted action: `*`, `view`, `create`, `edit`, or `delete`.                                                                                                                                                       | String     |
-| M        | resource_type   | The resource type to which the Permission applies. One of `*`, `APIKey`, `Role`, `Collaborator`, `Thing`, `Datastream`, `Observation`, `Sensor`, `ObservedProperty`, `ProcessingLevel`, `Unit`, `ResultQualifier`, `ETL`, `DataProduct`, or `DataMonitoring`. | String     |
+| Required | Attribute     | Definition                                                                                                                                                                                                                                                                                                                  | Data Type  |
+| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id            | A primary key unique identifier for the Permission.                                                                                                                                                                                                                                                                         | BigInteger |
+| M        | role_id       | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                                                                                                                      | UUID       |
+| M        | resource_type | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `Thing`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Sensor`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
+| M        | can_view      | Whether the Role may view this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
+| M        | can_create    | Whether the Role may create this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
+| M        | can_edit      | Whether the Role may edit this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
+| M        | can_delete    | Whether the Role may delete this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
 
 ## Collaborator
 
-A Collaborator associates a User with a Workspace through a Role.
+A Collaborator associates either a User or a ServiceAccount with a Workspace through a Role.
 
-| Required | Attribute    | Definition                                                          | Data Type  |
-| -------- | ------------ | ------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the Collaborator.               | BigInteger |
-| M        | workspace_id | A foreign key identifier for the Workspace.                         | UUID       |
-| M        | user_id      | A foreign key identifier for the collaborating User.                | BigInteger |
-| M        | role_id      | A foreign key identifier for the Role assigned to the Collaborator. | UUID       |
+| Required | Attribute          | Definition                                                          | Data Type  |
+| -------- | ------------------ | ------------------------------------------------------------------- | ---------- |
+| M        | id                 | A primary key unique identifier for the Collaborator.               | BigInteger |
+| M        | workspace_id       | A foreign key identifier for the Workspace.                         | UUID       |
+| O        | user_id            | A foreign key identifier for the collaborating User.                | BigInteger |
+| O        | service_account_id | A foreign key identifier for the collaborating ServiceAccount.      | UUID       |
+| M        | role_id            | A foreign key identifier for the Role assigned to the Collaborator. | UUID       |
 
-**NOTE**: The database enforces a unique constraint on `(user_id, workspace_id)`.
+**NOTE**: Exactly one of `user_id` and `service_account_id` must be set. The database allows each User or ServiceAccount to appear at most once per Workspace.
 
-## APIKey
+## ServiceAccount
 
-An APIKey grants non-interactive access to a Workspace using an assigned Role.
+A ServiceAccount grants non-interactive access through a generated API key. It belongs to a Workspace and receives permissions through Collaborator records.
 
-| Required | Attribute    | Definition                                                               | Data Type |
-| -------- | ------------ | ------------------------------------------------------------------------ | --------- |
-| M        | id           | A primary key unique identifier for the APIKey.                          | UUID      |
-| M        | workspace_id | A foreign key identifier for the Workspace to which the API key belongs. | UUID      |
-| M        | role_id      | A foreign key identifier for the Role assigned to the API key.           | UUID      |
-| M        | name         | A descriptive name for the API key.                                      | String    |
-| O        | description  | A text description of the API key.                                       | Text      |
-| M        | created_at   | The datetime when the API key was created.                               | Datetime  |
-| O        | expires_at   | The datetime when the API key expires.                                   | Datetime  |
-| O        | last_used    | The datetime when the API key was last used.                             | Datetime  |
-| M        | is_active    | A boolean value indicating whether the API key is active.                | Boolean   |
-| M        | hashed_key   | The stored hashed representation of the API key secret.                  | String    |
+| Required | Attribute      | Definition                                                                  | Data Type |
+| -------- | -------------- | --------------------------------------------------------------------------- | --------- |
+| M        | id             | A primary key unique identifier for the ServiceAccount.                     | UUID      |
+| M        | email          | The generated unique email-like identifier used in collaborator operations. | String    |
+| M        | name           | A descriptive name for the ServiceAccount.                                  | String    |
+| O        | description    | A text description of the ServiceAccount.                                   | Text      |
+| O        | workspace_id   | The Workspace where the ServiceAccount was created.                         | UUID      |
+| M        | created_at     | The datetime when the ServiceAccount was created.                           | Datetime  |
+| O        | last_used_at   | The datetime when the ServiceAccount last authenticated.                    | Datetime  |
+| M        | is_active      | Whether the ServiceAccount may authenticate.                                | Boolean   |
+| O        | deactivated_at | The datetime when the ServiceAccount was deactivated.                       | Datetime  |
+| M        | key_prefix     | The unique public prefix of the generated API key.                          | String    |
+| M        | key_hash       | The stored hash of the API key secret.                                      | String    |
+| O        | key_created_at | The datetime when the current API key was generated.                        | Datetime  |
+| O        | key_expires_at | The datetime when the current API key expires.                              | Datetime  |
 
 ## DatastreamTag
 

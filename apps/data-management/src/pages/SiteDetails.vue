@@ -398,7 +398,7 @@ function formatLocationValue(value?: string | number | null) {
 async function onDeleteThing() {
   try {
     await hs.things.delete(thingId)
-    await router.push('/sites')
+    await router.push('/browse')
   } catch (error) {
     console.error('Error deleting thing', error)
   }

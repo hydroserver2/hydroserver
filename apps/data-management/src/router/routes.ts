@@ -63,18 +63,11 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/sites',
-    name: 'Sites',
-    component: () => import('@/pages/Sites.vue'),
-    meta: {
-      requiresAuth: true,
-      title: 'Your Sites',
-      metaTags: [
-        {
-          name: 'keywords',
-          content: 'HydroServer, Your Sites',
-        },
-      ],
-    },
+    redirect: (to) => ({
+      name: 'Browse',
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: '/sites/:id',

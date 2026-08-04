@@ -4,18 +4,20 @@ The Data Management Web App provides straightforward user interfaces for creatin
 
 ## Creating a Monitoring Site
 
-Creating and managing monitoring sites is done on the 'Your sites' page in the Data Management App. Initially, a new workspace will be empty with no sites. To create a new site, click on the 'Register a new site' button at the top right of the sites table. This will launch the 'Register a Site' window.
+Creating and finding monitoring sites is done on the **Browse monitoring sites** page in the Data Management App. The page combines a map with a searchable site panel. You can filter sites by workspace, site type, or additional metadata, and selecting a site reveals a link to its details page. The **Color markers by** control can group map markers by workspace, site type, or the values of a selected metadata tag without changing the active site filters.
+
+To create a new site, sign in, expand the monitoring-sites panel if needed, and click the **Register a monitoring site** (+) button. Select the workspace where the site belongs. This will launch the **Register a Site** window.
 
 In this form, you can create the basic metadata for a monitoring site. Type or select the following attributes on the form:
 
-* Site Code: A brief and unique text code identifying your site.
-* Site Name: A longer text name for your site.
-* Site Description: A description of your monitoring site.
-* Site Type: A descriptive type for your site.
+- Site Code: A brief and unique text code identifying your site.
+- Site Name: A longer text name for your site.
+- Site Description: A description of your monitoring site.
+- Site Type: A descriptive type for your site.
 
 You can choose whether you want to include a data disclaimer to be displayed above the table of datastreams on your site's landing page. Default text is provided, but you can edit it if you wish
 
-For the Site's location, you can zoom in on the map and click on the site's location. This will automatically populate the latitude, longitude, elevation, state, county, and country (in the U.S.). You can also type those attributes in if you know them. 
+For the Site's location, you can zoom in on the map and click on the site's location. This will automatically populate the latitude, longitude, elevation, state, county, and country (in the U.S.). You can also type those attributes in if you know them.
 
 With this minimum metadata, you can click the 'Save' button to save the monitoring site.
 
@@ -33,7 +35,7 @@ Tags are displayed in the site metadata on the landing page for the site. They c
 Key: "Maintenance Log"
 Value: "http://www.url.com/maintenancelog.pdf"
 
-Where URLs are used in the Value element, they are hyperlinked and made clickable on the site's landing page. 
+Where URLs are used in the Value element, they are hyperlinked and made clickable on the site's landing page.
 
 <img src="/data-management-app/additional-site-metadata.png" alt="Create site form" class="img-white-bg">
 
@@ -43,6 +45,6 @@ You can also attach photos to your monitoring site. You can either drag and drop
 
 ## Deleting a Site
 
-You can delete a site by navigating to its landing page and clicking on the 'Delete site' button at the top right of the page. This will open a dialog warning you that this action will delete the site and all associated datastreams and observations for all users of HydroServer. 
+You can delete a site by navigating to its landing page and clicking on the 'Delete site' button at the top right of the page. This will open a dialog warning you that this action will delete the site and all associated datastreams and observations for all users of HydroServer.
 
 **WARNING**: Deleting a site is permanent. If you delete a site, all of the data associated with that site will also be deleted.

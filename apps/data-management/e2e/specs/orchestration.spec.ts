@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -21,9 +21,7 @@ test.describe('orchestration', () => {
         name: fixtures.orchestration.dataConnectionName,
       })
     ).toBeVisible()
-    await expect(
-      page.getByText(fixtures.orchestration.taskName)
-    ).toBeVisible()
+    await expect(page.getByText(fixtures.orchestration.taskName)).toBeVisible()
   })
 
   test('orchestration status filters narrow the task list', async ({
@@ -38,7 +36,9 @@ test.describe('orchestration', () => {
       page.getByRole('heading', { name: 'Job orchestration', exact: true })
     ).toBeVisible()
 
-    const statusFilter = page.getByRole('combobox', { name: 'Status filters' }).first()
+    const statusFilter = page
+      .getByRole('combobox', { name: 'Status filters' })
+      .first()
     await expect(statusFilter).toBeVisible()
 
     await statusFilter.click()
@@ -69,7 +69,9 @@ test.describe('orchestration', () => {
     ).toBeVisible()
     await selectWorkspace(page, fixtures.workspaces.public.name)
 
-    await expect(page.getByText(fixtures.orchestration.dataConnectionName)).toHaveCount(0)
+    await expect(
+      page.getByText(fixtures.orchestration.dataConnectionName)
+    ).toHaveCount(0)
 
     await selectWorkspace(page, fixtures.workspaces.private.name)
     await expect(

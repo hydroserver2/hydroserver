@@ -25,6 +25,14 @@ SECRET_KEY = config(
 # SECURITY WARNING: don"t run with debug turned on in production!
 DEBUG = config("DEBUG", default=DEPLOYMENT_BACKEND == "dev", cast=bool)
 NOINDEX = config("NOINDEX", default=False, cast=bool)
+E2E_TESTING = config("E2E_TESTING", default=False, cast=bool)
+E2E_CONTROL_TOKEN = config("E2E_CONTROL_TOKEN", default="")
+
+if E2E_TESTING:
+    # Browser scenarios create several short-lived users per test. The fast
+    # hasher keeps that setup inexpensive and is never enabled in a normal
+    # deployment.
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 
 # Default Superuser Settings

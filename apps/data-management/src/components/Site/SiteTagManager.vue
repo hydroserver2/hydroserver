@@ -17,10 +17,10 @@
           key and value for each metadata property.
         </p>
         <p>
-          On the 'Your Sites' page, you'll be able to filter and color your
-          sites by these metadata tags. For example, you can filter by only the
-          sites that have a specific key and color code the markers on the map
-          by the values of that key.
+          On the 'Browse monitoring sites' page, you'll be able to filter and
+          color your sites by these metadata tags. For example, you can filter
+          by only the sites that have a specific key and color code the markers
+          on the map by the values of that key.
         </p>
         <p>
           Additionally, if a URL is added as a value, it will be clickable from

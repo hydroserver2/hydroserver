@@ -133,6 +133,7 @@
       @created="onCreate"
       :workspace-id="workspaceId"
       :roles="roles"
+      :can-assign-role="canAssignRoleOnCreate"
     />
   </v-dialog>
 
@@ -151,6 +152,7 @@
       :workspace-id="workspaceId"
       :roles="roles"
       :service-account="item"
+      :can-assign-role="canAssignRoleOnEdit"
     />
   </v-dialog>
 
@@ -197,10 +199,25 @@ const workspaceId = computed(() => props.workspace.id)
 const { hasPermission } = useWorkspacePermissions()
 const serviceAccountsLoaded = ref(false)
 const rolesLoaded = ref(false)
+const canAssignRoleOnCreate = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Create,
+    props.workspace
+  )
+)
+const canAssignRoleOnEdit = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Edit,
+    props.workspace
+  )
+)
 const canCreate = computed(
   () =>
     serviceAccountsLoaded.value &&
     rolesLoaded.value &&
+    canAssignRoleOnCreate.value &&
     hasPermission(
       PermissionResource.ServiceAccount,
       PermissionAction.Create,
@@ -210,7 +227,6 @@ const canCreate = computed(
 const canEdit = computed(
   () =>
     serviceAccountsLoaded.value &&
-    rolesLoaded.value &&
     hasPermission(
       PermissionResource.ServiceAccount,
       PermissionAction.Edit,

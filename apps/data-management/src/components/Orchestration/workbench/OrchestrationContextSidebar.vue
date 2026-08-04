@@ -4,7 +4,7 @@
       <div class="flex items-center">
         <span class="sidebar-title">{{ title }}</span>
         <button
-          v-if="isIngestion && canEdit"
+          v-if="isIngestion && canCreate"
           type="button"
           class="sidebar-add ml-auto"
           :style="{ background: accent }"
@@ -107,7 +107,7 @@
                   <span>{{ READ_ONLY_TOOLTIP }}</span>
                 </v-tooltip>
                 <button
-                  v-if="canEdit"
+                  v-if="canDelete"
                   type="button"
                   class="sidebar-item-action sidebar-item-action--danger"
                   :class="{
@@ -206,7 +206,7 @@
 
     <div v-if="isIngestion" class="sidebar-footer">
       <button
-        v-if="canEdit"
+        v-if="canCreate"
         type="button"
         class="sidebar-footer-btn"
         :style="{ color: accent, borderColor: accent + '66' }"
@@ -243,14 +243,20 @@ import type { DataConnection, ThingTaskSummary } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { READ_ONLY_TOOLTIP, TAB_META } from './orchestrationTabs'
 
-const { activeTab, selectedConnectionId, selectedThingId, sidebarSearch: search } =
-  storeToRefs(useOrchestrationStore())
+const {
+  activeTab,
+  selectedConnectionId,
+  selectedThingId,
+  sidebarSearch: search,
+} = storeToRefs(useOrchestrationStore())
 
 const props = withDefaults(
   defineProps<{
     connections: DataConnection[]
     sites: ThingTaskSummary[]
+    canCreate: boolean
     canEdit: boolean
+    canDelete: boolean
     taskCountForConnection: (id: string) => number
     issueCountForConnection: (id: string) => number
     taskCountForSite: (id: string) => number

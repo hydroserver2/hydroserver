@@ -25,9 +25,9 @@ The following table is a comparison of permissions for the owners, editors, and 
 | Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | Yes         |
 | View public and private data within workspace           | Yes   | Yes    | Yes    | Yes         |
 
-## API Keys
+## Service Accounts and API Keys
 
-Remote systems code or applications may need to authenticate with HydroServer in whatever data loading, retrieval, or analysis workflows you build. Giving your username and password to these systems is risky since they'll have _all_ the permissions you do - including deleting your account and data. It's better to create an API key that has the minimum permissions required for the external system to do its job. API keys are assigned roles the same as collaborators. API keys can be designated with "Data Loader", "Editor", and "Viewer" permissions.
+Remote systems or applications may need to authenticate with HydroServer in data-loading, retrieval, or analysis workflows. Giving these systems your username and password is risky because they receive all of your permissions. Instead, create a service account, assign it the minimum workspace role required for its job, and authenticate it with the generated API key. Service accounts can use roles such as Data Loader, Editor, or Viewer just like user collaborators.
 
 ## Data Visibility
 

@@ -67,34 +67,10 @@ describe('useWorkspacePermissions', () => {
     ).toBe(true)
   })
 
-  it('applies an action wildcard to the requested action', () => {
+  it('applies a resource wildcard only to the explicitly granted action', () => {
     const workspace = workspaceWithPermissions([
       {
-        action: PermissionAction.Global,
-        resource: PermissionResource.Collaborator,
-      },
-    ])
-
-    expect(
-      useWorkspacePermissions().hasPermission(
-        PermissionResource.Collaborator,
-        PermissionAction.Delete,
-        workspace
-      )
-    ).toBe(true)
-    expect(
-      useWorkspacePermissions().hasPermission(
-        PermissionResource.ServiceAccount,
-        PermissionAction.Delete,
-        workspace
-      )
-    ).toBe(false)
-  })
-
-  it('applies a global wildcard permission to every action and resource', () => {
-    const workspace = workspaceWithPermissions([
-      {
-        action: PermissionAction.Global,
+        action: PermissionAction.Edit,
         resource: PermissionResource.Global,
       },
     ])
@@ -106,5 +82,25 @@ describe('useWorkspacePermissions', () => {
         workspace
       )
     ).toBe(true)
+    expect(
+      useWorkspacePermissions().hasPermission(
+        PermissionResource.ResultQualifier,
+        PermissionAction.Delete,
+        workspace
+      )
+    ).toBe(false)
+  })
+
+  it('exposes every permission resource returned by the API contract', () => {
+    expect(Object.values(PermissionResource)).toEqual(
+      expect.arrayContaining([
+        'Role',
+        'DataConnection',
+        'EtlTask',
+        'RatingCurve',
+        'DataProductTask',
+        'MonitoringTask',
+      ])
+    )
   })
 })

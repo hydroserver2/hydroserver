@@ -29,15 +29,20 @@
       {{ selectedSiteLabel }}
     </div>
 
-    <div v-if="uniqueColoredThings.length" class="legend">
-      <h3>Legend</h3>
+    <div
+      v-if="uniqueColoredThings.length"
+      class="legend"
+      :class="{ 'legend--browse': selectable }"
+      data-testid="map-marker-legend"
+    >
+      <h3>{{ legendTitle }}</h3>
       <ul>
         <li v-for="thing in uniqueColoredThings" :key="thing.tagValue">
           <v-icon
             :icon="mdiMapMarker"
             :style="{ color: thing.color?.background }"
           ></v-icon>
-          {{ thing?.tagValue }}
+          {{ getLegendLabel(thing.tagValue) }}
         </li>
       </ul>
     </div>
@@ -50,7 +55,11 @@
             <div class="detail-heading">
               <h2 class="detail-name">{{ detailThing.name }}</h2>
               <div v-if="detailSubtitle" class="detail-meta">
-                <v-icon :icon="mdiMapMarker" size="14" />
+                <v-icon
+                  :icon="detailSiteTypeIcon"
+                  size="14"
+                  data-testid="selected-site-type-icon"
+                />
                 <span>{{ detailSubtitle }}</span>
               </div>
             </div>
@@ -76,7 +85,7 @@
               variant="flat"
               style="flex: 1"
               :append-icon="mdiChevronRight"
-              :href="`/sites/${detailThing.id}`"
+              :to="{ name: 'SiteDetails', params: { id: detailThing.id } }"
             >
               View details
             </v-btn>
@@ -96,10 +105,18 @@ import {
   computed,
   type PropType,
 } from 'vue'
+import { storeToRefs } from 'pinia'
 import hs, { Thing } from '@hydroserver/client'
 import { MapThing, MapThingWithColor } from '@/types'
+import { useVocabularyStore } from '@/composables/useVocabulary'
+import {
+  buildSiteTypeIconRules,
+  getSiteTypeIcon as resolveSiteTypeIcon,
+} from '@/utils/siteTypeIcons'
 import {
   addColorToMarkers,
+  addSiteTypeColorToMarkers,
+  addWorkspaceColorToMarkers,
   generateMarkerContent,
   hasThingTags,
   isThingMarker,
@@ -128,6 +145,14 @@ const props = defineProps({
     default: () => [],
   },
   colorKey: { type: String, default: '' },
+  colorMode: {
+    type: String as PropType<'none' | 'workspace' | 'siteType' | 'metadata'>,
+    default: 'none',
+  },
+  colorLabels: {
+    type: Object as PropType<Record<string, string>>,
+    default: () => ({}),
+  },
   startInSatellite: Boolean,
   singleMarkerMode: Boolean,
   fitPadding: {
@@ -144,6 +169,7 @@ const props = defineProps({
   selectable: Boolean,
 })
 const emit = defineEmits(['location-clicked', 'select'])
+const { siteTypeIcons } = storeToRefs(useVocabularyStore())
 
 interface ConfigTileSource {
   name: string
@@ -229,6 +255,15 @@ const detailSubtitle = computed(() => {
   }
   return parts.join(' · ')
 })
+const siteTypeIconRules = computed(() =>
+  buildSiteTypeIconRules(siteTypeIcons.value)
+)
+const detailSiteTypeIcon = computed(() =>
+  resolveSiteTypeIcon(
+    detailThing.value?.siteType ?? '',
+    siteTypeIconRules.value
+  )
+)
 
 const detailCoordinates = computed(() => {
   const thing = detailThing.value
@@ -251,6 +286,17 @@ const uniqueColoredThings = computed(() => {
     return a.tagValue.localeCompare(b.tagValue)
   })
 })
+
+const legendTitle = computed(() =>
+  props.colorMode === 'workspace'
+    ? 'Workspace'
+    : props.colorMode === 'siteType'
+      ? 'Site type'
+      : props.colorKey || 'Legend'
+)
+
+const getLegendLabel = (value?: string) =>
+  value ? (props.colorLabels[value] ?? value) : ''
 
 const getThingCoordinates = (thing: MapThingWithColor) => {
   if (isThingMarker(thing)) {
@@ -282,8 +328,10 @@ const fitViewToMarkers = (duration = 0) => {
   if (!map) return
 
   const extent = vectorSource.getExtent() as Extent
-  if (extentIsEmpty(extent) || props.singleMarkerMode) return
+  if (extentIsEmpty(extent)) return
 
+  // A one-point extent fits to maxZoom. This keeps an existing site local in
+  // edit mode while a new-site map (which has no marker yet) stays at default.
   map.getView().fit(extent, {
     padding: props.fitPadding,
     maxZoom: 16,
@@ -550,11 +598,19 @@ const focusThingById = (thingId?: string | null) => {
 
 async function updateFeatures() {
   // 1) Rebuild features
-  coloredThings.value = props.colorKey
-    ? props.things.every(hasThingTags)
-      ? addColorToMarkers(props.things, props.colorKey)
-      : props.things
-    : props.things
+  if (props.colorMode === 'workspace') {
+    coloredThings.value = addWorkspaceColorToMarkers(props.things)
+  } else if (props.colorMode === 'siteType') {
+    coloredThings.value = addSiteTypeColorToMarkers(props.things)
+  } else if (
+    props.colorMode === 'metadata' &&
+    props.colorKey &&
+    props.things.every(hasThingTags)
+  ) {
+    coloredThings.value = addColorToMarkers(props.things, props.colorKey)
+  } else {
+    coloredThings.value = props.things
+  }
 
   const features = coloredThings.value
     .map(createFeature)
@@ -732,7 +788,12 @@ onBeforeUnmount(() => {
   }
 })
 
-watch(() => [props.things] as const, updateFeatures, { deep: true })
+watch(
+  () =>
+    [props.things, props.colorMode, props.colorKey, props.colorLabels] as const,
+  updateFeatures,
+  { deep: true }
+)
 
 watch(
   () => props.selectedThingId,
@@ -821,6 +882,13 @@ watch(
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.legend--browse {
+  right: 64px;
+  bottom: 16px;
+  left: auto;
+  z-index: 4;
 }
 
 .selected-site-label {
@@ -939,7 +1007,9 @@ watch(
 
 .detail-card-enter-active,
 .detail-card-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
 .detail-card-enter-from,

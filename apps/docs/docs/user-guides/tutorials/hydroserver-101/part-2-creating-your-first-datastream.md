@@ -1,6 +1,6 @@
 # Part 2: Creating Your First Datastream
 
-Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, navigate to it by going to the 'Your sites' page and clicking the name of your site in the site table.
+Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, open **Browse monitoring sites**, select your site in the panel, and click **View details**.
 
 Near the bottom of the site details page, there will be an empty datastreams table which will work the same as the sites table you saw before. Click 'Add new datastream' to open the datastream creation modal.
 

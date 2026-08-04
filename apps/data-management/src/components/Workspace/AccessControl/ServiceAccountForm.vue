@@ -30,6 +30,13 @@
           :return-object="true"
           variant="outlined"
           :rules="required"
+          :disabled="isEdit && !canAssignRole"
+          :hint="
+            isEdit && !canAssignRole
+              ? 'You do not have permission to change collaborator roles.'
+              : undefined
+          "
+          :persistent-hint="isEdit && !canAssignRole"
         />
       </v-card-text>
 
@@ -67,6 +74,7 @@ const props = defineProps<{
   serviceAccount?: ServiceAccountRow
   workspaceId: string
   roles: CollaboratorRole[]
+  canAssignRole: boolean
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
@@ -93,6 +101,7 @@ async function updateItem(
   if (!res.ok) return res
 
   if (
+    props.canAssignRole &&
     selectedRole.value &&
     selectedRole.value.id !== props.serviceAccount?.role?.id
   ) {

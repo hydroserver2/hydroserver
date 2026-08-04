@@ -3,7 +3,7 @@
   pk: 1000000010
   fields:
     user: 1000000011
-    role: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
+    role: 019f7154-79e5-78ff-a11c-d06cf351869b
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Public Workspace Viewer
@@ -11,7 +11,7 @@
   pk: 1000000011
   fields:
     user: 1000000012
-    role: 1d91bff7-edf6-4b69-bb26-674436335725
+    role: 019f7153-c6e0-7f32-bffb-84fc7e64b787
     workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Private Workspace Editor
@@ -19,7 +19,7 @@
   pk: 1000000012
   fields:
     user: 1000000011
-    role: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
+    role: 019f7154-79e5-78ff-a11c-d06cf351869b
     workspace: b27c51a0-7374-462d-8a53-d97d47176c10
 
 # Private Workspace Viewer
@@ -27,5 +27,5 @@
   pk: 1000000013
   fields:
     user: 1000000012
-    role: 1d91bff7-edf6-4b69-bb26-674436335725
+    role: 019f7153-c6e0-7f32-bffb-84fc7e64b787
     workspace: b27c51a0-7374-462d-8a53-d97d47176c10

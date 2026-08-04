@@ -70,13 +70,13 @@ describe('useWorkspaceStore.canEditSelected', () => {
     expect(store.canEditSelected).toBe(true)
   })
 
-  it('returns true for collaborator with "*" action on Observation', async () => {
+  it('returns false for unsupported "*" action on Observation', async () => {
     const { useWorkspaceStore } = await import('@/store/workspaces')
     const store = useWorkspaceStore()
     store.selectedWorkspace = ws(
       role([{ resource: 'Observation', action: '*' }])
     ) as any
-    expect(store.canEditSelected).toBe(true)
+    expect(store.canEditSelected).toBe(false)
   })
 
   it('returns true for collaborator with create on Observation', async () => {

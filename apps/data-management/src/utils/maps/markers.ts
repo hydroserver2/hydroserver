@@ -4,7 +4,7 @@ import { mapMarkerColors } from '@/utils/materialColors'
 
 type ColorableThing = Thing | ThingSiteSummary
 
-type ColorizedThing<T extends ColorableThing> = T & {
+type ColorizedThing<T extends MapThing> = T & {
   color?: {
     borderColor: string
     background: string
@@ -17,27 +17,43 @@ export function hasThingTags(thing: MapThing): thing is ColorableThing {
   return 'tags' in thing && Array.isArray(thing.tags)
 }
 
+const addColorToMarkersByValue = <T extends MapThing>(
+  things: T[],
+  getValue: (thing: T) => string | undefined
+): Array<ColorizedThing<T>> => {
+  let colorIndex = 0
+  const colorMap = new Map<string, (typeof mapMarkerColors)[number]>()
+
+  return things.map((thing) => {
+    const value = getValue(thing)
+    if (!value) return thing
+
+    if (!colorMap.has(value)) {
+      colorMap.set(value, mapMarkerColors[colorIndex % mapMarkerColors.length])
+      colorIndex++
+    }
+    return { ...thing, color: colorMap.get(value), tagValue: value }
+  })
+}
+
 export const addColorToMarkers = <T extends ColorableThing>(
   things: T[],
   key: string
-): Array<ColorizedThing<T>> => {
-  let colorIndex = 0
-  const colorMap = new Map()
+): Array<ColorizedThing<T>> =>
+  addColorToMarkersByValue(
+    things,
+    (thing) => thing.tags.find((tag) => tag.key === key)?.value
+  )
 
-  return things.map((thing) => {
-    const tagValue = thing.tags.find((tag) => tag.key === key)?.value
-    if (tagValue === undefined) return thing
+export const addWorkspaceColorToMarkers = <T extends MapThing>(
+  things: T[]
+): Array<ColorizedThing<T>> =>
+  addColorToMarkersByValue(things, (thing) => thing.workspaceId)
 
-    if (!colorMap.has(tagValue)) {
-      colorMap.set(
-        tagValue,
-        mapMarkerColors[colorIndex % mapMarkerColors.length]
-      )
-      colorIndex++
-    }
-    return { ...thing, color: colorMap.get(tagValue), tagValue: tagValue }
-  })
-}
+export const addSiteTypeColorToMarkers = <T extends MapThing>(
+  things: T[]
+): Array<ColorizedThing<T>> =>
+  addColorToMarkersByValue(things, (thing) => thing.siteType)
 
 export function isThingMarker(markerData: MapThing): markerData is ThingMarker {
   return !('location' in markerData)

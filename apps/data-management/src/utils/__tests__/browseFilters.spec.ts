@@ -15,6 +15,8 @@ describe('filterThingMarkers', () => {
       isPrivate: false,
       latitude: 41.7,
       longitude: -111.8,
+      samplingFeatureCode: 'LAKE-1',
+      tags: [{ key: 'Network', value: 'Primary' }],
     },
     {
       id: 'thing-2',
@@ -24,6 +26,8 @@ describe('filterThingMarkers', () => {
       isPrivate: false,
       latitude: 41.8,
       longitude: -111.7,
+      samplingFeatureCode: 'RIVER-1',
+      tags: [{ key: 'Network', value: 'Secondary' }],
     },
     {
       id: 'thing-3',
@@ -33,6 +37,8 @@ describe('filterThingMarkers', () => {
       isPrivate: false,
       latitude: 41.9,
       longitude: -111.6,
+      samplingFeatureCode: 'SPRING-1',
+      tags: [{ key: 'Network', value: 'Primary' }],
     },
     {
       id: 'thing-4',
@@ -42,6 +48,8 @@ describe('filterThingMarkers', () => {
       isPrivate: false,
       latitude: 42.0,
       longitude: -111.5,
+      samplingFeatureCode: 'RESERVOIR-1',
+      tags: [{ key: 'Region', value: 'North' }],
     },
   ]
 
@@ -71,9 +79,11 @@ describe('filterThingMarkers', () => {
 
   it('filters things by custom site types that contain commas', () => {
     expect(
-      filterThingMarkers(things as any, [], [
-        'Lake, Reservoir, Impoundment',
-      ]).map((thing) => thing.id)
+      filterThingMarkers(
+        things as any,
+        [],
+        ['Lake, Reservoir, Impoundment']
+      ).map((thing) => thing.id)
     ).toEqual(['thing-4'])
   })
 
@@ -107,6 +117,20 @@ describe('filterThingMarkers', () => {
       ).map((thing) => thing.id)
     ).toEqual([])
   })
+
+  it('filters things by metadata key and optional values', () => {
+    expect(
+      filterThingMarkers(things as any, [], [], undefined, 'Network').map(
+        (thing) => thing.id
+      )
+    ).toEqual(['thing-1', 'thing-2', 'thing-3'])
+
+    expect(
+      filterThingMarkers(things as any, [], [], undefined, 'Network', [
+        'Primary',
+      ]).map((thing) => thing.id)
+    ).toEqual(['thing-1', 'thing-3'])
+  })
 })
 
 describe('parseBrowseFilterQuery', () => {
@@ -117,6 +141,11 @@ describe('parseBrowseFilterQuery', () => {
         search: 'Logan',
         workspaces: ['workspace-1', 'workspace-2'],
         siteTypes: ['Lake', 'Stream'],
+        tagKey: 'Network',
+        tagValues: ['Primary', 'Secondary'],
+        mySites: '1',
+        colorBy: 'metadata',
+        colorTagKey: 'Network',
         drawer: '0',
       })
     ).toEqual({
@@ -124,6 +153,11 @@ describe('parseBrowseFilterQuery', () => {
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake', 'Stream'],
+      tagKey: 'Network',
+      tagValues: ['Primary', 'Secondary'],
+      mySites: true,
+      colorBy: 'metadata',
+      colorTagKey: 'Network',
       drawer: false,
     })
   })
@@ -142,6 +176,11 @@ describe('parseBrowseFilterQuery', () => {
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake'],
+      tagKey: '',
+      tagValues: [],
+      mySites: null,
+      colorBy: null,
+      colorTagKey: '',
       drawer: true,
     })
   })
@@ -157,6 +196,13 @@ describe('parseBrowseFilterQuery', () => {
   it('returns null for an absent or unrecognized drawer state', () => {
     expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
     expect(parseBrowseFilterQuery({}).drawer).toBeNull()
+    expect(parseBrowseFilterQuery({ colorBy: 'maybe' }).colorBy).toBeNull()
+  })
+
+  it('accepts site type marker coloring', () => {
+    expect(parseBrowseFilterQuery({ colorBy: 'siteType' }).colorBy).toBe(
+      'siteType'
+    )
   })
 
   it('preserves commas in the search text instead of truncating', () => {
@@ -190,6 +236,11 @@ describe('buildBrowseFilterQuery', () => {
           searchText: 'Logan',
           workspaceIds: ['workspace-1', 'workspace-2'],
           siteTypes: ['Lake'],
+          tagKey: 'Network',
+          tagValues: ['Primary', 'Secondary'],
+          mySites: true,
+          colorBy: 'metadata',
+          colorTagKey: 'Network',
           drawer: true,
         }
       )
@@ -198,6 +249,11 @@ describe('buildBrowseFilterQuery', () => {
       search: 'Logan',
       workspaces: ['workspace-1', 'workspace-2'],
       siteTypes: 'Lake',
+      tagKey: 'Network',
+      tagValues: ['Primary', 'Secondary'],
+      mySites: '1',
+      colorBy: 'metadata',
+      colorTagKey: 'Network',
     })
   })
 
@@ -208,6 +264,8 @@ describe('buildBrowseFilterQuery', () => {
           selectedSite: 'thing-1',
           workspaces: 'workspace-1',
           siteTypes: 'Lake',
+          mySites: '1',
+          colorByTag: '1',
           page: '2',
         },
         {
@@ -215,6 +273,11 @@ describe('buildBrowseFilterQuery', () => {
           searchText: '',
           workspaceIds: [],
           siteTypes: [],
+          tagKey: '',
+          tagValues: [],
+          mySites: false,
+          colorBy: 'none',
+          colorTagKey: '',
           drawer: false,
         }
       )

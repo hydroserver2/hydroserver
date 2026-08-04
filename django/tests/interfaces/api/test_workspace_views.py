@@ -62,6 +62,19 @@ def test_get_workspace_returns_404_for_nonexistent_workspace(client):
     assert response.status_code == 404
 
 
+def test_get_workspace_expands_collaborator_role_permissions(client):
+    workspace = WorkspaceFactory()
+    collaborator = _viewer_collaborator(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(_detail_url(workspace.id), {"expand_related": True})
+
+    assert response.status_code == 200
+    assert response.json()["collaboratorRole"]["permissions"] == [
+        {"resource": "Workspace", "action": "view"}
+    ]
+
+
 # --- create_workspace ------------------------------------------------------------
 
 
@@ -126,6 +139,39 @@ def test_get_workspaces_excludes_private_workspaces_of_others(client):
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_get_workspaces_expands_collaborator_role_permissions(client):
+    workspace = WorkspaceFactory()
+    collaborator = _viewer_collaborator(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(
+        WORKSPACES_URL,
+        {"is_associated": True, "expand_related": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["collaboratorRole"]["permissions"] == [
+        {"resource": "Workspace", "action": "view"}
+    ]
+
+
+def test_get_workspaces_includes_pending_transfer_for_recipient(client):
+    owner = UserFactory()
+    recipient = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, is_private=True)
+    workspace.initiate_transfer(recipient)
+    client.force_login(recipient)
+
+    response = client.get(
+        WORKSPACES_URL,
+        {"is_associated": True, "expand_related": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == str(workspace.id)
+    assert response.json()[0]["pendingTransferTo"]["email"] == recipient.email
 
 
 # --- update_workspace ---------------------------------------------------------------

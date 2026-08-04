@@ -1,8 +1,10 @@
 <template>
   <v-card>
-    <v-card-title>
-      <span class="text-h5">Confirm Deletion</span>
-    </v-card-title>
+    <v-toolbar flat color="red-darken-4">
+      <v-card-title class="text-h5">
+        <v-icon :icon="mdiAlert" /> Confirm Deletion
+      </v-card-title>
+    </v-toolbar>
     <v-card-text>
       This action will permanently delete the site along with all associated
       datastreams and observations
@@ -40,6 +42,7 @@
 import { ref } from 'vue'
 import { Thing } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
+import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['switchToAccessControl', 'delete', 'close'])
 const props = defineProps({

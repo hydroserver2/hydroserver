@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -18,6 +18,16 @@ test.describe('general navigation', () => {
 
     await page.getByRole('link', { name: 'Logo', exact: true }).first().click()
     await expect(page).toHaveURL(/\/browse$/)
+  })
+
+  test('legacy Your Sites URL redirects to Browse monitoring sites', async ({
+    page,
+  }) => {
+    await page.goto('/sites')
+    await expect(page).toHaveURL(/\/browse$/)
+    await expect(
+      page.getByRole('heading', { name: 'Monitoring sites', level: 1 })
+    ).toBeVisible()
   })
 
   test('browse page site type filter filters the site list and can be cleared', async ({

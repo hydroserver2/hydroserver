@@ -18,10 +18,23 @@ Work through this list before production release alongside CI.
 
 - [ ] **Browse filter-to-map behavior** — apply Browse page filters and confirm
       the visible markers/popups match the selected filters on the map.
+- [ ] **Browse marker coloring** — select **Workspace** under **Color markers
+      by** and confirm the legend uses workspace names, select **Site type** and
+      confirm it groups markers by type, then select **Metadata**, choose a tag,
+      and confirm markers and the legend use its values.
+- [ ] **Browse metadata filters** — filter by an additional-metadata key and
+      value and confirm the list and map stay in sync independently of the
+      selected marker-color mode.
+- [ ] **Browse site registration** — while signed in, register a site in a
+      permitted workspace from the Browse panel and confirm it appears in both
+      the list and map.
+- [ ] **Map extent / zoom behavior** — filter or switch workspaces on Browse and
+      verify the map zooms to the extent of the visible sites.
 - [ ] **Map marker click** — click a marker on the OpenLayers map and confirm the
-      site popup appears with the correct site name and a "View site details" link.
-- [ ] **Popup site details link** — confirm the link in the popup navigates to the
-      correct `/sites/<id>` page.
+      site detail card appears with the correct site name and a **View details**
+      link.
+- [ ] **Site details link** — confirm the link in the detail card navigates to
+      the correct `/sites/<id>` page.
 - [ ] **Map zoom / pan controls** — use the on-map zoom buttons and confirm the
       map zooms in and out without error.
 
@@ -31,11 +44,11 @@ Work through this list before production release alongside CI.
 
 - [ ] **Email verification sign-up** — create a username/password account,
       confirm a verification email is received, activate the account, and verify
-      the first login lands on `/sites`.
+      the first login lands on `/browse`.
 - [ ] **Google OAuth login** — click "Sign in with Google", complete the Google
-      auth flow, and confirm the user lands on `/sites` as the correct account.
+      auth flow, and confirm the user lands on `/browse` as the correct account.
 - [ ] **UtahID OAuth login** — click "Sign in with UtahID", complete the UtahID
-      auth flow, and confirm the user lands on `/sites` as the correct account.
+      auth flow, and confirm the user lands on `/browse` as the correct account.
 - [ ] **OAuth account creation** — sign up via OAuth for the first time and
       confirm a new account is provisioned with an onboarding prompt.
 
@@ -48,10 +61,8 @@ Work through this list before production release alongside CI.
 
 ---
 
-## Section 6 — Your Sites / Workspace Maps
+## Section 6 — Workspace Access
 
-- [ ] **Map extent / zoom behavior** — open `Your Sites`, switch between
-      workspaces, and verify the map zooms to the extent of the visible sites.
 - [ ] **Collaborator access verification** — after adding or changing a
       collaborator role, log in as that collaborator and confirm the resulting
       access matches the assigned role.

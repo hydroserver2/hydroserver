@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
-import { Workspace } from '@hydroserver/client'
+import { PermissionAction, PermissionResource, Workspace } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 
 /**
@@ -48,8 +48,8 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     const perms = ws.collaboratorRole.permissions ?? []
     return perms.some(
       (p) =>
-        (p.action === 'edit' || p.action === 'create' || p.action === '*') &&
-        (p.resource === 'Observation' || p.resource === '*')
+        (p.action === PermissionAction.Edit || p.action === PermissionAction.Create) &&
+        (p.resource === PermissionResource.Observation || p.resource === PermissionResource.Global)
     )
   })
 

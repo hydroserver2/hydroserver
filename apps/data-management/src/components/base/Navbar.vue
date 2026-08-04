@@ -39,38 +39,23 @@
       <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
     </a>
 
-    <template v-if="mdAndDown" v-slot:append>
-      <v-app-bar-nav-icon class="mx-2" @click.stop="drawer = !drawer" />
+    <template v-if="compactNavigation" v-slot:append>
+      <v-app-bar-nav-icon
+        class="mx-2"
+        data-testid="mobile-nav-button"
+        @click.stop="drawer = !drawer"
+      />
     </template>
 
-    <template v-if="!mdAndDown">
+    <template v-if="!compactNavigation">
       <div v-for="path of visiblePaths()" :key="path.label">
         <v-btn
-          v-if="!path.menu"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           @click="path.onClick"
           density="comfortable"
         >
           {{ path.label }}
         </v-btn>
-
-        <v-menu v-else>
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props">
-              {{ path.label }}
-              <v-icon :icon="mdiMenuDown" right small />
-            </v-btn>
-          </template>
-
-          <v-list>
-            <v-list-item
-              v-for="menuItem of path.menu"
-              v-bind="menuItem.attrs || {}"
-              :title="menuItem.label"
-              @click="menuItem.onClick"
-            />
-          </v-list>
-        </v-menu>
       </div>
 
       <v-spacer />
@@ -128,33 +113,20 @@
   </v-app-bar>
 
   <v-navigation-drawer
-    v-if="mdAndDown"
+    v-if="compactNavigation"
     temporary
     v-model="drawer"
     location="right"
   >
     <v-list density="compact" nav>
-      <div v-for="path of visiblePaths()">
+      <div v-for="path of visiblePaths()" :key="path.label">
         <v-list-item
-          v-if="path.attrs"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           :title="path.label"
           :prepend-icon="path.icon"
-          :value="path.attrs.to || path.attrs.href"
+          :value="path.attrs?.to || path.attrs?.href || path.label"
           @click="path.onClick"
         />
-        <div v-else>
-          <v-list-item
-            v-for="menuItem of path.menu"
-            v-bind="menuItem.attrs || {}"
-            :title="menuItem.label"
-            :prepend-icon="menuItem.icon"
-            :value="
-              menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label
-            "
-            @click="menuItem.onClick"
-          />
-        </div>
       </div>
     </v-list>
 
@@ -198,9 +170,8 @@
 </template>
 
 <script setup lang="ts">
-import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { Snackbar } from '@/utils/notifications'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUserStore } from '@/store/user'
@@ -219,7 +190,6 @@ import {
   mdiLogout,
   mdiMapMarkerOutline,
   mdiMenuClose,
-  mdiMenuDown,
   mdiMenuOpen,
   mdiShieldCheckOutline,
   mdiShieldEditOutline,
@@ -228,12 +198,30 @@ import {
 
 const route = useRoute()
 const { resetState } = useDataVisStore()
-const { mdAndDown } = useDisplay()
-const signupEnabled = import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
 const { user } = storeToRefs(useUserStore())
+const signupEnabled = import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
+const compactNavigation = ref(false)
+let compactNavigationQuery: MediaQueryList | undefined
+
+function updateCompactNavigation() {
+  compactNavigation.value = compactNavigationQuery?.matches ?? false
+}
+
+onMounted(() => {
+  // The full authenticated navigation needs more room than Vuetify's 960px
+  // small-screen breakpoint, but comfortably fits below its 1280px medium
+  // breakpoint. Collapse at the bar's measured content boundary instead.
+  compactNavigationQuery = window.matchMedia('(max-width: 1099px)')
+  updateCompactNavigation()
+  compactNavigationQuery.addEventListener('change', updateCompactNavigation)
+})
+
+onBeforeUnmount(() => {
+  compactNavigationQuery?.removeEventListener('change', updateCompactNavigation)
+})
 
 const userInitials = computed(() => {
   const first = user.value.firstName?.trim()?.[0] ?? ''
@@ -246,15 +234,12 @@ type NavItemAttrs = {
   href?: string
 }
 
-type NavMenuItem = {
+type NavItem = {
   attrs?: NavItemAttrs
   label: string
   icon?: string
   onClick?: () => void
-}
-
-type NavItem = NavMenuItem & {
-  menu?: NavMenuItem[]
+  requiresAuth?: boolean
 }
 
 // The base nav items, before filtering out anything that requires a login.
@@ -269,11 +254,6 @@ const basePaths: NavItem[] = [
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
-    icon: mdiMapMarkerOutline,
-  },
-  {
-    attrs: { to: '/sites' },
-    label: 'Your sites',
     icon: mdiMapMarkerOutline,
   },
   {
@@ -293,6 +273,7 @@ const basePaths: NavItem[] = [
   {
     label: 'Quality Control',
     icon: mdiShieldEditOutline,
+    requiresAuth: true,
     onClick: () => {
       window.location.href = '/qc/'
     },
@@ -316,18 +297,10 @@ function itemRequiresAuth(attrs?: NavItemAttrs): boolean {
 // component's auth-gated markup does.
 function visiblePaths(): NavItem[] {
   const authenticated = hs.session.isAuthenticated
-
-  const items = basePaths
-    .map((item): NavItem | null => {
-      if (item.menu) {
-        const menu = item.menu.filter(
-          (menuItem) => authenticated || !itemRequiresAuth(menuItem.attrs)
-        )
-        return menu.length ? { ...item, menu } : null
-      }
-      return authenticated || !itemRequiresAuth(item.attrs) ? item : null
-    })
-    .filter((item): item is NavItem => item !== null)
+  const items = basePaths.filter(
+    (item) =>
+      authenticated || !(item.requiresAuth || itemRequiresAuth(item.attrs))
+  )
 
   // Logged-in visitors reach About through the account menu instead.
   if (!authenticated) items.push(aboutPath)

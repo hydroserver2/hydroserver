@@ -30,9 +30,13 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     return apiMethods.fetch<ThingMarker[]>(`${this._route}/markers`)
   }
 
-  listSiteSummaries(workspaceId: string): Promise<ApiResponse<ThingSiteSummary[]>> {
+  listSiteSummaries(
+    workspaceId?: string
+  ): Promise<ApiResponse<ThingSiteSummary[]>> {
     return apiMethods.fetch<ThingSiteSummary[]>(
-      this.withQuery(`${this._route}/site-summaries`, { workspace_id: workspaceId })
+      this.withQuery(`${this._route}/site-summaries`, {
+        workspace_id: workspaceId,
+      })
     )
   }
 

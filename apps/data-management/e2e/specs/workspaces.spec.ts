@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -191,11 +191,37 @@ test.describe('workspace management', () => {
     await page.getByRole('tab', { name: 'Methods' }).click()
     await expect(page.getByTestId('add-workspace-metadata-item')).toHaveCount(0)
     await expect(
-      page.getByTestId('edit-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+      page.getByTestId(
+        `edit-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+      )
     ).toHaveCount(0)
     await expect(
-      page.getByTestId('delete-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+      page.getByTestId(
+        `delete-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+      )
     ).toHaveCount(0)
+  })
+
+  test('editor controls follow resource permissions instead of ownership', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.editor.email, users.editor.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.private.id}&section=privacy`
+    )
+
+    const workspaceItem = workspaceListItem(
+      page,
+      fixtures.workspaces.private.name
+    )
+    await expect(
+      workspaceItem.locator('[data-testid^="workspace-edit-"]')
+    ).toBeEnabled()
+    await expect(
+      workspaceItem.locator('[data-testid^="workspace-delete-"]')
+    ).toBeEnabled()
+    await expect(page.getByLabel('Make this workspace private')).toBeEnabled()
+    await expect(page.getByRole('tab', { name: 'Ownership' })).toBeVisible()
   })
 
   test('workspace selection carries into the rest of the management app', async ({
@@ -237,7 +263,7 @@ test.describe('workspace management', () => {
       new RegExp(`workspace=${fixtures.workspaces.private.id}`)
     )
 
-    await page.goto('/sites')
+    await page.goto('/orchestration/ingestion')
     await expect(page.getByTestId('workspace-selector')).toContainText(
       fixtures.workspaces.private.name
     )

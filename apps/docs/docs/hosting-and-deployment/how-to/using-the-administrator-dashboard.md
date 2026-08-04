@@ -31,23 +31,20 @@ HydroServer can be configured to limit access to certain features for new users 
 accounts cannot create or own workspaces, but they can be added as collaborators to existing workspaces.
 
 Administrators can manually upgrade a limited account to a standard account by clicking on
-**Identity and Access Management** > **Users**, selecting a user, and toggling **Is Ownership Allowed** to `true`.
+**Identity and Access Management** > **Users**, selecting a user, and changing **Owned workspace limit** from `0` to a
+positive number. Leaving the field blank allows unlimited workspace ownership.
 
 The **Identity and Access Management** section also exposes the following admin models:
 
-| Model | Purpose |
+| Model                | Purpose                                                                                                                                                                      |
 | --- | --- |
-| **Users** | Manage user profile fields, account status, staff/superuser access, and ownership permission. |
-| **Organizations** | Manage organizations that can be associated with users and workspaces. |
-| **Workspaces** | Review or edit workspace ownership, privacy, and workspace metadata. |
-| **Roles** | Configure reusable permission bundles for collaborators and API keys. |
-| **Permissions** | Review the resource-level permissions that belong to roles. |
-| **Collaborators** | Review or edit user access to workspaces. |
-| **API Keys** | Review API key metadata, deactivate keys, or regenerate a selected key. |
-
-To regenerate an API key, open **Identity and Access Management** > **API Keys**, select exactly one API key, choose
-**Regenerate selected API key** from the action menu, and click **Go**. The new key is shown once after the action
-completes.
+| **Users**            | Manage user profile fields, account status, staff/superuser access, and workspace ownership limits.                                                                          |
+| **Organizations**    | Manage organizations that can be associated with users and workspaces.                                                                                                       |
+| **Workspaces**       | Review or edit workspace ownership, privacy, and workspace metadata.                                                                                                         |
+| **Roles**            | Configure reusable permission bundles for user and service-account collaborators.                                                                                            |
+| **Permissions**      | Review the resource-level permissions that belong to roles.                                                                                                                  |
+| **Collaborators**    | Review or edit user and service-account access to workspaces.                                                                                                                |
+| **Service Accounts** | Review service-account metadata and activate or deactivate accounts. API keys are created and regenerated from Workspace Management, where the new secret can be shown once. |
 
 ## HydroServer Configuration
 

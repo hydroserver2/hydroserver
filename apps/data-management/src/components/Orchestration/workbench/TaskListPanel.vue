@@ -23,14 +23,14 @@
       </div>
       <div class="detail-actions">
         <template v-if="activeTab === 'ingestion' && selectedConnection">
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="flat"
                   :prepend-icon="mdiPlus"
                   :style="{ background: accent, color: 'white' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreate"
                   class="detail-action-btn detail-action-btn--primary text-none"
                   rounded="lg"
                   @click="$emit('add-task')"
@@ -43,14 +43,14 @@
           </v-tooltip>
         </template>
         <template v-else-if="activeTab === 'aggregation'">
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreate"
                   rounded="lg"
                   @click="$emit('add-aggregation')"
                 >
@@ -60,14 +60,14 @@
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreate"
                   rounded="lg"
                   @click="$emit('add-expression')"
                 >
@@ -77,14 +77,14 @@
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreate"
                   rounded="lg"
                   @click="$emit('add-derivation')"
                 >
@@ -94,14 +94,14 @@
             </template>
             <span>{{ READ_ONLY_TOOLTIP }}</span>
           </v-tooltip>
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreateRatingCurve">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="outlined"
                   class="detail-action-btn detail-action-btn--header text-none"
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreateRatingCurve"
                   rounded="lg"
                   @click="$emit('add-rating-curve')"
                 >
@@ -113,14 +113,14 @@
           </v-tooltip>
         </template>
         <template v-else-if="activeTab === 'quality'">
-          <v-tooltip location="top" :disabled="canEdit">
+          <v-tooltip location="top" :disabled="canCreate">
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <v-btn
                   variant="flat"
                   :prepend-icon="mdiPlus"
                   :style="{ background: accent, color: 'white' }"
-                  :disabled="!canEdit"
+                  :disabled="!canCreate"
                   class="detail-action-btn detail-action-btn--primary text-none"
                   rounded="lg"
                   @click="$emit('add-quality')"
@@ -627,6 +627,8 @@ const tableHeaders = computed(() => {
 })
 
 const props = defineProps<{
+  canCreate: boolean
+  canCreateRatingCurve: boolean
   canEdit: boolean
   loading: boolean
   hasSelection: boolean
