@@ -1,10 +1,17 @@
-import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  shallowMount,
+} from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
-import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RatingCurveTaskDetails from '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
 import SimpleProductTaskDetails from '@/components/Orchestration/data-products/SimpleProductTaskDetails.vue'
+import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
+import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
+
+enableAutoUnmount(afterEach)
 
 const {
   dataProductGetMock,
@@ -179,6 +186,18 @@ const globalStubs = {
     emits: ['close', 'updated', 'deleted'],
     template: '<div class="quality-form-stub" />',
   },
+  DeleteTaskCard: {
+    name: 'DeleteTaskCard',
+    emits: ['close', 'delete'],
+    template: '<div />',
+  },
+  AggregationForm: { template: '<div />' },
+  DerivationForm: { template: '<div />' },
+  ExpressionForm: { template: '<div />' },
+  RatingCurveForm: { template: '<div />' },
+  NoScheduleIcon: { template: '<span />' },
+  ProductTaskSwimlanes: { template: '<div />' },
+  RatingCurveSwimlanes: { template: '<div />' },
 }
 
 const seedWorkspace = async () => {
