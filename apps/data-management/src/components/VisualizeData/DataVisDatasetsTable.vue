@@ -136,17 +136,16 @@
                 <div class="pt-1 text-base font-semibold leading-snug">
                   {{ item.name }}
                 </div>
-              <v-checkbox
-                :model-value="isChecked(item)"
-                :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-                density="compact"
-                label="Plot"
-                hide-details
-                class="plot-checkbox"
-                :data-testid="`plot-datastream-${item.id}`"
-                @click.stop
-                @change="() => updatePlottedDatastreams(item)"
-              />
+                <v-checkbox
+                  :model-value="isChecked(item)"
+                  :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+                  density="compact"
+                  label="Plot"
+                  hide-details
+                  class="plot-checkbox"
+                  :data-testid="`plot-datastream-${item.id}`"
+                  @click.stop="updatePlottedDatastreams(item, !isChecked(item))"
+                />
               </div>
               <div class="flex flex-col gap-0.5 pt-1.5">
                 <span class="text-xs uppercase tracking-[0.04em] text-black/55"
@@ -206,15 +205,14 @@
         hover
       >
         <template v-slot:item.plot="{ item }">
-            <v-checkbox
-              :model-value="isChecked(item)"
-              :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
-              class="d-flex align-self-center plot-checkbox"
-              density="compact"
-              :data-testid="`plot-datastream-${item.id}`"
-              @click.stop
-              @change="() => updatePlottedDatastreams(item)"
-            />
+          <v-checkbox
+            :model-value="isChecked(item)"
+            :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+            class="d-flex align-self-center plot-checkbox"
+            density="compact"
+            :data-testid="`plot-datastream-${item.id}`"
+            @click.stop="updatePlottedDatastreams(item, !isChecked(item))"
+          />
         </template>
         <template v-slot:item.phenomenonEndTime="{ item }">
           {{ formatTime(item.phenomenonEndTime) }}
@@ -386,15 +384,19 @@ const toggleHeader = (key: string) => {
   selectedHeaders.value = keys
 }
 
-function updatePlottedDatastreams(datastream: Datastream) {
+function updatePlottedDatastreams(
+  datastream: Datastream,
+  selected: boolean | null
+) {
   const index = plottedDatastreams.value.findIndex(
     (ds) => ds.id === datastream.id
   )
-  if (index === -1) {
+  if (selected && index === -1) {
     if (plottedDatastreams.value.length >= 5) return
     plottedDatastreams.value.push(datastream)
+  } else if (!selected && index !== -1) {
+    plottedDatastreams.value.splice(index, 1)
   }
-  else plottedDatastreams.value.splice(index, 1)
 }
 </script>
 

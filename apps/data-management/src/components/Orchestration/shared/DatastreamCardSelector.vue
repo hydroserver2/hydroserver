@@ -19,7 +19,7 @@
   >
     <template #selection="{ item }">
       <span class="selected-datastream-name">
-        {{ item.raw.datastream.name }}
+        {{ item.datastream.name }}
       </span>
     </template>
 
@@ -29,7 +29,7 @@
         :title="undefined"
         class="datastream-card-selector__item"
       >
-        <DatastreamResultCard :datastream="item.raw.datastream" />
+        <DatastreamResultCard :datastream="item.datastream" />
       </v-list-item>
     </template>
   </v-autocomplete>
@@ -115,8 +115,14 @@ function searchText(datastream: Datastream): string {
     datastream.sampledMedium,
     datastream.aggregationStatistic,
     datastream.valueCount,
-    formatSpacing(datastream.intendedTimeSpacing, datastream.intendedTimeSpacingUnit),
-    formatSpacing(datastream.timeAggregationInterval, datastream.timeAggregationIntervalUnit),
+    formatSpacing(
+      datastream.intendedTimeSpacing,
+      datastream.intendedTimeSpacingUnit
+    ),
+    formatSpacing(
+      datastream.timeAggregationInterval,
+      datastream.timeAggregationIntervalUnit
+    ),
     ...related,
   ]
     .filter((value) => value !== null && value !== undefined && value !== '')

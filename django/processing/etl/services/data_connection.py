@@ -1,5 +1,5 @@
 import uuid
-import uuid
+
 import jmespath as jmespath_lib
 from datetime import datetime
 from typing import Optional, Literal, Union, Annotated
@@ -87,7 +87,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if isinstance(data_connection, uuid.UUID):
             try:
-                queryset = DataConnection.objects.filter(pk=data_connection)
+                queryset = DataConnection.objects.select_related("payload").filter(pk=data_connection)
                 if principal is not Unset:
                     queryset = principal.annotate_permissions(queryset)
                 data_connection = queryset.get()

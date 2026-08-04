@@ -13,7 +13,9 @@ test.describe('orchestration', () => {
     await page.goto('/orchestration')
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
-    await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Job orchestration', exact: true })
+    ).toBeVisible()
     await expect(
       page.getByRole('heading', {
         name: fixtures.orchestration.dataConnectionName,
@@ -32,7 +34,9 @@ test.describe('orchestration', () => {
     await page.goto('/orchestration')
     await selectWorkspace(page, fixtures.workspaces.private.name)
 
-    await expect(page.getByText('Job orchestration', { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Job orchestration', exact: true })
+    ).toBeVisible()
 
     const statusFilter = page.getByRole('combobox', { name: 'Status filters' }).first()
     await expect(statusFilter).toBeVisible()

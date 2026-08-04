@@ -2,42 +2,35 @@ import { expect, test, type Page } from '@playwright/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
-
-async function createWorkspace(page: Page, name: string) {
-  await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-  await page.getByRole('button', { name: 'Add workspace' }).click()
-  await page.getByLabel('Name *').fill(name)
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('cell', { name, exact: true })).toBeVisible()
-}
-
-async function openWorkspaceTransfer(page: Page, name: string) {
-  const workspaceRow = page.getByRole('row', { name: new RegExp(name) })
-  await expect(workspaceRow).toBeVisible()
-  await workspaceRow.locator('[data-testid^="workspace-access-control-"]').click()
-  await page.getByText('Transfer ownership', { exact: true }).click()
-}
+import {
+  createWorkspaceFromManagePage,
+  deleteWorkspaceFromManagePage,
+  workspaceListItem,
+} from '../support/ui'
 
 async function initiateTransfer(
   page: Page,
   workspaceName: string,
   newOwnerEmail: string
 ) {
-  await openWorkspaceTransfer(page, workspaceName)
+  await workspaceListItem(page, workspaceName).click()
+  await page.getByRole('tab', { name: 'Ownership' }).click()
   await page.getByLabel("New owner's email").fill(newOwnerEmail)
-  await page.getByRole('button', { name: 'Submit' }).click()
-  await page.getByRole('button', { name: 'Confirm' }).click()
-  await expect(page.getByText(/An ownership transfer is pending to/)).toBeVisible()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Begin transfer' }).click()
+  await expect(
+    page.getByText(
+      'Once accepted, you will no longer own this workspace and may lose access to it entirely.',
+      { exact: true }
+    )
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm transfer' }).click()
+  await expect(
+    page.getByText(/An ownership transfer is pending to/)
+  ).toBeVisible()
 }
 
-async function deleteWorkspace(page: Page, name: string) {
-  const workspaceRow = page.getByRole('row', { name: new RegExp(name) })
-  await expect(workspaceRow).toBeVisible()
-  await workspaceRow.locator('[data-testid^="workspace-delete-"]').click()
-  await page.getByLabel('Workspace name').fill(name)
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(0)
+function pendingTransferBanner(page: Page) {
+  return page.getByTestId('pending-transfers-banner')
 }
 
 test.describe('workspace transfers', () => {
@@ -46,35 +39,31 @@ test.describe('workspace transfers', () => {
   test('pending workspace transfers are visible to the destination user', async ({
     page,
   }) => {
-    await authenticateSession(page, users.unaffiliated.email, users.unaffiliated.password)
-    await page.goto('/orchestration')
+    await authenticateSession(
+      page,
+      users.unaffiliated.email,
+      users.unaffiliated.password
+    )
+    await page.goto('/workspaces')
 
+    const banner = pendingTransferBanner(page)
+    await expect(banner).toBeVisible()
+    await expect(banner).toContainText(fixtures.workspaces.transfer.name)
     await expect(
-      page.getByRole('button', { name: 'Pending workspace transfer' })
+      banner.getByRole('button', { name: 'Accept transfer' })
     ).toBeVisible()
-
-    await page.getByRole('button', { name: 'Pending workspace transfer' }).click()
-
-    await expect(
-      page.getByRole('cell', { name: fixtures.workspaces.transfer.name, exact: true })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: 'Accept transfer' })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: 'Cancel transfer' })
-    ).toBeVisible()
+    await expect(banner.getByRole('button', { name: 'Decline' })).toBeVisible()
   })
 
-  test('a pending workspace transfer can be cancelled by the destination user', async ({
+  test('a pending workspace transfer can be declined by the destination user', async ({
     page,
     browser,
   }) => {
     const workspaceName = `E2E Transfer Cancel ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
-    await createWorkspace(page, workspaceName)
+    await page.goto('/workspaces')
+    await createWorkspaceFromManagePage(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
     const targetContext = await browser.newContext()
@@ -85,19 +74,20 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto('/orchestration')
-    await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
+    await targetPage.goto('/workspaces')
 
-    const pendingRow = targetPage.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
-    await expect(pendingRow).toBeVisible()
-    await pendingRow.getByRole('button', { name: 'Cancel transfer' }).click()
-    await expect(pendingRow).toHaveCount(0)
+    const banner = pendingTransferBanner(targetPage)
+    await expect(banner).toContainText(workspaceName)
+    await banner
+      .locator('div')
+      .filter({ hasText: workspaceName })
+      .getByRole('button', { name: 'Decline' })
+      .first()
+      .click()
+    await expect(banner.getByText(workspaceName)).toHaveCount(0)
 
     await page.reload()
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await deleteWorkspace(page, workspaceName)
+    await deleteWorkspaceFromManagePage(page, workspaceName)
 
     await targetContext.close()
   })
@@ -109,8 +99,8 @@ test.describe('workspace transfers', () => {
     const workspaceName = `E2E Transfer Accept ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
-    await createWorkspace(page, workspaceName)
+    await page.goto('/workspaces')
+    await createWorkspaceFromManagePage(page, workspaceName)
     await initiateTransfer(page, workspaceName, users.unaffiliated.email)
 
     const targetContext = await browser.newContext()
@@ -121,26 +111,25 @@ test.describe('workspace transfers', () => {
       users.unaffiliated.email,
       users.unaffiliated.password
     )
-    await targetPage.goto('/orchestration')
-    await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
+    await targetPage.goto('/workspaces')
 
-    const pendingRow = targetPage.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
-    await expect(pendingRow).toBeVisible()
-    await pendingRow.getByRole('button', { name: 'Accept transfer' }).click()
-    await expect(pendingRow).toHaveCount(0)
+    const banner = pendingTransferBanner(targetPage)
+    await expect(banner).toContainText(workspaceName)
+    await banner
+      .locator('div')
+      .filter({ hasText: workspaceName })
+      .getByRole('button', { name: 'Accept transfer' })
+      .first()
+      .click()
 
-    await targetPage.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    const ownedRow = targetPage.getByRole('row', { name: new RegExp(workspaceName) })
-    await expect(ownedRow).toBeVisible()
-    await expect(ownedRow).toContainText('Owner')
+    const ownedItem = workspaceListItem(targetPage, workspaceName)
+    await expect(ownedItem).toBeVisible()
+    await expect(ownedItem).toContainText('Owner')
 
     await page.reload()
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await expect(page.getByRole('cell', { name: workspaceName, exact: true })).toHaveCount(0)
+    await expect(workspaceListItem(page, workspaceName)).toHaveCount(0)
 
-    await deleteWorkspace(targetPage, workspaceName)
+    await deleteWorkspaceFromManagePage(targetPage, workspaceName)
     await targetContext.close()
   })
 })

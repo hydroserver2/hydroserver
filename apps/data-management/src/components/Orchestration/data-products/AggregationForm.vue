@@ -254,7 +254,7 @@ const taskName = ref('')
 const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
-const aggregationMethod = ref<AggregationMethod>('mean')
+const aggregationMethod = ref<AggregationMethod>('time_weighted_mean')
 const outputInterval = ref<number | null>(1)
 const outputIntervalUnits = ref<IntervalUnit>('hours')
 const minValues = ref<number | null>(null)
@@ -264,12 +264,13 @@ const timezone = ref<string | null>(null)
 const selectedThingId = computed(() => props.initialThingId ?? null)
 
 const aggregationMethodOptions = [
-  { title: 'Mean', value: 'mean' },
-  { title: 'Sum', value: 'sum' },
-  { title: 'Min', value: 'min' },
-  { title: 'Max', value: 'max' },
+  { title: 'Arithmetic Mean', value: 'mean' },
   { title: 'First', value: 'first' },
   { title: 'Last', value: 'last' },
+  { title: 'Max', value: 'max' },
+  { title: 'Min', value: 'min' },
+  { title: 'Sum', value: 'sum' },
+  { title: 'Time-weighted mean', value: 'time_weighted_mean' },
 ]
 
 const intervalUnitOptions = [

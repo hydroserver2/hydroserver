@@ -1,6 +1,10 @@
 import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
+import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
+import RatingCurveTaskDetails from '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
+import SimpleProductTaskDetails from '@/components/Orchestration/data-products/SimpleProductTaskDetails.vue'
 
 const {
   dataProductGetMock,
@@ -161,6 +165,12 @@ const globalStubs = {
   'v-tabs': { template: '<div><slot /></div>' },
   TaskRunHistory: { template: '<div />' },
   TaskStatus: { template: '<span />' },
+  DeleteTaskCard: {
+    name: 'DeleteTaskCard',
+    props: ['task'],
+    emits: ['close', 'delete'],
+    template: '<div class="delete-task-card-stub" />',
+  },
   IngestionTaskForm: {
     props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
@@ -208,9 +218,6 @@ describe('Task detail components', () => {
   })
 
   it('fetches rating-curve task details from the data-product task endpoint', async () => {
-    const { default: RatingCurveTaskDetails } = await import(
-      '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
-    )
     await seedWorkspace()
 
     mount(RatingCurveTaskDetails as any, {
@@ -261,9 +268,6 @@ describe('Task detail components', () => {
   // })
 
   it('loads ingestion details in the ingestion component', async () => {
-    const { default: IngestionTaskDetails } = await import(
-      '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(IngestionTaskDetails as any, {
@@ -283,10 +287,52 @@ describe('Task detail components', () => {
     expect(wrapper.text()).toContain('Ingestion task')
   })
 
+  it('closes the ingestion delete dialog when deletion is cancelled', async () => {
+    await seedWorkspace()
+
+    const wrapper = shallowMount(IngestionTaskDetails as any, {
+      props: {
+        taskId: 'etl-task-1',
+        embedded: true,
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+    ;(wrapper.vm as any).deleteTaskDialogOpen = true
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'DeleteTaskCard' }).vm.$emit('close')
+    await flushPromises()
+
+    expect((wrapper.vm as any).deleteTaskDialogOpen).toBe(false)
+  })
+
+  it('closes the data-product delete dialog when deletion is cancelled', async () => {
+    await seedWorkspace()
+
+    const wrapper = shallowMount(SimpleProductTaskDetails as any, {
+      props: {
+        taskLabel: 'rating curve',
+        taskId: 'product-task-1',
+        embedded: true,
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+    ;(wrapper.vm as any).deleteTaskDialogOpen = true
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'DeleteTaskCard' }).vm.$emit('close')
+    await flushPromises()
+
+    expect((wrapper.vm as any).deleteTaskDialogOpen).toBe(false)
+  })
+
   it('closes the quality edit dialog after a successful update', async () => {
-    const { default: QualityTaskDetails } = await import(
-      '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(QualityTaskDetails as any, {
@@ -305,5 +351,27 @@ describe('Task detail components', () => {
 
     expect((wrapper.vm as any).editDialogOpen).toBe(false)
     expect(monitoringGetMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('closes the quality delete dialog when deletion is cancelled', async () => {
+    await seedWorkspace()
+
+    const wrapper = shallowMount(QualityTaskDetails as any, {
+      props: {
+        taskId: 'monitoring-task-1',
+        embedded: true,
+      },
+      global: {
+        stubs: globalStubs,
+      },
+    })
+    await flushPromises()
+    ;(wrapper.vm as any).deleteTaskDialogOpen = true
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'DeleteTaskCard' }).vm.$emit('close')
+    await flushPromises()
+
+    expect((wrapper.vm as any).deleteTaskDialogOpen).toBe(false)
   })
 })

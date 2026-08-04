@@ -104,6 +104,80 @@ class TestApplyAggregationMethods:
 
 
 # ---------------------------------------------------------------------------
+# time_weighted_mean (trapezoidal integration)
+# ---------------------------------------------------------------------------
+
+class TestApplyAggregationTimeWeightedMean:
+
+    def test_constant_series_equals_constant(self):
+        ts = [_utc(2024, 1, 1, 6), _utc(2024, 1, 1, 12), _utc(2024, 1, 1, 18)]
+        df = _make_df(ts, [5.0, 5.0, 5.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        assert result[RESULT_COL].iloc[0] == pytest.approx(5.0)
+
+    def test_linear_series_equals_midpoint(self):
+        # Hourly observations 0..23 plus the value at the next day's boundary (24)
+        # trace a straight line, so the time-weighted mean over the day is the midpoint.
+        ts = [_utc(2024, 1, 15, h) for h in range(24)] + [_utc(2024, 1, 16, 0)]
+        vals = [float(h) for h in range(25)]
+        df = _make_df(ts, vals)
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        assert result[RESULT_COL].iloc[0] == pytest.approx(12.0)
+
+    def test_weights_longer_intervals_more_than_simple_mean(self):
+        # A value held for most of the day should dominate the time-weighted mean,
+        # unlike the simple arithmetic mean which treats every observation equally.
+        ts = [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 6), _utc(2024, 1, 1, 23)]
+        df = _make_df(ts, [0.0, 12.0, 12.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        simple = apply_aggregation(df, interval="1d", method="mean")
+        assert result[RESULT_COL].iloc[0] == pytest.approx(10.5)
+        assert result[RESULT_COL].iloc[0] != pytest.approx(simple[RESULT_COL].iloc[0])
+
+    def test_extrapolates_flat_when_no_observation_before_window_start(self):
+        # No observation before 06:00, so the window-start boundary is a flat
+        # extrapolation of the first observation's value.
+        ts = [_utc(2024, 1, 1, 6), _utc(2024, 1, 1, 18)]
+        df = _make_df(ts, [10.0, 20.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        # (10+10)/2*6h + (10+20)/2*12h + (20+20)/2*6h, over 24h
+        expected = ((10 + 10) / 2 * 6 + (10 + 20) / 2 * 12 + (20 + 20) / 2 * 6) / 24
+        assert result[RESULT_COL].iloc[0] == pytest.approx(expected)
+
+    def test_single_observation_in_window_equals_that_value(self):
+        ts = [_utc(2024, 1, 1, 12)]
+        df = _make_df(ts, [7.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        assert result[RESULT_COL].iloc[0] == pytest.approx(7.0)
+
+    def test_dst_spring_forward_window_uses_actual_23_hour_duration(self):
+        # 2024-03-10 is a 23-hour local day in America/Denver (spring forward).
+        # A naive `window_start + timedelta(days=1)` would overshoot the true
+        # boundary by an hour and skew the result.
+        ts = [_utc(2024, 3, 10, 10), _utc(2024, 3, 10, 20)]
+        df = _make_df(ts, [1.0, 2.0])
+        result = apply_aggregation(
+            df, interval="1d", method="time_weighted_mean", local_timezone="America/Denver"
+        )
+        assert result[RESULT_COL].iloc[0] == pytest.approx(136800 / 82800)
+
+    def test_multiple_windows_computed_independently(self):
+        ts = _JAN1_TS + [_utc(2024, 1, 2, 6), _utc(2024, 1, 2, 12), _utc(2024, 1, 2, 18)]
+        df = _make_df(ts, _JAN1_VALS + [5.0, 6.0, 7.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        assert len(result) == 2
+
+    def test_respects_min_values_and_on_sparse(self):
+        # Jan 1 has 4 obs (passes), Jan 2 has 1 obs (fails min_values=3)
+        ts = _JAN1_TS + [_utc(2024, 1, 2, 6)]
+        df = _make_df(ts, _JAN1_VALS + [5.0])
+        result = apply_aggregation(
+            df, interval="1d", method="time_weighted_mean", min_values=3, on_sparse="drop"
+        )
+        assert len(result) == 1
+
+
+# ---------------------------------------------------------------------------
 # min_values and on_sparse
 # ---------------------------------------------------------------------------
 

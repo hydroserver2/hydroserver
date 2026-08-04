@@ -132,6 +132,14 @@ const runtimeSourceOptions = [
     title: 'Job execution time',
     value: 'run_time',
   },
+  {
+    title: 'Data ingestion window start',
+    value: 'window_start',
+  },
+  {
+    title: 'Data ingestion window end',
+    value: 'window_end',
+  },
 ] as const
 
 async function validate() {

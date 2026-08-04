@@ -169,19 +169,52 @@ function collectAllRefsDeep(
   }
 }
 
+function dataRefToSchemaName(ref: string): string {
+  return ref.match(/Data\.components\['schemas'\]\['(.+)'\]/)?.[1] ?? ''
+}
+
 /** Choose a ref by name constraints: mustContain (e.g., "Workspace"), then preferRegex (e.g., /SummaryResponse$/) */
 function pickRefByName(
   refs: string[],
   mustContain: string,
   preferRegex: RegExp
 ): string | null {
-  const toName = (r: string) =>
-    r.match(/Data\.components\['schemas'\]\['(.+)'\]/)?.[1] ?? ''
-  let candidates = refs.filter((r) => toName(r).includes(mustContain))
+  let candidates = refs.filter((r) =>
+    dataRefToSchemaName(r).includes(mustContain)
+  )
   if (!candidates.length) candidates = refs // fallback: nothing matched token
 
-  const preferred = candidates.find((r) => preferRegex.test(toName(r)))
+  const preferred = candidates.find((r) => preferRegex.test(dataRefToSchemaName(r)))
   return preferred ?? candidates[0] ?? null
+}
+
+/**
+ * Django-Ninja "fields" expansion produces responses shaped as
+ * anyOf[ array<Summary>, array<Detail> ] (list endpoints) or
+ * anyOf[ Summary, Detail ] (item endpoints). Pick the array-of-$ref
+ * variant whose target name matches preferRegex.
+ */
+function pickAnyOfArrayRef(schema: any, preferRegex: RegExp): string | null {
+  if (!Array.isArray(schema?.anyOf)) return null
+  for (const variant of schema.anyOf) {
+    if (variant?.type === 'array' && variant.items?.$ref) {
+      const rn = refName(variant.items.$ref)
+      if (rn && preferRegex.test(dataRefToSchemaName(rn))) return rn
+    }
+  }
+  return null
+}
+
+/** Same as pickAnyOfArrayRef but for the single-item (non-array) variant of the union. */
+function pickAnyOfRef(schema: any, preferRegex: RegExp): string | null {
+  if (!Array.isArray(schema?.anyOf)) return null
+  for (const variant of schema.anyOf) {
+    if (variant?.$ref) {
+      const rn = refName(variant.$ref)
+      if (rn && preferRegex.test(dataRefToSchemaName(rn))) return rn
+    }
+  }
+  return null
 }
 
 /* ----------------------- writable keys ------------------------- */
@@ -270,6 +303,10 @@ function analyzeResource(
       summaryRef = refName(colGet.items.$ref)
     }
     if (!summaryRef) {
+      // anyOf[ array<Summary>, array<Detail> ] union (Django-Ninja fields expansion)
+      summaryRef = pickAnyOfArrayRef(colGetSchema, /Summary(Response)?$/i)
+    }
+    if (!summaryRef) {
       const refs: string[] = []
       collectAllRefsDeep(spec, colGetSchema, refs)
       const uniq = Array.from(new Set(refs))
@@ -280,6 +317,10 @@ function analyzeResource(
   if (!detailRef) {
     const s = derefSchema(spec, itemGetSchema)
     if (s?.$ref) detailRef = refName(s.$ref)
+    if (!detailRef) {
+      // anyOf[ Summary, Detail ] union (Django-Ninja fields expansion)
+      detailRef = pickAnyOfRef(itemGetSchema, /Detail(Response)?$/i)
+    }
     if (!detailRef) {
       const refs: string[] = []
       collectAllRefsDeep(spec, itemGetSchema ?? colGetSchema, refs)

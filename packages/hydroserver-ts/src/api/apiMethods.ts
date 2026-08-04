@@ -145,8 +145,9 @@ export const apiMethods = {
     )
 
     for (const page of remainingPages) {
-      // A failed page has no data; stop merging to avoid silent gaps.
-      if (!page.ok) break
+      // Never report a partial multi-page result as successful. Callers use
+      // `ok` to decide whether a management table is complete and actionable.
+      if (!page.ok) return page
       if (mode === 'array') {
         if (Array.isArray(page.data)) {
           allArray.push(...(page.data as T[]))

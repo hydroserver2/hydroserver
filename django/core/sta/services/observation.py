@@ -208,7 +208,7 @@ class ObservationService(ServiceUtils):
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.thing.workspace_id
@@ -271,7 +271,7 @@ class ObservationService(ServiceUtils):
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         observation = self.get_observation_for_action(
             principal=principal,
@@ -296,7 +296,7 @@ class ObservationService(ServiceUtils):
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=datastream.thing.workspace_id
@@ -409,8 +409,18 @@ class ObservationService(ServiceUtils):
         update_datastream_statistics: bool = True,
     ):
         datastream = datastream_service.get_datastream_for_action(
-            principal, datastream_id, action="edit"
+            principal, datastream_id, action="view"
         )
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=datastream.thing.workspace_id
+        )
+
+        if not principal.has_permission(
+            workspace, resource_type="Observation", permission_field="can_delete"
+        ):
+            raise HttpError(
+                403, "You do not have permission to delete these observations"
+            )
 
         queryset = Observation.objects.filter(datastream=datastream)
 

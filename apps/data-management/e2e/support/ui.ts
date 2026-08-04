@@ -48,14 +48,36 @@ export async function fillCombobox(page: Page, label: string, value: string) {
   }
 }
 
-export async function clickWorkspaceTableAction(
+/** A workspace entry in the master list of the Manage Workspaces page. */
+export function workspaceListItem(page: Page, workspaceName: string) {
+  return page
+    .locator('[data-testid^="workspace-list-item-"]')
+    .filter({ hasText: workspaceName })
+    .first()
+}
+
+export async function createWorkspaceFromManagePage(
   page: Page,
-  action: 'access-control' | 'edit' | 'delete',
-  workspaceId: string
+  workspaceName: string
 ) {
-  await page
-    .getByTestId(`workspace-${action}-${workspaceId}`)
-    .click()
+  await page.getByRole('button', { name: 'Add workspace', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Name *').fill(workspaceName)
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(workspaceListItem(page, workspaceName)).toBeVisible()
+}
+
+export async function deleteWorkspaceFromManagePage(
+  page: Page,
+  workspaceName: string
+) {
+  const item = workspaceListItem(page, workspaceName)
+  await expect(item).toBeVisible()
+  await item.locator('[data-testid^="workspace-delete-"]').click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Workspace name').fill(workspaceName)
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(workspaceListItem(page, workspaceName)).toHaveCount(0)
 }
 
 export async function waitForSnackbar(page: Page, text: string | RegExp) {

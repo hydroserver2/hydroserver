@@ -1,14 +1,8 @@
 import { RouteRecordRaw } from 'vue-router'
 import { enableHomePage } from '@/config/homeConfig'
-import { useWorkspaceStore } from '@/store/workspaces'
 import hs from '@hydroserver/client'
 
-const validOrchestrationViews = new Set([
-  'ingestion',
-  'aggregation',
-  'quality',
-  'workspaces',
-])
+const validOrchestrationViews = new Set(['ingestion', 'aggregation', 'quality'])
 
 const orchestrationComponent = () => import('@/pages/Orchestration.vue')
 const ingestionTaskDetailsComponent = () =>
@@ -36,6 +30,22 @@ export const routes: RouteRecordRaw[] = [
         path: '/',
         redirect: '/browse',
       },
+  {
+    path: '/workspaces',
+    name: 'Workspaces',
+    component: () => import('@/pages/Workspaces.vue'),
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      title: 'Manage Workspaces',
+      metaTags: [
+        {
+          name: 'keywords',
+          content: 'HydroServer, Workspaces, Access Control, Metadata',
+        },
+      ],
+    },
+  },
   {
     path: '/browse',
     name: 'Browse',
@@ -97,10 +107,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/orchestration',
     name: 'Orchestration',
-    redirect: () =>
-      useWorkspaceStore().selectedWorkspace
-        ? '/orchestration/ingestion'
-        : '/orchestration/workspaces',
+    redirect: '/orchestration/ingestion',
   },
   {
     path: '/orchestration/:view',
@@ -188,10 +195,10 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: 'Profile' },
   },
   {
+    // The Manage Metadata page now lives in the Workspaces page as a tab.
     path: '/metadata',
     name: 'Metadata',
-    component: () => import('@/pages/Metadata.vue'),
-    meta: { requiresAuth: true },
+    redirect: { path: '/workspaces', query: { section: 'metadata' } },
   },
   {
     path: '/access-denied',

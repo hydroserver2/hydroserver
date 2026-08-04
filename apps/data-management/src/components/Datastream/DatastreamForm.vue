@@ -51,7 +51,11 @@
             are adding to the monitoring site. If you want to modify the values
             available in the drop down menus below, click the "+" button or
             visit the
-            <router-link to="/Metadata"> Manage metadata page. </router-link>
+            <router-link
+              :to="{ path: '/workspaces', query: { section: 'metadata' } }"
+            >
+              Metadata tab of the Workspaces page.
+            </router-link>
             Options in the drop down menus come from both metadata associated
             with the workspace as well as system level metadata managed by the
             system admin.
@@ -81,32 +85,32 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System variable'
                           : 'Workspace variable'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.name"
+                    :title="item.name"
                     :subtitle="{
                       label: 'Method type',
-                      value: item.raw.methodType,
+                      value: item.methodType,
                     }"
                     :items="[
-                      { label: 'Description', value: item.raw.description },
-                      { label: 'Make', value: item.raw.manufacturer },
-                      { label: 'Model', value: item.raw.model },
-                      { label: 'Method Code', value: item.raw.methodCode },
-                      { label: 'Method Link', value: item.raw.methodLink },
-                      { label: 'Encoding Type', value: item.raw.encodingType },
-                      { label: 'Model Link', value: item.raw.modelLink },
+                      { label: 'Description', value: item.description },
+                      { label: 'Make', value: item.manufacturer },
+                      { label: 'Model', value: item.model },
+                      { label: 'Method Code', value: item.methodCode },
+                      { label: 'Method Link', value: item.methodLink },
+                      { label: 'Encoding Type', value: item.encodingType },
+                      { label: 'Model Link', value: item.modelLink },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -159,32 +163,32 @@
                   <template v-slot:activator="{ props: tooltipProps }">
                     <v-list-item
                       :subtitle="
-                        item.raw.workspaceId === null
+                        item.workspaceId === null
                           ? 'System variable'
                           : 'Workspace variable'
                       "
                       :class="
-                        item.raw.workspaceId === null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId === null ? 'bg-grey-lighten-5' : ''
                       "
                       v-bind="{ ...props, ...tooltipProps }"
                     >
                     </v-list-item>
                   </template>
                   <InfoCard
-                    :title="item.raw.name"
-                    :subtitle="{ label: 'Code', value: item.raw.code }"
+                    :title="item.name"
+                    :subtitle="{ label: 'Code', value: item.code }"
                     :items="[
                       {
                         label: 'Definition',
-                        value: item.raw.definition,
+                        value: item.definition,
                       },
                       {
                         label: 'Description',
-                        value: item.raw.description,
+                        value: item.description,
                       },
-                      { label: 'Type', value: item.raw.type },
+                      { label: 'Type', value: item.type },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -239,24 +243,24 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System unit'
                           : 'Workspace unit'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.name"
-                    :subtitle="{ label: 'Symbol', value: item.raw.symbol }"
+                    :title="item.name"
+                    :subtitle="{ label: 'Symbol', value: item.symbol }"
                     :items="[
-                      { label: 'Definition', value: item.raw.definition },
-                      { label: 'Type', value: item.raw.type },
+                      { label: 'Definition', value: item.definition },
+                      { label: 'Type', value: item.type },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -310,26 +314,24 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System level'
                           : 'Workspace level'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.definition"
+                    :title="item.definition"
                     :subtitle="{
                       label: 'Code',
-                      value: item.raw.code,
+                      value: item.code,
                     }"
-                    :items="[
-                      { label: 'Explanation', value: item.raw.explanation },
-                    ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :items="[{ label: 'Explanation', value: item.explanation }]"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>

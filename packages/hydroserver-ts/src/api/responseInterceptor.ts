@@ -27,6 +27,15 @@ function firstStringField(
   for (const key of keys) {
     const val = obj[key]
     if (typeof val === 'string' && val.trim()) return val
+    // Django-Ninja's schema-validation errors put a list of Pydantic error
+    // objects here instead of a string, e.g. [{ msg: "value is not a valid
+    // email address: ...", loc: [...], ... }]. Surface the first one's
+    // message rather than falling through to a generic error.
+    if (Array.isArray(val) && val.length) {
+      const first = asRecord(val[0])
+      const msg = first && typeof first.msg === 'string' ? first.msg : null
+      if (msg) return msg
+    }
   }
   return null
 }

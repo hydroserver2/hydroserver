@@ -16,7 +16,7 @@ test.describe('account management', () => {
     await expect(page).toHaveURL(/\/sites$/)
     await expect(page.getByText('No workspaces found')).toBeVisible()
     await expect(
-      page.getByText('Click the "Add workspace" button to create one.')
+      page.getByRole('link', { name: 'Create a workspace' })
     ).toBeVisible()
   })
 
