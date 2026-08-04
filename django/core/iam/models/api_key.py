@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 import secrets
 import string
 from typing import Literal, Optional, TYPE_CHECKING
@@ -58,7 +58,7 @@ class APIKeyManager(models.Manager.from_queryset(APIKeyQueryset)):
 
 
 class APIKey(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     workspace = models.ForeignKey(
         "Workspace", on_delete=models.DO_NOTHING, related_name="apikeys"
     )

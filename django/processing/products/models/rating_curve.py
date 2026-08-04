@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 from typing import Union, Literal
 
 from django.db import models
@@ -59,7 +59,7 @@ class FittingMethod(models.TextChoices):
 
 
 class RatingCurve(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     thing = models.ForeignKey(
         Thing,
         on_delete=models.CASCADE,
@@ -94,7 +94,7 @@ class RatingCurve(models.Model, PermissionChecker):
 
 
 class RatingCurvePoint(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     rating_curve = models.ForeignKey(
         RatingCurve,
         on_delete=models.CASCADE,

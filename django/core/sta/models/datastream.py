@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 import typing
 from typing import Literal, Optional, Union
 from django.db import models
@@ -66,7 +66,7 @@ class DatastreamQuerySet(models.QuerySet):
 
 
 class Datastream(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=200)
     description = models.TextField()
     thing = models.ForeignKey(

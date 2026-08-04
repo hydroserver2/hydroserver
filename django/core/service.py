@@ -91,7 +91,10 @@ class ServiceUtils:
         for field in order_by:
             if field not in allowed_fields:
                 raise HttpError(400, f"Response cannot be ordered by field '{field}'")
-            order_by_fields.append(field_aliases.get(field, to_snake(field)))
+            descending = field.startswith("-")
+            stripped_field = field.lstrip("-")
+            resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
+            order_by_fields.append(f"-{resolved_field}" if descending else resolved_field)
 
         return queryset.order_by(*order_by_fields)
 

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import logging
 from datetime import datetime
 from typing import Optional, Union, Literal
@@ -163,7 +163,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         interval_period: Literal["minutes", "hours", "days"] | None = None,
         start_time: datetime | None = None,
         enabled: bool = True,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> DataProductTask:
         """Create a data product task."""
 

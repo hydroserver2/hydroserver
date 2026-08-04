@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import jmespath as jmespath_lib
 from datetime import datetime
 from typing import Optional, Literal, Union, Annotated
@@ -160,7 +160,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         source_url: str,
         payload_type: Literal["CSV", "JSON"],
         timestamp_key: str,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         description: str | None = None,
         auth_header_name: str | None = None,
         auth_header_value: str | None = None,

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from typing import Literal
 
 from pydantic import Field, ConfigDict, validate_call
@@ -104,7 +104,7 @@ class RatingCurveService(ServiceUtils):
         fitting_method: Literal["linear", "power_law", "polynomial"],
         points: list[tuple] = Field(default_factory=list),
         description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> RatingCurve:
         """Create a rating curve."""
 

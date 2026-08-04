@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 from typing import Union, Literal
 
 from django.db import models
@@ -93,7 +93,7 @@ class EtlTask(Task, PermissionChecker):
 
 
 class EtlMapping(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     etl_task = models.ForeignKey(EtlTask, on_delete=models.CASCADE, related_name="etl_mappings")
     source_identifier = models.CharField(max_length=255)
     target_datastream = models.ForeignKey(Datastream, on_delete=models.CASCADE, related_name="etl_mappings")

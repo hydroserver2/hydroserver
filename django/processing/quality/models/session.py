@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 
 from django.conf import settings
 from django.db import models
@@ -13,7 +13,7 @@ class SessionStatus(models.TextChoices):
 
 
 class QCSession(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     history = models.ForeignKey(QCHistory, on_delete=models.CASCADE, related_name="sessions")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="qc_sessions"
@@ -43,7 +43,7 @@ class QCSession(models.Model):
 
 
 class QCSessionDependency(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     session = models.ForeignKey(QCSession, on_delete=models.CASCADE, related_name="dependencies")
     dependency = models.ForeignKey(QCSession, on_delete=models.CASCADE, related_name="dependents")
 

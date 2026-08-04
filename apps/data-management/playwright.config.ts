@@ -7,7 +7,7 @@ const repoRoot = path.resolve(here, '../..')
 const apiDir = path.join(repoRoot, 'django')
 const ensureDbScript = path.join(here, 'e2e/scripts/ensure_e2e_database.py')
 
-const e2ePython = process.env.E2E_PYTHON || 'python3.11'
+const e2ePython = process.env.E2E_PYTHON || 'python3.14'
 const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
 const apiPort = process.env.E2E_API_PORT || '18000'
 const apiBaseUrl = `http://${apiHost}:${apiPort}`

@@ -3,7 +3,7 @@
 import django.db.models.deletion
 import core.iam.models.utils
 import core.sta.models.thing
-import uuid6
+import uuid
 from django.db import migrations, models
 
 
@@ -161,7 +161,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -194,7 +194,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -222,7 +222,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -249,7 +249,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -295,7 +295,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -350,7 +350,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -391,7 +391,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -420,7 +420,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -525,7 +525,7 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("id", models.UUIDField(default=uuid6.uuid7, editable=False)),
+                ("id", models.UUIDField(default=uuid.uuid7, editable=False)),
                 ("phenomenon_time", models.DateTimeField()),
                 ("result", models.FloatField()),
                 ("result_time", models.DateTimeField(blank=True, null=True)),

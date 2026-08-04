@@ -2,7 +2,7 @@
 
 import core.iam.models.utils
 import django.db.models.deletion
-import uuid6
+import uuid
 from django.conf import settings
 from django.db import migrations, models
 
@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QCHistory',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('phenomenon_time_start', models.DateTimeField(blank=True, null=True)),
                 ('phenomenon_time_end', models.DateTimeField(blank=True, null=True)),
@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QCSession',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('phenomenon_time_start', models.DateTimeField()),
                 ('phenomenon_time_end', models.DateTimeField()),
@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QCOperation',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('order', models.PositiveIntegerField()),
                 ('operation_type', models.CharField(choices=[('SELECTION', 'Selection'), ('VALUE_THRESHOLD', 'Value Threshold'), ('DATETIME_RANGE', 'Datetime Range'), ('CHANGE', 'Change'), ('RATE_OF_CHANGE', 'Rate Of Change'), ('FIND_GAPS', 'Find Gaps'), ('PERSISTENCE', 'Persistence'), ('ADD_POINTS', 'Add Points'), ('CHANGE_VALUES', 'Change Values'), ('ASSIGN_VALUES_BULK', 'Assign Values Bulk'), ('DELETE_POINTS', 'Delete Points'), ('DRIFT_CORRECTION', 'Drift Correction'), ('INTERPOLATE', 'Interpolate'), ('SHIFT_DATETIMES', 'Shift Datetimes'), ('FILL_GAPS', 'Fill Gaps'), ('ASSIGN_DATETIMES_BULK', 'Assign Datetimes Bulk')], max_length=30)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QCSessionDependency',
             fields=[
-                ('id', models.UUIDField(default=uuid6.uuid7, editable=False, primary_key=True, serialize=False)),
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False)),
                 ('dependency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dependents', to='quality.qcsession')),
                 ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dependencies', to='quality.qcsession')),
             ],

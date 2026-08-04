@@ -9,7 +9,7 @@ This guide is for setting up a local development instance of HydroServer which m
 ## Prerequisites
 
 Before starting, make sure you have the following software installed on your machine:
-- Python 3.11+
+- Python 3.14+
 - Docker
 - Node.js: The frontend uses various Node.js libraries. Check the package.json for specific version requirements.
 - npm (typically bundled with Node.js): This is required to install the project's dependencies.

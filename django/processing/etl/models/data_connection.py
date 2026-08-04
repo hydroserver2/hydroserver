@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 from typing import Union, Literal, Optional
 
 from django.db import models
@@ -75,7 +75,7 @@ class DataIngestionWindowAnchorType(models.TextChoices):
 
 
 class DataConnection(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     workspace = models.ForeignKey(
@@ -122,7 +122,7 @@ class DataConnection(models.Model, PermissionChecker):
 
 
 class PlaceholderVariable(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.ForeignKey(
         DataConnection,
         on_delete=models.CASCADE,
@@ -150,7 +150,7 @@ class PayloadDelimiter(models.TextChoices):
 
 
 class Payload(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.OneToOneField(
         DataConnection, on_delete=models.CASCADE, related_name="payload"
     )
@@ -208,7 +208,7 @@ class DataConnectionNotification(models.Model):
 
 
 class DataConnectionNotificationRecipient(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     notification = models.ForeignKey(
         DataConnectionNotification, on_delete=models.CASCADE, related_name="recipients"
     )

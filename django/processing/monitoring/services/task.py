@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import logging
 import numpy as np
 import pandas as pd
@@ -151,7 +151,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         principal: User | APIKey,
         thing: uuid.UUID | Thing,
         name: str,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         description: str | None = None,
         recipients: list[str] = Field(default_factory=list),
         crontab: str | None = None,

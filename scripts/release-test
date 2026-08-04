@@ -11,12 +11,12 @@ run_api() {
     DATABASE_URL="${DATABASE_URL:-postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver}" \
     CELERY_BROKER_URL="${CELERY_BROKER_URL:-redis://127.0.0.1:6379/0}" \
     SMTP_URL="${SMTP_URL:-memory://}" \
-    python3.11 -m pytest
+    python3.14 -m pytest
   )
 }
 
 run_python_client() {
-  (cd "$ROOT_DIR/packages/hydroserverpy" && python3.11 -m pytest --import-mode=append tests/)
+  (cd "$ROOT_DIR/packages/hydroserverpy" && python3.14 -m pytest --import-mode=append tests/)
 }
 
 run_ui() {

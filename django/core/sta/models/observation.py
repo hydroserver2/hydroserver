@@ -1,5 +1,5 @@
 import io
-import uuid6
+import uuid
 import typing
 import operator
 import orjson
@@ -138,7 +138,7 @@ class ObservationQuerySet(models.QuerySet):
 
 
 class Observation(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(Datastream, on_delete=models.DO_NOTHING)
     phenomenon_time = models.DateTimeField()
     result = models.FloatField()

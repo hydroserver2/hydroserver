@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from datetime import datetime
 from typing import Literal
 
@@ -155,7 +155,7 @@ class QCSessionService(ServiceUtils):
         phenomenon_time_start: datetime,
         phenomenon_time_end: datetime,
         description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> QCSession:
         """Create a new in-progress session for a QC history."""
 
