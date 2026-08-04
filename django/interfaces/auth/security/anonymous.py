@@ -1,5 +1,8 @@
+from core.iam.permissions.anonymous import AnonymousPrincipal
+
+
 def anonymous_auth(request):
 
-    request.principal = None
+    request.principal = AnonymousPrincipal()
 
     return True

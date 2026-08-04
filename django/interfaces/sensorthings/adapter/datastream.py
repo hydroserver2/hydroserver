@@ -2,6 +2,7 @@ from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from django.db.models import Count
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, DatastreamDTO
 from core.sta.services.datastream import DatastreamService
@@ -22,6 +23,7 @@ class DatastreamMixin(SensorThingsUtils):
                         top=100, skip=0, count=False, context=None):
         needs_unit = select is None or "unit_of_measurement" in select
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
         datastreams = Datastream.objects
         related = []
@@ -35,7 +37,7 @@ class DatastreamMixin(SensorThingsUtils):
             datastreams = datastreams.prefetch_related(
                 "datastream_file_attachments", "datastream_tags"
             )
-        datastreams = datastreams.visible(principal=context.principal if context else None)
+        datastreams = principal.filter_by_permission(datastreams, "can_view")
 
         if filters:
             datastreams = self.apply_filters(datastreams, Datastream, filters)
@@ -121,7 +123,6 @@ class DatastreamMixin(SensorThingsUtils):
                             "workspace": {
                                 "id": datastream.thing.workspace.id,
                                 "name": datastream.thing.workspace.name,
-                                "link": datastream.thing.workspace.link,
                                 "is_private": datastream.thing.workspace.is_private,
                             },
                             "tags": {tag.key: tag.value for tag in datastream.datastream_tags.all()},

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import logging
 from datetime import datetime
 from typing import Optional, Union, Literal
@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from processing.orchestration.services import TaskService
@@ -41,7 +42,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     def get(
         self,
         task: Union[uuid.UUID, DataProductTask],
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit", "delete"] = "view",
         expand_related: Optional[bool] = None,
     ) -> DataProductTask:
@@ -72,7 +73,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -142,7 +143,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
                 "thing", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related("transformations__input_datastreams")
 
-        queryset = queryset.visible(principal=principal).distinct()  # noqa
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         count = queryset.count()
         offset = (page - 1) * page_size
@@ -154,7 +155,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         thing: uuid.UUID | Thing,
         name: str,
         description: str | None = None,
@@ -163,7 +164,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         interval_period: Literal["minutes", "hours", "days"] | None = None,
         start_time: datetime | None = None,
         enabled: bool = True,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> DataProductTask:
         """Create a data product task."""
 
@@ -173,7 +174,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             except Thing.DoesNotExist:
                 raise LookupError("Thing does not exist.")
 
-        if not self.task_model.can_principal_create(principal=principal, workspace=thing.workspace):
+        if not principal.can_create("DataProductTask", workspace=thing.workspace):
             raise PermissionError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
@@ -200,7 +201,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     def update(
         self,
         task: Union[uuid.UUID, DataProductTask],
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
         crontab: str | None | Unset = Unset,
@@ -237,7 +238,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     def run(
         self,
         task: Union[uuid.UUID, DataProductTask],
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> dict:
         """Run all transformations for this task."""
 

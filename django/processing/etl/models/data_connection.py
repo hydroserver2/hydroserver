@@ -1,58 +1,13 @@
-import uuid6
-from typing import Union, Literal, Optional
+import uuid
 
 from django.db import models
-from django.db.models import Q
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
 from django_celery_beat.models import PeriodicTask
 
-from core.iam.models import Workspace, APIKey
-from core.iam.models.utils import PermissionChecker
-
-
-User = get_user_model()
-
-
-class DataConnectionQuerySet(models.QuerySet):
-    def visible(self, principal: Union[User, APIKey]):
-        if not principal:
-            return self.none()
-        elif hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                return self.filter(
-                    Q(workspace__owner=principal)
-                    | Q(
-                        workspace__collaborators__user=principal,
-                        workspace__collaborators__role__permissions__resource_type__in=[
-                            "*",
-                            "ETL",
-                        ],
-                        workspace__collaborators__role__permissions__permission_type__in=[
-                            "*",
-                            "view",
-                        ],
-                    )
-                )
-        elif hasattr(principal, "workspace"):
-            return self.filter(
-                Q(
-                    workspace__apikeys=principal,
-                    workspace__apikeys__role__permissions__resource_type__in=[
-                        "*",
-                        "ETL",
-                    ],
-                    workspace__apikeys__role__permissions__permission_type__in=[
-                        "*",
-                        "view",
-                    ],
-                )
-            )
-        else:
-            return self.none()
+from core.iam.models import Workspace
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 
 
 class TimezoneType(models.TextChoices):
@@ -74,8 +29,9 @@ class DataIngestionWindowAnchorType(models.TextChoices):
     FIXED_TIMESTAMP = "fixed_timestamp"
 
 
-class DataConnection(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+@register_resource_type()
+class DataConnection(models.Model, ResourcePermissionMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     workspace = models.ForeignKey(
@@ -89,40 +45,15 @@ class DataConnection(models.Model, PermissionChecker):
     timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
     timezone = models.CharField(max_length=255, blank=True, null=True)
 
-    objects = DataConnectionQuerySet.as_manager()
-
     class Meta:
         app_label = "etl"
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
-    @classmethod
-    def can_principal_create(
-        cls,
-        principal: Optional[Union[User, APIKey]],
-        workspace: Optional[Workspace] = None,
-    ):
-        return cls.check_create_permissions(
-            principal=principal,
-            workspace=workspace,
-            resource_type="ETL"
-        )
-
-    def get_principal_permissions(
-        self, principal: Optional[Union["User", "APIKey"]]
-    ) -> list[Literal["edit", "delete", "view"]]:
-        permissions = self.check_object_permissions(
-            principal=principal,
-            workspace=self.workspace,
-            resource_type="ETL"
-        )
-
-        return permissions
-
 
 class PlaceholderVariable(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.ForeignKey(
         DataConnection,
         on_delete=models.CASCADE,
@@ -150,7 +81,7 @@ class PayloadDelimiter(models.TextChoices):
 
 
 class Payload(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.OneToOneField(
         DataConnection, on_delete=models.CASCADE, related_name="payload"
     )
@@ -208,7 +139,7 @@ class DataConnectionNotification(models.Model):
 
 
 class DataConnectionNotificationRecipient(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     notification = models.ForeignKey(
         DataConnectionNotification, on_delete=models.CASCADE, related_name="recipients"
     )

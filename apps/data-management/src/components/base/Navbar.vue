@@ -44,49 +44,43 @@
     </template>
 
     <template v-if="!mdAndDown">
-      <div v-for="path of paths" :key="path.label">
+      <div v-for="path of visiblePaths()" :key="path.label">
         <v-btn
-          v-if="!path.menu"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           @click="path.onClick"
           density="comfortable"
         >
           {{ path.label }}
         </v-btn>
-
-        <v-menu v-else>
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props">
-              {{ path.label }}
-              <v-icon :icon="mdiMenuDown" right small />
-            </v-btn>
-          </template>
-
-          <v-list>
-            <v-list-item
-              v-for="menuItem of path.menu"
-              v-bind="menuItem.attrs || {}"
-              :title="menuItem.label"
-              @click="menuItem.onClick"
-            />
-          </v-list>
-        </v-menu>
       </div>
 
       <v-spacer />
 
       <template v-if="hs.session.isAuthenticated">
-        <v-btn data-testid="account-menu-button" elevation="2" rounded>
-          <v-icon :icon="mdiAccountCircle" />
-          <v-icon :icon="mdiMenuDown" />
+        <v-btn
+          data-testid="account-menu-button"
+          icon
+          size="40"
+          class="account-menu-btn"
+        >
+          <v-avatar color="primary" size="36">
+            <span class="account-avatar-initials">{{ userInitials }}</span>
+          </v-avatar>
 
           <v-menu bottom left activator="parent">
-            <v-list class="pa-0">
+            <v-list class="pa-0" min-width="200">
               <v-list-item
                 :prepend-icon="mdiAccountCircle"
                 :to="{ path: '/profile' }"
                 data-testid="account-menu-item"
                 title="Account"
+              />
+
+              <v-list-item
+                :prepend-icon="mdiInformation"
+                :to="{ path: '/about' }"
+                data-testid="about-menu-item"
+                title="About"
               />
 
               <v-divider />
@@ -121,27 +115,14 @@
     location="right"
   >
     <v-list density="compact" nav>
-      <div v-for="path of paths">
+      <div v-for="path of visiblePaths()" :key="path.label">
         <v-list-item
-          v-if="path.attrs"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           :title="path.label"
           :prepend-icon="path.icon"
-          :value="path.attrs.to || path.attrs.href"
+          :value="path.attrs?.to || path.attrs?.href || path.label"
           @click="path.onClick"
         />
-        <div v-else>
-          <v-list-item
-            v-for="menuItem of path.menu"
-            v-bind="menuItem.attrs || {}"
-            :title="menuItem.label"
-            :prepend-icon="menuItem.icon"
-            :value="
-              menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label
-            "
-            @click="menuItem.onClick"
-          />
-        </div>
       </div>
     </v-list>
 
@@ -154,6 +135,12 @@
           :prepend-icon="mdiAccountCircle"
           data-testid="account-drawer-item"
           >Account</v-list-item
+        >
+        <v-list-item
+          to="/about"
+          :prepend-icon="mdiInformation"
+          data-testid="about-drawer-item"
+          >About</v-list-item
         >
         <v-list-item
           :prepend-icon="mdiLogout"
@@ -179,8 +166,10 @@
 <script setup lang="ts">
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { Snackbar } from '@/utils/notifications'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useUserStore } from '@/store/user'
 import { navbarLogo } from '@/config/navbarConfig'
 import { RouteLocationRaw, useRoute } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebar'
@@ -189,17 +178,16 @@ import router from '@/router/router'
 import {
   mdiAccountCircle,
   mdiAccountPlusOutline,
+  mdiBriefcaseOutline,
   mdiChartLine,
-  mdiDatabaseCog,
   mdiInformation,
   mdiLogin,
   mdiLogout,
   mdiMapMarkerOutline,
   mdiMenuClose,
-  mdiMenuDown,
   mdiMenuOpen,
   mdiShieldCheckOutline,
-  // mdiShieldEditOutline,
+  mdiShieldEditOutline,
   mdiTransitConnectionVariant,
 } from '@mdi/js'
 
@@ -207,27 +195,38 @@ const route = useRoute()
 const { signupEnabled } = hs.session
 const { resetState } = useDataVisStore()
 const { mdAndDown } = useDisplay()
+const { user } = storeToRefs(useUserStore())
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
+
+const userInitials = computed(() => {
+  const first = user.value.firstName?.trim()?.[0] ?? ''
+  const last = user.value.lastName?.trim()?.[0] ?? ''
+  return (first + last).toUpperCase()
+})
 
 type NavItemAttrs = {
   to?: RouteLocationRaw
   href?: string
 }
 
-type NavMenuItem = {
+type NavItem = {
   attrs?: NavItemAttrs
   label: string
   icon?: string
   onClick?: () => void
 }
 
-type NavItem = NavMenuItem & {
-  menu?: NavMenuItem[]
-}
-
-const paths: NavItem[] = [
+// The base nav items, before filtering out anything that requires a login.
+// "About" isn't here - when logged in it lives in the account menu instead,
+// and is appended back to the end of the bar for logged-out visitors below.
+const basePaths: NavItem[] = [
+  {
+    attrs: { to: '/workspaces' },
+    label: 'Manage workspaces',
+    icon: mdiBriefcaseOutline,
+  },
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
@@ -240,34 +239,48 @@ const paths: NavItem[] = [
     onClick: () => resetState(),
   },
   {
-    label: 'Data management',
-    menu: [
-      {
-        attrs: { to: '/Metadata' },
-        label: 'Manage metadata',
-        icon: mdiDatabaseCog,
-      },
-      {
-        attrs: { to: '/orchestration' },
-        label: 'Job orchestration',
-        icon: mdiTransitConnectionVariant,
-      },
-      // Re-enable for the v1.12 release.
-      // {
-      //   label: 'Quality Control',
-      //   icon: mdiShieldEditOutline,
-      //   onClick: () => {
-      //     window.location.href = '/qc/'
-      //   },
-      // },
-    ],
+    // Points straight at the redirect's target rather than '/orchestration'
+    // itself - router.resolve() doesn't inherit a redirect target's meta, so
+    // requiresAuth filtering needs the real route here to work.
+    attrs: { to: '/orchestration/ingestion' },
+    label: 'Job orchestration',
+    icon: mdiTransitConnectionVariant,
   },
   {
-    attrs: { to: '/about' },
-    label: 'About',
-    icon: mdiInformation,
+    label: 'Quality Control',
+    icon: mdiShieldEditOutline,
+    onClick: () => {
+      window.location.href = '/qc/'
+    },
   },
 ]
+
+const aboutPath: NavItem = {
+  attrs: { to: '/about' },
+  label: 'About',
+  icon: mdiInformation,
+}
+
+/** Whether a nav item's target route requires the visitor to be logged in. */
+function itemRequiresAuth(attrs?: NavItemAttrs): boolean {
+  if (!attrs?.to) return false
+  return !!router.resolve(attrs.to).meta?.requiresAuth
+}
+
+// Recomputed on every render (rather than a cached computed) so it stays in
+// sync with hs.session.isAuthenticated the same way the rest of this
+// component's auth-gated markup does.
+function visiblePaths(): NavItem[] {
+  const authenticated = hs.session.isAuthenticated
+  const items = basePaths.filter(
+    (item) => authenticated || !itemRequiresAuth(item.attrs)
+  )
+
+  // Logged-in visitors reach About through the account menu instead.
+  if (!authenticated) items.push(aboutPath)
+
+  return items
+}
 
 async function onLogout() {
   await hs.session.logout()
@@ -280,5 +293,11 @@ async function onLogout() {
 .v-app-bar.navbar-flat,
 :deep(.v-app-bar.navbar-flat) {
   border-bottom: 1px solid #e8e8e8 !important;
+}
+.account-avatar-initials {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.02em;
 }
 </style>

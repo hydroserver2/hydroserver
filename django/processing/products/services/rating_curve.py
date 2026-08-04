@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from typing import Literal
 
 from pydantic import Field, ConfigDict, validate_call
@@ -9,7 +9,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchVector, SearchQuery
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Thing
 from processing.products.models import RatingCurve, RatingCurvePoint
@@ -27,28 +28,29 @@ class RatingCurveService(ServiceUtils):
     def get(
         rating_curve: uuid.UUID | RatingCurve,
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> RatingCurve:
         """Get a rating curve."""
 
         if isinstance(rating_curve, uuid.UUID):
             try:
-                rating_curve = RatingCurve.objects.select_related(
+                queryset = RatingCurve.objects.select_related(
                     "thing__workspace"
                 ).prefetch_related(
                     "points",
                     "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
-                ).get(pk=rating_curve)
+                ).filter(pk=rating_curve)
+                if principal is not Unset:
+                    queryset = principal.annotate_permissions(queryset)
+                rating_curve = queryset.get()
             except RatingCurve.DoesNotExist:
                 raise LookupError(f"Rating curve with ID {str(rating_curve)} does not exist.")
 
         if principal is not Unset:
-            permissions = rating_curve.get_principal_permissions(principal=principal)
-
-            if "view" not in permissions:
+            if not principal.can_view(rating_curve):
                 raise LookupError(f"Rating curve with ID {str(rating_curve.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(rating_curve):
                 raise PermissionError(f"You do not have permission to {action} this rating curve.")
 
         return rating_curve
@@ -56,7 +58,7 @@ class RatingCurveService(ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -86,7 +88,7 @@ class RatingCurveService(ServiceUtils):
             "points",
             "thing__locations", "thing__thing_tags", "thing__thing_file_attachments",
         )
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         count = queryset.count()
         offset = (page - 1) * page_size
@@ -98,13 +100,13 @@ class RatingCurveService(ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         thing: uuid.UUID | Thing,
         name: str,
         fitting_method: Literal["linear", "power_law", "polynomial"],
         points: list[tuple] = Field(default_factory=list),
         description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> RatingCurve:
         """Create a rating curve."""
 
@@ -114,7 +116,7 @@ class RatingCurveService(ServiceUtils):
             except Thing.DoesNotExist:
                 raise LookupError("Thing does not exist.")
 
-        if not RatingCurve.can_principal_create(principal=principal, workspace=thing.workspace):
+        if not principal.can_create("RatingCurve", workspace=thing.workspace):
             raise PermissionError("You do not have permission to create this rating curve.")
 
         rating_curve = RatingCurve.objects.create(
@@ -135,7 +137,7 @@ class RatingCurveService(ServiceUtils):
     def update(
         self,
         rating_curve: uuid.UUID | RatingCurve,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         description: str | None | Unset = Unset,
         fitting_method: Literal["linear", "power_law", "polynomial"] | Unset = Unset,
@@ -162,7 +164,7 @@ class RatingCurveService(ServiceUtils):
     def delete(
         self,
         rating_curve: uuid.UUID | RatingCurve,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """Delete a rating curve."""
 

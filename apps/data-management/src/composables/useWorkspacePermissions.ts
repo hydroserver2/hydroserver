@@ -5,16 +5,14 @@ import { useUserStore } from '@/store/user'
 import {
   PermissionResource,
   PermissionAction,
-  Permission,
   Workspace,
 } from '@hydroserver/client'
 
 export function useWorkspacePermissions(
   localWorkspace?: Ref<Workspace | undefined>
 ) {
-  const { selectedWorkspace: globalStoredWorkspace, workspaces } = storeToRefs(
-    useWorkspaceStore()
-  )
+  const { selectedWorkspace: globalStoredWorkspace, workspaces } =
+    storeToRefs(useWorkspaceStore())
   const { user } = storeToRefs(useUserStore())
 
   /** Some pages need to be in the context of a specific workspace that isn't the globally
@@ -56,18 +54,12 @@ export function useWorkspacePermissions(
     if (isOwner(w) || isAdmin()) return true
 
     const perms = w.collaboratorRole?.permissions ?? []
-    return (
-      hasGlobalPermissions(perms) ||
-      perms.some((p) => p.action === action && p.resource === resource)
+    return perms.some(
+      (permission) =>
+        [PermissionResource.Global, resource].includes(permission.resource) &&
+        [PermissionAction.Global, action].includes(permission.action)
     )
   }
-
-  const hasGlobalPermissions = (permissions: Permission[]) =>
-    permissions.some(
-      (p) =>
-        p.resource === PermissionResource.Global &&
-        p.action === PermissionAction.Global
-    )
 
   function checkPermissionsByWorkspaceId(
     workspaceId: string,

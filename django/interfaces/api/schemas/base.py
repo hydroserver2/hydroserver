@@ -90,11 +90,9 @@ class PartialMetaclass(type(Schema)):
         cls, name: str, bases: tuple[type, ...], attrs: dict, **kwargs
     ) -> "PartialMetaclass":
         new_cls = super().__new__(cls, name, bases, attrs, **kwargs)
-        new_cls.model_fields = {
-            k: copy.deepcopy(v) for k, v in new_cls.model_fields.items()
-        }
+        fields = {k: copy.deepcopy(v) for k, v in new_cls.model_fields.items()}
 
-        for field in new_cls.model_fields.values():
+        for field in fields.values():
             field.default = Unset
 
             metadata = field.metadata
@@ -108,6 +106,10 @@ class PartialMetaclass(type(Schema)):
 
             field.annotation = Union[constrained_arm, type(Unset)]
 
+        # `model_fields` is a read-only view of `__pydantic_fields__` as of newer
+        # pydantic versions, so the canonical field mapping must be updated directly
+        # for schema regeneration to pick up the mutated defaults/annotations.
+        new_cls.__pydantic_fields__ = fields
         new_cls.model_rebuild(force=True)  # noqa
 
         return new_cls

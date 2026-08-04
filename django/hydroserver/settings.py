@@ -33,6 +33,11 @@ DEFAULT_SUPERUSER_EMAIL = config(
 )
 DEFAULT_SUPERUSER_PASSWORD = config("DEFAULT_SUPERUSER_PASSWORD", default="pass")
 
+# Service Account Settings
+SERVICE_ACCOUNT_EMAIL_DOMAIN = config(
+    "SERVICE_ACCOUNT_EMAIL_DOMAIN", default="hydroserver.local"
+)
+
 # Deployment Settings
 
 USE_X_FORWARDED_HOST = True
@@ -170,6 +175,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
+    "ninja.compatibility.files.fix_request_files_middleware",
     "core.web.middleware.NoIndexMiddleware",
 ]
 

@@ -1,6 +1,17 @@
-import { flushPromises, mount, shallowMount } from '@vue/test-utils'
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  shallowMount,
+} from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import RatingCurveTaskDetails from '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
+import SimpleProductTaskDetails from '@/components/Orchestration/data-products/SimpleProductTaskDetails.vue'
+import IngestionTaskDetails from '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
+import QualityTaskDetails from '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
+
+enableAutoUnmount(afterEach)
 
 const {
   dataProductGetMock,
@@ -161,6 +172,12 @@ const globalStubs = {
   'v-tabs': { template: '<div><slot /></div>' },
   TaskRunHistory: { template: '<div />' },
   TaskStatus: { template: '<span />' },
+  DeleteTaskCard: {
+    name: 'DeleteTaskCard',
+    props: ['task'],
+    emits: ['close', 'delete'],
+    template: '<div class="delete-task-card-stub" />',
+  },
   IngestionTaskForm: {
     props: ['oldTask', 'dataConnection', 'workspaceId'],
     template: '<div class="task-form-stub" />',
@@ -169,6 +186,13 @@ const globalStubs = {
     emits: ['close', 'updated', 'deleted'],
     template: '<div class="quality-form-stub" />',
   },
+  AggregationForm: { template: '<div />' },
+  DerivationForm: { template: '<div />' },
+  ExpressionForm: { template: '<div />' },
+  RatingCurveForm: { template: '<div />' },
+  NoScheduleIcon: { template: '<span />' },
+  ProductTaskSwimlanes: { template: '<div />' },
+  RatingCurveSwimlanes: { template: '<div />' },
 }
 
 const seedWorkspace = async () => {
@@ -208,9 +232,6 @@ describe('Task detail components', () => {
   })
 
   it('fetches rating-curve task details from the data-product task endpoint', async () => {
-    const { default: RatingCurveTaskDetails } = await import(
-      '@/components/Orchestration/data-products/RatingCurveTaskDetails.vue'
-    )
     await seedWorkspace()
 
     mount(RatingCurveTaskDetails as any, {
@@ -261,9 +282,6 @@ describe('Task detail components', () => {
   // })
 
   it('loads ingestion details in the ingestion component', async () => {
-    const { default: IngestionTaskDetails } = await import(
-      '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(IngestionTaskDetails as any, {
@@ -284,9 +302,6 @@ describe('Task detail components', () => {
   })
 
   it('closes the ingestion delete dialog when deletion is cancelled', async () => {
-    const { default: IngestionTaskDetails } = await import(
-      '@/components/Orchestration/ingestion/IngestionTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(IngestionTaskDetails as any, {
@@ -309,9 +324,6 @@ describe('Task detail components', () => {
   })
 
   it('closes the data-product delete dialog when deletion is cancelled', async () => {
-    const { default: SimpleProductTaskDetails } = await import(
-      '@/components/Orchestration/data-products/SimpleProductTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(SimpleProductTaskDetails as any, {
@@ -335,9 +347,6 @@ describe('Task detail components', () => {
   })
 
   it('closes the quality edit dialog after a successful update', async () => {
-    const { default: QualityTaskDetails } = await import(
-      '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(QualityTaskDetails as any, {
@@ -359,9 +368,6 @@ describe('Task detail components', () => {
   })
 
   it('closes the quality delete dialog when deletion is cancelled', async () => {
-    const { default: QualityTaskDetails } = await import(
-      '@/components/Orchestration/monitoring/QualityTaskDetails.vue'
-    )
     await seedWorkspace()
 
     const wrapper = shallowMount(QualityTaskDetails as any, {

@@ -13,7 +13,6 @@ import {
 
 export type TabId = 'ingestion' | 'aggregation' | 'quality'
 export type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
-export type ActiveView = 'tasks' | 'workspaces'
 export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt' | 'taskType'
 export type SortDir = 'asc' | 'desc'
 
@@ -96,8 +95,6 @@ const AGGREGATION_ACCENT = '#6A1B9A'
 const AGGREGATION_ACCENT_LIGHT = '#F3E5F5'
 export const QUALITY_ACCENT = '#00695C'
 export const QUALITY_ACCENT_LIGHT = '#E0F2F1'
-export const WORKSPACE_ACCENT = '#2E7D32'
-export const WORKSPACE_ACCENT_LIGHT = '#E8F5E9'
 
 export const TAB_META: Record<
   TabId,

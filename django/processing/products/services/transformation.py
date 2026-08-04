@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 import logging
 import numpy as np
 import pandas as pd
@@ -19,7 +19,8 @@ from hydroserverpy.products.aggregation import apply_aggregation
 from hydroserverpy.products.rating_curve import apply_rating_curve
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.models import Datastream
 from core.sta.models.observation import Observation
@@ -72,7 +73,7 @@ class DataProductTransformationService(ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get(
         self,
-        principal: User | APIKey | None | Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         action: Literal["view", "edit", "delete"],
         task: Union[uuid.UUID, DataProductTask],
         transformation: Union[uuid.UUID, DataProductTransformation],
@@ -95,14 +96,16 @@ class DataProductTransformationService(ServiceUtils):
                 )
 
         if principal is not Unset:
-            permissions = transformation.task.get_principal_permissions(principal=principal)
+            task_obj = principal.annotate_permissions(
+                DataProductTask.objects.filter(pk=transformation.task_id)
+            ).get()
 
-            if "view" not in permissions:
+            if not principal.can_view(task_obj):
                 raise LookupError(
                     f"DataProductTransformation with ID {str(transformation.id)} does not exist."
                 )
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(task_obj):
                 raise PermissionError(
                     f"You do not have permission to {action} this transformation."
                 )
@@ -112,7 +115,7 @@ class DataProductTransformationService(ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None | Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         task: Union[uuid.UUID, DataProductTask],
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
@@ -130,8 +133,7 @@ class DataProductTransformationService(ServiceUtils):
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
         if principal is not Unset:
-            permissions = task.get_principal_permissions(principal=principal)
-            if "view" not in permissions:
+            if not principal.can_view(task):
                 raise LookupError(f"Task with ID {str(task.id)} does not exist.")
 
         queryset = DataProductTransformation.objects.filter(task=task).select_related(
@@ -167,12 +169,12 @@ class DataProductTransformationService(ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None | Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         task: Union[uuid.UUID, DataProductTask],
         transformation_type: TransformationType,
         input_datastreams: list[TransformationInput],
         output_datastream: Union[uuid.UUID, Datastream],
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
         formula: str | Unset = Unset,
         aggregation_method: AggregationMethod | Unset = Unset,
@@ -191,15 +193,15 @@ class DataProductTransformationService(ServiceUtils):
 
         if isinstance(task, uuid.UUID):
             try:
-                task = DataProductTask.objects.select_related("thing__workspace").get(pk=task)
+                task = principal.annotate_permissions(
+                    DataProductTask.objects.select_related("thing__workspace").filter(pk=task)
+                ).get()
             except DataProductTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
-        permissions = task.get_principal_permissions(principal=principal)
-
-        if "view" not in permissions:
+        if not principal.can_view(task):
             raise LookupError(f"Task with ID {str(task.id)} does not exist.")
-        if "edit" not in permissions:
+        if not principal.can_edit(task):
             raise PermissionError("You do not have permission to edit this task.")
 
         self.validate_transformation(
@@ -244,7 +246,7 @@ class DataProductTransformationService(ServiceUtils):
     @transaction.atomic
     def update(
         self,
-        principal: User | APIKey | None | Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         task: Union[uuid.UUID, DataProductTask],
         transformation: Union[uuid.UUID, DataProductTransformation],
         input_datastreams: list[Union[TransformationInput, TransformationInputPatch]] | Unset = Unset,
@@ -371,7 +373,7 @@ class DataProductTransformationService(ServiceUtils):
     @transaction.atomic
     def delete(
         self,
-        principal: User | APIKey | None | Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         task: Union[uuid.UUID, DataProductTask],
         transformation: Union[uuid.UUID, DataProductTransformation],
     ) -> None:

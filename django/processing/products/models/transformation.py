@@ -1,4 +1,4 @@
-import uuid6
+import uuid
 
 from django.db import models
 
@@ -38,7 +38,7 @@ class TimezoneType(models.TextChoices):
 
 
 class DataProductTransformation(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     task = models.ForeignKey(
         DataProductTask,
         on_delete=models.CASCADE,
@@ -80,7 +80,7 @@ class DataProductTransformation(models.Model):
 
 
 class DataProductTransformationInput(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     transformation = models.ForeignKey(
         DataProductTransformation,
         on_delete=models.CASCADE,

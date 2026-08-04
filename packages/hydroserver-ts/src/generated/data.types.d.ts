@@ -1928,78 +1928,6 @@ export interface paths {
         patch: operations["interfaces_api_views_iam_workspace_update_workspace"];
         trace?: never;
     };
-    "/api/data/workspaces/{workspace_id}/api-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Api Keys
-         * @description Get API keys associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_iam_api_key_get_api_keys"];
-        put?: never;
-        /**
-         * Create Api Key
-         * @description Create a new API key for the workspace.
-         */
-        post: operations["interfaces_api_views_iam_api_key_create_api_key"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/workspaces/{workspace_id}/api-keys/{api_key_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Api Key
-         * @description Get API key details.
-         */
-        get: operations["interfaces_api_views_iam_api_key_get_api_key"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Api Key
-         * @description Delete an API key.
-         */
-        delete: operations["interfaces_api_views_iam_api_key_delete_api_key"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Api Key
-         * @description Update an API key.
-         */
-        patch: operations["interfaces_api_views_iam_api_key_update_api_key"];
-        trace?: never;
-    };
-    "/api/data/workspaces/{workspace_id}/api-keys/{api_key_id}/regenerate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Regenerate Api Key
-         * @description Regenerate an API key using existing settings.
-         */
-        put: operations["interfaces_api_views_iam_api_key_regenerate_api_key"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/workspaces/{workspace_id}/collaborators": {
         parameters: {
             query?: never;
@@ -2027,6 +1955,78 @@ export interface paths {
          * @description Remove a collaborator from a workspace.
          */
         delete: operations["interfaces_api_views_iam_collaborator_remove_collaborator"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/workspaces/{workspace_id}/service-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Service Accounts
+         * @description Get service accounts associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_iam_service_account_get_service_accounts"];
+        put?: never;
+        /**
+         * Create Service Account
+         * @description Create a new service account for the workspace.
+         */
+        post: operations["interfaces_api_views_iam_service_account_create_service_account"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Service Account
+         * @description Get service account details.
+         */
+        get: operations["interfaces_api_views_iam_service_account_get_service_account"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Service Account
+         * @description Delete a service account.
+         */
+        delete: operations["interfaces_api_views_iam_service_account_delete_service_account"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Service Account
+         * @description Update a service account.
+         */
+        patch: operations["interfaces_api_views_iam_service_account_update_service_account"];
+        trace?: never;
+    };
+    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Regenerate Service Account Key
+         * @description Regenerate a service account's key using existing settings.
+         */
+        put: operations["interfaces_api_views_iam_service_account_regenerate_service_account_key"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2064,174 +2064,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** APIKeyDetailPostResponse */
-        APIKeyDetailPostResponse: {
-            /** Createdat */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Key */
-            key: string;
-            /** Lastused */
-            lastUsed: string | null;
-            /** Name */
-            name: string;
-            role: components["schemas"]["RoleSummaryResponse"];
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
-        };
-        /** APIKeyDetailResponse */
-        APIKeyDetailResponse: {
-            /** Createdat */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Lastused */
-            lastUsed: string | null;
-            /** Name */
-            name: string;
-            role: components["schemas"]["RoleSummaryResponse"];
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
-        };
-        /** APIKeyPatchBody */
-        APIKeyPatchBody: {
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /** Isactive */
-            isActive?: boolean;
-            /** Name */
-            name?: string;
-            /** Roleid */
-            roleId?: string | null;
-        };
-        /** APIKeyPostBody */
-        APIKeyPostBody: {
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /** Id */
-            id?: string | null;
-            /** Isactive */
-            isActive: boolean;
-            /** Name */
-            name: string;
-            /**
-             * Roleid
-             * Format: uuid
-             */
-            roleId: string;
-        };
-        /** APIKeyQueryParameters */
-        APIKeyQueryParameters: {
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "isActive" | "expiresAt" | "-name" | "-isActive" | "-expiresAt")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
-            /**
-             * Role Id
-             * @description Filter API keys by role ID.
-             * @default []
-             */
-            role_id: string[];
-        };
-        /** APIKeySummaryPostResponse */
-        APIKeySummaryPostResponse: {
-            /** Createdat */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Key */
-            key: string;
-            /** Lastused */
-            lastUsed: string | null;
-            /** Name */
-            name: string;
-            /**
-             * Roleid
-             * Format: uuid
-             */
-            roleId: string;
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** APIKeySummaryResponse */
-        APIKeySummaryResponse: {
-            /** Createdat */
-            createdAt: string;
-            /** Description */
-            description?: string | null;
-            /** Expiresat */
-            expiresAt?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isactive */
-            isActive: boolean;
-            /** Lastused */
-            lastUsed: string | null;
-            /** Name */
-            name: string;
-            /**
-             * Roleid
-             * Format: uuid
-             */
-            roleId: string;
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
         /** AccountContactDetailResponse */
         AccountContactDetailResponse: {
             /** Address */
@@ -2399,7 +2231,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "CSV";
         };
@@ -2419,29 +2250,23 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "CSV";
         };
         /** CollaboratorDeleteBody */
         CollaboratorDeleteBody: {
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
         };
         /** CollaboratorDetailResponse */
         CollaboratorDetailResponse: {
             role: components["schemas"]["RoleSummaryResponse"];
-            user: components["schemas"]["AccountContactDetailResponse"];
+            serviceAccount?: components["schemas"]["ServiceAccountContactResponse"] | null;
+            user?: components["schemas"]["AccountContactDetailResponse"] | null;
         };
         /** CollaboratorPostBody */
         CollaboratorPostBody: {
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
             /**
              * Roleid
@@ -3444,7 +3269,9 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
         };
         /**
          * EtlTaskOrderBy
@@ -3462,7 +3289,9 @@ export interface components {
             /** Schedule */
             schedule?: components["schemas"]["SchedulePatchBody"] | null;
             /** Taskvariables */
-            taskVariables?: Record<string, never>;
+            taskVariables?: {
+                [key: string]: unknown;
+            };
         };
         /** EtlTaskPostBody */
         EtlTaskPostBody: {
@@ -3490,7 +3319,9 @@ export interface components {
              * Taskvariables
              * @default {}
              */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
         };
         /** EtlTaskQueryParameters */
         EtlTaskQueryParameters: {
@@ -3578,7 +3409,9 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: Record<string, never>;
+            taskVariables: {
+                [key: string]: unknown;
+            };
             /**
              * Workspaceid
              * Format: uuid
@@ -3711,7 +3544,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "JSON";
         };
@@ -3727,7 +3559,6 @@ export interface components {
             /**
              * Type
              * @constant
-             * @enum {string}
              */
             type: "JSON";
         };
@@ -4129,7 +3960,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Phenomenontime */
+            /**
+             * Phenomenontime
+             * Format: date-time
+             */
             phenomenonTime: string;
             /** Result */
             result: number;
@@ -4217,7 +4051,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Phenomenontime */
+            /**
+             * Phenomenontime
+             * Format: date-time
+             */
             phenomenonTime: string;
             /** Result */
             result: number;
@@ -4373,12 +4210,12 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "*" | "view" | "create" | "edit" | "delete";
+            action: "view" | "create" | "edit" | "delete";
             /**
              * Resource
              * @enum {string}
              */
-            resource: "*" | "APIKey" | "Role" | "Collaborator" | "Thing" | "Datastream" | "Observation" | "Sensor" | "ObservedProperty" | "ProcessingLevel" | "Unit" | "ResultQualifier" | "ETL" | "DataProduct" | "DataMonitoring";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "Thing" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Sensor" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -4512,7 +4349,10 @@ export interface components {
         };
         /** QualityControlHistoryDetailResponse */
         QualityControlHistoryDetailResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /**
              * Id
@@ -4574,7 +4414,10 @@ export interface components {
         };
         /** QualityControlHistorySummaryResponse */
         QualityControlHistorySummaryResponse: {
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             /**
              * Id
@@ -4603,7 +4446,9 @@ export interface components {
         /** QualityControlOperationPatchBody */
         QualityControlOperationPatchBody: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /** Order */
@@ -4612,7 +4457,9 @@ export interface components {
         /** QualityControlOperationPostBody */
         QualityControlOperationPostBody: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -4641,10 +4488,15 @@ export interface components {
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
             /** Arguments */
-            arguments?: Record<string, never> | unknown[] | null;
+            arguments?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Comment */
             comment?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /**
@@ -4664,7 +4516,10 @@ export interface components {
         QualityControlSessionDetailResponse: {
             /** Committedat */
             committedAt?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /** Dependencyids */
@@ -4685,9 +4540,15 @@ export interface components {
             managedChecksum?: string | null;
             /** Operations */
             operations: components["schemas"]["QualityControlOperationResponse"][];
-            /** Phenomenontimeend */
+            /**
+             * Phenomenontimeend
+             * Format: date-time
+             */
             phenomenonTimeEnd: string;
-            /** Phenomenontimestart */
+            /**
+             * Phenomenontimestart
+             * Format: date-time
+             */
             phenomenonTimeStart: string;
             /** Sourcechecksum */
             sourceChecksum: string;
@@ -4755,7 +4616,10 @@ export interface components {
         QualityControlSessionSummaryResponse: {
             /** Committedat */
             committedAt?: string | null;
-            /** Createdat */
+            /**
+             * Createdat
+             * Format: date-time
+             */
             createdAt: string;
             createdBy: components["schemas"]["AccountContactDetailResponse"];
             /** Description */
@@ -4772,9 +4636,15 @@ export interface components {
             id: string;
             /** Managedchecksum */
             managedChecksum?: string | null;
-            /** Phenomenontimeend */
+            /**
+             * Phenomenontimeend
+             * Format: date-time
+             */
             phenomenonTimeEnd: string;
-            /** Phenomenontimestart */
+            /**
+             * Phenomenontimestart
+             * Format: date-time
+             */
             phenomenonTimeStart: string;
             /** Sourcechecksum */
             sourceChecksum: string;
@@ -5071,16 +4941,12 @@ export interface components {
         /** RoleDetailResponse */
         RoleDetailResponse: {
             /** Description */
-            description: string;
+            description?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Isapikeyrole */
-            isAPIKeyRole: boolean;
-            /** Isuserrole */
-            isUserRole: boolean;
             /** Name */
             name: string;
             /** Permissions */
@@ -5092,21 +4958,11 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
-             * Is Apikey Role
-             * @description Controls whether the returned roles should be API key roles.
-             */
-            is_apikey_role?: boolean | null;
-            /**
-             * Is User Role
-             * @description Controls whether the returned roles should be user roles.
-             */
-            is_user_role?: boolean | null;
-            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("name" | "isUserRole" | "isAPIKeyRole" | "-name" | "-isUserRole" | "-isAPIKeyRole")[] | null;
+            order_by: ("name" | "-name")[] | null;
             /**
              * Page
              * @description Page number (1-based).
@@ -5129,16 +4985,12 @@ export interface components {
         /** RoleSummaryResponse */
         RoleSummaryResponse: {
             /** Description */
-            description: string;
+            description?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Isapikeyrole */
-            isAPIKeyRole: boolean;
-            /** Isuserrole */
-            isUserRole: boolean;
             /** Name */
             name: string;
             /** Permissions */
@@ -5350,6 +5202,183 @@ export interface components {
             /** Workspaceid */
             workspaceId: string | null;
         };
+        /** ServiceAccountContactResponse */
+        ServiceAccountContactResponse: {
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** ServiceAccountDetailPostResponse */
+        ServiceAccountDetailPostResponse: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isactive */
+            isActive: boolean;
+            /** Key */
+            key: string;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Lastusedat */
+            lastUsedAt: string | null;
+            /** Name */
+            name: string;
+            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /** ServiceAccountDetailResponse */
+        ServiceAccountDetailResponse: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isactive */
+            isActive: boolean;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Lastusedat */
+            lastUsedAt: string | null;
+            /** Name */
+            name: string;
+            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /** ServiceAccountPatchBody */
+        ServiceAccountPatchBody: {
+            /** Description */
+            description?: string | null;
+            /** Isactive */
+            isActive?: boolean;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Name */
+            name?: string;
+        };
+        /** ServiceAccountPostBody */
+        ServiceAccountPostBody: {
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id?: string | null;
+            /** Isactive */
+            isActive: boolean;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Name */
+            name: string;
+            /** Roleid */
+            roleId?: string | null;
+        };
+        /** ServiceAccountQueryParameters */
+        ServiceAccountQueryParameters: {
+            /** Expand Related */
+            expand_related?: boolean | null;
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+        };
+        /** ServiceAccountSummaryPostResponse */
+        ServiceAccountSummaryPostResponse: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isactive */
+            isActive: boolean;
+            /** Key */
+            key: string;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Lastusedat */
+            lastUsedAt: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** ServiceAccountSummaryResponse */
+        ServiceAccountSummaryResponse: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isactive */
+            isActive: boolean;
+            /** Keyexpiresat */
+            keyExpiresAt?: string | null;
+            /** Lastusedat */
+            lastUsedAt: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
         /** SiteTypeIconResponse */
         SiteTypeIconResponse: {
             /** Icon */
@@ -5442,7 +5471,9 @@ export interface components {
             /** Message */
             message?: string | null;
             /** Result */
-            result?: Record<string, never> | null;
+            result?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Startedat
              * Format: date-time
@@ -6225,7 +6256,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6543,7 +6574,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6698,7 +6729,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -6707,7 +6738,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6779,7 +6810,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -6788,7 +6819,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6848,7 +6879,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6968,7 +6999,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7248,7 +7279,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7310,7 +7341,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7370,7 +7401,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7479,7 +7510,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7637,7 +7668,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7759,7 +7790,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7928,7 +7959,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8209,7 +8240,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8378,7 +8409,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8509,7 +8540,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8679,7 +8710,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8951,7 +8982,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9131,7 +9162,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9236,7 +9267,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9389,7 +9420,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9498,7 +9529,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9665,7 +9696,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9785,7 +9816,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9954,7 +9985,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10201,7 +10232,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10371,7 +10402,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10502,7 +10533,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10672,7 +10703,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10803,7 +10834,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -10973,7 +11004,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11104,7 +11135,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11274,7 +11305,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11440,7 +11471,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11673,7 +11704,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11845,7 +11876,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -11913,7 +11944,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12040,7 +12071,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12213,7 +12244,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12300,7 +12331,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12444,7 +12475,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12464,13 +12495,9 @@ export interface operations {
                 page_size?: number | null;
                 expand_related?: boolean | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "isUserRole" | "isAPIKeyRole" | "-name" | "-isUserRole" | "-isAPIKeyRole")[] | null;
+                order_by?: ("name" | "-name")[] | null;
                 /** @description Filter roles by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Controls whether the returned roles should be user roles. */
-                is_user_role?: boolean | null;
-                /** @description Controls whether the returned roles should be API key roles. */
-                is_apikey_role?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -12640,7 +12667,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12847,7 +12874,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -12955,7 +12982,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13338,7 +13365,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13455,7 +13482,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -13464,7 +13491,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13536,7 +13563,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Request Entity Too Large */
+            /** @description Content Too Large */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -13545,7 +13572,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13605,7 +13632,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13707,7 +13734,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13769,7 +13796,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13829,7 +13856,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13927,7 +13954,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14107,7 +14134,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14192,7 +14219,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14327,293 +14354,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_get_api_keys: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "isActive" | "expiresAt" | "-name" | "-isActive" | "-expiresAt")[] | null;
-                /** @description Filter API keys by role ID. */
-                role_id?: string[];
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["APIKeySummaryResponse"][] | components["schemas"]["APIKeyDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_create_api_key: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["APIKeyPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["APIKeySummaryPostResponse"] | components["schemas"]["APIKeyDetailPostResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_get_api_key: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-                api_key_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["APIKeySummaryResponse"] | components["schemas"]["APIKeyDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_delete_api_key: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                api_key_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_update_api_key: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-                api_key_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["APIKeyPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["APIKeySummaryResponse"] | components["schemas"]["APIKeyDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_iam_api_key_regenerate_api_key: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-                api_key_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["APIKeySummaryPostResponse"] | components["schemas"]["APIKeyDetailPostResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14713,7 +14454,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14766,7 +14507,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14817,7 +14558,291 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_get_service_accounts: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                expand_related?: boolean | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("name" | "isActive" | "keyExpiresAt" | "-name" | "-isActive" | "-keyExpiresAt")[] | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"][] | components["schemas"]["ServiceAccountDetailResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_create_service_account: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAccountPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAccountSummaryPostResponse"] | components["schemas"]["ServiceAccountDetailPostResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_get_service_account: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+                service_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"] | components["schemas"]["ServiceAccountDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_delete_service_account: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                service_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_update_service_account: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+                service_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAccountPatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAccountSummaryResponse"] | components["schemas"]["ServiceAccountDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_iam_service_account_regenerate_service_account_key: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+                service_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAccountSummaryPostResponse"] | components["schemas"]["ServiceAccountDetailPostResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -14928,7 +14953,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;

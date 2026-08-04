@@ -1,11 +1,14 @@
 import uuid
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from ninja import Query
-from pydantic import EmailStr
 from interfaces.api.schemas import BaseGetResponse, BasePostBody, CollectionQueryParameters
 
 if TYPE_CHECKING:
-    from interfaces.api.schemas import RoleSummaryResponse, AccountContactDetailResponse
+    from interfaces.api.schemas import (
+        RoleSummaryResponse,
+        AccountContactDetailResponse,
+        ServiceAccountContactResponse,
+    )
 
 DELETED_USER_CONTACT = {
     "name": "Deleted User",
@@ -23,14 +26,15 @@ class CollaboratorQueryParameters(CollectionQueryParameters):
 
 
 class CollaboratorDetailResponse(BaseGetResponse):
-    user: "AccountContactDetailResponse"
+    user: Optional["AccountContactDetailResponse"] = None
+    service_account: Optional["ServiceAccountContactResponse"] = None
     role: "RoleSummaryResponse"
 
 
 class CollaboratorPostBody(BasePostBody):
-    email: EmailStr
+    email: str
     role_id: uuid.UUID
 
 
 class CollaboratorDeleteBody(BasePostBody):
-    email: EmailStr
+    email: str

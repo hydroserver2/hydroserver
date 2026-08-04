@@ -10,7 +10,7 @@ import type {
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-export type OrchestrationView = TabId | 'workspaces'
+export type OrchestrationView = TabId
 
 export type OrchestrationTaskDetailType =
   | 'ingestion'
@@ -38,7 +38,6 @@ const VALID_VIEWS = new Set<OrchestrationView>([
   'ingestion',
   'aggregation',
   'quality',
-  'workspaces',
 ])
 
 const VALID_DETAIL_TYPES = new Set<OrchestrationTaskDetailType>([

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from datetime import datetime
 from typing import Literal
 
@@ -10,7 +10,8 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.services import ObservationService
 from processing.quality.models import QCHistory, QCSession, QCSessionDependency, SessionStatus
@@ -70,7 +71,7 @@ class QCSessionService(ServiceUtils):
         self,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit"] = "view",
         expand_related: bool | None = None,
     ) -> QCSession:
@@ -94,7 +95,7 @@ class QCSessionService(ServiceUtils):
     def get_collection(
         self,
         history: uuid.UUID | QCHistory,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -150,12 +151,12 @@ class QCSessionService(ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         phenomenon_time_start: datetime,
         phenomenon_time_end: datetime,
         description: str | None = None,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
     ) -> QCSession:
         """Create a new in-progress session for a QC history."""
 
@@ -213,7 +214,7 @@ class QCSessionService(ServiceUtils):
     @transaction.atomic
     def update(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         description: str | None | Unset = Unset,
@@ -236,7 +237,7 @@ class QCSessionService(ServiceUtils):
     @transaction.atomic
     def delete(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
     ) -> None:
@@ -253,7 +254,7 @@ class QCSessionService(ServiceUtils):
     @transaction.atomic
     def commit(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
     ) -> QCSession:

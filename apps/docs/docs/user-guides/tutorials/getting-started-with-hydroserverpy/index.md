@@ -28,7 +28,7 @@ source hydroserver-env/bin/activate  # On Windows: hydroserver-env\Scripts\activ
 Or if you prefer `conda`:
 
 ```bash
-conda create -n hydroserver-env python=3.11
+conda create -n hydroserver-env python=3.14
 conda activate hydroserver-env
 ```
 

@@ -9,7 +9,8 @@ from django.db import IntegrityError
 from django.db.models import Count, QuerySet, F, Q, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.cache import (
     get_public_thing_markers_cache,
@@ -51,29 +52,29 @@ class ThingService(ServiceUtils):
 
     def get_thing_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = Thing.objects.filter(pk=uid)
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+        else:
+            queryset = queryset.prefetch_related(
+                "thing_tags", "thing_file_attachments"
+            ).with_location()
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            thing = Thing.objects
-            if expand_related:
-                thing = self.select_expanded_fields(thing)
-            else:
-                thing = thing.prefetch_related(
-                    "thing_tags", "thing_file_attachments"
-                ).with_location()
-            thing = thing.get(pk=uid)
+            thing = queryset.get()
         except Thing.DoesNotExist:
             raise HttpError(404, "Thing does not exist")
 
-        thing_permissions = thing.get_principal_permissions(principal=principal)
-
-        if "view" not in thing_permissions:
+        if not principal.can_view(thing):
             raise HttpError(404, "Thing does not exist")
 
-        if action not in thing_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(thing):
             raise HttpError(403, f"You do not have permission to {action} this Thing")
 
         return thing
@@ -250,16 +251,16 @@ class ThingService(ServiceUtils):
 
     @staticmethod
     def get_tags_by_thing_id(
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         thing_ids: list[uuid.UUID],
     ) -> dict[str, list[TagGetResponse]]:
         if not thing_ids:
             return {}
 
         tags_by_thing_id: dict[str, list[TagGetResponse]] = defaultdict(list)
+        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
         tag_rows = (
-            ThingTag.objects.visible(principal=principal)
-            .filter(thing_id__in=thing_ids)
+            ThingTag.objects.filter(thing__in=visible_things, thing_id__in=thing_ids)
             .values("thing_id", "key", "value")
             .order_by("thing_id", "key", "value")
             .distinct()
@@ -344,15 +345,16 @@ class ThingService(ServiceUtils):
 
     def get_private_markers(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
     ) -> list[dict]:
-        if not principal:
+        if not principal.is_authenticated:
             return []
 
-        private_marker_queryset = Location.objects.visible(principal=principal).exclude(
-            **self.MARKER_PUBLIC_FILTER
-        )
+        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
+        private_marker_queryset = Location.objects.filter(
+            thing__in=visible_things
+        ).exclude(**self.MARKER_PUBLIC_FILTER)
         private_marker_queryset = self.apply_marker_filters(
             private_marker_queryset,
             filtering=filtering,
@@ -368,7 +370,7 @@ class ThingService(ServiceUtils):
 
     def list_markers(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
     ):
         public_markers = self.get_public_markers(filtering=filtering)
@@ -379,10 +381,12 @@ class ThingService(ServiceUtils):
 
     def list_site_summaries(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
     ) -> list[dict]:
-        site_queryset = Location.objects.visible(principal=principal)
+        site_queryset = Location.objects.filter(
+            thing__in=principal.filter_by_permission(Thing.objects, "can_view")
+        )
         site_queryset = self.apply_marker_filters(site_queryset, filtering=filtering)
         site_rows = list(
             self.get_site_summary_values(
@@ -397,7 +401,7 @@ class ThingService(ServiceUtils):
 
     @staticmethod
     def list_task_summaries(
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[list] = None,
         site_type: Optional[list] = None,
     ) -> QuerySet:
@@ -430,7 +434,7 @@ class ThingService(ServiceUtils):
                 0,
             )
 
-        queryset = Thing.objects.visible(principal=principal)
+        queryset = principal.filter_by_permission(Thing.objects, "can_view")
 
         if workspace_id:
             queryset = queryset.filter(workspace_id__in=workspace_id)
@@ -446,7 +450,7 @@ class ThingService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -504,7 +508,7 @@ class ThingService(ServiceUtils):
                 "thing_tags", "thing_file_attachments"
             ).with_location()
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -519,7 +523,7 @@ class ThingService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -535,7 +539,7 @@ class ThingService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ThingPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -543,7 +547,7 @@ class ThingService(ServiceUtils):
             principal=principal, workspace_id=data.workspace_id
         )
 
-        if not Thing.can_principal_create(principal=principal, workspace=workspace):
+        if not principal.can_create("Thing", workspace=workspace):
             raise HttpError(403, "You do not have permission to create this Thing")
 
         try:
@@ -578,7 +582,7 @@ class ThingService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ThingPatchBody,
         expand_related: Optional[bool] = None,
@@ -614,7 +618,7 @@ class ThingService(ServiceUtils):
             principal=principal, uid=thing.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         thing = self.get_thing_for_action(
             principal=principal, uid=uid, action="delete", expand_related=True
         )
@@ -625,18 +629,20 @@ class ThingService(ServiceUtils):
 
         return "Thing deleted"
 
-    def get_tags(self, principal: Optional[User | APIKey], uid: uuid.UUID):
+    def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         thing = self.get_thing_for_action(principal=principal, uid=uid, action="view")
 
         return thing.thing_tags.all()
 
     @staticmethod
     def get_tag_keys(
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
         thing_id: Optional[uuid.UUID],
     ):
-        queryset = ThingTag.objects
+        queryset = ThingTag.objects.filter(
+            thing__in=principal.filter_by_permission(Thing.objects, "can_view")
+        )
 
         if workspace_id:
             queryset = queryset.filter(thing__workspace_id=workspace_id)
@@ -644,15 +650,11 @@ class ThingService(ServiceUtils):
         if thing_id:
             queryset = queryset.filter(thing_id=thing_id)
 
-        tags = (
-            queryset.visible(principal=principal)
-            .values("key")
-            .annotate(values=ArrayAgg(F("value"), distinct=True))
-        )
+        tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
 
         return {entry["key"]: entry["values"] for entry in tags}
 
-    def add_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagPostBody):
+    def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
         thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
 
         if ThingTag.objects.filter(thing=thing, key=data.key).exists():
@@ -660,7 +662,7 @@ class ThingService(ServiceUtils):
 
         return ThingTag.objects.create(thing=thing, key=data.key, value=data.value)
 
-    def update_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagPostBody):
+    def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
         thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
 
         try:
@@ -673,7 +675,7 @@ class ThingService(ServiceUtils):
 
         return tag
 
-    def remove_tag(self, principal: User | APIKey, uid: uuid.UUID, data: TagDeleteBody):
+    def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
         thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
 
         queryset = ThingTag.objects.filter(thing=thing, key=data.key)
@@ -690,7 +692,7 @@ class ThingService(ServiceUtils):
 
     def get_file_attachments(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         filtering: Optional[dict] = None,
     ):
@@ -706,7 +708,7 @@ class ThingService(ServiceUtils):
         return queryset.all()
 
     def add_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         thing = self.get_thing_for_action(
             principal=principal, uid=uid, action="edit"
@@ -726,7 +728,7 @@ class ThingService(ServiceUtils):
         )
 
     def replace_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, file, data: FileAttachmentPostBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
         self.remove_file_attachment(
             principal=principal, uid=uid, data=FileAttachmentDeleteBody(name=file.name)
@@ -737,7 +739,7 @@ class ThingService(ServiceUtils):
         )
 
     def remove_file_attachment(
-        self, principal: User | APIKey, uid: uuid.UUID, data: FileAttachmentDeleteBody
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
     ):
         thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
 

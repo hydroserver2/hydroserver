@@ -5,8 +5,9 @@ import { fixtures, users } from '../support/fixtures'
 import {
   chooseAutocompleteOption,
   chooseOverlayOption,
+  createWorkspaceFromManagePage,
+  deleteWorkspaceFromManagePage,
   fillCombobox,
-  selectWorkspace,
 } from '../support/ui'
 
 const datastreamEntriesByName = (page: Page, name: string) =>
@@ -19,22 +20,27 @@ test.describe('sites and workspaces', () => {
     'base64'
   )
 
-  test('owner can create a workspace from the shared workspace toolbar', async ({
+  test('owner can use the top-level workspace and monitoring-site links', async ({
     page,
   }) => {
     const workspaceName = `E2E Workspace ${Date.now()}`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/orchestration')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
-    await page.getByRole('button', { name: 'Add workspace' }).click()
+    await page.goto('/browse')
+    await page
+      .getByRole('link', { name: 'Manage workspaces', exact: true })
+      .click()
+    await expect(page).toHaveURL(/\/workspaces/)
 
-    await page.getByLabel('Name *').fill(workspaceName)
-    await page.getByRole('button', { name: 'Save' }).click()
+    await createWorkspaceFromManagePage(page, workspaceName)
+    await deleteWorkspaceFromManagePage(page, workspaceName)
 
+    await page
+      .getByRole('link', { name: 'Browse monitoring sites', exact: true })
+      .click()
+    await expect(page).toHaveURL(/\/browse$/)
     await expect(
-      page.getByRole('cell', { name: workspaceName, exact: true })
+      page.getByRole('heading', { name: 'Monitoring sites', level: 1 })
     ).toBeVisible()
   })
 

@@ -5,8 +5,16 @@ export const users = {
     email: 'owner@example.com',
     password: E2E_PASSWORD,
   },
+  editor: {
+    email: 'editor@example.com',
+    password: E2E_PASSWORD,
+  },
   viewer: {
     email: 'viewer@example.com',
+    password: E2E_PASSWORD,
+  },
+  limited: {
+    email: 'limited@example.com',
     password: E2E_PASSWORD,
   },
   unaffiliated: {

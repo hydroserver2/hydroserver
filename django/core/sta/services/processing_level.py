@@ -5,7 +5,8 @@ from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import QuerySet
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ProcessingLevel
 from interfaces.api.schemas import (
     ProcessingLevelSummaryResponse,
@@ -25,27 +26,29 @@ User = get_user_model()
 class ProcessingLevelService(ServiceUtils):
     def get_processing_level_for_action(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
+        queryset = ProcessingLevel.objects.filter(pk=uid)
+
+        if expand_related:
+            queryset = self.select_expanded_fields(queryset)
+
+        queryset = principal.annotate_permissions(queryset)
+
         try:
-            processing_level = ProcessingLevel.objects
-            if expand_related:
-                processing_level = self.select_expanded_fields(processing_level)
-            processing_level = processing_level.get(pk=uid)
+            processing_level = queryset.get()
         except ProcessingLevel.DoesNotExist:
             raise HttpError(404, "Processing level does not exist")
 
-        processing_level_permissions = processing_level.get_principal_permissions(
-            principal=principal
-        )
-
-        if "view" not in processing_level_permissions:
+        if not principal.can_view(processing_level):
             raise HttpError(404, "Processing level does not exist")
 
-        if action not in processing_level_permissions:
+        if action != "view" and not getattr(principal, f"can_{action}")(
+            processing_level
+        ):
             raise HttpError(
                 403, f"You do not have permission to {action} this processing level"
             )
@@ -58,7 +61,7 @@ class ProcessingLevelService(ServiceUtils):
 
     def list(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         response: HttpResponse,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
@@ -88,7 +91,7 @@ class ProcessingLevelService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
 
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -103,7 +106,7 @@ class ProcessingLevelService(ServiceUtils):
 
     def get(
         self,
-        principal: Optional[User | APIKey],
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
@@ -119,7 +122,7 @@ class ProcessingLevelService(ServiceUtils):
 
     def create(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         data: ProcessingLevelPostBody,
         expand_related: Optional[bool] = None,
     ):
@@ -132,9 +135,7 @@ class ProcessingLevelService(ServiceUtils):
             )
         )
 
-        if not ProcessingLevel.can_principal_create(
-            principal=principal, workspace=workspace
-        ):
+        if not principal.can_create("ProcessingLevel", workspace=workspace):
             raise HttpError(
                 403, "You do not have permission to create this processing level"
             )
@@ -154,7 +155,7 @@ class ProcessingLevelService(ServiceUtils):
 
     def update(
         self,
-        principal: User | APIKey,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         data: ProcessingLevelPatchBody,
         expand_related: Optional[bool] = None,
@@ -175,7 +176,7 @@ class ProcessingLevelService(ServiceUtils):
             principal=principal, uid=processing_level.id, expand_related=expand_related
         )
 
-    def delete(self, principal: User | APIKey, uid: uuid.UUID):
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         processing_level = self.get_processing_level_for_action(
             principal=principal, uid=uid, action="delete"
         )

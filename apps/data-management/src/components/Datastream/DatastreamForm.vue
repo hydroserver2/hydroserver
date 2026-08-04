@@ -51,7 +51,11 @@
             are adding to the monitoring site. If you want to modify the values
             available in the drop down menus below, click the "+" button or
             visit the
-            <router-link to="/Metadata"> Manage metadata page. </router-link>
+            <router-link
+              :to="{ path: '/workspaces', query: { section: 'metadata' } }"
+            >
+              Metadata tab of the Workspaces page.
+            </router-link>
             Options in the drop down menus come from both metadata associated
             with the workspace as well as system level metadata managed by the
             system admin.

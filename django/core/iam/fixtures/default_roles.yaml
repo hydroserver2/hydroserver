@@ -1,55 +1,58 @@
 ---
+# ---- Roles ----
 - model: iam.role
-  pk: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
-  fields:
-    name: Editor
-    description: Grants read and write access to all workspace resources.
-    workspace_id:
-    is_user_role: True
-    is_apikey_role: True
-- model: iam.role
-  pk: 1d91bff7-edf6-4b69-bb26-674436335725
+  pk: 019f7153-c6e0-7f32-bffb-84fc7e64b787
   fields:
     name: Viewer
     description: Grants read-only access to all workspace resources.
     workspace_id:
-    is_user_role: True
-    is_apikey_role: True
 - model: iam.role
-  pk: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
+  pk: 019f7154-79e5-78ff-a11c-d06cf351869b
+  fields:
+    name: Editor
+    description: Grants read and write access to all workspace resources.
+    workspace_id:
+- model: iam.role
+  pk: 019f7155-a66f-7f8b-a40e-78c3a65e5759
   fields:
     name: Data Loader
-    description: Grants permission to push observations to workspace datastreams and update data connections.
+    description: Grants permission to push observations to workspace datastreams.
     workspace_id:
-    is_user_role: False
-    is_apikey_role: True
+
+# ---- Permissions ----
 - model: iam.permission
-  pk: 1
+  pk: "1"
   fields:
-    role: 2f05f775-5d8a-4778-9942-3d13a64ec7a3
-    permission_type: "*"
+    role: 019f7153-c6e0-7f32-bffb-84fc7e64b787
     resource_type: "*"
+    can_view: true
+    can_create: false
+    can_edit: false
+    can_delete: false
 - model: iam.permission
-  pk: 2
+  pk: "2"
   fields:
-    role: 1d91bff7-edf6-4b69-bb26-674436335725
-    permission_type: view
+    role: 019f7154-79e5-78ff-a11c-d06cf351869b
     resource_type: "*"
+    can_view: true
+    can_create: true
+    can_edit: true
+    can_delete: true
 - model: iam.permission
-  pk: 3
+  pk: "3"
   fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: view
+    role: 019f7155-a66f-7f8b-a40e-78c3a65e5759
     resource_type: "*"
+    can_view: true
+    can_create: false
+    can_edit: false
+    can_delete: false
 - model: iam.permission
-  pk: 4
+  pk: "4"
   fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: create
-    resource_type: Observation
-- model: iam.permission
-  pk: 7
-  fields:
-    role: 1f7ec829-eea8-415e-b6ee-72d31ae43d1a
-    permission_type: edit
-    resource_type: Datastream
+    role: 019f7155-a66f-7f8b-a40e-78c3a65e5759
+    resource_type: "Observation"
+    can_view: true
+    can_create: true
+    can_edit: false
+    can_delete: false

@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+
 import jmespath as jmespath_lib
 from datetime import datetime
 from typing import Optional, Literal, Union, Annotated
@@ -17,7 +17,8 @@ from django.utils import timezone as django_tz
 from hydroserverpy.etl.models import Timestamp
 
 from core.types import Unset
-from core.iam.models import APIKey, Workspace
+from core.iam.models import ServiceAccount, Workspace
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.orchestration.services import SchedulingService
@@ -78,7 +79,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def get(
         data_connection: uuid.UUID | DataConnection,
         action: Literal["view", "edit", "delete"] = "view",
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
     ) -> DataConnection:
         """
         Get a data connection.
@@ -86,17 +87,18 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         if isinstance(data_connection, uuid.UUID):
             try:
-                data_connection = DataConnection.objects.select_related("payload").get(pk=data_connection)
+                queryset = DataConnection.objects.select_related("payload").filter(pk=data_connection)
+                if principal is not Unset:
+                    queryset = principal.annotate_permissions(queryset)
+                data_connection = queryset.get()
             except DataConnection.DoesNotExist:
                 raise LookupError(f"Data connection with ID {str(data_connection)} does not exist.")
 
         if principal is not Unset:
-            permissions = data_connection.get_principal_permissions(principal=principal)
-
-            if "view" not in permissions:
+            if not principal.can_view(data_connection):
                 raise LookupError(f"Data connection with ID {str(data_connection.id)} does not exist.")
 
-            if action not in permissions:
+            if action != "view" and not getattr(principal, f"can_{action}")(data_connection):
                 raise PermissionError(f"You do not have permission to {action} this data connection.")
 
         return data_connection
@@ -104,7 +106,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def get_collection(
         self,
-        principal: User | APIKey | None = None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -138,7 +140,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         queryset = queryset.order_by(*order_by, "-id")
         queryset = queryset.select_related("workspace").prefetch_related("placeholder_variables", "payload")
-        queryset = queryset.visible(principal=principal).distinct()
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
         # Count before adding the task-count annotations so the COUNT(*) query does not have to
         # evaluate the per-connection task subqueries (they do not affect the row count).
@@ -154,13 +156,13 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str,
         workspace: uuid.UUID | Workspace,
         source_url: str,
         payload_type: Literal["CSV", "JSON"],
         timestamp_key: str,
-        uid: uuid.UUID = Field(default_factory=uuid6.uuid7),
+        uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         description: str | None = None,
         auth_header_name: str | None = None,
         auth_header_value: str | None = None,
@@ -171,7 +173,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: Literal[",", "|", "\t", ";", " "] | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
-        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] = Field(default_factory=list),
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -188,7 +189,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             principal=principal, workspace_id=getattr(workspace, "pk", workspace)
         )
 
-        if not DataConnection.can_principal_create(principal=principal, workspace=workspace):
+        if not principal.can_create("DataConnection", workspace=workspace):
             raise PermissionError("You do not have permission to create this data connection.")
 
         if (auth_header_name is None) != (auth_header_value is None):
@@ -225,7 +226,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_start_row=data_start_row,
             delimiter=delimiter,
             jmespath=jmespath,
-            data_ingestion_window=data_ingestion_window,
         )
 
         self.apply_placeholders(
@@ -251,7 +251,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def update(
         self,
         data_connection: uuid.UUID | DataConnection,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         name: str | Unset = Unset,
         source_url: str | Unset = Unset,
         auth_header_name: str | None | Unset = Unset,
@@ -266,7 +266,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
-        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] | Unset = Unset,
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -316,8 +315,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
             data_connection.timezone = timestamp.timezone
 
         if any(field is not Unset for field in [payload_type, timestamp_key, timestamp_format,
-                                                header_row, data_start_row, delimiter, jmespath,
-                                                data_ingestion_window]):
+                                                 header_row, data_start_row, delimiter, jmespath]):
             resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
             self.apply_payload(
                 data_connection=data_connection,
@@ -328,7 +326,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
                 data_start_row=data_start_row,
                 delimiter=delimiter,
                 jmespath=jmespath,
-                data_ingestion_window=data_ingestion_window,
             )
 
         if placeholder_variables is not Unset:
@@ -366,7 +363,7 @@ class DataConnectionService(SchedulingService, ServiceUtils):
     def delete(
         self,
         data_connection: uuid.UUID | DataConnection,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
     ) -> None:
         """
         Delete a data connection.
@@ -391,7 +388,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
-        data_ingestion_window: dict | None | Unset = Unset,
     ):
         """
         Create or update the payload settings attached to a data connection.
@@ -445,48 +441,6 @@ class DataConnectionService(SchedulingService, ServiceUtils):
         else:
             raise NotImplementedError(f"Unsupported payload type {payload_type}")
 
-        if data_ingestion_window is not Unset:
-            window = {"start": None, "end": None} if data_ingestion_window is None else data_ingestion_window
-
-            for side in ("start", "end"):
-                if side not in window:
-                    continue
-
-                raw_boundary = window[side]
-
-                if raw_boundary is None or not current_payload:
-                    current = {"anchor": None, "lookback": None, "lookback_units": None, "timestamp": None}
-                else:
-                    current = {
-                        "anchor": getattr(current_payload, f"data_ingestion_window_{side}_anchor"),
-                        "lookback": getattr(current_payload, f"data_ingestion_window_{side}_lookback"),
-                        "lookback_units": getattr(current_payload, f"data_ingestion_window_{side}_lookback_unit"),
-                        "timestamp": getattr(current_payload, f"data_ingestion_window_{side}_timestamp"),
-                    }
-
-                boundary = {**current, **(raw_boundary or {})}
-
-                if (boundary["lookback"] is None) != (boundary["lookback_units"] is None):
-                    raise ValueError(
-                        f"lookback and lookback_unit must both be set or both be null for the {side} boundary."
-                    )
-
-                if boundary["anchor"] == "fixed_timestamp" and boundary["timestamp"] is None:
-                    raise ValueError(
-                        f"timestamp is required for the {side} boundary when anchor is 'fixed_timestamp'."
-                    )
-                if boundary["anchor"] != "fixed_timestamp" and boundary["timestamp"] is not None:
-                    raise ValueError(
-                        f"timestamp must be null for the {side} boundary unless anchor is 'fixed_timestamp'."
-                    )
-
-                fields.update({
-                    f"data_ingestion_window_{side}_anchor": boundary["anchor"],
-                    f"data_ingestion_window_{side}_lookback": boundary["lookback"],
-                    f"data_ingestion_window_{side}_lookback_unit": boundary["lookback_units"],
-                    f"data_ingestion_window_{side}_timestamp": boundary["timestamp"],
-                })
-
         if current_payload:
             for field, value in fields.items():
                 if value is not Unset:
@@ -512,12 +466,10 @@ class DataConnectionService(SchedulingService, ServiceUtils):
 
         for pv in placeholder_variables:
             if pv.get("timestamp_format"):
-                if pv.get("variable_type") not in (
-                    "run_time", "latest_observation_timestamp", "window_start", "window_end"
-                ):
+                if pv.get("variable_type") not in ("run_time", "latest_observation_timestamp"):
                     raise ValueError(
-                        "timestamp_format is only allowed on 'run_time', 'latest_observation_timestamp', "
-                        "'window_start', and 'window_end' placeholder variables."
+                        "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
+                        "placeholder variables."
                     )
                 Timestamp._validate_strftime_format(pv["timestamp_format"])  # noqa
 

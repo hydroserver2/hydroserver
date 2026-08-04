@@ -541,7 +541,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -614,7 +614,7 @@ export interface operations {
                     "application/json": string;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;

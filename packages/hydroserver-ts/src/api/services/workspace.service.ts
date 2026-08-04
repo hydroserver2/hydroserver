@@ -2,18 +2,17 @@ import { apiMethods } from '../apiMethods'
 import { HydroServerBaseService } from './base'
 import { WorkspaceContract as C } from '../../generated/contracts'
 import {
-  ApiKey,
   Collaborator,
   CollaboratorRole,
+  ServiceAccount,
   Workspace as M,
 } from '../../types'
 import type * as Data from '../../generated/data.types'
 import { ApiResponse } from '../responseInterceptor'
 
-type RoleQueryParameters =
-  NonNullable<
-    Data.operations['interfaces_api_views_iam_role_get_roles']['parameters']['query']
-  >
+type RoleQueryParameters = NonNullable<
+  Data.operations['interfaces_api_views_iam_role_get_roles']['parameters']['query']
+>
 
 /**
  * Transport layer for /workspaces routes. Builds URLs, handles pagination,
@@ -27,7 +26,7 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   // ---------- sub-resources: collaborators ----------
   getCollaborators(workspaceId: string) {
     const url = `${this._route}/${workspaceId}/collaborators`
-    return apiMethods.fetch<Collaborator[]>(url)
+    return apiMethods.paginatedFetch<Collaborator[]>(url)
   }
 
   addCollaborator(workspaceId: string, email: string, roleId: string) {
@@ -57,59 +56,71 @@ export class WorkspaceService extends HydroServerBaseService<typeof C, M> {
   rejectOwnershipTransfer = (id: string) =>
     apiMethods.delete<string>(`${this._route}/${id}/transfer`)
 
-  // ---------- sub-resources: keys/roles ----------
-  getApiKeys(workspaceId: string) {
-    const url = `${this._route}/${workspaceId}/api-keys`
-    return apiMethods.fetch<ApiKey[]>(url)
+  // ---------- sub-resources: service accounts ----------
+  getServiceAccounts(workspaceId: string) {
+    const url = `${this._route}/${workspaceId}/service-accounts`
+    return apiMethods.paginatedFetch<ServiceAccount[]>(url)
   }
 
-  getApiKey = (workspaceId: string, apiKeyId: string) =>
-    apiMethods.fetch<ApiKey>(
-      `${this._route}/${workspaceId}/api-keys/${apiKeyId}?expand_related=true`
+  getServiceAccount = (workspaceId: string, serviceAccountId: string) =>
+    apiMethods.fetch<ServiceAccount>(
+      `${this._route}/${workspaceId}/service-accounts/${serviceAccountId}?expand_related=true`
     )
 
-  createApiKey = async (apiKey: ApiKey): Promise<ApiResponse<ApiKey>> => {
-    return apiMethods.post<ApiKey>(
-      `${this._route}/${apiKey.workspaceId}/api-keys?expand_related=true`,
+  createServiceAccount = async (
+    serviceAccount: ServiceAccount,
+    roleId: string
+  ): Promise<ApiResponse<ServiceAccount>> => {
+    return apiMethods.post<ServiceAccount>(
+      `${this._route}/${serviceAccount.workspaceId}/service-accounts?expand_related=true`,
       {
-        name: apiKey.name,
-        description: apiKey.description,
-        isActive: true,
-        roleId: apiKey.role!.id,
+        name: serviceAccount.name,
+        description: serviceAccount.description,
+        isActive: serviceAccount.isActive,
+        keyExpiresAt: serviceAccount.keyExpiresAt || null,
+        roleId,
       }
     )
   }
 
-  updateApiKey = async (
-    newKey: ApiKey,
-    oldKey?: ApiKey
-  ): Promise<ApiResponse<ApiKey>> => {
-    return await apiMethods.patch<ApiKey>(
-      `${this._route}/${newKey.workspaceId}/api-keys/${newKey.id}?expand_related=true`,
+  updateServiceAccount = async (
+    newAccount: ServiceAccount,
+    oldAccount?: ServiceAccount
+  ): Promise<ApiResponse<ServiceAccount>> => {
+    return await apiMethods.patch<ServiceAccount>(
+      `${this._route}/${newAccount.workspaceId}/service-accounts/${newAccount.id}?expand_related=true`,
       {
-        name: newKey.name,
-        description: newKey.description,
-        isActive: true,
-        roleId: newKey.role!.id,
+        name: newAccount.name,
+        description: newAccount.description,
+        isActive: newAccount.isActive,
+        keyExpiresAt: newAccount.keyExpiresAt || null,
       },
-      oldKey
+      oldAccount
         ? {
-            name: oldKey.name,
-            description: oldKey.description,
-            isActive: true,
-            roleId: oldKey.role!.id,
+            name: oldAccount.name,
+            description: oldAccount.description,
+            isActive: oldAccount.isActive,
+            keyExpiresAt: oldAccount.keyExpiresAt || null,
           }
-        : oldKey
+        : oldAccount
     )
   }
 
-  regenerateApiKey = async (id: string, apiKeyId: string) =>
-    apiMethods.put<ApiKey>(
-      `${this._route}/${id}/api-keys/${apiKeyId}/regenerate?expand_related=true`
+  regenerateServiceAccountKey = async (
+    workspaceId: string,
+    serviceAccountId: string
+  ) =>
+    apiMethods.put<ServiceAccount>(
+      `${this._route}/${workspaceId}/service-accounts/${serviceAccountId}/regenerate?expand_related=true`
     )
 
-  deleteApiKey = async (id: string, apiKeyId: string) =>
-    apiMethods.delete<null>(`${this._route}/${id}/api-keys/${apiKeyId}`)
+  deleteServiceAccount = async (
+    workspaceId: string,
+    serviceAccountId: string
+  ) =>
+    apiMethods.delete<null>(
+      `${this._route}/${workspaceId}/service-accounts/${serviceAccountId}`
+    )
 
   getRoles = (params?: RoleQueryParameters) => {
     const url = this.withQuery(`${this._client.baseRoute}/roles`, params)

@@ -1,574 +1,6 @@
 {
   "components": {
     "schemas": {
-      "APIKeyDetailPostResponse": {
-        "properties": {
-          "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "key": {
-            "maxLength": 255,
-            "title": "Key",
-            "type": "string"
-          },
-          "lastUsed": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastused"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/RoleSummaryResponse"
-          },
-          "workspace": {
-            "$ref": "#/components/schemas/WorkspaceSummaryResponse"
-          }
-        },
-        "required": [
-          "name",
-          "isActive",
-          "createdAt",
-          "lastUsed",
-          "id",
-          "workspace",
-          "role",
-          "key"
-        ],
-        "title": "APIKeyDetailPostResponse",
-        "type": "object"
-      },
-      "APIKeyDetailResponse": {
-        "properties": {
-          "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "lastUsed": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastused"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/RoleSummaryResponse"
-          },
-          "workspace": {
-            "$ref": "#/components/schemas/WorkspaceSummaryResponse"
-          }
-        },
-        "required": [
-          "name",
-          "isActive",
-          "createdAt",
-          "lastUsed",
-          "id",
-          "workspace",
-          "role"
-        ],
-        "title": "APIKeyDetailResponse",
-        "type": "object"
-      },
-      "APIKeyPatchBody": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "roleId": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roleid"
-          }
-        },
-        "title": "APIKeyPatchBody",
-        "type": "object"
-      },
-      "APIKeyPostBody": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "roleId": {
-            "format": "uuid",
-            "title": "Roleid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "isActive",
-          "roleId"
-        ],
-        "title": "APIKeyPostBody",
-        "type": "object"
-      },
-      "APIKeyQueryParameters": {
-        "properties": {
-          "expand_related": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expand Related"
-          },
-          "order_by": {
-            "anyOf": [
-              {
-                "items": {
-                  "enum": [
-                    "name",
-                    "isActive",
-                    "expiresAt",
-                    "-name",
-                    "-isActive",
-                    "-expiresAt"
-                  ],
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": [],
-            "description": "Select one or more fields to order the response by.",
-            "title": "Order By"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 1,
-            "description": "Page number (1-based).",
-            "title": "Page"
-          },
-          "page_size": {
-            "anyOf": [
-              {
-                "maximum": 100000,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": 100,
-            "description": "The number of items per page.",
-            "title": "Page Size"
-          },
-          "role_id": {
-            "default": [],
-            "description": "Filter API keys by role ID.",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Role Id",
-            "type": "array"
-          }
-        },
-        "title": "APIKeyQueryParameters",
-        "type": "object"
-      },
-      "APIKeySummaryPostResponse": {
-        "properties": {
-          "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "key": {
-            "maxLength": 255,
-            "title": "Key",
-            "type": "string"
-          },
-          "lastUsed": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastused"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "roleId": {
-            "format": "uuid",
-            "title": "Roleid",
-            "type": "string"
-          },
-          "workspaceId": {
-            "format": "uuid",
-            "title": "Workspaceid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "isActive",
-          "createdAt",
-          "lastUsed",
-          "id",
-          "workspaceId",
-          "roleId",
-          "key"
-        ],
-        "title": "APIKeySummaryPostResponse",
-        "type": "object"
-      },
-      "APIKeySummaryResponse": {
-        "properties": {
-          "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "expiresAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expiresat"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "lastUsed": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastused"
-          },
-          "name": {
-            "maxLength": 255,
-            "title": "Name",
-            "type": "string"
-          },
-          "roleId": {
-            "format": "uuid",
-            "title": "Roleid",
-            "type": "string"
-          },
-          "workspaceId": {
-            "format": "uuid",
-            "title": "Workspaceid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "isActive",
-          "createdAt",
-          "lastUsed",
-          "id",
-          "workspaceId",
-          "roleId"
-        ],
-        "title": "APIKeySummaryResponse",
-        "type": "object"
-      },
       "AccountContactDetailResponse": {
         "properties": {
           "address": {
@@ -1070,9 +502,6 @@
           },
           "type": {
             "const": "CSV",
-            "enum": [
-              "CSV"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -1154,9 +583,6 @@
           },
           "type": {
             "const": "CSV",
-            "enum": [
-              "CSV"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -1171,7 +597,6 @@
       "CollaboratorDeleteBody": {
         "properties": {
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           }
@@ -1187,12 +612,28 @@
           "role": {
             "$ref": "#/components/schemas/RoleSummaryResponse"
           },
+          "serviceAccount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAccountContactResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "user": {
-            "$ref": "#/components/schemas/AccountContactDetailResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountContactDetailResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "user",
           "role"
         ],
         "title": "CollaboratorDetailResponse",
@@ -1201,7 +642,6 @@
       "CollaboratorPostBody": {
         "properties": {
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           },
@@ -2406,9 +1846,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -2784,9 +2221,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -2798,9 +2232,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -2817,9 +2248,6 @@
           "resultBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -2831,9 +2259,6 @@
           },
           "resultEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -3817,9 +3242,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -3831,9 +3253,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -3852,9 +3271,6 @@
           "resultBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -3866,9 +3282,6 @@
           },
           "resultEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -4138,6 +3551,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4212,6 +3626,7 @@
             "title": "Schedule"
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4265,6 +3680,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "default": {},
             "title": "Taskvariables",
             "type": "object"
@@ -4374,9 +3790,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -4515,6 +3928,7 @@
             ]
           },
           "taskVariables": {
+            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           },
@@ -4816,9 +4230,6 @@
           },
           "type": {
             "const": "JSON",
-            "enum": [
-              "JSON"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -4870,9 +4281,6 @@
           },
           "type": {
             "const": "JSON",
-            "enum": [
-              "JSON"
-            ],
             "title": "Type",
             "type": "string"
           }
@@ -4937,8 +4345,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -4948,14 +4356,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -5020,8 +4428,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -5031,14 +4439,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -5099,8 +4507,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999.0,
-                "minimum": -99999.0,
+                "maximum": 99999,
+                "minimum": -99999,
                 "type": "number"
               },
               {
@@ -5110,14 +4518,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90.0,
-            "minimum": -90.0,
+            "maximum": 90,
+            "minimum": -90,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180.0,
-            "minimum": -180.0,
+            "maximum": 180,
+            "minimum": -180,
             "title": "Longitude",
             "type": "number"
           }
@@ -5784,9 +5192,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6211,16 +5616,9 @@
             "type": "string"
           },
           "phenomenonTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontime"
+            "format": "date-time",
+            "title": "Phenomenontime",
+            "type": "string"
           },
           "result": {
             "title": "Result",
@@ -6461,16 +5859,9 @@
             "type": "string"
           },
           "phenomenonTime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontime"
+            "format": "date-time",
+            "title": "Phenomenontime",
+            "type": "string"
           },
           "result": {
             "title": "Result",
@@ -6656,9 +6047,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6741,9 +6129,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6771,9 +6156,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -6949,7 +6331,6 @@
         "properties": {
           "action": {
             "enum": [
-              "*",
               "view",
               "create",
               "edit",
@@ -6961,20 +6342,23 @@
           "resource": {
             "enum": [
               "*",
-              "APIKey",
+              "Workspace",
               "Role",
+              "ServiceAccount",
               "Collaborator",
               "Thing",
-              "Datastream",
-              "Observation",
-              "Sensor",
               "ObservedProperty",
               "ProcessingLevel",
-              "Unit",
               "ResultQualifier",
-              "ETL",
-              "DataProduct",
-              "DataMonitoring"
+              "Sensor",
+              "Unit",
+              "Datastream",
+              "Observation",
+              "DataConnection",
+              "EtlTask",
+              "RatingCurve",
+              "DataProductTask",
+              "MonitoringTask"
             ],
             "title": "Resource",
             "type": "string"
@@ -7250,9 +6634,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7331,9 +6712,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7352,9 +6730,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -7424,16 +6799,9 @@
       "QualityControlHistoryDetailResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -7457,9 +6825,6 @@
           "phenomenonTimeEnd": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7471,9 +6836,6 @@
           },
           "phenomenonTimeStart": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -7597,16 +6959,9 @@
       "QualityControlHistorySummaryResponse": {
         "properties": {
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -7632,9 +6987,6 @@
           "phenomenonTimeEnd": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7646,9 +6998,6 @@
           },
           "phenomenonTimeStart": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -7690,6 +7039,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7726,6 +7076,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7823,6 +7174,7 @@
           "arguments": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7847,16 +7199,9 @@
             "title": "Comment"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -7908,9 +7253,6 @@
           "committedAt": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -7921,16 +7263,9 @@
             "title": "Committedat"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -7983,28 +7318,14 @@
             "type": "array"
           },
           "phenomenonTimeEnd": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimeend"
+            "format": "date-time",
+            "title": "Phenomenontimeend",
+            "type": "string"
           },
           "phenomenonTimeStart": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimestart"
+            "format": "date-time",
+            "title": "Phenomenontimestart",
+            "type": "string"
           },
           "sourceChecksum": {
             "title": "Sourcechecksum",
@@ -8213,9 +7534,6 @@
           "committedAt": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -8226,16 +7544,9 @@
             "title": "Committedat"
           },
           "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Createdat"
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
           },
           "createdBy": {
             "$ref": "#/components/schemas/AccountContactDetailResponse"
@@ -8273,28 +7584,14 @@
             "title": "Managedchecksum"
           },
           "phenomenonTimeEnd": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimeend"
+            "format": "date-time",
+            "title": "Phenomenontimeend",
+            "type": "string"
           },
           "phenomenonTimeStart": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "title": "Phenomenontimestart"
+            "format": "date-time",
+            "title": "Phenomenontimestart",
+            "type": "string"
           },
           "sourceChecksum": {
             "title": "Sourcechecksum",
@@ -8833,9 +8130,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8914,9 +8208,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8935,9 +8226,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -8990,21 +8278,20 @@
       "RoleDetailResponse": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
-          },
-          "isAPIKeyRole": {
-            "title": "Isapikeyrole",
-            "type": "boolean"
-          },
-          "isUserRole": {
-            "title": "Isuserrole",
-            "type": "boolean"
           },
           "name": {
             "maxLength": 255,
@@ -9031,9 +8318,6 @@
         },
         "required": [
           "name",
-          "description",
-          "isUserRole",
-          "isAPIKeyRole",
           "id",
           "workspace",
           "permissions"
@@ -9054,41 +8338,13 @@
             ],
             "title": "Expand Related"
           },
-          "is_apikey_role": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Controls whether the returned roles should be API key roles.",
-            "title": "Is Apikey Role"
-          },
-          "is_user_role": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Controls whether the returned roles should be user roles.",
-            "title": "Is User Role"
-          },
           "order_by": {
             "anyOf": [
               {
                 "items": {
                   "enum": [
                     "name",
-                    "isUserRole",
-                    "isAPIKeyRole",
-                    "-name",
-                    "-isUserRole",
-                    "-isAPIKeyRole"
+                    "-name"
                   ],
                   "type": "string"
                 },
@@ -9142,9 +8398,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -9159,21 +8412,20 @@
       "RoleSummaryResponse": {
         "properties": {
           "description": {
-            "title": "Description",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
-          },
-          "isAPIKeyRole": {
-            "title": "Isapikeyrole",
-            "type": "boolean"
-          },
-          "isUserRole": {
-            "title": "Isuserrole",
-            "type": "boolean"
           },
           "name": {
             "maxLength": 255,
@@ -9202,9 +8454,6 @@
         },
         "required": [
           "name",
-          "description",
-          "isUserRole",
-          "isAPIKeyRole",
           "id",
           "workspaceId",
           "permissions"
@@ -9773,9 +9022,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -9891,9 +9137,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -9912,9 +9155,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -10048,6 +9288,530 @@
           "workspaceId"
         ],
         "title": "SensorSummaryResponse",
+        "type": "object"
+      },
+      "ServiceAccountContactResponse": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "title": "ServiceAccountContactResponse",
+        "type": "object"
+      },
+      "ServiceAccountDetailPostResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "key": {
+            "maxLength": 255,
+            "title": "Key",
+            "type": "string"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastusedat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceSummaryResponse"
+          }
+        },
+        "required": [
+          "name",
+          "isActive",
+          "email",
+          "createdAt",
+          "lastUsedAt",
+          "id",
+          "workspace",
+          "key"
+        ],
+        "title": "ServiceAccountDetailPostResponse",
+        "type": "object"
+      },
+      "ServiceAccountDetailResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastusedat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceSummaryResponse"
+          }
+        },
+        "required": [
+          "name",
+          "isActive",
+          "email",
+          "createdAt",
+          "lastUsedAt",
+          "id",
+          "workspace"
+        ],
+        "title": "ServiceAccountDetailResponse",
+        "type": "object"
+      },
+      "ServiceAccountPatchBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "ServiceAccountPatchBody",
+        "type": "object"
+      },
+      "ServiceAccountPostBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "roleId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roleid"
+          }
+        },
+        "required": [
+          "name",
+          "isActive"
+        ],
+        "title": "ServiceAccountPostBody",
+        "type": "object"
+      },
+      "ServiceAccountQueryParameters": {
+        "properties": {
+          "expand_related": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expand Related"
+          },
+          "order_by": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "name",
+                    "isActive",
+                    "keyExpiresAt",
+                    "-name",
+                    "-isActive",
+                    "-keyExpiresAt"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "description": "Select one or more fields to order the response by.",
+            "title": "Order By"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Page number (1-based).",
+            "title": "Page"
+          },
+          "page_size": {
+            "anyOf": [
+              {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 100,
+            "description": "The number of items per page.",
+            "title": "Page Size"
+          }
+        },
+        "title": "ServiceAccountQueryParameters",
+        "type": "object"
+      },
+      "ServiceAccountSummaryPostResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "key": {
+            "maxLength": 255,
+            "title": "Key",
+            "type": "string"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastusedat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "isActive",
+          "email",
+          "createdAt",
+          "lastUsedAt",
+          "id",
+          "workspaceId",
+          "key"
+        ],
+        "title": "ServiceAccountSummaryPostResponse",
+        "type": "object"
+      },
+      "ServiceAccountSummaryResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "keyExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyexpiresat"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastusedat"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          },
+          "workspaceId": {
+            "format": "uuid",
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "isActive",
+          "email",
+          "createdAt",
+          "lastUsedAt",
+          "id",
+          "workspaceId"
+        ],
+        "title": "ServiceAccountSummaryResponse",
         "type": "object"
       },
       "SiteTypeIconResponse": {
@@ -10312,6 +10076,7 @@
           "result": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11243,9 +11008,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11328,9 +11090,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11358,9 +11117,6 @@
                 },
                 {
                   "const": "null",
-                  "enum": [
-                    "null"
-                  ],
                   "type": "string"
                 }
               ]
@@ -11474,9 +11230,6 @@
           "phenomenonBeginTime": {
             "anyOf": [
               {
-                "type": "string"
-              },
-              {
                 "format": "date-time",
                 "type": "string"
               },
@@ -11488,9 +11241,6 @@
           },
           "phenomenonEndTime": {
             "anyOf": [
-              {
-                "type": "string"
-              },
               {
                 "format": "date-time",
                 "type": "string"
@@ -11919,7 +11669,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.0b3"
+    "version": "1.11.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -12594,7 +12344,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13365,7 +13115,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13517,7 +13267,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13766,7 +13516,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -13777,7 +13527,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -13894,7 +13644,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -13905,7 +13655,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14173,6 +13923,7 @@
         ],
         "summary": "Get Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       },
@@ -14278,7 +14029,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14294,6 +14045,7 @@
         ],
         "summary": "Create Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14396,6 +14148,7 @@
         ],
         "summary": "Insert Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14466,6 +14219,7 @@
         ],
         "summary": "Delete Observations",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14547,6 +14301,7 @@
         ],
         "summary": "Delete Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       },
@@ -14646,6 +14401,7 @@
         ],
         "summary": "Get Observation",
         "tags": [
+          "Datastreams",
           "Observations"
         ]
       }
@@ -14722,7 +14478,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14888,7 +14644,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -14985,7 +14741,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15238,7 +14994,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15482,7 +15238,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -15647,9 +15403,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -15894,7 +15647,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -16173,7 +15926,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -16746,9 +16499,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -16936,7 +16686,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17215,7 +16965,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17409,6 +17159,7 @@
         ],
         "summary": "Get Monitoring Rules",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17501,7 +17252,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17517,6 +17268,7 @@
         ],
         "summary": "Create Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -17598,6 +17350,7 @@
         ],
         "summary": "Delete Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17684,6 +17437,7 @@
         ],
         "summary": "Get Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       },
@@ -17786,7 +17540,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -17802,6 +17556,7 @@
         ],
         "summary": "Update Monitoring Rule",
         "tags": [
+          "Monitoring Tasks",
           "Monitoring Rules"
         ]
       }
@@ -18338,9 +18093,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18365,9 +18117,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18392,9 +18141,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -18564,7 +18310,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -18933,7 +18679,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19057,9 +18803,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -19084,9 +18827,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -19111,9 +18851,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -19268,7 +19005,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19549,7 +19286,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -19799,7 +19536,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -20054,7 +19791,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -20203,9 +19940,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -20425,7 +20159,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -20704,7 +20438,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21243,6 +20977,7 @@
         ],
         "summary": "Get Aggregation Transformations",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21335,7 +21070,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21351,6 +21086,7 @@
         ],
         "summary": "Create Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -21432,6 +21168,7 @@
         ],
         "summary": "Delete Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21518,6 +21255,7 @@
         ],
         "summary": "Get Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       },
@@ -21620,7 +21358,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21636,6 +21374,7 @@
         ],
         "summary": "Update Aggregation Transformation",
         "tags": [
+          "Data Product Tasks",
           "Aggregation Transformations"
         ]
       }
@@ -21813,6 +21552,7 @@
         ],
         "summary": "Get Composite Expression Transformations",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -21905,7 +21645,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -21921,6 +21661,7 @@
         ],
         "summary": "Create Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       }
@@ -22002,6 +21743,7 @@
         ],
         "summary": "Delete Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -22088,6 +21830,7 @@
         ],
         "summary": "Get Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       },
@@ -22190,7 +21933,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22206,6 +21949,7 @@
         ],
         "summary": "Update Composite Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Composite Expression Transformations"
         ]
       }
@@ -22383,6 +22127,7 @@
         ],
         "summary": "Get Expression Transformations",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22475,7 +22220,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22491,6 +22236,7 @@
         ],
         "summary": "Create Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       }
@@ -22572,6 +22318,7 @@
         ],
         "summary": "Delete Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22658,6 +22405,7 @@
         ],
         "summary": "Get Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       },
@@ -22760,7 +22508,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -22776,6 +22524,7 @@
         ],
         "summary": "Update Expression Transformation",
         "tags": [
+          "Data Product Tasks",
           "Expression Transformations"
         ]
       }
@@ -22953,6 +22702,7 @@
         ],
         "summary": "Get Rating Curve Transformations",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -23045,7 +22795,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -23061,6 +22811,7 @@
         ],
         "summary": "Create Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -23142,6 +22893,7 @@
         ],
         "summary": "Delete Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -23228,6 +22980,7 @@
         ],
         "summary": "Get Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       },
@@ -23330,7 +23083,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -23346,6 +23099,7 @@
         ],
         "summary": "Update Rating Curve Transformation",
         "tags": [
+          "Data Product Tasks",
           "Rating Curve Transformations"
         ]
       }
@@ -23662,7 +23416,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24081,6 +23835,7 @@
         ],
         "summary": "Get Qc Sessions",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -24173,7 +23928,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24186,6 +23941,7 @@
         ],
         "summary": "Create Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24264,6 +24020,7 @@
         ],
         "summary": "Delete Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -24371,6 +24128,7 @@
         ],
         "summary": "Get Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       },
@@ -24473,7 +24231,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24486,6 +24244,7 @@
         ],
         "summary": "Update Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24580,7 +24339,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24593,6 +24352,7 @@
         ],
         "summary": "Commit Qc Session",
         "tags": [
+          "Quality Control Histories",
           "Quality Control Sessions"
         ]
       }
@@ -24723,6 +24483,7 @@
         ],
         "summary": "Get Qc Operations",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -24833,7 +24594,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -24846,6 +24607,7 @@
         ],
         "summary": "Create Qc Operations",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -24934,6 +24696,7 @@
         ],
         "summary": "Delete Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -25027,6 +24790,7 @@
         ],
         "summary": "Get Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       },
@@ -25139,7 +24903,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -25152,6 +24916,7 @@
         ],
         "summary": "Update Qc Operation",
         "tags": [
+          "Quality Control Sessions",
           "Quality Control Operations"
         ]
       }
@@ -25260,9 +25025,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25287,9 +25049,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25314,9 +25073,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -25449,7 +25205,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -25719,7 +25475,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -25812,11 +25568,7 @@
                   "items": {
                     "enum": [
                       "name",
-                      "isUserRole",
-                      "isAPIKeyRole",
-                      "-name",
-                      "-isUserRole",
-                      "-isAPIKeyRole"
+                      "-name"
                     ],
                     "type": "string"
                   },
@@ -25847,51 +25599,12 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
               },
               "title": "Workspace Id",
               "type": "array"
-            }
-          },
-          {
-            "description": "Controls whether the returned roles should be user roles.",
-            "in": "query",
-            "name": "is_user_role",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Controls whether the returned roles should be user roles.",
-              "title": "Is User Role"
-            }
-          },
-          {
-            "description": "Controls whether the returned roles should be API key roles.",
-            "in": "query",
-            "name": "is_apikey_role",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Controls whether the returned roles should be API key roles.",
-              "title": "Is Apikey Role"
             }
           }
         ],
@@ -26154,9 +25867,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -26181,9 +25891,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -26208,9 +25915,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -26410,7 +26114,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -26867,7 +26571,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -27271,7 +26975,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28177,7 +27881,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28269,7 +27973,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28518,7 +28222,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -28529,7 +28233,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28646,7 +28350,7 @@
                 }
               }
             },
-            "description": "Request Entity Too Large"
+            "description": "Content Too Large"
           },
           "422": {
             "content": {
@@ -28657,7 +28361,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28749,7 +28453,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -28915,7 +28619,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29012,7 +28716,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29140,9 +28844,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -29167,9 +28868,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -29194,9 +28892,6 @@
                   },
                   {
                     "const": "null",
-                    "enum": [
-                      "null"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -29355,7 +29050,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29724,7 +29419,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -29995,7 +29690,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30250,7 +29945,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -30264,678 +29959,6 @@
         "summary": "Update Workspace",
         "tags": [
           "Workspaces"
-        ]
-      }
-    },
-    "/api/data/workspaces/{workspace_id}/api-keys": {
-      "get": {
-        "description": "Get API keys associated with the authenticated user.",
-        "operationId": "interfaces_api_views_iam_api_key_get_api_keys",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Page number (1-based).",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 1,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 1,
-              "description": "Page number (1-based).",
-              "title": "Page"
-            }
-          },
-          {
-            "description": "The number of items per page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maximum": 100000,
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": 100,
-              "description": "The number of items per page.",
-              "title": "Page Size"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          },
-          {
-            "description": "Select one or more fields to order the response by.",
-            "in": "query",
-            "name": "order_by",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "enum": [
-                      "name",
-                      "isActive",
-                      "expiresAt",
-                      "-name",
-                      "-isActive",
-                      "-expiresAt"
-                    ],
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": [],
-              "description": "Select one or more fields to order the response by.",
-              "title": "Order By"
-            }
-          },
-          {
-            "description": "Filter API keys by role ID.",
-            "in": "query",
-            "name": "role_id",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Filter API keys by role ID.",
-              "items": {
-                "format": "uuid",
-                "type": "string"
-              },
-              "title": "Role Id",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "items": {
-                        "$ref": "#/components/schemas/APIKeySummaryResponse"
-                      },
-                      "type": "array"
-                    },
-                    {
-                      "items": {
-                        "$ref": "#/components/schemas/APIKeyDetailResponse"
-                      },
-                      "type": "array"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Get Api Keys",
-        "tags": [
-          "API Keys"
-        ]
-      },
-      "post": {
-        "description": "Create a new API key for the workspace.",
-        "operationId": "interfaces_api_views_iam_api_key_create_api_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/APIKeyPostBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/APIKeySummaryPostResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/APIKeyDetailPostResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Create Api Key",
-        "tags": [
-          "API Keys"
-        ]
-      }
-    },
-    "/api/data/workspaces/{workspace_id}/api-keys/{api_key_id}": {
-      "delete": {
-        "description": "Delete an API key.",
-        "operationId": "interfaces_api_views_iam_api_key_delete_api_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "api_key_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Api Key Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Delete Api Key",
-        "tags": [
-          "API Keys"
-        ]
-      },
-      "get": {
-        "description": "Get API key details.",
-        "operationId": "interfaces_api_views_iam_api_key_get_api_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "api_key_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Api Key Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/APIKeySummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/APIKeyDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          }
-        ],
-        "summary": "Get Api Key",
-        "tags": [
-          "API Keys"
-        ]
-      },
-      "patch": {
-        "description": "Update an API key.",
-        "operationId": "interfaces_api_views_iam_api_key_update_api_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "api_key_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Api Key Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/APIKeyPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/APIKeySummaryResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/APIKeyDetailResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update Api Key",
-        "tags": [
-          "API Keys"
-        ]
-      }
-    },
-    "/api/data/workspaces/{workspace_id}/api-keys/{api_key_id}/regenerate": {
-      "put": {
-        "description": "Regenerate an API key using existing settings.",
-        "operationId": "interfaces_api_views_iam_api_key_regenerate_api_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "api_key_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Api Key Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "expand_related",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expand Related"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/APIKeySummaryPostResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/APIKeyDetailPostResponse"
-                    }
-                  ],
-                  "title": "Response"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Regenerate Api Key",
-        "tags": [
-          "API Keys"
         ]
       }
     },
@@ -31000,7 +30023,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -31013,6 +30036,7 @@
         ],
         "summary": "Remove Collaborator",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -31139,6 +30163,7 @@
         ],
         "summary": "Get Collaborators",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -31209,7 +30234,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -31222,6 +30247,7 @@
         ],
         "summary": "Add Collaborator",
         "tags": [
+          "Workspaces",
           "Collaborators"
         ]
       },
@@ -31292,7 +30318,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [
@@ -31305,7 +30331,670 @@
         ],
         "summary": "Edit Collaborator Role",
         "tags": [
+          "Workspaces",
           "Collaborators"
+        ]
+      }
+    },
+    "/api/data/workspaces/{workspace_id}/service-accounts": {
+      "get": {
+        "description": "Get service accounts associated with the authenticated user.",
+        "operationId": "interfaces_api_views_iam_service_account_get_service_accounts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number (1-based).",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 1,
+              "description": "Page number (1-based).",
+              "title": "Page"
+            }
+          },
+          {
+            "description": "The number of items per page.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 100,
+              "description": "The number of items per page.",
+              "title": "Page Size"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          },
+          {
+            "description": "Select one or more fields to order the response by.",
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "name",
+                      "isActive",
+                      "keyExpiresAt",
+                      "-name",
+                      "-isActive",
+                      "-keyExpiresAt"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": [],
+              "description": "Select one or more fields to order the response by.",
+              "title": "Order By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceAccountSummaryResponse"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceAccountDetailResponse"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ],
+        "summary": "Get Service Accounts",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
+        ]
+      },
+      "post": {
+        "description": "Create a new service account for the workspace.",
+        "operationId": "interfaces_api_views_iam_service_account_create_service_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceAccountPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountSummaryPostResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountDetailPostResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Service Account",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
+        ]
+      }
+    },
+    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}": {
+      "delete": {
+        "description": "Delete a service account.",
+        "operationId": "interfaces_api_views_iam_service_account_delete_service_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "service_account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Service Account",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
+        ]
+      },
+      "get": {
+        "description": "Get service account details.",
+        "operationId": "interfaces_api_views_iam_service_account_get_service_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "service_account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          }
+        ],
+        "summary": "Get Service Account",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
+        ]
+      },
+      "patch": {
+        "description": "Update a service account.",
+        "operationId": "interfaces_api_views_iam_service_account_update_service_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "service_account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceAccountPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountSummaryResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountDetailResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Service Account",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
+        ]
+      }
+    },
+    "/api/data/workspaces/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
+      "put": {
+        "description": "Regenerate a service account's key using existing settings.",
+        "operationId": "interfaces_api_views_iam_service_account_regenerate_service_account_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "service_account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expand_related",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expand Related"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountSummaryPostResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ServiceAccountDetailPostResponse"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Regenerate Service Account Key",
+        "tags": [
+          "Workspaces",
+          "Service Accounts"
         ]
       }
     },
@@ -31463,7 +31152,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           }
         },
         "security": [

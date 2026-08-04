@@ -1,5 +1,5 @@
 import uuid
-import uuid6
+import uuid
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, validate_call
@@ -8,7 +8,8 @@ from django.db.models.query import QuerySet
 from django.contrib.auth import get_user_model
 
 from core.types import Unset
-from core.iam.models import APIKey
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from processing.quality.models import QCHistory, QCSession, QCOperation, OperationType, SessionStatus
 from processing.quality.services.session import QCSessionService
@@ -38,7 +39,7 @@ class QCOperationService(ServiceUtils):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operation: uuid.UUID | QCOperation,
-        principal: User | APIKey | None | Unset = Unset,
+        principal: User | ServiceAccount | AnonymousPrincipal | Unset = Unset,
         action: Literal["view", "edit"] = "view",
     ) -> QCOperation:
         """Get an operation belonging to a QC session."""
@@ -60,7 +61,7 @@ class QCOperationService(ServiceUtils):
         self,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         page: int = Field(gt=0, default=1),
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
@@ -84,7 +85,7 @@ class QCOperationService(ServiceUtils):
     @transaction.atomic
     def create(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operations: list[OperationInput],
@@ -98,7 +99,7 @@ class QCOperationService(ServiceUtils):
 
         return [
             QCOperation.objects.create(
-                pk=uuid6.uuid7(),
+                pk=uuid.uuid7(),
                 session=session,
                 created_by=principal if isinstance(principal, User) else None,
                 order=operation.order,
@@ -113,7 +114,7 @@ class QCOperationService(ServiceUtils):
     @transaction.atomic
     def update(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operation: uuid.UUID | QCOperation,
@@ -141,7 +142,7 @@ class QCOperationService(ServiceUtils):
     @transaction.atomic
     def delete(
         self,
-        principal: User | APIKey | None,
+        principal: User | ServiceAccount | AnonymousPrincipal,
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
         operation: uuid.UUID | QCOperation,

@@ -180,23 +180,8 @@ describe('useOrchestrationRouteState', () => {
     })
   })
 
-  it('updates only the workspace query on the workspaces view when overridden', async () => {
-    routeMock.query = {
-      workspace_id: 'workspace-old',
-      data_connection_id: 'connection-1',
-      site_id: 'site-1',
-    }
-
-    const state = useOrchestrationRouteState()
-    await state.replaceView('workspaces', null, 'workspace-new')
-
-    expect(replaceMock).toHaveBeenCalledWith({
-      name: ORCHESTRATION_VIEW_ROUTE_NAME,
-      params: { view: 'workspaces' },
-      query: {
-        workspace_id: 'workspace-new',
-      },
-    })
+  it('rejects the removed workspaces view value', () => {
+    expect(normalizeOrchestrationView('workspaces')).toBeNull()
   })
 
   it('does not replace selected group while a detail route is active', async () => {
