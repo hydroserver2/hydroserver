@@ -39,11 +39,15 @@
       <v-img :src="navbarLogo.src" alt="Logo" :width="navbarLogo.width" />
     </a>
 
-    <template v-if="mdAndDown" v-slot:append>
-      <v-app-bar-nav-icon class="mx-2" @click.stop="drawer = !drawer" />
+    <template v-if="compactNavigation" v-slot:append>
+      <v-app-bar-nav-icon
+        class="mx-2"
+        data-testid="mobile-nav-button"
+        @click.stop="drawer = !drawer"
+      />
     </template>
 
-    <template v-if="!mdAndDown">
+    <template v-if="!compactNavigation">
       <div v-for="path of visiblePaths()" :key="path.label">
         <v-btn
           v-bind="path.attrs || {}"
@@ -109,7 +113,7 @@
   </v-app-bar>
 
   <v-navigation-drawer
-    v-if="mdAndDown"
+    v-if="compactNavigation"
     temporary
     v-model="drawer"
     location="right"
@@ -164,9 +168,8 @@
 </template>
 
 <script setup lang="ts">
-import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { Snackbar } from '@/utils/notifications'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUserStore } from '@/store/user'
@@ -194,11 +197,29 @@ import {
 const route = useRoute()
 const { signupEnabled } = hs.session
 const { resetState } = useDataVisStore()
-const { mdAndDown } = useDisplay()
 const { user } = storeToRefs(useUserStore())
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
+const compactNavigation = ref(false)
+let compactNavigationQuery: MediaQueryList | undefined
+
+function updateCompactNavigation() {
+  compactNavigation.value = compactNavigationQuery?.matches ?? false
+}
+
+onMounted(() => {
+  // The full authenticated navigation needs more room than Vuetify's 960px
+  // small-screen breakpoint, but comfortably fits below its 1280px medium
+  // breakpoint. Collapse at the bar's measured content boundary instead.
+  compactNavigationQuery = window.matchMedia('(max-width: 1099px)')
+  updateCompactNavigation()
+  compactNavigationQuery.addEventListener('change', updateCompactNavigation)
+})
+
+onBeforeUnmount(() => {
+  compactNavigationQuery?.removeEventListener('change', updateCompactNavigation)
+})
 
 const userInitials = computed(() => {
   const first = user.value.firstName?.trim()?.[0] ?? ''

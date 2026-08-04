@@ -23,6 +23,7 @@ test.describe('authentication', () => {
   test('login with seeded owner user reaches Browse monitoring sites', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1100, height: 720 })
     await login(page, users.owner.email, users.owner.password)
 
     await expect(page).toHaveURL(/\/browse$/)
@@ -33,6 +34,12 @@ test.describe('authentication', () => {
     await expect(
       page.getByRole('button', { name: 'Quality Control' })
     ).toBeVisible()
+
+    await page.setViewportSize({ width: 1050, height: 720 })
+    await expect(
+      page.getByRole('button', { name: 'Quality Control' })
+    ).toHaveCount(0)
+    await expect(page.getByTestId('mobile-nav-button')).toBeVisible()
   })
 
   test('authenticated users can log out from the account menu', async ({
