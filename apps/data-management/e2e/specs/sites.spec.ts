@@ -115,6 +115,39 @@ test.describe('sites and workspaces', () => {
     await expect(mutableThingRow).toBeVisible()
   })
 
+  test('modifier-clicking a site opens its details in a new tab', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/sites')
+    await selectWorkspace(page, fixtures.workspaces.public.name)
+
+    const siteRow = page.locator('tr').filter({
+      hasText: fixtures.things.public.name,
+    })
+    await expect(siteRow).toBeVisible()
+
+    const siteLink = siteRow.getByRole('link', {
+      name: fixtures.things.public.name,
+    })
+    const newPagePromise = page.context().waitForEvent('page')
+    await siteLink.click({
+      modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'],
+    })
+    const newPage = await newPagePromise
+
+    await expect(page).toHaveURL(/\/sites$/)
+    await expect(newPage).toHaveURL(
+      new RegExp(`/sites/${fixtures.things.public.id}$`)
+    )
+    await newPage.close()
+
+    await siteLink.click()
+    await expect(page).toHaveURL(
+      new RegExp(`/sites/${fixtures.things.public.id}$`)
+    )
+  })
+
   test('owner can register a site with metadata and see the saved values on site details', async ({
     page,
   }) => {
