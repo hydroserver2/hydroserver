@@ -9,10 +9,14 @@
       :my-workspace-ids="myWorkspaceIds"
       :show-register-site="hs.session.isAuthenticated"
       :can-register-site="canRegisterSite"
+      :editable-workspace-ids="editableWorkspaceIds"
+      :deletable-workspace-ids="deletableWorkspaceIds"
       @filter="updateFilteredThings"
       @select-site="selectedThingId = $event"
       @color-settings="markerColorSettings = $event"
       @register-site="openSiteRegistration"
+      @edit-site="openSiteEditor"
+      @delete-site="openSiteDeletion"
     />
     <OpenLayersMap
       v-if="loaded"
@@ -32,7 +36,7 @@
       <SiteForm
         v-if="registrationWorkspaceId"
         :workspace-id="registrationWorkspaceId"
-        @close="showSiteForm = false"
+        @close="closeSiteRegistration"
         @site-created="loadThings"
       >
         <template #workspace>
@@ -50,6 +54,37 @@
         </template>
       </SiteForm>
     </v-dialog>
+
+    <v-dialog v-model="showEditSiteForm" width="80rem" :persistent="false">
+      <SiteForm
+        v-if="editingSite"
+        :thing-id="editingSite.id"
+        :workspace-id="editingSite.workspaceId"
+        @close="closeSiteEditor"
+      />
+    </v-dialog>
+
+    <v-dialog v-model="showDeleteSiteDialog" width="40rem" :persistent="false">
+      <SiteDeleteModal
+        v-if="deletingSite"
+        :thing="deletingSite"
+        @switch-to-access-control="switchToAccessControl"
+        @close="closeSiteDeletion"
+        @delete="deleteSite"
+      />
+    </v-dialog>
+
+    <v-dialog
+      v-model="showAccessControlDialog"
+      width="40rem"
+      :persistent="false"
+    >
+      <SiteAccessControl
+        v-if="deletingSite"
+        :thing-id="deletingSite.id"
+        @close="closeAccessControl"
+      />
+    </v-dialog>
   </div>
 </template>
 
@@ -60,16 +95,25 @@ import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import BrowseFilterTool from '@/components/Browse/BrowseFilterTool.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 import SiteForm from '@/components/Site/SiteForm.vue'
+import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
+import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
 import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
-import type { ThingSiteSummary } from '@hydroserver/client'
+import type { Thing, ThingSiteSummary } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { useThingStore } from '@/store/thing'
+import { useTagStore } from '@/store/tags'
+import { usePhotosStore } from '@/store/photos'
+import { Snackbar } from '@/utils/notifications'
 
 const desktopMapFitPadding: [number, number, number, number] = [44, 88, 96, 400]
 const compactMapFitPadding: [number, number, number, number] = [72, 48, 72, 48]
 
 const workspaceStore = useWorkspaceStore()
 const { workspaces, selectedWorkspace } = storeToRefs(workspaceStore)
+const { thing: storedThing } = storeToRefs(useThingStore())
+const { tags, previewTags } = storeToRefs(useTagStore())
+const { photos, newPhotos, photosToDelete } = storeToRefs(usePhotosStore())
 const { setWorkspaces } = workspaceStore
 const { hasPermission } = useWorkspacePermissions()
 
@@ -85,6 +129,11 @@ const loaded = ref(false)
 const isCompactMapViewport = ref(false)
 const showSiteForm = ref(false)
 const registrationWorkspaceId = ref('')
+const showEditSiteForm = ref(false)
+const editingSite = ref<ThingSiteSummary>()
+const showDeleteSiteDialog = ref(false)
+const deletingSite = ref<Thing>()
+const showAccessControlDialog = ref(false)
 
 interface MarkerColorSettings {
   mode: 'none' | 'workspace' | 'siteType' | 'metadata'
@@ -98,6 +147,35 @@ const creatableWorkspaces = computed(() =>
   )
 )
 const canRegisterSite = computed(() => creatableWorkspaces.value.length > 0)
+const hasSitePermission = (
+  site: ThingSiteSummary,
+  action: PermissionAction
+) => {
+  const workspace = workspaces.value.find(
+    (candidate) => candidate.id === site.workspaceId
+  )
+  return workspace
+    ? hasPermission(PermissionResource.Thing, action, workspace)
+    : false
+}
+const editableWorkspaceIds = computed(() =>
+  workspaces.value
+    .filter((workspace) =>
+      hasPermission(PermissionResource.Thing, PermissionAction.Edit, workspace)
+    )
+    .map((workspace) => workspace.id)
+)
+const deletableWorkspaceIds = computed(() =>
+  workspaces.value
+    .filter((workspace) =>
+      hasPermission(
+        PermissionResource.Thing,
+        PermissionAction.Delete,
+        workspace
+      )
+    )
+    .map((workspace) => workspace.id)
+)
 const myWorkspaceIds = computed(() =>
   workspaces.value.map((workspace) => workspace.id)
 )
@@ -144,11 +222,116 @@ const loadAssociatedWorkspaces = async () => {
 const openSiteRegistration = () => {
   if (!canRegisterSite.value) return
 
+  resetSiteFormContext()
   registrationWorkspaceId.value =
     creatableWorkspaces.value.find(
       (workspace) => workspace.id === selectedWorkspace.value?.id
     )?.id ?? creatableWorkspaces.value[0].id
   showSiteForm.value = true
+}
+
+const closeSiteRegistration = async () => {
+  showSiteForm.value = false
+  resetSiteFormContext()
+  await loadThings()
+}
+
+const resetSiteFormContext = () => {
+  storedThing.value = undefined
+  tags.value = []
+  previewTags.value = []
+  photos.value = []
+  newPhotos.value = []
+  photosToDelete.value = []
+}
+
+const fetchSite = async (site: ThingSiteSummary) => {
+  try {
+    const thing = await hs.things.getItem(site.id)
+    if (thing) return thing
+  } catch (error) {
+    console.error('Error fetching site', error)
+  }
+
+  Snackbar.error(`Unable to load ${site.name}. Please try again.`)
+  return null
+}
+
+const openSiteEditor = async (site: ThingSiteSummary) => {
+  if (!hasSitePermission(site, PermissionAction.Edit)) return
+
+  try {
+    const [thing, tagResponse, attachmentResponse] = await Promise.all([
+      hs.things.getItem(site.id),
+      hs.things.getTags(site.id),
+      hs.things.getAttachments(site.id),
+    ])
+    if (!thing || !tagResponse.ok || !attachmentResponse.ok) {
+      throw new Error('The site editing context could not be loaded.')
+    }
+
+    resetSiteFormContext()
+    storedThing.value = thing
+    tags.value = tagResponse.data
+    photos.value = attachmentResponse.data
+    editingSite.value = site
+    showEditSiteForm.value = true
+  } catch (error) {
+    console.error('Error preparing site editor', error)
+    Snackbar.error(`Unable to edit ${site.name}. Please try again.`)
+  }
+}
+
+const closeSiteEditor = async () => {
+  showEditSiteForm.value = false
+  editingSite.value = undefined
+  resetSiteFormContext()
+  await loadThings()
+}
+
+const openSiteDeletion = async (site: ThingSiteSummary) => {
+  if (!hasSitePermission(site, PermissionAction.Delete)) return
+
+  const thing = await fetchSite(site)
+  if (!thing) return
+
+  storedThing.value = thing
+  deletingSite.value = thing
+  showDeleteSiteDialog.value = true
+}
+
+const closeSiteDeletion = () => {
+  showDeleteSiteDialog.value = false
+  deletingSite.value = undefined
+}
+
+const deleteSite = async () => {
+  if (!deletingSite.value) return
+
+  const siteId = deletingSite.value.id
+  try {
+    const response = await hs.things.delete(siteId)
+    if (!response.ok) throw new Error(response.message)
+
+    if (selectedThingId.value === siteId) selectedThingId.value = undefined
+    closeSiteDeletion()
+    await loadThings()
+    Snackbar.success('Site deleted.')
+  } catch (error) {
+    console.error('Error deleting site', error)
+    Snackbar.error('Unable to delete the site. Please try again.')
+  }
+}
+
+const switchToAccessControl = () => {
+  showDeleteSiteDialog.value = false
+  showAccessControlDialog.value = true
+}
+
+const closeAccessControl = async () => {
+  showAccessControlDialog.value = false
+  deletingSite.value = undefined
+  await loadThings()
 }
 
 onMounted(async () => {

@@ -328,8 +328,10 @@ const fitViewToMarkers = (duration = 0) => {
   if (!map) return
 
   const extent = vectorSource.getExtent() as Extent
-  if (extentIsEmpty(extent) || props.singleMarkerMode) return
+  if (extentIsEmpty(extent)) return
 
+  // A one-point extent fits to maxZoom. This keeps an existing site local in
+  // edit mode while a new-site map (which has no marker yet) stays at default.
   map.getView().fit(extent, {
     padding: props.fitPadding,
     maxZoom: 16,

@@ -24,35 +24,23 @@
 
         <div class="filter-header-actions">
           <v-btn
-            v-if="hasActiveFilters"
-            class="reset-filters-btn"
-            variant="text"
-            color="primary"
-            size="small"
-            :prepend-icon="mdiFilterOffOutline"
-            title="Clear all filters"
-            @click="onClearFilters"
-          >
-            Reset
-          </v-btn>
-
-          <v-btn
             v-if="showRegisterSite"
             class="register-site-button"
-            icon
             color="primary"
             variant="flat"
+            size="small"
             data-testid="register-site-button"
-            aria-label="Register a monitoring site"
+            aria-label="Create Site"
             :disabled="!canRegisterSite"
             :title="
               canRegisterSite
-                ? 'Register a monitoring site'
-                : 'You need site creation permission in a workspace to register a site'
+                ? 'Create Site'
+                : 'You need site creation permission in a workspace to create a site'
             "
             @click="$emit('register-site')"
           >
-            <v-icon :icon="mdiPlus" size="16" />
+            <v-icon :icon="mdiPlus" size="13" />
+            Create Site
           </v-btn>
 
           <v-btn
@@ -68,7 +56,7 @@
         </div>
       </div>
 
-      <div class="filter-controls">
+      <div v-show="filtersVisible" class="filter-controls">
         <section class="filter-control-group" aria-label="Filter sites">
           <v-text-field
             v-model="siteSearch"
@@ -277,13 +265,41 @@
         </section>
       </div>
 
-      <v-divider />
+      <v-divider v-if="filtersVisible" />
 
       <div class="site-list">
-        <div class="site-list-count">
-          {{
-            thingsLoaded ? `${availableSites.length} sites` : 'Loading sites'
-          }}
+        <div class="site-list-header">
+          <div class="site-list-count">
+            {{
+              thingsLoaded ? `${availableSites.length} sites` : 'Loading sites'
+            }}
+          </div>
+
+          <div class="site-list-actions">
+            <v-btn
+              v-if="hasActiveFilters"
+              class="reset-filters-btn"
+              variant="text"
+              color="primary"
+              size="small"
+              :prepend-icon="mdiFilterOffOutline"
+              title="Clear all filters"
+              @click="onClearFilters"
+            >
+              Reset
+            </v-btn>
+
+            <v-btn
+              class="toggle-filters-btn"
+              variant="text"
+              color="primary"
+              size="small"
+              :aria-expanded="filtersVisible"
+              @click="filtersVisible = !filtersVisible"
+            >
+              {{ filtersVisible ? 'Hide Filters' : 'Show Filters' }}
+            </v-btn>
+          </div>
         </div>
 
         <div v-if="!thingsLoaded" class="site-list-items">
@@ -298,31 +314,69 @@
         </div>
 
         <div v-else-if="availableSites.length" class="site-list-items">
-          <button
+          <div
             v-for="site in availableSites"
             :key="site.id"
-            type="button"
             class="site-row"
             :class="{ selected: site.id === selectedSiteId }"
-            @click="$emit('select-site', site.id)"
+            :data-site-id="site.id"
           >
-            <span class="site-row-icon">
-              <v-icon :icon="getSiteTypeIcon(site.siteType)" size="20" />
-            </span>
-
-            <span class="site-row-text">
-              <span class="site-row-name">{{ site.name }}</span>
-              <span class="site-row-workspace">
-                <span v-if="site.samplingFeatureCode" class="site-row-code">
-                  {{ site.samplingFeatureCode }}
-                </span>
-                <span v-if="site.samplingFeatureCode" aria-hidden="true">
-                  ·
-                </span>
-                {{ getWorkspaceName(site.workspaceId) }}
+            <button
+              type="button"
+              class="site-row-main"
+              @click="$emit('select-site', site.id)"
+            >
+              <span class="site-row-icon">
+                <v-icon :icon="getSiteTypeIcon(site.siteType)" size="20" />
               </span>
-            </span>
-          </button>
+
+              <span class="site-row-text">
+                <span class="site-row-name">{{ site.name }}</span>
+                <span class="site-row-workspace">
+                  <span v-if="site.samplingFeatureCode" class="site-row-code">
+                    {{ site.samplingFeatureCode }}
+                  </span>
+                  <span v-if="site.samplingFeatureCode" aria-hidden="true">
+                    ·
+                  </span>
+                  {{ getWorkspaceName(site.workspaceId) }}
+                </span>
+              </span>
+            </button>
+
+            <div
+              v-if="canEditSite(site) || canDeleteSite(site)"
+              class="site-row-actions"
+            >
+              <v-btn
+                v-if="canEditSite(site)"
+                icon
+                class="site-row-action"
+                variant="text"
+                color="primary"
+                size="28"
+                :aria-label="`Edit ${site.name}`"
+                :data-testid="`edit-browse-site-${site.id}`"
+                @click.stop="$emit('edit-site', site)"
+              >
+                <v-icon :icon="mdiPencilOutline" size="17" />
+              </v-btn>
+
+              <v-btn
+                v-if="canDeleteSite(site)"
+                icon
+                class="site-row-action"
+                variant="text"
+                color="error"
+                size="28"
+                :aria-label="`Delete ${site.name}`"
+                :data-testid="`delete-browse-site-${site.id}`"
+                @click.stop="$emit('delete-site', site)"
+              >
+                <v-icon :icon="mdiTrashCanOutline" size="17" />
+              </v-btn>
+            </div>
+          </div>
         </div>
 
         <div v-else class="empty-sites">No sites match these filters.</div>
@@ -355,8 +409,10 @@ import {
   mdiChevronLeft,
   mdiFilterOffOutline,
   mdiMagnify,
+  mdiPencilOutline,
   mdiPlus,
   mdiTagOutline,
+  mdiTrashCanOutline,
 } from '@mdi/js'
 
 const route = useRoute()
@@ -374,6 +430,7 @@ const siteSearch = ref('')
 const workspaces = ref<Workspace[]>([])
 const workspacesLoaded = ref(false)
 const isExpanded = ref(true)
+const filtersVisible = ref(true)
 const isApplyingRouteState = ref(false)
 const hasAppliedInitialRouteState = ref(false)
 let routeApplyId = 0
@@ -389,6 +446,8 @@ const emit = defineEmits<{
     },
   ]
   'register-site': []
+  'edit-site': [ThingSiteSummary]
+  'delete-site': [ThingSiteSummary]
 }>()
 
 const props = defineProps({
@@ -419,6 +478,14 @@ const props = defineProps({
   canRegisterSite: {
     type: Boolean,
     default: false,
+  },
+  editableWorkspaceIds: {
+    type: Array as () => string[],
+    default: () => [],
+  },
+  deletableWorkspaceIds: {
+    type: Array as () => string[],
+    default: () => [],
   },
 })
 
@@ -544,6 +611,17 @@ const hasActiveFilters = computed(
 
 const getWorkspaceName = (workspaceId: string) =>
   workspaceById.value.get(workspaceId)?.name || 'Workspace'
+
+const editableWorkspaceIdSet = computed(
+  () => new Set(props.editableWorkspaceIds)
+)
+const deletableWorkspaceIdSet = computed(
+  () => new Set(props.deletableWorkspaceIds)
+)
+const canEditSite = (site: ThingSiteSummary) =>
+  editableWorkspaceIdSet.value.has(site.workspaceId)
+const canDeleteSite = (site: ThingSiteSummary) =>
+  deletableWorkspaceIdSet.value.has(site.workspaceId)
 
 const siteTypeIconRules = computed(() =>
   buildSiteTypeIconRules(siteTypeIcons.value)
@@ -864,11 +942,16 @@ pruneSelectionToAvailable(
 }
 
 .register-site-button {
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
   border-radius: 6px;
-  padding: 0;
+  padding-inline: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.register-site-button :deep(.v-btn__content) {
+  gap: 4px;
 }
 
 .filter-controls {
@@ -1082,13 +1165,36 @@ pruneSelectionToAvailable(
   padding: 12px 20px 16px;
 }
 
+.site-list-header {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .site-list-count {
-  margin-bottom: 10px;
   color: #5f6368;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
+}
+
+.site-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toggle-filters-btn {
+  min-width: 0;
+  padding-inline: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .site-list-items {
@@ -1099,20 +1205,15 @@ pruneSelectionToAvailable(
 
 .site-row {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   width: 100%;
   min-height: 46px;
-  padding: 6px 0;
-  border: 0;
+  padding: 2px 0;
   border-radius: 8px;
   background: transparent;
   color: inherit;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  text-decoration: none;
 }
 
 .site-row:hover,
@@ -1123,6 +1224,43 @@ pruneSelectionToAvailable(
 .site-row:hover .site-row-name,
 .site-row.selected .site-row-name {
   color: rgb(var(--v-theme-primary));
+}
+
+.site-row-main {
+  display: grid;
+  min-width: 0;
+  min-height: 42px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.site-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 3px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.site-row:hover .site-row-actions,
+.site-row:focus-within .site-row-actions,
+.site-row.selected .site-row-actions {
+  opacity: 1;
+}
+
+.site-row-action {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
 }
 
 .site-row-icon {
@@ -1138,6 +1276,9 @@ pruneSelectionToAvailable(
 }
 
 .skeleton-row {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  padding: 6px 0;
   pointer-events: none;
 }
 
