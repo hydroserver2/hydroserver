@@ -16,7 +16,7 @@ celery==5.6.3
 redis==8.0.1
 pandas==3.0.3
 orjson==3.11.9
-jwt==1.4.0
+PyJWT==2.13.0
 croniter==6.2.4
 python-decouple==3.8
 python-json-logger==4.1.0
