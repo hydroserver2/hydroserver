@@ -73,7 +73,7 @@ export class SessionService {
     if (!this._client.oidc) {
       if (!isBrowser()) return
       const url = new URL(this._client.resolveUrl('/accounts/login/'))
-      url.searchParams.set('next', returnTo)
+      url.searchParams.set('next', this._client.resolveAppUrl(returnTo))
       window.location.assign(url.toString())
       return
     }
@@ -100,7 +100,7 @@ export class SessionService {
       if (!isBrowser()) return
       removeHydroServerStorage()
       const url = new URL(this._client.resolveUrl('/accounts/logout/'))
-      url.searchParams.set('next', returnTo)
+      url.searchParams.set('next', this._client.resolveAppUrl(returnTo))
       window.location.assign(url.toString())
       return
     }

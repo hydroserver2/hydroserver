@@ -42,6 +42,7 @@ SERVICE_ACCOUNT_EMAIL_DOMAIN = config(
 
 USE_X_FORWARDED_HOST = True
 PROXY_BASE_URL = config("PROXY_BASE_URL", "http://127.0.0.1:8000")
+APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
 
 LOAD_DEFAULT_DATA = config("LOAD_DEFAULT_DATA", default=False, cast=bool)
 
@@ -258,6 +259,9 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "htt
 ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
 if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
     ACCOUNT_RATE_LIMITS = False
+
+LOGIN_REDIRECT_URL = APP_CLIENT_URL
+LOGOUT_REDIRECT_URL = APP_CLIENT_URL
 
 
 # Social Account Settings
