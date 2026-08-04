@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -522,22 +522,22 @@ test.describe('sites and workspaces', () => {
     await chooseAutocompleteOption(
       page,
       'Select method *',
-      'Public Assigned Sensor'
+      fixtures.metadata.publicAssignedSensor.name
     )
     await chooseAutocompleteOption(
       page,
       'Select observed property *',
-      'Public Assigned Observed Property'
+      fixtures.metadata.publicAssignedObservedProperty.name
     )
     await chooseAutocompleteOption(
       page,
       'Select unit *',
-      'Public Assigned Unit'
+      fixtures.metadata.publicAssignedUnit.name
     )
     await chooseAutocompleteOption(
       page,
       'Select processing level *',
-      'Public Assigned Processing Level'
+      fixtures.metadata.publicAssignedProcessingLevel.name
     )
     await page.getByLabel('Time aggregation interval *').fill('1')
     await page.locator('button').filter({ hasText: 'hours' }).first().click()

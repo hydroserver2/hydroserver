@@ -13,6 +13,11 @@ urlpatterns = [
     path("api/", include("interfaces.api.urls")),
 ]
 
+if settings.E2E_TESTING:
+    from interfaces.actions.e2e import scenario_view
+
+    urlpatterns.insert(0, path("api/e2e/scenarios", scenario_view))
+
 urlpatterns += [
     re_path(r"^qc/.*$", qc_spa_view),
     re_path(r"^(?!admin/|accounts/|api/|static/|media/).*$", main_spa_view),

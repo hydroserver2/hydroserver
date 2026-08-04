@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'

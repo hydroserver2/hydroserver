@@ -1,4 +1,5 @@
 import path from 'path'
+import { randomUUID } from 'crypto'
 import { fileURLToPath } from 'url'
 import { defineConfig, devices } from '@playwright/test'
 
@@ -14,6 +15,9 @@ const apiBaseUrl = `http://${apiHost}:${apiPort}`
 const appHost = process.env.E2E_APP_HOST || '127.0.0.1'
 const appPort = process.env.E2E_APP_PORT || '14173'
 const appBaseUrl = `http://${appHost}:${appPort}`
+const workerCount = Number(process.env.E2E_WORKERS || (process.env.CI ? 2 : 1))
+const e2eControlToken =
+  process.env.E2E_CONTROL_TOKEN || `hydroserver-e2e-${randomUUID()}`
 
 // Local runs use the fast Vite dev server (quiet, no rebuild between runs); CI
 // builds and previews the production bundle so the release gate tests the real
@@ -38,6 +42,7 @@ const e2eAdminDatabaseUrl =
 
 process.env.E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || apiBaseUrl
 process.env.E2E_APP_BASE_URL = process.env.E2E_APP_BASE_URL || appBaseUrl
+process.env.E2E_CONTROL_TOKEN = e2eControlToken
 
 const reporter = process.env.CI
   ? [
@@ -61,7 +66,7 @@ export default defineConfig({
   expect: {
     timeout: 10 * 1000,
   },
-  workers: process.env.CI ? 2 : 1,
+  workers: workerCount,
   reporter,
   outputDir: path.join(here, 'test-results'),
   use: {
@@ -87,7 +92,8 @@ export default defineConfig({
         DATABASE_URL: e2eDatabaseUrl,
         E2E_DATABASE_URL: e2eDatabaseUrl,
         E2E_ADMIN_DATABASE_URL: e2eAdminDatabaseUrl,
-        CELERY_BROKER_URL: process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
+        CELERY_BROKER_URL:
+          process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
         SMTP_URL: process.env.SMTP_URL || 'memory://',
         PROXY_BASE_URL: appBaseUrl,
         ALLOWED_HOSTS: '127.0.0.1,localhost',
@@ -100,9 +106,13 @@ export default defineConfig({
         ACCOUNT_RATE_LIMITS_DISABLED: 'true',
         DEPLOYMENT_BACKEND: 'dev',
         DEBUG: 'True',
+        E2E_TESTING: 'True',
+        E2E_CONTROL_TOKEN: e2eControlToken,
       },
       url: `${apiBaseUrl}/api/data/workspaces`,
-      reuseExistingServer: false,
+      // Isolated per-test scenarios make reusing a developer's local API safe
+      // and remove repeated migration/startup cost. CI always starts fresh.
+      reuseExistingServer: !process.env.CI,
       timeout: 180 * 1000,
       ...serverOutput,
     },

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -50,7 +50,10 @@ test.describe('metadata management', () => {
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await expect(
-      workspaceTable.locator('tr').filter({ hasText: 'Private Assigned Sensor' }).first()
+      workspaceTable
+        .locator('tr')
+        .filter({ hasText: fixtures.metadata.privateAssignedSensor.name })
+        .first()
     ).toBeVisible()
     await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
 
@@ -60,7 +63,10 @@ test.describe('metadata management', () => {
 
     const systemTable = page.getByTestId('system-metadata-table')
     await expect(
-      systemTable.locator('tr').filter({ hasText: 'System Sensor' }).first()
+      systemTable
+        .locator('tr')
+        .filter({ hasText: fixtures.metadata.systemSensor.name })
+        .first()
     ).toBeVisible()
     await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
   })
@@ -77,12 +83,14 @@ test.describe('metadata management', () => {
 
     const workspaceTable = page.getByTestId('workspace-metadata-table')
     await page.getByRole('tab', { name: 'Methods' }).click()
-    await workspaceTable.getByRole('button', { name: /Add new method/i }).click()
+    await workspaceTable
+      .getByRole('button', { name: /Add new method/i })
+      .click()
 
     await fillCombobox(page, 'Method Type *', 'E2E Method Type')
-    await page.getByLabel('Description *').fill(
-      'Temporary method created by the Playwright metadata CRUD suite.'
-    )
+    await page
+      .getByLabel('Description *')
+      .fill('Temporary method created by the Playwright metadata CRUD suite.')
     await page.getByLabel('Name *').fill(methodName)
     await page.getByRole('button', { name: 'Save' }).click()
 
@@ -100,7 +108,9 @@ test.describe('metadata management', () => {
     await expect(renamedMethodRow).toBeVisible()
 
     await renamedMethodRow.locator('.v-icon').nth(1).click()
-    await expect(page.getByText("isn't being used by any datastreams")).toBeVisible()
+    await expect(
+      page.getByText("isn't being used by any datastreams")
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
@@ -125,8 +135,14 @@ test.describe('metadata management', () => {
       .click()
 
     await fillCombobox(page, 'Variable Type *', 'E2E Variable Type')
-    await page.getByLabel('Definition *').fill('https://www.example.com/e2e-observed-property')
-    await page.getByLabel('Description *').fill('Temporary observed property created by the Playwright metadata CRUD suite.')
+    await page
+      .getByLabel('Definition *')
+      .fill('https://www.example.com/e2e-observed-property')
+    await page
+      .getByLabel('Description *')
+      .fill(
+        'Temporary observed property created by the Playwright metadata CRUD suite.'
+      )
     await page.getByLabel('Variable Code *').fill(`E2E-OP-${Date.now()}`)
     await page.getByLabel('Name *').fill(propName)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -181,7 +197,10 @@ test.describe('metadata management', () => {
     await page.getByLabel('Code *').fill(renamedCode)
     await page.getByRole('button', { name: 'Update' }).click()
 
-    const renamedRow = page.locator('tr').filter({ hasText: renamedCode }).first()
+    const renamedRow = page
+      .locator('tr')
+      .filter({ hasText: renamedCode })
+      .first()
     await expect(renamedRow).toBeVisible()
 
     await renamedRow.locator('.v-icon').nth(1).click()
@@ -254,9 +273,11 @@ test.describe('metadata management', () => {
       .click()
 
     await page.getByLabel('Code *').fill(qualifierCode)
-    await page.getByLabel('Description').fill(
-      'Temporary result qualifier created by the Playwright metadata CRUD suite.'
-    )
+    await page
+      .getByLabel('Description')
+      .fill(
+        'Temporary result qualifier created by the Playwright metadata CRUD suite.'
+      )
     await page.getByRole('button', { name: 'Save' }).click()
 
     const qualifierRow = page
@@ -296,11 +317,11 @@ test.describe('metadata management', () => {
       .first()
     await expect(searchBox).toBeVisible()
 
-    await searchBox.fill('Public Assigned Sensor')
+    await searchBox.fill(fixtures.metadata.publicAssignedSensor.name)
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: 'Public Assigned Sensor' })
+        .filter({ hasText: fixtures.metadata.publicAssignedSensor.name })
         .first()
     ).toBeVisible()
 
@@ -308,7 +329,7 @@ test.describe('metadata management', () => {
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: 'Public Assigned Sensor' })
+        .filter({ hasText: fixtures.metadata.publicAssignedSensor.name })
     ).toHaveCount(0)
 
     await searchBox.clear()
@@ -326,7 +347,7 @@ test.describe('metadata management', () => {
 
     const assignedSensorRow = workspaceTable
       .locator('tr')
-      .filter({ hasText: 'Private Assigned Sensor' })
+      .filter({ hasText: fixtures.metadata.privateAssignedSensor.name })
       .first()
     await expect(assignedSensorRow).toBeVisible()
 
@@ -334,7 +355,9 @@ test.describe('metadata management', () => {
     await expect(
       page.getByText("cannot be deleted because it's being referenced")
     ).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: 'Delete', exact: true })
+    ).toHaveCount(0)
     await page.getByRole('button', { name: 'Cancel' }).click()
   })
 })

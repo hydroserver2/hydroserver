@@ -1,94 +1,120 @@
 export const E2E_PASSWORD = 'HydroServer123!'
 
-export const users = {
+export let users = {
   owner: {
-    email: 'owner@example.com',
+    email: 'owner@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   editor: {
-    email: 'editor@example.com',
+    email: 'editor@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   viewer: {
-    email: 'viewer@example.com',
+    email: 'viewer@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   limited: {
-    email: 'limited@example.com',
+    email: 'limited@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   unaffiliated: {
-    email: 'unaffiliated@example.com',
+    email: 'unaffiliated@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   profile: {
-    email: 'profile@example.com',
+    email: 'profile@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
   deleteMe: {
-    email: 'delete-me@example.com',
+    email: 'delete-me@uninitialized.invalid',
     password: E2E_PASSWORD,
   },
-} as const
+}
 
-export const fixtures = {
+export let fixtures = {
   workspaces: {
     public: {
-      id: '6e0deaf2-a92b-421b-9ece-86783265596f',
+      id: 'uninitialized',
       name: 'Public',
     },
     private: {
-      id: 'b27c51a0-7374-462d-8a53-d97d47176c10',
+      id: 'uninitialized',
       name: 'Private',
     },
     transfer: {
-      id: 'caf4b92e-6914-4449-8c8a-efa5a7fd1826',
+      id: 'uninitialized',
       name: 'Transfer',
     },
   },
   things: {
     public: {
-      id: '3b7818af-eff7-4149-8517-e5cad9dc22e1',
+      id: 'uninitialized',
       name: 'Public Thing',
       siteCode: 'UWRL',
     },
     private: {
-      id: '76dadda5-224b-4e1f-8570-e385bd482b2d',
+      id: 'uninitialized',
       name: 'Private Thing',
       siteCode: 'TSC',
     },
     privatePublic: {
-      id: '92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7',
+      id: 'uninitialized',
       name: 'Private Thing Public Workspace',
       siteCode: 'MAIN',
     },
     privateWorkspacePublic: {
-      id: '819260c8-2543-4046-b8c4-7431243ed7c5',
+      id: 'uninitialized',
       name: 'Public Thing Private Workspace',
       siteCode: 'LIB',
     },
     mutablePublic: {
-      id: '5d4db6d5-6030-4db8-a620-23bb2d8d3f91',
+      id: 'uninitialized',
       name: 'E2E Mutable Thing',
       siteCode: 'E2E-MUTABLE',
     },
   },
   datastreams: {
     public: {
-      id: '27c70b41-e845-40ea-8cc7-d1b40f89816b',
+      id: 'uninitialized',
       name: 'Public Datastream 1',
     },
     publicSystemMetadata: {
-      id: 'dd5c60c2-a631-4e27-9aec-a59e1183861c',
+      id: 'uninitialized',
       name: 'Public Datastream 2',
     },
     privateVisible: {
-      id: 'e0506cac-3e50-4d0a-814d-7ae0146705b2',
+      id: 'uninitialized',
       name: 'Private Datastream 1',
     },
     privateWorkspacePublic: {
-      id: 'dd1f9293-ce29-4b6a-88e6-d65110d1be65',
+      id: 'uninitialized',
       name: 'Private Datastream 4',
+    },
+  },
+  metadata: {
+    privateAssignedSensor: {
+      id: 'uninitialized',
+      name: 'Private Assigned Sensor',
+    },
+    publicAssignedSensor: {
+      id: 'uninitialized',
+      name: 'Public Assigned Sensor',
+    },
+    publicAssignedObservedProperty: {
+      id: 'uninitialized',
+      name: 'Public Assigned Observed Property',
+    },
+    publicAssignedProcessingLevel: {
+      id: 'uninitialized',
+      name: 'Public Assigned Processing Level',
+    },
+    publicAssignedUnit: {
+      id: 'uninitialized',
+      name: 'Public Assigned Unit',
+    },
+    systemSensor: {
+      id: 'uninitialized',
+      name: 'System Sensor',
     },
   },
   orchestration: {
@@ -96,4 +122,15 @@ export const fixtures = {
     dataConnectionName: 'Test ETL Data Connection',
     taskName: 'Test ETL Task',
   },
-} as const
+}
+
+export type E2EScenario = {
+  scenarioKey: string
+  users: typeof users
+  fixtures: typeof fixtures
+}
+
+export function applyScenario(scenario: E2EScenario) {
+  users = scenario.users
+  fixtures = scenario.fixtures
+}

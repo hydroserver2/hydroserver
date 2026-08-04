@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
@@ -191,10 +191,14 @@ test.describe('workspace management', () => {
     await page.getByRole('tab', { name: 'Methods' }).click()
     await expect(page.getByTestId('add-workspace-metadata-item')).toHaveCount(0)
     await expect(
-      page.getByTestId('edit-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+      page.getByTestId(
+        `edit-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+      )
     ).toHaveCount(0)
     await expect(
-      page.getByTestId('delete-metadata-b2cc0c86-c131-4721-8080-9f5f722224ec')
+      page.getByTestId(
+        `delete-metadata-${fixtures.metadata.privateAssignedSensor.id}`
+      )
     ).toHaveCount(0)
   })
 
