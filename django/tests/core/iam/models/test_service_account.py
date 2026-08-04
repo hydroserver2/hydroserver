@@ -32,7 +32,7 @@ def test_save_populates_email_from_key_prefix_when_blank():
     service_account = ServiceAccountFactory()
 
     expected = f"{service_account.key_prefix}@service-accounts.{settings.SERVICE_ACCOUNT_EMAIL_DOMAIN}"
-    
+
     assert service_account.email == expected
 
 

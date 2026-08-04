@@ -1,12 +1,19 @@
 import type { Workspace } from '@hydroserver/client'
-import type { ThingMarker } from '@/types'
+import type { ThingSiteSummary } from '@/types'
 import type { LocationQuery } from 'vue-router'
+
+export type MarkerColorMode = 'none' | 'workspace' | 'siteType' | 'metadata'
 
 export interface BrowseFilterRouteState {
   siteIds: string[]
   searchText: string
   workspaceIds: string[]
   siteTypes: string[]
+  tagKey: string
+  tagValues: string[]
+  mySites: boolean | null
+  colorBy: MarkerColorMode | null
+  colorTagKey: string
   drawer: boolean | null
 }
 
@@ -15,6 +22,11 @@ export interface BrowseFilterSelectionState {
   searchText?: string | null
   workspaceIds: string[]
   siteTypes: string[]
+  tagKey?: string | null
+  tagValues?: string[]
+  mySites?: boolean
+  colorBy?: MarkerColorMode
+  colorTagKey?: string | null
   drawer?: boolean
 }
 
@@ -23,6 +35,12 @@ const BROWSE_FILTER_QUERY_KEYS = [
   'search',
   'workspaces',
   'siteTypes',
+  'tagKey',
+  'tagValues',
+  'mySites',
+  'colorBy',
+  'colorTagKey',
+  'colorByTag',
   'drawer',
 ]
 
@@ -69,6 +87,16 @@ const parseBooleanQuery = (value: unknown): boolean | null => {
   return null
 }
 
+const parseMarkerColorMode = (value: unknown): MarkerColorMode | null => {
+  const mode = querySingleValue(value)
+  return mode === 'none' ||
+    mode === 'workspace' ||
+    mode === 'siteType' ||
+    mode === 'metadata'
+    ? mode
+    : null
+}
+
 const queryArray = (values: string[]): string | string[] | undefined => {
   const normalized = uniqueValues(values)
   if (!normalized.length) return undefined
@@ -83,6 +111,11 @@ export function parseBrowseFilterQuery(
     searchText: querySingleValue(query.search),
     workspaceIds: readQueryValues(query, ['workspaces']),
     siteTypes: readExactQueryValues(query, ['siteTypes']),
+    tagKey: querySingleValue(query.tagKey),
+    tagValues: readExactQueryValues(query, ['tagValues']),
+    mySites: parseBooleanQuery(query.mySites),
+    colorBy: parseMarkerColorMode(query.colorBy),
+    colorTagKey: querySingleValue(query.colorTagKey),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
@@ -100,21 +133,33 @@ export function buildBrowseFilterQuery(
   const sites = queryArray(siteIds)
   const workspaces = queryArray(state.workspaceIds)
   const siteTypes = queryArray(state.siteTypes)
+  const tagKey = state.tagKey?.trim()
+  const tagValues = queryArray(state.tagValues ?? [])
+  const colorTagKey = state.colorTagKey?.trim()
 
   if (sites !== undefined) nextQuery.selectedSite = sites
   if (searchText) nextQuery.search = searchText
   if (workspaces !== undefined) nextQuery.workspaces = workspaces
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes
+  if (tagKey) nextQuery.tagKey = tagKey
+  if (tagValues !== undefined) nextQuery.tagValues = tagValues
+  if (state.mySites) nextQuery.mySites = '1'
+  if (state.colorBy && state.colorBy !== 'none')
+    nextQuery.colorBy = state.colorBy
+  if (state.colorBy === 'metadata' && colorTagKey)
+    nextQuery.colorTagKey = colorTagKey
   if (state.drawer === false) nextQuery.drawer = '0'
 
   return nextQuery
 }
 
 export function filterThingMarkers(
-  things: ThingMarker[],
+  things: ThingSiteSummary[],
   selectedWorkspaces: Workspace[],
   selectedSiteTypes: string[],
-  selectedSite?: ThingMarker | null
+  selectedSite?: ThingSiteSummary | null,
+  tagKey = '',
+  selectedTagValues: string[] = []
 ) {
   const selectedWorkspaceIds = new Set(
     selectedWorkspaces.map((workspace) => workspace.id)
@@ -128,7 +173,20 @@ export function filterThingMarkers(
     const inSelectedSiteType =
       selectedSiteTypes.length === 0 ||
       selectedSiteTypes.includes(thing.siteType)
+    const matchingTags = tagKey
+      ? thing.tags.filter((tag) => tag.key === tagKey)
+      : []
+    const hasSelectedTag =
+      !tagKey ||
+      (selectedTagValues.length === 0
+        ? matchingTags.length > 0
+        : matchingTags.some((tag) => selectedTagValues.includes(tag.value)))
 
-    return isSelectedSite && inSelectedWorkspace && inSelectedSiteType
+    return (
+      isSelectedSite &&
+      inSelectedWorkspace &&
+      inSelectedSiteType &&
+      hasSelectedTag
+    )
   })
 }

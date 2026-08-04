@@ -1,4 +1,4 @@
-const DEFAULT_POST_LOGIN_PATH = '/sites'
+const DEFAULT_POST_LOGIN_PATH = '/browse'
 const LOGIN_PATH = '/login'
 
 type RedirectQueryValue = string | null | (string | null)[] | undefined

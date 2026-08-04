@@ -8,9 +8,7 @@ Click the 'Sign up' button on the top right of the page to create a user account
 
 ## Create a workspace
 
-After verifying your email address, the website should navigate you to the 'Sites' page with a blank map on the top and a 'Workspaces' table on the bottom. If it didn't, you can navigate to it via the 'Your sites' button on the main navigation menu.
-
-<img src="/hydroserver-101/fresh-user.png" alt="Fresh sites page" class="img-white-bg">
+After verifying your email address, open **Manage workspaces** from the main navigation.
 
 Before creating your first site, you'll need to create a workspace for that site to go in. Most of HydroServer's access control happens at the workspace level, so resources like sites and datastreams belong to a workspace.
 
@@ -20,16 +18,14 @@ Click 'Add workspace' and give your workspace a name. Make it unique since every
 
 ## Create your site
 
-After the workspace is successfully created, you'll see a new table named 'Your registered sites'. Click the 'Register a new site' button on the top right of the table to create a new site.
+After the workspace is successfully created, open **Browse monitoring sites** from the main navigation. Expand the monitoring-sites panel if it is collapsed, then click the **Register a monitoring site** (+) button. Choose the workspace where the site should be registered.
 
-<img src="/hydroserver-101/fresh-workspace.png" alt="Newly created workspace" class="img-white-bg">
-
-Clicking the 'Register a new site' button will open the Register/Edit a site modal window. Click anywhere on the map and it will create a new map marker and automatically populate the location form fields. You can also type values into the 'Site Location' fields if you know them already. Fill out the rest of the form with the metadata for your site and click save.
+The button opens the Register/Edit a site modal window. Click anywhere on the map and it will create a new map marker and automatically populate the location form fields. You can also type values into the 'Site Location' fields if you know them already. Fill out the rest of the form with the metadata for your site and click save.
 
 <img src="/hydroserver-101/site-form.png" alt="Site form" class="img-white-bg">
 
-On the 'Your sites' page you'll now see the map zoomed in to your new site, and your site will be added to the registered sites table.
+On the **Browse monitoring sites** page, your new site will appear on the map and in the sites panel. You can search by its name or site code, or filter the list by workspace, site type, and additional metadata.
 
-Clicking the newly created table row for your site will direct you to the 'Site Details' page. This page is where you can edit the site's information and access control, delete it, or add new datastreams as you'll see in the next part of this tutorial.
+Select the new site in the panel, then click **View details**. The Site Details page is where you can edit the site's information and access control, delete it, or add new datastreams as you'll see in the next part of this tutorial.
 
 <img src="/hydroserver-101/site-details.png" alt="site details page" class="img-white-bg">

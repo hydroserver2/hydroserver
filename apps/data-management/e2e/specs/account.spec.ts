@@ -8,23 +8,23 @@ const API_BASE_URL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:18000'
 test.describe('account management', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('user with no workspaces lands on your sites and sees onboarding guidance', async ({
+  test('user with no workspaces lands on Browse with site registration disabled', async ({
     page,
   }) => {
     await login(page, users.deleteMe.email, users.deleteMe.password)
 
-    await expect(page).toHaveURL(/\/sites$/)
-    await expect(page.getByText('No workspaces found')).toBeVisible()
+    await expect(page).toHaveURL(/\/browse$/)
     await expect(
-      page.getByRole('link', { name: 'Create a workspace' })
+      page.getByRole('heading', { name: 'Monitoring sites', level: 1 })
     ).toBeVisible()
+    await expect(page.getByTestId('register-site-button')).toBeDisabled()
   })
 
   test('account menu opens the profile page and profile editing can remove organization details', async ({
     page,
   }) => {
     await login(page, users.profile.email, users.profile.password)
-    await expect(page).toHaveURL(/\/sites$/)
+    await expect(page).toHaveURL(/\/browse$/)
 
     await page.getByTestId('account-menu-button').click()
     await page.getByTestId('account-menu-item').click()
@@ -72,7 +72,7 @@ test.describe('account management', () => {
     page,
   }) => {
     await login(page, users.deleteMe.email, users.deleteMe.password)
-    await expect(page).toHaveURL(/\/sites$/)
+    await expect(page).toHaveURL(/\/browse$/)
 
     await page.goto('/profile')
     await page.getByRole('button', { name: 'Delete Account' }).click()

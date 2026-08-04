@@ -46,31 +46,12 @@
     <template v-if="!mdAndDown">
       <div v-for="path of visiblePaths()" :key="path.label">
         <v-btn
-          v-if="!path.menu"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           @click="path.onClick"
           density="comfortable"
         >
           {{ path.label }}
         </v-btn>
-
-        <v-menu v-else>
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props">
-              {{ path.label }}
-              <v-icon :icon="mdiMenuDown" right small />
-            </v-btn>
-          </template>
-
-          <v-list>
-            <v-list-item
-              v-for="menuItem of path.menu"
-              v-bind="menuItem.attrs || {}"
-              :title="menuItem.label"
-              @click="menuItem.onClick"
-            />
-          </v-list>
-        </v-menu>
       </div>
 
       <v-spacer />
@@ -134,27 +115,14 @@
     location="right"
   >
     <v-list density="compact" nav>
-      <div v-for="path of visiblePaths()">
+      <div v-for="path of visiblePaths()" :key="path.label">
         <v-list-item
-          v-if="path.attrs"
-          v-bind="path.attrs"
+          v-bind="path.attrs || {}"
           :title="path.label"
           :prepend-icon="path.icon"
-          :value="path.attrs.to || path.attrs.href"
+          :value="path.attrs?.to || path.attrs?.href || path.label"
           @click="path.onClick"
         />
-        <div v-else>
-          <v-list-item
-            v-for="menuItem of path.menu"
-            v-bind="menuItem.attrs || {}"
-            :title="menuItem.label"
-            :prepend-icon="menuItem.icon"
-            :value="
-              menuItem.attrs?.to || menuItem.attrs?.href || menuItem.label
-            "
-            @click="menuItem.onClick"
-          />
-        </div>
       </div>
     </v-list>
 
@@ -217,7 +185,6 @@ import {
   mdiLogout,
   mdiMapMarkerOutline,
   mdiMenuClose,
-  mdiMenuDown,
   mdiMenuOpen,
   mdiShieldCheckOutline,
   mdiShieldEditOutline,
@@ -244,15 +211,11 @@ type NavItemAttrs = {
   href?: string
 }
 
-type NavMenuItem = {
+type NavItem = {
   attrs?: NavItemAttrs
   label: string
   icon?: string
   onClick?: () => void
-}
-
-type NavItem = NavMenuItem & {
-  menu?: NavMenuItem[]
 }
 
 // The base nav items, before filtering out anything that requires a login.
@@ -267,11 +230,6 @@ const basePaths: NavItem[] = [
   {
     attrs: { to: '/browse' },
     label: 'Browse monitoring sites',
-    icon: mdiMapMarkerOutline,
-  },
-  {
-    attrs: { to: '/sites' },
-    label: 'Your sites',
     icon: mdiMapMarkerOutline,
   },
   {
@@ -314,18 +272,9 @@ function itemRequiresAuth(attrs?: NavItemAttrs): boolean {
 // component's auth-gated markup does.
 function visiblePaths(): NavItem[] {
   const authenticated = hs.session.isAuthenticated
-
-  const items = basePaths
-    .map((item): NavItem | null => {
-      if (item.menu) {
-        const menu = item.menu.filter(
-          (menuItem) => authenticated || !itemRequiresAuth(menuItem.attrs)
-        )
-        return menu.length ? { ...item, menu } : null
-      }
-      return authenticated || !itemRequiresAuth(item.attrs) ? item : null
-    })
-    .filter((item): item is NavItem => item !== null)
+  const items = basePaths.filter(
+    (item) => authenticated || !itemRequiresAuth(item.attrs)
+  )
 
   // Logged-in visitors reach About through the account menu instead.
   if (!authenticated) items.push(aboutPath)

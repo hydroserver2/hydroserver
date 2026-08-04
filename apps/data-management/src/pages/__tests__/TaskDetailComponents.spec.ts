@@ -186,11 +186,6 @@ const globalStubs = {
     emits: ['close', 'updated', 'deleted'],
     template: '<div class="quality-form-stub" />',
   },
-  DeleteTaskCard: {
-    name: 'DeleteTaskCard',
-    emits: ['close', 'delete'],
-    template: '<div />',
-  },
   AggregationForm: { template: '<div />' },
   DerivationForm: { template: '<div />' },
   ExpressionForm: { template: '<div />' },

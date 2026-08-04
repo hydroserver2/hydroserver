@@ -41,12 +41,12 @@ router.beforeEach(
       return { name: 'VerifyEmail' }
     }
     if (!inEmailVerificationFlow && to.name === 'VerifyEmail')
-      return { name: 'Sites' }
+      return { name: 'Browse' }
 
     if (inProviderSignupFlow && to.name !== 'CompleteProfile')
       return { name: 'CompleteProfile' }
     if (!inProviderSignupFlow && to.name === 'CompleteProfile')
-      return { name: 'Sites' }
+      return { name: 'Browse' }
 
     if (hs.session.isAuthenticated && to.meta.requiresLoggedOut) {
       const nextPath = getSafePostLoginPath(to.query.next)
@@ -55,7 +55,7 @@ router.beforeEach(
         return false
       }
       if (nextPath) return nextPath
-      return { name: 'Sites' }
+      return { name: 'Browse' }
     }
     if (!hs.session.isAuthenticated && to.meta.requiresAuth)
       return { name: 'Login', query: { next: to.fullPath } }
