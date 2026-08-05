@@ -80,35 +80,35 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
 <style scoped>
 .nav-rail {
   width: 88px;
-  border-right: 1px solid #e8e8e8;
-  background: #fafafa;
+  border-right: 1px solid var(--hs-border);
+  background: var(--hs-surface-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0;
+  padding: var(--hs-space-16) 0;
   flex-shrink: 0;
 }
 .rail-main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--hs-space-2);
   width: 100%;
 }
 .rail-bottom {
   margin-top: auto;
   width: 100%;
-  padding-top: 14px;
+  padding-top: var(--hs-space-12);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--hs-space-2);
 }
 .rail-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
+  gap: var(--hs-space-4);
+  padding: var(--hs-space-8) var(--hs-space-4);
   width: 100%;
   border: none;
   background: transparent;
@@ -125,7 +125,7 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
 .rail-pill {
   width: 58px;
   height: 32px;
-  border-radius: 16px;
+  border-radius: var(--hs-radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,7 +133,7 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
   transition: background 0.15s;
 }
 .rail-btn-secondary {
-  color: #5f6368;
+  color: var(--hs-text-secondary);
 }
 .rail-btn-secondary:hover .rail-pill-secondary {
   background: rgba(21, 101, 192, 0.08);
@@ -145,22 +145,22 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
   position: absolute;
   top: 1px;
   right: 4px;
-  background: #b71c1c;
+  background: var(--hs-danger);
   color: white;
-  border-radius: 8px;
+  border-radius: var(--hs-radius-pill);
   min-width: 16px;
   height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
   padding: 0 3px;
   line-height: 1;
 }
 .rail-label {
-  font-size: 10.5px;
-  color: #49454f;
+  font-size: var(--hs-font-2xs);
+  color: var(--hs-text-secondary);
   line-height: 1.2;
   text-align: center;
 }

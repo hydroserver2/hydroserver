@@ -28,7 +28,7 @@
             class="register-site-button"
             color="primary"
             variant="flat"
-            size="small"
+            rounded="xl"
             data-testid="register-site-button"
             aria-label="Create Site"
             :disabled="!canRegisterSite"
@@ -39,7 +39,7 @@
             "
             @click="$emit('register-site')"
           >
-            <v-icon :icon="mdiPlus" size="13" />
+            <v-icon :icon="mdiPlus" size="16" />
             Create Site
           </v-btn>
 
@@ -890,20 +890,20 @@ pruneSelectionToAvailable(
 
 .filter-chip {
   height: 38px;
-  padding-inline: 14px;
-  color: #222529;
+  padding-inline: var(--hs-space-12);
+  color: var(--hs-text-primary);
   box-shadow: 0 4px 16px rgba(22, 27, 34, 0.16) !important;
 }
 
 .filter-chip :deep(.v-btn__content) {
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--hs-space-8);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0;
 }
 
 .filter-chip-count {
-  color: #8b8f96;
+  color: var(--hs-text-secondary);
   font-weight: 600;
 }
 
@@ -913,22 +913,22 @@ pruneSelectionToAvailable(
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--hs-radius-lg);
+  background: var(--hs-surface-floating);
 }
 
 .filter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 18px 20px 10px;
+  gap: var(--hs-space-12);
+  padding: var(--hs-space-16) var(--hs-space-20) var(--hs-space-10);
 }
 
 .filter-header h1 {
   margin: 0;
-  color: #202124;
-  font-size: 18px;
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0;
@@ -937,21 +937,20 @@ pruneSelectionToAvailable(
 .filter-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--hs-space-8);
   flex-shrink: 0;
 }
 
 .register-site-button {
-  border-radius: 6px;
-  padding-inline: 10px;
-  font-size: 12px;
+  padding-inline: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
 }
 
 .register-site-button :deep(.v-btn__content) {
-  gap: 4px;
+  gap: var(--hs-space-6);
 }
 
 .filter-controls {
@@ -959,25 +958,25 @@ pruneSelectionToAvailable(
   min-height: 0;
   flex: 0 1 auto;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--hs-space-10);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 20px 14px;
+  padding: 0 var(--hs-space-20) var(--hs-space-16);
 }
 
 .site-search :deep(.v-field),
 .workspace-filter :deep(.v-field),
 .metadata-filter :deep(.v-field),
 .color-tag-filter :deep(.v-field) {
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--hs-radius-md);
+  font-size: var(--hs-font-sm);
 }
 
 .site-search :deep(.v-field__input),
 .workspace-filter :deep(.v-field__input),
 .metadata-filter :deep(.v-field__input),
 .color-tag-filter :deep(.v-field__input) {
-  font-size: 13px;
+  font-size: var(--hs-font-sm);
 }
 
 .workspace-filter-row {
@@ -988,7 +987,7 @@ pruneSelectionToAvailable(
 
 .workspace-filter-row--with-my-sites {
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: var(--hs-space-8);
 }
 
 .workspace-filter {
@@ -998,27 +997,27 @@ pruneSelectionToAvailable(
 .my-sites-filter {
   min-width: 0;
   height: 40px;
-  border-radius: 8px;
-  padding-inline: 10px;
-  font-size: 12px;
+  border-radius: var(--hs-radius-md);
+  padding-inline: var(--hs-space-10);
+  font-size: var(--hs-font-sm);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
 }
 
 .my-sites-filter :deep(.v-btn__content) {
-  gap: 5px;
+  gap: var(--hs-space-4);
 }
 
 .filter-control-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--hs-space-10);
 }
 
 .filter-group-title {
-  color: #3c4043;
-  font-size: 12px;
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -1027,12 +1026,12 @@ pruneSelectionToAvailable(
 .filter-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--hs-space-8);
 }
 
 .filter-section-title {
-  color: #5f6368;
-  font-size: 11px;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
@@ -1041,16 +1040,16 @@ pruneSelectionToAvailable(
 .color-mode-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--hs-space-4);
 }
 
 .color-mode-button {
   min-width: 0;
   height: 24px;
   flex: 0 0 auto;
-  border-radius: 4px;
-  padding-inline: 6px;
-  font-size: 0.75rem;
+  border-radius: var(--hs-radius-sm);
+  padding-inline: var(--hs-space-6);
+  font-size: var(--hs-font-sm);
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -1059,7 +1058,7 @@ pruneSelectionToAvailable(
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  gap: 8px;
+  gap: var(--hs-space-8);
 }
 
 .metadata-filter {
@@ -1087,7 +1086,7 @@ pruneSelectionToAvailable(
   min-width: 0;
   max-width: 100%;
   align-items: center;
-  gap: 4px;
+  gap: var(--hs-space-4);
   white-space: nowrap;
 }
 
@@ -1099,14 +1098,14 @@ pruneSelectionToAvailable(
 
 .metadata-value-count {
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--hs-font-sm);
 }
 
 .chip-grid {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 6px;
+  gap: var(--hs-space-6);
   max-height: 102px;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1128,41 +1127,43 @@ pruneSelectionToAvailable(
 
 .filter-pill {
   height: 30px;
-  padding-inline: 10px;
-  color: #63676d;
-  border-color: #dce0e5;
-  font-size: 12px;
+  padding-inline: var(--hs-space-10);
+  color: var(--hs-text-secondary);
+  border-color: var(--hs-border);
+  font-size: var(--hs-font-sm);
   font-weight: 600;
 }
 
 .filter-pill :deep(.v-btn__content) {
-  gap: 6px;
+  gap: var(--hs-space-6);
   letter-spacing: 0;
 }
 
 .filter-pill.selected {
-  color: #1976d2;
+  /* The theme's actual primary, not a hand-picked near-miss blue — the
+     border/background right below already correctly used it. */
+  color: rgb(var(--v-theme-primary));
   border-color: rgba(33, 150, 243, 0.38);
   background: rgba(33, 150, 243, 0.1);
 }
 
 .reset-filters-btn {
   min-width: 0;
-  padding-inline: 8px;
-  font-size: 11.5px;
+  padding-inline: var(--hs-space-8);
+  font-size: var(--hs-font-2xs);
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .reset-filters-btn :deep(.v-btn__prepend) {
-  margin-inline-end: 4px;
+  margin-inline-end: var(--hs-space-4);
 }
 
 .site-list {
   min-height: 140px;
   flex: 1 0 140px;
   overflow: hidden auto;
-  padding: 12px 20px 16px;
+  padding: var(--hs-space-12) var(--hs-space-20) var(--hs-space-16);
 }
 
 .site-list-header {
@@ -1170,13 +1171,13 @@ pruneSelectionToAvailable(
   min-height: 30px;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--hs-space-8);
+  margin-bottom: var(--hs-space-8);
 }
 
 .site-list-count {
-  color: #5f6368;
-  font-size: 11px;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
@@ -1185,13 +1186,13 @@ pruneSelectionToAvailable(
 .site-list-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--hs-space-2);
 }
 
 .toggle-filters-btn {
   min-width: 0;
-  padding-inline: 6px;
-  font-size: 11.5px;
+  padding-inline: var(--hs-space-6);
+  font-size: var(--hs-font-2xs);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -1200,18 +1201,18 @@ pruneSelectionToAvailable(
 .site-list-items {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--hs-space-2);
 }
 
 .site-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 2px;
+  gap: var(--hs-space-2);
   width: 100%;
   min-height: 46px;
-  padding: 2px 0;
-  border-radius: 8px;
+  padding: var(--hs-space-2) 0;
+  border-radius: var(--hs-radius-md);
   background: transparent;
   color: inherit;
 }
@@ -1232,8 +1233,8 @@ pruneSelectionToAvailable(
   min-height: 42px;
   grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 4px 0;
+  gap: var(--hs-space-10);
+  padding: var(--hs-space-4) 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1245,8 +1246,8 @@ pruneSelectionToAvailable(
 .site-row-actions {
   display: flex;
   align-items: center;
-  gap: 1px;
-  padding-right: 3px;
+  gap: var(--hs-space-2);
+  padding-right: var(--hs-space-4);
   opacity: 0;
   transition: opacity 0.1s;
 }
@@ -1270,15 +1271,15 @@ pruneSelectionToAvailable(
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  background: #f1f3f6;
-  color: #5f6368;
+  border-radius: var(--hs-radius-md);
+  background: var(--hs-surface-muted);
+  color: var(--hs-text-secondary);
 }
 
 .skeleton-row {
   grid-template-columns: 34px minmax(0, 1fr);
-  gap: 10px;
-  padding: 6px 0;
+  gap: var(--hs-space-10);
+  padding: var(--hs-space-6) 0;
   pointer-events: none;
 }
 
@@ -1307,7 +1308,7 @@ pruneSelectionToAvailable(
 .skeleton-line {
   display: block;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--hs-radius-pill);
 }
 
 .skeleton-line--name {
@@ -1322,7 +1323,7 @@ pruneSelectionToAvailable(
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--hs-space-2);
 }
 
 .site-row-name,
@@ -1334,19 +1335,19 @@ pruneSelectionToAvailable(
 
 .site-row-code {
   font-family: 'Roboto Mono', monospace;
-  font-size: 10.5px;
+  font-size: var(--hs-font-2xs);
 }
 
 .site-row-name {
-  color: #202124;
-  font-size: 13px;
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-sm);
   font-weight: 600;
   line-height: 1.25;
 }
 
 .site-row-workspace {
-  color: #5f6368;
-  font-size: 11px;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
   font-weight: 500;
 }
 
@@ -1355,8 +1356,8 @@ pruneSelectionToAvailable(
   min-height: 120px;
   align-items: center;
   justify-content: center;
-  color: #8a8d91;
-  font-size: 12px;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
   font-weight: 600;
   text-align: center;
 }
@@ -1394,20 +1395,20 @@ pruneSelectionToAvailable(
 
 @media (max-width: 560px) {
   .filter-header {
-    padding: 16px 16px 10px;
+    padding: var(--hs-space-16) var(--hs-space-16) var(--hs-space-10);
   }
 
   .filter-header h1 {
-    font-size: 17px;
+    font-size: var(--hs-font-md);
   }
 
   .filter-header-actions {
-    gap: 6px;
+    gap: var(--hs-space-6);
   }
 
   .filter-controls,
   .site-list {
-    padding-inline: 16px;
+    padding-inline: var(--hs-space-16);
   }
 }
 </style>

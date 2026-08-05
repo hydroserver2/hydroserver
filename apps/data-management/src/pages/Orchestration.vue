@@ -23,6 +23,9 @@
           data-testid="no-selected-workspace"
         >
           <div class="no-workspace-state-content">
+            <div class="no-workspace-icon">
+              <v-icon :icon="mdiBriefcaseOutline" size="28" />
+            </div>
             <p class="no-workspace-eyebrow">No selected workspace</p>
             <h2>Select or create a workspace to manage jobs</h2>
             <p>
@@ -211,6 +214,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { sumBy } from 'lodash-es'
+import { mdiBriefcaseOutline } from '@mdi/js'
 import hs, {
   DataConnection,
   type DataProductTask,
@@ -996,7 +1000,7 @@ const goToTask = async (row: TaskRow) => {
 
 <style scoped>
 .orchestration-page {
-  background-color: #ffffff;
+  background-color: var(--hs-surface);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1019,7 +1023,7 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex: 1;
   min-height: 0;
-  background: #ffffff;
+  background: var(--hs-surface);
   overflow: hidden;
 }
 
@@ -1030,28 +1034,49 @@ const goToTask = async (row: TaskRow) => {
   justify-content: center;
   min-width: 0;
   overflow: auto;
-  background: white;
-  padding: 32px;
+  background: var(--hs-surface);
+  padding: var(--hs-space-32);
 }
 
 .no-workspace-state-content {
   max-width: 560px;
-  color: #3c4043;
+  color: var(--hs-text-primary);
+}
+
+/* Matches the empty-state icon on Manage Workspaces (Workspaces.vue) so the
+   two workspace-scoped entry points read as the same product surface. */
+.no-workspace-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--hs-accent-blue-bg),
+    var(--hs-accent-green-bg)
+  );
+  color: var(--hs-accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--hs-space-16);
 }
 
 .no-workspace-eyebrow {
-  margin: 0 0 8px;
-  color: #5f6368;
-  font-size: 0.78rem;
+  margin: 0 0 var(--hs-space-8);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+/* Same size as the page's own h1 (WorkspaceToolbar.vue's
+   .orchestration-header-title) — this empty-state heading was previously a
+   step larger than the page title above it, which inverted the hierarchy. */
 .no-workspace-state h2 {
-  margin: 0 0 12px;
-  color: #202124;
-  font-size: 1.5rem;
+  margin: 0 0 var(--hs-space-12);
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-lg);
   line-height: 1.25;
 }
 
@@ -1060,7 +1085,7 @@ const goToTask = async (row: TaskRow) => {
 }
 
 .no-workspace-actions {
-  margin-top: 22px;
+  margin-top: var(--hs-space-24);
 }
 
 .detail {
@@ -1068,7 +1093,7 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: white;
+  background: var(--hs-surface);
   min-width: 0;
 }
 
