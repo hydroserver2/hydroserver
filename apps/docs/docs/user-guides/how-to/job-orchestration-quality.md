@@ -5,11 +5,11 @@ Quality monitoring tasks are used to automatically check existing HydroServer da
 
 To create a quality monitoring task, go to the **Quality** section in the Job Orchestration System and click **Add quality task**.
 
-<img src="/Quality/1 Click Quality.png" alt="Open the Quality section and add a quality monitoring task" width="550">
+<img src="/job-orchestration/quality_1_click_quality.png" alt="Open the Quality section and add a quality monitoring task" width="550">
 
 Here, enter a clear task name and description so users can understand what the task is checking. In this example, the task is named `Checking range of discharge`, and it is used to monitor the daily average discharge values for the `BC_CONF_A` site. A notification recipient is also added so HydroServer can send an alert if the rule is triggered.
 
-<img src="/Quality/2CreateQualityTask.png" alt="Create a quality monitoring task with a range rule for discharge" width="550">
+<img src="/job-orchestration/quality_2_create_quality_task.png" alt="Create a quality monitoring task with a range rule for discharge" width="550">
 
 Next, configure the schedule for the task. In this example, the task is set to run every `1 Hour`, starting on `06/25/2026 at 06:43 PM` in the `America/Denver` time zone. The schedule controls how often HydroServer checks the selected datastream for values that do not meet the quality rule.
 

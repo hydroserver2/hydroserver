@@ -29,11 +29,11 @@ Before creating an ingestion task, make sure the following items already exist i
 - A **workspace** where you have permission to create and manage content
 - A **site** where the observations will be stored
 
-<img src="Ingestion/1Workspace.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_1_workspace.png" alt="Download page" width="750">
 
 - One or more **datastreams** where the imported data values will be loaded
 
-<img src="Ingestion/2Datastream.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_2_datastream.png" alt="Download page" width="750">
 
 - A remote source file or URL that HydroServer can access
 
@@ -57,7 +57,7 @@ http://example-server.org/data/CR800_Station_Data.dat
 
 In HydroServer, go to the top navigation menu and select: Data management → Job orchestration
 
-<img src="Ingestion/3JobOrchestration.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Download page" width="750">
 
 This opens the Job Orchestration page. On the left side of the page, select **Ingestion**.
 
@@ -68,16 +68,16 @@ This opens the Job Orchestration page. On the left side of the page, select **In
 A **data connection** tells HydroServer where the source data are located and how the source file should be read.
 On the **Ingestion** page, click the blue **plus** button next to **Connections**. A window titled **Create a new data connection** will open.
 
-<img src="Ingestion/4.0CreateDataConnection.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_4_create_data_connection.png" alt="Download page" width="750">
 
 To create a data connection, first enter a clear name that helps identify the source file or station. Then paste the remote source URL into the **Source URL** field. The source URL should point directly to the raw data file, not to a preview webpage. When opened in a browser, the URL should show the data as text with rows and columns.
 
-<img src="/Ingestion/4DataConnection.png" alt="Create a new data connection form" width="750">
+<img src="/job-orchestration/ingestion_5_data_connection.png" alt="Create a new data connection form" width="750">
 
 
 In the **Payload** section, choose the payload type based on the source file format. For most CSV-style files and LoggerNet `.dat` files, select `CSV`. If the file has column names in a header row, select **Identify columns by name**. Then enter the correct **file header row number** and **data start row number**. The header row is the row that contains the column names, and the data start row is the first row that contains actual observation values. 
 
-<img src="/Ingestion/5csvfile.png" alt="Create a new data connection form" width="750">
+<img src="/job-orchestration/ingestion_6_csv_file.png" alt="Create a new data connection form" width="750">
 
 Next, select the file delimiter. Use `Comma` for comma-separated files and `Tab` for tab-delimited files. 
 
@@ -101,7 +101,7 @@ However, the data connection alone does not load data into a datastream. You mus
 
 Click the data connection you created. Then click **Add task**. The **Add task** window will open.
 
-<img src="/Ingestion/6AddTask.png" alt="Add a new ingestion task under a data connection" width="750">
+<img src="/job-orchestration/ingestion_7_add_task.png" alt="Add a new ingestion task under a data connection" width="750">
 
 Enter a clear task name that describes what data will be loaded, such as `Load Snow Depth Data` or `Load Discharge Data for BC_CONF_A`. The task name should be specific enough that users can understand its purpose later, especially when there are multiple ingestion tasks in the same workspace.
 
@@ -186,11 +186,11 @@ means the requested data are discharge values.
 
 To test the ingestion task, click **Run now**.
 
-<img src="/Ingestion/7RunTask.png" alt="Run the task" width="750">
+<img src="/job-orchestration/ingestion_8_run_task.png" alt="Run the task" width="750">
 
 HydroServer will read the source file, parse the configured timestamp and source columns, and load the mapped values into the selected target datastreams. If the task succeeds, you will see a green status indicator and a message showing how many observations were loaded.
 
-<img src="/Ingestion/8GreenTick.png" alt="Successful ingestion run showing loaded observations and green status" width="750">
+<img src="/job-orchestration/ingestion_9_green_tick.png" alt="Successful ingestion run showing loaded observations and green status" width="750">
 
 If the task does not succeed, the task status may show **Needs attention** or another warning. You can use the Status Filter to review the status of task failure.
 
@@ -207,6 +207,8 @@ The run details includes:
 - Start time
 - Duration
 - Run status
+
+<img src="/job-orchestration/ingestion_10_data_loaded.png" alt="Successful task details" width="750">
 
 ---
 
