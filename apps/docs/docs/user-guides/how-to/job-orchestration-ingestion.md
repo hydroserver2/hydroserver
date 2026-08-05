@@ -29,11 +29,11 @@ Before creating an ingestion task, make sure the following items already exist i
 - A **workspace** where you have permission to create and manage content
 - A **site** where the observations will be stored
 
-<img src="/job-orchestration/ingestion_1_workspace.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_1_workspace.png" alt="Workspace selection" width="750">
 
 - One or more **datastreams** where the imported data values will be loaded
 
-<img src="/job-orchestration/ingestion_2_datastream.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_2_datastream.png" alt="Example datastream" width="750">
 
 - A remote source file or URL that HydroServer can access
 
@@ -57,7 +57,7 @@ http://example-server.org/data/CR800_Station_Data.dat
 
 In HydroServer, go to the top navigation menu and select: Data management → Job orchestration
 
-<img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Select Job Orchesgtration" width="750">
 
 This opens the Job Orchestration page. On the left side of the page, select **Ingestion**.
 
@@ -68,7 +68,7 @@ This opens the Job Orchestration page. On the left side of the page, select **In
 A **data connection** tells HydroServer where the source data are located and how the source file should be read.
 On the **Ingestion** page, click the blue **plus** button next to **Connections**. A window titled **Create a new data connection** will open.
 
-<img src="/job-orchestration/ingestion_4_create_data_connection.png" alt="Download page" width="750">
+<img src="/job-orchestration/ingestion_4_create_data_connection.png" alt="Create data connection" width="750">
 
 To create a data connection, first enter a clear name that helps identify the source file or station. Then paste the remote source URL into the **Source URL** field. The source URL should point directly to the raw data file, not to a preview webpage. When opened in a browser, the URL should show the data as text with rows and columns.
 
@@ -77,7 +77,7 @@ To create a data connection, first enter a clear name that helps identify the so
 
 In the **Payload** section, choose the payload type based on the source file format. For most CSV-style files and LoggerNet `.dat` files, select `CSV`. If the file has column names in a header row, select **Identify columns by name**. Then enter the correct **file header row number** and **data start row number**. The header row is the row that contains the column names, and the data start row is the first row that contains actual observation values. 
 
-<img src="/job-orchestration/ingestion_6_csv_file.png" alt="Create a new data connection form" width="750">
+<img src="/job-orchestration/ingestion_6_csv_file.png" alt="Example CSV file" width="750">
 
 Next, select the file delimiter. Use `Comma` for comma-separated files and `Tab` for tab-delimited files. 
 
