@@ -138,6 +138,17 @@
             :workspace-id="thing.workspaceId"
           />
         </v-dialog>
+
+        <v-btn
+          class="ml-sm-auto max-[600px]:self-start"
+          variant="text"
+          color="primary"
+          :prepend-icon="mdiDownloadBoxOutline"
+          :to="{ name: 'StreamingDataLoaderDownload' }"
+          data-testid="download-data-loader-button"
+        >
+          Download data loader
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -263,7 +274,11 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useHydroShare } from '@/composables/useHydroShare'
 import { useHydroShareStore } from '@/store/hydroShare'
 import HydroShareArchivalButton from '@/components/HydroShare/HydroShareArchivalButton.vue'
-import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import {
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiDownloadBoxOutline,
+} from '@mdi/js'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 
 const route = useRoute()

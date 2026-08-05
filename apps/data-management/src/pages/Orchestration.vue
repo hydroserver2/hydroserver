@@ -18,7 +18,6 @@
             :tabs="tabs"
             @select-tab="setActiveTab"
             @open-workspaces="openWorkspaceManager"
-            @open-hydro-loader="goToHydroLoader"
           />
 
           <OrchestrationContextSidebar
@@ -778,10 +777,6 @@ const setActiveTab = async (tab: TabId) => {
 
 const openWorkspaceManager = async () => {
   await router.push({ name: 'Workspaces' })
-}
-
-const goToHydroLoader = async () => {
-  await router.push({ name: 'HydroLoader' })
 }
 
 const selectConnection = async (id: string) => {

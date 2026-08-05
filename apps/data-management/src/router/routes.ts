@@ -175,9 +175,25 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/streaming-data-loader/download',
+    name: 'StreamingDataLoaderDownload',
+    component: () => import('@/pages/StreamingDataLoaderDownload.vue'),
+    meta: {
+      title: 'Download Streaming Data Loader',
+      metaTags: [
+        {
+          name: 'keywords',
+          content: 'HydroServer, Streaming Data Loader, SDL, Download',
+        },
+      ],
+    },
+  },
+  {
+    // Renamed from /hydroloader/download. Kept as a redirect since this
+    // page has already shipped to production and may be bookmarked or
+    // linked from elsewhere.
     path: '/hydroloader/download',
-    name: 'HydroLoader',
-    component: () => import('@/pages/HydroLoaderDownload.vue'),
+    redirect: '/streaming-data-loader/download',
   },
   {
     // AllAuth emails will link users to this page if a password reset was requested but the email provided does not

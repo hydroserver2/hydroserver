@@ -43,23 +43,12 @@
         </span>
         <span class="rail-label">Workspaces</span>
       </button>
-
-      <button
-        type="button"
-        class="rail-btn rail-btn-secondary rail-link"
-        @click="$emit('open-hydro-loader')"
-      >
-        <span class="rail-pill rail-pill-secondary">
-          <v-icon :icon="mdiDownloadBoxOutline" size="22" />
-        </span>
-        <span class="rail-label">Download data loader</span>
-      </button>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { mdiBriefcaseOutline, mdiDownloadBoxOutline } from '@mdi/js'
+import { mdiBriefcaseOutline } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { type TabDefinition, type TabId } from './orchestrationTabs'
@@ -71,7 +60,6 @@ defineProps<{
 defineEmits<{
   (e: 'select-tab', id: TabId): void
   (e: 'open-workspaces'): void
-  (e: 'open-hydro-loader'): void
 }>()
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
@@ -115,10 +103,6 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
   cursor: pointer;
   font-family: inherit;
 }
-.rail-link {
-  text-decoration: none;
-  color: inherit;
-}
 .rail-btn:hover .rail-pill {
   background: rgba(0, 0, 0, 0.05);
 }
@@ -131,15 +115,6 @@ const { activeTab } = storeToRefs(useOrchestrationStore())
   justify-content: center;
   position: relative;
   transition: background 0.15s;
-}
-.rail-btn-secondary {
-  color: var(--hs-text-secondary);
-}
-.rail-btn-secondary:hover .rail-pill-secondary {
-  background: rgba(21, 101, 192, 0.08);
-}
-.rail-pill-secondary {
-  background: transparent;
 }
 .rail-badge {
   position: absolute;
