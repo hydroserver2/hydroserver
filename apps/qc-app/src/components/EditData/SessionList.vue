@@ -156,10 +156,16 @@ function returnToCurrent(): void {
   padding-block: 2px;
 }
 
+/* Every session reads as its own container, so the unselected ones don't
+   float loose against the timeline rail. */
 .qc-session-list__item :deep(.v-timeline-item__body) {
   border-radius: 6px;
-  padding-inline: 6px;
-  transition: background-color 120ms ease;
+  padding: 6px 8px;
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 .qc-session-list__item:hover :deep(.v-timeline-item__body) {
@@ -168,5 +174,6 @@ function returnToCurrent(): void {
 
 .qc-session-list__item--viewed :deep(.v-timeline-item__body) {
   background-color: rgba(var(--v-theme-primary), 0.12);
+  border-color: rgba(var(--v-theme-primary), 0.4);
 }
 </style>
