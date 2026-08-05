@@ -308,6 +308,8 @@ on boot.
 | `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
+| `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never promotes to QC target; `refreshGraphSeriesArray` skips its fetch. |
+| `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the QC target alone. |
 | `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
 | `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
 | `adoptManagedDatastream`            | action   | `(managed: Datastream, sourceId: string) => Promise<void>` | Enter editing on a freshly-created managed datastream: replace the source in the plot and re-key its already-loaded series as the managed datastream's working copy (no second, empty item; no re-fetch). |

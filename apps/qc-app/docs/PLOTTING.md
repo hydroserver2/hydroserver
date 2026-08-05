@@ -162,6 +162,19 @@ dispatch. Without it, a programmatic re-render after a HistoryItem
 replay would look like a user selection and append another item to
 the history. Cleared once the redraw is back in steady state.
 
+## History snapshot series
+
+A `GraphSeries` carrying a `snapshot` field is a frozen replay of a QC
+session at one operation, not a live datastream. To `createPlotlyOption` it
+is an ordinary non-QC series: it gets its own overlaying right-side axis and
+its own colour from the shared assigner. That is deliberate. Being able to
+shift a snapshot on its own axis is how the user lines it up against the QC
+target, which is the point of plotting it.
+
+What differs is upstream, not here: the data never refetches (see
+`refreshGraphSeriesArray`'s `isSnapshotId` guard), and `PlottedDatastreams`
+renders the row's provenance instead of a point count.
+
 ## Why `internal.ts` isn't re-exported
 
 `plotly.ts` is a barrel for everything the rest of the app needs.

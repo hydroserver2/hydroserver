@@ -414,17 +414,43 @@ The header carries the count chip and four icon buttons (left to right): **undo*
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, with a reload-from-server button.
+- A baseline **Data loaded** row at the top, with a plot-this-step button and a reload-from-server button.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
+  - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
   - A **reload-from-this-step** button that replays history up to but not including this entry.
   - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
 - A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
 
 Clicking the chevron at the very top of the panel collapses the whole panel; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar.
+
+## Comparing against a point in history
+
+The chart-line button on any history row plots that session's state at that
+operation as a **separate line**, so you can compare it against what you are
+editing now without leaving your session. The button on the **Data loaded**
+row plots the state the session started from, before its first operation.
+
+Click the button again to remove the line.
+
+Things worth knowing:
+
+- Snapshots appear in the plotted datastreams list with a history icon, a
+  `snapshot` chip, and a provenance line such as
+  `step 3 of 7: Fill Gaps - by Alice - Mar 14, 2026`.
+- Each snapshot gets its own Y axis, so you can shift it to line it up
+  against the QC target, exactly like any other plotted datastream.
+- A snapshot is **frozen**. It is computed once, over its own session's
+  window, and changing the plot's time range never refetches or recomputes
+  it. Zoom outside that window and the line simply stops.
+- Snapshots of the session you are editing include your unsaved edits;
+  snapshots of any other session replay what was saved to the server.
+- Snapshots travel in the share link, so a link reproduces the comparison.
+  Each one replays on load, so a link carrying several is slower to open.
+- Leaving the editor for the Select view drops every snapshot.
 
 ## Save / load a QC history
 

@@ -324,6 +324,31 @@ and each workspace's role is marked on the picker. The role rides along on the
 `Workspace` object (`collaboratorRole.permissions`; owners have a null role;
 admins override), so no extra request is needed.
 
+**History snapshots.** A snapshot is a session's state at one operation,
+plotted as an extra comparison line. `useHistorySnapshots()` drives it;
+`buildSnapshotRecord()` builds the record by replaying `0..k`, delegating
+committed sessions to `reconstructCommittedSession(..., opLimit)` and
+replaying the live record for the in-progress one so unsaved drafts count.
+
+Three constraints shape the implementation:
+
+- **Window.** The base is always the session chain's own window, never the
+  plot's time range. Operations replay against array indices, so a different
+  base window misaligns the replay. A snapshot is therefore frozen at
+  creation and never refetched.
+- **Record isolation.** `useObservationStore.fetchObservationsInRange` hands
+  back one shared `ObservationRecord` per datastream, and the replay mutates
+  whatever it is given. Snapshots inject a *detached* fetcher that warms the
+  raw cache and then constructs its own `ObservationRecord`, so a build never
+  disturbs the plot's series or a previous snapshot.
+- **Identity.** Snapshots ride in `plottedDatastreams` under the synthetic id
+  `snap:<sessionId>:<opIndex>` so legend rendering, colour assignment,
+  visibility and reorder work unchanged. `isSnapshotId()` guards the paths
+  that would otherwise treat one as real: `refreshGraphSeriesArray` skips its
+  fetch, `releaseManagedDatastream` drops them when the editor closes, and
+  the share encoder keeps them out of `ds` (they use their own `snap` key, so
+  the QC-target-is-first rule and the `h`/`ya` bitmask indices still hold).
+
 ## Routing and auth
 
 vue-router 5, two routes (Home, Workspaces). Two guards run on
