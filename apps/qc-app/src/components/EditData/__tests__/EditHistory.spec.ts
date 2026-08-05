@@ -293,9 +293,9 @@ describe('EditHistory.vue actions', () => {
     vi.useFakeTimers()
     const wrapper = createWrapper()
     await flushPromises()
-    const reloadBtn = wrapper.findAll('button').find((b) => b.html().includes('mdi-reload'))
-    expect(reloadBtn).toBeTruthy()
-    await reloadBtn!.trigger('click')
+    const reloadBtn = wrapper.find('[data-testid="history-reload-btn"]')
+    expect(reloadBtn.exists()).toBe(true)
+    await reloadBtn.trigger('click')
     await vi.runAllTimersAsync()
     expect(selectedSeries.value.data.reload).toHaveBeenCalled()
     expect(refreshGraphSeriesArray).toHaveBeenCalled()
@@ -570,6 +570,62 @@ describe('EditHistory.vue actions', () => {
         expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
       )
       expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
+    })
+
+    // The baseline row is step -1: the state the session started from,
+    // before any of its operations.
+    it('reloads to the session baseline from the Data loaded row', async () => {
+      const history = [
+        makeEntry('SELECTION', [], { durationMs: 10 }),
+        makeEntry('DELETE_POINTS', [], { durationMs: 20 }),
+      ]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+
+      const w = createWrapper()
+      await flushPromises()
+      await w
+        .find('[data-testid="history-reload-step-baseline"]')
+        .trigger('click')
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await flushPromises()
+
+      expect(reloadHistory).toHaveBeenCalledWith(-1)
+      // Nothing is applied at the baseline, so no row reports a run.
+      expect(w.find('[data-testid="history-duration-0"]').exists()).toBe(false)
+      expect(w.find('[data-testid="history-duration-1"]').exists()).toBe(false)
+    })
+
+    it('marks the Data loaded row as the one being shown', async () => {
+      const history = [makeEntry('SELECTION', [], { durationMs: 10 })]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+
+      const w = createWrapper()
+      await flushPromises()
+      expect(w.find('[data-testid="history-loaded-baseline"]').exists()).toBe(false)
+
+      await w
+        .find('[data-testid="history-reload-step-baseline"]')
+        .trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-loaded-baseline"]').exists()).toBe(true)
+      )
+      expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
+    })
+
+    it('disables the baseline reload when there is nothing to step back from', async () => {
+      editHistory.value = []
+      selectedSeries.value = makeSeries()
+
+      const w = createWrapper()
+      await flushPromises()
+
+      expect(
+        w.find('[data-testid="history-reload-step-baseline"]').attributes('disabled')
+      ).toBeDefined()
     })
 
     // Reloading from a step un-applies everything below it. A committed

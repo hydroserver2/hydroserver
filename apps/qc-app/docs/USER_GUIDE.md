@@ -414,7 +414,7 @@ The header carries the count chip and four icon buttons (left to right): **undo*
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, with a plot-this-step button and a reload-from-server button.
+- A baseline **Data loaded** row at the top, carrying a plot-this-step button, a **reload-from-this-step** button that returns the plot to the state the session started from, and a **reload-from-server** button (cloud icon) that refetches and drops the history entirely.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
   - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.

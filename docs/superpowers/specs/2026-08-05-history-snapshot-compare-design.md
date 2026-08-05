@@ -190,6 +190,12 @@ replayed length (a replay can drop a preceding `SELECTION`). `isApplied()`
 hides execution data for steps past the one on screen, since those did not run
 in this view.
 
+The "Data loaded" row is step `-1` and reloads to it, so a session's starting
+state is reachable the same way any operation is. It carries the "Showing"
+chip when it is the step on screen. Its reload-from-server button moved to a
+cloud icon so the two reloads are not two identical glyphs doing different
+things: one replays, the other refetches and drops the history.
+
 `hasUnsavedChanges` / `unsavedEditCount` now return false / 0 while a
 committed session is being viewed. They compare history entries by identity,
 so a replay that swaps entries used to read as pending edits and prompted

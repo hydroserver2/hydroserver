@@ -141,6 +141,18 @@
         <span class="text-body-small font-weight-medium flex-grow-1 text-truncate">
           {{ selectedSeries?.data.isLoading ? 'Loading data…' : 'Data loaded' }}
         </span>
+        <v-chip
+          v-if="shownStepIndex === SNAPSHOT_BASELINE_INDEX"
+          size="x-small"
+          color="primary"
+          variant="tonal"
+          label
+          class="mr-1 flex-shrink-0"
+          data-testid="history-loaded-baseline"
+        >
+          Showing
+        </v-chip>
+
         <span
           v-if="selectedSeries?.data.loadingTime"
           class="text-body-small text-medium-emphasis mr-1 flex-shrink-0"
@@ -184,15 +196,34 @@
           </template>
         </v-tooltip>
 
+        <v-tooltip location="start" text="Reload from this step">
+          <template #activator="{ props: tp }">
+            <v-btn
+              v-bind="tp"
+              data-testid="history-reload-step-baseline"
+              aria-label="Reload from this step"
+              size="x-small"
+              variant="text"
+              density="comfortable"
+              icon="mdi-reload"
+              :disabled="isUpdating || !editCount"
+              @click="onReloadHistory(SNAPSHOT_BASELINE_INDEX)"
+            />
+          </template>
+        </v-tooltip>
+
+        <!-- Distinct icon from the step reload above: this one refetches
+             and drops the history rather than replaying it. -->
         <v-tooltip v-if="!selectedSeries?.data.isLoading" location="start" text="Reload from server">
           <template #activator="{ props: tp }">
             <v-btn
               v-bind="tp"
               data-testid="history-reload-btn"
+              aria-label="Reload from server"
               size="x-small"
               variant="text"
               density="comfortable"
-              icon="mdi-reload"
+              icon="mdi-cloud-download-outline"
               :disabled="isUpdating || isReadOnly"
               @click="onReload"
             />
