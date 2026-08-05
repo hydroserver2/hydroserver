@@ -237,6 +237,68 @@ describe('reconstructCommittedSession', () => {
     expect(captured()!.operations.map((o) => o.method)).toEqual(['SELECTION'])
     expect((record.history as any[]).map((h) => h.method)).toEqual(['SELECTION'])
   })
+
+  it('truncates the viewed session operations to opLimit', async () => {
+    const qc = makeQcFake()
+    const { historyId, second } = await chainOf(qc)
+    const { fetchInRange, applyHistory, captured } = spies()
+    const { reconstructCommittedSession } = await import('../reconstructSession')
+
+    const { record } = await reconstructCommittedSession(
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      source,
+      historyId,
+      second.id,
+      1
+    )
+
+    // Ancestors are never truncated; only this session stops early.
+    expect(captured()!.operations.map((o) => o.method)).toEqual([
+      'SELECTION',
+      'DELETE_POINTS',
+    ])
+    expect((record.history as any[]).map((h) => h.method)).toEqual([
+      'DELETE_POINTS',
+    ])
+  })
+
+  it('replays ancestors only when opLimit is 0', async () => {
+    const qc = makeQcFake()
+    const { historyId, second } = await chainOf(qc)
+    const { fetchInRange, applyHistory, captured } = spies()
+    const { reconstructCommittedSession } = await import('../reconstructSession')
+
+    const { record } = await reconstructCommittedSession(
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      source,
+      historyId,
+      second.id,
+      0
+    )
+
+    expect(captured()!.operations.map((o) => o.method)).toEqual(['SELECTION'])
+    expect(record.history as any[]).toEqual([])
+  })
+
+  it('replays every operation when opLimit is omitted', async () => {
+    const qc = makeQcFake()
+    const { historyId, second } = await chainOf(qc)
+    const { fetchInRange, applyHistory, captured } = spies()
+    const { reconstructCommittedSession } = await import('../reconstructSession')
+
+    await reconstructCommittedSession(
+      { qcSessions: qc.sessions, qcOperations: qc.operations, fetchInRange, applyHistory },
+      source,
+      historyId,
+      second.id
+    )
+
+    expect(captured()!.operations.map((o) => o.method)).toEqual([
+      'SELECTION',
+      'DELETE_POINTS',
+      'INTERPOLATE',
+    ])
+  })
 })
 
 describe('reconstructCommittedSession — chain order', () => {

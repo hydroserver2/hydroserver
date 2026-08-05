@@ -154,10 +154,41 @@
           color="primary"
           indeterminate
         />
-        <v-tooltip v-else location="start" text="Reload from server">
+        <v-tooltip
+          location="start"
+          :text="
+            snapshotShown(SNAPSHOT_BASELINE_INDEX)
+              ? 'Remove this comparison line'
+              : `Plot the session's starting state`
+          "
+        >
           <template #activator="{ props: tp }">
             <v-btn
               v-bind="tp"
+              data-testid="history-snapshot-baseline"
+              aria-label="Plot the session's starting state"
+              size="x-small"
+              variant="text"
+              density="comfortable"
+              :icon="
+                snapshotShown(SNAPSHOT_BASELINE_INDEX)
+                  ? 'mdi-chart-line-variant'
+                  : 'mdi-chart-line'
+              "
+              :color="
+                snapshotShown(SNAPSHOT_BASELINE_INDEX) ? 'primary' : undefined
+              "
+              :disabled="isBuilding"
+              @click="onToggleSnapshot(SNAPSHOT_BASELINE_INDEX)"
+            />
+          </template>
+        </v-tooltip>
+
+        <v-tooltip v-if="!selectedSeries?.data.isLoading" location="start" text="Reload from server">
+          <template #activator="{ props: tp }">
+            <v-btn
+              v-bind="tp"
+              data-testid="history-reload-btn"
               size="x-small"
               variant="text"
               density="comfortable"
@@ -281,13 +312,14 @@
               </v-tooltip>
 
               <v-tooltip
-                v-if="entry.execution?.status === 'failed'"
+                v-if="isApplied(index) && entry.execution?.status === 'failed'"
                 location="start"
                 text="Operation failed: see console for details"
               >
                 <template #activator="{ props: tp }">
                   <v-icon
                     v-bind="tp"
+                    :data-testid="`history-failed-${index}`"
                     icon="mdi-alert-circle"
                     size="14"
                     color="error"
@@ -295,25 +327,11 @@
                 </template>
               </v-tooltip>
 
-              <!-- Dev-only badge showing whether the dispatch ran on a
-                   worker or inline; gated on import.meta.env.DEV. -->
-              <v-chip
-                v-if="isDev && entry.execution?.mode"
-                size="x-small"
-                variant="tonal"
-                :color="entry.execution.mode === 'inline' ? 'success' : 'primary'"
-                class="edit-history__mode-chip"
-                :title="
-                  entry.execution.mode === 'inline'
-                    ? 'Ran on the main thread (inline)'
-                    : 'Ran on a web worker'
-                "
-              >
-                {{ entry.execution.mode }}
-              </v-chip>
-
+              <!-- `!= null` so a replay that measures 0ms still reads as
+                   having run. -->
               <span
-                v-if="entry.execution?.durationMs"
+                v-if="isApplied(index) && entry.execution?.durationMs != null"
+                :data-testid="`history-duration-${index}`"
                 class="text-body-small text-medium-emphasis"
               >
                 {{ formatDuration(entry.execution.durationMs) }}
@@ -326,6 +344,34 @@
                 color="primary"
                 indeterminate
               />
+
+              <v-tooltip
+                location="start"
+                :text="
+                  snapshotShown(index)
+                    ? 'Remove this comparison line'
+                    : 'Plot this step as a comparison line'
+                "
+              >
+                <template #activator="{ props: tp }">
+                  <v-btn
+                    v-bind="tp"
+                    :data-testid="`history-snapshot-${index}`"
+                    aria-label="Plot this step as a comparison line"
+                    size="x-small"
+                    variant="text"
+                    density="comfortable"
+                    :icon="
+                      snapshotShown(index)
+                        ? 'mdi-chart-line-variant'
+                        : 'mdi-chart-line'
+                    "
+                    :color="snapshotShown(index) ? 'primary' : undefined"
+                    :disabled="isBuilding || entry.execution?.inFlight"
+                    @click="onToggleSnapshot(index)"
+                  />
+                </template>
+              </v-tooltip>
 
               <v-tooltip location="start" text="Reload from this step">
                 <template #activator="{ props: tp }">
@@ -378,6 +424,28 @@
                 <code class="text-body-small">{{ formatArg(arg) }}</code>
               </li>
             </ul>
+
+            <div
+              v-if="isApplied(index) && isDev && entry.execution?.mode"
+              class="text-body-small text-medium-emphasis mt-3 d-flex align-center ga-2"
+              :data-testid="`history-execution-${index}`"
+            >
+              <!-- Dev-only: whether the dispatch ran on a worker or inline. -->
+              <v-chip
+                v-if="isDev && entry.execution?.mode"
+                size="x-small"
+                variant="tonal"
+                :color="entry.execution.mode === 'inline' ? 'success' : 'primary'"
+                class="edit-history__mode-chip"
+                :title="
+                  entry.execution.mode === 'inline'
+                    ? 'Ran on the main thread (inline)'
+                    : 'Ran on a web worker'
+                "
+              >
+                {{ entry.execution.mode }}
+              </v-chip>
+            </div>
 
             <div
               v-if="entry.performedBy"
@@ -435,6 +503,8 @@ import { iconForMethod, colorForMethod } from '@/components/EditData/operations'
 import SessionList from '@/components/EditData/SessionList.vue'
 import { useQcHistory } from '@/composables/useQcHistory'
 import { useQcSessionStore } from '@/store/qcSession'
+import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
+import { SNAPSHOT_BASELINE_INDEX } from '@/utils/snapshotId'
 import { Snackbar } from '@uwrl/qc-utils'
 import type { HistoryItem } from '@uwrl/qc-utils'
 
@@ -496,7 +566,20 @@ const shownStepIndex = computed<number | null>(() => {
 
 // Committed sessions are immutable server-side, so their comments are shown
 // but not editable.
-const { isReadOnly, isSwitchingSession } = storeToRefs(useQcSessionStore())
+const { isReadOnly, isSwitchingSession, viewedSessionId } =
+  storeToRefs(useQcSessionStore())
+
+const { toggleSnapshot, isSnapshotPlotted, isBuilding } = useHistorySnapshots()
+
+// Not gated on isReadOnly: plotting a comparison line is a read action.
+const onToggleSnapshot = async (opIndex: number) => {
+  const sessionId = viewedSessionId.value
+  if (!sessionId) return
+  await toggleSnapshot(sessionId, opIndex)
+}
+
+const snapshotShown = (opIndex: number) =>
+  !!viewedSessionId.value && isSnapshotPlotted(viewedSessionId.value, opIndex)
 
 function setComment(entry: HistoryItem, value: string) {
   entry.comment = value
@@ -516,6 +599,11 @@ const canRedo = computed(
 function toggle(index: number) {
   openIndex.value = openIndex.value === index ? null : index
 }
+
+/** Steps past the one on screen were not replayed, so their execution
+ *  record describes a run that no longer holds in this view. */
+const isApplied = (index: number) =>
+  shownStepIndex.value === null || index <= shownStepIndex.value
 
 function formatMethod(method: string) {
   if (!method) return ''
@@ -581,7 +669,11 @@ const onReloadHistory = async (index: number) => {
     setTimeout(async () => {
       const newSelection = await record?.reloadHistory(index)
       if (preserved && record) {
-        record.history.splice(0, record.history.length, ...preserved)
+        // Append only what the replay dropped. Restoring `preserved`
+        // wholesale would put the pre-replay timings back.
+        const tail = preserved.slice(index + 1)
+        record.history.push(...tail)
+        loadedStepIndex.value = record.history.length - tail.length - 1
       }
 
       isUpdating.value = false

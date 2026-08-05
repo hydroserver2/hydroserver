@@ -104,7 +104,8 @@ export async function reconstructCommittedSession(
   deps: ReconstructSessionDeps,
   source: Datastream,
   historyId: string,
-  sessionId: string
+  sessionId: string,
+  opLimit?: number
 ): Promise<ReconstructSessionResult> {
   const { qcSessions, qcOperations, fetchInRange, applyHistory } = deps
 
@@ -135,6 +136,13 @@ export async function reconstructCommittedSession(
       unwrap(await qcOperations.list(historyId, s.id, { fetch_all: true }))
     )
   )
+
+  // Snapshots replay this session only partway. Ancestors are never
+  // truncated: they are the base this session was built on.
+  const targetIdx = chain.length - 1
+  if (opLimit != null && perSession[targetIdx]) {
+    perSession[targetIdx] = perSession[targetIdx]!.slice(0, opLimit)
+  }
 
   const history: QcHistory = {
     version: '1',

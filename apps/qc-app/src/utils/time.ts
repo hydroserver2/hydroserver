@@ -55,6 +55,13 @@ const toDate = (iso?: string | null): Date | null => {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
+/** `Mar 14, 2026`. Day precision, for timestamps shown alongside other text. */
+export function formatDayStamp(iso?: string | null): string {
+  const d = toDate(iso)
+  if (!d) return iso || '–'
+  return MONTH_DAY_YEAR.format(d)
+}
+
 /** A whole-day boundary, where showing the clock adds nothing. */
 const isMidnight = (d: Date) =>
   d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0

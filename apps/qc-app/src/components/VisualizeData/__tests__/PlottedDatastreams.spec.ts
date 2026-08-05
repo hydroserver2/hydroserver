@@ -216,3 +216,74 @@ describe('PlottedDatastreams.vue — load status', () => {
     expect(wrapper.find('.plotted-item__subtitle').text()).toBe('6 pts loaded')
   })
 })
+
+describe('PlottedDatastreams snapshot rows', () => {
+  const snapMeta = {
+    sessionId: 'sess-1',
+    sessionLabel: 'March backfill',
+    opIndex: 2,
+    opCount: 7,
+    opName: 'Fill Gaps',
+    performedBy: 'Alice',
+    createdAt: '2026-03-14T00:00:00',
+  }
+
+  beforeEach(() => {
+    plottedDatastreams.value = [
+      datastreamA,
+      { id: 'snap:sess-1:2', name: 'March backfill' },
+    ]
+    graphSeriesArray.value = [
+      { id: datastreamA.id, data: { isLoading: false } },
+      {
+        id: 'snap:sess-1:2',
+        name: 'March backfill',
+        data: { isLoading: false },
+        snapshot: snapMeta,
+      },
+    ]
+    plotlyOptions.value = { traces: [] }
+    qcDatastream.value = datastreamA
+    hiddenAxisIds.value = new Set()
+    hiddenTraceIds.value = new Set()
+  })
+
+  it('renders the provenance line and a snapshot chip', () => {
+    const text = mountIt().text()
+
+    expect(text).toContain('March backfill')
+    expect(text).toContain('snapshot')
+    expect(text).toContain('step 3 of 7: Fill Gaps')
+    expect(text).toContain('by Alice')
+    expect(text).toContain('Mar 14, 2026')
+  })
+
+  it('labels a baseline snapshot as the session start', () => {
+    graphSeriesArray.value[1].snapshot = {
+      ...snapMeta,
+      opIndex: -1,
+      opName: '',
+    }
+
+    const text = mountIt().text()
+
+    expect(text).toContain('session start')
+    expect(text).not.toContain('step 0 of 7')
+  })
+
+  // Snapshots are outside the loaded window by design, so the empty-window
+  // warning would fire on every one of them.
+  it('does not flag a snapshot as an empty window', () => {
+    const wrapper = mountIt()
+    const rows = wrapper.findAll('.plotted-item')
+
+    expect(rows[1]!.find('.plotted-item__empty-flag').exists()).toBe(false)
+  })
+
+  it('keeps the axis toggle so the snapshot can be shifted', () => {
+    const wrapper = mountIt()
+    const rows = wrapper.findAll('.plotted-item')
+
+    expect(rows[1]!.find('.plotted-item__axis-toggle').exists()).toBe(true)
+  })
+})

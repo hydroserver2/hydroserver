@@ -186,4 +186,14 @@ describe('useQcSessionStore', () => {
     await useQcSessionStore().loadSessions(h.id)
     expect(opsList).not.toHaveBeenCalled()
   })
+
+  it('holds the source datastream and clears it on reset', () => {
+    const store = useQcSessionStore()
+    expect(store.sourceDatastream).toBeNull()
+
+    store.sourceDatastream = { id: 's-1', name: 'Source' } as any
+    store.reset()
+
+    expect(store.sourceDatastream).toBeNull()
+  })
 })

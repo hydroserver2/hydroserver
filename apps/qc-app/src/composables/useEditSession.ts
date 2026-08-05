@@ -76,7 +76,7 @@ export function useEditSession() {
   const { fetchObservationsInRange } = useObservationStore()
   const sessionStore = useQcSessionStore()
 
-  const sourceDatastream = ref<Datastream | null>(null)
+  const { sourceDatastream } = storeToRefs(sessionStore)
   /** True when the managed datastream has no in-progress session to resume. */
   const needsSession = ref(false)
   /** True when the selected datastream has no QC history (not a managed datastream). */
@@ -98,8 +98,11 @@ export function useEditSession() {
   }
 
   /** True when the working copy has edits not in the last saved snapshot
-   *  (additions, removals, or an edited comment). */
+   *  (additions, removals, or an edited comment). Always false while
+   *  viewing a committed session: it cannot be edited, and replaying its
+   *  history swaps entries that an identity check would read as edits. */
   const hasUnsavedChanges = computed(() => {
+    if (sessionStore.isReadOnly) return false
     const current = currentEdits()
     const saved = savedEdits.value
     if (current.length !== saved.length) return true
@@ -109,10 +112,11 @@ export function useEditSession() {
   })
 
   /** Count of edits added since the last save (the common append case). */
-  const unsavedEditCount = computed(
-    () =>
-      currentEdits().filter((item) => !savedEdits.value.includes(item)).length
-  )
+  const unsavedEditCount = computed(() => {
+    if (sessionStore.isReadOnly) return 0
+    return currentEdits().filter((item) => !savedEdits.value.includes(item))
+      .length
+  })
 
   async function beginEditing(): Promise<void> {
     const managed = qcDatastream.value

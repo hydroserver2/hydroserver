@@ -492,10 +492,13 @@ import {
   encodeShareState,
   type ShareState,
 } from '@/utils/share'
+import { isSnapshotId, parseSnapshotId } from '@/utils/snapshotId'
+import { useHistorySnapshots } from '@/composables/useHistorySnapshots'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 
 const { resetState } = useDataVisStore()
+const { toggleSnapshot } = useHistorySnapshots()
 const {
   plottedDatastreams,
   qcDatastream,
@@ -922,7 +925,13 @@ const hydrateFromUrl = () => {
       }
     : null
 
-  void setPlottedDatastreams(resolved, qcId)
+  // Snapshots replay against the session store, so they wait for the plot
+  // (and with it the editor's session load) to settle.
+  void setPlottedDatastreams(resolved, qcId).then(async () => {
+    for (const s of state.snapshots ?? []) {
+      await toggleSnapshot(s.sessionId, s.opIndex)
+    }
+  })
 }
 
 if (datastreams.value.length) {
@@ -945,7 +954,7 @@ if (datastreams.value.length) {
 // lives in `share.ts` so this watcher reads as a plain assembly of
 // inputs.
 const SHARE_KEYS = [
-  'ws', 'm', 'tab', 'ds', 'r', 'from', 'to',
+  'ws', 'm', 'tab', 'ds', 'snap', 'r', 'from', 'to',
   't', 'op', 'pl', 'h', 'ya', 'z', 'yz', 'dp', 'th',
 ] as const
 
@@ -970,7 +979,14 @@ watch(
     tooltipsMaxDataPoints,
   ],
   () => {
-    const ids = plottedDatastreams.value.map((ds) => ds.id)
+    // Snapshots travel in their own key; `ids` stays real datastreams so the
+    // QC-target-is-first rule and the visibility bitmasks still line up.
+    const plotted = plottedDatastreams.value
+    const ids = plotted.filter((ds) => !isSnapshotId(ds.id)).map((ds) => ds.id)
+    const snapshots = plotted
+      .filter((ds) => isSnapshotId(ds.id))
+      .map((ds) => parseSnapshotId(ds.id))
+      .filter((s): s is NonNullable<typeof s> => !!s)
     const isEdit = currentView.value === DrawerType.Edit
 
     const state: ShareState = {
@@ -978,6 +994,7 @@ watch(
       editView: isEdit,
       tableTab: activeTab.value === 'table',
       datastreamIds: ids,
+      snapshots,
       datePresetId: Number.isFinite(selectedDateBtnId.value)
         ? selectedDateBtnId.value
         : null,

@@ -4,6 +4,26 @@ export type EnumDictionary<T extends string | symbol | number, U> = {
   [K in T]: U
 }
 
+/**
+ * Provenance for a history snapshot series: which session it came from and
+ * how far through that session's operations it was replayed. Present only on
+ * snapshot series; absent on real datastream series.
+ */
+export interface SnapshotMeta {
+  sessionId: string
+  /** Session description, or its formatted window when it has none. */
+  sessionLabel: string
+  /** -1 for the session baseline, else the index of the last replayed op. */
+  opIndex: number
+  /** Total operations in the session, for the "step 3 of 7" label. */
+  opCount: number
+  /** Formatted operation name, empty string for the baseline. */
+  opName: string
+  performedBy?: string
+  /** ISO timestamp shown in the provenance line. */
+  createdAt: string
+}
+
 export interface GraphSeries {
   id: string
   name: string
@@ -30,4 +50,10 @@ export interface GraphSeries {
    * before.
    */
   intendedSpacingMs?: number | null
+  /**
+   * Set when this series is a frozen replay of a session's history rather
+   * than a live datastream. Drives the legend provenance row and the guards
+   * that keep snapshots out of fetches and the QC-target selector.
+   */
+  snapshot?: SnapshotMeta
 }

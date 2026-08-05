@@ -31,6 +31,18 @@ vi.mock('@/composables/useDataSelection', () => ({
   useDataSelection: () => ({ clearSelected, setPlotSelection }),
 }))
 
+const toggleSnapshot = vi.fn().mockResolvedValue(undefined)
+const plottedSnapshots = ref<string[]>([])
+const isBuilding = ref(false)
+vi.mock('@/composables/useHistorySnapshots', () => ({
+  useHistorySnapshots: () => ({
+    toggleSnapshot,
+    isSnapshotPlotted: (sessionId: string, opIndex: number) =>
+      plottedSnapshots.value.includes(`${sessionId}:${opIndex}`),
+    isBuilding,
+  }),
+}))
+
 vi.mock('@uwrl/qc-utils', () => ({
   formatDuration: (ms: number) => String(ms) + 'ms',
   // operations.ts (transitively imported via EditHistory.vue's
@@ -405,6 +417,62 @@ describe('EditHistory.vue actions', () => {
       return store
     }
 
+    /**
+     * Stands in for the real `reloadHistory`: truncate to `0..index` and
+     * replace the survivors with freshly dispatched entries carrying the
+     * timings the replay just measured. Splices through the ref's proxy;
+     * mutating the raw array wouldn't trigger reactivity.
+     */
+    const replayingReloadHistory = () =>
+      vi.fn(async (index: number) => {
+        const fresh = editHistory.value.slice(0, index + 1).map((h, i) => ({
+          method: h.method,
+          args: h.args,
+          execution: { inFlight: false, status: 'success', durationMs: 900 + i },
+        }))
+        editHistory.value.splice(0, editHistory.value.length, ...fresh)
+        return []
+      })
+
+    // The committed-session path restores the full operation list after the
+    // replay so the user can keep stepping through it. That restore must not
+    // drag the pre-replay timings back with it.
+    it('shows the timings the replay produced, not the originals', async () => {
+      const history = [
+        makeEntry('SELECTION', [], { durationMs: 10 }),
+        makeEntry('DELETE_POINTS', [], { durationMs: 20 }),
+        makeEntry('INTERPOLATE', [], { durationMs: 30 }),
+      ]
+      editHistory.value = history
+      selectedSeries.value = {
+        data: {
+          history: editHistory.value,
+          redoStack: [],
+          reloadHistory: replayingReloadHistory(),
+        },
+      }
+      const w = createWrapper()
+      await readOnly()
+      await flushPromises()
+
+      await w
+        .find('[data-testid="history-item-1"]')
+        .findAll('button')
+        .at(-1)!
+        .trigger('click')
+      // `loadedStepIndex` moves synchronously, so waiting on the marker
+      // would race the replay. Wait for the dispatch itself to settle.
+      await vi.waitFor(() => expect(isUpdating.value).toBe(false))
+      await flushPromises()
+
+      // Replayed entries report the new measurement.
+      expect(w.find('[data-testid="history-duration-0"]').text()).toContain('900')
+      expect(w.find('[data-testid="history-duration-1"]').text()).toContain('901')
+      // The un-replayed tail survives on screen but did not run.
+      expect(w.findAll('[data-testid^="history-item-"]').length).toBe(3)
+      expect(w.find('[data-testid="history-duration-2"]').exists()).toBe(false)
+    })
+
     it('hides the per-entry undo and disables the toolbar undo/redo', async () => {
       editHistory.value = [{ method: 'ADD_POINTS', args: [], execution: {} }]
       selectedSeries.value = { data: { history: editHistory.value, redoStack: [{}] } }
@@ -431,8 +499,9 @@ describe('EditHistory.vue actions', () => {
       await readOnly()
       await flushPromises()
 
-      const baseline = w.find('.edit-history__row--baseline')
-      expect(baseline.find('button').attributes('disabled')).toBeDefined()
+      expect(
+        w.find('[data-testid="history-reload-btn"]').attributes('disabled')
+      ).toBeDefined()
     })
 
     it('keeps the entries below when reloading from a step', async () => {
@@ -501,6 +570,88 @@ describe('EditHistory.vue actions', () => {
         expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(false)
       )
       expect(w.find('[data-testid="history-loaded-1"]').exists()).toBe(true)
+    })
+
+    // Reloading from a step un-applies everything below it. A committed
+    // session keeps those rows on screen, so their telemetry would otherwise
+    // still advertise a run that no longer holds in this view.
+    it('drops execution info for steps after the one being shown', async () => {
+      const history = [
+        makeEntry('SELECTION', [], { durationMs: 10 }),
+        makeEntry('DELETE_POINTS', [], { durationMs: 20, status: 'failed' }),
+        makeEntry('INTERPOLATE', [], { durationMs: 30 }),
+      ]
+      editHistory.value = history
+      const reloadHistory = vi.fn(async () => [])
+      selectedSeries.value = { data: { history, redoStack: [], reloadHistory } }
+
+      const w = createWrapper()
+      await flushPromises()
+      expect(w.find('[data-testid="history-duration-2"]').exists()).toBe(true)
+      expect(w.find('[data-testid="history-failed-1"]').exists()).toBe(true)
+
+      await w
+        .find('[data-testid="history-item-0"]')
+        .findAll('button')
+        .at(-1)!
+        .trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('[data-testid="history-loaded-0"]').exists()).toBe(true)
+      )
+
+      // The step you reloaded from did run, so it keeps its label.
+      expect(w.find('[data-testid="history-duration-0"]').exists()).toBe(true)
+      expect(w.find('[data-testid="history-duration-1"]').exists()).toBe(false)
+      expect(w.find('[data-testid="history-duration-2"]').exists()).toBe(false)
+      // The failure badge is execution state too, so it goes as well.
+      expect(w.find('[data-testid="history-failed-1"]').exists()).toBe(false)
+    })
+  })
+
+  describe('execution telemetry placement', () => {
+    // Duration stays on the row: it is the answer to "did that step run?",
+    // which you want without expanding. Only the dev-only mode chip moved.
+    it('keeps the duration on the row and the mode chip off it', async () => {
+      editHistory.value = [
+        makeEntry('SELECTION', [], { durationMs: 1234, mode: 'inline' }),
+      ]
+      const w = createWrapper()
+      await flushPromises()
+
+      const row = w.find('[data-testid="history-item-0"] .edit-history__row')
+      expect(row.find('[data-testid="history-duration-0"]').exists()).toBe(true)
+      expect(row.text()).not.toContain('inline')
+    })
+
+    it('shows the mode chip in the expanded drawer', async () => {
+      editHistory.value = [
+        makeEntry('SELECTION', [], { durationMs: 1234, mode: 'inline' }),
+      ]
+      const w = createWrapper()
+      await flushPromises()
+
+      await w
+        .find('[data-testid="history-item-0"] .edit-history__expand')
+        .trigger('click')
+      await flushPromises()
+
+      const detail = w.find('[data-testid="history-execution-0"]')
+      expect(detail.exists()).toBe(true)
+      expect(detail.text()).toContain('inline')
+    })
+
+    // A replayed step can measure well under a millisecond, which rounds to
+    // "0ms". That is still a real run and must not read as "never ran".
+    it('renders sub-millisecond and zero durations rather than hiding them', async () => {
+      editHistory.value = [
+        makeEntry('SELECTION', [], { durationMs: 0.0054 }),
+        makeEntry('DELETE_POINTS', [], { durationMs: 0 }),
+      ]
+      const w = createWrapper()
+      await flushPromises()
+
+      expect(w.find('[data-testid="history-duration-0"]').exists()).toBe(true)
+      expect(w.find('[data-testid="history-duration-1"]').exists()).toBe(true)
     })
   })
 
@@ -613,5 +764,101 @@ describe('EditHistory.vue actions', () => {
       expect(setPlotSelection).not.toHaveBeenCalled()
       expect(clearSelected).toHaveBeenCalledWith({ recordHistory: false })
     })
+  })
+})
+
+describe('EditHistory.vue snapshot buttons', () => {
+  beforeEach(() => {
+    editHistory.value = []
+    isUpdating.value = false
+    isBuilding.value = false
+    plottedSnapshots.value = []
+    selectedSeries.value = makeSeries()
+    vi.clearAllMocks()
+  })
+
+  const makeSession = (id: string, createdAt = '2026-03-01T00:00:00Z') => ({
+    id,
+    createdAt,
+    status: 'in_progress',
+    phenomenonTimeStart: '2026-03-01T00:00:00Z',
+    phenomenonTimeEnd: '2026-04-01T00:00:00Z',
+  })
+
+  /**
+   * SessionList only renders the operations slot for a session it actually
+   * lists, or in its no-session fallback. Seed `sessions` accordingly or the
+   * history rows never mount.
+   */
+  const mountWithSession = async (
+    sessionId: string | null,
+    sessions: unknown[] = sessionId ? [makeSession(sessionId)] : []
+  ) => {
+    const pinia = createTestPinia()
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    const store = useQcSessionStore()
+    store.sessions = sessions as any
+    store.viewedSessionId = sessionId
+    return mount(EditHistory, {
+      props: {},
+      global: { plugins: [pinia, createTestVuetify()] },
+    })
+  }
+
+  it('renders an add-to-plot button on each operation row and the baseline', async () => {
+    editHistory.value = [makeEntry('FILL_GAPS'), makeEntry('DELETE_POINTS')]
+
+    const w = await mountWithSession('sess-1')
+
+    expect(w.find('[data-testid="history-snapshot-baseline"]').exists()).toBe(true)
+    expect(w.find('[data-testid="history-snapshot-0"]').exists()).toBe(true)
+    expect(w.find('[data-testid="history-snapshot-1"]').exists()).toBe(true)
+  })
+
+  it('toggles the snapshot for the clicked operation', async () => {
+    editHistory.value = [makeEntry('FILL_GAPS')]
+
+    const w = await mountWithSession('sess-1')
+    await w.find('[data-testid="history-snapshot-0"]').trigger('click')
+
+    expect(toggleSnapshot).toHaveBeenCalledWith('sess-1', 0)
+  })
+
+  it('toggles the baseline snapshot at index -1', async () => {
+    editHistory.value = [makeEntry('FILL_GAPS')]
+
+    const w = await mountWithSession('sess-1')
+    await w.find('[data-testid="history-snapshot-baseline"]').trigger('click')
+
+    expect(toggleSnapshot).toHaveBeenCalledWith('sess-1', -1)
+  })
+
+  // Plotting a comparison line is a read action, so it stays available on a
+  // committed session, which is exactly when comparing matters most.
+  it('stays enabled while the viewed session is read-only', async () => {
+    editHistory.value = [makeEntry('FILL_GAPS')]
+
+    const w = await mountWithSession('sess-1', [
+      makeSession('sess-1'),
+      makeSession('sess-2', '2026-04-01T00:00:00Z'),
+    ])
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    const store = useQcSessionStore()
+    store.currentSessionId = 'sess-2'
+    await flushPromises()
+
+    expect(store.isReadOnly).toBe(true)
+    expect(
+      w.find('[data-testid="history-snapshot-0"]').attributes('disabled')
+    ).toBeUndefined()
+  })
+
+  it('does nothing when no session is being viewed', async () => {
+    editHistory.value = [makeEntry('FILL_GAPS')]
+
+    const w = await mountWithSession(null)
+    await w.find('[data-testid="history-snapshot-0"]').trigger('click')
+
+    expect(toggleSnapshot).not.toHaveBeenCalled()
   })
 })

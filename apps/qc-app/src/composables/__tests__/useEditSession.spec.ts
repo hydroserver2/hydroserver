@@ -232,6 +232,32 @@ describe('useEditSession', () => {
     expect(session.unsavedEditCount.value).toBe(0)
   })
 
+  // A committed session cannot be edited, so nothing about it can be
+  // unsaved. Stepping through its history replaces entries as it replays,
+  // which an identity comparison would otherwise read as pending edits.
+  it('reports no unsaved changes while viewing a read-only session', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+
+    selectedSeries.value.data.history.push({ method: 'DELETE_POINTS', args: [] })
+    expect(session.hasUnsavedChanges.value).toBe(true)
+
+    const store = useQcSessionStore()
+    store.sessions = [
+      { id: 'a', status: 'committed', createdAt: '2025-01-01T00:00:00Z' },
+      { id: 'b', status: 'in_progress', createdAt: '2025-02-01T00:00:00Z' },
+    ] as any
+    store.currentSessionId = 'b'
+    store.viewedSessionId = 'a'
+
+    expect(store.isReadOnly).toBe(true)
+    expect(session.hasUnsavedChanges.value).toBe(false)
+    expect(session.unsavedEditCount.value).toBe(0)
+  })
+
   it('resuming a session starts with no unsaved changes', async () => {
     const h = unwrap(
       await qc.histories.create({

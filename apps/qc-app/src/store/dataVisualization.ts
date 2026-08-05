@@ -5,6 +5,9 @@ import { useObservationStore } from './observations'
 import { Snackbar } from '@uwrl/qc-utils'
 import { handleNewPlot } from '@/utils/plotting/plotly'
 import { subtractDays, subtractMonths, subtractYears } from '@/utils/dateMath'
+import { isSnapshotId } from '@/utils/snapshotId'
+import type { SnapshotMeta } from '@/types'
+import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
   Datastream,
   type DatastreamExtended,
@@ -187,6 +190,61 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     await rebuildPlot()
   }
 
+  /**
+   * Add a frozen history snapshot as an extra line. The synthetic datastream
+   * carries the snapshot id so the legend, colour assignment and visibility
+   * toggles work unchanged; `refreshGraphSeriesArray` skips its fetch.
+   */
+  async function addSnapshotSeries(
+    id: string,
+    record: ObservationRecord,
+    meta: SnapshotMeta
+  ) {
+    if (plottedDatastreams.value.some((d) => d.id === id)) return
+
+    const qcSeries = graphSeriesArray.value.find(
+      (s) => s.id === qcDatastreamId.value
+    )
+    plottedDatastreams.value.push({ id, name: meta.sessionLabel } as Datastream)
+    graphSeriesArray.value.push({
+      id,
+      name: meta.sessionLabel,
+      data: record,
+      yAxisLabel: qcSeries?.yAxisLabel ?? '',
+      color: '',
+      intendedSpacingMs: qcSeries?.intendedSpacingMs ?? null,
+      snapshot: meta,
+    })
+
+    assignSeriesColors(plottedDatastreams.value.map((d) => d.id))
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
+  /** Drop every snapshot line, without redrawing. Callers redraw themselves. */
+  function dropSnapshotSeries() {
+    if (!plottedDatastreams.value.some((d) => isSnapshotId(d.id))) return
+    plottedDatastreams.value = plottedDatastreams.value.filter(
+      (d) => !isSnapshotId(d.id)
+    )
+    graphSeriesArray.value = graphSeriesArray.value.filter(
+      (s) => !isSnapshotId(s.id)
+    )
+  }
+
+  /** Drop a snapshot line. Never touches the QC target. */
+  async function removeSnapshotSeries(id: string) {
+    const idx = plottedDatastreams.value.findIndex((d) => d.id === id)
+    if (idx === -1) return
+    plottedDatastreams.value.splice(idx, 1)
+    graphSeriesArray.value = graphSeriesArray.value.filter((s) => s.id !== id)
+
+    updateOptions()
+    const { plotlyRef } = storeToRefs(usePlotlyStore())
+    if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
   /** Clear every plotted datastream at once. */
   async function clearPlottedDatastreams() {
     if (!plottedDatastreams.value.length) return
@@ -258,9 +316,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
    * Inverse of `adoptManagedDatastream`, for leaving the editor. Managed
    * datastreams are hidden from the catalog, so without this the Select
    * view shows a plot with no row selected. No-op when the QC target isn't
-   * managed or its source isn't in the catalog.
+   * managed or its source isn't in the catalog. Snapshots are dropped
+   * regardless: they have no place in the Select view.
    */
   async function releaseManagedDatastream() {
+    dropSnapshotSeries()
+
     const managedId = qcDatastreamId.value
     if (!managedId) return
     const history = qcHistories.value.find(
@@ -577,10 +638,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       currentIds.has(s.id)
     )
 
-    const updateOrFetchPromises = plottedDatastreams.value.map(async (ds) => {
-      loadingStates.value.set(ds.id, true)
-      return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
-    })
+    const updateOrFetchPromises = plottedDatastreams.value
+      // Frozen replays: no server-side datastream to fetch.
+      .filter((ds) => !isSnapshotId(ds.id))
+      .map(async (ds) => {
+        loadingStates.value.set(ds.id, true)
+        return updateOrFetchGraphSeries(ds, beginDate.value, endDate.value)
+      })
 
     const results = await Promise.all(updateOrFetchPromises)
 
@@ -698,6 +762,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plotDatastream,
     unplotDatastream,
     clearPlottedDatastreams,
+    addSnapshotSeries,
+    removeSnapshotSeries,
     setPlottedDatastreams,
     setQcDatastream,
     adoptManagedDatastream,

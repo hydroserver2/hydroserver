@@ -11,13 +11,15 @@ import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useHydroServer } from '@/store/hydroserver'
 import { unwrap } from '@/services/qualityControl'
-import type { QualityControlSession } from '@hydroserver/client'
+import type { Datastream, QualityControlSession } from '@hydroserver/client'
 
 export const useQcSessionStore = defineStore('qcSession', () => {
   const historyId = ref<string | null>(null)
   /** Managed datastream the editor was last open on. The only persisted
    *  field; everything else is re-fetched on resume. */
   const resumeDatastreamId = ref<string | null>(null)
+  /** Raw datastream behind the managed one, resolved when editing begins. */
+  const sourceDatastream = ref<Datastream | null>(null)
   const sessions = ref<QualityControlSession[]>([])
   /** The single in-progress (editable) session, if any. */
   const currentSessionId = ref<string | null>(null)
@@ -120,6 +122,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
 
   function reset(): void {
     historyId.value = null
+    sourceDatastream.value = null
     sessions.value = []
     currentSessionId.value = null
     viewedSessionId.value = null
@@ -129,6 +132,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   return {
     historyId,
     resumeDatastreamId,
+    sourceDatastream,
     sessions,
     currentSessionId,
     viewedSessionId,
