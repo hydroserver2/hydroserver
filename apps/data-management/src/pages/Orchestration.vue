@@ -10,12 +10,38 @@
 
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
       <div class="orchestration-shell">
-        <OrchestrationNavRail
-          :tabs="tabs"
-          @select-tab="setActiveTab"
-          @open-workspaces="openWorkspaceManager"
-          @open-hydro-loader="goToHydroLoader"
-        />
+        <div
+          class="orchestration-nav-column"
+          :style="{ '--accent': navAccent, '--accent-light': navAccentLight }"
+        >
+          <OrchestrationNavRail
+            :tabs="tabs"
+            @select-tab="setActiveTab"
+            @open-workspaces="openWorkspaceManager"
+            @open-hydro-loader="goToHydroLoader"
+          />
+
+          <OrchestrationContextSidebar
+            v-if="selectedWorkspace"
+            :connections="filteredConnections"
+            :sites="filteredSites"
+            :can-create="canCreateDataConnections"
+            :can-edit="canEditDataConnections"
+            :can-delete="canDeleteDataConnections"
+            :task-count-for-connection="taskCountForConnection"
+            :issue-count-for-connection="issueCountForConnection"
+            :task-count-for-site="taskCountForSite"
+            :issue-count-for-site="issueCountForSite"
+            :violation-count-for-site="violationCountForSite"
+            :dot-color-for-connection="dotColorForConnection"
+            :dot-color-for-site="dotColorForSite"
+            @select-connection="selectConnection"
+            @select-site="selectSite"
+            @edit-connection="openEditDialog"
+            @delete-connection="openDeleteDialog"
+            @create="openCreateDialog"
+          />
+        </div>
 
         <section
           v-if="!selectedWorkspace"
@@ -48,26 +74,6 @@
         </section>
 
         <template v-else>
-          <OrchestrationContextSidebar
-            :connections="filteredConnections"
-            :sites="filteredSites"
-            :can-create="canCreateDataConnections"
-            :can-edit="canEditDataConnections"
-            :can-delete="canDeleteDataConnections"
-            :task-count-for-connection="taskCountForConnection"
-            :issue-count-for-connection="issueCountForConnection"
-            :task-count-for-site="taskCountForSite"
-            :issue-count-for-site="issueCountForSite"
-            :violation-count-for-site="violationCountForSite"
-            :dot-color-for-connection="dotColorForConnection"
-            :dot-color-for-site="dotColorForSite"
-            @select-connection="selectConnection"
-            @select-site="selectSite"
-            @edit-connection="openEditDialog"
-            @delete-connection="openDeleteDialog"
-            @create="openCreateDialog"
-          />
-
           <RouterView v-slot="{ Component }">
             <section
               v-if="hasTaskDetails && Component"
@@ -304,6 +310,15 @@ const {
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+// Tints the accent bar spanning the nav rail + connections/sites sidebar
+// (.orchestration-nav-column below) with the active tab's color. Previously
+// this bar lived on the sidebar alone, which put it 88px in from the page
+// edge — floating past the end of the nav rail instead of anchored to it,
+// unlike the equivalent bar on Manage Workspaces (Workspaces.vue), which
+// sits flush against the page edge because that page has no nav rail.
+const navAccent = computed(() => TAB_META[activeTab.value].accent)
+const navAccentLight = computed(() => TAB_META[activeTab.value].accentLight)
 
 const applyRouteWorkspace = () => {
   const targetWorkspaceId = routeWorkspaceId.value
@@ -1025,6 +1040,27 @@ const goToTask = async (row: TaskRow) => {
   min-height: 0;
   background: var(--hs-surface);
   overflow: hidden;
+}
+
+/* Wraps the nav rail and the connections/sites sidebar so the accent bar
+   below spans both as one strip anchored to the page edge — the same
+   position the equivalent bar holds on Manage Workspaces (Workspaces.vue),
+   which has no nav rail in front of its sidebar. */
+.orchestration-nav-column {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.orchestration-nav-column::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  z-index: 1;
 }
 
 .no-workspace-state {

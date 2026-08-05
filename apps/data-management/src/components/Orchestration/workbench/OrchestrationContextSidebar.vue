@@ -1,8 +1,5 @@
 <template>
-  <aside
-    class="sidebar"
-    :style="{ '--accent': accent, '--accent-light': accentLight }"
-  >
+  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="flex items-center">
         <span class="sidebar-title">{{ title }}</span>
@@ -284,7 +281,6 @@ defineEmits<{
 const isIngestion = computed(() => activeTab.value === 'ingestion')
 const isQuality = computed(() => activeTab.value === 'quality')
 const accent = computed(() => TAB_META[activeTab.value].accent)
-const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
 const title = computed(() => (isIngestion.value ? 'Connections' : 'Sites'))
 const addLabel = computed(() =>
   isIngestion.value ? 'Add data connection' : 'Add site'
@@ -293,7 +289,6 @@ const addLabel = computed(() =>
 
 <style scoped>
 .sidebar {
-  position: relative;
   width: 260px;
   border-right: 1px solid var(--hs-border);
   background: var(--hs-surface-muted);
@@ -302,17 +297,9 @@ const addLabel = computed(() =>
   flex-shrink: 0;
   min-height: 0;
 }
-/* Matches the accent bar atop the workspace list on Manage Workspaces
-   (Workspaces.vue), tinted with the active tab's accent color. */
-.sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-light));
-}
+/* The accent bar that used to sit here now spans the nav rail + this
+   sidebar together — see .orchestration-nav-column in Orchestration.vue —
+   so it's anchored to the page edge instead of floating in from 88px. */
 .sidebar-header {
   padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
   border-bottom: 1px solid var(--hs-border);
