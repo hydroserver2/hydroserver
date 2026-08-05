@@ -6,17 +6,17 @@ Aggregation tasks are used to summarize high-frequency data into lower-frequency
 
 Before creating an aggregation task, make sure the output datastream already exists. The aggregation task needs a place to save the processed results. For example, if the goal is to convert 15-minute discharge data into daily average discharge data, create a new datastream first for the daily average discharge output.
 
-<img src="/job-aggregation/aggregation_1_output_datastream.png" alt="Output datastream created for daily average discharge" width="550">
+<img src="/job-orchestration/aggregation_1_output_datastream.png" alt="Output datastream created for daily average discharge" width="550">
 
 After the output datastream is ready, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Click **Aggregation** to create a new aggregation task.
 
-<img src="/job-aggregation/aggregation_2_aggregation.png" alt="Open the Aggregations and products section and add an aggregation task" width="550">
+<img src="/job-orchestration/aggregation_2_aggregation.png" alt="Open the Aggregations and products section and add an aggregation task" width="550">
 
 Aggregation tasks are used to summarize higher-frequency data into lower-frequency data. In this example, the input datastream contains discharge observations recorded every 15 minutes, and the task calculates one daily average discharge value. The input datastream is `BC_CONF_A Discharge (cfs) - Provisional data`, and the output datastream is `Discharge at BC_CONF_A with average daily discharge`.
 
 In the task form, enter a clear task name, such as `BC_CONF_A Discharge (15 mins to daily average)`. Then choose whether the task should run manually or on a schedule. In this example, the task is scheduled to run every `1 Hour`. The schedule controls how often HydroServer checks and runs the task, but it does not control the output time interval.
 
-<img src="/job-aggregation/aggregation_3_task.png" alt="Create an aggregation task to calculate daily average discharge" width="550">
+<img src="/job-orchestration/aggregation_3_task.png" alt="Create an aggregation task to calculate daily average discharge" width="550">
 
 Next, select the input and output datastreams. The input datastream is the original 15-minute discharge datastream, and the output datastream is the new daily average discharge datastream. Under **Aggregation Settings**, set the aggregation method to `Mean`. This tells HydroServer to average the available discharge values within each daily time bucket. If you click the drop down button then you will see other methods that you can choose from, which includes Sum, Min, Max, First and Last. You should use whatever option you want to use.
 
@@ -24,7 +24,7 @@ Here, the output interval is set to `1 Day` so HydroServer writes one aggregated
 
 After the settings are complete, click **Create aggregation task**. The task will appear in the Aggregations & products task list. To test the task immediately, click **Run now**.
 
-<img src="/job-aggregation/aggregation_4_green.png" alt="Run the aggregation task manually" width="550">
+<img src="/job-orchestration/aggregation_4_green.png" alt="Run the aggregation task manually" width="550">
 
 After the aggregation task runs successfully, return to the site datastream page and check the output datastream. The new datastream should contain the aggregated daily average values created by the task.
 
@@ -38,7 +38,7 @@ An expression task is best for a **one-input, one-output** calculation. It uses 
 
 To create an expression task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Expression**. The expression task form will open.
 
-<img src="/job-aggregation/expression_1_tab.png" alt="Open the expression task form" width="550">
+<img src="/job-orchestration/expression_1_tab.png" alt="Open the expression task form" width="550">
 
 In the task form, enter a clear task name that describes what the expression will do. In this example, the task is named `Discharge data from cfs to cms` because the task converts discharge values from cubic feet per second to cubic meters per second.
 
@@ -59,7 +59,7 @@ In the formula section, HydroServer represents each input value as the variable 
 x*0.0283168
 ```
 
-<img src="/job-aggregation/expression_2_fillup.png" alt="Expression task form filled out" width="550">
+<img src="/job-orchestration/expression_2_fillup.png" alt="Expression task form filled out" width="550">
 
 > **Note:** If a calculation requires more than one input datastream, use a **Derivation** task instead of an Expression task.
 
@@ -75,7 +75,7 @@ Derivation tasks are handled differently from expression tasks because the input
 
 To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Derivation**. The derivation task form will open.
 
-<img src="/job-aggregation/derivation_1_task.png" alt="Derivation task form" width="550">
+<img src="/job-orchestration/derivation_1_task.png" alt="Derivation task form" width="550">
 
 In the task form, enter a clear task name that describes what the derivation will calculate. Then choose whether the task should run manually or on a schedule. The schedule controls how often HydroServer checks for new input data and runs the derivation. Next, select the output datastream. This is the datastream where HydroServer will write the calculated results.
 
@@ -107,7 +107,7 @@ stage / gage height → rating curve → discharge
 
 Before creating a rating curve task, make sure the required datastreams already exist in the workspace. The input datastream should contain the water level, stage, or gage-height values. The output datastream should be the datastream where HydroServer will save the calculated discharge values. To create a rating curve task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Rating curve**. This will open the rating curve task form.
 
-<img src="/job-aggregation/rating_curve_2_rc_task.png" alt="Rating curve task form" width="550">
+<img src="/job-orchestration/rating_curve_2_rc_task.png" alt="Rating curve task form" width="550">
 
 In the rating curve task form, first enter a clear task name. The task name should describe what the rating curve task will calculate. In this example, the task is named `Rating Curve for BC_CONF_A`.
 
@@ -119,13 +119,13 @@ The next step is to select or create the rating curve. If a rating curve already
 
 For example, the CSV file may look like this:
 
-<img src="/job-aggregation/rating_curve_1_csv.png" alt="Example CSV file" width="300">
+<img src="/job-orchestration/rating_curve_1_csv.png" alt="Example CSV file" width="300">
 
 In this example, `water_level` is the input value and `Discharge` is the output value. HydroServer uses these paired values as the reference relationship between water level and discharge. Based on the uploaded CSV file and the selected fitting method, HydroServer creates a rating curve and applies it to the input datastream.
 
 When preparing the CSV file, make sure the input values are unique. For example, the same `water_level` value should not be repeated in the input column. If duplicate input values are included, HydroServer may show an error such as `Duplicate input_value in points`.
 
-<img src="/job-aggregation/rating_cruve_3_error.png" alt="Duplicate input value error" width="550">
+<img src="/job-orchestration/rating_curve_3_error.png" alt="Duplicate input value error" width="550">
 
 If this error appears, edit the CSV file and remove duplicate values from the input column before uploading it again. One way to do this is to open the CSV file in Excel, select the water-level or stage column, and use **Data → Remove Duplicates**. Make sure only the input column is selected when removing duplicates. Then save the file again as a CSV and upload it again.
 
@@ -133,4 +133,4 @@ After uploading the CSV file, enter a rating curve name and description. The rat
 
 After the task name, schedule, input datastream, output datastream, rating curve CSV file, rating curve name, description, and fitting method are complete, click **Create rating curve task**. Once the task runs successfully, go to the output datastream and open **Visualize data** to view the calculated rating curve output. The plot shows the discharge values calculated from the input water-level or gage-height data using the rating curve.
 
-<img src="/job-aggregation/rating_curve_4_rc.png" alt="Output data visualization" width="550">
+<img src="/job-orchestration/rating_curve_4_rc.png" alt="Output data visualization" width="550">
