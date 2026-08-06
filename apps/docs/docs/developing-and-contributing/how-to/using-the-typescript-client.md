@@ -16,26 +16,23 @@ If your frontend is served from the same domain as HydroServer, set `host: ""` t
 await createHydroServer({ host: "" });
 ```
 
-The TypeScript client exposes these core services:
+The TypeScript client exposes these services:
 
-- `workspaces`
-- `things`
-- `datastreams`
-- `sensors`
-- `units`
-- `processingLevels`
-- `observedProperties`
-- `resultQualifiers`
-- `orchestrationSystems`
-- `dataConnections`
-- `tasks`
+| Area | Services |
+| --- | --- |
+| Authentication and account | `session`, `user` |
+| Data management | `workspaces`, `things`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
+| Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
+| Files and quality control | `thingFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
+
+Services are created lazily, so reading a service property does not make a request.
 
 ## Responses and errors
 
-Most methods return an `ApiResponse<T>` object:
+Most methods return an `ApiResponse<T>` discriminated union:
 
 - `ok`: request success flag
-- `data`: response payload
+- `data`: response payload when `ok` is `true`
 - `status`: HTTP status
 - `message`: best-available status/error text
 - `meta`: optional metadata
@@ -49,13 +46,19 @@ if (!res.ok) {
 }
 ```
 
-## Collections
+Always check `ok` before reading `data`; TypeScript then narrows the response to the success shape.
 
-All core collection services support:
+## Collections and CRUD helpers
+
+Model-backed collection services support:
 
 - `list(params)`: returns `ApiResponse<T[]>`
 - `listItems(params)`: returns `T[]` (or `[]` on error)
 - `listAllItems(params)`: fetches and merges all pages
+
+They also provide `get`/`getItem`, `create`/`createItem`, `update`/`updateItem`, and `delete`. Methods ending in `Item` return the payload directly, with `null` or `[]` on failure; use the methods returning `ApiResponse` when the caller needs status or error details.
+
+QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and file-attachment services expose purpose-specific methods instead.
 
 Most endpoints support query params such as:
 
@@ -131,6 +134,17 @@ hs.on("session:expired", () => {
 });
 
 await hs.session.logout();
+```
+
+`createHydroServer` initializes the session snapshot before it resolves. Account operations are available through `hs.user`:
+
+```ts
+const accountRes = await hs.user.get();
+if (accountRes.ok) {
+  const account = accountRes.data;
+  account.firstName = "Updated";
+  await hs.user.update(account);
+}
 ```
 
 ## Workspaces
@@ -526,17 +540,20 @@ await hs.datastreams.deleteAttachment(datastreamId, "rating-curve.csv");
 ### Example: Get related metadata for a datastream
 
 ```ts
+import type { DatastreamExtended } from "@hydroserver/client";
+
 const res = await hs.datastreams.get(
   "00000000-0000-0000-0000-000000000000",
   { expand_related: true }
 );
 
 if (res.ok) {
-  console.log(res.data.thing);
-  console.log(res.data.sensor);
-  console.log(res.data.observedProperty);
-  console.log(res.data.unit);
-  console.log(res.data.processingLevel);
+  const datastream = res.data as unknown as DatastreamExtended;
+  console.log(datastream.thing);
+  console.log(datastream.sensor);
+  console.log(datastream.observedProperty);
+  console.log(datastream.unit);
+  console.log(datastream.processingLevel);
 }
 ```
 
@@ -603,15 +620,23 @@ await hs.datastreams.deleteObservations(datastreamId, {
 await hs.datastreams.deleteObservations(datastreamId);
 ```
 
-### Example: Download observations as CSV
+### Example: Fetch observations as CSV
+
+`fetchCsvBlob` returns the server response without prescribing how an application saves or displays the file.
 
 ```ts
-await hs.datastreams.downloadCsv("00000000-0000-0000-0000-000000000000");
+const csvRes = await hs.datastreams.fetchCsvBlob(
+  "00000000-0000-0000-0000-000000000000"
+);
 
-await hs.datastreams.downloadCsvBatchZip([
-  "00000000-0000-0000-0000-000000000000",
-  "11111111-1111-1111-1111-111111111111",
-]);
+if (csvRes.ok) {
+  const url = URL.createObjectURL(csvRes.data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "observations.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 ```
 
 ### Example: Delete a datastream
@@ -620,44 +645,9 @@ await hs.datastreams.downloadCsvBatchZip([
 await hs.datastreams.delete("00000000-0000-0000-0000-000000000000");
 ```
 
-## Orchestration Systems
-
-Orchestration systems represent loaders/processes that run ETL tasks.
-
-### Example: Get orchestration systems
-
-```ts
-const systems = await hs.orchestrationSystems.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
-});
-```
-
-### Example: Create and modify an orchestration system
-
-```ts
-const orchestrationSystem = {
-  id: "",
-  name: "My Data Loader",
-  type: "ETL",
-  workspaceId: "00000000-0000-0000-0000-000000000000",
-};
-
-const created = await hs.orchestrationSystems.createItem(orchestrationSystem);
-if (!created) throw new Error("Unable to create orchestration system");
-
-created.name = "Updated Data Loader";
-await hs.orchestrationSystems.update(created);
-```
-
-### Example: Delete an orchestration system
-
-```ts
-await hs.orchestrationSystems.delete("00000000-0000-0000-0000-000000000000");
-```
-
 ## Data Connections
 
-Data connections define extract, transform, and load settings used by task runs.
+Data connections define the source, payload format, timestamp handling, placeholders, and optional notifications used by ETL tasks.
 
 ### Example: Get data connections
 
@@ -671,26 +661,32 @@ const dataConnections = await hs.dataConnections.listAllItems({
 ### Example: Create and modify a data connection
 
 ```ts
-import { DataConnection, Workspace } from "@hydroserver/client";
+import { DataConnection } from "@hydroserver/client";
 
-const dataConnection = new DataConnection();
-dataConnection.name = "Example Data Connection";
-
-const workspace = new Workspace();
-workspace.id = "00000000-0000-0000-0000-000000000000";
-dataConnection.workspace = workspace;
-
-dataConnection.extractor.type = "HTTP";
-dataConnection.extractor.settings = {
-  sourceUri: "https://example.com/data.csv",
-  placeholderVariables: [],
-};
+const dataConnection = Object.assign(
+  new DataConnection({
+    name: "Example Data Connection",
+    sourceUrl: "https://example.com/data.csv",
+    timezoneType: "iana",
+    timezone: "Etc/UTC",
+    payload: {
+      type: "CSV",
+      timestampKey: "timestamp",
+      timestampFormat: "%Y-%m-%dT%H:%M:%SZ",
+      delimiter: ",",
+    },
+    placeholderVariables: [],
+  }),
+  { workspaceId: "00000000-0000-0000-0000-000000000000" }
+);
 
 const created = await hs.dataConnections.createItem(dataConnection);
 if (!created) throw new Error("Unable to create data connection");
 
-created.name = "Updated Data Connection";
-await hs.dataConnections.update(created);
+await hs.dataConnections.update({
+  id: created.id,
+  name: "Updated Data Connection",
+});
 ```
 
 ### Example: Delete a data connection
@@ -701,7 +697,7 @@ await hs.dataConnections.delete("00000000-0000-0000-0000-000000000000");
 
 ## Tasks
 
-Tasks bind orchestration systems, data connections, and payload mappings.
+ETL tasks bind a data connection to source-to-datastream mappings.
 
 ### Example: Get tasks
 
@@ -719,18 +715,12 @@ import { Task } from "@hydroserver/client";
 
 const task = new Task({
   name: "Example Task",
-  workspaceId: "00000000-0000-0000-0000-000000000000",
   dataConnectionId: "11111111-1111-1111-1111-111111111111",
-  orchestrationSystemId: "22222222-2222-2222-2222-222222222222",
+  taskVariables: {},
   mappings: [
     {
       sourceIdentifier: "temperature",
-      paths: [
-        {
-          targetIdentifier: "33333333-3333-3333-3333-333333333333",
-          dataTransformations: [],
-        },
-      ],
+      targetDatastreamId: "33333333-3333-3333-3333-333333333333",
     },
   ],
 });
@@ -774,17 +764,228 @@ const run = await hs.tasks.getTaskRun(
 );
 ```
 
-### Example: Create a task run (external orchestration reporting)
+The same `runTask`, `getTaskRuns`, and `getTaskRun` helpers are available on `monitoringTasks` and `dataProductTasks`.
+
+## Monitoring Tasks
+
+Monitoring tasks run data-quality rules for the datastreams at a Thing and can notify a list of recipients.
 
 ```ts
-await hs.tasks.createTaskRun("00000000-0000-0000-0000-000000000000", {
-  status: "SUCCESS",
-  startedAt: "2026-01-01T00:00:00Z",
-  finishedAt: "2026-01-01T00:10:00Z",
-  result: {
-    message: "Task executed successfully.",
-  },
+import { MonitoringTask } from "@hydroserver/client";
+
+const task = await hs.monitoringTasks.createItem(
+  new MonitoringTask({
+    name: "Daily range checks",
+    thingId: "00000000-0000-0000-0000-000000000000",
+    recipients: ["alerts@example.com"],
+    schedule: null,
+  })
+);
+
+if (!task) throw new Error("Unable to create monitoring task");
+
+await hs.monitoringTasks.createRule(task.id, {
+  datastreamId: "11111111-1111-1111-1111-111111111111",
+  ruleType: "range",
+  minValue: -40,
+  maxValue: 60,
+});
+
+await hs.monitoringTasks.runTask(task.id);
+```
+
+Use `listRules`, `getRule`, `createRule`, `updateRule`, and `deleteRule` to manage a monitoring task's rules.
+
+## Data Product Tasks and Rating Curves
+
+Data product tasks create derived datastreams through expression, rating-curve, aggregation, or composite-expression transformations.
+
+```ts
+import { DataProductTask } from "@hydroserver/client";
+
+const task = await hs.dataProductTasks.createItem(
+  new DataProductTask({
+    name: "Convert temperature",
+    thingId: "00000000-0000-0000-0000-000000000000",
+    schedule: null,
+  })
+);
+
+if (!task) throw new Error("Unable to create data product task");
+
+await hs.dataProductTasks.createExpressionTransformation(task.id, {
+  inputDatastreamId: "11111111-1111-1111-1111-111111111111",
+  outputDatastreamId: "22222222-2222-2222-2222-222222222222",
+  variableName: "temperature",
+  formula: "temperature * 9 / 5 + 32",
 });
 ```
 
-The client currently exposes read/create helpers for task runs (`getTaskRuns`, `getTaskRun`, `createTaskRun`).
+Each transformation type has matching `create`, `list`, `update`, and `delete` helpers. Rating curves themselves are managed through `hs.ratingCurves`:
+
+```ts
+import { RatingCurve } from "@hydroserver/client";
+
+const curve = await hs.ratingCurves.createItem(
+  new RatingCurve({
+    name: "Stage to discharge",
+    thingId: "00000000-0000-0000-0000-000000000000",
+    fittingMethod: "power_law",
+    points: [
+      [0.1, 0.3],
+      [0.5, 2.4],
+      [1.0, 7.8],
+    ],
+  })
+);
+```
+
+Use `listItemsForThing(thingId)` to retrieve all curves for one Thing.
+
+## Typed Thing File Attachments
+
+`hs.things` accepts raw `FormData` for general attachment operations. `hs.thingFileAttachments` provides typed upload, metadata update, replacement, deletion, and rating-curve preview helpers.
+
+```ts
+const thingId = "00000000-0000-0000-0000-000000000000";
+const file = fileInput.files![0];
+const replacementFile = replacementFileInput.files![0];
+
+const uploadRes = await hs.thingFileAttachments.upload(thingId, file, {
+  type: "rating_curve",
+  name: "rating-curve.csv",
+  description: "Approved field rating curve",
+});
+
+if (uploadRes.ok) {
+  await hs.thingFileAttachments.replaceFile(
+    thingId,
+    uploadRes.data.id,
+    replacementFile
+  );
+}
+
+const attachments = await hs.thingFileAttachments.listItems(thingId, {
+  type: "rating_curve",
+});
+```
+
+## Quality Control Histories
+
+A QC history links an immutable source datastream to the managed datastream that receives quality-controlled observations. Sessions record a time-bounded QC pass, and ordered operations record what changed.
+
+### Create and query histories
+
+```ts
+const historyRes = await hs.qualityControlHistories.create({
+  sourceDatastreamId: "00000000-0000-0000-0000-000000000000",
+  managedDatastreamId: "11111111-1111-1111-1111-111111111111",
+});
+
+if (!historyRes.ok) throw new Error(historyRes.message);
+const history = historyRes.data;
+
+const histories = await hs.qualityControlHistories.listAllItems({
+  managed_datastream_id: [history.managedDatastream.id],
+  expand_related: true,
+});
+```
+
+Without `expand_related`, history responses contain `sourceDatastreamId` and `managedDatastreamId`. With it, they contain expanded `sourceDatastream` and `managedDatastream` objects.
+
+### Example: Correct observations in a range
+
+This example corrects source values that were recorded at ten times their actual value. The app records the range selection and multiplication as QC operations, applies the same change locally, writes the corrected range to the managed datastream, and then commits the session.
+
+```ts
+const rangeStart = "2026-01-01T00:00:00Z";
+const rangeEnd = "2026-01-02T00:00:00Z";
+
+const sessionRes = await hs.qualityControlSessions.create(history.id, {
+  phenomenonTimeStart: rangeStart,
+  phenomenonTimeEnd: rangeEnd,
+  description: "Correct values recorded at ten times their actual value",
+});
+
+if (!sessionRes.ok) throw new Error(sessionRes.message);
+const session = sessionRes.data;
+
+const sourceRes = await hs.datastreams.getObservations(
+  history.sourceDatastream.id,
+  {
+    format: "record",
+    order_by: ["phenomenonTime"],
+    phenomenon_time_min: rangeStart,
+    phenomenon_time_max: rangeEnd,
+  }
+);
+
+if (!sourceRes.ok) throw new Error(sourceRes.message);
+if (!Array.isArray(sourceRes.data) || sourceRes.data.length === 0) {
+  throw new Error("No source observations found in the QC range");
+}
+
+const correctedRows = sourceRes.data.map((observation) => [
+  observation.phenomenonTime,
+  observation.result * 0.1,
+  observation.resultQualifierCodes,
+]);
+
+const operationsRes = await hs.qualityControlOperations.create(
+  history.id,
+  session.id,
+  [
+    {
+      operationType: "DATETIME_RANGE",
+      order: 1,
+      comment: "Selected the affected period",
+      arguments: [Date.parse(rangeStart), Date.parse(rangeEnd)],
+    },
+    {
+      operationType: "CHANGE_VALUES",
+      order: 2,
+      comment: "Converted values to the correct scale",
+      arguments: ["MULT", 0.1],
+    },
+  ]
+);
+
+if (!operationsRes.ok) throw new Error(operationsRes.message);
+
+const writeRes = await hs.datastreams.createObservations(
+  history.managedDatastream.id,
+  {
+    fields: ["phenomenonTime", "result", "resultQualifierCodes"],
+    data: correctedRows,
+  },
+  { mode: "replace" }
+);
+
+if (!writeRes.ok) throw new Error(writeRes.message);
+
+const commitRes = await hs.qualityControlSessions.commit(
+  history.id,
+  session.id
+);
+
+if (!commitRes.ok) throw new Error(commitRes.message);
+```
+
+Operation `arguments` are specific to the selected `operationType`. Timestamps in QC operation arguments use epoch milliseconds. The client records the operations but does not execute them, so the application must apply those same operations before writing the managed observations. A production QC app can use a dedicated processing layer for more complex filters and edits.
+
+### Query session ancestry
+
+```ts
+const sessions = await hs.qualityControlSessions.listAllItems(history.id, {
+  status: "committed",
+  range_start: "2026-01-01T00:00:00Z",
+  range_end: "2026-02-01T00:00:00Z",
+  include_ancestors: true,
+});
+
+const ancestors = await hs.qualityControlSessions.listAllItems(history.id, {
+  ancestor_of: session.id,
+});
+```
+
+History methods are `list`, `listItems`, `listAllItems`, `get`, `getItem`, `create`, `createItem`, and `delete`. Session methods add `update` and `commit`; operation methods provide list/get, bulk create, update, and delete helpers.
