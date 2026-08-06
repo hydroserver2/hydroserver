@@ -17,12 +17,7 @@ const app = createApp(App)
 async function initializeApp() {
   app.use(store)
 
-  const hydroServerHost =
-    import.meta.env.VITE_APP_PROXY_BASE_URL
-      ? ''
-      : import.meta.env.DEV
-      ? 'http://127.0.0.1:8000'
-      : ''
+  const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL || ''
 
   // The session must be initialized before the router so auth guards
   // can read `hs.session.isAuthenticated` on the first navigation, and

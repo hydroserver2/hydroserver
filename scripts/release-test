@@ -10,7 +10,7 @@ run_api() {
     cd "$ROOT_DIR/django"
     DATABASE_URL="${DATABASE_URL:-postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver}" \
     CELERY_BROKER_URL="${CELERY_BROKER_URL:-redis://127.0.0.1:6379/0}" \
-    SMTP_URL="${SMTP_URL:-memory://}" \
+    SMTP_URL="${SMTP_URL:-memorymail://}" \
     python3.14 -m pytest
   )
 }

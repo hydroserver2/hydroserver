@@ -52,36 +52,30 @@ Before starting, make sure you have the following software installed on your mac
 2. Install the Python dependencies:
    ```bash
    pip install -r django/requirements.txt
+   pip install -e packages/hydroserverpy
    ```
-3. Install the Django Tailwind dependency once:
-   ```bash
-   cd django
-   npm install
-   cd ..
-   ```
-4. Perform database migrations and collect static files:
+3. Perform database migrations and collect static files:
    ```bash
    ./scripts/dev-api-command manage.py migrate
    ./scripts/dev-api-command manage.py collectstatic --noinput
    ```
-5. Create an admin user:
+4. Create an admin user:
    ```bash
    ./scripts/dev-api-command manage.py createsuperuser
    ```
-6. Start the Django development web server:
+5. Start the Django development web server together with the Tailwind CSS watcher for the
+   server-rendered account and OIDC templates:
    ```bash
-   ./scripts/dev-api-command manage.py runserver 127.0.0.1:8000
+   ./scripts/dev-api-command manage.py tailwind runserver 127.0.0.1:8000
    ```
-7. In a second terminal, start the Django Tailwind watcher for the server-rendered account and OIDC templates:
-   ```bash
-   ./scripts/dev-django-tailwind
-   ```
+   This uses [django-tailwind-cli](https://django-tailwind-cli.readthedocs.io/), which downloads
+   its own standalone Tailwind CSS binary on first run — no Node.js/npm required for this step.
 
 `./scripts/dev-api-command` automatically creates `django/dev_oidc_private_key.pem` if it does not already exist, so local OIDC discovery, authorize, token, and JWKS endpoints work without any manual key setup.
 
 ## HydroServer Frontend
 
-### Installation
+### Data Management App
 
 1. Navigate to `apps/data-management` and install the required packages:
    ```bash
@@ -93,3 +87,16 @@ Before starting, make sure you have the following software installed on your mac
    npm run dev
    ```
 4. Open `http://localhost`. The reverse proxy forwards frontend requests to Vite and backend requests, including the OIDC endpoints, to Django.
+
+### QC App
+
+1. Navigate to `apps/qc-app` and install the required packages:
+   ```bash
+   npm install
+   ```
+2. Run the application in developer mode:
+   ```bash
+   npm run dev
+   ```
+3. Open `http://localhost/qc`. The reverse proxy forwards these requests to the QC app's Vite server; no
+   separate environment configuration is needed since backend requests are already routed through NGINX.

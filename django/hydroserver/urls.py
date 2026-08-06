@@ -1,12 +1,12 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, re_path, include
+from django.urls import URLPattern, URLResolver, path, re_path, include
 from django.views.static import serve
 from interfaces.web.views import main_spa_view, qc_spa_view
 
 
-urlpatterns = [
+urlpatterns: list[URLPattern | URLResolver] = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("accounts/", include("interfaces.account.urls")),

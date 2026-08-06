@@ -59,7 +59,7 @@ ALLOWED_HOSTS.append(urlparse(PROXY_BASE_URL).hostname)
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = TRUSTED_LOCAL_ENVIRONMENT
-CORS_URLS_REGEX = r"^/(api|identity|\.well-known|media|static)/.*$"
+CORS_URLS_REGEX = r"^/$|^/(api|identity|\.well-known|media|static)/.*$"
 
 CORS_EXPOSE_HEADERS = [
     "X-Total-Pages",
@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
     "django_celery_beat",
+    "django_tailwind_cli",
     "interfaces.api.apps.ApiConfig",
     "interfaces.web.apps.WebConfig",
     "interfaces.actions.apps.ActionsConfig",
@@ -358,6 +359,9 @@ MEDIA_STORAGE_IS_LOCAL = (
 STATIC_STORAGE_IS_LOCAL = (
     STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.StaticFilesStorage"
 )
+
+TAILWIND_CLI_VERSION = "4.1.3"
+TAILWIND_CLI_SRC_CSS = "static/css/input.css"
 
 
 # Celery
