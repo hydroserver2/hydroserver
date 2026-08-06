@@ -248,7 +248,7 @@ When retrieving data from an API, you need to specify the type of payload return
 * **JMESPath**: this is the path to the data values within the JSON data structure. JMESPath is a query language for JSON data that allows you to extract and transform elements from a JSON document. See [https://jmespath.org/](https://jmespath.org/) for information on building JMESPath expressions.
 * **Timestamp**: Like CSV file payloads, you also need to specify the name of the element in the JSON payload that contains the timestamp values.
 * **Timestamp format**: Like the CSV payload you need to specify the timestamp format.
-* **Data ingestion window**: These options allow you to specify a starting date for data ingestion and an ending date for data ingestion
+* **Data ingestion window**: These options allow you to specify a starting date for data ingestion and an ending date for data ingestion. For example, by specifying a starting date, any data in the database already after that date will be replaced by what is newly retrieved. By setting an ending date, any data in the response after that date will be ignored and not added to the database. These settings are useful when loading data from data sources where data values may change. For example, data values may be transitioned from provisional to approved over time and you want to load the latest data, but reload data when the values have been approved.
 * **Timezone**: Like CSV payloads the timezone associated with the timestamps in the JSON payload.
 
 <img src="/job-orchestration/ingestion_10_json_payload.png" alt="JSON Payload Options" width="750">
