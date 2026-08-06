@@ -10,12 +10,37 @@
 
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
       <div class="orchestration-shell">
-        <OrchestrationNavRail
-          :tabs="tabs"
-          @select-tab="setActiveTab"
-          @open-workspaces="openWorkspaceManager"
-          @open-hydro-loader="goToHydroLoader"
-        />
+        <div
+          class="orchestration-nav-column"
+          :style="{ '--accent': navAccent, '--accent-light': navAccentLight }"
+        >
+          <OrchestrationNavRail
+            :tabs="tabs"
+            @select-tab="setActiveTab"
+            @open-workspaces="openWorkspaceManager"
+          />
+
+          <OrchestrationContextSidebar
+            v-if="selectedWorkspace"
+            :connections="filteredConnections"
+            :sites="filteredSites"
+            :can-create="canCreateDataConnections"
+            :can-edit="canEditDataConnections"
+            :can-delete="canDeleteDataConnections"
+            :task-count-for-connection="taskCountForConnection"
+            :issue-count-for-connection="issueCountForConnection"
+            :task-count-for-site="taskCountForSite"
+            :issue-count-for-site="issueCountForSite"
+            :violation-count-for-site="violationCountForSite"
+            :dot-color-for-connection="dotColorForConnection"
+            :dot-color-for-site="dotColorForSite"
+            @select-connection="selectConnection"
+            @select-site="selectSite"
+            @edit-connection="openEditDialog"
+            @delete-connection="openDeleteDialog"
+            @create="openCreateDialog"
+          />
+        </div>
 
         <section
           v-if="!selectedWorkspace"
@@ -23,6 +48,9 @@
           data-testid="no-selected-workspace"
         >
           <div class="no-workspace-state-content">
+            <div class="no-workspace-icon">
+              <v-icon :icon="mdiBriefcaseOutline" size="28" />
+            </div>
             <p class="no-workspace-eyebrow">No selected workspace</p>
             <h2>Select or create a workspace to manage jobs</h2>
             <p>
@@ -45,26 +73,6 @@
         </section>
 
         <template v-else>
-          <OrchestrationContextSidebar
-            :connections="filteredConnections"
-            :sites="filteredSites"
-            :can-create="canCreateDataConnections"
-            :can-edit="canEditDataConnections"
-            :can-delete="canDeleteDataConnections"
-            :task-count-for-connection="taskCountForConnection"
-            :issue-count-for-connection="issueCountForConnection"
-            :task-count-for-site="taskCountForSite"
-            :issue-count-for-site="issueCountForSite"
-            :violation-count-for-site="violationCountForSite"
-            :dot-color-for-connection="dotColorForConnection"
-            :dot-color-for-site="dotColorForSite"
-            @select-connection="selectConnection"
-            @select-site="selectSite"
-            @edit-connection="openEditDialog"
-            @delete-connection="openDeleteDialog"
-            @create="openCreateDialog"
-          />
-
           <RouterView v-slot="{ Component }">
             <section
               v-if="hasTaskDetails && Component"
@@ -211,6 +219,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { sumBy } from 'lodash-es'
+import { mdiBriefcaseOutline } from '@mdi/js'
 import hs, {
   DataConnection,
   type DataProductTask,
@@ -300,6 +309,15 @@ const {
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+// Tints the accent bar spanning the nav rail + connections/sites sidebar
+// (.orchestration-nav-column below) with the active tab's color. Previously
+// this bar lived on the sidebar alone, which put it 88px in from the page
+// edge — floating past the end of the nav rail instead of anchored to it,
+// unlike the equivalent bar on Manage Workspaces (Workspaces.vue), which
+// sits flush against the page edge because that page has no nav rail.
+const navAccent = computed(() => TAB_META[activeTab.value].accent)
+const navAccentLight = computed(() => TAB_META[activeTab.value].accentLight)
 
 const applyRouteWorkspace = () => {
   const targetWorkspaceId = routeWorkspaceId.value
@@ -761,10 +779,6 @@ const openWorkspaceManager = async () => {
   await router.push({ name: 'Workspaces' })
 }
 
-const goToHydroLoader = async () => {
-  await router.push({ name: 'HydroLoader' })
-}
-
 const selectConnection = async (id: string) => {
   selectedConnectionId.value = id
   await fetchVisibleTasks()
@@ -996,7 +1010,7 @@ const goToTask = async (row: TaskRow) => {
 
 <style scoped>
 .orchestration-page {
-  background-color: #ffffff;
+  background-color: var(--hs-surface);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1019,8 +1033,29 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex: 1;
   min-height: 0;
-  background: #ffffff;
+  background: var(--hs-surface);
   overflow: hidden;
+}
+
+/* Wraps the nav rail and the connections/sites sidebar so the accent bar
+   below spans both as one strip anchored to the page edge — the same
+   position the equivalent bar holds on Manage Workspaces (Workspaces.vue),
+   which has no nav rail in front of its sidebar. */
+.orchestration-nav-column {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.orchestration-nav-column::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  z-index: 1;
 }
 
 .no-workspace-state {
@@ -1030,28 +1065,49 @@ const goToTask = async (row: TaskRow) => {
   justify-content: center;
   min-width: 0;
   overflow: auto;
-  background: white;
-  padding: 32px;
+  background: var(--hs-surface);
+  padding: var(--hs-space-32);
 }
 
 .no-workspace-state-content {
   max-width: 560px;
-  color: #3c4043;
+  color: var(--hs-text-primary);
+}
+
+/* Matches the empty-state icon on Manage Workspaces (Workspaces.vue) so the
+   two workspace-scoped entry points read as the same product surface. */
+.no-workspace-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--hs-accent-blue-bg),
+    var(--hs-accent-green-bg)
+  );
+  color: var(--hs-accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--hs-space-16);
 }
 
 .no-workspace-eyebrow {
-  margin: 0 0 8px;
-  color: #5f6368;
-  font-size: 0.78rem;
+  margin: 0 0 var(--hs-space-8);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+/* Same size as the page's own h1 (WorkspaceToolbar.vue's
+   .orchestration-header-title) — this empty-state heading was previously a
+   step larger than the page title above it, which inverted the hierarchy. */
 .no-workspace-state h2 {
-  margin: 0 0 12px;
-  color: #202124;
-  font-size: 1.5rem;
+  margin: 0 0 var(--hs-space-12);
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-lg);
   line-height: 1.25;
 }
 
@@ -1060,7 +1116,7 @@ const goToTask = async (row: TaskRow) => {
 }
 
 .no-workspace-actions {
-  margin-top: 22px;
+  margin-top: var(--hs-space-24);
 }
 
 .detail {
@@ -1068,7 +1124,7 @@ const goToTask = async (row: TaskRow) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: white;
+  background: var(--hs-surface);
   min-width: 0;
 }
 

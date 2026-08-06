@@ -369,13 +369,6 @@
                   </div>
                 </div>
 
-                <div v-if="overviewStatsError" class="overview-stats-error">
-                  Some totals could not be loaded.
-                  <button type="button" @click="loadOverviewStats(selected.id)">
-                    Retry
-                  </button>
-                </div>
-
                 <v-table class="hs-table-card">
                   <tbody>
                     <tr>
@@ -592,6 +585,8 @@ import { Snackbar } from '@/utils/notifications'
 
 // Matches the accent used for the "Workspaces" entry in the orchestration nav
 // rail, so the two workspace-management entry points read as the same place.
+// Kept as a literal (not `var(--hs-accent-green)`) because it's concatenated
+// with an alpha suffix below — but must stay equal to that token's value.
 const WORKSPACE_ACCENT = '#2E7D32'
 
 const SECTIONS = [
@@ -651,7 +646,6 @@ const overviewStats = ref<{
   metadata: number | null
 }>({ members: null, sites: null, serviceAccounts: null, metadata: null })
 const overviewStatsLoaded = ref(false)
-const overviewStatsError = ref(false)
 let overviewRequestId = 0
 
 function responseCount(result: PromiseSettledResult<unknown>): number | null {
@@ -668,7 +662,6 @@ function responseCount(result: PromiseSettledResult<unknown>): number | null {
 const loadOverviewStats = async (workspaceId: string) => {
   const requestId = ++overviewRequestId
   overviewStatsLoaded.value = false
-  overviewStatsError.value = false
   overviewStats.value = {
     members: null,
     sites: null,
@@ -724,11 +717,6 @@ const loadOverviewStats = async (workspaceId: string) => {
     serviceAccounts: canViewServiceAccounts ? counts[2] : null,
     metadata,
   }
-  overviewStatsError.value =
-    counts[0] === null ||
-    counts[1] === null ||
-    (canViewServiceAccounts && counts[2] === null) ||
-    metadata === null
   overviewStatsLoaded.value = true
 }
 
@@ -1031,29 +1019,29 @@ onMounted(async () => {
 /* ── overview stat tiles ── */
 .overview-stats {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--hs-space-12);
+  margin-bottom: var(--hs-space-16);
 }
 .stat-tile {
   flex: 1;
   min-width: 0;
-  padding: 15px 16px;
+  padding: var(--hs-space-16);
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 11px;
-  background: #ffffff;
+  border-radius: var(--hs-radius-lg);
+  background: var(--hs-surface);
 }
 .stat-tile-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 9px;
+  gap: var(--hs-space-8);
+  margin-bottom: var(--hs-space-8);
 }
 .stat-tile-head span:last-child {
-  font-size: 11px;
+  font-size: var(--hs-font-2xs);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #757575;
+  color: var(--hs-text-secondary);
 }
 .stat-tile-icon {
   display: inline-flex;
@@ -1065,57 +1053,47 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .stat-tile-value {
-  font-size: 26px;
+  font-size: var(--hs-font-xl);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #1c1b1f;
-}
-.overview-stats-error {
-  margin: -6px 0 14px;
-  color: #8a5a00;
-  font-size: 12px;
-}
-.overview-stats-error button {
-  margin-left: 4px;
-  color: #1565c0;
-  font-weight: 600;
+  color: var(--hs-text-primary);
 }
 /* A little color per metric instead of one uniform grey, so the overview
    reads as more than a wall of numbers. */
 .stat-tile--members .stat-tile-icon {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--hs-accent-blue-bg);
+  color: var(--hs-accent-blue);
 }
 .stat-tile--members .stat-tile-value {
-  color: #1565c0;
+  color: var(--hs-accent-blue);
 }
 .stat-tile--sites .stat-tile-icon {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--hs-accent-green-bg);
+  color: var(--hs-accent-green);
 }
 .stat-tile--sites .stat-tile-value {
-  color: #2e7d32;
+  color: var(--hs-accent-green);
 }
 .stat-tile--keys .stat-tile-icon {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--hs-accent-orange-bg);
+  color: var(--hs-accent-orange);
 }
 .stat-tile--keys .stat-tile-value {
-  color: #e65100;
+  color: var(--hs-accent-orange);
 }
 .stat-tile--metadata .stat-tile-icon {
-  background: #e0f7fa;
-  color: #00838f;
+  background: var(--hs-accent-teal-bg);
+  color: var(--hs-accent-teal);
 }
 .stat-tile--metadata .stat-tile-value {
-  color: #00838f;
+  color: var(--hs-accent-teal);
 }
 
 /* Page chrome mirrors the Job Orchestration page (Orchestration.vue /
    OrchestrationContextSidebar.vue) so the two workspace-management entry
    points feel like the same product surface. */
 .workspaces-page {
-  background-color: #ffffff;
+  background-color: var(--hs-surface);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
@@ -1126,16 +1104,20 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .workspaces-header {
-  background: linear-gradient(120deg, #eaf5fd 0%, #eefaf0 100%);
-  border-bottom: 1px solid #dfe8e2;
+  background: linear-gradient(
+    120deg,
+    var(--hs-header-wash-start) 0%,
+    var(--hs-header-wash-end) 100%
+  );
+  border-bottom: 1px solid var(--hs-header-wash-border);
 }
 .workspaces-header-inner {
-  padding: 12px 24px;
+  padding: var(--hs-space-12) var(--hs-space-24);
 }
 .workspaces-header-title {
-  font-size: 22px;
+  font-size: var(--hs-font-lg);
   font-weight: 400;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
   letter-spacing: 0;
   line-height: 1.2;
 }
@@ -1157,7 +1139,7 @@ onMounted(async () => {
   display: flex;
   flex: 1;
   min-height: 0;
-  background: #ffffff;
+  background: var(--hs-surface);
   overflow: hidden;
 }
 
@@ -1165,8 +1147,8 @@ onMounted(async () => {
 .sidebar {
   position: relative;
   width: 260px;
-  border-right: 1px solid #e8e8e8;
-  background: #fafafa;
+  border-right: 1px solid var(--hs-border);
+  background: var(--hs-surface-muted);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -1179,16 +1161,22 @@ onMounted(async () => {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #2196f3, #4caf50);
+  /* The theme's actual primary/secondary, not a hand-copied duplicate of
+     them, so this can't drift from vuetify.ts. */
+  background: linear-gradient(
+    90deg,
+    rgb(var(--v-theme-primary)),
+    rgb(var(--v-theme-secondary))
+  );
 }
 .sidebar-header {
-  padding: 11px 14px 10px;
-  border-bottom: 1px solid #ebebeb;
+  padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
+  border-bottom: 1px solid var(--hs-border);
 }
 .sidebar-title {
-  font-size: 11px;
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
-  color: #49454f;
+  color: var(--hs-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -1196,7 +1184,7 @@ onMounted(async () => {
   width: 26px;
   height: 26px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--hs-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1204,26 +1192,26 @@ onMounted(async () => {
 }
 .sidebar-search {
   position: relative;
-  margin-top: 8px;
+  margin-top: var(--hs-space-8);
 }
 .sidebar-search-icon {
   position: absolute;
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  color: #cac4d0;
+  color: var(--hs-input-border);
   pointer-events: none;
 }
 .sidebar-search-input {
   width: 100%;
-  border: 1px solid #cac4d0;
-  border-radius: 20px;
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-pill);
   height: 30px;
   padding-left: 30px;
-  padding-right: 10px;
-  font-size: 12px;
+  padding-right: var(--hs-space-10);
+  font-size: var(--hs-font-sm);
   outline: none;
-  background: white;
+  background: var(--hs-surface);
 }
 .sidebar-list {
   flex: 1;
@@ -1231,12 +1219,12 @@ onMounted(async () => {
 }
 .sidebar-item {
   position: relative;
-  padding: 10px 14px;
+  padding: var(--hs-space-10) var(--hs-space-16);
   cursor: default;
-  border-bottom: 1px solid #ebebeb;
+  border-bottom: 1px solid var(--hs-border);
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--hs-space-10);
   transition: background 0.1s;
 }
 .sidebar-item:not(.selected):hover {
@@ -1257,7 +1245,7 @@ onMounted(async () => {
   padding-right: 62px;
 }
 .sidebar-item-title {
-  font-size: 13px;
+  font-size: var(--hs-font-sm);
   color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1267,13 +1255,13 @@ onMounted(async () => {
   font-weight: 600;
 }
 .sidebar-item-meta {
-  font-size: 11px;
-  color: #49454f;
-  margin-top: 2px;
+  font-size: var(--hs-font-2xs);
+  color: var(--hs-text-secondary);
+  margin-top: var(--hs-space-2);
   min-height: 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--hs-space-6);
 }
 .sidebar-item.selected .sidebar-item-meta {
   color: rgba(255, 255, 255, 0.75);
@@ -1290,7 +1278,7 @@ onMounted(async () => {
   top: 10px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--hs-space-2);
   opacity: 0;
   transition: opacity 0.1s;
 }
@@ -1303,8 +1291,8 @@ onMounted(async () => {
   width: 24px;
   height: 24px;
   border: none;
-  border-radius: 6px;
-  color: #546e7a;
+  border-radius: var(--hs-radius-sm);
+  color: var(--hs-text-secondary);
   background: transparent;
   display: inline-flex;
   align-items: center;
@@ -1312,10 +1300,12 @@ onMounted(async () => {
   cursor: pointer;
 }
 .sidebar-item-action:hover:not(:disabled) {
-  background: rgba(84, 110, 122, 0.12);
+  /* rgb(73, 69, 79) is --hs-text-secondary; rgba() can't reference a var()
+     directly, so the triple is kept in sync with it by hand here. */
+  background: rgba(73, 69, 79, 0.12);
 }
 .sidebar-item-action--danger {
-  color: #b3261e;
+  color: var(--hs-danger);
 }
 .sidebar-item-action--danger:hover:not(:disabled) {
   background: rgba(179, 38, 30, 0.1);
@@ -1331,26 +1321,26 @@ onMounted(async () => {
   opacity: 0.5;
 }
 .sidebar-empty {
-  padding: 16px 14px;
-  font-size: 12px;
-  color: #9ca3af;
+  padding: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  color: var(--hs-text-muted);
 }
 .sidebar-footer {
-  padding: 10px 14px;
-  border-top: 1px solid #ebebeb;
+  padding: var(--hs-space-10) var(--hs-space-16);
+  border-top: 1px solid var(--hs-border);
 }
 .sidebar-footer-btn {
   background: none;
   border: 1px dashed;
-  border-radius: 8px;
-  padding: 6px 0;
+  border-radius: var(--hs-radius-md);
+  padding: var(--hs-space-6) 0;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--hs-font-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--hs-space-4);
 }
 .sidebar-footer-btn:disabled {
   opacity: 0.5;
@@ -1363,38 +1353,38 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: white;
+  background: var(--hs-surface);
   min-width: 0;
 }
 .detail-header {
-  padding: 12px 22px;
-  border-bottom: 1px solid #e8e8e8;
+  padding: var(--hs-space-12) var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: white;
+  gap: var(--hs-space-12);
+  background: var(--hs-surface);
   flex-shrink: 0;
 }
 .detail-title {
-  font-size: 17px;
+  font-size: var(--hs-font-md);
   font-weight: 400;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
 }
 .detail-subtitle {
-  margin-top: 4px;
-  font-size: 12.5px;
-  color: #49454f;
+  margin-top: var(--hs-space-4);
+  font-size: var(--hs-font-sm);
+  color: var(--hs-text-secondary);
 }
 .detail-tabbar {
-  padding: 0 22px;
-  border-bottom: 1px solid #e8e8e8;
-  background: white;
+  padding: 0 var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
+  background: var(--hs-surface);
   flex-shrink: 0;
 }
 .detail-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 22px;
+  padding: var(--hs-space-16) var(--hs-space-24);
 }
 .workspace-id-cell {
   overflow-wrap: anywhere;
@@ -1410,43 +1400,50 @@ onMounted(async () => {
   justify-content: center;
   min-width: 0;
   overflow: auto;
-  background: white;
-  padding: 32px;
+  background: var(--hs-surface);
+  padding: var(--hs-space-32);
 }
 .no-workspace-state-content {
   max-width: 560px;
-  color: #3c4043;
+  color: var(--hs-text-primary);
 }
 .no-workspace-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
-  color: #2e7d32;
+  background: linear-gradient(
+    135deg,
+    var(--hs-accent-blue-bg),
+    var(--hs-accent-green-bg)
+  );
+  color: var(--hs-accent-green);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18px;
+  margin-bottom: var(--hs-space-16);
 }
 .no-workspace-eyebrow {
-  margin: 0 0 8px;
-  color: #5f6368;
-  font-size: 0.78rem;
+  margin: 0 0 var(--hs-space-8);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/* Same size as the page's own h1 (.workspaces-header-title) — this
+   empty-state heading was previously a step larger than the page title
+   above it, which inverted the hierarchy. */
 .no-workspace-state h2 {
-  margin: 0 0 12px;
-  color: #202124;
-  font-size: 1.5rem;
+  margin: 0 0 var(--hs-space-12);
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-lg);
   line-height: 1.25;
 }
 .no-workspace-state p {
   line-height: 1.55;
 }
 .no-workspace-actions {
-  margin-top: 22px;
+  margin-top: var(--hs-space-24);
 }
 
 @media (hover: none) {
@@ -1478,7 +1475,7 @@ onMounted(async () => {
     max-width: 100%;
     min-height: auto;
     border-right: 0;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid var(--hs-border);
   }
   .sidebar-list {
     display: flex;
@@ -1488,7 +1485,7 @@ onMounted(async () => {
   }
   .sidebar-item {
     min-width: 175px;
-    border-right: 1px solid #ebebeb;
+    border-right: 1px solid var(--hs-border);
     border-bottom: 0;
   }
   .sidebar-footer {
@@ -1500,14 +1497,14 @@ onMounted(async () => {
     overflow: visible;
   }
   .detail-header {
-    padding: 12px 16px;
+    padding: var(--hs-space-12) var(--hs-space-16);
   }
   .detail-tabbar {
-    padding: 0 8px;
+    padding: 0 var(--hs-space-8);
   }
   .detail-body {
     overflow: visible;
-    padding: 16px;
+    padding: var(--hs-space-16);
   }
   .overview-stats {
     flex-wrap: wrap;

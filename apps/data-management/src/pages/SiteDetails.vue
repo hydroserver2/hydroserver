@@ -3,38 +3,101 @@
     <v-row v-if="thing" class="align-center gap-y-[0.35rem]">
       <v-col
         cols="12"
-        class="d-flex align-center flex-wrap justify-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
+        class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
         <h5 class="text-h5 mt-2 mb-0">{{ thing.name }}</h5>
+
         <div
-          class="flex items-center gap-2 ml-auto max-[600px]:w-full max-[600px]:ml-0"
+          class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
         >
+          <HydroShareArchivalButton v-if="canEditThing && hydroShareConnected" />
+
+          <v-btn
+            v-if="canEditThing"
+            variant="outlined"
+            data-testid="site-access-control-button"
+            @click="isAccessControlModalOpen = true"
+          >
+            Access control
+          </v-btn>
+
+          <v-btn
+            v-if="canEditThing"
+            variant="outlined"
+            color="secondary"
+            data-testid="edit-site-button"
+            @click="isRegisterModalOpen = true"
+          >
+            Edit site information
+          </v-btn>
+
+          <v-menu v-if="canEditThing" location="bottom end">
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                color="primary"
+                :prepend-icon="mdiCloudUploadOutline"
+                :append-icon="mdiChevronDown"
+                data-testid="stream-data-button"
+              >
+                Stream data
+              </v-btn>
+            </template>
+            <v-list density="comfortable">
+              <v-list-item
+                :to="orchestrationIngestionRoute"
+                :prepend-icon="mdiCogSyncOutline"
+                title="Automated job orchestration"
+                subtitle="Schedule recurring imports from a data connection"
+              />
+              <v-list-item
+                :to="{ name: 'StreamingDataLoaderDownload' }"
+                :prepend-icon="mdiDownloadBoxOutline"
+                title="Streaming Data Loader"
+                subtitle="Desktop app that streams local CSV files as they update"
+              />
+              <v-list-item
+                :href="pythonClientGuideUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                :prepend-icon="mdiLanguagePython"
+                title="API via scripts"
+                subtitle="Push observations with hydroserverpy or the REST API"
+              />
+            </v-list>
+          </v-menu>
+
           <v-btn
             v-if="
               hasPermission(PermissionResource.Thing, PermissionAction.Delete)
             "
-            class="max-[600px]:self-start"
             color="red-darken-3"
             data-testid="delete-site-button"
             @click="isDeleteModalOpen = true"
           >
             Delete site
           </v-btn>
-          <div class="flex-1" />
-          <HydroShareArchivalButton
-            v-if="
-              hasPermission(PermissionResource.Thing, PermissionAction.Edit) &&
-              hydroShareEnabled &&
-              hydroShareConnected
-            "
-          />
         </div>
+
         <v-dialog v-model="isDeleteModalOpen" v-if="thing" width="40rem">
           <SiteDeleteModal
             :thing="thing"
             @switch-to-access-control="switchToAccessControlModal"
             @close="isDeleteModalOpen = false"
             @delete="onDeleteThing"
+          />
+        </v-dialog>
+        <v-dialog v-model="isAccessControlModalOpen" width="40rem">
+          <SiteAccessControl
+            @close="isAccessControlModalOpen = false"
+            :thing-id="thingId"
+          />
+        </v-dialog>
+        <v-dialog v-if="thing" v-model="isRegisterModalOpen" width="80rem">
+          <SiteForm
+            @close="onSiteFormClosed"
+            :thing-id="thingId"
+            :workspace-id="thing.workspaceId"
           />
         </v-dialog>
       </v-col>
@@ -94,51 +157,6 @@
             </div>
           </v-card>
         </div>
-      </v-col>
-    </v-row>
-
-    <v-row class="align-center mb-2">
-      <v-col
-        cols="12"
-        md="8"
-        class="d-flex align-center flex-wrap gap-2 max-[600px]:flex-col max-[600px]:items-start"
-      >
-        <h5 class="text-h6 mb-0 max-[600px]:w-full">Site information</h5>
-
-        <v-btn
-          v-if="hasPermission(PermissionResource.Thing, PermissionAction.Edit)"
-          class="max-[600px]:self-start"
-          data-testid="site-access-control-button"
-          @click="isAccessControlModalOpen = true"
-        >
-          Access control
-        </v-btn>
-        <v-dialog v-model="isAccessControlModalOpen" width="40rem">
-          <SiteAccessControl
-            @close="isAccessControlModalOpen = false"
-            :thing-id="thingId"
-          />
-        </v-dialog>
-
-        <v-btn
-          v-if="
-            hasPermission(PermissionResource.Thing, PermissionAction.Edit) &&
-            !!thing
-          "
-          class="max-[600px]:self-start"
-          @click="isRegisterModalOpen = true"
-          color="secondary"
-          data-testid="edit-site-button"
-        >
-          Edit site information
-        </v-btn>
-        <v-dialog v-if="thing" v-model="isRegisterModalOpen" width="80rem">
-          <SiteForm
-            @close="onSiteFormClosed"
-            :thing-id="thingId"
-            :workspace-id="thing.workspaceId"
-          />
-        </v-dialog>
       </v-col>
     </v-row>
 
@@ -264,8 +282,19 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useHydroShare } from '@/composables/useHydroShare'
 import { useHydroShareStore } from '@/store/hydroShare'
 import HydroShareArchivalButton from '@/components/HydroShare/HydroShareArchivalButton.vue'
-import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import {
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiDownloadBoxOutline,
+  mdiCloudUploadOutline,
+  mdiChevronDown,
+  mdiCogSyncOutline,
+  mdiLanguagePython,
+} from '@mdi/js'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
+
+const pythonClientGuideUrl =
+  'https://hydroserver2.github.io/hydroserver/user-guides/how-to/using-the-python-client.html'
 
 const route = useRoute()
 const thingId = route.params.id.toString()
@@ -273,6 +302,14 @@ const targetDatastreamId = computed(() => {
   const param = route.query.datastream
   return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
 })
+const orchestrationIngestionRoute = computed(() => ({
+  name: 'OrchestrationView',
+  params: { view: 'ingestion' },
+  query: {
+    workspace_id: thing.value?.workspaceId,
+    site_id: thingId,
+  },
+}))
 const { photos, loading } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 

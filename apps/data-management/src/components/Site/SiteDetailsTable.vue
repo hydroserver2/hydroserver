@@ -1,15 +1,85 @@
 <template>
-  <div v-if="isMobile" class="site-details-mobile">
-    <div
-      v-for="item in thingProperties"
-      :key="item.label"
-      class="site-details-mobile__item"
-    >
-      <div class="site-details-mobile__header">
-        <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
-        <span class="site-detail-label">{{ item.label }}</span>
+  <v-card class="hs-table-card site-details-card" flat>
+    <v-card-title tag="h5" class="text-h6">Site information</v-card-title>
+    <v-divider />
+
+    <div v-if="isMobile" class="site-details-mobile">
+      <div
+        v-for="item in thingProperties"
+        :key="item.label"
+        class="site-details-mobile__item"
+      >
+        <div class="site-details-mobile__header">
+          <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
+          <span class="site-detail-label">{{ item.label }}</span>
+        </div>
+        <div class="site-details-mobile__value">
+          <div v-if="item.label === 'ID'" class="d-flex align-center">
+            <span class="mr-2">{{ item.value }}</span>
+            <v-tooltip text="Copy ID">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon
+                  size="x-small"
+                  variant="text"
+                  @click.stop="copyValue(String(item.value))"
+                >
+                  <v-icon :icon="mdiContentCopy" size="x-small" />
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+          <div
+            v-else-if="item.label === 'Additional metadata'"
+            class="metadata-chip-list"
+          >
+            <v-chip
+              v-for="(tag, index) in tagProperty.value"
+              rounded="true"
+              :color="materialColors[index % materialColors.length]"
+              :key="tag.key"
+              class="mr-2 my-1"
+            >
+              {{ tag.key }}:
+              <span v-if="isUrl(tag.value)">
+                <a :href="tag.value" target="_blank">{{ tag.value }}</a>
+              </span>
+              <span v-else>{{ tag.value }}</span>
+            </v-chip>
+          </div>
+          <div v-else-if="item.label === 'Rating Curves'">
+            <v-btn
+              variant="text"
+              color="teal-darken-1"
+              class="text-none px-0 rating-curve-view-btn"
+              @click="openRatingCurveDialog"
+            >
+              View rating curves ({{ props.ratingCurveCount }})
+            </v-btn>
+          </div>
+          <p v-else class="site-detail-text">{{ item.value }}</p>
+        </div>
       </div>
-      <div class="site-details-mobile__value">
+    </div>
+    <v-data-table
+      v-else
+      :items="thingProperties"
+      :items-per-page="-1"
+      hide-default-header
+      hide-default-footer
+      density="compact"
+      class="site-details-table"
+    >
+      <template v-slot:item.icon="{ item }">
+        <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
+      </template>
+
+      <template v-slot:item.label="{ item }">
+        <span class="site-detail-label">{{ item.label }}</span>
+      </template>
+
+      <template v-slot:item.value="{ item }">
         <div v-if="item.label === 'ID'" class="d-flex align-center">
           <span class="mr-2">{{ item.value }}</span>
           <v-tooltip text="Copy ID">
@@ -17,19 +87,17 @@
               <v-btn
                 v-bind="props"
                 icon
-                size="x-small"
+                size="small"
                 variant="text"
+                class="site-copy-btn"
                 @click.stop="copyValue(String(item.value))"
               >
-                <v-icon :icon="mdiContentCopy" size="x-small" />
+                <v-icon :icon="mdiContentCopy" size="small" />
               </v-btn>
             </template>
           </v-tooltip>
         </div>
-        <div
-          v-else-if="item.label === 'Additional metadata'"
-          class="metadata-chip-list"
-        >
+        <div v-else-if="item.label === 'Additional metadata'">
           <v-chip
             v-for="(tag, index) in tagProperty.value"
             rounded="true"
@@ -54,73 +122,10 @@
             View rating curves ({{ props.ratingCurveCount }})
           </v-btn>
         </div>
-        <p v-else class="site-detail-text">{{ item.value }}</p>
-      </div>
-    </div>
-  </div>
-  <v-data-table
-    v-else
-    :items="thingProperties"
-    :items-per-page="-1"
-    hide-default-header
-    hide-default-footer
-    density="compact"
-    class="elevation-2 site-details-table"
-  >
-    <template v-slot:item.icon="{ item }">
-      <v-icon :icon="item.icon" :color="item.iconColor"></v-icon>
-    </template>
-
-    <template v-slot:item.label="{ item }">
-      <span class="site-detail-label">{{ item.label }}</span>
-    </template>
-
-    <template v-slot:item.value="{ item }">
-      <div v-if="item.label === 'ID'" class="d-flex align-center">
-        <span class="mr-2">{{ item.value }}</span>
-        <v-tooltip text="Copy ID">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon
-              size="small"
-              variant="text"
-              class="site-copy-btn"
-              @click.stop="copyValue(String(item.value))"
-            >
-              <v-icon :icon="mdiContentCopy" size="small" />
-            </v-btn>
-          </template>
-        </v-tooltip>
-      </div>
-      <div v-else-if="item.label === 'Additional metadata'">
-        <v-chip
-          v-for="(tag, index) in tagProperty.value"
-          rounded="true"
-          :color="materialColors[index % materialColors.length]"
-          :key="tag.key"
-          class="mr-2 my-1"
-        >
-          {{ tag.key }}:
-          <span v-if="isUrl(tag.value)">
-            <a :href="tag.value" target="_blank">{{ tag.value }}</a>
-          </span>
-          <span v-else>{{ tag.value }}</span>
-        </v-chip>
-      </div>
-      <div v-else-if="item.label === 'Rating Curves'">
-        <v-btn
-          variant="text"
-          color="teal-darken-1"
-          class="text-none px-0 rating-curve-view-btn"
-          @click="openRatingCurveDialog"
-        >
-          View rating curves ({{ props.ratingCurveCount }})
-        </v-btn>
-      </div>
-      <p v-else>{{ item.value }}</p>
-    </template>
-  </v-data-table>
+        <p v-else>{{ item.value }}</p>
+      </template>
+    </v-data-table>
+  </v-card>
 
   <v-dialog v-model="isRatingCurveDialogOpen" width="56rem" max-width="95vw">
     <v-card>
@@ -283,15 +288,24 @@ type ThingPropertyRow = {
   max-height: none;
 }
 
+.site-details-table :deep(tbody tr:hover) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
 .site-details-mobile {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  padding: 0.25rem 1rem 0.75rem;
 }
 
 .site-details-mobile__item {
   padding: 0.4rem 0.25rem 0.6rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.site-details-mobile__item:last-child {
+  border-bottom: none;
 }
 
 .site-details-mobile__header {

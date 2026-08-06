@@ -1,9 +1,5 @@
 <template>
-  <v-navigation-drawer
-    v-model="sidebar.isOpen"
-    width="400"
-    class="datavis-filters-drawer border-r border-slate-200 bg-slate-50 text-slate-900"
-  >
+  <aside v-if="sidebar.isOpen" class="datavis-filters-panel">
     <div class="flex h-full flex-col gap-4 px-4 py-4">
       <div class="flex items-center justify-between px-1">
         <div class="text-[11px] uppercase tracking-[0.25em] text-slate-500">
@@ -12,7 +8,7 @@
         <v-btn
           color="primary"
           variant="outlined"
-          rounded
+          rounded="xl"
           :append-icon="mdiClose"
           class="text-xs"
           @click="clearFilters"
@@ -173,7 +169,7 @@
         </div>
       </div>
     </div>
-  </v-navigation-drawer>
+  </aside>
 </template>
 
 <script setup lang="ts">
@@ -397,7 +393,35 @@ watch(
   text-overflow: ellipsis;
 }
 
-.datavis-filters-drawer {
+/* Floating "island" card, matching the filter panel on Browse Monitoring
+   Sites (BrowseFilterTool.vue) exactly: same radius, same translucent
+   background, same shadow (--hs-shadow-float, sourced from Vuetify's own
+   card shadow) instead of a flush, square-cornered drawer. Browse's panel
+   is a real <v-card>, so it picks up that shadow from Vuetify directly;
+   this is a plain element, so it's applied explicitly here. */
+.datavis-filters-panel {
+  width: 340px;
+  max-width: 100%;
+  flex-shrink: 0;
+  min-height: 0;
+  border-radius: var(--hs-radius-lg);
+  background: var(--hs-surface-floating);
+  box-shadow: var(--hs-shadow-float);
+  color: var(--hs-text-primary);
+  overflow: hidden;
   z-index: 1;
+}
+
+@media (max-width: 700px) {
+  .datavis-filters-panel {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    /* Fully opaque on mobile, where the panel covers the plot/table instead
+       of a map, so underlying content doesn't show through. */
+    background: var(--hs-surface);
+    border-radius: 0;
+    z-index: 30;
+  }
 }
 </style>

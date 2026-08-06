@@ -290,21 +290,24 @@ const addLabel = computed(() =>
 <style scoped>
 .sidebar {
   width: 260px;
-  border-right: 1px solid #e8e8e8;
-  background: #fafafa;
+  border-right: 1px solid var(--hs-border);
+  background: var(--hs-surface-muted);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   min-height: 0;
 }
+/* The accent bar that used to sit here now spans the nav rail + this
+   sidebar together — see .orchestration-nav-column in Orchestration.vue —
+   so it's anchored to the page edge instead of floating in from 88px. */
 .sidebar-header {
-  padding: 11px 14px 10px;
-  border-bottom: 1px solid #ebebeb;
+  padding: var(--hs-space-10) var(--hs-space-16) var(--hs-space-8);
+  border-bottom: 1px solid var(--hs-border);
 }
 .sidebar-title {
-  font-size: 11px;
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
-  color: #49454f;
+  color: var(--hs-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -312,7 +315,7 @@ const addLabel = computed(() =>
   width: 26px;
   height: 26px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--hs-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -320,26 +323,26 @@ const addLabel = computed(() =>
 }
 .sidebar-search {
   position: relative;
-  margin-top: 8px;
+  margin-top: var(--hs-space-8);
 }
 .sidebar-search-icon {
   position: absolute;
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  color: #cac4d0;
+  color: var(--hs-input-border);
   pointer-events: none;
 }
 .sidebar-search-input {
   width: 100%;
-  border: 1px solid #cac4d0;
-  border-radius: 20px;
+  border: 1px solid var(--hs-input-border);
+  border-radius: var(--hs-radius-pill);
   height: 30px;
   padding-left: 30px;
-  padding-right: 10px;
-  font-size: 12px;
+  padding-right: var(--hs-space-10);
+  font-size: var(--hs-font-sm);
   outline: none;
-  background: white;
+  background: var(--hs-surface);
 }
 .sidebar-list {
   flex: 1;
@@ -347,12 +350,12 @@ const addLabel = computed(() =>
 }
 .sidebar-item {
   position: relative;
-  padding: 10px 14px;
+  padding: var(--hs-space-10) var(--hs-space-16);
   cursor: pointer;
-  border-bottom: 1px solid #ebebeb;
+  border-bottom: 1px solid var(--hs-border);
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--hs-space-10);
   transition: background 0.1s;
 }
 .sidebar-item:not(.selected):hover {
@@ -373,20 +376,20 @@ const addLabel = computed(() =>
   padding-right: 62px;
 }
 .sidebar-item-title {
-  font-size: 13px;
+  font-size: var(--hs-font-sm);
   color: inherit;
 }
 .sidebar-item.selected .sidebar-item-title {
   font-weight: 600;
 }
 .sidebar-item-meta {
-  font-size: 11px;
-  color: #49454f;
-  margin-top: 2px;
+  font-size: var(--hs-font-2xs);
+  color: var(--hs-text-secondary);
+  margin-top: var(--hs-space-2);
   min-height: 24px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--hs-space-6);
 }
 .sidebar-item.selected .sidebar-item-meta {
   color: rgba(255, 255, 255, 0.7);
@@ -395,11 +398,11 @@ const addLabel = computed(() =>
   min-width: 0;
 }
 .sidebar-item-badge {
-  background: #ffebee;
-  color: #b3261e;
-  border-radius: 10px;
-  padding: 1px 6px;
-  font-size: 10px;
+  background: var(--hs-danger-bg);
+  color: var(--hs-danger);
+  border-radius: var(--hs-radius-pill);
+  padding: 1px var(--hs-space-6);
+  font-size: var(--hs-font-2xs);
   font-weight: 700;
 }
 .sidebar-item-actions {
@@ -408,7 +411,7 @@ const addLabel = computed(() =>
   bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--hs-space-2);
   opacity: 0;
   transition: opacity 0.1s;
 }
@@ -421,8 +424,8 @@ const addLabel = computed(() =>
   width: 24px;
   height: 24px;
   border: none;
-  border-radius: 6px;
-  color: #546e7a;
+  border-radius: var(--hs-radius-sm);
+  color: var(--hs-text-secondary);
   background: transparent;
   display: inline-flex;
   align-items: center;
@@ -430,10 +433,12 @@ const addLabel = computed(() =>
   cursor: pointer;
 }
 .sidebar-item-action:hover:not(:disabled) {
-  background: rgba(84, 110, 122, 0.12);
+  /* rgb(73, 69, 79) is --hs-text-secondary; rgba() can't reference a var()
+     directly, so the triple is kept in sync with it by hand here. */
+  background: rgba(73, 69, 79, 0.12);
 }
 .sidebar-item-action--danger {
-  color: #b3261e;
+  color: var(--hs-danger);
 }
 .sidebar-item-action--danger:hover:not(:disabled) {
   background: rgba(179, 38, 30, 0.1);
@@ -449,21 +454,21 @@ const addLabel = computed(() =>
   opacity: 0.5;
 }
 .sidebar-empty {
-  padding: 16px 14px;
-  font-size: 12px;
-  color: #9ca3af;
+  padding: var(--hs-space-16) var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  color: var(--hs-text-muted);
 }
 .sidebar-footer {
-  padding: 10px 14px;
-  border-top: 1px solid #ebebeb;
+  padding: var(--hs-space-10) var(--hs-space-16);
+  border-top: 1px solid var(--hs-border);
 }
 .sidebar-footer-btn {
   background: none;
   border: 1px dashed;
-  border-radius: 8px;
-  padding: 6px 0;
+  border-radius: var(--hs-radius-md);
+  padding: var(--hs-space-6) 0;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--hs-font-sm);
   cursor: pointer;
   display: flex;
   align-items: center;

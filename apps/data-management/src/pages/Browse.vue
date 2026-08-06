@@ -365,8 +365,8 @@ onBeforeUnmount(() => {
 
 .browse-filter-overlay {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: var(--hs-space-16);
+  left: var(--hs-space-16);
   z-index: 1000;
 }
 
@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
   }
 
   .browse-filter-overlay:not(.browse-filter-tool--expanded) {
-    inset: 12px auto auto 12px;
+    inset: var(--hs-space-12) auto auto var(--hs-space-12);
   }
 }
 </style>
