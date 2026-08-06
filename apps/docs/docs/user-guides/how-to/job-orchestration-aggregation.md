@@ -1,5 +1,7 @@
-# Job Orchestration System
-## Data Transformation Tasks
+# Job Orchestration System: Data Transformation Tasks
+
+
+
 ## 1. Create an Aggregation Task
 
 Aggregation tasks are used to summarize high-frequency data into lower-frequency data. For example, an aggregation task can convert hourly or subdaily discharge data into daily average discharge values. This is useful when users want to reduce detailed time-series data into a simpler summary datastream for reporting, analysis, or visualization.
@@ -27,8 +29,6 @@ After the settings are complete, click **Create aggregation task**. The task wil
 <img src="/job-orchestration/aggregation_4_green.png" alt="Run the aggregation task manually" width="550">
 
 After the aggregation task runs successfully, return to the site datastream page and check the output datastream. The new datastream should contain the aggregated daily average values created by the task.
-
----
 
 ## 2. Create an Expression Task
 
@@ -63,8 +63,6 @@ x*0.0283168
 
 > **Note:** If a calculation requires more than one input datastream, use a **Derivation** task instead of an Expression task.
 
----
-
 ## 3. Create a Derivation Task
 
 Derivation tasks are used when a calculated output depends on **multiple input datastreams**. Each input datastream is assigned a variable name, such as `a`, `b`, or `c`, and those variables are used together in a formula.
@@ -94,7 +92,7 @@ a = first input datastream
 b = second input datastream
 a-b = calculated output value
 ```
----
+
 ## 4. Creating a Rating Curve
 
 A rating curve task is used to calculate discharge from water level, stage, or gage-height data. In many monitoring sites, the sensor may measure water level directly, but users may also need discharge values for analysis, visualization, or reporting. A rating curve provides the relationship between water level and discharge, and HydroServer uses this relationship to estimate discharge from the input water-level datastream.
