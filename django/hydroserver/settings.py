@@ -3,8 +3,6 @@ import environ
 from pathlib import Path
 from uuid import UUID
 from urllib.parse import urlparse
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from django.core.exceptions import ImproperlyConfigured
 from celery.schedules import crontab
 
@@ -278,26 +276,17 @@ SOCIALACCOUNT_STORE_TOKENS = True
 
 IDP_OIDC_ENABLED = env.bool("IDP_OIDC_ENABLED", default=True)
 
+_dev_key_path = BASE_DIR / "dev_oidc2_private_key.pem"
+
 IDP_OIDC_PRIVATE_KEY_FILE = env.str("IDP_OIDC_PRIVATE_KEY_FILE", default="")
 IDP_OIDC_PRIVATE_KEY = (
     Path(IDP_OIDC_PRIVATE_KEY_FILE).read_text()
     if IDP_OIDC_PRIVATE_KEY_FILE
-    else env.str("IDP_OIDC_PRIVATE_KEY", default="")
+    else env.str(
+        "IDP_OIDC_PRIVATE_KEY",
+        default=_dev_key_path.read_text() if _dev_key_path.exists() else "",
+    )
 )
-
-if not IDP_OIDC_PRIVATE_KEY and TRUSTED_LOCAL_ENVIRONMENT:
-    _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
-    if not _dev_key_path.exists():
-        _dev_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        _dev_key_path.write_bytes(
-            _dev_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-        _dev_key_path.chmod(0o600)
-    IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
 
 if IDP_OIDC_ENABLED and not TRUSTED_LOCAL_ENVIRONMENT and not IDP_OIDC_PRIVATE_KEY:
     raise ImproperlyConfigured(

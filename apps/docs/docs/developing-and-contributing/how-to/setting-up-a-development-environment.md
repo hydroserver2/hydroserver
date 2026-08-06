@@ -71,7 +71,11 @@ Before starting, make sure you have the following software installed on your mac
    This uses [django-tailwind-cli](https://django-tailwind-cli.readthedocs.io/), which downloads
    its own standalone Tailwind CSS binary on first run — no Node.js/npm required for this step.
 
-`./scripts/dev-api-command` automatically creates `django/dev_oidc_private_key.pem` if it does not already exist, so local OIDC discovery, authorize, token, and JWKS endpoints work without any manual key setup.
+If you need OIDC identity provider features (discovery, authorize, token, and JWKS endpoints), generate a
+signing key first:
+```bash
+openssl genpkey -algorithm RSA -out django/dev_oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+```
 
 ## HydroServer Frontend
 

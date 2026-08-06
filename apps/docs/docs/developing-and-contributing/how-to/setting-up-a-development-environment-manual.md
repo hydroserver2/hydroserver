@@ -97,3 +97,12 @@ By default, `SMTP_URL` is unset and account-related emails (verification, passwo
 console where `runserver` is running. If you'd rather view them in a real inbox UI, run something like 
 [MailHog](https://github.com/mailhog/MailHog) or [Mailpit](https://github.com/axllent/mailpit) and 
 set `SMTP_URL=smtp://127.0.0.1:1025` in `django/.env`.
+
+## Optional: OpenID Connect Identity Provider
+
+Only needed if you're testing the OIDC identity provider (discovery, authorize, token, and JWKS
+endpoints). Generate a signing key:
+```bash
+cd django
+openssl genpkey -algorithm RSA -out dev_oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+```
