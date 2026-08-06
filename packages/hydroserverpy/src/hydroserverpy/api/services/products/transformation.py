@@ -189,10 +189,10 @@ class DataProductTransformationService:
         self,
         task_id: Union[UUID, str],
         uid: Union[UUID, str],
-        input_datastreams: List[dict],
-        formula: str,
-        stop_on_no_data: bool = True,
-        stop_on_error: bool = True,
+        input_datastreams: List[dict] = ...,
+        formula: str = ...,
+        stop_on_no_data: bool = ...,
+        stop_on_error: bool = ...,
     ) -> ExpressionTransformation:
         """
         Update an expression transformation.
@@ -207,11 +207,12 @@ class DataProductTransformationService:
                     "variableName": inp.get("variable_name") or inp.get("variableName"),
                 }
                 for inp in input_datastreams
-            ],
+            ] if input_datastreams is not ... else ...,
             "formula": formula,
             "stopOnNoData": stop_on_no_data,
             "stopOnError": stop_on_error,
         }
+        body = {k: v for k, v in body.items() if v is not ...}
 
         return ExpressionTransformation(**self._patch(task_id, "expression", uid, body))
 
