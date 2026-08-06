@@ -21,6 +21,7 @@ coverage.txt
 photos/
 csrf_test.py
 tmp/
+dev_oidc_private_key.pem
 .env
 
 # Elastic Beanstalk Files

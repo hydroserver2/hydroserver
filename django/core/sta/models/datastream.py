@@ -112,7 +112,7 @@ class DatastreamFileAttachment(models.Model):
         except TypeError:
             file_attachment_link = storage.url(self.file_attachment.name)
 
-        if settings.DEPLOYMENT_BACKEND == "local":
+        if settings.MEDIA_STORAGE_IS_LOCAL:
             file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
 
         return file_attachment_link

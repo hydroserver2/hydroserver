@@ -1,140 +1,84 @@
-import datetime
-import os
-import socket
-import dj_database_url
-import dj_email_url
+import environ
+
 from pathlib import Path
 from uuid import UUID
-from corsheaders.defaults import default_headers
-from decouple import config
 from urllib.parse import urlparse
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from django.core.exceptions import ImproperlyConfigured
 from celery.schedules import crontab
 
 
 # Build paths inside the project like this: BASE_DIR / "subdir".
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEPLOYMENT_BACKEND = config("DEPLOYMENT_BACKEND", default="dev")
+env = environ.Env()
+env_file = BASE_DIR / ".env"
+
+if env_file.exists():
+    environ.Env.read_env(env_file)
+
+
+# Security & Debug
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config(
+SECRET_KEY = env.str(
     "SECRET_KEY",
     default="django-insecure-zw@4h#ol@0)5fxy=ib6(t&7o4ot9mzvli*d-wd=81kjxqc!5w4",
 )
 
-# SECURITY WARNING: don"t run with debug turned on in production!
-DEBUG = config("DEBUG", default=DEPLOYMENT_BACKEND == "dev", cast=bool)
-NOINDEX = config("NOINDEX", default=False, cast=bool)
-E2E_TESTING = config("E2E_TESTING", default=False, cast=bool)
-E2E_CONTROL_TOKEN = config("E2E_CONTROL_TOKEN", default="")
-
-if E2E_TESTING:
-    # Browser scenarios create several short-lived users per test. The fast
-    # hasher keeps that setup inexpensive and is never enabled in a normal
-    # deployment.
-    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool("DEBUG", default=True)
 
 
-# Default Superuser Settings
-DEFAULT_SUPERUSER_EMAIL = config(
-    "DEFAULT_SUPERUSER_EMAIL", default="admin@hydroserver.org"
-)
-DEFAULT_SUPERUSER_PASSWORD = config("DEFAULT_SUPERUSER_PASSWORD", default="pass")
+# Networking & Proxy
 
-# Service Account Settings
-SERVICE_ACCOUNT_EMAIL_DOMAIN = config(
-    "SERVICE_ACCOUNT_EMAIL_DOMAIN", default="hydroserver.local"
+PROXY_BASE_URL = env.str("PROXY_BASE_URL", default="http://127.0.0.1:8000")
+
+TRUSTED_LOCAL_ENVIRONMENT = env.bool(
+    "TRUSTED_LOCAL_ENVIRONMENT",
+    default=urlparse(PROXY_BASE_URL).hostname in {"127.0.0.1", "localhost"}
 )
 
-# Deployment Settings
+WEB_CLIENT_URL = env.str(
+    "WEB_CLIENT_URL",
+    default=(
+        f"http://{urlparse(PROXY_BASE_URL).hostname}:1203"
+        if TRUSTED_LOCAL_ENVIRONMENT else PROXY_BASE_URL
+    ),
+)
+
+if not TRUSTED_LOCAL_ENVIRONMENT and SECRET_KEY.startswith("django-insecure-"):
+    raise ImproperlyConfigured("SECRET_KEY must be set for deployed instances")
 
 USE_X_FORWARDED_HOST = True
-PROXY_BASE_URL = config("PROXY_BASE_URL", "http://127.0.0.1:8000")
-APP_CLIENT_URL = config("APP_CLIENT_URL", default=PROXY_BASE_URL)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-LOAD_DEFAULT_DATA = config("LOAD_DEFAULT_DATA", default=False, cast=bool)
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS.append(urlparse(PROXY_BASE_URL).hostname)
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
-proxy_hostname = urlparse(PROXY_BASE_URL).hostname
-default_allowed_hosts = ",".join(
-    host
-    for host in ["127.0.0.1", "localhost", proxy_hostname]
-    if host
-)
-
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=default_allowed_hosts).split(",") + [
-    local_ip
-]
-TRUSTED_ORIGINS = config("TRUSTED_ORIGINS", None)
-
-if TRUSTED_ORIGINS:
-    TRUSTED_ORIGIN_LIST = [
-        origin.strip() for origin in TRUSTED_ORIGINS.split(",") if origin.strip()
-    ]
-    CORS_ORIGIN_ALLOW_ALL = False
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOWED_ORIGINS = TRUSTED_ORIGIN_LIST + [PROXY_BASE_URL]
-    CSRF_TRUSTED_ORIGINS = TRUSTED_ORIGIN_LIST + [PROXY_BASE_URL]
-else:
-    CORS_ORIGIN_ALLOW_ALL = True
-    CORS_ALLOW_CREDENTIALS = False
-    CSRF_TRUSTED_ORIGINS = [PROXY_BASE_URL]
-
-if DEPLOYMENT_BACKEND == "dev":
-    CORS_ORIGIN_ALLOW_ALL = True
-    CORS_ALLOW_CREDENTIALS = True
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = TRUSTED_LOCAL_ENVIRONMENT
+CORS_URLS_REGEX = r"^/(api|identity|\.well-known|media|static)/.*$"
 
 CORS_EXPOSE_HEADERS = [
     "X-Total-Pages",
     "X-Total-Count",
 ]
 
-# Celery
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in env.list("CSRF_TRUSTED_ORIGINS", default=[PROXY_BASE_URL])
+    if origin.strip()
+]
 
-CELERY_ENABLED = config("CELERY_ENABLED", default=True, cast=bool)
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CSRF_COOKIE_SECURE = urlparse(PROXY_BASE_URL).scheme == "https"
+SESSION_COOKIE_SECURE = urlparse(PROXY_BASE_URL).scheme == "https"
 
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_BROKER_CONNECTION_RETRY = True
-CELERY_BROKER_CONNECTION_MAX_RETRIES = None
-CELERY_BROKER_HEARTBEAT = 10
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    "socket_keepalive": True,
-    "retry_on_timeout": True,
-    "socket_timeout": 30,
-}
+NOINDEX = env.bool("NOINDEX", default=False)
 
-DATA_CONNECTION_NOTIFICATION_CRONTAB = config("DATA_CONNECTION_NOTIFICATION_CRONTAB", default="0 0 * * *").split()
-
-CELERY_BEAT_SCHEDULE = {
-    "cleanup_task_runs": {
-        "task": "processing.orchestration.tasks.cleanup_task_runs",
-        "schedule": crontab(hour=3, minute=0),
-        "args": (7,),
-    },
-    "send_orchestration_notifications": {
-        "task": "processing.etl.tasks.send_orchestration_notifications",
-        "schedule": crontab(
-            minute=DATA_CONNECTION_NOTIFICATION_CRONTAB[0],
-            hour=DATA_CONNECTION_NOTIFICATION_CRONTAB[1],
-            day_of_month=DATA_CONNECTION_NOTIFICATION_CRONTAB[2],
-            month_of_year=DATA_CONNECTION_NOTIFICATION_CRONTAB[3],
-            day_of_week=DATA_CONNECTION_NOTIFICATION_CRONTAB[4],
-        ),
-    }
-}
 
 # Application definition
-
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -153,7 +97,6 @@ INSTALLED_APPS = [
     "core.iam.auth.providers.hydroshare",
     "core.iam.auth.providers.orcidsandbox",
     "corsheaders",
-    "easyaudit",
     "sensorthings.versions.v1_1",
     "sensorthings.versions.v1_1.extensions.dataarray",
     "storages",
@@ -183,10 +126,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "easyaudit.middleware.easyaudit.EasyAuditMiddleware",
     "ninja.compatibility.files.fix_request_files_middleware",
     "core.web.middleware.NoIndexMiddleware",
 ]
+
+if TRUSTED_LOCAL_ENVIRONMENT:
+    MIDDLEWARE.remove("django.middleware.csrf.CsrfViewMiddleware")
 
 ROOT_URLCONF = "hydroserver.urls"
 
@@ -212,124 +157,84 @@ WSGI_APPLICATION = "hydroserver.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-os.environ["DATABASE_URL"] = config(
-    "DATABASE_URL", default=f"postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver"
-)
-
-dj_database_config = dj_database_url.config(
-    engine="django.db.backends.postgresql",
-    conn_health_checks=config("CONN_HEALTH_CHECKS", default=True, cast=bool),
-    ssl_require=config("SSL_REQUIRED", default=False, cast=bool),
-)
-
 DATABASES = {
-    "default": {
-        **dj_database_config,
-        "OPTIONS": {
-            "application_name": "HydroServer",
-            "pool": {
-                "min_size": config("DB_POOL_MIN_SIZE", default=5, cast=int),
-                "max_size": config("DB_POOL_MAX_SIZE", default=10, cast=int),
-                "timeout": config("DB_POOL_TIMEOUT", default=60, cast=int),
-            },
-            **dj_database_config.get("OPTIONS", {}),
-        },
-    }
+    "default": env.db(
+        default="postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver"
+    )
 }
 
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool(
+    "CONN_HEALTH_CHECKS", default=True
+)
 
-# Site and Session Settings
+DATABASES["default"].setdefault("OPTIONS", {}).update(
+    {
+        "application_name": "HydroServer",
+        "pool": {
+            "min_size": env.int("DB_POOL_MIN_SIZE", default=5),
+            "max_size": env.int("DB_POOL_MAX_SIZE", default=10),
+            "timeout": env.int("DB_POOL_TIMEOUT", default=60),
+        },
+    }
+)
+
+if env.bool("SSL_REQUIRED", default=False):
+    DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
+
+
+# Caching
+
+if DEBUG:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "hydroserver-dev-cache",
+        }
+    }
+
+PUBLIC_THING_MARKERS_CACHE_TIMEOUT = env.int(
+    "PUBLIC_THING_MARKERS_CACHE_TIMEOUT", default=300
+)
+
+
+# Site and Session
 
 SITE_ID = 1
 
-SESSION_COOKIE_NAME = "hs_session"
-SESSION_COOKIE_AGE = 86400
+SESSION_COOKIE_NAME = env.str("SESSION_COOKIE_NAME", default="hs_session")
+SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=86400)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 
-# Account and Access Control Settings
+# Account and Access Control
 
 AUTH_USER_MODEL = "iam.User"
 
-ACCOUNT_SIGNUP_ENABLED = config("ACCOUNT_SIGNUP_ENABLED", default=True, cast=bool)
-ACCOUNT_OWNERSHIP_ENABLED = config("ACCOUNT_OWNERSHIP_ENABLED", default=True, cast=bool)
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+SERVICE_ACCOUNT_EMAIL_DOMAIN = env.str(
+    "SERVICE_ACCOUNT_EMAIL_DOMAIN", default="hydroserver.local"
+)
+
+ACCOUNT_SIGNUP_ENABLED = env.bool("ACCOUNT_SIGNUP_ENABLED", default=True)
+ACCOUNT_OWNERSHIP_ENABLED = env.bool("ACCOUNT_OWNERSHIP_ENABLED", default=True)
+ACCOUNT_RATE_LIMITS = env.json(
+    "ACCOUNT_RATE_LIMITS", default={} if not TRUSTED_LOCAL_ENVIRONMENT else False
+)
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_LOGIN_METHODS = {"email"}
-
-ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEPLOYMENT_BACKEND != "dev" else "http"
 
-ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
-if config("ACCOUNT_RATE_LIMITS_DISABLED", default=False, cast=bool):
-    ACCOUNT_RATE_LIMITS = False
-
-LOGIN_REDIRECT_URL = APP_CLIENT_URL
-LOGOUT_REDIRECT_URL = APP_CLIENT_URL
-
-
-# Social Account Settings
-
-SOCIALACCOUNT_SIGNUP_ONLY = config(
-    "SOCIALACCOUNT_SIGNUP_ONLY", default=False, cast=bool
-)
-SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "mandatory"
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_AUTO_SIGNUP = False
-SOCIALACCOUNT_STORE_TOKENS = True
-
-
-# OIDC Identity Provider Settings
-
-IDP_OIDC_PRIVATE_KEY = config("IDP_OIDC_PRIVATE_KEY", default="")
-
-if not IDP_OIDC_PRIVATE_KEY and DEPLOYMENT_BACKEND == "dev":
-    _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
-    if _dev_key_path.exists():
-        IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
-
-IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = 3600   # 1 hour
-IDP_OIDC_ROTATE_REFRESH_TOKEN = True
-IDP_OIDC_ADAPTER = "core.iam.auth.oidc_adapter.HydroServerOIDCAdapter"
-
-
-# Email Settings
-
-EMAIL_CONFIG = dj_email_url.parse(config("SMTP_URL", default="smtp://127.0.0.1:1025"))
-
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
-EMAIL_BACKEND = EMAIL_CONFIG["EMAIL_BACKEND"]
-EMAIL_HOST = EMAIL_CONFIG["EMAIL_HOST"]
-EMAIL_PORT = EMAIL_CONFIG["EMAIL_PORT"]
-EMAIL_HOST_USER = EMAIL_CONFIG["EMAIL_HOST_USER"]
-EMAIL_HOST_PASSWORD = EMAIL_CONFIG["EMAIL_HOST_PASSWORD"]
-EMAIL_USE_TLS = EMAIL_CONFIG["EMAIL_USE_TLS"]
-EMAIL_USE_SSL = EMAIL_CONFIG["EMAIL_USE_SSL"]
-
-
-# Audit Settings
-
-ENABLE_AUDITS = config("ENABLE_AUDITS", default=False, cast=bool)
-
-DJANGO_EASY_AUDIT_WATCH_MODEL_EVENTS = ENABLE_AUDITS
-DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = False
-DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
-
-DJANGO_EASY_AUDIT_ADMIN_SHOW_MODEL_EVENTS = ENABLE_AUDITS
-DJANGO_EASY_AUDIT_ADMIN_SHOW_AUTH_EVENTS = False
-DJANGO_EASY_AUDIT_ADMIN_SHOW_REQUEST_EVENTS = False
-
-DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = ["sta.Observation"]
-
-
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
+ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
+ACCOUNT_PASSWORD_RESET_BY_CODE_ENABLED = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -346,102 +251,159 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Caching settings
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = urlparse(PROXY_BASE_URL).scheme
 
-if DEBUG:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "hydroserver-dev-cache",
-        }
-    }
+LOGIN_REDIRECT_URL = WEB_CLIENT_URL
+LOGOUT_REDIRECT_URL = WEB_CLIENT_URL
 
-PUBLIC_THING_MARKERS_CACHE_TIMEOUT = config(
-    "PUBLIC_THING_MARKERS_CACHE_TIMEOUT", default=300, cast=int
+ACCOUNT_ADAPTER = "core.iam.auth.adapters.AccountAdapter"
+
+
+# Social Account
+
+SOCIALACCOUNT_SIGNUP_ONLY = env.bool("SOCIALACCOUNT_SIGNUP_ONLY", default=False)
+
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "mandatory"
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+
+SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_STORE_TOKENS = True
+
+
+# OpenID Connect Identity Provider
+
+IDP_OIDC_ENABLED = env.bool("IDP_OIDC_ENABLED", default=True)
+
+IDP_OIDC_PRIVATE_KEY_FILE = env.str("IDP_OIDC_PRIVATE_KEY_FILE", default="")
+IDP_OIDC_PRIVATE_KEY = (
+    Path(IDP_OIDC_PRIVATE_KEY_FILE).read_text()
+    if IDP_OIDC_PRIVATE_KEY_FILE
+    else env.str("IDP_OIDC_PRIVATE_KEY", default="")
 )
 
-# Storage settings
+if not IDP_OIDC_PRIVATE_KEY and TRUSTED_LOCAL_ENVIRONMENT:
+    _dev_key_path = BASE_DIR / "dev_oidc_private_key.pem"
+    if not _dev_key_path.exists():
+        _dev_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        _dev_key_path.write_bytes(
+            _dev_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
+        _dev_key_path.chmod(0o600)
+    IDP_OIDC_PRIVATE_KEY = _dev_key_path.read_text()
+
+if IDP_OIDC_ENABLED and not TRUSTED_LOCAL_ENVIRONMENT and not IDP_OIDC_PRIVATE_KEY:
+    raise ImproperlyConfigured(
+        "IDP_OIDC_PRIVATE_KEY must be set for deployed instances with "
+        "IDP_OIDC_ENABLED"
+    )
+
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = env.int("IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN", default=3600)
+IDP_OIDC_ROTATE_REFRESH_TOKEN = env.bool("IDP_OIDC_ROTATE_REFRESH_TOKEN", default=True)
+IDP_OIDC_ADAPTER = "core.iam.auth.oidc_adapter.HydroServerOIDCAdapter"
+
+
+# Email
+
+EMAIL_CONFIG = env.email("SMTP_URL", default="consolemail://")
+
+EMAIL_BACKEND = EMAIL_CONFIG["EMAIL_BACKEND"]
+EMAIL_HOST = EMAIL_CONFIG["EMAIL_HOST"]
+EMAIL_PORT = EMAIL_CONFIG["EMAIL_PORT"]
+EMAIL_HOST_USER = EMAIL_CONFIG["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = EMAIL_CONFIG["EMAIL_HOST_PASSWORD"]
+EMAIL_USE_TLS = EMAIL_CONFIG.get("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = EMAIL_CONFIG.get("EMAIL_USE_SSL", False)
+
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+
+
+# Storage
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
-if DEPLOYMENT_BACKEND == "aws":
-    AWS_S3_CUSTOM_DOMAIN = urlparse(PROXY_BASE_URL).hostname
-    AWS_CLOUDFRONT_KEY = config("AWS_CLOUDFRONT_KEY", default="").encode("ascii")
-    AWS_CLOUDFRONT_KEY_ID = config("AWS_CLOUDFRONT_KEY_ID", default=None)
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "bucket_name": config("MEDIA_BUCKET_NAME", default=None),
-                "location": "media",
-                "default_acl": "private",
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-            "OPTIONS": {
-                "bucket_name": config("STATIC_BUCKET_NAME", default=None),
-                "location": "static",
-                "default_acl": None,
-            },
-        },
-    }
-elif DEPLOYMENT_BACKEND == "gcp":
-    GS_PROJECT_ID = config("GS_PROJECT_ID", default=None)
-    GS_CUSTOM_ENDPOINT = PROXY_BASE_URL
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
-            "OPTIONS": {
-                "bucket_name": config("MEDIA_BUCKET_NAME", default=None),
-                "location": "media",
-                "default_acl": "publicRead",
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
-            "OPTIONS": {
-                "bucket_name": config("STATIC_BUCKET_NAME", default=None),
-                "location": "static",
-                "default_acl": "publicRead",
-            },
-        },
-    }
-else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-            "OPTIONS": {"location": str(BASE_DIR / "media")},
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-            "OPTIONS": {"location": str(BASE_DIR / "static")},
-        },
-    }
+STORAGES = {
+    "default": {
+        "BACKEND": env.str(
+            "MEDIA_STORAGE_BACKEND",
+            default="django.core.files.storage.FileSystemStorage",
+        ),
+        "OPTIONS": env.json(
+            "MEDIA_STORAGE_OPTIONS", default={"location": str(BASE_DIR / "media")}
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": env.str(
+            "STATIC_STORAGE_BACKEND",
+            default="django.contrib.staticfiles.storage.StaticFilesStorage",
+        ),
+        "OPTIONS": env.json(
+            "STATIC_STORAGE_OPTIONS", default={"location": str(BASE_DIR / "static")}
+        ),
+    },
+}
+
+MEDIA_STORAGE_IS_LOCAL = (
+    STORAGES["default"]["BACKEND"] == "django.core.files.storage.FileSystemStorage"
+)
+STATIC_STORAGE_IS_LOCAL = (
+    STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.1/topics/i18n/
+# Celery
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_TZ = True
+CELERY_ENABLED = env.bool("CELERY_ENABLED", default=True)
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+CELERY_BROKER_HEARTBEAT = 10
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_keepalive": True,
+    "retry_on_timeout": True,
+    "socket_timeout": 30,
+}
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
+TASK_RUN_RETENTION_DAYS = env.int("TASK_RUN_RETENTION_DAYS", default=7)
+TASK_RUN_CLEANUP_CRONTAB = env.str(
+    "TASK_RUN_CLEANUP_CRONTAB", default="0 3 * * *"
+).split()
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+CELERY_BEAT_SCHEDULE = {
+    "cleanup_task_runs": {
+        "task": "processing.orchestration.tasks.cleanup_task_runs",
+        "schedule": crontab(
+            minute=TASK_RUN_CLEANUP_CRONTAB[0],
+            hour=TASK_RUN_CLEANUP_CRONTAB[1],
+            day_of_month=TASK_RUN_CLEANUP_CRONTAB[2],
+            month_of_year=TASK_RUN_CLEANUP_CRONTAB[3],
+            day_of_week=TASK_RUN_CLEANUP_CRONTAB[4],
+        ),
+        "args": (TASK_RUN_RETENTION_DAYS,),
+    },
+}
 
 
 # Logging
 
+LOG_FORMAT = env.str("LOG_FORMAT", default="standard")
+
 LOGGING_FORMATTERS = {}
-if DEPLOYMENT_BACKEND == "gcp":
+
+if LOG_FORMAT == "json":
     LOGGING_FORMATTERS["standard"] = {
         "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
         "format": "%(levelname)s %(run_id)s %(name)s %(message)s",
@@ -475,7 +437,28 @@ LOGGING = {
 }
 
 
-# SensorThings Configuration
+# Internationalization
+# https://docs.djangoproject.com/en/4.1/topics/i18n/
+
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# API
+
+ANON_THROTTLE_RATE = env.str("ANON_THROTTLE_RATE", default="20/s")
+AUTH_THROTTLE_RATE = env.str("AUTH_THROTTLE_RATE", default="20/s")
+
+
+# SensorThings
 
 SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
 SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
@@ -488,7 +471,7 @@ SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
 ]
 SENSORTHINGS_V1_1_ID_TYPE = UUID
 SENSORTHINGS_V1_1_ID_DELIMITER = "'"
-SENSORTHINGS_V1_1_MAX_TOP = 1000
+SENSORTHINGS_V1_1_MAX_TOP = env.int("SENSORTHINGS_V1_1_MAX_TOP", default=1000)
 SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
     "Things": "interfaces.sensorthings.schemas.ThingProperties",
     "Datastreams": "interfaces.sensorthings.schemas.DatastreamProperties",
@@ -498,3 +481,15 @@ SENSORTHINGS_V1_1_PROPERTIES_SCHEMAS = {
 }
 SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_SCHEMA = "interfaces.sensorthings.schemas.SensorMetadata"
 SENSORTHINGS_V1_1_SENSOR_METADATA_ENCODING_TYPE_VALUE_LITERAL = "interfaces.sensorthings.schemas.sensorEncodingTypes"
+
+
+# End-to-End Testing
+
+E2E_TESTING = env.bool("E2E_TESTING", default=False)
+E2E_CONTROL_TOKEN = env.str("E2E_CONTROL_TOKEN", default="")
+
+if E2E_TESTING:
+    # Browser scenarios create several short-lived users per test. The fast
+    # hasher keeps that setup inexpensive and is never enabled in a normal
+    # deployment.
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

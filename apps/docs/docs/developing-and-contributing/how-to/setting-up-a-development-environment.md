@@ -64,10 +64,9 @@ Before starting, make sure you have the following software installed on your mac
    ./scripts/dev-api-command manage.py migrate
    ./scripts/dev-api-command manage.py collectstatic --noinput
    ```
-5. Create an admin user and load default development data:
+5. Create an admin user:
    ```bash
-   ./scripts/dev-api-command manage.py setup_admin_user
-   ./scripts/dev-api-command manage.py load_default_data
+   ./scripts/dev-api-command manage.py createsuperuser
    ```
 6. Start the Django development web server:
    ```bash

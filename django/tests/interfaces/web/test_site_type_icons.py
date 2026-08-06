@@ -7,16 +7,11 @@ from django.contrib import admin
 from django.conf import settings
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
-from django.test import override_settings
 from django.urls import reverse
 
 from core.sta.models import SiteType
 from core.web.admin import SiteTypeIconAdminForm
-from core.web.models import (
-    SITE_TYPE_ICON_CHOICES,
-    InstanceConfiguration,
-    SiteTypeIcon,
-)
+from core.web.models import SITE_TYPE_ICON_CHOICES, SiteTypeIcon
 
 
 SITE_TYPES = [
@@ -155,45 +150,6 @@ def test_default_site_type_fixture_contains_canonical_categories():
     assert list(SiteType.objects.order_by("pk").values_list("name", flat=True)) == (
         SITE_TYPES
     )
-
-
-@pytest.mark.django_db
-@override_settings(LOAD_DEFAULT_DATA=True)
-def test_new_instance_default_data_loads_canonical_site_types():
-    SiteType.objects.all().delete()
-
-    call_command("load_default_data", verbosity=0)
-
-    assert list(SiteType.objects.order_by("pk").values_list("name", flat=True)) == (
-        SITE_TYPES
-    )
-
-
-@pytest.mark.django_db
-@override_settings(LOAD_DEFAULT_DATA=True)
-def test_default_data_does_not_replace_nonempty_site_types():
-    SiteType.objects.all().delete()
-    SiteType.objects.create(name="Instance-specific site type")
-
-    call_command("load_default_data", verbosity=0)
-
-    assert list(SiteType.objects.values_list("name", flat=True)) == [
-        "Instance-specific site type"
-    ]
-
-
-@pytest.mark.django_db
-@override_settings(LOAD_DEFAULT_DATA=True)
-def test_existing_instance_update_does_not_replace_site_types():
-    InstanceConfiguration.get_configuration()
-    SiteType.objects.all().delete()
-    SiteType.objects.create(name="Instance-specific site type")
-
-    call_command("load_default_data", verbosity=0)
-
-    assert list(SiteType.objects.values_list("name", flat=True)) == [
-        "Instance-specific site type"
-    ]
 
 
 @pytest.mark.django_db

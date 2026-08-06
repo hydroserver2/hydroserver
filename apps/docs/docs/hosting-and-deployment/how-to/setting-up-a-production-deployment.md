@@ -37,10 +37,6 @@ For production use, additional configuration and infrastructure are strongly rec
 
 HydroServer’s Docker image supports the following environment variables for configuring a deployment:
 
-- **DEPLOYMENT_BACKEND**  
-  Platform where HydroServer static files are collected.  
-  Example: `docker`, `aws`, `gcp`, `dev`
-
 - **SECRET_KEY**  
   Secret used by Django to encrypt passwords and sign sessions. Must be securely generated and stored in production.  
   Example: See [Django docs](https://docs.djangoproject.com/en/5.2/ref/settings/#secret-key)
@@ -48,14 +44,6 @@ HydroServer’s Docker image supports the following environment variables for co
 - **DEBUG**  
   Enables debug mode. Must be `False` in production.  
   Example: `True` / `False`
-
-- **DEFAULT_SUPERUSER_EMAIL**  
-  Email for the default admin user created with `python manage.py setup_admin_user`.  
-  Example: `admin@example.com`
-
-- **DEFAULT_SUPERUSER_PASSWORD**  
-  Password for the default admin user.  
-  Example: `securepassword123`
 
 - **PROXY_BASE_URL**  
   Base URL for your HydroServer instance.  
@@ -85,17 +73,28 @@ HydroServer’s Docker image supports the following environment variables for co
   Email address used for account management emails if SMTP is configured.  
   Example: `noreply@example.com`
 
-- **STATIC_BUCKET_NAME**  
-  The name of the AWS or GCP bucket used to serve static files if DEPLOYMENT_BACKEND is `aws` or `gcp`.  
-  Example: `hydroserver-static-your-account-or-project-id`
+- **MEDIA_STORAGE_BACKEND**  
+  Dotted path to the Django storage backend used to store file attachments. Defaults to
+  `django.core.files.storage.FileSystemStorage` (local disk), which is **not** recommended for production —
+  set this explicitly to `storages.backends.s3.S3Storage` or `storages.backends.gcloud.GoogleCloudStorage`.  
+  Example: `storages.backends.s3.S3Storage`
 
-- **MEDIA_BUCKET_NAME**  
-  The name of the AWS or GCP bucket used to serve media files if DEPLOYMENT_BACKEND is `aws` or `gcp`.  
-  Example: `hydroserver-media-your-account-or-project-id`
+- **MEDIA_STORAGE_OPTIONS**  
+  JSON object of keyword arguments passed to `MEDIA_STORAGE_BACKEND`.  
+  Example (S3): `{"bucket_name": "hydroserver-media-your-account-id", "location": "media"}`  
+  Example (GCS): `{"bucket_name": "hydroserver-media-your-project-id", "project_id": "your-gcp-project-id", "location": "media"}`
 
-- **GS_PROJECT_ID**  
-  The ID of your GCP project if DEPLOYMENT_BACKEND is `gcp`.  
-  Example: `your-gcp-project-id`
+- **STATIC_STORAGE_BACKEND**  
+  Dotted path to the Django storage backend used to serve static files. Defaults to
+  `django.contrib.staticfiles.storage.StaticFilesStorage` (local disk), which is **not** recommended for
+  production — set this explicitly to `storages.backends.s3.S3Storage` or
+  `storages.backends.gcloud.GoogleCloudStorage`.  
+  Example: `storages.backends.s3.S3Storage`
+
+- **STATIC_STORAGE_OPTIONS**  
+  JSON object of keyword arguments passed to `STATIC_STORAGE_BACKEND`.  
+  Example (S3): `{"bucket_name": "hydroserver-static-your-account-id", "location": "static"}`  
+  Example (GCS): `{"bucket_name": "hydroserver-static-your-project-id", "project_id": "your-gcp-project-id", "location": "static"}`
 
 Store sensitive environment variables (database credentials, API keys, etc.) securely, using a secret manager such as 
 [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html), 
@@ -253,9 +252,9 @@ Copies HydroServer’s static files to the deployment location.
 Run this after upgrades to ensure new or updated static files are available.
 
 ```bash
-python manage.py setup_admin_user
+python manage.py createsuperuser
 ```
-Creates the initial admin account for your HydroServer instance.  
+Creates the initial admin account for your HydroServer instance (Django will prompt for an email and password).  
 Run once only. Additional admin accounts can be created later through the dashboard.
 
 ### Starting HydroServer with Gunicorn
