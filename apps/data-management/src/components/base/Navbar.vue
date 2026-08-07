@@ -101,11 +101,11 @@
       </template>
 
       <template v-else>
-        <v-btn :prepend-icon="mdiLogin" to="/Login">Log in</v-btn>
+        <v-btn :prepend-icon="mdiLogin" @click="onLogin">Log in</v-btn>
         <v-btn
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          to="/sign-up"
+          :href="hs.session.accountSignupUrl"
           >Sign up</v-btn
         >
       </template>
@@ -155,11 +155,13 @@
       </template>
 
       <template v-else>
-        <v-list-item :prepend-icon="mdiLogin" to="/Login">Login</v-list-item>
+        <v-list-item :prepend-icon="mdiLogin" @click.prevent="onLogin"
+          >Login</v-list-item
+        >
         <v-list-item
           v-if="signupEnabled"
           :prepend-icon="mdiAccountPlusOutline"
-          to="/sign-up"
+          :href="hs.session.accountSignupUrl"
           >Sign up</v-list-item
         >
       </template>
@@ -195,9 +197,9 @@ import {
 } from '@mdi/js'
 
 const route = useRoute()
-const { signupEnabled } = hs.session
 const { resetState } = useDataVisStore()
 const { user } = storeToRefs(useUserStore())
+const signupEnabled = import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
@@ -306,9 +308,12 @@ function visiblePaths(): NavItem[] {
   return items
 }
 
+async function onLogin() {
+  await hs.session.login(route.fullPath)
+}
+
 async function onLogout() {
-  await hs.session.logout()
-  await router.push({ name: 'Login' })
+  await hs.session.logout('/browse')
   Snackbar.info('You have logged out')
 }
 </script>

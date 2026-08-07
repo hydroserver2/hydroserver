@@ -17,12 +17,7 @@ import { useUserStore } from './store/user'
 
 const app = createApp(App)
 const pinia = createPinia()
-const hydroServerHost =
-  import.meta.env.VITE_APP_PROXY_BASE_URL
-    ? ''
-    : import.meta.env.DEV
-    ? 'http://127.0.0.1:8000'
-    : ''
+const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL || ''
 
 async function initializeApp() {
   app.use(pinia)

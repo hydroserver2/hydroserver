@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.products.services.rating_curve import RatingCurveService
 from interfaces.api.schemas.products.rating_curve import (
     RatingCurveResponse,
@@ -21,7 +21,7 @@ rating_curve_service = RatingCurveService()
 
 @rating_curve_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[RatingCurveResponse],
         401: str,
@@ -56,7 +56,7 @@ def get_rating_curves(
 
 @rating_curve_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: RatingCurveResponse,
         400: str,
@@ -87,7 +87,7 @@ def create_rating_curve(
 
 @rating_curve_router.get(
     "/{rating_curve_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: RatingCurveResponse,
         401: str,
@@ -115,7 +115,7 @@ def get_rating_curve(
 
 @rating_curve_router.patch(
     "/{rating_curve_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: RatingCurveResponse,
         400: str,
@@ -147,7 +147,7 @@ def update_rating_curve(
 
 @rating_curve_router.delete(
     "/{rating_curve_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

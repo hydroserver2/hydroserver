@@ -1,60 +1,36 @@
-import { Snackbar } from '@/utils/notifications'
 import hs from '@hydroserver/client'
 import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { settings } from '@/config/settings'
 import { Provider } from '@/models/settings'
+import { useUserStore } from '@/store/user'
+
+const availableProviders = ref<Provider[]>(
+  settings.authenticationConfiguration.providers
+)
+const isLoaded = ref(true)
 
 export function useHydroShare() {
-  const { oAuthProviders } = hs.session
+  const { user } = storeToRefs(useUserStore())
 
-  const connectedProviders = ref<Provider[]>(
-    settings.authenticationConfiguration.providers
+  const availableHydroShareProvider = computed<Provider | null>(
+    () => availableProviders.value.find((item) => item.id === 'hydroshare') || null
   )
-  const isLoaded = ref(false)
-
-  const hydroShareProvider = computed<Provider | null>(
-    () =>
-      connectedProviders.value.find(
-        (item: any) => item.provider?.id === 'hydroshare'
-      ) || null
-  )
-
-  const isConnected = computed(() => !!hydroShareProvider.value)
 
   const isConnectionEnabled = computed(() =>
-    oAuthProviders.some((p) => p.id === 'hydroshare' && p.connectEnabled)
+    Boolean(availableHydroShareProvider.value?.connectEnabled)
   )
 
-  async function connectHydroShare() {
-    const callbackUrl = '/profile'
-    hs.session.providerRedirect('hydroshare', callbackUrl, 'connect')
-  }
+  const isConnected = computed(() => Boolean(user.value?.hydroShareConnected))
 
-  async function disconnectHydroShare() {
-    try {
-      if (!hydroShareProvider.value) {
-        Snackbar.error('Cannot disconnect: no HydroShare provider found.')
-        return
-      }
-
-      const providerResponse = await hs.session.deleteProvider(
-        'hydroshare',
-        hydroShareProvider.value.id
-      )
-      if (providerResponse.ok)
-        connectedProviders.value = providerResponse.data as Provider[]
-      Snackbar.info('Your HydroShare account has been disconnected.')
-    } catch (error) {
-      console.error('Error disconnecting HydroShare account', error)
-      Snackbar.error('Error disconnecting HydroShare account')
-    }
+  function manageHydroShareConnection() {
+    window.location.assign(hs.session.accountProfileUrl)
   }
 
   return {
     isLoaded,
-    isConnected,
     isConnectionEnabled,
-    connectHydroShare,
-    disconnectHydroShare,
+    isConnected,
+    manageHydroShareConnection,
   }
 }

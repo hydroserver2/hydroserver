@@ -6,10 +6,6 @@ import {
 } from 'vue-router'
 import { routes } from '@/router/routes'
 import hs from '@hydroserver/client'
-import {
-  getSafePostLoginPath,
-  requiresHardNavigation,
-} from '@/utils/authRedirect'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,40 +28,15 @@ function updateDocumentTitle(matched: RouteRecordNormalized[]): void {
   }
 }
 
-router.beforeEach(
-  async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    const { inEmailVerificationFlow, inProviderSignupFlow } = hs.session
-
-    if (inEmailVerificationFlow && to.name !== 'VerifyEmail') {
-      if (to.name === 'ResetPassword') return { name: 'ResetPassword' }
-      return { name: 'VerifyEmail' }
-    }
-    if (!inEmailVerificationFlow && to.name === 'VerifyEmail')
-      return { name: 'Browse' }
-
-    if (inProviderSignupFlow && to.name !== 'CompleteProfile')
-      return { name: 'CompleteProfile' }
-    if (!inProviderSignupFlow && to.name === 'CompleteProfile')
-      return { name: 'Browse' }
-
-    if (hs.session.isAuthenticated && to.meta.requiresLoggedOut) {
-      const nextPath = getSafePostLoginPath(to.query.next)
-      if (nextPath && requiresHardNavigation(nextPath)) {
-        window.location.assign(nextPath)
-        return false
-      }
-      if (nextPath) return nextPath
-      return { name: 'Browse' }
-    }
-    if (!hs.session.isAuthenticated && to.meta.requiresAuth)
-      return { name: 'Login', query: { next: to.fullPath } }
+router.beforeEach(async (to: RouteLocationNormalized) => {
+  if (!hs.session.isAuthenticated && to.meta.requiresAuth) {
+    await hs.session.login(to.fullPath)
+    return false
   }
-)
+})
 
-router.afterEach(
-  (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    updateDocumentTitle(to.matched)
-  }
-)
+router.afterEach((to: RouteLocationNormalized) => {
+  updateDocumentTitle(to.matched)
+})
 
 export default router

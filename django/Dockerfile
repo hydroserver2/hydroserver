@@ -19,6 +19,8 @@ RUN pip install --upgrade pip && \
 
 COPY . /app
 
+RUN python manage.py tailwind build
+
 RUN unzip /app/data_mgmt_app.zip -d /tmp/data_mgmt_app && \
     mkdir -p interfaces/web/static/web && \
     cp -f /tmp/data_mgmt_app/dist/index.html templates/index.html && \

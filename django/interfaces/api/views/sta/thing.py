@@ -4,7 +4,7 @@ from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.db import transaction
 from django.http import HttpResponse
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
@@ -37,7 +37,7 @@ thing_service = ThingService()
 
 @thing_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ThingSummaryResponse] | list[ThingDetailResponse],
         401: str,
@@ -66,7 +66,7 @@ def get_things(
 
 @thing_router.get(
     "/markers",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ThingMarkerResponse],
         401: str,
@@ -89,7 +89,7 @@ def get_thing_markers(
 
 @thing_router.get(
     "/site-summaries",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[ThingSiteSummaryResponse],
         401: str,
@@ -112,7 +112,7 @@ def get_thing_site_summaries(
 
 @thing_router.get(
     "/task-summaries",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[ThingTaskSummaryResponse],
         401: str,
@@ -136,7 +136,7 @@ def get_thing_task_summaries(
 
 @thing_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: ThingSummaryResponse | ThingDetailResponse,
         400: str,
@@ -162,7 +162,7 @@ def create_thing(
 
 @thing_router.get(
     "/tags/keys",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: dict[str, list[str]],
         401: str,
@@ -253,7 +253,7 @@ def get_file_attachment_types(
 
 @thing_router.get(
     "/{thing_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ThingSummaryResponse | ThingDetailResponse,
         401: str,
@@ -278,7 +278,7 @@ def get_thing(
 
 @thing_router.patch(
     "/{thing_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: ThingSummaryResponse | ThingDetailResponse,
         400: str,
@@ -309,7 +309,7 @@ def update_thing(
 
 @thing_router.delete(
     "/{thing_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -328,7 +328,7 @@ def delete_thing(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
 
 @thing_router.get(
     "/{thing_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[TagGetResponse],
         401: str,
@@ -349,7 +349,7 @@ def get_thing_tags(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
 
 @thing_router.post(
     "/{thing_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: TagGetResponse,
         400: str,
@@ -375,7 +375,7 @@ def add_thing_tag(
 
 @thing_router.put(
     "/{thing_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: TagGetResponse,
         400: str,
@@ -401,7 +401,7 @@ def edit_thing_tag(
 
 @thing_router.delete(
     "/{thing_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -427,7 +427,7 @@ def remove_thing_tag(
 
 @thing_router.get(
     "/{thing_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[FileAttachmentGetResponse],
         401: str,
@@ -453,7 +453,7 @@ def get_thing_file_attachments(
 
 @thing_router.post(
     "/{thing_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: FileAttachmentGetResponse,
         400: str,
@@ -489,7 +489,7 @@ def add_thing_file_attachment(
 
 @thing_router.put(
     "/{thing_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -525,7 +525,7 @@ def replace_thing_file_attachment(
 
 @thing_router.delete(
     "/{thing_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,

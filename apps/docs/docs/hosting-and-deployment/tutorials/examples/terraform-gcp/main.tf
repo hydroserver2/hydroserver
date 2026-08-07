@@ -138,11 +138,9 @@ resource "google_cloud_run_v2_service" "hydroserver" {
 
       dynamic "env" {
         for_each = {
-          PROXY_BASE_URL             = google_secret_manager_secret.proxy_base_url.id
-          DATABASE_URL               = google_secret_manager_secret.database_url.id
-          SECRET_KEY                 = google_secret_manager_secret.secret_key.id
-          DEFAULT_SUPERUSER_EMAIL    = google_secret_manager_secret.admin_email.id
-          DEFAULT_SUPERUSER_PASSWORD = google_secret_manager_secret.admin_password.id
+          PROXY_BASE_URL = google_secret_manager_secret.proxy_base_url.id
+          DATABASE_URL   = google_secret_manager_secret.database_url.id
+          SECRET_KEY     = google_secret_manager_secret.secret_key.id
         }
         content {
           name = env.key
@@ -177,8 +175,6 @@ resource "google_cloud_run_v2_service" "hydroserver" {
     google_secret_manager_secret_version.proxy_base_url_value,
     google_secret_manager_secret_version.database_url_value,
     google_secret_manager_secret_version.secret_key_value,
-    google_secret_manager_secret_version.admin_email_value,
-    google_secret_manager_secret_version.admin_password_value,
   ]
 }
 
@@ -206,8 +202,6 @@ resource "google_secret_manager_secret_iam_member" "hydroserver_cloud_run_secret
     "proxy_base_url" = google_secret_manager_secret.proxy_base_url.id
     "database_url"   = google_secret_manager_secret.database_url.id
     "secret_key"     = google_secret_manager_secret.secret_key.id
-    "admin_email"    = google_secret_manager_secret.admin_email.id
-    "admin_password" = google_secret_manager_secret.admin_password.id
   }
   project   = data.google_project.current.project_id
   secret_id = each.value
@@ -225,19 +219,6 @@ resource "google_project_iam_member" "cloud_run_invoker" {
 # ---------------------------------
 # Environment Variables and Secrets
 # ---------------------------------
-
-resource "random_password" "admin_password" {
-  length      = 20
-  lower       = true
-  min_lower   = 1
-  upper       = true
-  min_upper   = 1
-  numeric     = true
-  min_numeric = 1
-  special     = true
-  min_special = 1
-  override_special = "!@#$%^&*()_+-=:;.,?/"
-}
 
 resource "random_password" "rds_password" {
   length           = 15
@@ -304,31 +285,6 @@ resource "google_secret_manager_secret_version" "secret_key_value" {
   secret_data = random_password.secret_key.result
 }
 
-resource "google_secret_manager_secret" "admin_email" {
-  secret_id = "hydroserver-demo-admin-email"
-  replication {
-    auto {}
-  }
-}
-
-resource "google_secret_manager_secret_version" "admin_email_value" {
-  secret      = google_secret_manager_secret.admin_email.id
-  secret_data = "admin@hydroserver.org"
-}
-
-resource "google_secret_manager_secret" "admin_password" {
-  secret_id = "hydroserver-demo-admin-password"
-  replication {
-    auto {}
-  }
-}
-
-resource "google_secret_manager_secret_version" "admin_password_value" {
-  secret      = google_secret_manager_secret.admin_password.id
-  secret_data = random_password.admin_password.result
-}
-
-
 # ---------------------------------
 # Instance Outputs
 # ---------------------------------
@@ -336,17 +292,6 @@ resource "google_secret_manager_secret_version" "admin_password_value" {
 output "database_url" {
   description = "The PostgreSQL connection string for the Cloud SQL instance"
   value       = local.database_url
-  sensitive   = true
-}
-
-output "admin_username" {
-  description = "The default HydroServer admin username"
-  value       = "admin@hydroserver.org"
-}
-
-output "admin_password" {
-  description = "The default HydroServer admin password"
-  value       = random_password.admin_password.result
   sensitive   = true
 }
 

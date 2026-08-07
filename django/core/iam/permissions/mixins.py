@@ -170,7 +170,7 @@ class ResourcePermissionMixin:
         """Narrow queryset to rows this principal holds permission_field on."""
 
         if self.is_superuser_principal():
-            return queryset
+            return queryset.all()
 
         return queryset.filter(self._permission_q(queryset.model, permission_field))
 

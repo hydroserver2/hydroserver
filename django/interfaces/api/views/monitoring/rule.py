@@ -7,7 +7,7 @@ from core.types import Unset
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.monitoring.services.rule import MonitoringRuleService
 from interfaces.api.schemas.monitoring.rule import (
     MonitoringRuleResponse,
@@ -22,7 +22,7 @@ monitoring_rule_service = MonitoringRuleService()
 
 @monitoring_rule_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[MonitoringRuleResponse],
         401: str,
@@ -62,7 +62,7 @@ def get_monitoring_rules(
 
 @monitoring_rule_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: MonitoringRuleResponse,
         400: str,
@@ -95,7 +95,7 @@ def create_monitoring_rule(
 
 @monitoring_rule_router.get(
     "/{rule_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: MonitoringRuleResponse,
         401: str,
@@ -125,7 +125,7 @@ def get_monitoring_rule(
 
 @monitoring_rule_router.patch(
     "/{rule_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: MonitoringRuleResponse,
         400: str,
@@ -159,7 +159,7 @@ def update_monitoring_rule(
 
 @monitoring_rule_router.delete(
     "/{rule_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

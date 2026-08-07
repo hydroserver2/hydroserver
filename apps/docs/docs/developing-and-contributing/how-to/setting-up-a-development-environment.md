@@ -38,57 +38,69 @@ Before starting, make sure you have the following software installed on your mac
    ```bash
    docker compose --file "docker-compose.yaml" up
    ```
+   The bundled NGINX config proxies `/.well-known/`, `/identity/`, `/accounts/`, `/admin/`, and `/api/` to Django so the local OIDC authorization flow works through `http://localhost`.
 
-## Installation
+## HydroServer Django Backend
+
+### Installation
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/hydroserver2/hydroserver.git
    cd hydroserver
    ```
-
-## HydroServer Backend Setup
-
-### Installation
-
-1. Navigate to `django` and install the dependencies:
+2. Install the Python dependencies:
    ```bash
-   cd django
-   pip install -r requirements.txt
+   pip install -r django/requirements.txt
+   pip install -e packages/hydroserverpy
    ```
-2. Create a .env file and update variables as needed. For getting started, the default settings should be sufficient.
 3. Perform database migrations and collect static files:
    ```bash
-   python manage.py migrate
-   python manage.py collectstatic
+   ./scripts/dev-api-command manage.py migrate
+   ./scripts/dev-api-command manage.py collectstatic --noinput
    ```
-4. Create an admin user and load test data.
+4. Create an admin user:
    ```bash
-   python manage.py createsuperuser
-   python manage.py load_iam_test_data
-   python manage.py load_sta_test_data
+   ./scripts/dev-api-command manage.py createsuperuser
    ```
-5. Start the Django development web server:
+5. Start the Django development web server together with the Tailwind CSS watcher for the
+   server-rendered account and OIDC templates:
    ```bash
-   python manage.py runserver
+   ./scripts/dev-api-command manage.py tailwind runserver 127.0.0.1:8000
    ```
+   This uses [django-tailwind-cli](https://django-tailwind-cli.readthedocs.io/), which downloads
+   its own standalone Tailwind CSS binary on first run — no Node.js/npm required for this step.
+
+If you need OIDC identity provider features (discovery, authorize, token, and JWKS endpoints), generate a
+signing key first:
+```bash
+openssl genpkey -algorithm RSA -out django/dev_oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+```
 
 ## HydroServer Frontend
 
-### Installation
+### Data Management App
 
 1. Navigate to `apps/data-management` and install the required packages:
    ```bash
-   cd hydroserver-data-management-app
    npm install
    ```
 2. Create a .env file and update variables as needed. For getting started, the default settings should be sufficient.
-3. Build the static files and run the application in production mode:
-   ```bash
-   npm run build
-   npm run preview
-   ```
-   or developer mode
+3. Run the application in developer mode:
    ```bash
    npm run dev
    ```
+4. Open `http://localhost`. The reverse proxy forwards frontend requests to Vite and backend requests, including the OIDC endpoints, to Django.
+
+### QC App
+
+1. Navigate to `apps/qc-app` and install the required packages:
+   ```bash
+   npm install
+   ```
+2. Run the application in developer mode:
+   ```bash
+   npm run dev
+   ```
+3. Open `http://localhost/qc`. The reverse proxy forwards these requests to the QC app's Vite server; no
+   separate environment configuration is needed since backend requests are already routed through NGINX.
