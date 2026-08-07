@@ -39,6 +39,7 @@ test.describe("visualization", () => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
+    await ensureFiltersDrawerOpen(page);
 
     await expect(
       page.getByRole("heading", { name: "Datastreams" }),

@@ -369,6 +369,16 @@
                   </div>
                 </div>
 
+                <v-alert
+                  v-if="overviewStatsLoaded && overviewStatsHasError"
+                  class="mb-4"
+                  type="warning"
+                  variant="tonal"
+                  border="start"
+                >
+                  Some totals could not be loaded.
+                </v-alert>
+
                 <v-table class="hs-table-card">
                   <tbody>
                     <tr>
@@ -646,6 +656,7 @@ const overviewStats = ref<{
   metadata: number | null
 }>({ members: null, sites: null, serviceAccounts: null, metadata: null })
 const overviewStatsLoaded = ref(false)
+const overviewStatsHasError = ref(false)
 let overviewRequestId = 0
 
 function responseCount(result: PromiseSettledResult<unknown>): number | null {
@@ -662,6 +673,7 @@ function responseCount(result: PromiseSettledResult<unknown>): number | null {
 const loadOverviewStats = async (workspaceId: string) => {
   const requestId = ++overviewRequestId
   overviewStatsLoaded.value = false
+  overviewStatsHasError.value = false
   overviewStats.value = {
     members: null,
     sites: null,
@@ -717,6 +729,11 @@ const loadOverviewStats = async (workspaceId: string) => {
     serviceAccounts: canViewServiceAccounts ? counts[2] : null,
     metadata,
   }
+  overviewStatsHasError.value =
+    counts[0] === null ||
+    counts[1] === null ||
+    (canViewServiceAccounts && counts[2] === null) ||
+    metadata === null
   overviewStatsLoaded.value = true
 }
 

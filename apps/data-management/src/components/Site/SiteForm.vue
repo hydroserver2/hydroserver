@@ -124,15 +124,20 @@
               /></v-col>
               <v-col cols="12" sm="6"
                 ><v-text-field
-                  label="Elevation (m) *"
+                  label="Elevation (m)"
                   v-model="monitoringSite.elevation_m"
                   type="number"
-                  :rules="[
-                    ...rules.requiredNumber,
-                    ...rules.maxLength(22),
-                    ...rules.lessThan(1000000),
-                    ...rules.greaterThan(-1000000),
-                  ]"
+                  :rules="
+                    monitoringSite.elevation_m === '' ||
+                    monitoringSite.elevation_m == null
+                      ? []
+                      : [
+                          ...rules.requiredNumber,
+                          ...rules.maxLength(22),
+                          ...rules.lessThan(1000000),
+                          ...rules.greaterThan(-1000000),
+                        ]
+                  "
                   validate-on="input"
               /></v-col>
               <v-col cols="12" sm="6">

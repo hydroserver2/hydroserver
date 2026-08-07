@@ -401,7 +401,7 @@ test.describe('sites and workspaces', () => {
     await fillCombobox(page, 'Select Site Type *', 'Lake')
     await page.getByLabel('Latitude *').fill('41.7501')
     await page.getByLabel('Longitude *').fill('-111.8102')
-    await page.getByLabel('Elevation (m) *').fill('1380')
+    await page.getByLabel('Elevation (m)').fill('1380')
     const tagKey = siteFormDialog.getByRole('combobox', { name: 'Key' })
     await tagKey.fill('E2E')
     await tagKey.press('Enter')
