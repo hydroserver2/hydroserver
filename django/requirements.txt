@@ -11,6 +11,7 @@ django-celery-beat==2.8.1
 django-ogc-sensorthings==1.2.0
 dj-database-url==2.3.0
 dj-email-url==1.0.6
+pydantic==2.7.4
 gunicorn==23.0.0
 celery==5.5.3
 redis==7.0.1
