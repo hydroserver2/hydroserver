@@ -1,6 +1,6 @@
 <template>
   <SimpleProductTaskDetails
-    task-label="expression"
+    task-label="derivation"
     :task-id="taskId"
     :run-id="runId"
     :embedded="embedded"

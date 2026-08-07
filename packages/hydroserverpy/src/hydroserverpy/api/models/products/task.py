@@ -6,7 +6,7 @@ from ..base import HydroServerBaseModel
 from ..orchestration.run import TaskRun
 from .transformation import (
     RatingCurveTransformation,
-    ExpressionTransformation,
+    DerivationTransformation,
     AggregationTransformation,
     Period,
 )
@@ -29,7 +29,7 @@ class DataProductTask(HydroServerBaseModel):
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
     rating_curve_transformations: List[RatingCurveTransformation] = []
-    expression_transformations: List[ExpressionTransformation] = []
+    derivation_transformations: List[DerivationTransformation] = []
     aggregation_transformations: List[AggregationTransformation] = []
 
     _editable_fields: ClassVar[set[str]] = {"name", "description"}

@@ -996,7 +996,7 @@ export interface paths {
         patch: operations["interfaces_api_views_products_transformation_update_aggregation_transformation"];
         trace?: never;
     };
-    "/api/data/products/tasks/{task_id}/transformations/expression": {
+    "/api/data/products/tasks/{task_id}/transformations/derivation": {
         parameters: {
             query?: never;
             header?: never;
@@ -1004,23 +1004,23 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Expression Transformations
-         * @description Get expression transformations for a data product task.
+         * Get Derivation Transformations
+         * @description Get derivation transformations for a data product task.
          */
-        get: operations["interfaces_api_views_products_transformation_get_expression_transformations"];
+        get: operations["interfaces_api_views_products_transformation_get_derivation_transformations"];
         put?: never;
         /**
-         * Create Expression Transformation
-         * @description Create an expression transformation on a data product task.
+         * Create Derivation Transformation
+         * @description Create a derivation transformation on a data product task.
          */
-        post: operations["interfaces_api_views_products_transformation_create_expression_transformation"];
+        post: operations["interfaces_api_views_products_transformation_create_derivation_transformation"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/data/products/tasks/{task_id}/transformations/expression/{transformation_id}": {
+    "/api/data/products/tasks/{task_id}/transformations/derivation/{transformation_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1028,24 +1028,24 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Expression Transformation
-         * @description Get an expression transformation.
+         * Get Derivation Transformation
+         * @description Get a derivation transformation.
          */
-        get: operations["interfaces_api_views_products_transformation_get_expression_transformation"];
+        get: operations["interfaces_api_views_products_transformation_get_derivation_transformation"];
         put?: never;
         post?: never;
         /**
-         * Delete Expression Transformation
-         * @description Delete an expression transformation.
+         * Delete Derivation Transformation
+         * @description Delete a derivation transformation.
          */
-        delete: operations["interfaces_api_views_products_transformation_delete_expression_transformation"];
+        delete: operations["interfaces_api_views_products_transformation_delete_derivation_transformation"];
         options?: never;
         head?: never;
         /**
-         * Update Expression Transformation
-         * @description Update an expression transformation.
+         * Update Derivation Transformation
+         * @description Update a derivation transformation.
          */
-        patch: operations["interfaces_api_views_products_transformation_update_expression_transformation"];
+        patch: operations["interfaces_api_views_products_transformation_update_derivation_transformation"];
         trace?: never;
     };
     "/api/data/products/tasks/{task_id}/transformations/rating-curve": {
@@ -2585,10 +2585,10 @@ export interface components {
         DataProductTaskDetailResponse: {
             /** Aggregationtransformations */
             aggregationTransformations: components["schemas"]["AggregationTransformationResponse"][];
+            /** Derivationtransformations */
+            derivationTransformations: components["schemas"]["DerivationTransformationResponse"][];
             /** Description */
             description?: string | null;
-            /** Expressiontransformations */
-            expressionTransformations: components["schemas"]["ExpressionTransformationResponse"][];
             /**
              * Id
              * Format: uuid
@@ -2703,10 +2703,10 @@ export interface components {
         DataProductTaskSummaryResponse: {
             /** Aggregationtransformations */
             aggregationTransformations: components["schemas"]["AggregationTransformationSummaryResponse"][];
+            /** Derivationtransformations */
+            derivationTransformations: components["schemas"]["DerivationTransformationSummaryResponse"][];
             /** Description */
             description?: string | null;
-            /** Expressiontransformations */
-            expressionTransformations: components["schemas"]["ExpressionTransformationSummaryResponse"][];
             /**
              * Id
              * Format: uuid
@@ -3242,6 +3242,87 @@ export interface components {
             /** Things */
             things: components["schemas"]["VisualizationThingResponse"][];
         };
+        /** DerivationTransformationPatchBody */
+        DerivationTransformationPatchBody: {
+            /** Formula */
+            formula?: string;
+            /** Inputdatastreams */
+            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId?: string;
+            /** Stoponerror */
+            stopOnError?: boolean;
+            /** Stoponnodata */
+            stopOnNoData?: boolean;
+        };
+        /** DerivationTransformationPostBody */
+        DerivationTransformationPostBody: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /**
+             * Stoponerror
+             * @default true
+             */
+            stopOnError: boolean;
+            /**
+             * Stoponnodata
+             * @default true
+             */
+            stopOnNoData: boolean;
+        };
+        /** DerivationTransformationResponse */
+        DerivationTransformationResponse: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inputdatastreams */
+            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
+            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
+            /** Stoponerror */
+            stopOnError: boolean;
+            /** Stoponnodata */
+            stopOnNoData: boolean;
+        };
+        /** DerivationTransformationSummaryResponse */
+        DerivationTransformationSummaryResponse: {
+            /** Formula */
+            formula: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inputdatastreamids */
+            inputDatastreamIds: string[];
+            /**
+             * Outputdatastreamid
+             * Format: uuid
+             */
+            outputDatastreamId: string;
+            /** Stoponerror */
+            stopOnError: boolean;
+            /** Stoponnodata */
+            stopOnNoData: boolean;
+        };
         /** EtlDataMappingPatchBody */
         EtlDataMappingPatchBody: {
             /** Sourceidentifier */
@@ -3425,87 +3506,6 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
-        };
-        /** ExpressionTransformationPatchBody */
-        ExpressionTransformationPatchBody: {
-            /** Formula */
-            formula?: string;
-            /** Inputdatastreams */
-            inputDatastreams?: components["schemas"]["TransformationInputPostBody"][];
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId?: string;
-            /** Stoponerror */
-            stopOnError?: boolean;
-            /** Stoponnodata */
-            stopOnNoData?: boolean;
-        };
-        /** ExpressionTransformationPostBody */
-        ExpressionTransformationPostBody: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id?: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputPostBody"][];
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /**
-             * Stoponerror
-             * @default true
-             */
-            stopOnError: boolean;
-            /**
-             * Stoponnodata
-             * @default true
-             */
-            stopOnNoData: boolean;
-        };
-        /** ExpressionTransformationResponse */
-        ExpressionTransformationResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreams */
-            inputDatastreams: components["schemas"]["TransformationInputResponse"][];
-            outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
-            /** Stoponerror */
-            stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
-        };
-        /** ExpressionTransformationSummaryResponse */
-        ExpressionTransformationSummaryResponse: {
-            /** Formula */
-            formula: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inputdatastreamids */
-            inputDatastreamIds: string[];
-            /**
-             * Outputdatastreamid
-             * Format: uuid
-             */
-            outputDatastreamId: string;
-            /** Stoponerror */
-            stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
         };
         /** FileAttachmentDeleteBody */
         FileAttachmentDeleteBody: {
@@ -10229,7 +10229,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_products_transformation_get_expression_transformations: {
+    interfaces_api_views_products_transformation_get_derivation_transformations: {
         parameters: {
             query?: {
                 /** @description Page number (1-based). */
@@ -10257,7 +10257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"][];
+                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -10289,7 +10289,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_products_transformation_create_expression_transformation: {
+    interfaces_api_views_products_transformation_create_derivation_transformation: {
         parameters: {
             query?: never;
             header?: never;
@@ -10300,7 +10300,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ExpressionTransformationPostBody"];
+                "application/json": components["schemas"]["DerivationTransformationPostBody"];
             };
         };
         responses: {
@@ -10310,7 +10310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
+                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */
@@ -10360,7 +10360,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_products_transformation_get_expression_transformation: {
+    interfaces_api_views_products_transformation_get_derivation_transformation: {
         parameters: {
             query?: never;
             header?: never;
@@ -10378,7 +10378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
+                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -10410,7 +10410,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_products_transformation_delete_expression_transformation: {
+    interfaces_api_views_products_transformation_delete_derivation_transformation: {
         parameters: {
             query?: never;
             header?: never;
@@ -10458,7 +10458,7 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_products_transformation_update_expression_transformation: {
+    interfaces_api_views_products_transformation_update_derivation_transformation: {
         parameters: {
             query?: never;
             header?: never;
@@ -10470,7 +10470,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ExpressionTransformationPatchBody"];
+                "application/json": components["schemas"]["DerivationTransformationPatchBody"];
             };
         };
         responses: {
@@ -10480,7 +10480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExpressionTransformationSummaryResponse"];
+                    "application/json": components["schemas"]["DerivationTransformationSummaryResponse"];
                 };
             };
             /** @description Bad Request */

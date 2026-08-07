@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 
 from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, normalize_tz
 from hydroserverpy.core.duration import duration_to_us
-from hydroserverpy.products.expression import validate_expression, apply_expression
+from hydroserverpy.products.derivation import validate_derivation_formula, apply_derivation
 from hydroserverpy.products.aggregation import apply_aggregation
 from hydroserverpy.products.rating_curve import apply_rating_curve
 
@@ -41,7 +41,7 @@ datastream_service = DatastreamService()
 observation_service = ObservationService()
 rating_curve_service = RatingCurveService()
 
-TransformationType = Literal["rating_curve", "expression", "aggregation"]
+TransformationType = Literal["rating_curve", "derivation", "aggregation"]
 AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
 
@@ -274,7 +274,7 @@ class DataProductTransformationService(ServiceUtils):
             ),
             formula=(
                 formula if formula is not Unset
-                else (transformation.formula if transformation_type == "expression" else Unset)
+                else (transformation.formula if transformation_type == "derivation" else Unset)
             ),
             aggregation_method=(
                 aggregation_method if aggregation_method is not Unset
@@ -302,11 +302,11 @@ class DataProductTransformationService(ServiceUtils):
             ),
             stop_on_no_data=(
                 stop_on_no_data if stop_on_no_data is not Unset
-                else (transformation.stop_on_no_data if transformation_type == "expression" else Unset)
+                else (transformation.stop_on_no_data if transformation_type == "derivation" else Unset)
             ),
             stop_on_error=(
                 stop_on_error if stop_on_error is not Unset
-                else (transformation.stop_on_error if transformation_type == "expression" else Unset)
+                else (transformation.stop_on_error if transformation_type == "derivation" else Unset)
             ),
         )
 
@@ -459,21 +459,21 @@ class DataProductTransformationService(ServiceUtils):
                     f"does not exist at site {task.thing.id}."
                 )
 
-        elif transformation_type == "expression":
+        elif transformation_type == "derivation":
             if formula is Unset:
-                raise ValueError("formula is required for transformation_type 'expression'.")
+                raise ValueError("formula is required for transformation_type 'derivation'.")
             if not input_datastreams:
-                raise ValueError("At least one input datastream is required for transformation_type 'expression'.")
+                raise ValueError("At least one input datastream is required for transformation_type 'derivation'.")
             if any(v is not Unset for v in (
                 rating_curve, output_interval_units, output_interval, aggregation_method, min_values,
             )):
                 raise ValueError(
                     "rating_curve_id, output_interval_units, output_interval, aggregation_method, and min_values "
-                    "must not be set for transformation_type 'expression'."
+                    "must not be set for transformation_type 'derivation'."
                 )
             if any(input_datastream.variable_name is None for input_datastream in input_datastreams):
-                raise ValueError("variable_name is required for every input of transformation_type 'expression'.")
-            validate_expression(
+                raise ValueError("variable_name is required for every input of transformation_type 'derivation'.")
+            validate_derivation_formula(
                 formula=formula,
                 variables=input_datastream_variable_names
             )
@@ -519,8 +519,8 @@ class DataProductTransformationService(ServiceUtils):
 
         if transformation.transformation_type == "rating_curve":
             return self.run_rating_curve(transformation)
-        elif transformation.transformation_type == "expression":
-            return self.run_expression(transformation)
+        elif transformation.transformation_type == "derivation":
+            return self.run_derivation(transformation)
         elif transformation.transformation_type == "aggregation":
             return self.run_aggregation(transformation)
         else:
@@ -575,7 +575,7 @@ class DataProductTransformationService(ServiceUtils):
 
         return self._load_to_datastream(transformation, result_df)
 
-    def run_expression(self, transformation: DataProductTransformation) -> int:
+    def run_derivation(self, transformation: DataProductTransformation) -> int:
         """
         Evaluate a formula against one or more input datastreams and load results
         to the output datastream.
@@ -605,7 +605,7 @@ class DataProductTransformationService(ServiceUtils):
             inputs[entry.variable_name] = df
             input_no_data_values[entry.variable_name] = entry.datastream.no_data_value
 
-        result_df = apply_expression(
+        result_df = apply_derivation(
             inputs=inputs,
             formula=transformation.formula,
             stop_on_no_data=transformation.stop_on_no_data,

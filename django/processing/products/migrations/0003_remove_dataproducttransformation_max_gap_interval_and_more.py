@@ -3,25 +3,30 @@
 from django.db import migrations, models
 
 
-def merge_composite_expression_into_expression(apps, schema_editor):
+def merge_composite_expression_into_derivation(apps, schema_editor):
     """
-    'composite_expression' is retired in favor of a single 'expression' type that
-    accepts one or more inputs. Existing composite_expression rows become expression
-    rows (their now-meaningless output_interval fields are cleared). Every expression
-    row (old and converted) defaults to stop_on_no_data=False, stop_on_error=False,
-    since neither transformation_type ever halted output on bad data before, and the
-    new columns' schema default of True would.
+    'composite_expression' is retired in favor of a single 'derivation' type that
+    accepts one or more inputs. Existing composite_expression rows become derivation
+    rows (their now-meaningless output_interval fields are cleared). Plain 'expression'
+    rows are renamed to 'derivation' too, since that's the same type under its new
+    name. Every derivation row (old and converted) defaults to stop_on_no_data=False,
+    stop_on_error=False, since neither transformation_type ever halted output on bad
+    data before, and the new columns' schema default of True would.
     """
 
     DataProductTransformation = apps.get_model("products", "DataProductTransformation")
 
     DataProductTransformation.objects.filter(transformation_type="composite_expression").update(
-        transformation_type="expression",
+        transformation_type="derivation",
         output_interval_units=None,
         output_interval=None,
     )
 
     DataProductTransformation.objects.filter(transformation_type="expression").update(
+        transformation_type="derivation",
+    )
+
+    DataProductTransformation.objects.filter(transformation_type="derivation").update(
         stop_on_no_data=False,
         stop_on_error=False,
     )
@@ -55,10 +60,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='dataproducttransformation',
             name='transformation_type',
-            field=models.CharField(choices=[('rating_curve', 'Rating Curve'), ('expression', 'Expression'), ('aggregation', 'Aggregation')], max_length=255),
+            field=models.CharField(choices=[('rating_curve', 'Rating Curve'), ('derivation', 'Derivation'), ('aggregation', 'Aggregation')], max_length=255),
         ),
         migrations.RunPython(
-            merge_composite_expression_into_expression,
+            merge_composite_expression_into_derivation,
             reverse_code=migrations.RunPython.noop,
         ),
     ]

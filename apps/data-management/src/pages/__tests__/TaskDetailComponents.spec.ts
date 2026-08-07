@@ -111,7 +111,7 @@ const makeDataProductTask = () => ({
   description: null,
   thing: { id: 'thing-1', name: 'Site 1', workspaceId: 'workspace-1' },
   aggregationTransformations: [],
-  expressionTransformations: [],
+  derivationTransformations: [],
   ratingCurveTransformations: [{ id: 'rating-transform-1' }],
   latestRun: null,
   schedule: {
@@ -186,7 +186,6 @@ const globalStubs = {
   },
   AggregationForm: { template: '<div />' },
   DerivationForm: { template: '<div />' },
-  ExpressionForm: { template: '<div />' },
   RatingCurveForm: { template: '<div />' },
   NoScheduleIcon: { template: '<span />' },
   ProductTaskSwimlanes: { template: '<div />' },

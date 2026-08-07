@@ -37,7 +37,7 @@ class DataProductTransformationTypeQueryParameters(CollectionQueryParameters):
     )
 
 
-# --- Expression input schemas ---
+# --- Derivation input schemas ---
 
 class TransformationInputResponse(BaseGetResponse):
     datastream: DatastreamSummaryResponse
@@ -65,7 +65,7 @@ class RatingCurveTransformationSummaryResponse(BaseGetResponse):
         return first.datastream_id if first else None
 
 
-class ExpressionTransformationSummaryResponse(BaseGetResponse):
+class DerivationTransformationSummaryResponse(BaseGetResponse):
     id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastream_ids: list[uuid.UUID]
@@ -115,7 +115,7 @@ class RatingCurveTransformationResponse(BaseGetResponse):
         return first.datastream if first else None
 
 
-class ExpressionTransformationResponse(BaseGetResponse):
+class DerivationTransformationResponse(BaseGetResponse):
     id: uuid.UUID
     output_datastream: DatastreamSummaryResponse
     input_datastreams: list[TransformationInputResponse]
@@ -161,7 +161,7 @@ class RatingCurveTransformationPostBody(_TransformationPostBodyBase):
     rating_curve: uuid.UUID = Field(alias="ratingCurveId")
 
 
-class ExpressionTransformationPostBody(_TransformationPostBodyBase):
+class DerivationTransformationPostBody(_TransformationPostBodyBase):
     input_datastreams: list[TransformationInputPostBody]
     formula: str
     stop_on_no_data: bool = True
@@ -186,7 +186,7 @@ class RatingCurveTransformationPatchBody(BasePatchBody):
     rating_curve: uuid.UUID = Field(alias="ratingCurveId")
 
 
-class ExpressionTransformationPatchBody(BasePatchBody):
+class DerivationTransformationPatchBody(BasePatchBody):
     output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastreams: list[TransformationInputPostBody]
     formula: str

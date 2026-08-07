@@ -102,7 +102,7 @@
               @open-task="goToTask"
               @add-task="openCreateTaskDialog(selectedConnection!)"
               @add-aggregation="openAggregationForm = true"
-              @add-expression="openExpressionForm = true"
+              @add-derivation="openDerivationForm = true"
               @add-rating-curve="openRatingCurveForm = true"
               @add-quality="openQualityForm = true"
             />
@@ -163,10 +163,10 @@
           />
         </v-dialog>
 
-        <v-dialog v-model="openExpressionForm" width="60rem">
-          <ExpressionForm
+        <v-dialog v-model="openDerivationForm" width="60rem">
+          <DerivationForm
             :initial-thing-id="selectedThingId"
-            @close="openExpressionForm = false"
+            @close="openDerivationForm = false"
             @created="onDataProductTaskCreated"
           />
         </v-dialog>
@@ -227,7 +227,7 @@ import OrchestrationWorkspaceManager from '@/components/Workspace/OrchestrationW
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
-import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
+import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
 import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
 
@@ -347,7 +347,7 @@ const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 const openAggregationForm = ref(false)
 const editingAggregationTaskId = ref<string | null>(null)
-const openExpressionForm = ref(false)
+const openDerivationForm = ref(false)
 const openRatingCurveForm = ref(false)
 const openQualityForm = ref(false)
 const editingQualityTaskId = ref<string | null>(null)
@@ -743,7 +743,7 @@ const closeWorkspaceScopedUi = () => {
   openEditDataConnection.value = false
   openDeleteDataConnection.value = false
   openAggregationForm.value = false
-  openExpressionForm.value = false
+  openDerivationForm.value = false
   openRatingCurveForm.value = false
   openQualityForm.value = false
   selectedDataConnection.value = null
@@ -862,7 +862,7 @@ const closeQualityForm = () => {
 
 const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
   openAggregationForm.value = false
-  openExpressionForm.value = false
+  openDerivationForm.value = false
   openRatingCurveForm.value = false
   await fetchAll()
   await autoSelectSidebarAndSync()

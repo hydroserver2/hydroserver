@@ -2,7 +2,7 @@ from .rating_curve import RatingCurve
 from .task import DataProductTask
 from .transformation import (
     RatingCurveTransformation,
-    ExpressionTransformation,
+    DerivationTransformation,
     AggregationTransformation,
 )
 
@@ -10,6 +10,6 @@ __all__ = [
     "RatingCurve",
     "DataProductTask",
     "RatingCurveTransformation",
-    "ExpressionTransformation",
+    "DerivationTransformation",
     "AggregationTransformation",
 ]

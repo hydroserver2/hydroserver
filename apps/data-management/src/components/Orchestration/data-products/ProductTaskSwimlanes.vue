@@ -78,7 +78,7 @@ import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSi
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamThingId } from '@/utils/orchestration/datastreams'
 
-type ProductTaskLabel = 'aggregation' | 'expression'
+type ProductTaskLabel = 'aggregation' | 'derivation'
 type DatastreamLike = {
   id?: string
   name?: string
@@ -146,9 +146,9 @@ const mappingRows = computed<MappingRow[]>(() => {
     )
   }
 
-  // The expression transformation type always carries a list of inputs
+  // The derivation transformation type always carries a list of inputs
   // (one or more).
-  return (props.task?.expressionTransformations ?? []).flatMap(
+  return (props.task?.derivationTransformations ?? []).flatMap(
     (transformation: any, transformationIndex: number) => {
       const targetDatastream = resolveDatastream(
         transformation.outputDatastream,

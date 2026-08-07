@@ -16,7 +16,7 @@ class RatingCurveTransformation(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
-class ExpressionTransformation(BaseModel):
+class DerivationTransformation(BaseModel):
     id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastream_ids: List[uuid.UUID]

@@ -1894,6 +1894,13 @@
             "title": "Aggregationtransformations",
             "type": "array"
           },
+          "derivationTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/DerivationTransformationResponse"
+            },
+            "title": "Derivationtransformations",
+            "type": "array"
+          },
           "description": {
             "anyOf": [
               {
@@ -1904,13 +1911,6 @@
               }
             ],
             "title": "Description"
-          },
-          "expressionTransformations": {
-            "items": {
-              "$ref": "#/components/schemas/ExpressionTransformationResponse"
-            },
-            "title": "Expressiontransformations",
-            "type": "array"
           },
           "id": {
             "format": "uuid",
@@ -1957,7 +1957,7 @@
           "name",
           "thing",
           "ratingCurveTransformations",
-          "expressionTransformations",
+          "derivationTransformations",
           "aggregationTransformations"
         ],
         "title": "DataProductTaskDetailResponse",
@@ -2228,6 +2228,13 @@
             "title": "Aggregationtransformations",
             "type": "array"
           },
+          "derivationTransformations": {
+            "items": {
+              "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
+            },
+            "title": "Derivationtransformations",
+            "type": "array"
+          },
           "description": {
             "anyOf": [
               {
@@ -2238,13 +2245,6 @@
               }
             ],
             "title": "Description"
-          },
-          "expressionTransformations": {
-            "items": {
-              "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
-            },
-            "title": "Expressiontransformations",
-            "type": "array"
           },
           "id": {
             "format": "uuid",
@@ -2299,7 +2299,7 @@
           "thingId",
           "workspaceId",
           "ratingCurveTransformations",
-          "expressionTransformations",
+          "derivationTransformations",
           "aggregationTransformations"
         ],
         "title": "DataProductTaskSummaryResponse",
@@ -3717,6 +3717,163 @@
         "title": "DatastreamVisualizationBootstrapResponse",
         "type": "object"
       },
+      "DerivationTransformationPatchBody": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputPostBody"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
+          }
+        },
+        "title": "DerivationTransformationPatchBody",
+        "type": "object"
+      },
+      "DerivationTransformationPostBody": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputPostBody"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "stopOnError": {
+            "default": true,
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "default": true,
+            "title": "Stoponnodata",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "outputDatastreamId",
+          "inputDatastreams",
+          "formula"
+        ],
+        "title": "DerivationTransformationPostBody",
+        "type": "object"
+      },
+      "DerivationTransformationResponse": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreams": {
+            "items": {
+              "$ref": "#/components/schemas/TransformationInputResponse"
+            },
+            "title": "Inputdatastreams",
+            "type": "array"
+          },
+          "outputDatastream": {
+            "$ref": "#/components/schemas/DatastreamSummaryResponse"
+          },
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastream",
+          "inputDatastreams",
+          "formula",
+          "stopOnNoData",
+          "stopOnError"
+        ],
+        "title": "DerivationTransformationResponse",
+        "type": "object"
+      },
+      "DerivationTransformationSummaryResponse": {
+        "properties": {
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputDatastreamIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Inputdatastreamids",
+            "type": "array"
+          },
+          "outputDatastreamId": {
+            "format": "uuid",
+            "title": "Outputdatastreamid",
+            "type": "string"
+          },
+          "stopOnError": {
+            "title": "Stoponerror",
+            "type": "boolean"
+          },
+          "stopOnNoData": {
+            "title": "Stoponnodata",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "outputDatastreamId",
+          "inputDatastreamIds",
+          "formula",
+          "stopOnNoData",
+          "stopOnError"
+        ],
+        "title": "DerivationTransformationSummaryResponse",
+        "type": "object"
+      },
       "EtlDataMappingPatchBody": {
         "properties": {
           "sourceIdentifier": {
@@ -4215,163 +4372,6 @@
           "taskVariables"
         ],
         "title": "EtlTaskSummaryResponse",
-        "type": "object"
-      },
-      "ExpressionTransformationPatchBody": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputPostBody"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "stopOnError": {
-            "title": "Stoponerror",
-            "type": "boolean"
-          },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
-            "type": "boolean"
-          }
-        },
-        "title": "ExpressionTransformationPatchBody",
-        "type": "object"
-      },
-      "ExpressionTransformationPostBody": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputPostBody"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "stopOnError": {
-            "default": true,
-            "title": "Stoponerror",
-            "type": "boolean"
-          },
-          "stopOnNoData": {
-            "default": true,
-            "title": "Stoponnodata",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "outputDatastreamId",
-          "inputDatastreams",
-          "formula"
-        ],
-        "title": "ExpressionTransformationPostBody",
-        "type": "object"
-      },
-      "ExpressionTransformationResponse": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreams": {
-            "items": {
-              "$ref": "#/components/schemas/TransformationInputResponse"
-            },
-            "title": "Inputdatastreams",
-            "type": "array"
-          },
-          "outputDatastream": {
-            "$ref": "#/components/schemas/DatastreamSummaryResponse"
-          },
-          "stopOnError": {
-            "title": "Stoponerror",
-            "type": "boolean"
-          },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "outputDatastream",
-          "inputDatastreams",
-          "formula",
-          "stopOnNoData",
-          "stopOnError"
-        ],
-        "title": "ExpressionTransformationResponse",
-        "type": "object"
-      },
-      "ExpressionTransformationSummaryResponse": {
-        "properties": {
-          "formula": {
-            "title": "Formula",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "inputDatastreamIds": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Inputdatastreamids",
-            "type": "array"
-          },
-          "outputDatastreamId": {
-            "format": "uuid",
-            "title": "Outputdatastreamid",
-            "type": "string"
-          },
-          "stopOnError": {
-            "title": "Stoponerror",
-            "type": "boolean"
-          },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "outputDatastreamId",
-          "inputDatastreamIds",
-          "formula",
-          "stopOnNoData",
-          "stopOnError"
-        ],
-        "title": "ExpressionTransformationSummaryResponse",
         "type": "object"
       },
       "FileAttachmentDeleteBody": {
@@ -21334,10 +21334,10 @@
         ]
       }
     },
-    "/api/data/products/tasks/{task_id}/transformations/expression": {
+    "/api/data/products/tasks/{task_id}/transformations/derivation": {
       "get": {
-        "description": "Get expression transformations for a data product task.",
-        "operationId": "interfaces_api_views_products_transformation_get_expression_transformations",
+        "description": "Get derivation transformations for a data product task.",
+        "operationId": "interfaces_api_views_products_transformation_get_derivation_transformations",
         "parameters": [
           {
             "in": "path",
@@ -21451,7 +21451,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
+                    "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
                   },
                   "title": "Response",
                   "type": "array"
@@ -21505,14 +21505,14 @@
             "APIKeyAuth": []
           }
         ],
-        "summary": "Get Expression Transformations",
+        "summary": "Get Derivation Transformations",
         "tags": [
-          "Expression Transformations"
+          "Derivation Transformations"
         ]
       },
       "post": {
-        "description": "Create an expression transformation on a data product task.",
-        "operationId": "interfaces_api_views_products_transformation_create_expression_transformation",
+        "description": "Create a derivation transformation on a data product task.",
+        "operationId": "interfaces_api_views_products_transformation_create_derivation_transformation",
         "parameters": [
           {
             "in": "path",
@@ -21529,7 +21529,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ExpressionTransformationPostBody"
+                "$ref": "#/components/schemas/DerivationTransformationPostBody"
               }
             }
           },
@@ -21540,7 +21540,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
+                  "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
                 }
               }
             },
@@ -21613,16 +21613,16 @@
             "APIKeyAuth": []
           }
         ],
-        "summary": "Create Expression Transformation",
+        "summary": "Create Derivation Transformation",
         "tags": [
-          "Expression Transformations"
+          "Derivation Transformations"
         ]
       }
     },
-    "/api/data/products/tasks/{task_id}/transformations/expression/{transformation_id}": {
+    "/api/data/products/tasks/{task_id}/transformations/derivation/{transformation_id}": {
       "delete": {
-        "description": "Delete an expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_delete_expression_transformation",
+        "description": "Delete a derivation transformation.",
+        "operationId": "interfaces_api_views_products_transformation_delete_derivation_transformation",
         "parameters": [
           {
             "in": "path",
@@ -21694,14 +21694,14 @@
             "APIKeyAuth": []
           }
         ],
-        "summary": "Delete Expression Transformation",
+        "summary": "Delete Derivation Transformation",
         "tags": [
-          "Expression Transformations"
+          "Derivation Transformations"
         ]
       },
       "get": {
-        "description": "Get an expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_get_expression_transformation",
+        "description": "Get a derivation transformation.",
+        "operationId": "interfaces_api_views_products_transformation_get_derivation_transformation",
         "parameters": [
           {
             "in": "path",
@@ -21729,7 +21729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
+                  "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
                 }
               }
             },
@@ -21780,14 +21780,14 @@
             "APIKeyAuth": []
           }
         ],
-        "summary": "Get Expression Transformation",
+        "summary": "Get Derivation Transformation",
         "tags": [
-          "Expression Transformations"
+          "Derivation Transformations"
         ]
       },
       "patch": {
-        "description": "Update an expression transformation.",
-        "operationId": "interfaces_api_views_products_transformation_update_expression_transformation",
+        "description": "Update a derivation transformation.",
+        "operationId": "interfaces_api_views_products_transformation_update_derivation_transformation",
         "parameters": [
           {
             "in": "path",
@@ -21814,7 +21814,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ExpressionTransformationPatchBody"
+                "$ref": "#/components/schemas/DerivationTransformationPatchBody"
               }
             }
           },
@@ -21825,7 +21825,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExpressionTransformationSummaryResponse"
+                  "$ref": "#/components/schemas/DerivationTransformationSummaryResponse"
                 }
               }
             },
@@ -21898,9 +21898,9 @@
             "APIKeyAuth": []
           }
         ],
-        "summary": "Update Expression Transformation",
+        "summary": "Update Derivation Transformation",
         "tags": [
-          "Expression Transformations"
+          "Derivation Transformations"
         ]
       }
     },

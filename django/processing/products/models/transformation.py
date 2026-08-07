@@ -8,7 +8,7 @@ from processing.products.models.task import DataProductTask
 
 class TransformationType(models.TextChoices):
     RATING_CURVE = "rating_curve"
-    EXPRESSION = "expression"
+    DERIVATION = "derivation"
     AGGREGATION = "aggregation"
 
 

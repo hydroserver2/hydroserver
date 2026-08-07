@@ -619,7 +619,7 @@ hs_api.ratingcurves.create(name, thing, fitting_method, description=None, points
 | `next_run_at` | `datetime \| None` | No | |
 | `latest_run` | `TaskRun \| None` | No | |
 | `rating_curve_transformations` | `List[RatingCurveTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
-| `expression_transformations` | `List[ExpressionTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
+| `derivation_transformations` | `List[DerivationTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
 | `aggregation_transformations` | `List[AggregationTransformation]` | No | Manage via `hs_api.dataproducttransformations` |
 
 #### Service methods
@@ -665,7 +665,7 @@ hs_api.dataproducttransformations.update_rating_curve(task_id, uid, input_datast
 hs_api.dataproducttransformations.delete_rating_curve(task_id, uid)
 ```
 
-#### Expression Transformations
+#### Derivation Transformations
 
 Combines one or more input datastreams using a formula. Each input datastream is assigned a variable name used in the formula; with a single input, this is equivalent to applying the formula to each observation independently. Multiple inputs are matched by exact timestamp — if they stop lining up, a run stops there until the inputs are back in sync.
 
@@ -679,20 +679,20 @@ Combines one or more input datastreams using a formula. Each input datastream is
 | `stop_on_error` | `bool` | If `True`, stop the run when the formula produces a non-finite result; if `False`, fill the output with its no-data value and continue |
 
 ```python
-hs_api.dataproducttransformations.list_expression(task_id, output_datastream=None, input_datastream=None)
-hs_api.dataproducttransformations.get_expression(task_id, uid)
-hs_api.dataproducttransformations.create_expression(
+hs_api.dataproducttransformations.list_derivation(task_id, output_datastream=None, input_datastream=None)
+hs_api.dataproducttransformations.get_derivation(task_id, uid)
+hs_api.dataproducttransformations.create_derivation(
     task_id, output_datastream, input_datastreams, formula,
     stop_on_no_data=True, stop_on_error=True, uid=None
 )
-hs_api.dataproducttransformations.update_expression(
-    task_id, uid, input_datastreams, formula,
-    stop_on_no_data=True, stop_on_error=True
+hs_api.dataproducttransformations.update_derivation(
+    task_id, uid, input_datastreams=..., formula=...,
+    stop_on_no_data=..., stop_on_error=...
 )
-hs_api.dataproducttransformations.delete_expression(task_id, uid)
+hs_api.dataproducttransformations.delete_derivation(task_id, uid)
 ```
 
-`input_datastreams` is a list of dicts with `datastream_id` and `variable_name`.
+`input_datastreams` is a list of dicts with `datastream_id` and `variable_name`. On `update_derivation`, any argument left at its default (`...`) is omitted from the request, leaving the existing value in place.
 
 #### Aggregation Transformations
 

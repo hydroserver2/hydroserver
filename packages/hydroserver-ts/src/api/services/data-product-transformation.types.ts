@@ -25,17 +25,17 @@ export type AggregationTransformationValues = {
   timezone?: AggregationTransformationPatchPayload['timezone']
 }
 
-export type ExpressionTransformationInput =
+export type DerivationTransformationInput =
   Data.components['schemas']['TransformationInputPostBody']
 
-export type ExpressionTransformationPayload =
-  Data.components['schemas']['ExpressionTransformationPostBody']
+export type DerivationTransformationPayload =
+  Data.components['schemas']['DerivationTransformationPostBody']
 
-export type ExpressionTransformationPatchPayload =
-  Data.components['schemas']['ExpressionTransformationPatchBody']
+export type DerivationTransformationPatchPayload =
+  Data.components['schemas']['DerivationTransformationPatchBody']
 
-export type ExpressionTransformationResponse =
-  Data.components['schemas']['ExpressionTransformationResponse']
+export type DerivationTransformationResponse =
+  Data.components['schemas']['DerivationTransformationResponse']
 
-export type ExpressionTransformationSummaryResponse =
-  Data.components['schemas']['ExpressionTransformationSummaryResponse']
+export type DerivationTransformationSummaryResponse =
+  Data.components['schemas']['DerivationTransformationSummaryResponse']

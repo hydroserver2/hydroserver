@@ -19,7 +19,7 @@ export type SortDir = 'asc' | 'desc'
 
 export type DataProductTaskType =
   | 'Aggregation'
-  | 'Expression'
+  | 'Derivation'
   | 'Rating curve'
   | null
 
@@ -33,13 +33,13 @@ export const DATA_PRODUCT_TYPE_COLORS: Record<
   { text: string; bg: string }
 > = {
   Aggregation: { text: '#6A1B9A', bg: '#F3E5F5' },
-  Expression: { text: '#006064', bg: '#E0F7FA' },
+  Derivation: { text: '#006064', bg: '#E0F7FA' },
   'Rating curve': { text: '#283593', bg: '#E8EAF6' },
 }
 
 export const DATA_PRODUCT_TYPE_OPTIONS = [
   'Aggregation',
-  'Expression',
+  'Derivation',
   'Rating curve',
 ] as const satisfies readonly NonNullable<DataProductTaskType>[]
 

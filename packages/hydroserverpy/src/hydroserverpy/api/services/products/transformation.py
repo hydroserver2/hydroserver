@@ -4,7 +4,7 @@ from typing import List, Literal, Optional, Union, TYPE_CHECKING
 from uuid import UUID
 from hydroserverpy.api.models.products.transformation import (
     RatingCurveTransformation,
-    ExpressionTransformation,
+    DerivationTransformation,
     AggregationTransformation,
     AggregationMethod,
     Period,
@@ -119,16 +119,16 @@ class DataProductTransformationService:
         self.client.request("delete", f"{self._route(task_id, 'rating-curve')}/{str(uid)}")
 
     # ---------------------------------------------------------------------------
-    # Expression Transformations
+    # Derivation Transformations
     # ---------------------------------------------------------------------------
 
-    def list_expression(
+    def list_derivation(
         self,
         task_id: Union[UUID, str],
         output_datastream: Optional[Union[UUID, str]] = None,
         input_datastream: Optional[Union[UUID, str]] = None,
-    ) -> List[ExpressionTransformation]:
-        """List expression transformations for a data product task."""
+    ) -> List[DerivationTransformation]:
+        """List derivation transformations for a data product task."""
 
         params = {}
         if output_datastream is not None:
@@ -136,22 +136,22 @@ class DataProductTransformationService:
         if input_datastream is not None:
             params["input_datastream_id"] = normalize_uuid(input_datastream)
 
-        response = self.client.request("get", self._route(task_id, "expression"), params=params)
+        response = self.client.request("get", self._route(task_id, "derivation"), params=params)
 
-        return [ExpressionTransformation(**t) for t in response.json()]
+        return [DerivationTransformation(**t) for t in response.json()]
 
-    def get_expression(
+    def get_derivation(
         self, task_id: Union[UUID, str], uid: Union[UUID, str]
-    ) -> ExpressionTransformation:
-        """Get an expression transformation."""
+    ) -> DerivationTransformation:
+        """Get a derivation transformation."""
 
         response = self.client.request(
-            "get", f"{self._route(task_id, 'expression')}/{str(uid)}"
+            "get", f"{self._route(task_id, 'derivation')}/{str(uid)}"
         ).json()
 
-        return ExpressionTransformation(**response)
+        return DerivationTransformation(**response)
 
-    def create_expression(
+    def create_derivation(
         self,
         task_id: Union[UUID, str],
         output_datastream: Union[UUID, str],
@@ -160,9 +160,9 @@ class DataProductTransformationService:
         stop_on_no_data: bool = True,
         stop_on_error: bool = True,
         uid: Optional[UUID] = None,
-    ) -> ExpressionTransformation:
+    ) -> DerivationTransformation:
         """
-        Create an expression transformation on a data product task.
+        Create a derivation transformation on a data product task.
 
         Each item in input_datastreams should have 'datastream_id' and 'variable_name'.
         """
@@ -183,9 +183,9 @@ class DataProductTransformationService:
         if uid is not None:
             body["id"] = normalize_uuid(uid)
 
-        return ExpressionTransformation(**self._post(task_id, "expression", body))
+        return DerivationTransformation(**self._post(task_id, "derivation", body))
 
-    def update_expression(
+    def update_derivation(
         self,
         task_id: Union[UUID, str],
         uid: Union[UUID, str],
@@ -193,9 +193,9 @@ class DataProductTransformationService:
         formula: str = ...,
         stop_on_no_data: bool = ...,
         stop_on_error: bool = ...,
-    ) -> ExpressionTransformation:
+    ) -> DerivationTransformation:
         """
-        Update an expression transformation.
+        Update a derivation transformation.
 
         Each item in input_datastreams should have 'datastream_id' and 'variable_name'.
         """
@@ -214,12 +214,12 @@ class DataProductTransformationService:
         }
         body = {k: v for k, v in body.items() if v is not ...}
 
-        return ExpressionTransformation(**self._patch(task_id, "expression", uid, body))
+        return DerivationTransformation(**self._patch(task_id, "derivation", uid, body))
 
-    def delete_expression(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
-        """Delete an expression transformation."""
+    def delete_derivation(self, task_id: Union[UUID, str], uid: Union[UUID, str]) -> None:
+        """Delete a derivation transformation."""
 
-        self.client.request("delete", f"{self._route(task_id, 'expression')}/{str(uid)}")
+        self.client.request("delete", f"{self._route(task_id, 'derivation')}/{str(uid)}")
 
     # ---------------------------------------------------------------------------
     # Aggregation Transformations

@@ -467,7 +467,7 @@ An EtlMapping associates a source identifier produced by the DataConnection with
 
 # Data Products
 
-The Data Products app models derived Datastreams produced by transformations such as rating curves, expressions, and time-series aggregations.
+The Data Products app models derived Datastreams produced by transformations such as rating curves, derivations, and time-series aggregations.
 
 ## DataProductTask
 
@@ -487,11 +487,11 @@ A DataProductTransformation describes how a single derived (output) Datastream i
 | M        | id                     | A primary key unique identifier for the DataProductTransformation.                                                                  | UUID      |
 | M        | task_id                | A foreign key identifier for the DataProductTask to which the transformation belongs.                                               | UUID      |
 | M        | output_datastream_id   | A one-to-one foreign key identifier for the Datastream that receives the transformation output.                                     | UUID      |
-| M        | transformation_type    | The type of transformation: `rating_curve`, `expression`, or `aggregation`.                                                          | String    |
+| M        | transformation_type    | The type of transformation: `rating_curve`, `derivation`, or `aggregation`.                                                          | String    |
 | O        | rating_curve_id        | A foreign key identifier for the RatingCurve used when `transformation_type` is `rating_curve`.                                     | UUID      |
-| O        | formula                | An expression string used when `transformation_type` is `expression`, referencing one or more input variable names.                 | Text      |
-| O        | stop_on_no_data        | For `expression` transformations, whether a run stops when an input holds its no-data value (vs. filling the output and continuing). | Boolean   |
-| O        | stop_on_error          | For `expression` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
+| O        | formula                | A formula (expression) string used when `transformation_type` is `derivation`, referencing one or more input variable names.        | Text      |
+| O        | stop_on_no_data        | For `derivation` transformations, whether a run stops when an input holds its no-data value (vs. filling the output and continuing). | Boolean   |
+| O        | stop_on_error          | For `derivation` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
 | O        | output_interval_units  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
 | O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |
 | O        | timezone_type          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |

@@ -961,7 +961,7 @@ task = hs_api.data_product_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Access inline transformation lists from the task response
 rating_curve_transforms = task.rating_curve_transformations
-expression_transforms = task.expression_transformations
+derivation_transforms = task.derivation_transformations
 aggregation_transforms = task.aggregation_transformations
 ```
 
@@ -1026,7 +1026,7 @@ task.delete()
 
 ### Transformations
 
-Transformations define the individual derivation rules within a data product task. HydroServer supports three transformation types: rating curve, expression, and aggregation. All transformation operations are task-scoped and use `hs_api.transformations`.
+Transformations define the individual derivation rules within a data product task. HydroServer supports three transformation types: rating curve, derivation, and aggregation. All transformation operations are task-scoped and use `hs_api.transformations`.
 
 #### Example: Rating Curve Transformations
 ```python
@@ -1058,12 +1058,12 @@ hs_api.transformations.delete_rating_curve(
 )
 ```
 
-#### Example: Expression Transformations
+#### Example: Derivation Transformations
 ```python
-# Create an expression transformation (one or more input datastreams with a formula).
+# Create a derivation transformation (one or more input datastreams with a formula).
 # Each item in input_datastreams needs 'datastream_id' and 'variable_name'; the
 # formula must reference at least one of those variable names.
-new_transformation = hs_api.transformations.create_expression(
+new_transformation = hs_api.transformations.create_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     output_datastream='00000000-0000-0000-0000-000000000000',
     input_datastreams=[
@@ -1074,10 +1074,10 @@ new_transformation = hs_api.transformations.create_expression(
     stop_on_error=True,    # stop the run if the formula produces a non-finite result
 )
 
-# An expression with multiple inputs works the same way, just with more entries.
+# A derivation with multiple inputs works the same way, just with more entries.
 # Inputs are matched by exact timestamp; if they stop lining up, the run stops
 # there until they're back in sync.
-new_derived_transformation = hs_api.transformations.create_expression(
+new_derived_transformation = hs_api.transformations.create_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     output_datastream='00000000-0000-0000-0000-000000000000',
     input_datastreams=[
@@ -1087,8 +1087,8 @@ new_derived_transformation = hs_api.transformations.create_expression(
     formula='temp_c + 273.15',
 )
 
-# Update an expression transformation
-hs_api.transformations.update_expression(
+# Update a derivation transformation
+hs_api.transformations.update_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     uid=new_transformation.id,
     input_datastreams=[
@@ -1097,8 +1097,8 @@ hs_api.transformations.update_expression(
     formula='x * 0.3048',
 )
 
-# Delete an expression transformation
-hs_api.transformations.delete_expression(
+# Delete a derivation transformation
+hs_api.transformations.delete_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     uid=new_transformation.id
 )

@@ -3,8 +3,8 @@ import type * as Data from '../../generated/data.types'
 
 type AggregationTransformationResponse =
   Data.components['schemas']['AggregationTransformationResponse']
-type ExpressionTransformationResponse =
-  Data.components['schemas']['ExpressionTransformationResponse']
+type DerivationTransformationResponse =
+  Data.components['schemas']['DerivationTransformationResponse']
 type RatingCurveTransformationResponse =
   Data.components['schemas']['RatingCurveTransformationResponse']
 
@@ -26,7 +26,7 @@ export interface DataProductTaskExpanded {
   description?: string | null
   thing: { id: string; name: string; [key: string]: unknown }
   aggregationTransformations: AggregationTransformationResponse[]
-  expressionTransformations: ExpressionTransformationResponse[]
+  derivationTransformations: DerivationTransformationResponse[]
   ratingCurveTransformations: RatingCurveTransformationResponse[]
   latestRun?: TaskRun | null
   schedule: TaskSchedule | null

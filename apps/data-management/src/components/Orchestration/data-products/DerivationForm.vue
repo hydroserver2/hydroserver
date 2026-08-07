@@ -3,7 +3,7 @@
     <div class="shrink-0">
       <v-toolbar :style="DATA_PRODUCT_TOOLBAR_STYLE" flat>
         <v-card-title>{{
-          isEditMode ? 'Edit expression task' : 'Create expression task'
+          isEditMode ? 'Edit derivation task' : 'Create derivation task'
         }}</v-card-title>
         <v-btn
           :icon="mdiInformationOutline"
@@ -253,7 +253,7 @@
           :loading="saving"
           :disabled="deleting"
         >
-          {{ isEditMode ? 'Save changes' : 'Create expression task' }}
+          {{ isEditMode ? 'Save changes' : 'Create derivation task' }}
         </v-btn-primary>
       </v-card-actions>
     </v-form>
@@ -542,8 +542,8 @@ async function loadExistingTask() {
     schedule.value = task.schedule ?? null
   }
 
-  if (task?.expressionTransformations?.length) {
-    const t = task.expressionTransformations[0]
+  if (task?.derivationTransformations?.length) {
+    const t = task.derivationTransformations[0]
     existingTransformationId.value = t.id
     outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
     formula.value = t.formula
@@ -583,7 +583,7 @@ async function onSubmit() {
       await onCreate(inputDatastreams)
     }
   } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to save expression task.')
+    Snackbar.error(error?.message || 'Unable to save derivation task.')
   } finally {
     saving.value = false
   }
@@ -594,7 +594,7 @@ async function onCreate(
 ) {
   const thingId = selectedThingId.value
   if (!thingId) {
-    Snackbar.error('Select a site before creating an expression task.')
+    Snackbar.error('Select a site before creating a derivation task.')
     return
   }
 
@@ -607,11 +607,11 @@ async function onCreate(
   })
 
   if (!taskRes.ok || !taskRes.data?.id) {
-    Snackbar.error(taskRes.message || 'Unable to create expression task.')
+    Snackbar.error(taskRes.message || 'Unable to create derivation task.')
     return
   }
 
-  const transformRes = await hs.dataProductTasks.createExpressionTransformation(
+  const transformRes = await hs.dataProductTasks.createDerivationTransformation(
     taskRes.data.id,
     {
       outputDatastreamId: outputDatastreamId.value!,
@@ -624,7 +624,7 @@ async function onCreate(
 
   if (!transformRes.ok) {
     Snackbar.error(
-      transformRes.message || 'Unable to create expression transformation.'
+      transformRes.message || 'Unable to create derivation transformation.'
     )
     return
   }
@@ -651,7 +651,7 @@ async function onUpdate(
 
   if (existingTransformationId.value) {
     const transformRes =
-      await hs.dataProductTasks.updateExpressionTransformation(
+      await hs.dataProductTasks.updateDerivationTransformation(
         taskId,
         existingTransformationId.value,
         {
@@ -665,13 +665,13 @@ async function onUpdate(
 
     if (!transformRes.ok) {
       Snackbar.error(
-        transformRes.message || 'Unable to update expression transformation.'
+        transformRes.message || 'Unable to update derivation transformation.'
       )
       return
     }
   }
 
-  Snackbar.success('Expression task updated.')
+  Snackbar.success('Derivation task updated.')
   emit('updated', taskRes.data!)
   emit('close')
 }
@@ -682,14 +682,14 @@ async function onDelete() {
   try {
     const res = await hs.dataProductTasks.delete(props.editTaskId)
     if (!res.ok) {
-      Snackbar.error(res.message || 'Unable to delete expression task.')
+      Snackbar.error(res.message || 'Unable to delete derivation task.')
       return
     }
-    Snackbar.success('Expression task deleted.')
+    Snackbar.success('Derivation task deleted.')
     emit('deleted')
     emit('close')
   } catch (error: any) {
-    Snackbar.error(error?.message || 'Unable to delete expression task.')
+    Snackbar.error(error?.message || 'Unable to delete derivation task.')
   } finally {
     deleting.value = false
   }

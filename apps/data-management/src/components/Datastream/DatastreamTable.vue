@@ -1490,8 +1490,8 @@ const dataProductRouteName = (task: any) => {
   if (task.aggregationTransformations?.length) {
     return 'OrchestrationAggregationDetails'
   }
-  if (task.expressionTransformations?.length) {
-    return 'OrchestrationExpressionDetails'
+  if (task.derivationTransformations?.length) {
+    return 'OrchestrationDerivationDetails'
   }
   if (task.ratingCurveTransformations?.length) {
     return 'OrchestrationRatingCurveDetails'
@@ -1681,7 +1681,7 @@ const linkedTasksByDatastreamId = computed<
         label: 'Derived by',
         icon: mdiSigma,
         iconClass: 'datastream-task-link__icon--derived',
-        transformations: (task as any).expressionTransformations ?? [],
+        transformations: (task as any).derivationTransformations ?? [],
       },
       {
         label: 'Rating curve',

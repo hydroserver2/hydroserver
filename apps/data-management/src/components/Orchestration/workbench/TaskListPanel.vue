@@ -69,9 +69,9 @@
                   :style="{ color: '#1565C0', borderColor: '#1565C0' }"
                   :disabled="!canEdit"
                   rounded="lg"
-                  @click="$emit('add-expression')"
+                  @click="$emit('add-derivation')"
                 >
-                  + Expression
+                  + Derivation
                 </v-btn>
               </span>
             </template>
@@ -629,7 +629,7 @@ defineEmits<{
   (e: 'open-task', row: TaskRow): void
   (e: 'add-task'): void
   (e: 'add-aggregation'): void
-  (e: 'add-expression'): void
+  (e: 'add-derivation'): void
   (e: 'add-rating-curve'): void
   (e: 'add-quality'): void
 }>()

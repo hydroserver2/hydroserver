@@ -50,7 +50,7 @@ _MATH_NAMESPACE: dict = {
 }
 
 
-def validate_expression(formula: str, variables: list[str]) -> None:
+def validate_derivation_formula(formula: str, variables: list[str]) -> None:
     """
     Validate a formula string against the approved AST whitelist and variable names.
 
@@ -65,7 +65,7 @@ def validate_expression(formula: str, variables: list[str]) -> None:
 
     if conflicts := set(variables) & _ALLOWED_FUNCTIONS:
         raise ValueError(
-            f"Variable names conflict with expression functions: {sorted(conflicts)}."
+            f"Variable names conflict with derivation functions: {sorted(conflicts)}."
         )
 
     try:
@@ -102,7 +102,7 @@ def validate_expression(formula: str, variables: list[str]) -> None:
 
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-def apply_expression(
+def apply_derivation(
     inputs: dict[str, pd.DataFrame],
     formula: str,
     *,
@@ -127,7 +127,7 @@ def apply_expression(
     """
 
     if not inputs:
-        raise ValueError("At least one input DataFrame must be provided to run an expression.")
+        raise ValueError("At least one input DataFrame must be provided to run a derivation.")
 
     if not stop_on_no_data and output_no_data_value is None:
         raise ValueError("output_no_data_value is required when stop_on_no_data is False.")
@@ -136,7 +136,7 @@ def apply_expression(
         raise ValueError("output_no_data_value is required when stop_on_error is False.")
 
     variables = list(inputs.keys())
-    validate_expression(formula, variables)
+    validate_derivation_formula(formula, variables)
 
     validated = {
         var: validate_timeseries(df).sort_values(TIMESTAMP_COL).reset_index(drop=True)
@@ -144,7 +144,7 @@ def apply_expression(
     }
 
     logger.debug(
-        "Evaluating expression (formula=%r, variables=%r, stopOnNoData=%r, stopOnError=%r, "
+        "Evaluating derivation (formula=%r, variables=%r, stopOnNoData=%r, stopOnError=%r, "
         "inputNoDataValues=%r, outputNoDataValue=%r, rows=%r).",
         formula, variables, stop_on_no_data, stop_on_error, input_no_data_values, output_no_data_value,
         {var: len(df) for var, df in validated.items()},
@@ -167,7 +167,7 @@ def apply_expression(
     if len(combined_df) == 0:
         if divergence_timestamp is not None:
             logger.warning(
-                "Expression stopped at %s: input timestamps are not aligned.", divergence_timestamp,
+                "Derivation stopped at %s: input timestamps are not aligned.", divergence_timestamp,
             )
         return pd.DataFrame({
             TIMESTAMP_COL: pd.Series([], dtype="datetime64[us, UTC]"),
@@ -213,10 +213,10 @@ def apply_expression(
         result_array = result_array[:stop_idx]
         ndv_mask = ndv_mask[:stop_idx]
         error_mask = error_mask[:stop_idx]
-        logger.warning("Expression stopped at %s: %s.", stop_timestamp, stop_reason)
+        logger.warning("Derivation stopped at %s: %s.", stop_timestamp, stop_reason)
     elif divergence_timestamp is not None:
         logger.warning(
-            "Expression stopped at %s: input timestamps are not aligned.", divergence_timestamp,
+            "Derivation stopped at %s: input timestamps are not aligned.", divergence_timestamp,
         )
 
     if not stop_on_no_data and ndv_mask.any():
@@ -231,7 +231,7 @@ def apply_expression(
     })
 
     logger.info(
-        "Expression produced %d row(s) from %d input variable(s).",
+        "Derivation produced %d row(s) from %d input variable(s).",
         len(result), len(inputs),
     )
 
