@@ -41,20 +41,6 @@ def test_get_observation_returns_200(client):
     assert response.json()["@iot.id"] == str(observation.id)
 
 
-def test_get_observation_links_synthetic_feature_of_interest(client):
-    observation = ObservationFactory()
-
-    response = client.get(_detail_url(observation.id))
-
-    assert response.status_code == 200
-    feature_url = response.json()["FeatureOfInterest@iot.navigationLink"]
-    feature_response = client.get(feature_url)
-    assert feature_response.status_code == 200
-    assert feature_response.json()["@iot.id"] == str(
-        observation.datastream.monitoring_site_id
-    )
-
-
 # --- create_observation_entity (POST /Observations) -------------------------------------
 
 

@@ -565,7 +565,7 @@ The current HydroServer SensorThings implementation still exposes SensorThings c
 
 ### FeatureOfInterest
 
-HydroServer synthesizes one FeatureOfInterest from each MonitoringSite for SensorThings responses rather than storing it as a first-class model.
+HydroServer currently derives FeatureOfInterest behavior from the MonitoringSite context used by SensorThings responses rather than storing FeatureOfInterest as a first-class HydroServer model.
 
 | Required | Attribute   | Definition                                                                           | Data Type |
 | -------- | ----------- | ------------------------------------------------------------------------------------ | --------- |

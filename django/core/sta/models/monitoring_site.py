@@ -46,6 +46,7 @@ class MonitoringSite(models.Model):
     def delete(self, *args, **kwargs):
         return type(self).objects.filter(pk=self.pk).delete()
 
+
 class MonitoringSiteTag(models.Model):
     monitoring_site = models.ForeignKey(
         MonitoringSite, related_name="monitoring_site_tags", on_delete=models.CASCADE

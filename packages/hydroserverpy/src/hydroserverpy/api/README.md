@@ -167,7 +167,7 @@ Each of the methods above will return one or more MonitoringSite objects. The ex
 # Get a monitoring_site
 monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Update one or more properties of the monitoring_site.
+# Update one or more properties of the monitoring site.
 monitoring_site.name = 'Updated Site Name'
 monitoring_site.description = 'This site metadata has been modified.'
 monitoring_site.is_private = True
@@ -221,7 +221,7 @@ monitoring_site.delete_photo(name='photo.png')
 # Get a monitoring_site
 monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Fetch datastreams of the monitoring_site
+# Fetch datastreams of the monitoring site
 datastreams = monitoring_site.datastreams
 ```
 
@@ -239,7 +239,7 @@ monitoring_site.refresh()
 # Get a MonitoringSite
 monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Delete the monitoring_site from HydroServer
+# Delete the monitoring site from HydroServer
 monitoring_site.delete()
 ```
 

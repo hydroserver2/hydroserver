@@ -7,7 +7,7 @@ A site encompasses both the physical location and the metadata describing the si
 A site is _not_ the physical sensors or instruments that are deployed at the site's location. That metadata lives in the Sensor table of HydroServer's database.
 
 ::: tip MonitoringSite and SensorThings
-HydroServer's data model and Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing`, `Location`, and `FeatureOfInterest` entities by deriving one of each from a monitoring site.
+HydroServer's data model and Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.
 :::
 
 ## key:value tagging system

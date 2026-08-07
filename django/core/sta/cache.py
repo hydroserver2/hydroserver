@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 
-PUBLIC_MONITORING_SITE_MARKERS_CACHE_KEY = "sta:monitoring_site-markers:public:v1"
+PUBLIC_MONITORING_SITE_MARKERS_CACHE_KEY = "sta:monitoring-site-markers:public:v1"
 
 
 def get_public_monitoring_site_markers_cache_timeout() -> int:

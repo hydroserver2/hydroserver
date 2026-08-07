@@ -21,9 +21,7 @@ class ObservationMixin(SensorThingsUtils):
         needs_result_quality = select is None or "result_quality" in select
         principal = context.principal if context else AnonymousPrincipal()
 
-        observations = principal.filter_by_permission(
-            Observation.objects.select_related("datastream"), "can_view"
-        )
+        observations = principal.filter_by_permission(Observation.objects, "can_view")
 
         if filters:
             observations = self.apply_filters(observations, Observation, filters)
@@ -64,31 +62,6 @@ class ObservationMixin(SensorThingsUtils):
                     entity_ids=groups.get(pid, [])
                 ) for pid in group_by[1]
             }
-        elif group_by and group_by[0] == "feature_of_interest":
-            observations = observations.filter(
-                datastream__monitoring_site_id__in=group_by[1]
-            )
-            obs_counts = dict(
-                observations
-                .values("datastream__monitoring_site_id")
-                .annotate(total=Count("id"))
-                .values_list("datastream__monitoring_site_id", "total")
-            ) if count else None
-            obs_list = list(
-                self.apply_window(
-                    observations, "datastream__monitoring_site_id", top, skip
-                )
-            )
-            groups = {}
-            for obs in obs_list:
-                groups.setdefault(obs.datastream.monitoring_site_id, []).append(obs.id)
-            collections = {
-                site_id: CollectionDTO(
-                    entity_count=int(obs_counts.get(site_id, 0)) if count else None,
-                    entity_ids=groups.get(site_id, []),
-                )
-                for site_id in group_by[1]
-            }
         else:
             if count and not filters:
                 entity_count = principal.filter_by_permission(
@@ -127,7 +100,6 @@ class ObservationMixin(SensorThingsUtils):
                         if needs_result_quality else Absent
                     ),
                     datastream_id=obs.datastream_id,
-                    feature_of_interest_id=obs.datastream.monitoring_site_id,
                 )
                 for obs in obs_list
             }

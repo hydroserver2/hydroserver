@@ -45,11 +45,6 @@ class SensorThingsUtils:
                 "location__coordinates": "id",
             }.get(prop, prop)
 
-        elif component_name == "FeatureOfInterest":
-            return {
-                "feature__coordinates": "id",
-            }.get(prop, prop)
-
         elif component.__name__ == "HistoricalLocation":
             return prop
 
@@ -122,7 +117,7 @@ class SensorThingsUtils:
         elif component.__name__ == "Observation":
             related = {
                 "Datastream": "datastream",
-                "FeatureOfInterest": "datastream__monitoring_site",
+                "FeatureOfInterest": "feature_of_interest",
             }
             parent = prop.split("__")[0]
             if parent in related:
@@ -130,13 +125,8 @@ class SensorThingsUtils:
                     related[parent]
                     + "__"
                     + self.transform_model_field(
-                        component=(
-                            sta_models.MonitoringSite
-                            if parent == "FeatureOfInterest"
-                            else getattr(sta_models, parent)
-                        ),
+                        component=getattr(sta_models, parent),
                         prop="__".join(prop.split("__")[1:]),
-                        entity_name=parent,
                     )
                 )
             return {
