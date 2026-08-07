@@ -7,63 +7,36 @@ from factory.django import DjangoModelFactory
 
 from core.sta.models import (
     Datastream,
-    Location,
     Observation,
     ObservedProperty,
     ProcessingLevel,
     ResultQualifier,
     Sensor,
-    Thing,
+    MonitoringSite,
     Unit,
 )
 from tests.core.iam.factories import WorkspaceFactory
 
 
-class ThingFactory(DjangoModelFactory):
+class MonitoringSiteFactory(DjangoModelFactory):
     class Meta:
-        model = Thing
+        model = MonitoringSite
 
     if TYPE_CHECKING:
 
-        def __new__(cls, *args, **kwargs) -> Thing: ...
+        def __new__(cls, *args, **kwargs) -> MonitoringSite: ...
 
     workspace = factory.SubFactory(WorkspaceFactory)
     name = factory.Sequence(lambda seq: f"Site {seq}")
     description = factory.Faker("sentence")
-    sampling_feature_type = "Site"
-    sampling_feature_code = factory.Sequence(lambda seq: f"SITE-{seq}")
-    site_type = "Stream"
+    code = factory.Sequence(lambda seq: f"SITE-{seq}")
+    type = "Stream"
+    latitude = 40.0
+    longitude = -111.0
     is_private = False
-
-    location = factory.RelatedFactory(
-        "tests.core.sta.factories.LocationFactory",
-        factory_related_name="thing",
-        latitude=40.0,
-        longitude=-111.0,
-    )
 
     class Params:
         private = factory.Trait(is_private=True)
-
-
-class LocationFactory(DjangoModelFactory):
-    class Meta:
-        model = Location
-
-    if TYPE_CHECKING:
-
-        def __new__(cls, *args, **kwargs) -> Location: ...
-
-    thing = factory.SubFactory(ThingFactory)
-    name = factory.Sequence(lambda seq: f"Location {seq}")
-    description = factory.Faker("sentence")
-    encoding_type = "application/geo+json"
-    latitude = factory.Faker(
-        "pydecimal", left_digits=2, right_digits=6, min_value=-90, max_value=90
-    )
-    longitude = factory.Faker(
-        "pydecimal", left_digits=3, right_digits=6, min_value=-180, max_value=180
-    )
 
 
 class SensorFactory(DjangoModelFactory):
@@ -164,18 +137,18 @@ class DatastreamFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> Datastream: ...
 
-    thing = factory.SubFactory(ThingFactory)
+    monitoring_site = factory.SubFactory(MonitoringSiteFactory)
     sensor = factory.SubFactory(
-        SensorFactory, workspace=factory.SelfAttribute("..thing.workspace")
+        SensorFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
     )
     observed_property = factory.SubFactory(
-        ObservedPropertyFactory, workspace=factory.SelfAttribute("..thing.workspace")
+        ObservedPropertyFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
     )
     processing_level = factory.SubFactory(
-        ProcessingLevelFactory, workspace=factory.SelfAttribute("..thing.workspace")
+        ProcessingLevelFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
     )
     unit = factory.SubFactory(
-        UnitFactory, workspace=factory.SelfAttribute("..thing.workspace")
+        UnitFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
     )
     name = factory.Sequence(lambda seq: f"Datastream {seq}")
     description = factory.Faker("sentence")

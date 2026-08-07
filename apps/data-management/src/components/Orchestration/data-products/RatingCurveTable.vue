@@ -115,9 +115,9 @@
           </v-chip>
           <v-spacer />
           <v-tooltip
-            v-if="canEditThing"
+            v-if="canEditMonitoringSite"
             location="top"
-            :disabled="canEditThing"
+            :disabled="canEditMonitoringSite"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
@@ -125,7 +125,7 @@
                   variant="outlined"
                   color="teal-darken-1"
                   class="text-none"
-                  :disabled="!canEditThing"
+                  :disabled="!canEditMonitoringSite"
                   @click="openCreateDialog"
                 >
                   Add rating curve
@@ -199,14 +199,14 @@
                   </div>
                 </div>
 
-                <div v-if="canEditThing" class="rating-curve-item-actions">
-                  <v-tooltip location="top" :disabled="canEditThing">
+                <div v-if="canEditMonitoringSite" class="rating-curve-item-actions">
+                  <v-tooltip location="top" :disabled="canEditMonitoringSite">
                     <template #activator="{ props: tooltipProps }">
                       <span v-bind="tooltipProps" class="inline-flex">
                         <v-btn
                           :icon="mdiPencil"
                           variant="text"
-                          :disabled="!canEditThing"
+                          :disabled="!canEditMonitoringSite"
                           @click="openEditDialog(attachment)"
                         />
                       </span>
@@ -214,7 +214,7 @@
                     <span>{{ readOnlyTooltip }}</span>
                   </v-tooltip>
 
-                  <v-tooltip location="top" :disabled="canEditThing">
+                  <v-tooltip location="top" :disabled="canEditMonitoringSite">
                     <template #activator="{ props: tooltipProps }">
                       <span v-bind="tooltipProps" class="inline-flex">
                         <v-btn
@@ -223,7 +223,7 @@
                           color="delete"
                           :loading="isValidatingDelete(attachment.id)"
                           :disabled="
-                            !canEditThing || isValidatingDelete(attachment.id)
+                            !canEditMonitoringSite || isValidatingDelete(attachment.id)
                           "
                           @click="handleDeleteClick(attachment)"
                         />
@@ -554,7 +554,7 @@ import { useRatingCurveStore } from '@/store/ratingCurves'
 
 const props = withDefaults(
   defineProps<{
-    thingId?: string
+    monitoringSiteId?: string
     canEdit?: boolean
     deferPersist?: boolean
     inlineReadOnly?: boolean
@@ -642,12 +642,12 @@ const fittingMethodOptions = [
   { title: 'Power law', value: 'power_law' },
 ]
 
-const canEditThing = computed(() => props.canEdit)
+const canEditMonitoringSite = computed(() => props.canEdit)
 const inlineReadOnly = computed(
-  () => props.inlineReadOnly && !canEditThing.value
+  () => props.inlineReadOnly && !canEditMonitoringSite.value
 )
 const showManageButton = computed(
-  () => canEditThing.value && !inlineReadOnly.value
+  () => canEditMonitoringSite.value && !inlineReadOnly.value
 )
 const readOnlyTooltip =
   'You have read-only access to this site. Ask an editor or owner to make changes.'
@@ -850,7 +850,7 @@ function emitRatingCurvesChanged() {
 async function refreshRatingCurves() {
   if (props.deferPersist) {
     try {
-      await ratingCurveStore.loadExistingRatingCurves(props.thingId)
+      await ratingCurveStore.loadExistingRatingCurves(props.monitoringSiteId)
 
       const deletedIds = new Set(
         ratingCurveStore.pendingDeleteIds.map((item) => String(item))
@@ -877,7 +877,7 @@ async function refreshRatingCurves() {
     return
   }
 
-  if (!props.thingId) {
+  if (!props.monitoringSiteId) {
     backendRatingCurves.value = []
     emitRatingCurvesChanged()
     return
@@ -885,7 +885,7 @@ async function refreshRatingCurves() {
 
   backendLoading.value = true
   try {
-    const items = await hs.ratingCurves.listItemsForThing(props.thingId, {
+    const items = await hs.ratingCurves.listItemsForMonitoringSite(props.monitoringSiteId, {
       order_by: ['name'],
     })
     backendRatingCurves.value = items.sort((a, b) =>
@@ -905,18 +905,18 @@ async function refreshRatingCurves() {
 }
 
 function openCreateDialog() {
-  if (!canEditThing.value) return
+  if (!canEditMonitoringSite.value) return
   resetCreateState()
   openCreate.value = true
 }
 
 function openManageDialog() {
-  if (!canEditThing.value) return
+  if (!canEditMonitoringSite.value) return
   openManage.value = true
 }
 
 function openEditDialog(item: DisplayRatingCurve) {
-  if (!canEditThing.value) return
+  if (!canEditMonitoringSite.value) return
   resetEditState()
   editAttachment.value = item
   editAttachmentName.value = item.name
@@ -927,13 +927,13 @@ function openEditDialog(item: DisplayRatingCurve) {
 }
 
 function openDeleteDialog(item: DisplayRatingCurve) {
-  if (!canEditThing.value) return
+  if (!canEditMonitoringSite.value) return
   activeAttachment.value = item
   openDelete.value = true
 }
 
 async function handleDeleteClick(item: DisplayRatingCurve) {
-  if (!canEditThing.value) return
+  if (!canEditMonitoringSite.value) return
   if (!props.deferPersist) {
     if (await blockDeletionIfLinkedWithSpinner(item)) return
     openDeleteDialog(item)
@@ -991,7 +991,7 @@ async function createAttachment() {
     return
   }
 
-  if (!props.thingId) {
+  if (!props.monitoringSiteId) {
     Snackbar.error('Save the site first before adding rating curves.')
     return
   }
@@ -1003,7 +1003,7 @@ async function createAttachment() {
       name: trimmedName,
       description: attachmentDescription.value.trim() || null,
       fittingMethod: attachmentFittingMethod.value,
-      thingId: props.thingId,
+      monitoringSiteId: props.monitoringSiteId,
       points,
     })
 
@@ -1050,7 +1050,7 @@ async function deleteAttachment() {
     return
   }
 
-  if (!props.thingId) {
+  if (!props.monitoringSiteId) {
     Snackbar.error('Save the site first before deleting rating curves.')
     return
   }
@@ -1262,7 +1262,7 @@ async function saveEditAttachment() {
     return
   }
 
-  if (!props.thingId) {
+  if (!props.monitoringSiteId) {
     Snackbar.error('Save the site first before updating rating curves.')
     return
   }
@@ -1535,7 +1535,7 @@ async function validateEditFile(file: File | null): Promise<boolean> {
 }
 
 watch(
-  () => props.thingId,
+  () => props.monitoringSiteId,
   () => {
     void refreshRatingCurves()
   },

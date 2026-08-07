@@ -13,7 +13,7 @@
               <span class="target-name">{{
                 t.inputDatastream?.name || '—'
               }}</span>
-              <span v-if="t.ratingCurve?.name" class="target-thing">
+              <span v-if="t.ratingCurve?.name" class="target-monitoringSite">
                 via {{ t.ratingCurve.name }}
               </span>
               <span class="target-id">{{ inputDatastreamId(t) || '—' }}</span>
@@ -21,7 +21,7 @@
             <DatastreamSiteButton
               :datastream="t.inputDatastream"
               :datastream-id="inputDatastreamId(t)"
-              :fallback-thing-id="props.thingId"
+              :fallback-monitoring-site-id="props.monitoringSiteId"
             />
           </div>
         </div>
@@ -36,15 +36,15 @@
               <span class="target-name">{{
                 t.outputDatastream?.name || '—'
               }}</span>
-              <span v-if="outputThingName(t)" class="target-thing">
-                {{ outputThingName(t) }}
+              <span v-if="outputMonitoringSiteName(t)" class="target-monitoringSite">
+                {{ outputMonitoringSiteName(t) }}
               </span>
               <span class="target-id">{{ outputDatastreamId(t) || '—' }}</span>
             </div>
             <DatastreamSiteButton
               :datastream="t.outputDatastream"
               :datastream-id="outputDatastreamId(t)"
-              :fallback-thing-id="props.thingId"
+              :fallback-monitoring-site-id="props.monitoringSiteId"
             />
           </div>
         </div>
@@ -58,7 +58,7 @@ import { storeToRefs } from 'pinia'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamThingId } from '@/utils/orchestration/datastreams'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 type RatingCurveTransformation = {
   id?: string
@@ -67,26 +67,26 @@ type RatingCurveTransformation = {
   inputDatastream?: {
     id?: string
     name?: string
-    thingId?: string
-    thing_id?: string
-    thing?: { id?: string }
+    monitoringSiteId?: string
+    monitoring_site_id?: string
+    monitoringSite?: { id?: string }
   }
   outputDatastream?: {
     id?: string
     name?: string
-    thingId?: string
-    thing_id?: string
-    thing?: { id?: string }
+    monitoringSiteId?: string
+    monitoring_site_id?: string
+    monitoringSite?: { id?: string }
   }
   ratingCurve?: { id?: string; name?: string }
 }
 
 const props = defineProps<{
   transformations: RatingCurveTransformation[]
-  thingId?: string | null
+  monitoringSiteId?: string | null
 }>()
 
-const { workspaceThings } = storeToRefs(useOrchestrationStore())
+const { workspaceMonitoringSites } = storeToRefs(useOrchestrationStore())
 
 function inputDatastreamId(t: RatingCurveTransformation) {
   return t.inputDatastream?.id || t.inputDatastreamId || ''
@@ -96,13 +96,13 @@ function outputDatastreamId(t: RatingCurveTransformation) {
   return t.outputDatastream?.id || t.outputDatastreamId || ''
 }
 
-function outputThingName(t: RatingCurveTransformation) {
-  const thingId =
-    (t.outputDatastream ? datastreamThingId(t.outputDatastream as any) : '') ||
-    props.thingId
-  if (!thingId) return ''
+function outputMonitoringSiteName(t: RatingCurveTransformation) {
+  const monitoringSiteId =
+    (t.outputDatastream ? datastreamMonitoringSiteId(t.outputDatastream as any) : '') ||
+    props.monitoringSiteId
+  if (!monitoringSiteId) return ''
   return (
-    workspaceThings.value.find((th) => th.id === String(thingId))?.name || ''
+    workspaceMonitoringSites.value.find((th) => th.id === String(monitoringSiteId))?.name || ''
   )
 }
 </script>
@@ -207,7 +207,7 @@ function outputThingName(t: RatingCurveTransformation) {
   overflow-wrap: anywhere;
   white-space: normal;
 }
-.target-thing {
+.target-monitoringSite {
   color: rgba(0, 0, 0, 0.66);
   overflow-wrap: anywhere;
   white-space: normal;

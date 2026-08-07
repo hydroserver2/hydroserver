@@ -6,12 +6,12 @@ export class RatingCurve {
   name = ''
   description: string | null = null
   fittingMethod: RatingCurveFittingMethod = 'linear'
-  thingId = ''
-  thing?: { id: string; name: string; [key: string]: unknown }
+  monitoringSiteId = ''
+  monitoringSite?: { id: string; name: string; [key: string]: unknown }
   points: RatingCurvePoint[] = []
 
   constructor(init?: Partial<RatingCurve>) {
     Object.assign(this, init)
-    if (!this.thingId && this.thing?.id) this.thingId = this.thing.id
+    if (!this.monitoringSiteId && this.monitoringSite?.id) this.monitoringSiteId = this.monitoringSite.id
   }
 }

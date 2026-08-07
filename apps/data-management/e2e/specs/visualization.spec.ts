@@ -38,7 +38,7 @@ test.describe("visualization", () => {
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByRole("heading", { name: "Datastreams" }),
@@ -70,7 +70,7 @@ test.describe("visualization", () => {
     });
 
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByText(fixtures.datastreams.public.name, { exact: true }),
@@ -106,7 +106,7 @@ test.describe("visualization", () => {
     );
 
     expect(copiedUrl).toContain(
-      `/visualize-data?sites=${fixtures.things.public.id}`,
+      `/visualize-data?sites=${fixtures.monitoringSites.public.id}`,
     );
     expect(copiedUrl).toContain(
       `datastreams=${fixtures.datastreams.public.id}`,
@@ -135,7 +135,7 @@ test.describe("visualization", () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
@@ -187,7 +187,7 @@ test.describe("visualization", () => {
     await chooseAutocompleteOption(
       page,
       "Sites",
-      fixtures.things.privateWorkspacePublic.name,
+      fixtures.monitoringSites.privateWorkspacePublic.name,
     );
 
     await expect(
@@ -217,7 +217,7 @@ test.describe("visualization", () => {
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     const tableSearch = page.getByRole("textbox", {
       name: "Search",
@@ -242,7 +242,7 @@ test.describe("visualization", () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     const columnsButton = page.getByRole("button", {
       name: "Show or hide columns",
@@ -275,7 +275,7 @@ test.describe("visualization", () => {
       };
     });
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
@@ -306,7 +306,7 @@ test.describe("visualization", () => {
 
   test("visualization custom date range can be set", async ({ page }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
@@ -334,7 +334,7 @@ test.describe("visualization", () => {
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await expect(
       page.getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`),
@@ -376,7 +376,7 @@ test.describe("visualization", () => {
   }) => {
     await page.setViewportSize({ width: 500, height: 900 });
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await page
       .getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`)
@@ -403,7 +403,7 @@ test.describe("visualization", () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
-    await page.goto(`/visualize-data?sites=${fixtures.things.public.id}`);
+    await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     await page
       .getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)

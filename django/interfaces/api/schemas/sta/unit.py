@@ -36,8 +36,8 @@ class UnitQueryParameters(CollectionQueryParameters):
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter units by workspace ID."
     )
-    datastreams__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by thing ID.", alias="thing_id"
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [], description="Filter units by monitoring_site ID.", alias="monitoring_site_id"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter units by datastream ID.", alias="datastream_id"

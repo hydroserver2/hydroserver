@@ -3,7 +3,7 @@ from interfaces.api.views.iam.role import role_router
 from interfaces.api.views.iam.collaborator import collaborator_router
 from interfaces.api.views.iam.service_account import service_account_router
 
-from interfaces.api.views.sta.thing import thing_router
+from interfaces.api.views.sta.monitoring_site import monitoring_site_router
 from interfaces.api.views.sta.observed_property import observed_property_router
 from interfaces.api.views.sta.processing_level import processing_level_router
 from interfaces.api.views.sta.result_qualifier import result_qualifier_router

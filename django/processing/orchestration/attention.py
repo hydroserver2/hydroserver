@@ -2,7 +2,7 @@
 
 This mirrors the frontend status logic in
 ``apps/data-management/src/utils/orchestration/taskRunDetails.ts`` so that the
-per-connection / per-thing attention badges agree with the per-task statuses
+per-connection / per-monitoring_site attention badges agree with the per-task statuses
 shown in the task list.
 
 A task needs attention when either:

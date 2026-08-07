@@ -20,7 +20,7 @@ from tests.core.sta.factories import (
     ObservedPropertyFactory,
     ProcessingLevelFactory,
     SensorFactory,
-    ThingFactory,
+    MonitoringSiteFactory,
     UnitFactory,
 )
 
@@ -44,14 +44,14 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_datastream(workspace, **kwargs):
-    return DatastreamFactory(thing=ThingFactory(workspace=workspace), **kwargs)
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
 
 
-def _datastream_body(thing, sensor, observed_property, processing_level, unit, **overrides):
+def _datastream_body(monitoring_site, sensor, observed_property, processing_level, unit, **overrides):
     body = {
         "name": "New Datastream",
         "description": "A new datastream.",
-        "thingId": str(thing.id),
+        "monitoringSiteId": str(monitoring_site.id),
         "sensorId": str(sensor.id),
         "observedPropertyId": str(observed_property.id),
         "processingLevelId": str(processing_level.id),
@@ -112,7 +112,7 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
 def test_create_datastream_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -121,7 +121,7 @@ def test_create_datastream_succeeds_for_workspace_owner(client):
 
     response = client.post(
         DATASTREAMS_URL,
-        data=_datastream_body(thing, sensor, observed_property, processing_level, unit),
+        data=_datastream_body(monitoring_site, sensor, observed_property, processing_level, unit),
         content_type="application/json",
     )
 
@@ -131,7 +131,7 @@ def test_create_datastream_succeeds_for_workspace_owner(client):
 
 def test_create_datastream_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -139,7 +139,7 @@ def test_create_datastream_returns_401_when_unauthenticated(client):
 
     response = client.post(
         DATASTREAMS_URL,
-        data=_datastream_body(thing, sensor, observed_property, processing_level, unit),
+        data=_datastream_body(monitoring_site, sensor, observed_property, processing_level, unit),
         content_type="application/json",
     )
 
@@ -148,7 +148,7 @@ def test_create_datastream_returns_401_when_unauthenticated(client):
 
 def test_create_datastream_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     sensor = SensorFactory(workspace=workspace)
     observed_property = ObservedPropertyFactory(workspace=workspace)
     processing_level = ProcessingLevelFactory(workspace=workspace)
@@ -158,7 +158,7 @@ def test_create_datastream_returns_403_without_create_permission(client):
 
     response = client.post(
         DATASTREAMS_URL,
-        data=_datastream_body(thing, sensor, observed_property, processing_level, unit),
+        data=_datastream_body(monitoring_site, sensor, observed_property, processing_level, unit),
         content_type="application/json",
     )
 
@@ -496,8 +496,8 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
 
 def test_get_datastream_csv_returns_csv_with_observations(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
-    datastream = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=monitoring_site)
     ObservationFactory(datastream=datastream, result=12.5)
 
     response = client.get(f"{_detail_url(datastream.id)}/csv")

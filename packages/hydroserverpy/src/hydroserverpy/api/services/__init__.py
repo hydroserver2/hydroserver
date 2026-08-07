@@ -1,6 +1,6 @@
 from .iam.workspace import WorkspaceService
 from .iam.role import RoleService
-from .sta.thing import ThingService
+from .sta.monitoring_site import MonitoringSiteService
 from .sta.observed_property import ObservedPropertyService
 from .sta.unit import UnitService
 from .sta.processing_level import ProcessingLevelService

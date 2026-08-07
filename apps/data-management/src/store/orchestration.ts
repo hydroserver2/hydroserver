@@ -3,7 +3,7 @@ import hs, {
   Datastream,
   DatastreamExtended,
   TaskMapping,
-  Thing,
+  MonitoringSite,
 } from '@hydroserver/client'
 import { computed, ref, watch } from 'vue'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -20,7 +20,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const workspaceDatastreams = ref<Datastream[]>([])
   const draftDatastreams = ref<DatastreamExtended[]>([])
   const workspaceTasks = ref<Task[]>([])
-  const workspaceThings = ref<Thing[]>([])
+  const workspaceMonitoringSites = ref<MonitoringSite[]>([])
   const orchestrationSearch = ref('')
   const orchestrationStatusFilter = ref<string[]>([])
   const orchestrationTaskTypeFilter = ref<NonNullable<DataProductTaskType>[]>(
@@ -29,12 +29,12 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
 
   const activeTab = ref<TabId>('ingestion')
   const selectedConnectionId = ref<string | null>(null)
-  const selectedThingId = ref<string | null>(null)
+  const selectedMonitoringSiteId = ref<string | null>(null)
   const sidebarSearch = ref('')
   const loadedWorkspaceDatastreamId = ref<string | null>(null)
-  const loadedWorkspaceThingsId = ref<string | null>(null)
+  const loadedWorkspaceMonitoringSitesId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
-  let workspaceThingsRequestId = 0
+  let workspaceMonitoringSitesRequestId = 0
 
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
@@ -42,10 +42,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     loadedWorkspaceDatastreamId.value = null
   }
 
-  const resetWorkspaceThings = () => {
-    workspaceThingsRequestId += 1
-    workspaceThings.value = []
-    loadedWorkspaceThingsId.value = null
+  const resetWorkspaceMonitoringSites = () => {
+    workspaceMonitoringSitesRequestId += 1
+    workspaceMonitoringSites.value = []
+    loadedWorkspaceMonitoringSitesId.value = null
   }
 
   const resetDraftDatastreams = () => {
@@ -97,30 +97,30 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     return workspaceDatastreams.value
   }
 
-  const ensureWorkspaceThings = async (
+  const ensureWorkspaceMonitoringSites = async (
     requestedWorkspaceId = workspaceId.value,
     force = false
   ) => {
     if (!requestedWorkspaceId) {
-      resetWorkspaceThings()
+      resetWorkspaceMonitoringSites()
       return []
     }
 
-    if (!force && loadedWorkspaceThingsId.value === requestedWorkspaceId) {
-      return workspaceThings.value
+    if (!force && loadedWorkspaceMonitoringSitesId.value === requestedWorkspaceId) {
+      return workspaceMonitoringSites.value
     }
 
-    const requestId = ++workspaceThingsRequestId
-    const list = await hs.things.listAllItems({
+    const requestId = ++workspaceMonitoringSitesRequestId
+    const list = await hs.monitoringSites.listAllItems({
       workspace_id: [requestedWorkspaceId],
       order_by: ['name'],
     } as any)
-    if (requestId !== workspaceThingsRequestId) {
-      return workspaceThings.value
+    if (requestId !== workspaceMonitoringSitesRequestId) {
+      return workspaceMonitoringSites.value
     }
-    workspaceThings.value = (list ?? []) as Thing[]
-    loadedWorkspaceThingsId.value = requestedWorkspaceId
-    return workspaceThings.value
+    workspaceMonitoringSites.value = (list ?? []) as MonitoringSite[]
+    loadedWorkspaceMonitoringSitesId.value = requestedWorkspaceId
+    return workspaceMonitoringSites.value
   }
 
   watch(
@@ -128,7 +128,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     (wsId) => {
       if (!wsId) {
         resetWorkspaceDatastreams()
-        resetWorkspaceThings()
+        resetWorkspaceMonitoringSites()
         resetDraftDatastreams()
         return
       }
@@ -136,8 +136,8 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
         resetWorkspaceDatastreams()
         resetDraftDatastreams()
       }
-      if (loadedWorkspaceThingsId.value !== wsId) {
-        resetWorkspaceThings()
+      if (loadedWorkspaceMonitoringSitesId.value !== wsId) {
+        resetWorkspaceMonitoringSites()
       }
     },
     { immediate: true }
@@ -149,18 +149,18 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     linkedDatastreams,
     draftDatastreams,
     workspaceDatastreams,
-    workspaceThings,
+    workspaceMonitoringSites,
     orchestrationSearch,
     orchestrationStatusFilter,
     orchestrationTaskTypeFilter,
     activeTab,
     selectedConnectionId,
-    selectedThingId,
+    selectedMonitoringSiteId,
     sidebarSearch,
     ensureWorkspaceDatastreams,
-    ensureWorkspaceThings,
+    ensureWorkspaceMonitoringSites,
     resetWorkspaceDatastreams,
-    resetWorkspaceThings,
+    resetWorkspaceMonitoringSites,
     resetDraftDatastreams,
   }
 })

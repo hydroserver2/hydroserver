@@ -50,7 +50,7 @@ type Inputs = {
   workspaceTasks: Ref<Task[]>
   dataProductTasks: Ref<DataProductTask[]>
   monitoringTasks: Ref<MonitoringTask[]>
-  datastreamThingByDatastreamId: Ref<Record<string, string>>
+  datastreamMonitoringSiteByDatastreamId: Ref<Record<string, string>>
   runNowTriggeredByTaskId: Record<string, boolean>
 }
 
@@ -161,16 +161,16 @@ const resolveMonitoringRules = (task: MonitoringTask) => {
 }
 
 // ETL tasks don't carry their site on the task itself; infer it from the first mapping's
-// target datastream, cross-referencing the workspace datastream list for thingId.
-const resolveTaskThingId = (
+// target datastream, cross-referencing the workspace datastream list for monitoringSiteId.
+const resolveTaskMonitoringSiteId = (
   task: Task,
-  datastreamThingMap: Record<string, string>
+  datastreamMonitoringSiteMap: Record<string, string>
 ): string | null => {
   for (const mapping of task.mappings ?? []) {
     const ds = targetDatastream(mapping)
-    const dsThingId = ds?.thingId ?? ds?.thing_id
-    if (dsThingId) return dsThingId
-    const fromMap = ds?.id ? datastreamThingMap[ds.id] : null
+    const dsMonitoringSiteId = ds?.monitoringSiteId ?? ds?.monitoring_site_id
+    if (dsMonitoringSiteId) return dsMonitoringSiteId
+    const fromMap = ds?.id ? datastreamMonitoringSiteMap[ds.id] : null
     if (fromMap) return fromMap
   }
   return null
@@ -197,7 +197,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
     workspaceTasks,
     dataProductTasks,
     monitoringTasks,
-    datastreamThingByDatastreamId,
+    datastreamMonitoringSiteByDatastreamId,
     runNowTriggeredByTaskId,
   } = inputs
 
@@ -206,7 +206,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       ...buildRowBase(t, 'etl', runNowTriggeredByTaskId),
       dataConnectionId:
         (t as any).dataConnection?.id ?? (t as any).dataConnectionId ?? null,
-      thingId: resolveTaskThingId(t, datastreamThingByDatastreamId.value),
+      monitoringSiteId: resolveTaskMonitoringSiteId(t, datastreamMonitoringSiteByDatastreamId.value),
       noWorkWarning: getEtlNoWorkWarning(t),
     }))
   )
@@ -215,7 +215,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
     dataProductTasks.value.map((t) => ({
       ...buildRowBase(t, 'dataProduct', runNowTriggeredByTaskId),
       dataConnectionId: null,
-      thingId: (t as any).thing?.id ?? (t as any).thingId ?? null,
+      monitoringSiteId: (t as any).monitoringSite?.id ?? (t as any).monitoringSiteId ?? null,
       taskType: resolveDataProductTaskType(t),
       noWorkWarning: getDataProductNoWorkWarning(t),
     }))
@@ -227,7 +227,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       return {
         ...buildRowBase(t, 'monitoring', runNowTriggeredByTaskId),
         dataConnectionId: null,
-        thingId: (t as any).thing?.id ?? (t as any).thingId ?? null,
+        monitoringSiteId: (t as any).monitoringSite?.id ?? (t as any).monitoringSiteId ?? null,
         noWorkWarning: getMonitoringNoWorkWarning(t),
         qualityRuleSummary: rules.summary,
         qualityRuleCount: rules.total,

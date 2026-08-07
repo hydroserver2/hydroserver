@@ -33,7 +33,7 @@ class MonitoredDatastream(BaseModel):
 class MonitoringTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))

@@ -1,15 +1,15 @@
 import { apiMethods } from '../apiMethods'
 import { HydroServerBaseService } from './base'
-import { ThingContract as C } from '../../generated/contracts'
+import { MonitoringSiteContract as C } from '../../generated/contracts'
 import type * as Data from '../../generated/data.types'
 import {
-  Thing,
+  MonitoringSite,
   PostHydroShareArchive,
   HydroShareArchive,
-  ThingMarker,
+  MonitoringSiteMarker,
   SiteTypeIcon,
-  ThingSiteSummary,
-  ThingTaskSummary,
+  MonitoringSiteMapSummary,
+  MonitoringSiteTaskSummary,
   Tag,
 } from '../../types'
 import { ApiResponse } from '../responseInterceptor'
@@ -21,19 +21,19 @@ type TagResponse = Data.components['schemas']['TagGetResponse']
 type FileAttachmentResponse =
   Data.components['schemas']['FileAttachmentGetResponse']
 
-export class ThingService extends HydroServerBaseService<typeof C, Thing> {
+export class MonitoringSiteService extends HydroServerBaseService<typeof C, MonitoringSite> {
   static route = C.route
   static writableKeys = C.writableKeys
-  static Model = Thing
+  static Model = MonitoringSite
 
-  listMarkers(): Promise<ApiResponse<ThingMarker[]>> {
-    return apiMethods.fetch<ThingMarker[]>(`${this._route}/markers`)
+  listMarkers(): Promise<ApiResponse<MonitoringSiteMarker[]>> {
+    return apiMethods.fetch<MonitoringSiteMarker[]>(`${this._route}/markers`)
   }
 
   listSiteSummaries(
     workspaceId?: string
-  ): Promise<ApiResponse<ThingSiteSummary[]>> {
-    return apiMethods.fetch<ThingSiteSummary[]>(
+  ): Promise<ApiResponse<MonitoringSiteMapSummary[]>> {
+    return apiMethods.fetch<MonitoringSiteMapSummary[]>(
       this.withQuery(`${this._route}/site-summaries`, {
         workspace_id: workspaceId,
       })
@@ -42,9 +42,9 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
 
   listTaskSummaries(params: {
     workspace_id?: string | string[]
-    site_type?: string | string[]
-  }): Promise<ApiResponse<ThingTaskSummary[]>> {
-    return apiMethods.fetch<ThingTaskSummary[]>(
+    type?: string | string[]
+  }): Promise<ApiResponse<MonitoringSiteTaskSummary[]>> {
+    return apiMethods.fetch<MonitoringSiteTaskSummary[]>(
       this.withQuery(`${this._route}/task-summaries`, params)
     )
   }
@@ -52,39 +52,36 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   updatePrivacy = (
     id: string,
     isPrivate: boolean
-  ): Promise<ApiResponse<Thing>> =>
-    apiMethods.patch<Thing>(`${this._route}/${id}`, { isPrivate })
+  ): Promise<ApiResponse<MonitoringSite>> =>
+    apiMethods.patch<MonitoringSite>(`${this._route}/${id}`, { isPrivate })
 
   getSiteTypes = () => apiMethods.fetch<string[]>(`${this._route}/site-types`)
   getSiteTypeIcons = () =>
     apiMethods.fetch<SiteTypeIcon[]>(`${this._route}/site-type-icons`)
-  getSamplingFeatureTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/sampling-feature-types`)
-
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTags(thingId: string) {
-    const url = `${this._route}/${thingId}/tags`
+  getTags(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/tags`
     return apiMethods.fetch<Tag[]>(url)
   }
 
-  getTagKeys(params: { workspace_id?: string; thing_id?: string }) {
+  getTagKeys(params: { workspace_id?: string; monitoring_site_id?: string }) {
     const url = this.withQuery(`${this._route}/tags/keys`, params)
     return apiMethods.fetch<Record<string, string[]>>(url)
   }
 
-  createTag(thingId: string, tag: TagPostBody) {
-    const url = `${this._route}/${thingId}/tags`
+  createTag(monitoringSiteId: string, tag: TagPostBody) {
+    const url = `${this._route}/${monitoringSiteId}/tags`
     return apiMethods.post<TagResponse>(url, tag)
   }
 
-  updateTag(thingId: string, tag: TagPostBody) {
-    const url = `${this._route}/${thingId}/tags`
+  updateTag(monitoringSiteId: string, tag: TagPostBody) {
+    const url = `${this._route}/${monitoringSiteId}/tags`
     return apiMethods.put<TagResponse>(url, tag)
   }
 
-  deleteTag(thingId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${thingId}/tags`
+  deleteTag(monitoringSiteId: string, tag: TagDeleteBody) {
+    const url = `${this._route}/${monitoringSiteId}/tags`
     return apiMethods.delete<null>(url, tag)
   }
 
@@ -93,8 +90,8 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
   getFileAttachmentTypes = () =>
     apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
 
-  async uploadAttachments(thingId: string, data: FormData) {
-    const url = `${this._route}/${thingId}/file-attachments`
+  async uploadAttachments(monitoringSiteId: string, data: FormData) {
+    const url = `${this._route}/${monitoringSiteId}/file-attachments`
     const res = await apiMethods.post<FileAttachmentResponse>(url, data)
     if (!res.ok) return res
     return {
@@ -106,8 +103,8 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     } as ApiResponse<FileAttachmentResponse>
   }
 
-  async getAttachments(thingId: string) {
-    const url = `${this._route}/${thingId}/file-attachments`
+  async getAttachments(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/file-attachments`
     const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
     if (!res.ok) return res
     return {
@@ -119,15 +116,15 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     } as ApiResponse<FileAttachmentResponse[]>
   }
 
-  deleteAttachment(thingId: string, name: string) {
-    const url = `${this._route}/${thingId}/file-attachments`
+  deleteAttachment(monitoringSiteId: string, name: string) {
+    const url = `${this._route}/${monitoringSiteId}/file-attachments`
     return apiMethods.delete<null>(url, { name })
   }
 
   /* --------------- Sub-resources: HydroShare Archive ----------------- */
 
   async createHydroShareArchive(archive: PostHydroShareArchive) {
-    const url = `${this._route}/${archive.thingId}/archive`
+    const url = `${this._route}/${archive.monitoringSiteId}/archive`
     return await apiMethods.post<HydroShareArchive>(url, archive)
   }
 
@@ -135,39 +132,39 @@ export class ThingService extends HydroServerBaseService<typeof C, Thing> {
     archive: HydroShareArchive,
     old?: HydroShareArchive
   ) {
-    const url = `${this._route}/${archive.thingId}/archive`
+    const url = `${this._route}/${archive.monitoringSiteId}/archive`
     return await apiMethods.patch<HydroShareArchive>(url, archive, old)
   }
 
-  getHydroShareArchive(thingId: string) {
-    const url = `${this._route}/${thingId}/archive`
+  getHydroShareArchive(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/archive`
     return apiMethods.fetch<HydroShareArchive>(url)
   }
 
-  deleteHydroShareArchive(thingId: string) {
-    const url = `${this._route}/${thingId}/archive`
+  deleteHydroShareArchive(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/archive`
     return apiMethods.delete<null>(url)
   }
 
-  triggerHydroShareArchive(thingId: string) {
-    const url = `${this._route}/${thingId}/archive/trigger`
+  triggerHydroShareArchive(monitoringSiteId: string) {
+    const url = `${this._route}/${monitoringSiteId}/archive/trigger`
     return apiMethods.post<string>(url, {})
   }
 
   /* ---------------------- Ownership management ----------------------- */
 
-  removeOwner(thingId: string, email: string) {
-    const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch<Thing>(url, { email, removeOwner: true })
+  removeOwner(monitoringSiteId: string, email: string) {
+    const url = `${this._route}/${monitoringSiteId}/ownership`
+    return apiMethods.patch<MonitoringSite>(url, { email, removeOwner: true })
   }
 
-  addSecondaryOwner(thingId: string, email: string) {
-    const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch<Thing>(url, { email, makeOwner: true })
+  addSecondaryOwner(monitoringSiteId: string, email: string) {
+    const url = `${this._route}/${monitoringSiteId}/ownership`
+    return apiMethods.patch<MonitoringSite>(url, { email, makeOwner: true })
   }
 
-  transferPrimaryOwnership(thingId: string, email: string) {
-    const url = `${this._route}/${thingId}/ownership`
-    return apiMethods.patch<Thing>(url, { email, transferPrimary: true })
+  transferPrimaryOwnership(monitoringSiteId: string, email: string) {
+    const url = `${this._route}/${monitoringSiteId}/ownership`
+    return apiMethods.patch<MonitoringSite>(url, { email, transferPrimary: true })
   }
 }

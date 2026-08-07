@@ -33,8 +33,8 @@ class ProcessingLevelQueryParameters(CollectionQueryParameters):
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter processing levels by workspace ID."
     )
-    datastreams__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by thing ID.", alias="thing_id"
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [], description="Filter processing levels by monitoring_site ID.", alias="monitoring_site_id"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],

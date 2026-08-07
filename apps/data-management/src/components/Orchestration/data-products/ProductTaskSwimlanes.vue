@@ -19,19 +19,19 @@
                   datastreamName(row.sourceDatastream, row.sourceDatastreamId)
                 }}
               </span>
-              <span v-if="row.sourceDetail" class="target-thing">
+              <span v-if="row.sourceDetail" class="target-monitoringSite">
                 {{ row.sourceDetail }}
               </span>
-              <span v-if="thingName(row.sourceDatastream)" class="target-thing">
-                {{ thingName(row.sourceDatastream) }}
+              <span v-if="monitoringSiteName(row.sourceDatastream)" class="target-monitoringSite">
+                {{ monitoringSiteName(row.sourceDatastream) }}
               </span>
               <span class="target-id">{{ row.sourceDatastreamId || '—' }}</span>
             </div>
             <DatastreamSiteButton
               :datastream="row.sourceDatastream"
               :datastream-id="row.sourceDatastreamId"
-              :fallback-thing-id="
-                thingId(row.sourceDatastream) || props.thingId
+              :fallback-monitoring-site-id="
+                monitoringSiteId(row.sourceDatastream) || props.monitoringSiteId
               "
             />
           </div>
@@ -49,16 +49,16 @@
                   datastreamName(row.targetDatastream, row.targetDatastreamId)
                 }}
               </span>
-              <span v-if="thingName(row.targetDatastream)" class="target-thing">
-                {{ thingName(row.targetDatastream) }}
+              <span v-if="monitoringSiteName(row.targetDatastream)" class="target-monitoringSite">
+                {{ monitoringSiteName(row.targetDatastream) }}
               </span>
               <span class="target-id">{{ row.targetDatastreamId || '—' }}</span>
             </div>
             <DatastreamSiteButton
               :datastream="row.targetDatastream"
               :datastream-id="row.targetDatastreamId"
-              :fallback-thing-id="
-                thingId(row.targetDatastream) || props.thingId
+              :fallback-monitoring-site-id="
+                monitoringSiteId(row.targetDatastream) || props.monitoringSiteId
               "
             />
           </div>
@@ -76,15 +76,15 @@ import { storeToRefs } from 'pinia'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamThingId } from '@/utils/orchestration/datastreams'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 type ProductTaskLabel = 'aggregation' | 'expression' | 'derivation'
 type DatastreamLike = {
   id?: string
   name?: string
-  thingId?: string
-  thing_id?: string
-  thing?: { id?: string }
+  monitoringSiteId?: string
+  monitoring_site_id?: string
+  monitoringSite?: { id?: string }
 } | null
 
 type MappingRow = {
@@ -99,14 +99,14 @@ type MappingRow = {
 const props = defineProps<{
   task: any
   taskLabel: ProductTaskLabel
-  thingId?: string | null
+  monitoringSiteId?: string | null
 }>()
 
 const {
   linkedDatastreams,
   workspaceDatastreams,
   draftDatastreams,
-  workspaceThings,
+  workspaceMonitoringSites,
 } = storeToRefs(useOrchestrationStore())
 
 const allKnownDatastreams = computed(() => [
@@ -205,15 +205,15 @@ function datastreamName(datastream: DatastreamLike, fallbackId: string) {
   return fallbackId
 }
 
-function thingId(datastream: DatastreamLike) {
-  return datastream ? datastreamThingId(datastream as any) : ''
+function monitoringSiteId(datastream: DatastreamLike) {
+  return datastream ? datastreamMonitoringSiteId(datastream as any) : ''
 }
 
-function thingName(datastream: DatastreamLike) {
-  const id = thingId(datastream)
+function monitoringSiteName(datastream: DatastreamLike) {
+  const id = monitoringSiteId(datastream)
   if (!id) return ''
   return (
-    workspaceThings.value.find((thing) => thing.id === String(id))?.name || ''
+    workspaceMonitoringSites.value.find((monitoringSite) => monitoringSite.id === String(id))?.name || ''
   )
 }
 </script>
@@ -318,7 +318,7 @@ function thingName(datastream: DatastreamLike) {
   overflow-wrap: anywhere;
   white-space: normal;
 }
-.target-thing {
+.target-monitoringSite {
   color: rgba(0, 0, 0, 0.66);
   overflow-wrap: anywhere;
   white-space: normal;

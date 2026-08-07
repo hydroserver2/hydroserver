@@ -48,21 +48,21 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
     return res.ok ? res.data : null
   }
 
-  async listForThing(
-    thingId: string,
+  async listForMonitoringSite(
+    monitoringSiteId: string,
     params: Partial<QueryParamsOf<typeof C>> & { fetch_all?: boolean } = {}
   ) {
     return this.list({
       ...params,
-      thing_id: [thingId],
+      monitoring_site_id: [monitoringSiteId],
     })
   }
 
-  async listItemsForThing(
-    thingId: string,
+  async listItemsForMonitoringSite(
+    monitoringSiteId: string,
     params: Partial<QueryParamsOf<typeof C>> & { fetch_all?: boolean } = {}
   ) {
-    const res = await this.listForThing(thingId, {
+    const res = await this.listForMonitoringSite(monitoringSiteId, {
       fetch_all: true,
       ...params,
     })
@@ -75,7 +75,7 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
       name: body.name,
       description: body.description ?? null,
       fittingMethod: body.fittingMethod,
-      thingId: body.thingId,
+      monitoringSiteId: body.monitoringSiteId,
       points: body.points ?? [],
     }
   }
@@ -88,6 +88,6 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
         ? { fittingMethod: body.fittingMethod }
         : {}),
       ...(body.points !== undefined ? { points: body.points } : {}),
-    }
+    } as C.PatchBody
   }
 }

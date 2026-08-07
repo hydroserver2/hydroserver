@@ -1,4 +1,4 @@
-from .thing import ThingService
+from .monitoring_site import MonitoringSiteService
 from .observed_property import ObservedPropertyService
 from .processing_level import ProcessingLevelService
 from .result_qualifier import ResultQualifierService

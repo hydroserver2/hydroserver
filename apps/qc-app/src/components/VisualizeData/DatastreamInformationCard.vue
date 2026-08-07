@@ -30,15 +30,15 @@
       </div>
       <div class="d-flex flex-wrap ga-2 mt-3">
         <v-chip
-          v-if="datastream.thing"
+          v-if="datastream.monitoringSite"
           size="small"
           color="primary"
           variant="tonal"
           prepend-icon="mdi-map-marker"
-          :title="`Filter table by site: ${datastream.thing.name}`"
+          :title="`Filter table by site: ${datastream.monitoringSite.name}`"
           @click="filterBySite"
         >
-          {{ datastream.thing.samplingFeatureCode || datastream.thing.name || '–' }}
+          {{ datastream.monitoringSite.code || datastream.monitoringSite.name || '–' }}
         </v-chip>
         <v-chip
           v-if="datastream.observedProperty"
@@ -234,10 +234,10 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const {
-  selectedThings,
+  selectedMonitoringSites,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
-  things,
+  monitoringSites,
 } = storeToRefs(useDataVisStore())
 const { plotDatastream, setPlottedDatastreams } = useDataVisStore()
 const downloading = ref(false)
@@ -245,11 +245,11 @@ const tags = ref<Tag[]>([])
 const expandedPanels = ref<string[]>(['general'])
 
 function filterBySite() {
-  const thing = props.datastream.thing
-  if (!thing) return
+  const monitoringSite = props.datastream.monitoringSite
+  if (!monitoringSite) return
   // Reuse the catalog reference so DatastreamFilters' v-checkbox equality works.
-  const resolved = things.value.find((t) => t.id === thing.id) ?? thing
-  selectedThings.value = [resolved]
+  const resolved = monitoringSites.value.find((t) => t.id === monitoringSite.id) ?? monitoringSite
+  selectedMonitoringSites.value = [resolved]
   emit('close')
 }
 
@@ -329,14 +329,14 @@ const generalItems = computed(() => [
 ])
 
 const locationItems = computed(() => {
-  const t = d.value.thing
+  const t = d.value.monitoringSite
   if (!t) return []
-  const l = t.location || ({} as any)
+  const l = t
   return [
     { label: 'Site Name', value: t.name },
-    { label: 'Site Code', value: t.samplingFeatureCode },
+    { label: 'Site Code', value: t.code },
     { label: 'Description', value: t.description },
-    { label: 'Site Type', value: t.siteType },
+    { label: 'Site Type', value: t.type },
     { label: 'Latitude', value: l.latitude },
     { label: 'Longitude', value: l.longitude },
     { label: 'Elevation (m)', value: l.elevation_m },
@@ -344,9 +344,8 @@ const locationItems = computed(() => {
     { label: 'State/Province/Region', value: l.adminArea1 },
     { label: 'County/District', value: l.adminArea2 },
     { label: 'Country', value: l.country },
-    { label: 'Sampling Feature Type', value: t.samplingFeatureType },
     { label: 'Is Private', value: t.isPrivate ? 'Yes' : 'No' },
-    { label: 'Thing Id', value: t.id },
+    { label: 'MonitoringSite Id', value: t.id },
   ]
 })
 

@@ -5,7 +5,7 @@
 
     <div v-if="isMobile" class="site-details-mobile">
       <div
-        v-for="item in thingProperties"
+        v-for="item in monitoringSiteProperties"
         :key="item.label"
         class="site-details-mobile__item"
       >
@@ -64,7 +64,7 @@
     </div>
     <v-data-table
       v-else
-      :items="thingProperties"
+      :items="monitoringSiteProperties"
       :items-per-page="-1"
       hide-default-header
       hide-default-footer
@@ -135,9 +135,9 @@
       <v-divider />
       <v-card-text class="pt-4">
         <RatingCurveTable
-          v-if="thing?.id"
-          :thing-id="thing.id"
-          :workspace-id="thing.workspaceId"
+          v-if="monitoringSite?.id"
+          :monitoring-site-id="monitoringSite.id"
+          :workspace-id="monitoringSite.workspaceId"
           :can-edit="false"
           inline-read-only
           download-only
@@ -157,7 +157,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { materialColors } from '@/utils/materialColors'
 import { useTagStore } from '@/store/tags'
 import { Snackbar } from '@/utils/notifications'
@@ -184,7 +184,7 @@ const props = withDefaults(
   }
 )
 
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags } = storeToRefs(useTagStore())
 const { smAndDown } = useDisplay()
 const isMobile = computed(() => smAndDown.value)
@@ -214,35 +214,35 @@ const openRatingCurveDialog = () => {
   isRatingCurveDialogOpen.value = true
 }
 
-const thingProperties = computed(() => {
-  if (!thing.value) return []
+const monitoringSiteProperties = computed(() => {
+  if (!monitoringSite.value) return []
 
-  const properties: ThingPropertyRow[] = [
+  const properties: MonitoringSitePropertyRow[] = [
     {
       icon: mdiCardAccountDetails,
       label: 'ID',
-      value: thing.value.id,
+      value: monitoringSite.value.id,
     },
     {
       icon: mdiBarcode,
       label: 'Site code',
-      value: thing.value.samplingFeatureCode,
+      value: monitoringSite.value.code,
     },
     {
       icon: mdiFileDocumentOutline,
       label: 'Description',
-      value: thing.value.description,
+      value: monitoringSite.value.description,
     },
     {
       icon: mdiPineTree,
       label: 'Site type',
-      value: thing.value.siteType,
+      value: monitoringSite.value.type,
     },
     {
-      icon: thing.value.isPrivate ? mdiLock : mdiLockOpenVariant,
-      iconColor: thing.value.isPrivate ? 'red-darken-2' : 'green',
+      icon: monitoringSite.value.isPrivate ? mdiLock : mdiLockOpenVariant,
+      iconColor: monitoringSite.value.isPrivate ? 'red-darken-2' : 'green',
       label: 'Privacy',
-      value: thing.value.isPrivate ? 'Private' : 'Public',
+      value: monitoringSite.value.isPrivate ? 'Private' : 'Public',
     },
     {
       icon: mdiTagMultipleOutline,
@@ -270,7 +270,7 @@ const tagProperty = computed(() => {
   }
 })
 
-type ThingPropertyRow = {
+type MonitoringSitePropertyRow = {
   icon: string
   iconColor?: string
   label: string

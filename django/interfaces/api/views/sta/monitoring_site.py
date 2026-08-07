@@ -8,18 +8,18 @@ from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, ano
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
-    ThingMarkerResponse,
-    ThingMarkerQueryParameters,
+    MonitoringSiteMarkerResponse,
+    MonitoringSiteMarkerQueryParameters,
     SiteTypeIconResponse,
-    ThingSiteSummaryResponse,
-    ThingSiteSummaryQueryParameters,
-    ThingTaskSummaryResponse,
-    ThingTaskSummaryQueryParameters,
-    ThingSummaryResponse,
-    ThingDetailResponse,
-    ThingPostBody,
-    ThingPatchBody,
-    ThingQueryParameters,
+    MonitoringSiteMapSummaryResponse,
+    MonitoringSiteMapSummaryQueryParameters,
+    MonitoringSiteSummaryResponse,
+    MonitoringSiteTaskSummaryResponse,
+    MonitoringSiteTaskSummaryQueryParameters,
+    MonitoringSiteDetailResponse,
+    MonitoringSitePostBody,
+    MonitoringSitePatchBody,
+    MonitoringSiteQueryParameters,
     TagGetResponse,
     TagPostBody,
     TagDeleteBody,
@@ -28,32 +28,32 @@ from interfaces.api.schemas import (
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
-from core.sta.services import ThingService
+from core.sta.services import MonitoringSiteService
 from core.web.models import SiteTypeIcon
 
-thing_router = Router(tags=["Things"])
-thing_service = ThingService()
+monitoring_site_router = Router(tags=["Monitoring Sites"])
+monitoring_site_service = MonitoringSiteService()
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
-        200: list[ThingSummaryResponse] | list[ThingDetailResponse],
+        200: list[MonitoringSiteSummaryResponse] | list[MonitoringSiteDetailResponse],
         401: str,
     },
     by_alias=True,
 )
-def get_things(
+def get_monitoring_sites(
     request: HydroServerHttpRequest,
     response: HttpResponse,
-    query: Query[ThingQueryParameters],
+    query: Query[MonitoringSiteQueryParameters],
 ):
     """
-    Get public Things and Things associated with the authenticated user.
+    Get public MonitoringSites and MonitoringSites associated with the authenticated user.
     """
 
-    return 200, thing_service.list(
+    return 200, monitoring_site_service.list(
         principal=request.principal,
         response=response,
         page=query.page,
@@ -64,81 +64,81 @@ def get_things(
     )
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "/markers",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
-        200: list[ThingMarkerResponse],
+        200: list[MonitoringSiteMarkerResponse],
         401: str,
     },
     by_alias=True,
 )
-def get_thing_markers(
+def get_monitoring_site_markers(
     request: HydroServerHttpRequest,
-    query: Query[ThingMarkerQueryParameters],
+    query: Query[MonitoringSiteMarkerQueryParameters],
 ):
     """
-    Get lean marker data for public Things plus private Things visible to the authenticated user.
+    Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
     """
 
-    return 200, thing_service.list_markers(
+    return 200, monitoring_site_service.list_markers(
         principal=request.principal,
         filtering=query.dict(exclude_unset=True),
     )
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "/site-summaries",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
-        200: list[ThingSiteSummaryResponse],
+        200: list[MonitoringSiteMapSummaryResponse],
         401: str,
     },
     by_alias=True,
 )
-def get_thing_site_summaries(
+def get_monitoring_site_summaries(
     request: HydroServerHttpRequest,
-    query: Query[ThingSiteSummaryQueryParameters],
+    query: Query[MonitoringSiteMapSummaryQueryParameters],
 ):
     """
-    Get lean site summary data for public Things and Things associated with the authenticated user.
+    Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
     """
 
-    return 200, thing_service.list_site_summaries(
+    return 200, monitoring_site_service.list_site_summaries(
         principal=request.principal,
         filtering=query.dict(exclude_unset=True),
     )
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "/task-summaries",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: list[ThingTaskSummaryResponse],
+        200: list[MonitoringSiteTaskSummaryResponse],
         401: str,
     },
     by_alias=True,
 )
-def get_thing_task_summaries(
+def get_monitoring_site_task_summaries(
     request: HydroServerHttpRequest,
-    query: Query[ThingTaskSummaryQueryParameters],
+    query: Query[MonitoringSiteTaskSummaryQueryParameters],
 ):
     """
-    Get task count summaries for Things associated with the authenticated user.
+    Get task count summaries for MonitoringSites associated with the authenticated user.
     """
 
-    return 200, thing_service.list_task_summaries(
+    return 200, monitoring_site_service.list_task_summaries(
         principal=request.principal,
         workspace_id=query.workspace_id or None,
-        site_type=query.site_type or None,
+        type=query.type or None,
     )
 
 
-@thing_router.post(
+@monitoring_site_router.post(
     "",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        201: ThingSummaryResponse | ThingDetailResponse,
+        201: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         400: str,
         401: str,
         422: str,
@@ -146,21 +146,21 @@ def get_thing_task_summaries(
     by_alias=True,
 )
 @transaction.atomic
-def create_thing(
+def create_monitoring_site(
     request: HydroServerHttpRequest,
-    data: ThingPostBody,
+    data: MonitoringSitePostBody,
     expand_related: Optional[bool] = None,
 ):
     """
-    Create a new Thing.
+    Create a new MonitoringSite.
     """
 
-    return 201, thing_service.create(
+    return 201, monitoring_site_service.create(
         principal=request.principal, data=data, expand_related=expand_related
     )
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "/tags/keys",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
@@ -168,23 +168,23 @@ def create_thing(
         401: str,
     },
 )
-def get_thing_tag_keys(
+def get_monitoring_site_tag_keys(
     request: HydroServerHttpRequest,
     workspace_id: Optional[uuid.UUID] = None,
-    thing_id: Optional[uuid.UUID] = None,
+    monitoring_site_id: Optional[uuid.UUID] = None,
 ):
     """
-    Get all existing unique thing tag keys.
+    Get all existing unique monitoring_site tag keys.
     """
 
-    return 200, thing_service.get_tag_keys(
+    return 200, monitoring_site_service.get_tag_keys(
         principal=request.principal,
         workspace_id=workspace_id,
-        thing_id=thing_id,
+        monitoring_site_id=monitoring_site_id,
     )
 
 
-@thing_router.get("/site-types", response={200: list[str]}, by_alias=True)
+@monitoring_site_router.get("/site-types", response={200: list[str]}, by_alias=True)
 def get_site_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
@@ -194,7 +194,7 @@ def get_site_types(
     Get site types.
     """
 
-    return 200, thing_service.list_site_types(
+    return 200, monitoring_site_service.list_site_types(
         response=response,
         page=query.page,
         page_size=query.page_size,
@@ -202,7 +202,7 @@ def get_site_types(
     )
 
 
-@thing_router.get(
+@monitoring_site_router.get(
     "/site-type-icons",
     response={200: list[SiteTypeIconResponse]},
     by_alias=True,
@@ -215,25 +215,7 @@ def get_site_type_icons(request: HydroServerHttpRequest):
     return 200, SiteTypeIcon.objects.values("icon", "site_types")
 
 
-@thing_router.get("/sampling-feature-types", response={200: list[str]}, by_alias=True)
-def get_sampling_feature_types(
-    request: HydroServerHttpRequest,
-    response: HttpResponse,
-    query: Query[VocabularyQueryParameters],
-):
-    """
-    Get sampling feature types.
-    """
-
-    return 200, thing_service.list_sampling_feature_types(
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
-        order_desc=query.order_desc,
-    )
-
-
-@thing_router.get("/file-attachment-types", response={200: list[str]}, by_alias=True)
+@monitoring_site_router.get("/file-attachment-types", response={200: list[str]}, by_alias=True)
 def get_file_attachment_types(
     request: HydroServerHttpRequest,
     response: HttpResponse,
@@ -243,7 +225,7 @@ def get_file_attachment_types(
     Get file attachment types.
     """
 
-    return 200, thing_service.list_file_attachment_types(
+    return 200, monitoring_site_service.list_file_attachment_types(
         response=response,
         page=query.page,
         page_size=query.page_size,
@@ -251,36 +233,36 @@ def get_file_attachment_types(
     )
 
 
-@thing_router.get(
-    "/{thing_id}",
+@monitoring_site_router.get(
+    "/{monitoring_site_id}",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
-        200: ThingSummaryResponse | ThingDetailResponse,
+        200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         401: str,
         403: str,
     },
     by_alias=True,
     exclude_unset=True,
 )
-def get_thing(
+def get_monitoring_site(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
+    monitoring_site_id: Path[uuid.UUID],
     expand_related: Optional[bool] = None,
 ):
     """
-    Get a Thing.
+    Get a MonitoringSite.
     """
 
-    return 200, thing_service.get(
-        principal=request.principal, uid=thing_id, expand_related=expand_related
+    return 200, monitoring_site_service.get(
+        principal=request.principal, uid=monitoring_site_id, expand_related=expand_related
     )
 
 
-@thing_router.patch(
-    "/{thing_id}",
+@monitoring_site_router.patch(
+    "/{monitoring_site_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
-        200: ThingSummaryResponse | ThingDetailResponse,
+        200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         400: str,
         401: str,
         403: str,
@@ -289,26 +271,26 @@ def get_thing(
     by_alias=True,
 )
 @transaction.atomic
-def update_thing(
+def update_monitoring_site(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
-    data: ThingPatchBody,
+    monitoring_site_id: Path[uuid.UUID],
+    data: MonitoringSitePatchBody,
     expand_related: Optional[bool] = None,
 ):
     """
-    Update a Thing.
+    Update a MonitoringSite.
     """
 
-    return 200, thing_service.update(
+    return 200, monitoring_site_service.update(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         data=data,
         expand_related=expand_related,
     )
 
 
-@thing_router.delete(
-    "/{thing_id}",
+@monitoring_site_router.delete(
+    "/{monitoring_site_id}",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         204: None,
@@ -318,16 +300,16 @@ def update_thing(
     by_alias=True,
 )
 @transaction.atomic
-def delete_thing(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
+def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID]):
     """
-    Delete a Thing.
+    Delete a MonitoringSite.
     """
 
-    return 204, thing_service.delete(principal=request.principal, uid=thing_id)
+    return 204, monitoring_site_service.delete(principal=request.principal, uid=monitoring_site_id)
 
 
-@thing_router.get(
-    "/{thing_id}/tags",
+@monitoring_site_router.get(
+    "/{monitoring_site_id}/tags",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
         200: list[TagGetResponse],
@@ -336,19 +318,19 @@ def delete_thing(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
     },
     by_alias=True,
 )
-def get_thing_tags(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
+def get_monitoring_site_tags(request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID]):
     """
-    Get all tags associated with a Thing.
+    Get all tags associated with a MonitoringSite.
     """
 
-    return 200, thing_service.get_tags(
+    return 200, monitoring_site_service.get_tags(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
     )
 
 
-@thing_router.post(
-    "/{thing_id}/tags",
+@monitoring_site_router.post(
+    "/{monitoring_site_id}/tags",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         201: TagGetResponse,
@@ -359,22 +341,22 @@ def get_thing_tags(request: HydroServerHttpRequest, thing_id: Path[uuid.UUID]):
     },
     by_alias=True,
 )
-def add_thing_tag(
-    request: HydroServerHttpRequest, thing_id: Path[uuid.UUID], data: TagPostBody
+def add_monitoring_site_tag(
+    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagPostBody
 ):
     """
-    Add a tag to a Thing.
+    Add a tag to a MonitoringSite.
     """
 
-    return 201, thing_service.add_tag(
+    return 201, monitoring_site_service.add_tag(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         data=data,
     )
 
 
-@thing_router.put(
-    "/{thing_id}/tags",
+@monitoring_site_router.put(
+    "/{monitoring_site_id}/tags",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         200: TagGetResponse,
@@ -385,22 +367,22 @@ def add_thing_tag(
     },
     by_alias=True,
 )
-def edit_thing_tag(
-    request: HydroServerHttpRequest, thing_id: Path[uuid.UUID], data: TagPostBody
+def edit_monitoring_site_tag(
+    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagPostBody
 ):
     """
-    Edit a tag of a Thing.
+    Edit a tag of a MonitoringSite.
     """
 
-    return 200, thing_service.update_tag(
+    return 200, monitoring_site_service.update_tag(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         data=data,
     )
 
 
-@thing_router.delete(
-    "/{thing_id}/tags",
+@monitoring_site_router.delete(
+    "/{monitoring_site_id}/tags",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         204: None,
@@ -411,22 +393,22 @@ def edit_thing_tag(
     },
     by_alias=True,
 )
-def remove_thing_tag(
-    request: HydroServerHttpRequest, thing_id: Path[uuid.UUID], data: TagDeleteBody
+def remove_monitoring_site_tag(
+    request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID], data: TagDeleteBody
 ):
     """
-    Remove a tag from a Thing.
+    Remove a tag from a MonitoringSite.
     """
 
-    return 204, thing_service.remove_tag(
+    return 204, monitoring_site_service.remove_tag(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         data=data,
     )
 
 
-@thing_router.get(
-    "/{thing_id}/file-attachments",
+@monitoring_site_router.get(
+    "/{monitoring_site_id}/file-attachments",
     auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
     response={
         200: list[FileAttachmentGetResponse],
@@ -435,24 +417,24 @@ def remove_thing_tag(
     },
     by_alias=True,
 )
-def get_thing_file_attachments(
+def get_monitoring_site_file_attachments(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
+    monitoring_site_id: Path[uuid.UUID],
     query: Query[FileAttachmentQueryParameters],
 ):
     """
-    Get all file attachments associated with a Thing.
+    Get all file attachments associated with a MonitoringSite.
     """
 
-    return 200, thing_service.get_file_attachments(
+    return 200, monitoring_site_service.get_file_attachments(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         filtering=query.dict(exclude_unset=True),
     )
 
 
-@thing_router.post(
-    "/{thing_id}/file-attachments",
+@monitoring_site_router.post(
+    "/{monitoring_site_id}/file-attachments",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         201: FileAttachmentGetResponse,
@@ -464,20 +446,20 @@ def get_thing_file_attachments(
     },
     by_alias=True,
 )
-def add_thing_file_attachment(
+def add_monitoring_site_file_attachment(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
+    monitoring_site_id: Path[uuid.UUID],
     file: UploadedFile = File(...),
     description: Optional[str] = Form(None),
     file_attachment_type: str = Form(...),
 ):
     """
-    Add a file attachment to a thing.
+    Add a file attachment to a monitoring_site.
     """
 
-    return 201, thing_service.add_file_attachment(
+    return 201, monitoring_site_service.add_file_attachment(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         file=file,
         data=FileAttachmentPostBody(
             name=file.name,
@@ -487,8 +469,8 @@ def add_thing_file_attachment(
     )
 
 
-@thing_router.put(
-    "/{thing_id}/file-attachments",
+@monitoring_site_router.put(
+    "/{monitoring_site_id}/file-attachments",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         204: None,
@@ -500,20 +482,20 @@ def add_thing_file_attachment(
     },
     by_alias=True,
 )
-def replace_thing_file_attachment(
+def replace_monitoring_site_file_attachment(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
+    monitoring_site_id: Path[uuid.UUID],
     file: UploadedFile = File(...),
     description: Optional[str] = Form(None),
     file_attachment_type: str = Form(...),
 ):
     """
-    Replace a file attachment for a thing.
+    Replace a file attachment for a monitoring_site.
     """
 
-    return 204, thing_service.replace_file_attachment(
+    return 204, monitoring_site_service.replace_file_attachment(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         file=file,
         data=FileAttachmentPostBody(
             name=file.name,
@@ -523,8 +505,8 @@ def replace_thing_file_attachment(
     )
 
 
-@thing_router.delete(
-    "/{thing_id}/file-attachments",
+@monitoring_site_router.delete(
+    "/{monitoring_site_id}/file-attachments",
     auth=[session_auth, bearer_auth, apikey_auth],
     response={
         204: None,
@@ -535,17 +517,17 @@ def replace_thing_file_attachment(
     },
     by_alias=True,
 )
-def remove_thing_file_attachment(
+def remove_monitoring_site_file_attachment(
     request: HydroServerHttpRequest,
-    thing_id: Path[uuid.UUID],
+    monitoring_site_id: Path[uuid.UUID],
     data: FileAttachmentDeleteBody,
 ):
     """
-    Remove a file attachment from a thing.
+    Remove a file attachment from a monitoring_site.
     """
 
-    return 204, thing_service.remove_file_attachment(
+    return 204, monitoring_site_service.remove_file_attachment(
         principal=request.principal,
-        uid=thing_id,
+        uid=monitoring_site_id,
         data=data,
     )

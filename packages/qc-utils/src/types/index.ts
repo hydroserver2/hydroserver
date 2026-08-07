@@ -237,7 +237,7 @@ export type Frequency = "daily" | "weekly" | "monthly" | null;
 
 export class HydroShareArchive {
   id: string;
-  thingId: string;
+  monitoringSiteId: string;
   link: string;
   frequency: Frequency;
   path: string;
@@ -246,7 +246,7 @@ export class HydroShareArchive {
 
   constructor() {
     this.id = "";
-    this.thingId = "";
+    this.monitoringSiteId = "";
     this.link = "";
     this.frequency = null;
     this.path = "HydroShare";
@@ -268,7 +268,10 @@ export class PostHydroShareArchive extends HydroShareArchive {
   }
 }
 
-export class Location {
+export class MonitoringSite {
+  id: string;
+  workspaceId: string;
+  name: string;
   latitude?: number | "";
   longitude?: number | "";
   elevation_m?: number | "";
@@ -276,27 +279,12 @@ export class Location {
   state: string;
   county: string;
   country: string;
-
-  constructor() {
-    this.elevationDatum = "WGS84";
-    this.state = "";
-    this.county = "";
-    this.country = "";
-  }
-}
-
-export class Thing {
-  id: string;
-  workspaceId: string;
-  name: string;
-  location: Location = new Location();
   tags: Tag[];
   hydroShareArchive?: HydroShareArchive | null;
-  siteType: string;
-  samplingFeatureCode: string;
+  type: string;
+  code: string;
   isPrivate: boolean;
   description: string;
-  samplingFeatureType: string;
   dataDisclaimer: string;
 
   constructor() {
@@ -304,16 +292,19 @@ export class Thing {
     this.workspaceId = "";
     this.name = "";
     this.tags = [];
-    this.siteType = "";
-    this.samplingFeatureCode = "";
+    this.type = "";
+    this.code = "";
+    this.elevationDatum = "WGS84";
+    this.state = "";
+    this.county = "";
+    this.country = "";
     this.isPrivate = false;
     this.description = "";
-    this.samplingFeatureType = "Site";
     this.dataDisclaimer = "";
   }
 }
 
-export interface ThingWithColor extends Thing {
+export interface MonitoringSiteWithColor extends MonitoringSite {
   color?: {
     borderColor: string;
     background: string;
@@ -327,7 +318,7 @@ export class Datastream {
   workspaceId: string;
   name: string;
   description: string;
-  thingId: string;
+  monitoringSiteId: string;
   observationType: string;
   resultType?: string;
   status?: string;
@@ -349,12 +340,12 @@ export class Datastream {
   dataSourceId?: string | null;
   valueCount: number;
 
-  constructor(thingId?: string) {
+  constructor(monitoringSiteId?: string) {
     this.id = "";
     this.workspaceId = "";
     this.name = "";
     this.description = "";
-    this.thingId = thingId || "";
+    this.monitoringSiteId = monitoringSiteId || "";
     this.observationType = "OM_Measurement";
     this.resultType = "Time Series Coverage";
     this.sampledMedium = "";
@@ -393,7 +384,7 @@ export interface DatastreamExtended {
   dataSourceId?: string | null;
   valueCount: number;
 
-  thing: Thing;
+  monitoringSite: MonitoringSite;
   workspace: Workspace;
   unit: Unit;
   observedProperty: ObservedProperty;
@@ -572,7 +563,7 @@ export enum PermissionResource {
   Global = "*",
   Workspace = "Workspace",
   Collaborator = "Collaborator",
-  Thing = "Thing",
+  MonitoringSite = "MonitoringSite",
   Datastream = "Datastream",
   Sensor = "Sensor",
   Unit = "Unit",

@@ -24,7 +24,7 @@ const props = defineProps<{
 }>()
 
 const details = computed(() => [
-  { label: 'Site', value: relatedValue('thing', 'name') },
+  { label: 'Site', value: relatedValue('monitoringSite', 'name') },
   { label: 'Processing level', value: processingLevel() },
   { label: 'Unit', value: unit() },
   { label: 'Intended time spacing', value: spacing(props.datastream.intendedTimeSpacing, props.datastream.intendedTimeSpacingUnit) },

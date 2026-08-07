@@ -14,7 +14,7 @@ export class DataProductTask {
   id = ''
   name = ''
   description: string | null = null
-  thingId = ''
+  monitoringSiteId = ''
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<DataProductTask>) {
@@ -26,7 +26,7 @@ export interface DataProductTaskExpanded {
   id: string
   name: string
   description?: string | null
-  thing: { id: string; name: string; [key: string]: unknown }
+  monitoringSite: { id: string; name: string; [key: string]: unknown }
   aggregationTransformations: AggregationTransformationResponse[]
   compositeExpressionTransformations: CompositeExpressionTransformationResponse[]
   expressionTransformations: ExpressionTransformationResponse[]

@@ -1,16 +1,16 @@
 <template>
   <v-card>
     <v-card-title class="text-h5"
-      >{{ thingId ? 'Edit' : 'Register a' }} Site</v-card-title
+      >{{ monitoringSiteId ? 'Edit' : 'Register a' }} Site</v-card-title
     >
     <slot name="workspace" />
     <div class="flex-shrink-0" style="height: 20rem">
       <OpenLayersMap
         v-if="loaded"
         singleMarkerMode
-        :startInSatellite="!!thingId"
+        :startInSatellite="!!monitoringSiteId"
         @location-clicked="onMapLocationClicked"
-        :things="thingId ? [thing] : []"
+        :monitoringSites="monitoringSiteId ? [monitoringSite] : []"
       />
     </div>
     <v-divider />
@@ -20,7 +20,7 @@
     >
       <v-icon :icon="mdiInformation" class="mr-1" />
       Click on the map to
-      {{ thingId ? 'edit' : 'populate' }}
+      {{ monitoringSiteId ? 'edit' : 'populate' }}
       site location data.
     </v-card-text>
 
@@ -28,7 +28,7 @@
       ref="myForm"
       v-model="valid"
       validate-on="blur"
-      @submit.prevent="uploadThing"
+      @submit.prevent="uploadMonitoringSite"
       enctype="multipart/form-data"
     >
       <v-card-text>
@@ -39,26 +39,26 @@
               <v-col cols="12"
                 ><v-text-field
                   label="Site Code *"
-                  v-model="thing.samplingFeatureCode"
+                  v-model="monitoringSite.code"
                   :rules="rules.requiredCode"
               /></v-col>
               <v-col cols="12"
                 ><v-text-field
                   label="Site Name *"
-                  v-model="thing.name"
+                  v-model="monitoringSite.name"
                   :rules="rules.requiredAndMaxLength200"
               /></v-col>
               <v-col cols="12"
                 ><v-textarea
                   label="Site Description *"
-                  v-model="thing.description"
+                  v-model="monitoringSite.description"
                   :rules="rules.requiredDescription"
               /></v-col>
               <v-col cols="12">
                 <v-combobox
                   label="Select Site Type *"
                   :items="vocabularyStore.siteTypes"
-                  v-model="thing.siteType"
+                  v-model="monitoringSite.type"
                   :rules="rules.required"
                 />
               </v-col>
@@ -76,7 +76,7 @@
             <v-row v-if="includeDataDisclaimer" no-gutters>
               <v-col>
                 <v-textarea
-                  v-model="thing.dataDisclaimer"
+                  v-model="monitoringSite.dataDisclaimer"
                   color="primary"
                 ></v-textarea>
               </v-col>
@@ -85,7 +85,7 @@
             <v-row class="mt-2">
               <v-col>
                 <RatingCurveTable
-                  :thing-id="thingId"
+                  :monitoring-site-id="monitoringSiteId"
                   :workspace-id="workspaceId"
                   :can-edit="true"
                   :defer-persist="true"
@@ -99,7 +99,7 @@
               <v-col cols="12" sm="6">
                 <v-text-field
                   label="Latitude *"
-                  v-model="thing.location.latitude"
+                  v-model="monitoringSite.latitude"
                   type="number"
                   :rules="[
                     ...rules.requiredNumber,
@@ -112,7 +112,7 @@
               <v-col cols="12" sm="6"
                 ><v-text-field
                   label="Longitude *"
-                  v-model="thing.location.longitude"
+                  v-model="monitoringSite.longitude"
                   type="number"
                   :rules="[
                     ...rules.requiredNumber,
@@ -125,7 +125,7 @@
               <v-col cols="12" sm="6"
                 ><v-text-field
                   label="Elevation (m) *"
-                  v-model="thing.location.elevation_m"
+                  v-model="monitoringSite.elevation_m"
                   type="number"
                   :rules="[
                     ...rules.requiredNumber,
@@ -138,15 +138,15 @@
               <v-col cols="12" sm="6">
                 <v-text-field
                   label="State/Province/Region"
-                  v-model="thing.location.adminArea1"
-                  :rules="thing.location.adminArea1 ? rules.name : []"
+                  v-model="monitoringSite.adminArea1"
+                  :rules="monitoringSite.adminArea1 ? rules.name : []"
                 />
               </v-col>
               <v-col cols="12" sm="6">
                 <v-text-field
                   label="County/District"
-                  v-model="thing.location.adminArea2"
-                  :rules="thing.location.adminArea2 ? rules.name : []"
+                  v-model="monitoringSite.adminArea2"
+                  :rules="monitoringSite.adminArea2 ? rules.name : []"
                 />
               </v-col>
               <v-col cols="12" sm="6">
@@ -156,10 +156,10 @@
                   :item-title="countryTitle"
                   item-value="code"
                   clearable
-                  v-model="thing.location.country"
+                  v-model="monitoringSite.country"
                 >
                   <template v-slot:selection="{ item, index }">
-                    <span>{{ thing.location.country }}</span>
+                    <span>{{ monitoringSite.country }}</span>
                   </template></v-autocomplete
                 >
               </v-col>
@@ -167,13 +167,13 @@
 
             <v-row>
               <v-col>
-                <SiteTagManager :thing-id="thingId" />
+                <SiteTagManager :monitoring-site-id="monitoringSiteId" />
               </v-col>
             </v-row>
 
             <v-row>
               <v-col>
-                <SitePhotoManager :thing-id="thingId" />
+                <SitePhotoManager :monitoring-site-id="monitoringSiteId" />
               </v-col>
             </v-row>
           </v-col>
@@ -182,7 +182,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn-cancel @click="closeDialog">Cancel</v-btn-cancel>
-        <v-btn-primary @click="uploadThing">Save</v-btn-primary>
+        <v-btn-primary @click="uploadMonitoringSite">Save</v-btn-primary>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -191,7 +191,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { VForm } from 'vuetify/components'
 import { rules } from '@/utils/rules'
 import { storeToRefs } from 'pinia'
@@ -204,7 +204,7 @@ import { useTagStore } from '@/store/tags'
 import { Snackbar } from '@/utils/notifications'
 import countryList from 'country-list'
 import { useVocabularyStore } from '@/composables/useVocabulary'
-import hs, { Thing } from '@hydroserver/client'
+import hs, { MonitoringSite } from '@hydroserver/client'
 import { mdiInformation } from '@mdi/js'
 
 const countries = ref<{ name: string; code: string }[]>([])
@@ -213,7 +213,7 @@ const countryTitle = (item: { name: string; code: string } | undefined) => {
   return ''
 }
 
-const { thing: storedThing } = storeToRefs(useThingStore())
+const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { updatePhotos } = usePhotosStore()
 const { updateRatingCurves, resetRatingCurves } = useRatingCurveStore()
 const { tags } = storeToRefs(useTagStore())
@@ -221,29 +221,29 @@ const { updateTags } = useTagStore()
 const vocabularyStore = useVocabularyStore()
 
 const props = defineProps({
-  thingId: String,
+  monitoringSiteId: String,
   workspaceId: { type: String, required: true },
 })
 const emit = defineEmits(['close', 'site-created'])
 let loaded = ref(false)
 const valid = ref(false)
 const myForm = ref<VForm>()
-const thing = reactive<Thing>(new Thing())
-const includeDataDisclaimer = ref(thing.dataDisclaimer !== '')
+const monitoringSite = reactive<MonitoringSite>(new MonitoringSite())
+const includeDataDisclaimer = ref(monitoringSite.dataDisclaimer !== '')
 
 watch(
   () => includeDataDisclaimer.value,
   (newVal) => {
-    if (newVal && !thing.dataDisclaimer) {
-      thing.dataDisclaimer =
+    if (newVal && !monitoringSite.dataDisclaimer) {
+      monitoringSite.dataDisclaimer =
         'WARNING: These data may be provisional and subject to revision. The data are released under the condition that the data collectors may not be held liable for any damages resulting from their use.'
     }
   }
 )
 
-async function populateThing() {
-  Object.assign(thing, JSON.parse(JSON.stringify(storedThing.value)))
-  if (thing.location.latitude && thing.location.longitude) loaded.value = true
+async function populateMonitoringSite() {
+  Object.assign(monitoringSite, JSON.parse(JSON.stringify(storedMonitoringSite.value)))
+  if (monitoringSite.latitude && monitoringSite.longitude) loaded.value = true
 }
 
 function closeDialog() {
@@ -251,28 +251,28 @@ function closeDialog() {
   emit('close')
 }
 
-async function uploadThing() {
+async function uploadMonitoringSite() {
   await myForm.value?.validate()
   if (!valid.value) return
-  if (!includeDataDisclaimer.value) thing.dataDisclaimer = ''
+  if (!includeDataDisclaimer.value) monitoringSite.dataDisclaimer = ''
 
-  thing.workspaceId = props.workspaceId
-  const thingRes = props.thingId
-    ? await hs.things.updateItem(thing)
-    : await hs.things.createItem(thing)
+  monitoringSite.workspaceId = props.workspaceId
+  const monitoringSiteRes = props.monitoringSiteId
+    ? await hs.monitoringSites.updateItem(monitoringSite)
+    : await hs.monitoringSites.createItem(monitoringSite)
 
-  if (thingRes) storedThing.value = thingRes
+  if (monitoringSiteRes) storedMonitoringSite.value = monitoringSiteRes
 
-  if (!props.thingId) emit('site-created')
+  if (!props.monitoringSiteId) emit('site-created')
 
   // Set the tag context to the current site so updateTags can compare
   // against what we already have if anything.
-  const tagRes = await hs.things.getTags(storedThing.value!.id)
+  const tagRes = await hs.monitoringSites.getTags(storedMonitoringSite.value!.id)
   tags.value = tagRes.ok ? tagRes.data : []
 
-  await updateTags(storedThing.value!.id)
-  await updatePhotos(storedThing.value!.id)
-  const ratingCurveResult = await updateRatingCurves(storedThing.value!.id)
+  await updateTags(storedMonitoringSite.value!.id)
+  await updatePhotos(storedMonitoringSite.value!.id)
+  const ratingCurveResult = await updateRatingCurves(storedMonitoringSite.value!.id)
   if (!ratingCurveResult.ok) {
     const firstFailure =
       ratingCurveResult.message ||
@@ -287,21 +287,21 @@ async function uploadThing() {
   closeDialog()
 }
 
-function onMapLocationClicked(locationData: Thing) {
-  thing.location.latitude = locationData.location.latitude
-  thing.location.longitude = locationData.location.longitude
-  thing.location.elevation_m = locationData.location.elevation_m
-  thing.location.adminArea1 = locationData.location.adminArea1
-  thing.location.adminArea2 = locationData.location.adminArea2
-  thing.location.country = locationData.location.country
+function onMapLocationClicked(locationData: MonitoringSite) {
+  monitoringSite.latitude = locationData.latitude
+  monitoringSite.longitude = locationData.longitude
+  monitoringSite.elevation_m = locationData.elevation_m
+  monitoringSite.adminArea1 = locationData.adminArea1
+  monitoringSite.adminArea2 = locationData.adminArea2
+  monitoringSite.country = locationData.country
 }
 
 onMounted(async () => {
   resetRatingCurves()
   countries.value = countryList.getData()
-  if (props.thingId) {
-    await populateThing()
-    includeDataDisclaimer.value = !!thing.dataDisclaimer
+  if (props.monitoringSiteId) {
+    await populateMonitoringSite()
+    includeDataDisclaimer.value = !!monitoringSite.dataDisclaimer
   } else {
     loaded.value = true
   }

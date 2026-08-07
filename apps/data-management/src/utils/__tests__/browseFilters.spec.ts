@@ -1,135 +1,135 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBrowseFilterQuery,
-  filterThingMarkers,
+  filterMonitoringSiteMarkers,
   parseBrowseFilterQuery,
 } from '../browseFilters'
 
-describe('filterThingMarkers', () => {
-  const things = [
+describe('filterMonitoringSiteMarkers', () => {
+  const monitoringSites = [
     {
-      id: 'thing-1',
+      id: 'monitoringSite-1',
       workspaceId: 'workspace-1',
       name: 'Lake Site',
-      siteType: 'Lake',
+      type: 'Lake',
       isPrivate: false,
       latitude: 41.7,
       longitude: -111.8,
-      samplingFeatureCode: 'LAKE-1',
+      code: 'LAKE-1',
       tags: [{ key: 'Network', value: 'Primary' }],
     },
     {
-      id: 'thing-2',
+      id: 'monitoringSite-2',
       workspaceId: 'workspace-2',
       name: 'River Site',
-      siteType: 'Stream',
+      type: 'Stream',
       isPrivate: false,
       latitude: 41.8,
       longitude: -111.7,
-      samplingFeatureCode: 'RIVER-1',
+      code: 'RIVER-1',
       tags: [{ key: 'Network', value: 'Secondary' }],
     },
     {
-      id: 'thing-3',
+      id: 'monitoringSite-3',
       workspaceId: 'workspace-1',
       name: 'Spring Site',
-      siteType: 'Spring',
+      type: 'Spring',
       isPrivate: false,
       latitude: 41.9,
       longitude: -111.6,
-      samplingFeatureCode: 'SPRING-1',
+      code: 'SPRING-1',
       tags: [{ key: 'Network', value: 'Primary' }],
     },
     {
-      id: 'thing-4',
+      id: 'monitoringSite-4',
       workspaceId: 'workspace-1',
       name: 'Reservoir Site',
-      siteType: 'Lake, Reservoir, Impoundment',
+      type: 'Lake, Reservoir, Impoundment',
       isPrivate: false,
       latitude: 42.0,
       longitude: -111.5,
-      samplingFeatureCode: 'RESERVOIR-1',
+      code: 'RESERVOIR-1',
       tags: [{ key: 'Region', value: 'North' }],
     },
   ]
 
-  it('returns all things when no filters are selected', () => {
+  it('returns all monitoringSites when no filters are selected', () => {
     expect(
-      filterThingMarkers(things as any, [], []).map((thing) => thing.id)
-    ).toEqual(['thing-1', 'thing-2', 'thing-3', 'thing-4'])
+      filterMonitoringSiteMarkers(monitoringSites as any, [], []).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3', 'monitoringSite-4'])
   })
 
-  it('filters things by selected workspaces', () => {
+  it('filters monitoringSites by selected workspaces', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, []).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, selectedWorkspaces as any, []).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-1', 'thing-3', 'thing-4'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-3', 'monitoringSite-4'])
   })
 
-  it('filters things by selected site types', () => {
+  it('filters monitoringSites by selected site types', () => {
     expect(
-      filterThingMarkers(things as any, [], ['Lake', 'Stream']).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, [], ['Lake', 'Stream']).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-1', 'thing-2'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2'])
   })
 
-  it('filters things by custom site types that contain commas', () => {
+  it('filters monitoringSites by custom site types that contain commas', () => {
     expect(
-      filterThingMarkers(
-        things as any,
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
         [],
         ['Lake, Reservoir, Impoundment']
-      ).map((thing) => thing.id)
-    ).toEqual(['thing-4'])
+      ).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-4'])
   })
 
-  it('requires a thing to match both workspace and site type filters', () => {
+  it('requires a monitoringSite to match both workspace and site type filters', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, [
+      filterMonitoringSiteMarkers(monitoringSites as any, selectedWorkspaces as any, [
         'Spring',
-      ]).map((thing) => thing.id)
-    ).toEqual(['thing-3'])
+      ]).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-3'])
   })
 
-  it('filters things by selected site', () => {
+  it('filters monitoringSites by selected site', () => {
     expect(
-      filterThingMarkers(things as any, [], [], things[1] as any).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], monitoringSites[1] as any).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-2'])
+    ).toEqual(['monitoringSite-2'])
   })
 
   it('requires a selected site to match the other filters', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(
-        things as any,
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
         selectedWorkspaces as any,
         ['Stream'],
-        things[1] as any
-      ).map((thing) => thing.id)
+        monitoringSites[1] as any
+      ).map((monitoringSite) => monitoringSite.id)
     ).toEqual([])
   })
 
-  it('filters things by metadata key and optional values', () => {
+  it('filters monitoringSites by metadata key and optional values', () => {
     expect(
-      filterThingMarkers(things as any, [], [], undefined, 'Network').map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network').map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-1', 'thing-2', 'thing-3'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3'])
 
     expect(
-      filterThingMarkers(things as any, [], [], undefined, 'Network', [
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network', [
         'Primary',
-      ]).map((thing) => thing.id)
-    ).toEqual(['thing-1', 'thing-3'])
+      ]).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-3'])
   })
 })
 
@@ -137,7 +137,7 @@ describe('parseBrowseFilterQuery', () => {
   it('reads canonical query params', () => {
     expect(
       parseBrowseFilterQuery({
-        selectedSite: 'thing-1',
+        selectedSite: 'monitoringSite-1',
         search: 'Logan',
         workspaces: ['workspace-1', 'workspace-2'],
         siteTypes: ['Lake', 'Stream'],
@@ -149,7 +149,7 @@ describe('parseBrowseFilterQuery', () => {
         drawer: '0',
       })
     ).toEqual({
-      siteIds: ['thing-1'],
+      siteIds: ['monitoringSite-1'],
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake', 'Stream'],
@@ -165,14 +165,14 @@ describe('parseBrowseFilterQuery', () => {
   it('deduplicates canonical values and accepts comma-separated non-site-type lists', () => {
     expect(
       parseBrowseFilterQuery({
-        selectedSite: ['thing-1', 'thing-1'],
+        selectedSite: ['monitoringSite-1', 'monitoringSite-1'],
         workspaces: 'workspace-1,workspace-2',
         siteTypes: ['Lake', 'Lake'],
         search: 'Logan',
         drawer: 'yes',
       })
     ).toEqual({
-      siteIds: ['thing-1'],
+      siteIds: ['monitoringSite-1'],
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake'],
@@ -200,8 +200,8 @@ describe('parseBrowseFilterQuery', () => {
   })
 
   it('accepts site type marker coloring', () => {
-    expect(parseBrowseFilterQuery({ colorBy: 'siteType' }).colorBy).toBe(
-      'siteType'
+    expect(parseBrowseFilterQuery({ colorBy: 'type' }).colorBy).toBe(
+      'type'
     )
   })
 
@@ -216,13 +216,13 @@ describe('parseBrowseFilterQuery', () => {
   })
 
   it('preserves comma-containing site types through query round trips', () => {
-    const siteType = 'Lake, Reservoir, Impoundment'
+    const type = 'Lake, Reservoir, Impoundment'
     const query = buildBrowseFilterQuery(
       {},
-      { searchText: '', workspaceIds: [], siteTypes: [siteType] }
+      { searchText: '', workspaceIds: [], siteTypes: [type] }
     )
 
-    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([siteType])
+    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([type])
   })
 })
 
@@ -232,7 +232,7 @@ describe('buildBrowseFilterQuery', () => {
       buildBrowseFilterQuery(
         {},
         {
-          siteId: 'thing-1',
+          siteId: 'monitoringSite-1',
           searchText: 'Logan',
           workspaceIds: ['workspace-1', 'workspace-2'],
           siteTypes: ['Lake'],
@@ -245,7 +245,7 @@ describe('buildBrowseFilterQuery', () => {
         }
       )
     ).toEqual({
-      selectedSite: 'thing-1',
+      selectedSite: 'monitoringSite-1',
       search: 'Logan',
       workspaces: ['workspace-1', 'workspace-2'],
       siteTypes: 'Lake',
@@ -261,7 +261,7 @@ describe('buildBrowseFilterQuery', () => {
     expect(
       buildBrowseFilterQuery(
         {
-          selectedSite: 'thing-1',
+          selectedSite: 'monitoringSite-1',
           workspaces: 'workspace-1',
           siteTypes: 'Lake',
           mySites: '1',

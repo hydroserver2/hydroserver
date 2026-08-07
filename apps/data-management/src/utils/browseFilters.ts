@@ -1,8 +1,8 @@
 import type { Workspace } from '@hydroserver/client'
-import type { ThingSiteSummary } from '@/types'
+import type { MonitoringSiteMapSummary } from '@/types'
 import type { LocationQuery } from 'vue-router'
 
-export type MarkerColorMode = 'none' | 'workspace' | 'siteType' | 'metadata'
+export type MarkerColorMode = 'none' | 'workspace' | 'type' | 'metadata'
 
 export interface BrowseFilterRouteState {
   siteIds: string[]
@@ -91,7 +91,7 @@ const parseMarkerColorMode = (value: unknown): MarkerColorMode | null => {
   const mode = querySingleValue(value)
   return mode === 'none' ||
     mode === 'workspace' ||
-    mode === 'siteType' ||
+    mode === 'type' ||
     mode === 'metadata'
     ? mode
     : null
@@ -153,11 +153,11 @@ export function buildBrowseFilterQuery(
   return nextQuery
 }
 
-export function filterThingMarkers(
-  things: ThingSiteSummary[],
+export function filterMonitoringSiteMarkers(
+  monitoringSites: MonitoringSiteMapSummary[],
   selectedWorkspaces: Workspace[],
   selectedSiteTypes: string[],
-  selectedSite?: ThingSiteSummary | null,
+  selectedSite?: MonitoringSiteMapSummary | null,
   tagKey = '',
   selectedTagValues: string[] = []
 ) {
@@ -165,16 +165,16 @@ export function filterThingMarkers(
     selectedWorkspaces.map((workspace) => workspace.id)
   )
 
-  return things.filter((thing) => {
-    const isSelectedSite = !selectedSite || thing.id === selectedSite.id
+  return monitoringSites.filter((monitoringSite) => {
+    const isSelectedSite = !selectedSite || monitoringSite.id === selectedSite.id
     const inSelectedWorkspace =
       selectedWorkspaceIds.size === 0 ||
-      selectedWorkspaceIds.has(thing.workspaceId)
+      selectedWorkspaceIds.has(monitoringSite.workspaceId)
     const inSelectedSiteType =
       selectedSiteTypes.length === 0 ||
-      selectedSiteTypes.includes(thing.siteType)
+      selectedSiteTypes.includes(monitoringSite.type)
     const matchingTags = tagKey
-      ? thing.tags.filter((tag) => tag.key === tagKey)
+      ? monitoringSite.tags.filter((tag) => tag.key === tagKey)
       : []
     const hasSelectedTag =
       !tagKey ||

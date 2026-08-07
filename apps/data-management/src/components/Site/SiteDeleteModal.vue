@@ -18,7 +18,7 @@
       dialog.
     </v-card-text>
     <v-card-text>
-      Please type the site name (<strong>{{ thing?.name }}</strong
+      Please type the site name (<strong>{{ monitoringSite?.name }}</strong
       >) to confirm deletion:
       <v-form>
         <v-text-field
@@ -26,36 +26,36 @@
           v-model="deleteInput"
           label="Site name"
           solo
-          @keydown.enter.prevent="onDeleteThing"
+          @keydown.enter.prevent="onDeleteMonitoringSite"
         ></v-text-field>
       </v-form>
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete color="delete" @click="onDeleteThing">Delete</v-btn-delete>
+      <v-btn-delete color="delete" @click="onDeleteMonitoringSite">Delete</v-btn-delete>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Thing } from '@hydroserver/client'
+import { MonitoringSite } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['switchToAccessControl', 'delete', 'close'])
 const props = defineProps({
-  thing: {
-    type: Object as () => Thing,
+  monitoringSite: {
+    type: Object as () => MonitoringSite,
     required: true,
   },
 })
 
 const deleteInput = ref('')
 
-const onDeleteThing = () => {
-  if (deleteInput.value.toLowerCase() !== props.thing.name.toLowerCase()) {
+const onDeleteMonitoringSite = () => {
+  if (deleteInput.value.toLowerCase() !== props.monitoringSite.name.toLowerCase()) {
     Snackbar.warn('Site name does not match.')
     return
   }

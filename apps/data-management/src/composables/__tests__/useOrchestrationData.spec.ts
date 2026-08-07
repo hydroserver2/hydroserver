@@ -7,13 +7,13 @@ const {
   tasksListMock,
   dataProductTasksListMock,
   monitoringTasksListMock,
-  thingsTaskSummariesMock,
+  monitoringSitesTaskSummariesMock,
 } = vi.hoisted(() => ({
   dataConnectionsListMock: vi.fn(),
   tasksListMock: vi.fn(),
   dataProductTasksListMock: vi.fn(),
   monitoringTasksListMock: vi.fn(),
-  thingsTaskSummariesMock: vi.fn(),
+  monitoringSitesTaskSummariesMock: vi.fn(),
 }))
 
 vi.mock('@hydroserver/client', async (importOriginal) => {
@@ -27,7 +27,7 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
       tasks: { listAllItems: tasksListMock },
       dataProductTasks: { listAllItems: dataProductTasksListMock },
       monitoringTasks: { listAllItems: monitoringTasksListMock },
-      things: { listTaskSummaries: thingsTaskSummariesMock },
+      monitoringSites: { listTaskSummaries: monitoringSitesTaskSummariesMock },
     },
   }
 })
@@ -40,9 +40,9 @@ describe('useOrchestrationData', () => {
 
   it('loads orchestration summaries for a workspace', async () => {
     dataConnectionsListMock.mockResolvedValue([{ id: 'dc-1', name: 'Source' }])
-    thingsTaskSummariesMock.mockResolvedValue({
+    monitoringSitesTaskSummariesMock.mockResolvedValue({
       ok: true,
-      data: [{ id: 'thing-1', name: 'Site' }],
+      data: [{ id: 'monitoringSite-1', name: 'Site' }],
     })
 
     const data = useOrchestrationData()
@@ -53,13 +53,13 @@ describe('useOrchestrationData', () => {
     expect(data.workspaceTasks.value).toEqual([])
     expect(data.dataProductTasks.value).toEqual([])
     expect(data.monitoringTasks.value).toEqual([])
-    expect(data.things.value.map((item) => item.id)).toEqual(['thing-1'])
-    expect(data.datastreamThingByDatastreamId.value).toEqual({})
+    expect(data.monitoringSites.value.map((item) => item.id)).toEqual(['monitoringSite-1'])
+    expect(data.datastreamMonitoringSiteByDatastreamId.value).toEqual({})
     expect(dataConnectionsListMock).toHaveBeenCalledWith({
       workspace_id: 'workspace-1',
       order_by: 'name',
     })
-    expect(thingsTaskSummariesMock).toHaveBeenCalledWith({
+    expect(monitoringSitesTaskSummariesMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
     })
     expect(tasksListMock).not.toHaveBeenCalled()
@@ -76,7 +76,7 @@ describe('useOrchestrationData', () => {
     dataConnectionsListMock
       .mockReturnValueOnce(firstRequest)
       .mockResolvedValueOnce([{ id: 'dc-2' }])
-    thingsTaskSummariesMock.mockResolvedValue({ ok: true, data: [] })
+    monitoringSitesTaskSummariesMock.mockResolvedValue({ ok: true, data: [] })
 
     const data = useOrchestrationData()
     const staleLoad = data.fetchAll('workspace-1')
@@ -103,19 +103,19 @@ describe('useOrchestrationData', () => {
       order_by: ['name'],
     })
 
-    await data.fetchTasksForGroup('aggregation', 'thing-1', 'workspace-1')
+    await data.fetchTasksForGroup('aggregation', 'monitoringSite-1', 'workspace-1')
     expect(data.dataProductTasks.value.map((item) => item.id)).toEqual(['dp-1'])
     expect(dataProductTasksListMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
-      thing_id: ['thing-1'],
+      monitoring_site_id: ['monitoringSite-1'],
       order_by: ['name'],
     })
 
-    await data.fetchTasksForGroup('quality', 'thing-1', 'workspace-1')
+    await data.fetchTasksForGroup('quality', 'monitoringSite-1', 'workspace-1')
     expect(data.monitoringTasks.value.map((item) => item.id)).toEqual(['mon-1'])
     expect(monitoringTasksListMock).toHaveBeenCalledWith({
       workspace_id: ['workspace-1'],
-      thing_id: ['thing-1'],
+      monitoring_site_id: ['monitoringSite-1'],
       order_by: ['name'],
     })
   })

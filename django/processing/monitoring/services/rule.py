@@ -45,7 +45,7 @@ class MonitoringRuleService(ServiceUtils):
         if isinstance(rule, uuid.UUID):
             try:
                 rule = MonitoringRule.objects.select_related(
-                    "task__thing__workspace",
+                    "task__monitoring_site__workspace",
                     "datastream",
                 ).get(pk=rule, task=task)
             except MonitoringRule.DoesNotExist:
@@ -81,7 +81,7 @@ class MonitoringRuleService(ServiceUtils):
 
         if isinstance(task, uuid.UUID):
             try:
-                task = MonitoringTask.objects.select_related("thing__workspace").get(pk=task)
+                task = MonitoringTask.objects.select_related("monitoring_site__workspace").get(pk=task)
             except MonitoringTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
@@ -128,7 +128,7 @@ class MonitoringRuleService(ServiceUtils):
         if isinstance(task, uuid.UUID):
             try:
                 task = principal.annotate_permissions(
-                    MonitoringTask.objects.select_related("thing__workspace").filter(pk=task)
+                    MonitoringTask.objects.select_related("monitoring_site__workspace").filter(pk=task)
                 ).get()
             except MonitoringTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
@@ -139,12 +139,12 @@ class MonitoringRuleService(ServiceUtils):
             raise PermissionError("You do not have permission to edit this task.")
 
         try:
-            datastream = Datastream.objects.select_related("thing").get(
-                pk=datastream_id, thing=task.thing
+            datastream = Datastream.objects.select_related("monitoring_site").get(
+                pk=datastream_id, monitoring_site=task.monitoring_site
             )
         except Datastream.DoesNotExist:
             raise LookupError(
-                f"Datastream with ID {str(datastream_id)} does not exist on this task's thing."
+                f"Datastream with ID {str(datastream_id)} does not exist on this task's monitoring_site."
             )
 
         self._validate_rule(

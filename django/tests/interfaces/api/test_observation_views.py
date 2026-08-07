@@ -11,7 +11,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ObservationFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, ObservationFactory, MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -25,7 +25,7 @@ def _detail_url(datastream_id, observation_id):
 
 
 def _make_datastream(workspace, **kwargs):
-    return DatastreamFactory(thing=ThingFactory(workspace=workspace), **kwargs)
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
 
 
 def _collaborator_without_observation_permissions(workspace):

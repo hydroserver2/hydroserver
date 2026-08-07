@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import ThingFactory
+from tests.core.sta.factories import MonitoringSiteFactory
 from tests.processing.products.factories import RatingCurveFactory
 
 pytestmark = pytest.mark.django_db
@@ -26,14 +26,14 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_rating_curve(workspace, **kwargs):
-    return RatingCurveFactory(thing=ThingFactory(workspace=workspace), **kwargs)
+    return RatingCurveFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
 
 
-def _rating_curve_body(thing_id, **overrides):
+def _rating_curve_body(monitoring_site_id, **overrides):
     body = {
         "name": "New Rating Curve",
         "fittingMethod": "linear",
-        "thingId": str(thing_id),
+        "monitoringSiteId": str(monitoring_site_id),
         "points": [[1.0, 2.0], [3.0, 4.0]],
     }
     body.update(overrides)
@@ -78,12 +78,12 @@ def test_get_rating_curves_returns_401_when_unauthenticated(client):
 def test_create_rating_curve_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
         RATING_CURVES_URL,
-        data=_rating_curve_body(thing.id),
+        data=_rating_curve_body(monitoring_site.id),
         content_type="application/json",
     )
 
@@ -95,11 +95,11 @@ def test_create_rating_curve_succeeds_for_workspace_owner(client):
 
 def test_create_rating_curve_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
     response = client.post(
         RATING_CURVES_URL,
-        data=_rating_curve_body(thing.id),
+        data=_rating_curve_body(monitoring_site.id),
         content_type="application/json",
     )
 
@@ -108,13 +108,13 @@ def test_create_rating_curve_returns_401_when_unauthenticated(client):
 
 def test_create_rating_curve_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
     response = client.post(
         RATING_CURVES_URL,
-        data=_rating_curve_body(thing.id),
+        data=_rating_curve_body(monitoring_site.id),
         content_type="application/json",
     )
 
@@ -124,12 +124,12 @@ def test_create_rating_curve_returns_403_without_create_permission(client):
 def test_create_rating_curve_returns_400_for_duplicate_input_value_in_points(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
         RATING_CURVES_URL,
-        data=_rating_curve_body(thing.id, points=[[1.0, 2.0], [1.0, 5.0]]),
+        data=_rating_curve_body(monitoring_site.id, points=[[1.0, 2.0], [1.0, 5.0]]),
         content_type="application/json",
     )
 

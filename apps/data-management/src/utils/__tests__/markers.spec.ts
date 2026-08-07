@@ -9,19 +9,19 @@ const sites = [
   {
     id: 'site-1',
     workspaceId: 'workspace-a',
-    siteType: 'Stream',
+    type: 'Stream',
     tags: [{ key: 'Network', value: 'Primary' }],
   },
   {
     id: 'site-2',
     workspaceId: 'workspace-a',
-    siteType: 'Well',
+    type: 'Well',
     tags: [{ key: 'Network', value: 'Secondary' }],
   },
   {
     id: 'site-3',
     workspaceId: 'workspace-b',
-    siteType: 'Stream',
+    type: 'Stream',
     tags: [{ key: 'Network', value: 'Primary' }],
   },
 ] as any[]

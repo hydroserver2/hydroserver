@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 from hydroserverpy.api.services import (
     WorkspaceService,
     RoleService,
-    ThingService,
+    MonitoringSiteService,
     ObservedPropertyService,
     UnitService,
     ProcessingLevelService,
@@ -151,10 +151,10 @@ class HydroServer:
         return RoleService(self)
 
     @property
-    def things(self):
-        """Utilities for managing HydroServer things."""
+    def monitoring_sites(self):
+        """Utilities for managing HydroServer monitoring_sites."""
 
-        return ThingService(self)
+        return MonitoringSiteService(self)
 
     @property
     def observedproperties(self):

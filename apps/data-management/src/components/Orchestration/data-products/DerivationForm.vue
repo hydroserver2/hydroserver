@@ -61,7 +61,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
@@ -317,7 +317,7 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -350,7 +350,7 @@ const RESERVED_NAMES = new Set(ALLOWED_FUNCTIONS)
 const VAR_LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('')
 
 const props = defineProps<{
-  initialThingId?: string | null
+  initialMonitoringSiteId?: string | null
   editTaskId?: string | null
 }>()
 
@@ -400,7 +400,7 @@ const configureMaxGap = ref(false)
 const maxGapInterval = ref<number | null>(null)
 const maxGapIntervalUnits = ref<IntervalUnit | null>(null)
 
-const selectedThingId = computed(() => props.initialThingId ?? null)
+const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
 
 const namedInputs = computed(() =>
   inputs.value.filter((inp) => inp.variableName.trim())
@@ -421,8 +421,8 @@ const intervalUnitOptions = [
 ]
 
 const siteDatastreams = computed(() => {
-  const thingId = selectedThingId.value
-  return datastreamsForThing(datastreams.value, thingId)
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 function nextVarName(): string {
@@ -617,8 +617,8 @@ async function onCreate(
     maxGapIntervalUnits: IntervalUnit | null
   }
 ) {
-  const thingId = selectedThingId.value
-  if (!thingId) {
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  if (!monitoringSiteId) {
     Snackbar.error('Select a site before creating a derivation task.')
     return
   }
@@ -626,7 +626,7 @@ async function onCreate(
   const taskRes = await hs.dataProductTasks.create({
     id: '',
     name: taskName.value.trim(),
-    thingId,
+    monitoringSiteId,
     description: null,
     schedule: schedule.value,
   })
@@ -728,7 +728,7 @@ async function onDelete() {
 }
 
 watch(
-  () => props.initialThingId,
+  () => props.initialMonitoringSiteId,
   () => {
     if (!isEditMode.value) {
       outputDatastreamId.value = null

@@ -56,15 +56,15 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
     pendingDeleteIds.value = []
   }
 
-  const loadExistingRatingCurves = async (thingId?: string | null) => {
-    if (!thingId) {
+  const loadExistingRatingCurves = async (monitoringSiteId?: string | null) => {
+    if (!monitoringSiteId) {
       existingRatingCurves.value = []
       return
     }
 
     loading.value = true
     try {
-      const items = await hs.ratingCurves.listItemsForThing(thingId, {
+      const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId, {
         order_by: ['name'],
       })
       existingRatingCurves.value = [...items].sort((a, b) =>
@@ -198,7 +198,7 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
   }
 
   const updateRatingCurves = async (
-    thingId: string
+    monitoringSiteId: string
   ): Promise<UpdateRatingCurvesResult> => {
     loading.value = true
     let generalError = ''
@@ -330,7 +330,7 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
             name: item.name,
             description: item.description || null,
             fittingMethod: item.fittingMethod,
-            thingId,
+            monitoringSiteId,
             points: item.points,
           })
           if (!res.ok || !res.data) {
@@ -353,7 +353,7 @@ export const useRatingCurveStore = defineStore('ratingCurves', () => {
         }
       }
 
-      await loadExistingRatingCurves(thingId)
+      await loadExistingRatingCurves(monitoringSiteId)
     } catch (error: any) {
       generalError =
         error?.message || 'Unable to synchronize rating curve changes.'

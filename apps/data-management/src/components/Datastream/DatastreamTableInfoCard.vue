@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { Datastream, Thing } from '@hydroserver/client'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
 import { ref } from 'vue'
 import DatastreamInformationPanels from '@/components/Datastream/DatastreamInformationPanels.vue'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
@@ -30,7 +30,7 @@ import { mdiDownload } from '@mdi/js'
 
 defineProps({
   datastream: { type: Object as () => Datastream, required: true },
-  thing: { type: Object as () => Thing, required: true },
+  monitoringSite: { type: Object as () => MonitoringSite, required: true },
 })
 
 const emit = defineEmits(['close'])

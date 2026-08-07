@@ -4,8 +4,8 @@ This tutorial will guide you through how to build a simple web application backe
 
 We’ll use the `@hydroserver/client` TypeScript package to build a small browser app that will:
 
-- Fetch a page of the first 50 public Things currently on playground.hydroserver.org
-- Print each Thing with a location
+- Fetch a page of the first 50 public monitoring sites currently on playground.hydroserver.org
+- Print each MonitoringSite with a location
 
 The API client is written in TypeScript and gives you typed models and typed API methods end-to-end, but of course using the typing features is optional, so vanilla JavaScript will work alongside the client just fine, along with your choice of frontend framework.
 
@@ -56,9 +56,9 @@ export default defineConfig({
       <h1>HydroServer TS Demo App</h1>
 
       <section class="card">
-        <h2>Public Things</h2>
+        <h2>Public Monitoring Sites</h2>
         <p id="status" class="muted">Loading...</p>
-        <ol id="things-list" class="thing-list"></ol>
+        <ol id="monitoringSites-list" class="monitoringSite-list"></ol>
       </section>
     </main>
 
@@ -69,22 +69,22 @@ export default defineConfig({
 
 ```ts [src/main.ts]
 import "./style.css";
-import hs, { createHydroServer, type Thing } from "@hydroserver/client";
+import hs, { createHydroServer, type MonitoringSite } from "@hydroserver/client";
 
 await createHydroServer({ host: "" });
 
 const status = document.querySelector<HTMLParagraphElement>("#status")!;
-const list = document.querySelector<HTMLOListElement>("#things-list")!;
+const list = document.querySelector<HTMLOListElement>("#monitoringSites-list")!;
 
-const row = ({ name, location }: Thing) => {
+const row = ({ name, latitude, longitude }: MonitoringSite) => {
   const li = document.createElement("li");
-  const lat = Number(location.latitude).toFixed(4);
-  const lon = Number(location.longitude).toFixed(4);
+  const lat = Number(latitude).toFixed(4);
+  const lon = Number(longitude).toFixed(4);
   li.textContent = `${name}: ${lat}, ${lon}`;
   return li;
 };
 
-const res = await hs.things.list({
+const res = await hs.monitoringSites.list({
   page: 1,
   page_size: 50,
   order_by: ["name"],
@@ -94,9 +94,9 @@ const res = await hs.things.list({
 if (!res.ok) {
   status.textContent = res.message;
 } else {
-  const things: Thing[] = res.data;
-  list.replaceChildren(...things.map(row));
-  status.textContent = `Showing ${things.length} public Things.`;
+  const monitoringSites: MonitoringSite[] = res.data;
+  list.replaceChildren(...monitoringSites.map(row));
+  status.textContent = `Showing ${monitoringSites.length} public monitoring sites.`;
 }
 ```
 
@@ -132,7 +132,7 @@ body {
   margin-top: 0;
 }
 
-.thing-list {
+.monitoringSite-list {
   margin: 0;
   padding-left: 1.2rem;
   display: grid;
@@ -149,11 +149,11 @@ With this setup, the client uses `host: ""` so requests go through the local `/a
 1. Startup and client wiring  
    `await createHydroServer({ host: "" })` initializes the client once. After that, `hs` is available throughout your app.
 
-2. One API call for Things  
-   `hs.things.list(...)` retrieves page 1 with `page_size: 50`, ordered by name, and limited to public Things.
+2. One API call for monitoring sites
+   `hs.monitoringSites.list(...)` retrieves page 1 with `page_size: 50`, ordered by name, and limited to public monitoring sites.
 
 3. Rendering  
-   The response data is mapped directly into `<li>` elements with Thing name and location text.
+   The response data is mapped directly into `<li>` elements with MonitoringSite name and location text.
 
 4. Error handling style  
    Calls returning `ApiResponse` should check `response.ok` and display `response.message` on failure.
@@ -164,7 +164,7 @@ With this setup, the client uses `host: ""` so requests go through the local `/a
 npm run dev
 ```
 
-Open the local Vite URL (usually `http://localhost:5173`) and you should see the first 50 public Things with their locations.
+Open the local Vite URL (usually `http://localhost:5173`) and you should see the first 50 public monitoring sites with their locations.
 
 ## Notes for production
 

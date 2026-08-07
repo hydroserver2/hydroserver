@@ -22,7 +22,7 @@ export const useTagStore = defineStore('tags', () => {
     return [tagsToEdit, tagsToDelete, tagsToAdd]
   }
 
-  const updateTags = async (thingId: string) => {
+  const updateTags = async (monitoringSiteId: string) => {
     try {
       const [tagsToEdit, tagsToDelete, tagsToAdd] = findTagChanges(
         tags.value,
@@ -30,14 +30,14 @@ export const useTagStore = defineStore('tags', () => {
       )
 
       const requests = [
-        ...tagsToAdd.map((tag) => hs.things.createTag(thingId, tag)),
-        ...tagsToEdit.map((tag) => hs.things.updateTag(thingId, tag)),
-        ...tagsToDelete.map((tag) => hs.things.deleteTag(thingId, tag)),
+        ...tagsToAdd.map((tag) => hs.monitoringSites.createTag(monitoringSiteId, tag)),
+        ...tagsToEdit.map((tag) => hs.monitoringSites.updateTag(monitoringSiteId, tag)),
+        ...tagsToDelete.map((tag) => hs.monitoringSites.deleteTag(monitoringSiteId, tag)),
       ]
 
       await Promise.all(requests)
 
-      const res = await hs.things.getTags(thingId)
+      const res = await hs.monitoringSites.getTags(monitoringSiteId)
       tags.value = res.ok ? res.data : []
       previewTags.value = []
     } catch (error) {

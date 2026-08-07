@@ -13,30 +13,31 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
 from core.sta.cache import (
-    get_public_thing_markers_cache,
-    set_public_thing_markers_cache,
+    get_public_monitoring_site_markers_cache,
+    set_public_monitoring_site_markers_cache,
 )
 from core.sta.models import (
-    Thing,
-    Location,
-    ThingTag,
-    ThingFileAttachment,
-    SamplingFeatureType,
+    MonitoringSite,
+    MonitoringSiteTag,
+    MonitoringSiteFileAttachment,
     SiteType,
     FileAttachmentType,
 )
 from interfaces.api.schemas import (
     TagGetResponse,
-    ThingSummaryResponse,
-    ThingDetailResponse,
-    ThingPostBody,
-    ThingPatchBody,
+    MonitoringSiteSummaryResponse,
+    MonitoringSiteDetailResponse,
+    MonitoringSitePostBody,
+    MonitoringSitePatchBody,
     TagPostBody,
     TagDeleteBody,
     FileAttachmentPostBody,
     FileAttachmentDeleteBody,
 )
-from interfaces.api.schemas.sta.thing import ThingFields, LocationFields, ThingOrderByFields
+from interfaces.api.schemas.sta.monitoring_site import (
+    MonitoringSiteFields,
+    MonitoringSiteOrderByFields,
+)
 from processing.orchestration.attention import attention_filter, latest_run_status_subquery
 from processing.products.models import DataProductTask
 from processing.monitoring.models import MonitoringTask
@@ -44,47 +45,46 @@ from processing.monitoring.models import MonitoringTask
 User = get_user_model()
 
 
-class ThingService(ServiceUtils):
+class MonitoringSiteService(ServiceUtils):
     MARKER_PUBLIC_FILTER = {
-        "thing__workspace__is_private": False,
-        "thing__is_private": False,
+        "workspace__is_private": False,
+        "is_private": False,
     }
 
-    def get_thing_for_action(
+    def get_monitoring_site_for_action(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
         action: Literal["view", "edit", "delete"],
         expand_related: Optional[bool] = None,
     ):
-        queryset = Thing.objects.filter(pk=uid)
+        queryset = MonitoringSite.objects.filter(pk=uid)
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.prefetch_related(
-                "thing_tags", "thing_file_attachments"
-            ).with_location()
+                "monitoring_site_tags", "monitoring_site_file_attachments"
+            )
         queryset = principal.annotate_permissions(queryset)
 
         try:
-            thing = queryset.get()
-        except Thing.DoesNotExist:
-            raise HttpError(404, "Thing does not exist")
+            monitoring_site = queryset.get()
+        except MonitoringSite.DoesNotExist:
+            raise HttpError(404, "MonitoringSite does not exist")
 
-        if not principal.can_view(thing):
-            raise HttpError(404, "Thing does not exist")
+        if not principal.can_view(monitoring_site):
+            raise HttpError(404, "MonitoringSite does not exist")
 
-        if action != "view" and not getattr(principal, f"can_{action}")(thing):
-            raise HttpError(403, f"You do not have permission to {action} this Thing")
+        if action != "view" and not getattr(principal, f"can_{action}")(monitoring_site):
+            raise HttpError(403, f"You do not have permission to {action} this MonitoringSite")
 
-        return thing
+        return monitoring_site
 
     @staticmethod
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
         return (
             queryset.select_related("workspace")
-            .prefetch_related("thing_tags", "thing_file_attachments")
-            .with_location()
+            .prefetch_related("monitoring_site_tags", "monitoring_site_file_attachments")
         )
 
     @staticmethod
@@ -113,10 +113,10 @@ class ThingService(ServiceUtils):
                 )
 
             bbox_filter |= Q(
-                locations__longitude__gte=min_lon,
-                locations__longitude__lte=max_lon,
-                locations__latitude__gte=min_lat,
-                locations__latitude__lte=max_lat,
+                longitude__gte=min_lon,
+                longitude__lte=max_lon,
+                latitude__gte=min_lat,
+                latitude__lte=max_lat,
             )
 
         return queryset.filter(bbox_filter)
@@ -132,7 +132,7 @@ class ThingService(ServiceUtils):
 
             key, value = tag.split(":", 1)
 
-            queryset = queryset.filter(thing_tags__key=key, thing_tags__value=value)
+            queryset = queryset.filter(monitoring_site_tags__key=key, monitoring_site_tags__value=value)
 
         return queryset.distinct()
 
@@ -193,12 +193,12 @@ class ThingService(ServiceUtils):
 
         if "workspace_id" in filtering:
             queryset = ServiceUtils.apply_filters(
-                queryset, "thing__workspace_id", filtering["workspace_id"]
+                queryset, "workspace_id", filtering["workspace_id"]
             )
 
-        if "site_type" in filtering:
+        if "type" in filtering:
             queryset = ServiceUtils.apply_filters(
-                queryset, "thing__site_type", filtering["site_type"]
+                queryset, "type", filtering["type"]
             )
 
         return queryset
@@ -207,11 +207,11 @@ class ThingService(ServiceUtils):
     def serialize_marker_rows(marker_rows) -> list[dict]:
         return [
             {
-                "id": str(marker["thing_id"]),
-                "workspace_id": str(marker["thing__workspace_id"]),
-                "name": marker["thing__name"],
-                "site_type": marker["thing__site_type"],
-                "is_private": marker["thing__is_private"],
+                "id": str(marker["id"]),
+                "workspace_id": str(marker["workspace_id"]),
+                "name": marker["name"],
+                "type": marker["type"],
+                "is_private": marker["is_private"],
                 "latitude": marker["latitude_value"],
                 "longitude": marker["longitude_value"],
             }
@@ -224,11 +224,11 @@ class ThingService(ServiceUtils):
             latitude_value=Cast("latitude", FloatField()),
             longitude_value=Cast("longitude", FloatField()),
         ).values(
-            "thing_id",
-            "thing__workspace_id",
-            "thing__name",
-            "thing__site_type",
-            "thing__is_private",
+            "id",
+            "workspace_id",
+            "name",
+            "type",
+            "is_private",
             "latitude_value",
             "longitude_value",
         )
@@ -239,57 +239,57 @@ class ThingService(ServiceUtils):
             latitude_value=Cast("latitude", FloatField()),
             longitude_value=Cast("longitude", FloatField()),
         ).values(
-            "thing_id",
-            "thing__workspace_id",
-            "thing__name",
-            "thing__sampling_feature_code",
-            "thing__site_type",
-            "thing__is_private",
+            "id",
+            "workspace_id",
+            "name",
+            "code",
+            "type",
+            "is_private",
             "latitude_value",
             "longitude_value",
         )
 
     @staticmethod
-    def get_tags_by_thing_id(
+    def get_tags_by_monitoring_site_id(
         principal: User | ServiceAccount | AnonymousPrincipal,
-        thing_ids: list[uuid.UUID],
+        monitoring_site_ids: list[uuid.UUID],
     ) -> dict[str, list[TagGetResponse]]:
-        if not thing_ids:
+        if not monitoring_site_ids:
             return {}
 
-        tags_by_thing_id: dict[str, list[TagGetResponse]] = defaultdict(list)
-        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
+        tags_by_monitoring_site_id: dict[str, list[TagGetResponse]] = defaultdict(list)
+        visible_monitoring_sites = principal.filter_by_permission(MonitoringSite.objects, "can_view")
         tag_rows = (
-            ThingTag.objects.filter(thing__in=visible_things, thing_id__in=thing_ids)
-            .values("thing_id", "key", "value")
-            .order_by("thing_id", "key", "value")
+            MonitoringSiteTag.objects.filter(monitoring_site__in=visible_monitoring_sites, monitoring_site_id__in=monitoring_site_ids)
+            .values("monitoring_site_id", "key", "value")
+            .order_by("monitoring_site_id", "key", "value")
             .distinct()
         )
         for tag in tag_rows:
-            tags_by_thing_id[str(tag["thing_id"])].append(
+            tags_by_monitoring_site_id[str(tag["monitoring_site_id"])].append(
                 {
                     "key": tag["key"],
                     "value": tag["value"],
                 }
             )
-        return tags_by_thing_id
+        return tags_by_monitoring_site_id
 
     @staticmethod
     def serialize_site_summary_rows(
         site_rows,
-        tags_by_thing_id: dict[str, list[TagGetResponse]],
+        tags_by_monitoring_site_id: dict[str, list[TagGetResponse]],
     ) -> list[dict]:
         return [
             {
-                "id": str(site["thing_id"]),
-                "workspace_id": str(site["thing__workspace_id"]),
-                "name": site["thing__name"],
-                "sampling_feature_code": site["thing__sampling_feature_code"],
-                "site_type": site["thing__site_type"],
-                "is_private": site["thing__is_private"],
+                "id": str(site["id"]),
+                "workspace_id": str(site["workspace_id"]),
+                "name": site["name"],
+                "code": site["code"],
+                "type": site["type"],
+                "is_private": site["is_private"],
                 "latitude": site["latitude_value"],
                 "longitude": site["longitude_value"],
-                "tags": tags_by_thing_id.get(str(site["thing_id"]), []),
+                "tags": tags_by_monitoring_site_id.get(str(site["id"]), []),
             }
             for site in site_rows
         ]
@@ -309,12 +309,12 @@ class ThingService(ServiceUtils):
                 if marker["workspace_id"] in workspace_ids
             ]
 
-        if filtering.get("site_type"):
-            site_types = set(filtering["site_type"])
+        if filtering.get("type"):
+            site_types = set(filtering["type"])
             filtered_markers = [
                 marker
                 for marker in filtered_markers
-                if marker["site_type"] in site_types
+                if marker["type"] in site_types
             ]
 
         parsed_bbox_filters = cls.parse_bbox_filters(filtering.get("bbox"))
@@ -332,14 +332,14 @@ class ThingService(ServiceUtils):
         return filtered_markers
 
     def get_public_markers(self, filtering: Optional[dict] = None) -> list[dict]:
-        public_markers = get_public_thing_markers_cache()
+        public_markers = get_public_monitoring_site_markers_cache()
 
         if public_markers is None:
             public_marker_queryset = self.get_marker_values(
-                Location.objects.filter(**self.MARKER_PUBLIC_FILTER).order_by("thing_id")
+                MonitoringSite.objects.filter(**self.MARKER_PUBLIC_FILTER).order_by("id")
             )
             public_markers = self.serialize_marker_rows(public_marker_queryset)
-            set_public_thing_markers_cache(public_markers)
+            set_public_monitoring_site_markers_cache(public_markers)
 
         return self.filter_cached_markers(public_markers, filtering=filtering)
 
@@ -351,9 +351,8 @@ class ThingService(ServiceUtils):
         if not principal.is_authenticated:
             return []
 
-        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
-        private_marker_queryset = Location.objects.filter(
-            thing__in=visible_things
+        private_marker_queryset = principal.filter_by_permission(
+            MonitoringSite.objects, "can_view"
         ).exclude(**self.MARKER_PUBLIC_FILTER)
         private_marker_queryset = self.apply_marker_filters(
             private_marker_queryset,
@@ -365,7 +364,7 @@ class ThingService(ServiceUtils):
         )
 
         return self.serialize_marker_rows(
-            self.get_marker_values(private_marker_queryset.order_by("thing_id").distinct())
+            self.get_marker_values(private_marker_queryset.order_by("id").distinct())
         )
 
     def list_markers(
@@ -384,39 +383,37 @@ class ThingService(ServiceUtils):
         principal: User | ServiceAccount | AnonymousPrincipal,
         filtering: Optional[dict] = None,
     ) -> list[dict]:
-        site_queryset = Location.objects.filter(
-            thing__in=principal.filter_by_permission(Thing.objects, "can_view")
-        )
+        site_queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
         site_queryset = self.apply_marker_filters(site_queryset, filtering=filtering)
         site_rows = list(
             self.get_site_summary_values(
-                site_queryset.order_by("thing_id").distinct()
+                site_queryset.order_by("id").distinct()
             )
         )
-        tags_by_thing_id = self.get_tags_by_thing_id(
+        tags_by_monitoring_site_id = self.get_tags_by_monitoring_site_id(
             principal=principal,
-            thing_ids=[site["thing_id"] for site in site_rows],
+            monitoring_site_ids=[site["id"] for site in site_rows],
         )
-        return self.serialize_site_summary_rows(site_rows, tags_by_thing_id)
+        return self.serialize_site_summary_rows(site_rows, tags_by_monitoring_site_id)
 
     @staticmethod
     def list_task_summaries(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[list] = None,
-        site_type: Optional[list] = None,
+        type: Optional[list] = None,
     ) -> QuerySet:
 
         now = timezone.now()
 
         def task_count(task_model, attention_only=False):
-            """Correlated per-thing count subquery.
+            """Correlated per-monitoring_site count subquery.
 
             Using a subquery (rather than joining the relation into the outer
             query and using Count(distinct=True)) avoids a cartesian product
             between the data_product_tasks and monitoring_tasks relations, which
-            would otherwise make this query explode on things with many tasks.
+            would otherwise make this query explode on monitoring_sites with many tasks.
             """
-            tasks = task_model.objects.filter(thing_id=OuterRef("pk"))
+            tasks = task_model.objects.filter(monitoring_site_id=OuterRef("pk"))
             if attention_only:
                 tasks = (
                     tasks
@@ -426,7 +423,7 @@ class ThingService(ServiceUtils):
             return Coalesce(
                 Subquery(
                     tasks
-                    .values("thing_id")
+                    .values("monitoring_site_id")
                     .annotate(count=Count("pk"))
                     .values("count"),
                     output_field=IntegerField(),
@@ -434,12 +431,12 @@ class ThingService(ServiceUtils):
                 0,
             )
 
-        queryset = principal.filter_by_permission(Thing.objects, "can_view")
+        queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
 
         if workspace_id:
             queryset = queryset.filter(workspace_id__in=workspace_id)
-        if site_type:
-            queryset = queryset.filter(site_type__in=site_type)
+        if type:
+            queryset = queryset.filter(type__in=type)
 
         return queryset.annotate(
             product_task_count=task_count(DataProductTask),
@@ -458,15 +455,14 @@ class ThingService(ServiceUtils):
         filtering: Optional[dict] = None,
         expand_related: Optional[bool] = None,
     ):
-        queryset = Thing.objects
+        queryset = MonitoringSite.objects
 
         for field in [
             "workspace_id",
-            "locations__admin_area_1",
-            "locations__admin_area_2",
-            "locations__country",
-            "site_type",
-            "sampling_feature_type",
+            "admin_area_1",
+            "admin_area_2",
+            "country",
+            "type",
             "is_private",
         ]:
             if field in filtering:
@@ -487,15 +483,11 @@ class ThingService(ServiceUtils):
             queryset = self.apply_ordering(
                 queryset,
                 order_by,
-                list(get_args(ThingOrderByFields)),
+                list(get_args(MonitoringSiteOrderByFields)),
                 {
-                    "latitude": "location__latitude",
-                    "longitude": "location__longitude",
-                    "elevation_m": "location__elevation_m",
-                    "elevationDatum": "location__elevation_datum",
-                    "admin_area_1": "location__admin_area_1",
-                    "admin_area_2": "location__admin_area_2",
-                    "country": "location__country",
+                    "elevationDatum": "elevation_datum",
+                    "adminArea1": "admin_area_1",
+                    "adminArea2": "admin_area_2",
                 },
             )
         else:
@@ -505,8 +497,8 @@ class ThingService(ServiceUtils):
             queryset = self.select_expanded_fields(queryset)
         else:
             queryset = queryset.prefetch_related(
-                "thing_tags", "thing_file_attachments"
-            ).with_location()
+                "monitoring_site_tags", "monitoring_site_file_attachments"
+            )
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
 
@@ -514,11 +506,11 @@ class ThingService(ServiceUtils):
 
         return [
             (
-                ThingDetailResponse.model_validate(thing)
+                MonitoringSiteDetailResponse.model_validate(monitoring_site)
                 if expand_related
-                else ThingSummaryResponse.model_validate(thing)
+                else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
             )
-            for thing in queryset.all()
+            for monitoring_site in queryset.all()
         ]
 
     def get(
@@ -527,147 +519,119 @@ class ThingService(ServiceUtils):
         uid: uuid.UUID,
         expand_related: Optional[bool] = None,
     ):
-        thing = self.get_thing_for_action(
+        monitoring_site = self.get_monitoring_site_for_action(
             principal=principal, uid=uid, action="view", expand_related=expand_related
         )
 
         return (
-            ThingDetailResponse.model_validate(thing)
+            MonitoringSiteDetailResponse.model_validate(monitoring_site)
             if expand_related
-            else ThingSummaryResponse.model_validate(thing)
+            else MonitoringSiteSummaryResponse.model_validate(monitoring_site)
         )
 
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        data: ThingPostBody,
+        data: MonitoringSitePostBody,
         expand_related: Optional[bool] = None,
     ):
         workspace, _ = self.get_workspace(
             principal=principal, workspace_id=data.workspace_id
         )
 
-        if not principal.can_create("Thing", workspace=workspace):
-            raise HttpError(403, "You do not have permission to create this Thing")
+        if not principal.can_create("MonitoringSite", workspace=workspace):
+            raise HttpError(403, "You do not have permission to create this MonitoringSite")
 
         try:
-            thing = Thing.objects.create(
+            monitoring_site = MonitoringSite.objects.create(
                 pk=data.id,
                 workspace=workspace,
-                **data.dict(include=set(ThingFields.model_fields.keys())),
+                **data.dict(include=set(MonitoringSiteFields.model_fields.keys())),
             )
         except IntegrityError:
             raise HttpError(409, "The operation could not be completed due to a resource conflict.")
-
-        Location.objects.create(
-            name=f"Location for {data.name}",
-            description="location",
-            encoding_type="application/geo+json",
-            thing=thing,
-            **data.location.dict(include=set(LocationFields.model_fields.keys())),
-        )
 
         if data.tags:
             keys = [tag.key for tag in data.tags]
             if len(keys) != len(set(keys)):
                 raise HttpError(400, "Duplicate tag keys are not allowed")
-            ThingTag.objects.bulk_create([
-                ThingTag(thing=thing, key=tag.key, value=tag.value)
+            MonitoringSiteTag.objects.bulk_create([
+                MonitoringSiteTag(monitoring_site=monitoring_site, key=tag.key, value=tag.value)
                 for tag in data.tags
             ])
 
         return self.get(
-            principal=principal, uid=thing.id, expand_related=expand_related
+            principal=principal, uid=monitoring_site.id, expand_related=expand_related
         )
 
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
-        data: ThingPatchBody,
+        data: MonitoringSitePatchBody,
         expand_related: Optional[bool] = None,
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
-        location = thing.location
-
-        thing_data = data.dict(
-            include=set(ThingFields.model_fields.keys()), exclude_unset=True
-        )
-        location_data = (
-            data.location.dict(
-                include=set(LocationFields.model_fields.keys()), exclude_unset=True
-            )
-            if data.location
-            else {}
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site_data = data.dict(
+            include=set(MonitoringSiteFields.model_fields.keys()), exclude_unset=True
         )
 
-        if thing_data.get("name"):
-            location_data["name"] = f"Location for {thing_data['name']}"
+        for field, value in monitoring_site_data.items():
+            setattr(monitoring_site, field, value)
 
-        for field, value in thing_data.items():
-            setattr(thing, field, value)
-
-        thing.save()
-
-        for field, value in location_data.items():
-            setattr(location, field, value)
-
-        location.save()
+        monitoring_site.save()
 
         return self.get(
-            principal=principal, uid=thing.id, expand_related=expand_related
+            principal=principal, uid=monitoring_site.id, expand_related=expand_related
         )
 
     def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        thing = self.get_thing_for_action(
+        monitoring_site = self.get_monitoring_site_for_action(
             principal=principal, uid=uid, action="delete", expand_related=True
         )
-        location = thing.location
+        monitoring_site.delete()
 
-        thing.delete()
-        location.delete()
-
-        return "Thing deleted"
+        return "MonitoringSite deleted"
 
     def get_tags(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="view")
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="view")
 
-        return thing.thing_tags.all()
+        return monitoring_site.monitoring_site_tags.all()
 
     @staticmethod
     def get_tag_keys(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: Optional[uuid.UUID],
-        thing_id: Optional[uuid.UUID],
+        monitoring_site_id: Optional[uuid.UUID],
     ):
-        queryset = ThingTag.objects.filter(
-            thing__in=principal.filter_by_permission(Thing.objects, "can_view")
+        queryset = MonitoringSiteTag.objects.filter(
+            monitoring_site__in=principal.filter_by_permission(MonitoringSite.objects, "can_view")
         )
 
         if workspace_id:
-            queryset = queryset.filter(thing__workspace_id=workspace_id)
+            queryset = queryset.filter(monitoring_site__workspace_id=workspace_id)
 
-        if thing_id:
-            queryset = queryset.filter(thing_id=thing_id)
+        if monitoring_site_id:
+            queryset = queryset.filter(monitoring_site_id=monitoring_site_id)
 
         tags = queryset.values("key").annotate(values=ArrayAgg(F("value"), distinct=True))
 
         return {entry["key"]: entry["values"] for entry in tags}
 
     def add_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
 
-        if ThingTag.objects.filter(thing=thing, key=data.key).exists():
+        if MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key=data.key).exists():
             raise HttpError(400, "Tag already exists")
 
-        return ThingTag.objects.create(thing=thing, key=data.key, value=data.value)
+        return MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key=data.key, value=data.value)
 
     def update_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagPostBody):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
 
         try:
-            tag = ThingTag.objects.get(thing=thing, key=data.key)
-        except ThingTag.DoesNotExist:
+            tag = MonitoringSiteTag.objects.get(monitoring_site=monitoring_site, key=data.key)
+        except MonitoringSiteTag.DoesNotExist:
             raise HttpError(404, "Tag does not exist")
 
         tag.value = data.value
@@ -676,9 +640,9 @@ class ThingService(ServiceUtils):
         return tag
 
     def remove_tag(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: TagDeleteBody):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
 
-        queryset = ThingTag.objects.filter(thing=thing, key=data.key)
+        queryset = MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key=data.key)
 
         if data.value is not None:
             queryset = queryset.filter(value=data.value)
@@ -696,11 +660,11 @@ class ThingService(ServiceUtils):
         uid: uuid.UUID,
         filtering: Optional[dict] = None,
     ):
-        thing = self.get_thing_for_action(
+        monitoring_site = self.get_monitoring_site_for_action(
             principal=principal, uid=uid, action="view"
         )
 
-        queryset = thing.thing_file_attachments
+        queryset = monitoring_site.monitoring_site_file_attachments
 
         if filtering.get("file_attachment_type"):
             queryset = self.apply_filters(queryset, "file_attachment_type", filtering["file_attachment_type"])
@@ -710,17 +674,17 @@ class ThingService(ServiceUtils):
     def add_file_attachment(
         self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, file, data: FileAttachmentPostBody
     ):
-        thing = self.get_thing_for_action(
+        monitoring_site = self.get_monitoring_site_for_action(
             principal=principal, uid=uid, action="edit"
         )
 
-        if ThingFileAttachment.objects.filter(
-            thing=thing, name=file.name
+        if MonitoringSiteFileAttachment.objects.filter(
+            monitoring_site=monitoring_site, name=file.name
         ).exists():
             raise HttpError(400, "File attachment already exists")
 
-        return ThingFileAttachment.objects.create(
-            thing=thing,
+        return MonitoringSiteFileAttachment.objects.create(
+            monitoring_site=monitoring_site,
             name=file.name,
             description=data.description,
             file_attachment=file,
@@ -741,11 +705,11 @@ class ThingService(ServiceUtils):
     def remove_file_attachment(
         self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, data: FileAttachmentDeleteBody
     ):
-        thing = self.get_thing_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
 
         try:
-            file_attachment = ThingFileAttachment.objects.get(thing=thing, name=data.name)
-        except ThingFileAttachment.DoesNotExist:
+            file_attachment = MonitoringSiteFileAttachment.objects.get(monitoring_site=monitoring_site, name=data.name)
+        except MonitoringSiteFileAttachment.DoesNotExist:
             raise HttpError(404, "File attachment does not exist")
 
         file_attachment.file_attachment.delete()
@@ -759,20 +723,6 @@ class ThingService(ServiceUtils):
         order_desc: bool = False,
     ):
         queryset = SiteType.objects.order_by(f"{'-' if order_desc else ''}name")
-        queryset, count = self.apply_pagination(queryset, response, page, page_size)
-
-        return queryset.values_list("name", flat=True)
-
-    def list_sampling_feature_types(
-        self,
-        response: HttpResponse,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-        order_desc: bool = False,
-    ):
-        queryset = SamplingFeatureType.objects.order_by(
-            f"{'-' if order_desc else ''}name"
-        )
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
         return queryset.values_list("name", flat=True)

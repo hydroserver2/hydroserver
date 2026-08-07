@@ -57,7 +57,7 @@ export interface ShareState {
   endMs?: number | null
   /** Sidebar filters — only emitted when the recipient lands on the
    *  Select view (they don't affect the plot). */
-  thingIds?: string[]
+  monitoringSiteIds?: string[]
   observedPropertyNames?: string[]
   processingLevelNames?: string[]
   /** Eye-toggle state: `true` means visible, `false` means hidden.
@@ -153,7 +153,7 @@ export function encodeShareState(state: ShareState): Record<string, string> {
   // Filters: serialize only when there's content. They're a Select-
   // view concern; callers that want the Edit-view rule pass empty
   // arrays.
-  if (state.thingIds?.length) q.t = state.thingIds.join(',')
+  if (state.monitoringSiteIds?.length) q.t = state.monitoringSiteIds.join(',')
   if (state.observedPropertyNames?.length) {
     q.op = state.observedPropertyNames.join(',')
   }
@@ -231,7 +231,7 @@ export function decodeShareState(query: Record<string, unknown>): ShareState {
   }
 
   const t = splitCsv(str('t'))
-  if (t.length) out.thingIds = t
+  if (t.length) out.monitoringSiteIds = t
   const op = splitCsv(str('op'))
   if (op.length) out.observedPropertyNames = op
   const pl = splitCsv(str('pl'))

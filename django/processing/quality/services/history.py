@@ -33,28 +33,26 @@ class QCHistoryService(ServiceUtils):
     def select_related_fields(queryset: QuerySet, expand_related: bool | None = None) -> QuerySet:
         if expand_related:
             return queryset.select_related(
-                "managed_datastream__thing__workspace",
+                "managed_datastream__monitoring_site__workspace",
                 "managed_datastream__sensor",
                 "managed_datastream__observed_property",
                 "managed_datastream__unit",
                 "managed_datastream__processing_level",
-                "source_datastream__thing__workspace",
+                "source_datastream__monitoring_site__workspace",
                 "source_datastream__sensor",
                 "source_datastream__observed_property",
                 "source_datastream__unit",
                 "source_datastream__processing_level",
             ).prefetch_related(
-                "managed_datastream__thing__locations",
                 "managed_datastream__datastream_tags",
                 "managed_datastream__datastream_file_attachments",
-                "source_datastream__thing__locations",
                 "source_datastream__datastream_tags",
                 "source_datastream__datastream_file_attachments",
             )
 
         return queryset.select_related(
-            "managed_datastream__thing__workspace",
-            "source_datastream__thing__workspace",
+            "managed_datastream__monitoring_site__workspace",
+            "source_datastream__monitoring_site__workspace",
         )
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -138,7 +136,7 @@ class QCHistoryService(ServiceUtils):
         if isinstance(managed_datastream, uuid.UUID):
             try:
                 managed_datastream = Datastream.objects.select_related(
-                    "thing__workspace", "processing_level"
+                    "monitoring_site__workspace", "processing_level"
                 ).get(pk=managed_datastream)
             except Datastream.DoesNotExist:
                 raise LookupError("Managed datastream does not exist.")
@@ -146,7 +144,7 @@ class QCHistoryService(ServiceUtils):
         if isinstance(source_datastream, uuid.UUID):
             try:
                 source_datastream = Datastream.objects.select_related(
-                    "thing__workspace", "processing_level"
+                    "monitoring_site__workspace", "processing_level"
                 ).get(pk=source_datastream)
             except Datastream.DoesNotExist:
                 raise LookupError("Source datastream does not exist.")
@@ -156,7 +154,7 @@ class QCHistoryService(ServiceUtils):
                 "You do not have permission to create a QC history for this datastream."
             )
 
-        if managed_datastream.thing.workspace_id != source_datastream.thing.workspace_id:
+        if managed_datastream.monitoring_site.workspace_id != source_datastream.monitoring_site.workspace_id:
             raise ValueError(
                 "The managed datastream and source datastream must belong to the same workspace."
             )

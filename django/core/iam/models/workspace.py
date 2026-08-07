@@ -15,13 +15,13 @@ if typing.TYPE_CHECKING:
 
 class WorkspaceQuerySet(models.QuerySet):
     def delete(self):
-        from core.sta.models import Thing
+        from core.sta.models import MonitoringSite
         from core.iam.models import ServiceAccount
 
         ServiceAccount.objects.filter(workspace__in=self).update(
             is_active=False, key_hash=""
         )
-        Thing.objects.filter(workspace__in=self).delete()
+        MonitoringSite.objects.filter(workspace__in=self).delete()
 
         return super().delete()
 

@@ -1,10 +1,10 @@
-import { Thing } from '@hydroserver/client'
-import { MapThing, ThingMarker, ThingSiteSummary } from '@/types'
+import { MonitoringSite } from '@hydroserver/client'
+import { MapMonitoringSite, MonitoringSiteMarker, MonitoringSiteMapSummary } from '@/types'
 import { mapMarkerColors } from '@/utils/materialColors'
 
-type ColorableThing = Thing | ThingSiteSummary
+type ColorableMonitoringSite = MonitoringSite | MonitoringSiteMapSummary
 
-type ColorizedThing<T extends MapThing> = T & {
+type ColorizedMonitoringSite<T extends MapMonitoringSite> = T & {
   color?: {
     borderColor: string
     background: string
@@ -13,62 +13,66 @@ type ColorizedThing<T extends MapThing> = T & {
   tagValue?: string
 }
 
-export function hasThingTags(thing: MapThing): thing is ColorableThing {
-  return 'tags' in thing && Array.isArray(thing.tags)
+export function hasMonitoringSiteTags(
+  monitoringSite: MapMonitoringSite
+): monitoringSite is ColorableMonitoringSite {
+  return 'tags' in monitoringSite && Array.isArray(monitoringSite.tags)
 }
 
-const addColorToMarkersByValue = <T extends MapThing>(
-  things: T[],
-  getValue: (thing: T) => string | undefined
-): Array<ColorizedThing<T>> => {
+const addColorToMarkersByValue = <T extends MapMonitoringSite>(
+  monitoringSites: T[],
+  getValue: (monitoringSite: T) => string | undefined
+): Array<ColorizedMonitoringSite<T>> => {
   let colorIndex = 0
   const colorMap = new Map<string, (typeof mapMarkerColors)[number]>()
 
-  return things.map((thing) => {
-    const value = getValue(thing)
-    if (!value) return thing
+  return monitoringSites.map((monitoringSite) => {
+    const value = getValue(monitoringSite)
+    if (!value) return monitoringSite
 
     if (!colorMap.has(value)) {
       colorMap.set(value, mapMarkerColors[colorIndex % mapMarkerColors.length])
       colorIndex++
     }
-    return { ...thing, color: colorMap.get(value), tagValue: value }
+    return { ...monitoringSite, color: colorMap.get(value), tagValue: value }
   })
 }
 
-export const addColorToMarkers = <T extends ColorableThing>(
-  things: T[],
+export const addColorToMarkers = <T extends ColorableMonitoringSite>(
+  monitoringSites: T[],
   key: string
-): Array<ColorizedThing<T>> =>
+): Array<ColorizedMonitoringSite<T>> =>
   addColorToMarkersByValue(
-    things,
-    (thing) => thing.tags.find((tag) => tag.key === key)?.value
+    monitoringSites,
+    (monitoringSite) => monitoringSite.tags.find((tag) => tag.key === key)?.value
   )
 
-export const addWorkspaceColorToMarkers = <T extends MapThing>(
-  things: T[]
-): Array<ColorizedThing<T>> =>
-  addColorToMarkersByValue(things, (thing) => thing.workspaceId)
+export const addWorkspaceColorToMarkers = <T extends MapMonitoringSite>(
+  monitoringSites: T[]
+): Array<ColorizedMonitoringSite<T>> =>
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) => monitoringSite.workspaceId)
 
-export const addSiteTypeColorToMarkers = <T extends MapThing>(
-  things: T[]
-): Array<ColorizedThing<T>> =>
-  addColorToMarkersByValue(things, (thing) => thing.siteType)
+export const addSiteTypeColorToMarkers = <T extends MapMonitoringSite>(
+  monitoringSites: T[]
+): Array<ColorizedMonitoringSite<T>> =>
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) => monitoringSite.type)
 
-export function isThingMarker(markerData: MapThing): markerData is ThingMarker {
-  return !('location' in markerData)
+export function isMonitoringSiteMarker(
+  markerData: MapMonitoringSite
+): markerData is MonitoringSiteMarker {
+  return !('description' in markerData)
 }
 
-export function generateMarkerContent(markerData: MapThing): string {
-  const isMarker = isThingMarker(markerData)
+export function generateMarkerContent(markerData: MapMonitoringSite): string {
+  const isMarker = isMonitoringSiteMarker(markerData)
   const subtitle = isMarker
-    ? markerData.siteType || ''
+    ? markerData.type || ''
     : [
-        markerData.location.adminArea2 || '',
-        markerData.location.adminArea2 && markerData.location.adminArea1
+        markerData.adminArea2 || '',
+        markerData.adminArea2 && markerData.adminArea1
           ? ','
           : '',
-        markerData.location.adminArea1 || '',
+        markerData.adminArea1 || '',
       ]
         .join(' ')
         .trim()

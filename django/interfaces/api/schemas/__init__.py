@@ -28,21 +28,20 @@ from interfaces.api.schemas.iam.service_account import (
 from interfaces.api.schemas.iam.role import (RoleDetailResponse, RoleSummaryResponse, RoleQueryParameters,
                                              RoleOrderByFields)
 
-from interfaces.api.schemas.sta.thing import (
-    ThingMarkerResponse,
-    ThingMarkerQueryParameters,
+from interfaces.api.schemas.sta.monitoring_site import (
+    MonitoringSiteMarkerResponse,
+    MonitoringSiteMarkerQueryParameters,
     SiteTypeIconResponse,
-    ThingSiteSummaryResponse,
-    ThingSiteSummaryQueryParameters,
-    ThingTaskSummaryResponse,
-    ThingTaskSummaryQueryParameters,
-    ThingSummaryResponse,
-    ThingDetailResponse,
-    ThingPostBody,
-    ThingPatchBody,
-    ThingQueryParameters,
-    LocationPostBody,
-    LocationPatchBody,
+    MonitoringSiteMapSummaryResponse,
+    MonitoringSiteMapSummaryQueryParameters,
+    MonitoringSiteSummaryResponse,
+    MonitoringSiteTaskSummaryResponse,
+    MonitoringSiteTaskSummaryQueryParameters,
+    MonitoringSiteSummaryResponse,
+    MonitoringSiteDetailResponse,
+    MonitoringSitePostBody,
+    MonitoringSitePatchBody,
+    MonitoringSiteQueryParameters,
     TagGetResponse,
     FileAttachmentGetResponse,
 )
@@ -126,7 +125,7 @@ ServiceAccountDetailPostResponse.model_rebuild()
 
 CollaboratorDetailResponse.model_rebuild()
 
-ThingDetailResponse.model_rebuild()
+MonitoringSiteDetailResponse.model_rebuild()
 ObservedPropertyDetailResponse.model_rebuild()
 ProcessingLevelDetailResponse.model_rebuild()
 ResultQualifierDetailResponse.model_rebuild()

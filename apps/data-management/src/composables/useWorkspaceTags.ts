@@ -27,7 +27,7 @@ export function useWorkspaceTags(localWorkspace?: Ref<Workspace | undefined>) {
     workspaceId,
     async (id) => {
       if (id) {
-        const res = await hs.things.getTagKeys({ workspace_id: id })
+        const res = await hs.monitoringSites.getTagKeys({ workspace_id: id })
         if (res.ok) tags.value = res.data
       }
     },

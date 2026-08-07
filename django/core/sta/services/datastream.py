@@ -35,7 +35,7 @@ from interfaces.api.schemas.sta.datastream import (
     DatastreamDetailResponse,
 )
 from core.sta.services import (
-    ThingService,
+    MonitoringSiteService,
     ObservedPropertyService,
     ProcessingLevelService,
     SensorService,
@@ -44,7 +44,7 @@ from core.sta.services import (
 
 User = get_user_model()
 
-thing_service = ThingService()
+monitoring_site_service = MonitoringSiteService()
 observed_property_service = ObservedPropertyService()
 processing_level_service = ProcessingLevelService()
 sensor_service = SensorService()
@@ -74,7 +74,7 @@ class DatastreamService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.select_related("thing").prefetch_related(
+            queryset = queryset.select_related("monitoring_site").prefetch_related(
                 "datastream_tags", "datastream_file_attachments"
             )
         queryset = principal.annotate_permissions(queryset)
@@ -98,13 +98,13 @@ class DatastreamService(ServiceUtils):
     @staticmethod
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
         return queryset.select_related(
-            "thing__workspace",
-            "thing",
+            "monitoring_site__workspace",
+            "monitoring_site",
             "sensor",
             "observed_property",
             "unit",
             "processing_level",
-        ).prefetch_related("thing__locations", "datastream_tags", "datastream_file_attachments")
+        ).prefetch_related("datastream_tags", "datastream_file_attachments")
 
     @staticmethod
     def apply_tag_filter(queryset, tags: list[str]):
@@ -134,8 +134,8 @@ class DatastreamService(ServiceUtils):
         queryset = Datastream.objects
 
         for field in [
-            "thing__workspace_id",
-            "thing_id",
+            "monitoring_site__workspace_id",
+            "monitoring_site_id",
             "sensor_id",
             "observed_property_id",
             "processing_level_id",
@@ -163,10 +163,10 @@ class DatastreamService(ServiceUtils):
                         queryset, f"is_private", filtering[field]
                     )
                     queryset = self.apply_filters(
-                        queryset, f"thing__is_private", filtering[field]
+                        queryset, f"monitoring_site__is_private", filtering[field]
                     )
                     queryset = self.apply_filters(
-                        queryset, f"thing__workspace__is_private", filtering[field]
+                        queryset, f"monitoring_site__workspace__is_private", filtering[field]
                     )
                 elif field == "observations__result_qualifier_id":
                     queryset = Datastream.objects.none()
@@ -187,7 +187,7 @@ class DatastreamService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.select_related("thing").prefetch_related(
+            queryset = queryset.select_related("monitoring_site").prefetch_related(
                 "datastream_tags", "datastream_file_attachments"
             )
 
@@ -212,23 +212,23 @@ class DatastreamService(ServiceUtils):
         filtering = filtering or {}
         queryset = principal.filter_by_permission(Datastream.objects, "can_view")
 
-        if "thing__workspace_id" in filtering:
+        if "monitoring_site__workspace_id" in filtering:
             queryset = self.apply_filters(
                 queryset,
-                "thing__workspace_id",
-                filtering["thing__workspace_id"],
+                "monitoring_site__workspace_id",
+                filtering["monitoring_site__workspace_id"],
             )
 
         datastream_rows = list(
-            queryset.select_related("thing", "observed_property", "processing_level")
+            queryset.select_related("monitoring_site", "observed_property", "processing_level")
             .order_by("id")
             .values(
                 "id",
                 "name",
-                "thing_id",
-                "thing__workspace_id",
-                "thing__name",
-                "thing__sampling_feature_code",
+                "monitoring_site_id",
+                "monitoring_site__workspace_id",
+                "monitoring_site__name",
+                "monitoring_site__code",
                 "observed_property_id",
                 "observed_property__name",
                 "observed_property__code",
@@ -245,23 +245,23 @@ class DatastreamService(ServiceUtils):
             .distinct()
         )
 
-        things_by_id: dict[str, dict] = {}
+        monitoring_sites_by_id: dict[str, dict] = {}
         observed_properties_by_id: dict[str, dict] = {}
         processing_levels_by_id: dict[str, dict] = {}
         datastreams: list[dict] = []
 
         for row in datastream_rows:
-            thing_id = str(row["thing_id"])
+            monitoring_site_id = str(row["monitoring_site_id"])
             observed_property_id = str(row["observed_property_id"])
             processing_level_id = str(row["processing_level_id"])
 
-            things_by_id.setdefault(
-                thing_id,
+            monitoring_sites_by_id.setdefault(
+                monitoring_site_id,
                 {
-                    "id": thing_id,
-                    "workspace_id": str(row["thing__workspace_id"]),
-                    "name": row["thing__name"],
-                    "sampling_feature_code": row["thing__sampling_feature_code"],
+                    "id": monitoring_site_id,
+                    "workspace_id": str(row["monitoring_site__workspace_id"]),
+                    "name": row["monitoring_site__name"],
+                    "code": row["monitoring_site__code"],
                 },
             )
             observed_properties_by_id.setdefault(
@@ -283,7 +283,7 @@ class DatastreamService(ServiceUtils):
                 {
                     "id": str(row["id"]),
                     "name": row["name"],
-                    "thing_id": thing_id,
+                    "monitoring_site_id": monitoring_site_id,
                     "observed_property_id": observed_property_id,
                     "processing_level_id": processing_level_id,
                     "unit_id": str(row["unit_id"]),
@@ -297,7 +297,7 @@ class DatastreamService(ServiceUtils):
             )
 
         return {
-            "things": list(things_by_id.values()),
+            "monitoring_sites": list(monitoring_sites_by_id.values()),
             "datastreams": datastreams,
             "observed_properties": list(observed_properties_by_id.values()),
             "processing_levels": list(processing_levels_by_id.values()),
@@ -325,11 +325,11 @@ class DatastreamService(ServiceUtils):
         data: DatastreamPostBody,
         expand_related: Optional[bool] = None,
     ):
-        thing = self.handle_http_404_error(
-            thing_service.get, principal=principal, uid=data.thing_id
+        monitoring_site = self.handle_http_404_error(
+            monitoring_site_service.get, principal=principal, uid=data.monitoring_site_id
         )
         workspace, _ = self.get_workspace(
-            principal=principal, workspace_id=thing.workspace_id
+            principal=principal, workspace_id=monitoring_site.workspace_id
         )
 
         if not principal.can_create("Datastream", workspace=workspace):
@@ -341,7 +341,7 @@ class DatastreamService(ServiceUtils):
             uid=data.observed_property_id,
         )
         if observed_property.workspace_id not in (
-            thing.workspace_id,
+            monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -355,7 +355,7 @@ class DatastreamService(ServiceUtils):
             uid=data.processing_level_id,
         )
         if processing_level.workspace_id not in (
-            thing.workspace_id,
+            monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -367,7 +367,7 @@ class DatastreamService(ServiceUtils):
             sensor_service.get, principal=principal, uid=data.sensor_id
         )
         if sensor.workspace_id not in (
-            thing.workspace_id,
+            monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -378,7 +378,7 @@ class DatastreamService(ServiceUtils):
             unit_service.get, principal=principal, uid=data.unit_id
         )
         if unit.workspace_id not in (
-            thing.workspace_id,
+            monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -420,17 +420,17 @@ class DatastreamService(ServiceUtils):
             include=set(DatastreamPatchBody.model_fields.keys()), exclude_unset=True
         )
 
-        thing = (
+        monitoring_site = (
             self.handle_http_404_error(
-                thing_service.get, principal=principal, uid=data.thing_id
+                monitoring_site_service.get, principal=principal, uid=data.monitoring_site_id
             )
-            if data.thing_id
+            if data.monitoring_site_id
             else None
         )
-        if thing and thing.workspace_id != datastream.thing.workspace_id:
+        if monitoring_site and monitoring_site.workspace_id != datastream.monitoring_site.workspace_id:
             raise HttpError(
                 400,
-                "You cannot associate this datastream with a thing in another workspace",
+                "You cannot associate this datastream with a monitoring_site in another workspace",
             )
 
         observed_property = (
@@ -443,7 +443,7 @@ class DatastreamService(ServiceUtils):
             else None
         )
         if observed_property and observed_property.workspace_id not in (
-            datastream.thing.workspace_id,
+            datastream.monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -461,7 +461,7 @@ class DatastreamService(ServiceUtils):
             else None
         )
         if processing_level and processing_level.workspace_id not in (
-            datastream.thing.workspace_id,
+            datastream.monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -477,7 +477,7 @@ class DatastreamService(ServiceUtils):
             else None
         )
         if sensor and sensor.workspace_id not in (
-            datastream.thing.workspace_id,
+            datastream.monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -492,7 +492,7 @@ class DatastreamService(ServiceUtils):
             else None
         )
         if unit and unit.workspace_id not in (
-            datastream.thing.workspace_id,
+            datastream.monitoring_site.workspace_id,
             None,
         ):
             raise HttpError(
@@ -534,7 +534,7 @@ class DatastreamService(ServiceUtils):
         )
 
         if workspace_id:
-            queryset = queryset.filter(datastream__thing__workspace_id=workspace_id)
+            queryset = queryset.filter(datastream__monitoring_site__workspace_id=workspace_id)
 
         if datastream_id:
             queryset = queryset.filter(datastream_id=datastream_id)
@@ -712,18 +712,18 @@ class DatastreamService(ServiceUtils):
             )
 
         latitude = (
-            round(datastream.thing.location.latitude, 6)
-            if datastream.thing.location.latitude
+            round(datastream.monitoring_site.latitude, 6)
+            if datastream.monitoring_site.latitude
             else "None"
         )
         longitude = (
-            round(datastream.thing.location.longitude, 6)
-            if datastream.thing.location.longitude
+            round(datastream.monitoring_site.longitude, 6)
+            if datastream.monitoring_site.longitude
             else "None"
         )
         elevation_m = (
-            round(datastream.thing.location.elevation_m, 6)
-            if datastream.thing.location.elevation_m
+            round(datastream.monitoring_site.elevation_m, 6)
+            if datastream.monitoring_site.elevation_m
             else "None"
         )
 
@@ -733,28 +733,25 @@ class DatastreamService(ServiceUtils):
             f"# \n"
             f"# Workspace:\n"
             f"# -------------------------------------\n"
-            f"# Name: {datastream.thing.workspace.name}\n"
-            f"# Owner: {datastream.thing.workspace.owner.name}\n"
-            f"# Contact Email: {datastream.thing.workspace.owner.email}\n"
+            f"# Name: {datastream.monitoring_site.workspace.name}\n"
+            f"# Owner: {datastream.monitoring_site.workspace.owner.name}\n"
+            f"# Contact Email: {datastream.monitoring_site.workspace.owner.email}\n"
             f"#\n"
             f"# Site Information:\n"
             f"# -------------------------------------\n"
-            f"# Name: {datastream.thing.name}\n"
-            f"# Description: {datastream.thing.description}\n"
-            f"# SamplingFeatureType: {datastream.thing.sampling_feature_type}\n"
-            f"# SamplingFeatureCode: {datastream.thing.sampling_feature_code}\n"
-            f"# SiteType: {datastream.thing.site_type}\n"
+            f"# Name: {datastream.monitoring_site.name}\n"
+            f"# Description: {datastream.monitoring_site.description}\n"
+            f"# Code: {datastream.monitoring_site.code}\n"
+            f"# Type: {datastream.monitoring_site.type}\n"
             f"#\n"
             f"# Location Information:\n"
             f"# -------------------------------------\n"
-            f"# Name: {datastream.thing.location.name}\n"
-            f"# Description: {datastream.thing.location.description}\n"
             f"# Latitude: {latitude}\n"
             f"# Longitude: {longitude}\n"
             f"# Elevation_m: {elevation_m}\n"
-            f"# ElevationDatum: {datastream.thing.location.elevation_datum}\n"
-            f"# State: {datastream.thing.location.admin_area_1}\n"
-            f"# County: {datastream.thing.location.admin_area_2}\n"
+            f"# ElevationDatum: {datastream.monitoring_site.elevation_datum}\n"
+            f"# State: {datastream.monitoring_site.admin_area_1}\n"
+            f"# County: {datastream.monitoring_site.admin_area_2}\n"
             f"#\n"
             f"# Datastream Information:\n"
             f"# -------------------------------------\n"
@@ -807,7 +804,7 @@ class DatastreamService(ServiceUtils):
             f"# Data Disclaimer:\n"
             f"# -------------------------------------\n"
             f"# Output date/time values are in UTC unless they were input to HydroServer without time zone offset information. In that case, date/time values are output as they were supplied to HydroServer.\n"
-            f"# {datastream.thing.data_disclaimer if datastream.thing.data_disclaimer else ''}\n"
+            f"# {datastream.monitoring_site.data_disclaimer if datastream.monitoring_site.data_disclaimer else ''}\n"
             f"# =============================================================================\n"
         )
 

@@ -7,7 +7,7 @@ import { useHydroServer } from '@/store/hydroserver'
  * Central state for HydroServer workspace context.
  *
  * The QC app inherits HydroServer's role-based access control at the
- * workspace level. Every CRUD-ish interaction — things, datastreams,
+ * workspace level. Every CRUD-ish interaction — monitoringSites, datastreams,
  * observations, qualifiers — is scoped to a workspace the signed-in
  * user has been granted a role on. `hs.workspaces.list()` already
  * filters server-side to workspaces the user can see; we trust that

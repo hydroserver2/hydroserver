@@ -161,9 +161,9 @@ below.
 | **Datastreams** | Review datastream metadata and run selected maintenance actions. |
 | **Result Qualifiers** | Manage result qualifier codes. |
 | **File Attachment Types** | Manage file attachment type vocabulary values. |
-| **Thing File Attachments** | Review files attached to monitoring sites. |
+| **Monitoring Site File Attachments** | Review files attached to monitoring sites. |
 | **Datastream File Attachments** | Review files attached to datastreams. |
-| **Thing Tags** | Review key/value tags attached to monitoring sites. |
+| **Monitoring Site Tags** | Review key/value tags attached to monitoring sites. |
 | **Datastream Tags** | Review key/value tags attached to datastreams. |
 
 The **Datastreams** admin page includes two actions for selected datastreams:

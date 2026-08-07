@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import hs, { Thing } from '@hydroserver/client'
+import hs, { MonitoringSite } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -55,7 +55,7 @@ import router from '@/router/router'
 
 const { ownedWorkspaces } = storeToRefs(useWorkspaceStore())
 
-const things = ref<Thing[]>([])
+const monitoringSites = ref<MonitoringSite[]>([])
 
 const emit = defineEmits(['delete', 'close'])
 const deleteInput = ref('')
@@ -83,6 +83,6 @@ function cancelDeletion() {
 
 onMounted(
   async () =>
-    (things.value = await hs.things.listAllItems({ order_by: ['name'] }))
+    (monitoringSites.value = await hs.monitoringSites.listAllItems({ order_by: ['name'] }))
 )
 </script>

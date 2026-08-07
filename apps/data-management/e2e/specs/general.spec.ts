@@ -40,15 +40,15 @@ test.describe('general navigation', () => {
     ).toBeVisible()
 
     await expect(
-      page.getByText(fixtures.things.private.name, { exact: true })
+      page.getByText(fixtures.monitoringSites.private.name, { exact: true })
     ).toBeVisible()
     await expect(
-      page.getByText(fixtures.things.public.name, { exact: true })
+      page.getByText(fixtures.monitoringSites.public.name, { exact: true })
     ).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Reset', exact: true }).click()
     await expect(
-      page.getByText(fixtures.things.public.name, { exact: true })
+      page.getByText(fixtures.monitoringSites.public.name, { exact: true })
     ).toBeVisible()
   })
 })

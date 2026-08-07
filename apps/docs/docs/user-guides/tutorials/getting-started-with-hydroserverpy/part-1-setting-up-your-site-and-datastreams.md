@@ -43,13 +43,12 @@ for ws in hs_api.workspaces.list(is_associated=True).items:
 Now let's create the site itself. We need a few pieces of information: basic metadata about what kind of site this is, and its location.
 
 ```python
-blacksmith_fork_site = hs_api.things.create(
+blacksmith_fork_site = hs_api.monitoring_sites.create(
     workspace=workspace,
     name='Blacksmith Fork River above confluence with Logan River',
     description='Logan River Observatory monitoring site for Blacksmith Fork River above the confluence with Logan River',
-    sampling_feature_type='Site',
-    sampling_feature_code='BSF_CONF_BA',
-    site_type='Stream',
+    code='BSF_CONF_BA',
+    type='Stream',
     latitude=41.704431,
     longitude=-111.850800,
     elevation_m=1366.0,
@@ -64,7 +63,7 @@ blacksmith_fork_site = hs_api.things.create(
 print(f"{blacksmith_fork_site.name}: {blacksmith_fork_site.uid}")
 ```
 
-The `sampling_feature_code` is a short identifier for your site — something you'd use to reference it in a dataset or filename. Make it unique within your workspace.
+The `code` is a short identifier for your site — something you'd use to reference it in a dataset or filename. Make it unique within your workspace.
 
 ## Create linked metadata
 
@@ -139,7 +138,7 @@ Our gauge records instantaneous discharge measurements every 15 minutes.
 discharge_datastream = hs_api.datastreams.create(
     name=f"{discharge_observed_property.name} measured in the {blacksmith_fork_site.name}",
     description=f'{discharge_observed_property.name} created using a {discharge_sensor.name}',
-    thing=blacksmith_fork_site,
+    monitoring_site=blacksmith_fork_site,
     sensor=discharge_sensor,
     observed_property=discharge_observed_property,
     processing_level=raw_processing_level,

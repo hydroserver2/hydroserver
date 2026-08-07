@@ -52,10 +52,10 @@ export function useSimpleTaskDetails(
     }
     if (kind === 'dataProduct') {
       return (
-        !!candidate.thing && Array.isArray(candidate.ratingCurveTransformations)
+        !!candidate.monitoringSite && Array.isArray(candidate.ratingCurveTransformations)
       )
     }
-    return !!candidate.thing && Array.isArray(candidate.monitoredDatastreams)
+    return !!candidate.monitoringSite && Array.isArray(candidate.monitoredDatastreams)
   }
   const task = ref<any>(
     isDetailedTask(props.initialTask) ? props.initialTask : null
@@ -105,7 +105,7 @@ export function useSimpleTaskDetails(
     'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
   const backLabel = computed(
-    () => task.value?.dataConnection?.name ?? task.value?.thing?.name ?? 'Back'
+    () => task.value?.dataConnection?.name ?? task.value?.monitoringSite?.name ?? 'Back'
   )
   const statusName = computed(() =>
     task.value ? getTaskStatusText(task.value) : 'Unknown'

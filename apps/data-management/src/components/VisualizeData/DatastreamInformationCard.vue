@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream, Thing } from '@hydroserver/client'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
@@ -46,7 +46,7 @@ import { mdiDownload } from '@mdi/js'
 
 defineProps({
   datastream: { type: Object as () => Datastream, required: true },
-  thing: { type: Object as () => Thing, required: true },
+  monitoringSite: { type: Object as () => MonitoringSite, required: true },
 })
 
 const { plottedDatastreams } = storeToRefs(useDataVisStore())

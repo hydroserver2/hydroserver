@@ -83,7 +83,7 @@ describe('useOrchestrationRouteState', () => {
       run_id: ['run-1'],
       workspaceId: 'workspace-1',
       dataConnectionId: 'connection-1',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
     }
 
     const state = useOrchestrationRouteState()
@@ -95,7 +95,7 @@ describe('useOrchestrationRouteState', () => {
     expect(state.runId.value).toBe('run-1')
     expect(state.workspaceId.value).toBe('workspace-1')
     expect(state.dataConnectionId.value).toBe('connection-1')
-    expect(state.siteId.value).toBe('thing-1')
+    expect(state.siteId.value).toBe('monitoringSite-1')
     expect(state.hasTaskDetails.value).toBe(true)
   })
 

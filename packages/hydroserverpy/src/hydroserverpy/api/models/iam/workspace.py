@@ -11,7 +11,7 @@ if TYPE_CHECKING:
         Collaborator,
         APIKey,
         Account,
-        Thing,
+        MonitoringSite,
         ObservedProperty,
         Sensor,
         Unit,
@@ -42,7 +42,7 @@ class Workspace(HydroServerBaseModel):
         self._collaborators = None
         self._collaborator_role = None
         self._apikeys = None
-        self._things = None
+        self._monitoring_sites = None
         self._observedproperties = None
         self._processinglevels = None
         self._resultqualifiers = None
@@ -94,13 +94,13 @@ class Workspace(HydroServerBaseModel):
         return self._apikeys
 
     @property
-    def things(self) -> List["Thing"]:
-        """The things associated with this workspace."""
+    def monitoring_sites(self) -> List["MonitoringSite"]:
+        """The monitoring_sites associated with this workspace."""
 
-        if self._things is None:
-            self._things = self.client.things.list(workspace=self.uid, fetch_all=True).items
+        if self._monitoring_sites is None:
+            self._monitoring_sites = self.client.monitoring_sites.list(workspace=self.uid, fetch_all=True).items
 
-        return self._things
+        return self._monitoring_sites
 
     @property
     def observedproperties(self) -> List["ObservedProperty"]:

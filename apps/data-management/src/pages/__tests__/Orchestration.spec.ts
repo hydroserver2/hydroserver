@@ -57,7 +57,7 @@ vi.mock('@hydroserver/client', () => ({
       runTask: vi.fn(),
       update: vi.fn(),
     },
-    things: {
+    monitoringSites: {
       listAllItems: vi.fn(),
       listTaskSummaries: vi.fn(),
     },

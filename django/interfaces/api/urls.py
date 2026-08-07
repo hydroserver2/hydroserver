@@ -8,7 +8,7 @@ from interfaces.api.http.renderer import ORJSONRenderer
 from interfaces.api.views import (
     workspace_router,
     role_router,
-    thing_router,
+    monitoring_site_router,
     observed_property_router,
     processing_level_router,
     result_qualifier_router,
@@ -48,7 +48,7 @@ api = NinjaAPI(
 api.add_router("workspaces", workspace_router)
 api.add_router("roles", role_router)
 
-api.add_router("things", thing_router)
+api.add_router("monitoring-sites", monitoring_site_router)
 api.add_router("datastreams", datastream_router)
 api.add_router("observed-properties", observed_property_router)
 api.add_router("units", unit_router)

@@ -97,7 +97,7 @@ function onUpdate(value: unknown) {
 function searchText(datastream: Datastream): string {
   const ds = datastream as Datastream & Record<string, any>
   const related = [
-    ds.thing?.name,
+    ds.monitoringSite?.name,
     ds.observedProperty?.name,
     ds.observedProperty?.code,
     ds.processingLevel?.code,

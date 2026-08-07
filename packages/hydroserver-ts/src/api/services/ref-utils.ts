@@ -11,7 +11,7 @@ export function resolveId<T extends WithId>(
 
 /**
  * Convert ergonomic object/uuid refs into explicit *_Id string fields.
- * - mapping: { refKey: 'idKey', ... }   e.g. { workspace: 'workspaceId', thing: 'thingId' }
+ * - mapping: { refKey: 'idKey', ... }   e.g. { workspace: 'workspaceId', monitoringSite: 'monitoringSiteId' }
  * - Removes the original ref keys so they don’t leak into the query.
  */
 export function coerceRefParams<
@@ -38,7 +38,7 @@ export type WorkspaceScoped = {
   workspaceId?: string
 }
 
-export type ThingScoped = {
-  thing?: ResourceRef
-  thingId?: string
+export type MonitoringSiteScoped = {
+  monitoringSite?: ResourceRef
+  monitoringSiteId?: string
 }

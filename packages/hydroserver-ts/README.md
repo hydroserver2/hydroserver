@@ -19,7 +19,7 @@ import hs, { createHydroServer } from "@hydroserver/client";
 
 await createHydroServer({ host: "https://playground.hydroserver.org" });
 
-const response = await hs.things.list({ page: 1, page_size: 50 });
+const response = await hs.monitoringSites.list({ page: 1, page_size: 50 });
 if (response.ok) {
   console.log(response.data);
 } else {
@@ -32,9 +32,9 @@ Use `host: ""` for same-origin requests. Applications that prefer dependency inj
 ## Services
 
 - Account: `session`, `user`
-- Data management: `workspaces`, `things`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers`
+- Data management: `workspaces`, `monitoringSites`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers`
 - Orchestration: `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves`
-- Files and QC: `thingFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations`
+- Files and QC: `monitoringSiteFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations`
 
 QC resources are nested. For example:
 

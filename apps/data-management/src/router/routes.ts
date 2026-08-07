@@ -273,7 +273,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: 'Access Denied' },
   },
   {
-    path: '/visualize-data/:thingId?',
+    path: '/visualize-data/:monitoringSiteId?',
     name: 'VisualizeData',
     component: () => import('@/pages/VisualizeData.vue'),
     meta: {

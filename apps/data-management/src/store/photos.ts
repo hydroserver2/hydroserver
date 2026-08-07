@@ -8,14 +8,14 @@ export const usePhotosStore = defineStore('photos', () => {
   const photosToDelete = ref<string[]>([])
   const loading = ref(false)
 
-  const uploadNewPhotos = async (thingId: string) => {
+  const uploadNewPhotos = async (monitoringSiteId: string) => {
     if (!newPhotos.value.length) return
 
     const promises = newPhotos.value.map(async (file) => {
       const data = new FormData()
       data.append('file', file)
       data.append('file_attachment_type', 'Photo')
-      return await hs.things.uploadAttachments(thingId, data)
+      return await hs.monitoringSites.uploadAttachments(monitoringSiteId, data)
     })
 
     const newPhotoResponses: ApiResponse<FileAttachment>[] =
@@ -26,21 +26,21 @@ export const usePhotosStore = defineStore('photos', () => {
     photos.value = [...photos.value, ...photoData]
   }
 
-  const deleteSelectedPhotos = async (thingId: string) => {
+  const deleteSelectedPhotos = async (monitoringSiteId: string) => {
     if (!photosToDelete.value.length) return
     await Promise.all(
-      photosToDelete.value.map((p) => hs.things.deleteAttachment(thingId, p))
+      photosToDelete.value.map((p) => hs.monitoringSites.deleteAttachment(monitoringSiteId, p))
     )
     photos.value = photos.value.filter(
       (p) => !photosToDelete.value.includes(p.name)
     )
   }
 
-  const updatePhotos = async (thingId: string) => {
+  const updatePhotos = async (monitoringSiteId: string) => {
     try {
       loading.value = true
-      await uploadNewPhotos(thingId)
-      await deleteSelectedPhotos(thingId)
+      await uploadNewPhotos(monitoringSiteId)
+      await deleteSelectedPhotos(monitoringSiteId)
     } catch (error) {
       console.error('Error updating photos', error)
     } finally {

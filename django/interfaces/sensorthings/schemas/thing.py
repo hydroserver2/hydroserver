@@ -5,9 +5,8 @@ from .workspace import WorkspaceProperties
 
 
 class ThingProperties(BaseModel):
-    sampling_feature_type: str
-    sampling_feature_code: str
-    site_type: str
+    code: str
+    type: str
     data_disclaimer: Optional[str] = None
     is_private: bool
     workspace: WorkspaceProperties

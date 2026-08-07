@@ -58,9 +58,9 @@ class ObservationQuerySet(models.QuerySet):
         return observations
 
 
-@register_resource_type(workspace_field="datastream__thing__workspace", privacy_chain=[
-    "datastream__is_private", "datastream__thing__is_private",
-    "datastream__thing__workspace__is_private"
+@register_resource_type(workspace_field="datastream__monitoring_site__workspace", privacy_chain=[
+    "datastream__is_private", "datastream__monitoring_site__is_private",
+    "datastream__monitoring_site__workspace__is_private"
 ])
 class Observation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)

@@ -10,7 +10,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import ThingFactory
+from tests.core.sta.factories import MonitoringSiteFactory
 from tests.processing.products.factories import DataProductTaskFactory
 
 pytestmark = pytest.mark.django_db
@@ -29,13 +29,13 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_data_product_task(workspace, **kwargs):
-    return DataProductTaskFactory(thing=ThingFactory(workspace=workspace), **kwargs)
+    return DataProductTaskFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
 
 
-def _data_product_task_body(thing_id, **overrides):
+def _data_product_task_body(monitoring_site_id, **overrides):
     body = {
         "name": "New Data Product Task",
-        "thingId": str(thing_id),
+        "monitoringSiteId": str(monitoring_site_id),
     }
     body.update(overrides)
     return body
@@ -79,12 +79,12 @@ def test_get_data_product_tasks_returns_401_when_unauthenticated(client):
 def test_create_data_product_task_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     client.force_login(owner)
 
     response = client.post(
         DATA_PRODUCT_TASKS_URL,
-        data=_data_product_task_body(thing.id),
+        data=_data_product_task_body(monitoring_site.id),
         content_type="application/json",
     )
 
@@ -94,11 +94,11 @@ def test_create_data_product_task_succeeds_for_workspace_owner(client):
 
 def test_create_data_product_task_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
 
     response = client.post(
         DATA_PRODUCT_TASKS_URL,
-        data=_data_product_task_body(thing.id),
+        data=_data_product_task_body(monitoring_site.id),
         content_type="application/json",
     )
 
@@ -107,13 +107,13 @@ def test_create_data_product_task_returns_401_when_unauthenticated(client):
 
 def test_create_data_product_task_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
     response = client.post(
         DATA_PRODUCT_TASKS_URL,
-        data=_data_product_task_body(thing.id),
+        data=_data_product_task_body(monitoring_site.id),
         content_type="application/json",
     )
 

@@ -442,7 +442,7 @@ describe('handleRelayout', () => {
 
   it('keeps scatter-only series markers visible when the data-points toggle is off', async () => {
     // A datastream with no `intendedTimeSpacing` ships no gap overlay,
-    // so the main trace is the only thing on screen for that series.
+    // so the main trace is the only monitoringSite on screen for that series.
     // Honouring the points toggle here would leave the series invisible,
     // so the relayout policy pins its marker opacity at 1.
     qcDatastream.value = { id: 'qc-target' }

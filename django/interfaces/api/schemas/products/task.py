@@ -10,7 +10,7 @@ from interfaces.api.schemas import (
     BasePostBody,
     BasePatchBody,
     CollectionQueryParameters,
-    ThingSummaryResponse,
+    MonitoringSiteSummaryResponse,
 )
 from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, SchedulePostBody, SchedulePatchBody
 from interfaces.api.schemas.orchestration.run import TaskRunResponse
@@ -29,10 +29,10 @@ from interfaces.api.schemas.products.transformation import (
 class DataProductTaskOrderBy(OrderByField):
     id = ("id", "id")
     name = ("name", "name")
-    thing_id = ("thingId", "thing_id")
-    thing_name = ("thingName", "thing__name")
-    workspace_id = ("workspaceId", "thing__workspace_id")
-    workspace_name = ("workspaceName", "thing__workspace__name")
+    monitoring_site_id = ("monitoringSiteId", "monitoring_site_id")
+    monitoring_site_name = ("monitoringSiteName", "monitoring_site__name")
+    workspace_id = ("workspaceId", "monitoring_site__workspace_id")
+    workspace_name = ("workspaceName", "monitoring_site__workspace__name")
     latest_run_status = ("latestRunStatus", "latest_run_status")
     latest_run_started_at = ("latestRunStartedAt", "latest_run_started_at")
     latest_run_finished_at = ("latestRunFinishedAt", "latest_run_finished_at")
@@ -42,8 +42,8 @@ class DataProductTaskQueryParameters(CollectionQueryParameters):
     order_by: list[DataProductTaskOrderBy] = Query(
         [], description="Select one or more fields to order the response by."
     )
-    thing: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by thing ID.", alias="thing_id"
+    monitoring_site: list[uuid.UUID] = Query(
+        [], description="Filter data product tasks by monitoring_site ID.", alias="monitoring_site_id"
     )
     workspace: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by workspace ID.", alias="workspace_id"
@@ -102,7 +102,7 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     workspace_id: uuid.UUID
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
@@ -113,9 +113,9 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_workspace_id(obj):
-        if not hasattr(obj, "thing") or not hasattr(obj.thing, "workspace_id"):
+        if not hasattr(obj, "monitoring_site") or not hasattr(obj.monitoring_site, "workspace_id"):
             return getattr(obj, "workspace_id", None)
-        return obj.thing.workspace_id
+        return obj.monitoring_site.workspace_id
 
     @staticmethod
     def resolve_schedule(obj):
@@ -154,7 +154,7 @@ class DataProductTaskDetailResponse(BaseGetResponse):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
-    thing: ThingSummaryResponse
+    monitoring_site: MonitoringSiteSummaryResponse
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
     rating_curve_transformations: list[RatingCurveTransformationResponse]
@@ -199,7 +199,7 @@ class DataProductTaskPostBody(BasePostBody):
     uid: uuid.UUID | Unset = Field(Unset, alias="id")
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     schedule: SchedulePostBody | None = None
 
 

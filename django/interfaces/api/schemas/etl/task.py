@@ -33,8 +33,8 @@ class EtlTaskQueryParameters(CollectionQueryParameters):
     order_by: list[EtlTaskOrderBy] = Query(
         [], description="Select one or more fields to order the response by."
     )
-    thing_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by thing ID."
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [], description="Filter ETL tasks by monitoring_site ID."
     )
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter ETL tasks by workspace ID."

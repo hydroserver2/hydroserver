@@ -17,7 +17,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | M        | name                           | A text name for the Datastream.                                                                                    | String    |
 | M        | description                    | A text description for the Datastream.                                                                             | Text      |
 | M        | sensor_id                      | A foreign key identifier for the Sensor or method used to create the Datastream.                                   | UUID      |
-| M        | thing_id                       | A foreign key identifier for the Thing on which or at which the Datastream was created.                            | UUID      |
+| M        | monitoring_site_id              | A foreign key identifier for the MonitoringSite at which the Datastream was created.                               | UUID      |
 | M        | observed_property_id           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
 | M        | unit_id                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
 | M        | processing_level_id            | A foreign key identifier indicating the ProcessingLevel for the Datastream.                                        | UUID      |
@@ -39,27 +39,6 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | O        | result_end_time                | The timestamp of the last Observation in the Datastream. This field remains in the model but is currently unused.  | Datetime  |
 | M        | is_private                     | An access control flag indicating whether the Datastream metadata and data are private by default.                 | Boolean   |
 | M        | is_visible                     | An access control flag indicating whether the Datastream should be shown in normal data-discovery responses.       | Boolean   |
-
-## Location
-
-The Location entity stores the location of a Thing. In the context of Things that are monitoring sites, this is the physical location of the monitoring site.
-
-| Required | Attribute       | Definition                                                                      | Data Type |
-| -------- | --------------- | ------------------------------------------------------------------------------- | --------- |
-| M        | id              | A primary key unique identifier for the Location.                               | UUID      |
-| M        | thing_id        | A foreign key identifier for the Thing to which the Location belongs.           | UUID      |
-| M        | name            | A text string name for the Location.                                            | String    |
-| M        | description     | A text string description for the Location.                                     | Text      |
-| M        | encoding_type   | The encoding type of the Location, usually `application/vnd.geo+json`.          | String    |
-| M        | latitude        | The latitude of the Location using WGS84 coordinates.                           | Decimal   |
-| M        | longitude       | The longitude of the Location using WGS84 coordinates.                          | Decimal   |
-| O        | elevation_m     | The elevation of the Location in meters.                                        | Decimal   |
-| O        | elevation_datum | A text string indicating the elevation datum used for the Location.             | String    |
-| O        | admin_area_1    | A text string indicating the first-level administrative area for the Location.  | String    |
-| O        | admin_area_2    | A text string indicating the second-level administrative area for the Location. | String    |
-| O        | country         | A two-character ISO country code for the Location.                              | String    |
-
-**NOTE**: The database allows a Thing to have multiple Location rows, but the current Data Management API treats `location` as a single nested object on a Thing.
 
 ## Observation
 
@@ -176,47 +155,35 @@ A Sensor is an instrument, method, or procedure used to produce Observations for
 
 **NOTE**: HydroServer uses the Sensor entity for both physical instruments and derived methods or procedures, such as transformations or rating-curve-derived values.
 
-## Thing
+## MonitoringSite
 
-A Thing is an object of the physical world or information world that is capable of being identified and integrated into communication networks. In the context of HydroServer, a Thing is typically a monitoring station or site.
+A MonitoringSite stores a site and its single physical location in one row.
 
-| Required | Attribute             | Definition                                                                                                          | Data Type |
-| -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id                    | A primary key unique identifier for the Thing.                                                                      | UUID      |
-| M        | workspace_id          | A foreign key identifier for the Workspace that owns the Thing.                                                     | UUID      |
-| M        | name                  | A text string giving a name for the Thing.                                                                          | String    |
-| M        | description           | A text string giving a description for the Thing.                                                                   | Text      |
-| M        | sampling_feature_type | A text string specifying the type of sampling feature.                                                              | String    |
-| M        | sampling_feature_code | A text string specifying a shortened code identifying the Thing.                                                    | String    |
-| M        | site_type             | A text string specifying the type of site represented by the Thing.                                                 | String    |
-| M        | is_private            | An access control flag indicating whether the Thing is discoverable and whether its metadata is publicly available. | Boolean   |
-| O        | data_disclaimer       | A text string displayed with the Thing's data to specify any disclaimer.                                            | Text      |
+| Required | Attribute       | Definition                                                                                                                   | Data Type |
+| -------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id              | A primary key unique identifier for the MonitoringSite.                                                                      | UUID      |
+| M        | workspace_id    | A foreign key identifier for the Workspace that owns the MonitoringSite.                                                     | UUID      |
+| M        | name            | A text name for the MonitoringSite.                                                                                          | String    |
+| M        | description     | A text description for the MonitoringSite.                                                                                   | Text      |
+| M        | code            | A shortened code identifying the MonitoringSite.                                                                             | String    |
+| M        | type            | The type of monitoring site.                                                                                                 | String    |
+| M        | latitude        | The site's latitude using WGS84 coordinates.                                                                                 | Decimal   |
+| M        | longitude       | The site's longitude using WGS84 coordinates.                                                                                | Decimal   |
+| O        | elevation_m     | The site's elevation in meters.                                                                                              | Decimal   |
+| O        | elevation_datum | The elevation datum used for the site.                                                                                       | String    |
+| O        | admin_area_1    | The first-level administrative area.                                                                                         | String    |
+| O        | admin_area_2    | The second-level administrative area.                                                                                        | String    |
+| O        | country         | A two-character ISO country code.                                                                                            | String    |
+| M        | is_private      | Whether the MonitoringSite is discoverable and its metadata publicly available.                                             | Boolean   |
+| O        | data_disclaimer | A disclaimer displayed with the MonitoringSite's data.                                                                      | Text      |
 
-## ThingTag
+## MonitoringSiteTag
 
-A key-value tag associated with a Thing.
+A key-value tag associated with a MonitoringSite. The database enforces unique `(monitoring_site_id, key)` pairs.
 
-| Required | Attribute | Definition                                                       | Data Type  |
-| -------- | --------- | ---------------------------------------------------------------- | ---------- |
-| M        | id        | A primary key unique identifier for the ThingTag.                | BigInteger |
-| M        | thing_id  | A foreign key identifier for the Thing to which the tag belongs. | UUID       |
-| M        | key       | The tag key.                                                     | String     |
-| M        | value     | The tag value.                                                   | String     |
+## MonitoringSiteFileAttachment
 
-## ThingFileAttachment
-
-A file attached to a Thing, such as a site photo, document, or supporting artifact.
-
-| Required | Attribute            | Definition                                                                   | Data Type  |
-| -------- | -------------------- | ---------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the ThingFileAttachment.                 | BigInteger |
-| M        | thing_id             | A foreign key identifier for the Thing to which the file attachment belongs. | UUID       |
-| M        | name                 | The name of the attached file.                                               | String     |
-| O        | description          | A text description of the attached file.                                     | Text       |
-| M        | file_attachment      | The stored file object for the attachment.                                   | File       |
-| M        | file_attachment_type | A text string identifying the type of file attachment.                       | String     |
-
-**NOTE**: The database enforces a unique constraint on `(thing_id, name)`.
+A file attached to a MonitoringSite, such as a site photo, document, or supporting artifact. The database enforces unique `(monitoring_site_id, name)` pairs.
 
 ## Unit
 
@@ -273,7 +240,7 @@ A Permission associates a Role with the actions it may perform on a resource typ
 | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | M        | id            | A primary key unique identifier for the Permission.                                                                                                                                                                                                                                                                         | BigInteger |
 | M        | role_id       | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                                                                                                                      | UUID       |
-| M        | resource_type | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `Thing`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Sensor`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
+| M        | resource_type | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `MonitoringSite`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Sensor`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
 | M        | can_view      | Whether the Role may view this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
 | M        | can_create    | Whether the Role may create this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
 | M        | can_edit      | Whether the Role may edit this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
@@ -465,12 +432,12 @@ The Data Products app models derived Datastreams produced by transformations suc
 
 ## DataProductTask
 
-A DataProductTask extends `Task` with the data-product context — the Thing under which the derived Datastreams are organized.
+A DataProductTask extends `Task` with the data-product context — the MonitoringSite under which the derived Datastreams are organized.
 
 | Required | Attribute | Definition                                                                                                       | Data Type |
 | -------- | --------- | ---------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id        | A primary key unique identifier for the DataProductTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID      |
-| M        | thing_id  | A foreign key identifier for the Thing that owns the derived Datastreams produced by this task.                  | UUID      |
+| M        | monitoring_site_id  | A foreign key identifier for the MonitoringSite that owns the derived Datastreams produced by this task.                  | UUID      |
 
 ## DataProductTransformation
 
@@ -513,7 +480,7 @@ A RatingCurve defines a mapping from input values to output values, used by `rat
 | Required | Attribute      | Definition                                                                          | Data Type |
 | -------- | -------------- | ----------------------------------------------------------------------------------- | --------- |
 | M        | id             | A primary key unique identifier for the RatingCurve.                                | UUID      |
-| M        | thing_id       | A foreign key identifier for the Thing to which the RatingCurve belongs.            | UUID      |
+| M        | monitoring_site_id       | A foreign key identifier for the MonitoringSite to which the RatingCurve belongs.            | UUID      |
 | M        | name           | A descriptive name for the RatingCurve.                                             | String    |
 | O        | description    | A text description for the RatingCurve.                                             | Text      |
 | M        | fitting_method | The method used to fit the curve: `linear` or `power_law`.                          | String    |
@@ -535,12 +502,12 @@ The Data Monitoring app models scheduled checks that evaluate Datastreams agains
 
 ## MonitoringTask
 
-A MonitoringTask extends `Task` with the data-monitoring context — the Thing whose Datastreams are evaluated.
+A MonitoringTask extends `Task` with the data-monitoring context — the MonitoringSite whose Datastreams are evaluated.
 
 | Required | Attribute | Definition                                                                                                  | Data Type |
 | -------- | --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id        | A primary key unique identifier for the MonitoringTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID   |
-| M        | thing_id  | A foreign key identifier for the Thing whose Datastreams are monitored by this task.                        | UUID      |
+| M        | monitoring_site_id  | A foreign key identifier for the MonitoringSite whose Datastreams are monitored by this task.                        | UUID      |
 
 ## MonitoringRule
 
@@ -583,7 +550,6 @@ HydroServer also includes simple lookup tables that primarily store controlled v
 | `UserType`              | `id`, `name`, `public` | BigInteger, String, Boolean |
 | `OrganizationType`      | `id`, `name`, `public` | BigInteger, String, Boolean |
 | `SiteType`              | `id`, `name`           | BigInteger, String          |
-| `SamplingFeatureType`   | `id`, `name`           | BigInteger, String          |
 | `FileAttachmentType`    | `id`, `name`           | BigInteger, String          |
 | `VariableType`          | `id`, `name`           | BigInteger, String          |
 | `SensorEncodingType`    | `id`, `name`           | BigInteger, String          |
@@ -599,7 +565,7 @@ The current HydroServer SensorThings implementation still exposes SensorThings c
 
 ### FeatureOfInterest
 
-HydroServer currently derives FeatureOfInterest behavior from the Thing and Location context used by SensorThings responses rather than storing FeatureOfInterest as a first-class HydroServer model.
+HydroServer synthesizes one FeatureOfInterest from each MonitoringSite for SensorThings responses rather than storing it as a first-class model.
 
 | Required | Attribute   | Definition                                                                           | Data Type |
 | -------- | ----------- | ------------------------------------------------------------------------------------ | --------- |
@@ -615,6 +581,6 @@ HydroServer currently exposes HistoricalLocation through SensorThings but does n
 
 | Required | Attribute   | Definition                                                                            | Data Type |
 | -------- | ----------- | ------------------------------------------------------------------------------------- | --------- |
-| M        | thing_id    | A foreign key identifier for the Thing for which the HistoricalLocation is specified. | UUID      |
-| M        | time        | The time when the Thing is known to be at the Location.                               | Datetime  |
+| M        | thing_id    | A foreign key identifier for the SensorThings Thing for which the HistoricalLocation is specified. | UUID      |
+| M        | time        | The time when the Thing is known to be at the Location.                                           | Datetime  |
 | M        | location_id | A foreign key identifier for the Location.                                            | UUID      |

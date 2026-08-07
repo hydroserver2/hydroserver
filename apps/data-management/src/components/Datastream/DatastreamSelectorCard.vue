@@ -8,8 +8,8 @@
       <v-row>
         <v-col cols="6">
           <v-autocomplete
-            v-model="selectedThingId"
-            :items="things"
+            v-model="selectedMonitoringSiteId"
+            :items="monitoringSites"
             item-title="name"
             item-value="id"
             variant="outlined"
@@ -102,7 +102,7 @@
           </template>
         </v-data-table-virtual>
       </div>
-      <template v-else-if="!selectedThingId">
+      <template v-else-if="!selectedMonitoringSiteId">
         <v-card-text>
           Select a site in order to view its datastreams.
         </v-card-text>
@@ -152,7 +152,7 @@
 
 <script setup lang="ts">
 import { watch, onMounted, ref, computed } from 'vue'
-import { DatastreamExtended, Thing, Workspace } from '@hydroserver/client'
+import { DatastreamExtended, MonitoringSite, Workspace } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useRoute, useRouter } from 'vue-router'
@@ -167,9 +167,9 @@ const { linkedDatastreamIds } = storeToRefs(useOrchestrationStore())
 const router = useRouter()
 const route = useRoute()
 
-const datastreamsForThing = ref<DatastreamExtended[]>([])
-const things = ref<Thing[]>([])
-const selectedThingId = ref('')
+const datastreamsForMonitoringSite = ref<DatastreamExtended[]>([])
+const monitoringSites = ref<MonitoringSite[]>([])
+const selectedMonitoringSiteId = ref('')
 const search = ref()
 const openLinkConflictModal = ref(false)
 const currentSourceId = ref('')
@@ -215,15 +215,15 @@ const headers = [
 ] as const
 
 watch(
-  selectedThingId,
+  selectedMonitoringSiteId,
   async (newId) => {
     if (!newId) {
-      datastreamsForThing.value = []
+      datastreamsForMonitoringSite.value = []
       return
     }
 
-    datastreamsForThing.value = (await hs.datastreams.listAllItems({
-      thing_id: [newId],
+    datastreamsForMonitoringSite.value = (await hs.datastreams.listAllItems({
+      monitoring_site_id: [newId],
       expand_related: true,
     })) as unknown as DatastreamExtended[]
   },
@@ -232,8 +232,8 @@ watch(
 
 const filteredDatastreams = computed(() =>
   props.enforceUniqueSelections && !showLinkedDatastreams.value
-    ? datastreamsForThing.value.filter((ds) => !isLinked(ds))
-    : datastreamsForThing.value
+    ? datastreamsForMonitoringSite.value.filter((ds) => !isLinked(ds))
+    : datastreamsForMonitoringSite.value
 )
 
 const tableItems = computed(() =>
@@ -310,8 +310,8 @@ onMounted(async () => {
   const workspaceId = props.workspace
     ? props.workspace.id
     : selectedWorkspace.value!.id
-  things.value = await hs.things.listAllItems({ workspace_id: [workspaceId] })
-  things.value.sort((a, b) => a.name.localeCompare(b.name))
+  monitoringSites.value = await hs.monitoringSites.listAllItems({ workspace_id: [workspaceId] })
+  monitoringSites.value.sort((a, b) => a.name.localeCompare(b.name))
 })
 </script>
 

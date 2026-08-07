@@ -25,7 +25,7 @@ import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 // auth guard sees `hs.session.isAuthenticated` on first navigation.
 const isLoading = ref(false)
 
-const { things, processingLevels, observedProperties, datastreams } =
+const { monitoringSites, processingLevels, observedProperties, datastreams } =
   storeToRefs(useDataVisStore())
 
 const { hs } = storeToRefs(useHydroServer())
@@ -33,12 +33,12 @@ const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 
 async function loadWorkspaceCatalog(workspaceId: string) {
   const [
-    thingsResponse,
+    monitoringSitesResponse,
     datastreamsResponse,
     processingLevelsResponse,
     observedPropertiesResponse,
   ] = await Promise.all([
-    hs.value.things.list({ workspace_id: workspaceId } as any),
+    hs.value.monitoringSites.list({ workspace_id: workspaceId } as any),
     hs.value.datastreams.list({
       expand_related: true,
       workspace_id: workspaceId,
@@ -47,7 +47,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     hs.value.observedProperties.list({ workspace_id: workspaceId } as any),
   ])
 
-  things.value = thingsResponse.ok ? thingsResponse.data : []
+  monitoringSites.value = monitoringSitesResponse.ok ? monitoringSitesResponse.data : []
   datastreams.value = (datastreamsResponse.ok
     ? datastreamsResponse.data
     : []) as (Datastream & DatastreamExtended)[]
@@ -64,7 +64,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
 watch(selectedWorkspaceId, async (id, prev) => {
   if (id === prev) return
   if (!id) {
-    things.value = []
+    monitoringSites.value = []
     datastreams.value = []
     processingLevels.value = []
     observedProperties.value = []

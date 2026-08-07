@@ -683,7 +683,7 @@ const loadOverviewStats = async (workspaceId: string) => {
 
   const results = await Promise.allSettled([
     hs.workspaces.getCollaborators(workspaceId),
-    hs.things.listSiteSummaries(workspaceId),
+    hs.monitoringSites.listSiteSummaries(workspaceId),
     serviceAccountRequest,
     hs.sensors.list({ workspace_id: [workspaceId], fetch_all: true }),
     hs.observedProperties.list({

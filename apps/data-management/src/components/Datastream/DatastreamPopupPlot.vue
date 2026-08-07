@@ -376,7 +376,7 @@ type Query = {
 
 const getDatastreamQueryParams = (datastream: Datastream) => {
   let query: Query = {
-    sites: datastream.thingId,
+    sites: datastream.monitoringSiteId,
     datastreams: datastream.id,
   }
 

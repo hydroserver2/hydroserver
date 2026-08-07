@@ -47,7 +47,7 @@ function singularizeKebab(resource: string): string {
   return parts.join('-')
 }
 
-/** "#/components/schemas/Thing" -> "Data.components['schemas']['Thing']" */
+/** "#/components/schemas/MonitoringSite" -> "Data.components['schemas']['MonitoringSite']" */
 function refName(ref?: string): string | null {
   if (!ref) return null
   const name = ref.split('/').pop()

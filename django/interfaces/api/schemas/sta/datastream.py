@@ -15,7 +15,7 @@ from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, F
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
     from interfaces.api.schemas import (
-        ThingSummaryResponse,
+        MonitoringSiteSummaryResponse,
         ObservedPropertySummaryResponse,
         UnitSummaryResponse,
         SensorSummaryResponse,
@@ -48,7 +48,7 @@ class DatastreamFields(Schema):
 
 
 class DatastreamRelatedFields(Schema):
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     sensor_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
@@ -79,10 +79,10 @@ class DatastreamQueryParameters(CollectionQueryParameters):
     order_by: Optional[list[DatastreamOrderByFields]] = Query(
         [], description="Select one or more fields to order the response by."
     )
-    thing__workspace_id: list[uuid.UUID] = Query(
+    monitoring_site__workspace_id: list[uuid.UUID] = Query(
         [], description="Filter datastreams by workspace ID.", alias="workspace_id"
     )
-    thing_id: list[uuid.UUID] = Query([], description="Filter datastreams by thing ID.")
+    monitoring_site_id: list[uuid.UUID] = Query([], description="Filter datastreams by monitoring_site ID.")
     sensor_id: list[uuid.UUID] = Query(
         [], description="Filter datastreams by sensor ID."
     )
@@ -99,13 +99,13 @@ class DatastreamQueryParameters(CollectionQueryParameters):
         alias="result_qualifier_id",
     )
     observation_type: list[str] = Query(
-        [], description="Filter things by observation type."
+        [], description="Filter monitoring_sites by observation type."
     )
     sampled_medium: list[str] = Query(
-        [], description="Filter things by sampled medium."
+        [], description="Filter monitoring_sites by sampled medium."
     )
-    status: list[str] = Query([], description="Filter things by status.")
-    result_type: list[str] = Query([], description="Filter things by result type.")
+    status: list[str] = Query([], description="Filter monitoring_sites by status.")
+    result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
     tag: list[str] = Query(
         [], description="Filter datastreams by tag. Format tag filters as {key}:{value}"
     )
@@ -166,16 +166,16 @@ class DatastreamQueryParameters(CollectionQueryParameters):
 
 
 class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
-    thing__workspace_id: list[uuid.UUID] = Query(
+    monitoring_site__workspace_id: list[uuid.UUID] = Query(
         [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspace_id"
     )
 
 
-class VisualizationThingResponse(BaseGetResponse):
+class VisualizationMonitoringSiteResponse(BaseGetResponse):
     id: uuid.UUID
     workspace_id: uuid.UUID
     name: str = Field(..., max_length=200)
-    sampling_feature_code: str = Field(..., max_length=200)
+    code: str = Field(..., max_length=200)
 
 
 class VisualizationObservedPropertyResponse(BaseGetResponse):
@@ -192,7 +192,7 @@ class VisualizationProcessingLevelResponse(BaseGetResponse):
 class VisualizationDatastreamResponse(BaseGetResponse):
     id: uuid.UUID
     name: str = Field(..., max_length=255)
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
@@ -207,7 +207,7 @@ class VisualizationDatastreamResponse(BaseGetResponse):
 
 
 class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
-    things: list[VisualizationThingResponse]
+    monitoring_sites: list[VisualizationMonitoringSiteResponse]
     datastreams: list[VisualizationDatastreamResponse]
     observed_properties: list[VisualizationObservedPropertyResponse]
     processing_levels: list[VisualizationProcessingLevelResponse]
@@ -218,7 +218,7 @@ class DatastreamSummaryResponse(
 ):
     id: uuid.UUID
     workspace_id: uuid.UUID = Field(
-        ..., validation_alias=AliasChoices("workspaceId", AliasPath("thing", "workspace_id"))
+        ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
     datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
     datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
@@ -229,9 +229,9 @@ class DatastreamSummaryResponse(
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("thing", "workspace")
+        ..., validation_alias=AliasPath("monitoring_site", "workspace")
     )
-    thing: "ThingSummaryResponse"
+    monitoring_site: "MonitoringSiteSummaryResponse"
     sensor: "SensorSummaryResponse"
     observed_property: "ObservedPropertySummaryResponse"
     processing_level: "ProcessingLevelSummaryResponse"

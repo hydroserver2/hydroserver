@@ -90,7 +90,7 @@ import { useTagStore } from '@/store/tags'
 import { useWorkspaceTags } from '@/composables/useWorkspaceTags'
 import { mdiHelpCircleOutline } from '@mdi/js'
 
-const props = defineProps({ thingId: String })
+const props = defineProps({ monitoringSiteId: String })
 const { tags, previewTags } = storeToRefs(useTagStore())
 const { tags: workspaceTags } = useWorkspaceTags()
 
@@ -111,7 +111,7 @@ const addTag = () => {
 }
 
 onMounted(async () => {
-  previewTags.value = props.thingId ? [...tags.value] : []
+  previewTags.value = props.monitoringSiteId ? [...tags.value] : []
 })
 </script>
 

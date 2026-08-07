@@ -89,7 +89,7 @@ async function togglePrivacy() {
   else {
     isPrivate.value = !isPrivate.value
     Snackbar.error(res.message)
-    console.error('Error updating thing privacy', res)
+    console.error('Error updating monitoringSite privacy', res)
   }
 
   isUpdating.value = false

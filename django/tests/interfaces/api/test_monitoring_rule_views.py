@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.monitoring.factories import MonitoringRuleFactory, MonitoringTaskFactory
 
 pytestmark = pytest.mark.django_db
@@ -30,9 +30,9 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_task_with_datastream(workspace):
-    thing = ThingFactory(workspace=workspace)
-    task = MonitoringTaskFactory(thing=thing)
-    datastream = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    task = MonitoringTaskFactory(monitoring_site=monitoring_site)
+    datastream = DatastreamFactory(monitoring_site=monitoring_site)
     return task, datastream
 
 

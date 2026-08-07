@@ -75,7 +75,7 @@ class ResultQualifierService(ServiceUtils):
                 queryset = self.apply_filters(queryset, field, filtering[field])
         for field in [
             "observations__datastream_id",
-            "observations__datastream__thing_id",
+            "observations__datastream__monitoring_site_id",
         ]:
             if field in filtering and not all(
                 value is None for value in filtering[field]

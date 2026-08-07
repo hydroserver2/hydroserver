@@ -1,7 +1,7 @@
 import pytest
 
 from core.iam.models import Role, User, Workspace
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 from tests.core.iam.factories import RoleFactory
 from tests.e2e.scenarios import cleanup_scenario, create_scenario
 
@@ -23,16 +23,16 @@ def test_scenario_uses_generated_ids_and_cleans_up_all_workspace_data():
         "+scenario-one@example.com"
     )
     assert scenario["fixtures"]["workspaces"]["public"]["id"]
-    assert scenario["fixtures"]["things"]["public"]["id"]
+    assert scenario["fixtures"]["monitoringSites"]["public"]["id"]
     assert User.objects.filter(email__contains="+scenario-one@").count() == 7
     assert Workspace.objects.count() == 3
-    assert Thing.objects.count() == 5
+    assert MonitoringSite.objects.count() == 5
 
     cleanup_scenario("scenario-one")
 
     assert not User.objects.filter(email__contains="+scenario-one@").exists()
     assert not Workspace.objects.exists()
-    assert not Thing.objects.exists()
+    assert not MonitoringSite.objects.exists()
 
 
 def test_scenarios_do_not_share_users_or_resource_ids():

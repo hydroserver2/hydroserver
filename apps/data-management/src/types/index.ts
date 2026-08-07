@@ -1,10 +1,10 @@
-import { Thing, ThingMarker, ThingSiteSummary } from '@hydroserver/client'
+import { MonitoringSite, MonitoringSiteMarker, MonitoringSiteMapSummary } from '@hydroserver/client'
 
-export type { ThingMarker, ThingSiteSummary }
+export type { MonitoringSiteMarker, MonitoringSiteMapSummary }
 
-export type MapThing = Thing | ThingMarker | ThingSiteSummary
+export type MapMonitoringSite = MonitoringSite | MonitoringSiteMarker | MonitoringSiteMapSummary
 
-interface ThingWithColor extends Thing {
+interface MonitoringSiteWithColor extends MonitoringSite {
   color?: {
     borderColor: string
     background: string
@@ -13,7 +13,7 @@ interface ThingWithColor extends Thing {
   tagValue?: string
 }
 
-export interface ThingSiteSummaryWithColor extends ThingSiteSummary {
+export interface MonitoringSiteMapSummaryWithColor extends MonitoringSiteMapSummary {
   color?: {
     borderColor: string
     background: string
@@ -22,7 +22,7 @@ export interface ThingSiteSummaryWithColor extends ThingSiteSummary {
   tagValue?: string
 }
 
-interface ThingMarkerWithColor extends ThingMarker {
+interface MonitoringSiteMarkerWithColor extends MonitoringSiteMarker {
   color?: {
     borderColor: string
     background: string
@@ -31,7 +31,7 @@ interface ThingMarkerWithColor extends ThingMarker {
   tagValue?: string
 }
 
-export type MapThingWithColor =
-  | ThingWithColor
-  | ThingMarkerWithColor
-  | ThingSiteSummaryWithColor
+export type MapMonitoringSiteWithColor =
+  | MonitoringSiteWithColor
+  | MonitoringSiteMarkerWithColor
+  | MonitoringSiteMapSummaryWithColor

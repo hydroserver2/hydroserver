@@ -1,19 +1,19 @@
 <template>
   <div v-if="loaded && authorized" class="my-3 mx-4 flex flex-col gap-2">
-    <v-row v-if="thing" class="align-center gap-y-[0.35rem]">
+    <v-row v-if="monitoringSite" class="align-center gap-y-[0.35rem]">
       <v-col
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <h5 class="text-h5 mt-2 mb-0">{{ thing.name }}</h5>
+        <h5 class="text-h5 mt-2 mb-0">{{ monitoringSite.name }}</h5>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
         >
-          <HydroShareArchivalButton v-if="canEditThing && hydroShareConnected" />
+          <HydroShareArchivalButton v-if="canEditMonitoringSite && hydroShareConnected" />
 
           <v-btn
-            v-if="canEditThing"
+            v-if="canEditMonitoringSite"
             variant="outlined"
             data-testid="site-access-control-button"
             @click="isAccessControlModalOpen = true"
@@ -22,7 +22,7 @@
           </v-btn>
 
           <v-btn
-            v-if="canEditThing"
+            v-if="canEditMonitoringSite"
             variant="outlined"
             color="secondary"
             data-testid="edit-site-button"
@@ -31,7 +31,7 @@
             Edit site information
           </v-btn>
 
-          <v-menu v-if="canEditThing" location="bottom end">
+          <v-menu v-if="canEditMonitoringSite" location="bottom end">
             <template #activator="{ props: menuProps }">
               <v-btn
                 v-bind="menuProps"
@@ -69,7 +69,7 @@
 
           <v-btn
             v-if="
-              hasPermission(PermissionResource.Thing, PermissionAction.Delete)
+              hasPermission(PermissionResource.MonitoringSite, PermissionAction.Delete)
             "
             color="red-darken-3"
             data-testid="delete-site-button"
@@ -79,36 +79,36 @@
           </v-btn>
         </div>
 
-        <v-dialog v-model="isDeleteModalOpen" v-if="thing" width="40rem">
+        <v-dialog v-model="isDeleteModalOpen" v-if="monitoringSite" width="40rem">
           <SiteDeleteModal
-            :thing="thing"
+            :monitoringSite="monitoringSite"
             @switch-to-access-control="switchToAccessControlModal"
             @close="isDeleteModalOpen = false"
-            @delete="onDeleteThing"
+            @delete="onDeleteMonitoringSite"
           />
         </v-dialog>
         <v-dialog v-model="isAccessControlModalOpen" width="40rem">
           <SiteAccessControl
             @close="isAccessControlModalOpen = false"
-            :thing-id="thingId"
+            :monitoring-site-id="monitoringSiteId"
           />
         </v-dialog>
-        <v-dialog v-if="thing" v-model="isRegisterModalOpen" width="80rem">
+        <v-dialog v-if="monitoringSite" v-model="isRegisterModalOpen" width="80rem">
           <SiteForm
             @close="onSiteFormClosed"
-            :thing-id="thingId"
-            :workspace-id="thing.workspaceId"
+            :monitoring-site-id="monitoringSiteId"
+            :workspace-id="monitoringSite.workspaceId"
           />
         </v-dialog>
       </v-col>
     </v-row>
 
-    <v-row v-if="thing">
+    <v-row v-if="monitoringSite">
       <v-col>
         <div class="w-full">
           <div class="h-88 w-full max-[960px]:h-72">
             <OpenLayersMap
-              :things="[thing]"
+              :monitoringSites="[monitoringSite]"
               startInSatellite
               class="h-full w-full"
             >
@@ -206,7 +206,7 @@
     </v-row>
 
     <DatastreamTable
-      v-if="thing && workspace"
+      v-if="monitoringSite && workspace"
       :workspace="workspace"
       :target-datastream-id="targetDatastreamId"
     />
@@ -261,7 +261,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePhotosStore } from '@/store/photos'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useTagStore } from '@/store/tags'
 import { storeToRefs } from 'pinia'
 import hs, {
@@ -297,7 +297,7 @@ const pythonClientGuideUrl =
   'https://hydroserver2.github.io/hydroserver/user-guides/how-to/using-the-python-client.html'
 
 const route = useRoute()
-const thingId = route.params.id.toString()
+const monitoringSiteId = route.params.id.toString()
 const targetDatastreamId = computed(() => {
   const param = route.query.datastream
   return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
@@ -306,8 +306,8 @@ const orchestrationIngestionRoute = computed(() => ({
   name: 'OrchestrationView',
   params: { view: 'ingestion' },
   query: {
-    workspace_id: thing.value?.workspaceId,
-    site_id: thingId,
+    workspace_id: monitoringSite.value?.workspaceId,
+    site_id: monitoringSiteId,
   },
 }))
 const { photos, loading } = storeToRefs(usePhotosStore())
@@ -319,12 +319,12 @@ const { hydroShareArchive } = storeToRefs(useHydroShareStore())
 const { hasPermission } = useWorkspacePermissions(workspace)
 const loaded = ref(false)
 const authorized = ref(true)
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags } = storeToRefs(useTagStore())
 const { xs } = useDisplay()
 const isMobile = computed(() => xs.value)
-const canEditThing = computed(() =>
-  hasPermission(PermissionResource.Thing, PermissionAction.Edit)
+const canEditMonitoringSite = computed(() =>
+  hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit)
 )
 
 const hasPhotos = computed(() => !loading.value && photos.value?.length > 0)
@@ -349,7 +349,7 @@ const selectedPhoto = computed(() => {
 })
 
 const locationDetails = computed(() => {
-  const location = thing.value?.location
+  const location = monitoringSite.value
   if (!location) return []
 
   return [
@@ -381,8 +381,8 @@ function switchToAccessControlModal() {
   isAccessControlModalOpen.value = true
 }
 
-async function loadThingPhotos() {
-  const res = await hs.things.getAttachments(thingId)
+async function loadMonitoringSitePhotos() {
+  const res = await hs.monitoringSites.getAttachments(monitoringSiteId)
   if (!res.ok || !Array.isArray(res.data)) return
 
   photos.value = res.data.filter(
@@ -391,13 +391,13 @@ async function loadThingPhotos() {
 }
 
 async function loadRatingCurveCount() {
-  const items = await hs.ratingCurves.listItemsForThing(thingId)
+  const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId)
   ratingCurveCount.value = items.length
 }
 
 function onSiteFormClosed() {
   isRegisterModalOpen.value = false
-  void loadThingPhotos()
+  void loadMonitoringSitePhotos()
   void loadRatingCurveCount()
 }
 
@@ -431,42 +431,42 @@ function formatLocationValue(value?: string | number | null) {
   return value.toString()
 }
 
-async function onDeleteThing() {
+async function onDeleteMonitoringSite() {
   try {
-    await hs.things.delete(thingId)
+    await hs.monitoringSites.delete(monitoringSiteId)
     await router.push('/browse')
   } catch (error) {
-    console.error('Error deleting thing', error)
+    console.error('Error deleting monitoringSite', error)
   }
 }
 
 onMounted(async () => {
   photos.value = []
-  void loadThingPhotos().catch((error) =>
+  void loadMonitoringSitePhotos().catch((error) =>
     console.error('Error fetching photos from DB', error)
   )
   void loadRatingCurveCount().catch((error) =>
     console.error('Error fetching rating curves from DB', error)
   )
 
-  const [thingResponse, tagResponse] = await Promise.all([
-    hs.things.getItem(thingId).catch((error: any) => {
+  const [monitoringSiteResponse, tagResponse] = await Promise.all([
+    hs.monitoringSites.getItem(monitoringSiteId).catch((error: any) => {
       if (parseInt(error.status) === 403) authorized.value = false
-      else console.error('Error fetching thing', error)
+      else console.error('Error fetching monitoringSite', error)
 
       return null
     }),
-    hs.things.getTags(thingId).catch((error) => {
+    hs.monitoringSites.getTags(monitoringSiteId).catch((error) => {
       console.error('Error fetching additional metadata tags', error)
       return null
     }),
   ])
 
   tags.value = tagResponse?.ok ? tagResponse.data : []
-  thing.value = thingResponse ?? undefined
+  monitoringSite.value = monitoringSiteResponse ?? undefined
   try {
     workspace.value =
-      (await hs.workspaces.getItem(thing.value!.workspaceId)) ?? undefined
+      (await hs.workspaces.getItem(monitoringSite.value!.workspaceId)) ?? undefined
   } catch (error) {
     console.error('Error fetching workspace', error)
   }

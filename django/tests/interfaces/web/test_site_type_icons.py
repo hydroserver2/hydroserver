@@ -76,7 +76,7 @@ def test_django_and_data_management_app_icon_lists_stay_in_sync():
 
 @pytest.mark.django_db
 def test_default_site_type_icon_mappings_are_available(client):
-    response = client.get("/api/data/things/site-type-icons")
+    response = client.get("/api/data/monitoring-sites/site-type-icons")
 
     assert response.status_code == 200
     mappings = response.json()
@@ -212,7 +212,7 @@ def test_site_type_icon_migration_does_not_replace_site_types():
 
 @pytest.mark.django_db
 def test_site_types_endpoint_remains_a_list_of_names(client):
-    response = client.get("/api/data/things/site-types")
+    response = client.get("/api/data/monitoring-sites/site-types")
 
     assert response.status_code == 200
     assert all(isinstance(site_type, str) for site_type in response.json())

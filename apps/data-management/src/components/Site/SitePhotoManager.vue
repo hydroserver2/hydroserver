@@ -25,7 +25,7 @@
 
   <div class="photo-container">
     <div
-      v-if="thingId && photos"
+      v-if="monitoringSiteId && photos"
       v-for="(photo, index) in photos"
       :key="photo.name"
       class="photo-wrapper"
@@ -73,7 +73,7 @@ import { mdiCloseCircle, mdiPaperclip } from '@mdi/js'
 
 const { photos, newPhotos, photosToDelete } = storeToRefs(usePhotosStore())
 
-const props = defineProps({ thingId: String })
+const props = defineProps({ monitoringSiteId: String })
 
 const previewedPhotos = ref<string[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)

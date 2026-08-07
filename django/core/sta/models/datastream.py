@@ -5,7 +5,7 @@ from django.conf import settings
 
 from core.iam.permissions.registry import register_resource_type
 
-from .thing import Thing
+from .monitoring_site import MonitoringSite
 from .sensor import Sensor
 from .unit import Unit
 from .processing_level import ProcessingLevel
@@ -21,16 +21,16 @@ class DatastreamQuerySet(models.QuerySet):
         return super().delete()
 
 
-@register_resource_type(workspace_field="thing__workspace", privacy_chain=[
-    "is_private", "thing__is_private",
-    "thing__workspace__is_private"
+@register_resource_type(workspace_field="monitoring_site__workspace", privacy_chain=[
+    "is_private", "monitoring_site__is_private",
+    "monitoring_site__workspace__is_private"
 ])
 class Datastream(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=200)
     description = models.TextField()
-    thing = models.ForeignKey(
-        Thing, on_delete=models.CASCADE, related_name="datastreams"
+    monitoring_site = models.ForeignKey(
+        MonitoringSite, on_delete=models.CASCADE, related_name="datastreams"
     )
     sensor = models.ForeignKey(
         Sensor, on_delete=models.PROTECT, related_name="datastreams"

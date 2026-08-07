@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.quality.factories import (
     QCHistoryFactory,
     QCOperationFactory,
@@ -34,9 +34,9 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_session(workspace, managed_private=False, **kwargs):
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing, private=managed_private)
-    source = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site, private=managed_private)
+    source = DatastreamFactory(monitoring_site=monitoring_site)
     history = QCHistoryFactory(managed_datastream=managed, source_datastream=source)
     return QCSessionFactory(history=history, **kwargs)
 

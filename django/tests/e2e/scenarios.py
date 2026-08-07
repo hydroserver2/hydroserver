@@ -19,7 +19,7 @@ from core.sta.models import (
     ProcessingLevel,
     ResultQualifier,
     Sensor,
-    ThingTag,
+    MonitoringSiteTag,
     Unit,
 )
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
@@ -30,7 +30,7 @@ from tests.core.sta.factories import (
     ProcessingLevelFactory,
     ResultQualifierFactory,
     SensorFactory,
-    ThingFactory,
+    MonitoringSiteFactory,
     UnitFactory,
 )
 from tests.processing.etl.factories import (
@@ -70,30 +70,25 @@ def _user(kind, marker, **kwargs):
     )
 
 
-def _thing(workspace, marker, *, name, code, private, latitude, longitude):
-    thing = ThingFactory(
+def _monitoring_site(workspace, marker, *, name, code, private, latitude, longitude):
+    monitoring_site = MonitoringSiteFactory(
         workspace=workspace,
         name=_name(name, marker),
         description=f"E2E scenario site {marker}",
-        sampling_feature_type="Private" if private else "Public",
-        sampling_feature_code=code,
-        site_type="Private" if private else "Public",
+        code=code,
+        type="Private" if private else "Public",
+        latitude=latitude,
+        longitude=longitude,
+        elevation_m=1,
+        elevation_datum="WGS84",
+        country="US",
         is_private=private,
     )
-    location = thing.locations.first()
-    location.name = f"Location for {thing.name}"
-    location.description = f"E2E scenario location {marker}"
-    location.latitude = latitude
-    location.longitude = longitude
-    location.elevation_m = 1
-    location.elevation_datum = "WGS84"
-    location.country = "US"
-    location.save()
-    return thing
+    return monitoring_site
 
 
 def _datastream(
-    thing,
+    monitoring_site,
     marker,
     *,
     name,
@@ -106,7 +101,7 @@ def _datastream(
     begin = datetime(2025, 2, 10, 8, 0, tzinfo=timezone.utc)
     end = datetime(2025, 2, 10, 9, 0, tzinfo=timezone.utc)
     datastream = DatastreamFactory(
-        thing=thing,
+        monitoring_site=monitoring_site,
         name=_name(name, marker),
         description=f"E2E scenario datastream {marker}",
         sensor=sensor,
@@ -300,53 +295,53 @@ def create_scenario(scenario_key):
         role=data_loader_role,
     )
 
-    public_thing = _thing(
+    public_monitoring_site = _monitoring_site(
         public_workspace,
         marker,
-        name="Public Thing",
+        name="Public MonitoringSite",
         code=f"UWRL-{marker[-4:]}",
         private=False,
         latitude=41.739742,
         longitude=-111.793766,
     )
-    private_thing = _thing(
+    private_monitoring_site = _monitoring_site(
         private_workspace,
         marker,
-        name="Private Thing",
+        name="Private MonitoringSite",
         code=f"TSC-{marker[-4:]}",
         private=True,
         latitude=41.743042,
         longitude=-111.813250,
     )
-    private_public_thing = _thing(
+    private_public_monitoring_site = _monitoring_site(
         public_workspace,
         marker,
-        name="Private Thing Public Workspace",
+        name="Private MonitoringSite Public Workspace",
         code=f"MAIN-{marker[-4:]}",
         private=True,
         latitude=41.740741,
         longitude=-111.813924,
     )
-    private_workspace_public_thing = _thing(
+    private_workspace_public_monitoring_site = _monitoring_site(
         private_workspace,
         marker,
-        name="Public Thing Private Workspace",
+        name="Public MonitoringSite Private Workspace",
         code=f"LIB-{marker[-4:]}",
         private=False,
         latitude=41.742008,
         longitude=-111.809720,
     )
-    mutable_public_thing = _thing(
+    mutable_public_monitoring_site = _monitoring_site(
         public_workspace,
         marker,
-        name="E2E Mutable Thing",
+        name="E2E Mutable MonitoringSite",
         code=f"E2E-MUTABLE-{marker[-4:]}",
         private=False,
         latitude=41.741111,
         longitude=-111.805555,
     )
-    ThingTag.objects.create(
-        thing=mutable_public_thing, key="E2E", value="Mutable"
+    MonitoringSiteTag.objects.create(
+        monitoring_site=mutable_public_monitoring_site, key="E2E", value="Mutable"
     )
 
     public_metadata = _metadata(public_workspace, marker, "Public")
@@ -361,26 +356,26 @@ def create_scenario(scenario_key):
     )
 
     public_datastream = _datastream(
-        public_thing,
+        public_monitoring_site,
         marker,
         name="Public Datastream 1",
         **public_metadata,
     )
     private_visible_datastream = _datastream(
-        public_thing,
+        public_monitoring_site,
         marker,
         name="Private Datastream 1",
         private=True,
         **public_metadata,
     )
     public_system_datastream = _datastream(
-        public_thing,
+        public_monitoring_site,
         marker,
         name="Public Datastream 2",
         **system_metadata,
     )
     private_workspace_datastream = _datastream(
-        private_workspace_public_thing,
+        private_workspace_public_monitoring_site,
         marker,
         name="Private Datastream 4",
         **private_metadata,
@@ -457,31 +452,31 @@ def create_scenario(scenario_key):
                 "private": {"id": str(private_workspace.id), "name": private_workspace.name},
                 "transfer": {"id": str(transfer_workspace.id), "name": transfer_workspace.name},
             },
-            "things": {
+            "monitoringSites": {
                 "public": {
-                    "id": str(public_thing.id),
-                    "name": public_thing.name,
-                    "siteCode": public_thing.sampling_feature_code,
+                    "id": str(public_monitoring_site.id),
+                    "name": public_monitoring_site.name,
+                    "siteCode": public_monitoring_site.code,
                 },
                 "private": {
-                    "id": str(private_thing.id),
-                    "name": private_thing.name,
-                    "siteCode": private_thing.sampling_feature_code,
+                    "id": str(private_monitoring_site.id),
+                    "name": private_monitoring_site.name,
+                    "siteCode": private_monitoring_site.code,
                 },
                 "privatePublic": {
-                    "id": str(private_public_thing.id),
-                    "name": private_public_thing.name,
-                    "siteCode": private_public_thing.sampling_feature_code,
+                    "id": str(private_public_monitoring_site.id),
+                    "name": private_public_monitoring_site.name,
+                    "siteCode": private_public_monitoring_site.code,
                 },
                 "privateWorkspacePublic": {
-                    "id": str(private_workspace_public_thing.id),
-                    "name": private_workspace_public_thing.name,
-                    "siteCode": private_workspace_public_thing.sampling_feature_code,
+                    "id": str(private_workspace_public_monitoring_site.id),
+                    "name": private_workspace_public_monitoring_site.name,
+                    "siteCode": private_workspace_public_monitoring_site.code,
                 },
                 "mutablePublic": {
-                    "id": str(mutable_public_thing.id),
-                    "name": mutable_public_thing.name,
-                    "siteCode": mutable_public_thing.sampling_feature_code,
+                    "id": str(mutable_public_monitoring_site.id),
+                    "name": mutable_public_monitoring_site.name,
+                    "siteCode": mutable_public_monitoring_site.code,
                 },
             },
             "datastreams": {

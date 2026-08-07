@@ -17,7 +17,7 @@
       some of your datastreams. Before deletion, all of the following
       datastreams need to be deleted or use a different {{ itemName }}:
       <div class="my-4" v-for="ds in datastreams">
-        <router-link :to="`/sites/${ds.thingId}`">
+        <router-link :to="`/sites/${ds.monitoringSiteId}`">
           {{ ds.name }}
         </router-link>
       </div>
@@ -80,7 +80,7 @@ onMounted(async () => {
     datastreams.value = await hs.datastreams.listAllItems(filter)
     loaded.value = true
   } catch (error) {
-    console.error('Error fetching things', error)
+    console.error('Error fetching monitoringSites', error)
   }
 })
 </script>

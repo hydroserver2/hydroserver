@@ -27,7 +27,7 @@ Everything runs in your web browser. The backend never sees your edit history un
 | Term | Meaning |
 |------|---------|
 | **Workspace** | A HydroServer scope (one organization or project's data). You pick one when you sign in to the QC App. |
-| **Thing / Site** | A physical monitoring site or sampling location. |
+| **Monitoring site** | A physical monitoring site or sampling location. |
 | **Datastream** | A single time-series at a site: one variable, one sensor, one processing level. |
 | **Observation** | A single (timestamp, value) measurement. |
 | **QC target** | The datastream you are editing. There is always exactly one QC target when the Edit view is open. |

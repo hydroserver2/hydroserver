@@ -1,12 +1,10 @@
-from .thing import (
-    Thing,
-    ThingTag,
-    ThingFileAttachment,
+from .monitoring_site import (
+    MonitoringSite,
+    MonitoringSiteTag,
+    MonitoringSiteFileAttachment,
     SiteType,
-    SamplingFeatureType,
     FileAttachmentType,
 )
-from .location import Location
 from .observed_property import ObservedProperty, VariableType
 from .processing_level import ProcessingLevel
 from .result_qualifier import ResultQualifier
