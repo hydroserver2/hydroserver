@@ -90,11 +90,22 @@ class PartialMetaclass(type(Schema)):
         cls, name: str, bases: tuple[type, ...], attrs: dict, **kwargs
     ) -> "PartialMetaclass":
         new_cls = super().__new__(cls, name, bases, attrs, **kwargs)
-        new_cls.model_fields = {
-            k: copy.deepcopy(v) for k, v in new_cls.model_fields.items()
+
+        # `model_fields` is a deprecated read-only property that proxies
+        # `__pydantic_fields__`. Assigning to it doesn't update the real
+        # field store - it just adds a plain dict entry to this class's own
+        # `__dict__`, which then shadows `BaseModel`'s `model_fields`
+        # property for every subclass that lists this class earlier in its
+        # MRO than the mixins it's meant to combine with (e.g. a
+        # `*PatchBody(BasePatchBody, SomeFields, ...)` subclass would read
+        # back the shadowed dict left behind here instead of the fields
+        # merged in from `SomeFields`). Read and write `__pydantic_fields__`
+        # directly so field mutations survive multi-inheritance.
+        fields = {
+            k: copy.deepcopy(v) for k, v in new_cls.__pydantic_fields__.items()
         }
 
-        for field in new_cls.model_fields.values():
+        for field in fields.values():
             field.default = Unset
 
             metadata = field.metadata
@@ -108,6 +119,7 @@ class PartialMetaclass(type(Schema)):
 
             field.annotation = Union[constrained_arm, type(Unset)]
 
+        new_cls.__pydantic_fields__ = fields
         new_cls.model_rebuild(force=True)  # noqa
 
         return new_cls

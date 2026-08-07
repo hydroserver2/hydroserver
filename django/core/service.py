@@ -91,7 +91,14 @@ class ServiceUtils:
         for field in order_by:
             if field not in allowed_fields:
                 raise HttpError(400, f"Response cannot be ordered by field '{field}'")
-            order_by_fields.append(field_aliases.get(field, to_snake(field)))
+            descending = field.startswith("-")
+            stripped_field = field.lstrip("-")
+            # `to_snake` doesn't understand a leading "-" (it would turn
+            # "-name" into "_name", which Django can't resolve into a
+            # field), so strip it first and re-apply it to the resolved
+            # ORM field name.
+            orm_field = field_aliases.get(field, to_snake(stripped_field))
+            order_by_fields.append(f"-{orm_field}" if descending else orm_field)
 
         # Requested fields (e.g. "name") are rarely unique, so rows that tie on
         # them have no guaranteed relative order. Since results are fetched a
