@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.quality.services.operation import QCOperationService, OperationInput
 from interfaces.api.schemas.quality.operation import (
     QualityControlOperationResponse,
@@ -15,15 +15,13 @@ from interfaces.api.schemas.quality.operation import (
     QualityControlOperationPatchBody,
 )
 
-_auth = [session_auth, bearer_auth]
-
 qc_operation_router = Router(tags=["Quality Control Operations"])
 qc_operation_service = QCOperationService()
 
 
 @qc_operation_router.get(
     "",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={200: list[QualityControlOperationResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -56,7 +54,7 @@ def get_qc_operations(
 
 @qc_operation_router.post(
     "",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={201: list[QualityControlOperationResponse], 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -81,7 +79,7 @@ def create_qc_operations(
 
 @qc_operation_router.get(
     "/{operation_id}",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={200: QualityControlOperationResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -106,7 +104,7 @@ def get_qc_operation(
 
 @qc_operation_router.patch(
     "/{operation_id}",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={200: QualityControlOperationResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -133,7 +131,7 @@ def update_qc_operation(
 
 @qc_operation_router.delete(
     "/{operation_id}",
-    auth=_auth,
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )

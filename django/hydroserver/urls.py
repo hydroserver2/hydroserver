@@ -1,15 +1,16 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, re_path, include
+from django.urls import URLPattern, URLResolver, path, re_path, include
 from django.views.static import serve
 from interfaces.web.views import main_spa_view, qc_spa_view
 
 
-urlpatterns = [
+urlpatterns: list[URLPattern | URLResolver] = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("api/auth/", include("interfaces.auth.urls")),
+    path("accounts/", include("interfaces.account.urls")),
+    path("", include("allauth.idp.urls")),
     path("api/", include("interfaces.api.urls")),
 ]
 
@@ -20,27 +21,36 @@ if settings.E2E_TESTING:
 
 urlpatterns += [
     re_path(r"^qc/.*$", qc_spa_view),
-    re_path(r"^(?!admin/|accounts/|api/|static/|media/).*$", main_spa_view),
+    re_path(
+        r"^(?!admin/|accounts/|identity/|\.well-known/|api/|static/|media/).*$",
+        main_spa_view,
+    ),
 ]
 
-urlpatterns += static(
-    settings.STATIC_URL,
-    document_root=settings.STORAGES["staticfiles"]["OPTIONS"]["location"],
-)
-urlpatterns += static(
-    settings.MEDIA_URL,
-    document_root=settings.STORAGES["default"]["OPTIONS"]["location"],
-)
+if settings.STATIC_STORAGE_IS_LOCAL:
+    urlpatterns += static(
+        settings.STATIC_URL,
+        document_root=settings.STORAGES["staticfiles"]["OPTIONS"]["location"],
+    )
+if settings.MEDIA_STORAGE_IS_LOCAL:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.STORAGES["default"]["OPTIONS"]["location"],
+    )
 
-# In local/dev environments we want file attachments to remain accessible from the
-# Django process even when DEBUG is false.
-if settings.DEPLOYMENT_BACKEND in {"dev", "local"} and not settings.DEBUG:
+# When using local filesystem storage, we want file attachments to remain
+# accessible from the Django process even when DEBUG is false.
+if settings.MEDIA_STORAGE_IS_LOCAL and not settings.DEBUG:
     urlpatterns += [
         re_path(
             r"^media/(?P<path>.*)$",
             serve,
             {"document_root": settings.STORAGES["default"]["OPTIONS"]["location"]},
         ),
+    ]
+
+if settings.STATIC_STORAGE_IS_LOCAL and not settings.DEBUG:
+    urlpatterns += [
         re_path(
             r"^static/(?P<path>.*)$",
             serve,

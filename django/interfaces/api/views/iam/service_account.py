@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from interfaces.api.schemas import (
     ServiceAccountSummaryResponse,
     ServiceAccountDetailResponse,
@@ -22,7 +22,7 @@ service_account_service = ServiceAccountService()
 
 @service_account_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[ServiceAccountSummaryResponse] | list[ServiceAccountDetailResponse],
         401: str,
@@ -54,7 +54,7 @@ def get_service_accounts(
 
 @service_account_router.post(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: ServiceAccountSummaryPostResponse | ServiceAccountDetailPostResponse,
         401: str,
@@ -84,7 +84,7 @@ def create_service_account(
 
 @service_account_router.get(
     "/{service_account_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth],
     response={
         200: ServiceAccountSummaryResponse | ServiceAccountDetailResponse,
         401: str,
@@ -113,7 +113,7 @@ def get_service_account(
 
 @service_account_router.patch(
     "/{service_account_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_auth],
     response={
         200: ServiceAccountSummaryResponse | ServiceAccountDetailResponse,
         401: str,
@@ -146,7 +146,7 @@ def update_service_account(
 
 @service_account_router.delete(
     "/{service_account_id}",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_auth],
     response={
         204: None,
         401: str,
@@ -171,7 +171,7 @@ def delete_service_account(
 
 @service_account_router.put(
     "/{service_account_id}/regenerate",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_auth],
     response={
         201: ServiceAccountSummaryPostResponse | ServiceAccountDetailPostResponse,
         400: str,

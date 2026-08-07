@@ -17,6 +17,15 @@ hs_api = HydroServer(
 )
 ```
 
+You can also authenticate with an API key instead of email/password:
+
+```python
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    apikey='hs_your_api_key'
+)
+```
+
 The hydroserverpy connection instance exposes the following types of core data and metadata you can retrieve or create, either as a collection or by ID using the `list`, `get`, or `create` methods of the associated property:
 
 * workspaces

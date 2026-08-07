@@ -110,6 +110,50 @@ class User(AbstractUser, ResourcePermissionMixin):
         self.email = self.email.lower()
         super().save(*args, **kwargs)
 
+    def to_profile_claims(self) -> dict:
+        """
+        HydroServer-specific profile fields, shared by the SPA shell's
+        embedded current-user context (interfaces/web/views.py) and the
+        OIDC /userinfo endpoint (core/iam/auth/oidc_adapter.py), so both
+        surfaces describe a user the same way.
+        """
+
+        if self.is_superuser:
+            account_type = "admin"
+        elif self.owned_workspace_limit == 0:
+            account_type = "limited"
+        else:
+            account_type = "standard"
+
+        organization = (
+            {
+                "name": self.organization.name,
+                "code": self.organization.code,
+                "type": self.organization.organization_type,
+                "description": self.organization.description,
+                "link": self.organization.link,
+            }
+            if self.organization
+            else None
+        )
+
+        return {
+            "id": str(self.pk),
+            "email": self.email,
+            "firstName": self.first_name,
+            "middleName": self.middle_name,
+            "lastName": self.last_name,
+            "phone": self.phone,
+            "address": self.address,
+            "link": self.link,
+            "type": self.user_type,
+            "accountType": account_type,
+            "organization": organization,
+            "hydroShareConnected": self.socialaccount_set.filter(
+                provider="hydroshare"
+            ).exists(),
+        }
+
 
 class UserType(models.Model):
     name = models.CharField(max_length=255, unique=True)

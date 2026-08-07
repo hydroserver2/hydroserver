@@ -1,8 +1,8 @@
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
+from django.conf import settings
 from django.urls import path, include
 from django.views.decorators.csrf import ensure_csrf_cookie
-from decouple import config
 from hydroserver import __version__
 from interfaces.api.http.renderer import ORJSONRenderer
 from interfaces.api.views import (
@@ -30,9 +30,6 @@ from interfaces.api.views import (
     qc_operation_router,
 )
 
-ANON_THROTTLE_RATE = config("ANON_THROTTLE_RATE", default="20/s")
-AUTH_THROTTLE_RATE = config("AUTH_THROTTLE_RATE", default="20/s")
-
 api = NinjaAPI(
     title="HydroServer Data Management API",
     version=__version__,
@@ -40,8 +37,8 @@ api = NinjaAPI(
     docs_decorator=ensure_csrf_cookie,
     renderer=ORJSONRenderer(),
     throttle=[
-        AnonRateThrottle(ANON_THROTTLE_RATE),
-        AuthRateThrottle(AUTH_THROTTLE_RATE),
+        AnonRateThrottle(settings.ANON_THROTTLE_RATE),
+        AuthRateThrottle(settings.AUTH_THROTTLE_RATE),
     ],
 )
 

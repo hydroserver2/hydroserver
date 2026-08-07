@@ -10,7 +10,7 @@ async function interceptedFetch<T>(
   endpoint: string,
   options: RequestOptions
 ): Promise<ApiResponse<T>> {
-  const opts = requestInterceptor(options)
+  const opts = await requestInterceptor(options)
   const response = await fetch(endpoint, opts)
   return await responseInterceptor<T>(response)
 }
@@ -87,7 +87,7 @@ export const apiMethods = {
     if (!url.searchParams.has('page_size'))
       url.searchParams.set('page_size', String(DEFAULT_PAGE_SIZE))
 
-    const opts = requestInterceptor({ method: 'GET' })
+    const opts = await requestInterceptor({ method: 'GET' })
 
     // fetch first page without response interceptor so we can read headers
     const firstResponse = await limit(() => fetch(url, opts))

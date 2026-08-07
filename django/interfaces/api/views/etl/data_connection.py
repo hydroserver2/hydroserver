@@ -7,7 +7,7 @@ from core.types import Unset
 from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
 from processing.etl.services.data_connection import DataConnectionService
 from interfaces.api.schemas import (
     DataConnectionResponse,
@@ -22,7 +22,7 @@ data_connection_service = DataConnectionService()
 
 @data_connection_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[DataConnectionResponse],
         401: str,
@@ -57,7 +57,7 @@ def get_data_connections(
 
 @data_connection_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: DataConnectionResponse,
         400: str,
@@ -99,7 +99,7 @@ def create_data_connection(
 
 @data_connection_router.get(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: DataConnectionResponse,
         401: str,
@@ -127,7 +127,7 @@ def get_data_connection(
 
 @data_connection_router.patch(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: DataConnectionResponse,
         400: str,
@@ -170,7 +170,7 @@ def update_data_connection(
 
 @data_connection_router.delete(
     "/{data_connection_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

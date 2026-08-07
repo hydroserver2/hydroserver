@@ -26,3 +26,5 @@ class APIKeyAuth(APIKeyHeader):
                 service_account.save(update_fields=["last_used_at"])
                 request.principal = service_account
                 return service_account
+
+        return None

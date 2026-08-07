@@ -1,7 +1,6 @@
 from django.http import HttpRequest
 from django.conf import settings
 from allauth.account.adapter import DefaultAccountAdapter
-from interfaces.auth.schemas import AccountPatchBody
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -10,19 +9,7 @@ class AccountAdapter(DefaultAccountAdapter):
 
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)
-        data = form.cleaned_data
 
-        account = AccountPatchBody(
-            **{
-                "middle_name": data.get("middle_name") or None,
-                "phone": data.get("phone") or None,
-                "address": data.get("address") or None,
-                "link": data.get("link") or None,
-                "user_type": data.get("user_type") or None,
-                "organization": data.get("organization") or None,
-            }
-        )
-        # user = AccountService.update(principal=user, data=account)
         if not settings.ACCOUNT_OWNERSHIP_ENABLED:
             user.owned_workspace_limit = 0
         user.save()

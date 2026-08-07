@@ -45,8 +45,8 @@ terraform init
 terraform apply -var "region=your-aws-region"
 ```
 
-Upon successful completion, Terraform will output a URL and admin user credentials you can use to access your deployed 
-HydroServer instance.
+Upon successful completion, Terraform will output a URL for your deployed HydroServer instance. You will need to 
+create an admin account separately by running `python manage.py createsuperuser` against the deployed instance.
 
 To stop and tear down the service infrastructure, run:
 

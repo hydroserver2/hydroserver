@@ -4,7 +4,7 @@ from ninja import Router, Path, Query, File, Form
 from ninja.files import UploadedFile
 from django.db import transaction
 from django.http import HttpResponse
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import VocabularyQueryParameters
 from interfaces.api.schemas import (
@@ -37,7 +37,7 @@ monitoring_site_service = MonitoringSiteService()
 
 @monitoring_site_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[MonitoringSiteSummaryResponse] | list[MonitoringSiteDetailResponse],
         401: str,
@@ -66,7 +66,7 @@ def get_monitoring_sites(
 
 @monitoring_site_router.get(
     "/markers",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[MonitoringSiteMarkerResponse],
         401: str,
@@ -89,7 +89,7 @@ def get_monitoring_site_markers(
 
 @monitoring_site_router.get(
     "/site-summaries",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[MonitoringSiteMapSummaryResponse],
         401: str,
@@ -112,7 +112,7 @@ def get_monitoring_site_summaries(
 
 @monitoring_site_router.get(
     "/task-summaries",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: list[MonitoringSiteTaskSummaryResponse],
         401: str,
@@ -136,7 +136,7 @@ def get_monitoring_site_task_summaries(
 
 @monitoring_site_router.post(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         400: str,
@@ -162,7 +162,7 @@ def create_monitoring_site(
 
 @monitoring_site_router.get(
     "/tags/keys",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: dict[str, list[str]],
         401: str,
@@ -235,7 +235,7 @@ def get_file_attachment_types(
 
 @monitoring_site_router.get(
     "/{monitoring_site_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         401: str,
@@ -260,7 +260,7 @@ def get_monitoring_site(
 
 @monitoring_site_router.patch(
     "/{monitoring_site_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: MonitoringSiteSummaryResponse | MonitoringSiteDetailResponse,
         400: str,
@@ -291,7 +291,7 @@ def update_monitoring_site(
 
 @monitoring_site_router.delete(
     "/{monitoring_site_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -310,7 +310,7 @@ def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: 
 
 @monitoring_site_router.get(
     "/{monitoring_site_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[TagGetResponse],
         401: str,
@@ -331,7 +331,7 @@ def get_monitoring_site_tags(request: HydroServerHttpRequest, monitoring_site_id
 
 @monitoring_site_router.post(
     "/{monitoring_site_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: TagGetResponse,
         400: str,
@@ -357,7 +357,7 @@ def add_monitoring_site_tag(
 
 @monitoring_site_router.put(
     "/{monitoring_site_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         200: TagGetResponse,
         400: str,
@@ -383,7 +383,7 @@ def edit_monitoring_site_tag(
 
 @monitoring_site_router.delete(
     "/{monitoring_site_id}/tags",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -409,7 +409,7 @@ def remove_monitoring_site_tag(
 
 @monitoring_site_router.get(
     "/{monitoring_site_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[FileAttachmentGetResponse],
         401: str,
@@ -435,7 +435,7 @@ def get_monitoring_site_file_attachments(
 
 @monitoring_site_router.post(
     "/{monitoring_site_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         201: FileAttachmentGetResponse,
         400: str,
@@ -471,7 +471,7 @@ def add_monitoring_site_file_attachment(
 
 @monitoring_site_router.put(
     "/{monitoring_site_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -507,7 +507,7 @@ def replace_monitoring_site_file_attachment(
 
 @monitoring_site_router.delete(
     "/{monitoring_site_id}/file-attachments",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
