@@ -23,8 +23,21 @@ def copy_locations_to_monitoring_sites(apps, schema_editor):
         )
         seen_site_ids.add(location.thing_id)
 
-    MonitoringSite.objects.filter(latitude__isnull=True).update(latitude=0)
-    MonitoringSite.objects.filter(longitude__isnull=True).update(longitude=0)
+    missing_location_site_ids = list(
+        MonitoringSite.objects.filter(latitude__isnull=True)
+        .order_by("id")
+        .values_list("id", flat=True)[:10]
+    )
+    if missing_location_site_ids:
+        missing_location_count = MonitoringSite.objects.filter(
+            latitude__isnull=True
+        ).count()
+        raise RuntimeError(
+            "Cannot merge Location into MonitoringSite because "
+            f"{missing_location_count} monitoring site(s) have no Location. "
+            "Create a Location for every site before retrying this migration. "
+            f"Example site IDs: {', '.join(map(str, missing_location_site_ids))}"
+        )
 
 
 class Migration(migrations.Migration):
@@ -134,9 +147,10 @@ class Migration(migrations.Migration):
             name="country",
             field=models.CharField(blank=True, max_length=2, null=True),
         ),
-        migrations.RunPython(
-            copy_locations_to_monitoring_sites, migrations.RunPython.noop
-        ),
+        # Location IDs and additional Location rows are discarded by this merge,
+        # so an exact reverse migration is not possible. Leaving reverse_code
+        # unset makes Django reject rollback before applying any reverse steps.
+        migrations.RunPython(copy_locations_to_monitoring_sites),
         migrations.AlterField(
             model_name="monitoringsite",
             name="latitude",

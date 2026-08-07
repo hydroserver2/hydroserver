@@ -32,7 +32,10 @@ class MonitoringSiteFields(Schema):
     type: str = Field(..., max_length=200)
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    elevation_m: Optional[float] = Field(None, ge=-99999, le=99999)
+    # Preserve the established snake_case wire name used by both clients.
+    elevation_m: Optional[float] = Field(
+        None, ge=-99999, le=99999, alias="elevation_m"
+    )
     elevation_datum: Optional[str] = Field(None, max_length=255)
     admin_area_1: Optional[str] = Field(None, max_length=200)
     admin_area_2: Optional[str] = Field(None, max_length=200)

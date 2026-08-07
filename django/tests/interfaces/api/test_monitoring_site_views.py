@@ -172,6 +172,20 @@ def test_get_monitoring_site_returns_public_monitoring_site_for_anonymous(client
     assert response.json()["id"] == str(monitoring_site.id)
 
 
+def test_get_monitoring_site_preserves_elevation_m_wire_name(client):
+    workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(
+        workspace=workspace,
+        elevation_m=1380,
+    )
+
+    response = client.get(_detail_url(monitoring_site.id))
+
+    assert response.status_code == 200
+    assert response.json()["elevation_m"] == 1380
+    assert "elevationM" not in response.json()
+
+
 def test_get_monitoring_site_returns_404_for_private_monitoring_site_when_outsider(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace, private=True)

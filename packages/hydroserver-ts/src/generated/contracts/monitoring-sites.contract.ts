@@ -10,7 +10,7 @@ export namespace MonitoringSiteContract {
   export type PostBody        = Data.components['schemas']['MonitoringSitePostBody']
   export type PatchBody       = Data.components['schemas']['MonitoringSitePatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["adminArea1","adminArea2","code","country","dataDisclaimer","description","elevationDatum","elevationM","isPrivate","latitude","longitude","name","type"] as const
+  export const writableKeys = ["adminArea1","adminArea2","code","country","dataDisclaimer","description","elevationDatum","elevation_m","isPrivate","latitude","longitude","name","type"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

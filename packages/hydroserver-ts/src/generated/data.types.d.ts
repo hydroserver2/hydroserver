@@ -3696,8 +3696,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevationm */
-            elevationM?: number | null;
+            /** Elevation M */
+            elevation_m?: number | null;
             /** Fileattachments */
             fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**
@@ -3821,8 +3821,8 @@ export interface components {
             description?: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevationm */
-            elevationM?: number | null;
+            /** Elevation M */
+            elevation_m?: number | null;
             /** Isprivate */
             isPrivate?: boolean;
             /** Latitude */
@@ -3850,8 +3850,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevationm */
-            elevationM?: number | null;
+            /** Elevation M */
+            elevation_m?: number | null;
             /** Id */
             id?: string | null;
             /** Isprivate */
@@ -3961,8 +3961,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevationm */
-            elevationM?: number | null;
+            /** Elevation M */
+            elevation_m?: number | null;
             /** Fileattachments */
             fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
             /**

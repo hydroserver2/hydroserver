@@ -4798,7 +4798,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevationM": {
+          "elevation_m": {
             "anyOf": [
               {
                 "maximum": 99999,
@@ -4809,7 +4809,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevationm"
+            "title": "Elevation M"
           },
           "fileAttachments": {
             "items": {
@@ -5113,7 +5113,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevationM": {
+          "elevation_m": {
             "anyOf": [
               {
                 "maximum": 99999,
@@ -5124,7 +5124,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevationm"
+            "title": "Elevation M"
           },
           "isPrivate": {
             "title": "Isprivate",
@@ -5226,7 +5226,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevationM": {
+          "elevation_m": {
             "anyOf": [
               {
                 "maximum": 99999,
@@ -5237,7 +5237,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevationm"
+            "title": "Elevation M"
           },
           "id": {
             "anyOf": [
@@ -5536,7 +5536,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevationM": {
+          "elevation_m": {
             "anyOf": [
               {
                 "maximum": 99999,
@@ -5547,7 +5547,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevationm"
+            "title": "Elevation M"
           },
           "fileAttachments": {
             "items": {
