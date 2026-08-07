@@ -94,7 +94,7 @@ export default defineConfig({
         E2E_ADMIN_DATABASE_URL: e2eAdminDatabaseUrl,
         CELERY_BROKER_URL:
           process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
-        SMTP_URL: process.env.SMTP_URL || 'memory://',
+        SMTP_URL: process.env.SMTP_URL || 'memorymail://',
         PROXY_BASE_URL: appBaseUrl,
         ALLOWED_HOSTS: '127.0.0.1,localhost',
         // The seeded browser suite issues many short bursts of API requests while
