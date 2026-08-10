@@ -118,6 +118,52 @@ test.describe('metadata management', () => {
     ).toHaveCount(0)
   })
 
+  test('instrument methods require sensor details and derive their name', async ({
+    page,
+  }) => {
+    const manufacturer = `E2E Manufacturer ${Date.now()}`
+    const model = 'E2E Model'
+    const derivedName = `${manufacturer}: ${model}`
+
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/metadata')
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
+
+    const workspaceTable = page.getByTestId('workspace-metadata-table')
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    await workspaceTable
+      .getByRole('button', { name: /Add new method/i })
+      .click()
+
+    await fillCombobox(page, 'Type *', 'Instrument Deployment')
+    await page
+      .getByLabel('Description *')
+      .fill('Instrument method created by the Playwright regression suite.')
+
+    await expect(page.getByLabel('Name *', { exact: true })).toHaveCount(0)
+
+    const manufacturerField = page.getByLabel('Sensor Model Manufacturer *')
+    const modelField = page.getByLabel('Sensor Model *', { exact: true })
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('This field is required.')).toHaveCount(2)
+
+    await manufacturerField.fill(manufacturer)
+    await modelField.fill(model)
+    await page.getByRole('button', { name: 'Save' }).click()
+
+    const methodRow = page
+      .locator('tr')
+      .filter({ hasText: derivedName })
+      .first()
+    await expect(methodRow).toBeVisible()
+
+    await methodRow.locator('.v-icon').nth(1).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(
+      page.locator('tr').filter({ hasText: derivedName })
+    ).toHaveCount(0)
+  })
+
   test('workspace observed property metadata can be created, updated, and deleted', async ({
     page,
   }) => {
