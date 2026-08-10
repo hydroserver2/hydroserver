@@ -10,11 +10,11 @@ from core.sta.models import (
     ObservedProperty,
     ProcessingLevel,
     Sensor,
-    Thing,
+    MonitoringSite,
     Unit,
 )
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
-from tests.core.tree_factories import build_things
+from tests.core.tree_factories import build_monitoring_sites
 
 pytestmark = pytest.mark.django_db
 
@@ -110,7 +110,7 @@ def test_accept_transfer_changes_owner_and_clears_confirmation():
     assert workspace.transfer is None
 
 
-def test_accept_transfer_raises_when_nothing_pending():
+def test_accept_transfer_raises_when_none_pending():
     workspace = WorkspaceFactory()
 
     with pytest.raises(ValueError):
@@ -132,7 +132,7 @@ def test_reject_transfer_clears_confirmation_without_changing_owner():
     assert workspace.transfer is None
 
 
-def test_reject_transfer_raises_when_nothing_pending():
+def test_reject_transfer_raises_when_none_pending():
     workspace = WorkspaceFactory()
 
     with pytest.raises(ValueError):
@@ -144,16 +144,16 @@ def test_reject_transfer_raises_when_nothing_pending():
 
 def test_delete_removes_workspace_tree_including_same_workspace_vocab_items():
     workspace = WorkspaceFactory()
-    build_things(workspace, thing_count=3, datastreams_per_thing=2, observations_per_datastream=1_000)
+    build_monitoring_sites(workspace, monitoring_site_count=3, datastreams_per_monitoring_site=2, observations_per_datastream=1_000)
     sibling = WorkspaceFactory()
-    build_things(sibling, thing_count=1, datastreams_per_thing=1, observations_per_datastream=10)
+    build_monitoring_sites(sibling, monitoring_site_count=1, datastreams_per_monitoring_site=1, observations_per_datastream=10)
 
     workspace.delete()
 
     assert not Workspace.objects.filter(pk=workspace.pk).exists()
-    assert not Thing.objects.filter(workspace_id=workspace.pk).exists()
-    assert not Datastream.objects.filter(thing__workspace_id=workspace.pk).exists()
-    assert not Observation.objects.filter(datastream__thing__workspace_id=workspace.pk).exists()
+    assert not MonitoringSite.objects.filter(workspace_id=workspace.pk).exists()
+    assert not Datastream.objects.filter(monitoring_site__workspace_id=workspace.pk).exists()
+    assert not Observation.objects.filter(datastream__monitoring_site__workspace_id=workspace.pk).exists()
     # These are CASCADE from Workspace but PROTECT from Datastream -- proving the
     # ordering issue (deleting a Workspace whose own Datastreams still reference
     # its own Sensor/ObservedProperty/ProcessingLevel/Unit) no longer raises.
@@ -162,7 +162,7 @@ def test_delete_removes_workspace_tree_including_same_workspace_vocab_items():
     assert not ProcessingLevel.objects.filter(workspace_id=workspace.pk).exists()
     assert not Unit.objects.filter(workspace_id=workspace.pk).exists()
     assert Workspace.objects.filter(pk=sibling.pk).exists()
-    assert Thing.objects.filter(workspace=sibling).count() == 1
+    assert MonitoringSite.objects.filter(workspace=sibling).count() == 1
 
 
 # --- QuerySet.delete() -------------------------------------------------------------
@@ -172,40 +172,40 @@ def test_queryset_delete_removes_workspaces_and_full_tree_in_bulk():
     to_delete = []
     for _ in range(2):
         ws = WorkspaceFactory()
-        build_things(ws, thing_count=2, datastreams_per_thing=1, observations_per_datastream=100)
+        build_monitoring_sites(ws, monitoring_site_count=2, datastreams_per_monitoring_site=1, observations_per_datastream=100)
         to_delete.append(ws)
     kept = WorkspaceFactory()
-    build_things(kept, thing_count=1, datastreams_per_thing=1, observations_per_datastream=10)
+    build_monitoring_sites(kept, monitoring_site_count=1, datastreams_per_monitoring_site=1, observations_per_datastream=10)
 
     Workspace.objects.filter(pk__in=[w.pk for w in to_delete]).delete()
 
     assert not Workspace.objects.filter(pk__in=[w.pk for w in to_delete]).exists()
-    assert not Thing.objects.filter(workspace__in=to_delete).exists()
-    assert not Datastream.objects.filter(thing__workspace__in=to_delete).exists()
+    assert not MonitoringSite.objects.filter(workspace__in=to_delete).exists()
+    assert not Datastream.objects.filter(monitoring_site__workspace__in=to_delete).exists()
     assert Workspace.objects.filter(pk=kept.pk).exists()
 
 
 WORKSPACE_DELETE_SHAPES = [
-    pytest.param(1, 3, 2, 1_000, id="1_workspace-3_things-2_datastreams-1000_observations_each"),
-    pytest.param(3, 3, 2, 1_000, id="3_workspaces-3_things-2_datastreams-1000_observations_each"),
-    pytest.param(10, 1, 1, 100, id="10_workspaces-1_thing-1_datastream-100_observations_each"),
+    pytest.param(1, 3, 2, 1_000, id="1_workspace-3_monitoring_sites-2_datastreams-1000_observations_each"),
+    pytest.param(3, 3, 2, 1_000, id="3_workspaces-3_monitoring_sites-2_datastreams-1000_observations_each"),
+    pytest.param(10, 1, 1, 100, id="10_workspaces-1_monitoring_site-1_datastream-100_observations_each"),
 ]
 
 
 @pytest.mark.parametrize(
-    "workspace_count,things_per_workspace,datastreams_per_thing,observations_per_datastream",
+    "workspace_count,monitoring_sites_per_workspace,datastreams_per_monitoring_site,observations_per_datastream",
     WORKSPACE_DELETE_SHAPES,
 )
 def test_queryset_delete_query_count_does_not_scale_with_workspace_count(
-    workspace_count, things_per_workspace, datastreams_per_thing, observations_per_datastream
+    workspace_count, monitoring_sites_per_workspace, datastreams_per_monitoring_site, observations_per_datastream
 ):
     small = WorkspaceFactory.create_batch(workspace_count)
     for workspace in small:
-        build_things(workspace, things_per_workspace, datastreams_per_thing, observations_per_datastream)
+        build_monitoring_sites(workspace, monitoring_sites_per_workspace, datastreams_per_monitoring_site, observations_per_datastream)
 
     large = WorkspaceFactory.create_batch(workspace_count * 2)
     for workspace in large:
-        build_things(workspace, things_per_workspace, datastreams_per_thing, observations_per_datastream)
+        build_monitoring_sites(workspace, monitoring_sites_per_workspace, datastreams_per_monitoring_site, observations_per_datastream)
 
     with CaptureQueriesContext(connection) as small_queries:
         Workspace.objects.filter(pk__in=[w.pk for w in small]).delete()

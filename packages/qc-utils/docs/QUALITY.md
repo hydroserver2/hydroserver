@@ -87,7 +87,7 @@ move to a sub-export so its DOM dependency is opt-in.
 
 ### 5. Some types duplicate `@hydroserver/client`
 
-`Thing`, `Datastream`, `Workspace`, etc., are defined in `src/types/`.
+`MonitoringSite`, `Datastream`, `Workspace`, etc., are defined in `src/types/`.
 The qc-app uses `@hydroserver/client`'s versions in the consumer code
 and only uses qc-utils' shapes inside the QC engine surface. For new
 consumers, the qc-utils copies are sufficient but slightly behind

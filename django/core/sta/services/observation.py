@@ -55,7 +55,7 @@ class ObservationService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.select_related("datastream__thing")
+            queryset = queryset.select_related("datastream__monitoring_site")
         if datastream_id:
             queryset = queryset.filter(id=uid, datastream__id=datastream_id)
         else:
@@ -80,7 +80,7 @@ class ObservationService(ServiceUtils):
     @staticmethod
     def select_expanded_fields(queryset: QuerySet) -> QuerySet:
         return queryset.select_related(
-            "datastream", "datastream__thing", "datastream__thing__workspace"
+            "datastream", "datastream__monitoring_site", "datastream__monitoring_site__workspace"
         )
 
     def list(
@@ -148,7 +148,7 @@ class ObservationService(ServiceUtils):
         if expand_related:
             queryset = self.select_expanded_fields(queryset)
         else:
-            queryset = queryset.select_related("datastream__thing")
+            queryset = queryset.select_related("datastream__monitoring_site")
 
         queryset, count = self.apply_pagination(queryset, response, page, page_size)
 
@@ -211,7 +211,7 @@ class ObservationService(ServiceUtils):
             principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
-            principal=principal, workspace_id=datastream.thing.workspace_id
+            principal=principal, workspace_id=datastream.monitoring_site.workspace_id
         )
 
         if not principal.can_create("Observation", workspace=workspace):
@@ -235,7 +235,7 @@ class ObservationService(ServiceUtils):
             valid_codes = set(
                 principal.filter_by_permission(
                     ResultQualifier.objects.filter(
-                        Q(workspace_id=datastream.thing.workspace_id)
+                        Q(workspace_id=datastream.monitoring_site.workspace_id)
                         | Q(workspace__isnull=True)
                     ).filter(code__in=data.result_qualifier_codes),
                     "can_view",
@@ -299,7 +299,7 @@ class ObservationService(ServiceUtils):
             principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
-            principal=principal, workspace_id=datastream.thing.workspace_id
+            principal=principal, workspace_id=datastream.monitoring_site.workspace_id
         )
 
         if not principal.can_create("Observation", workspace=workspace):
@@ -339,7 +339,7 @@ class ObservationService(ServiceUtils):
             valid_codes = set(
                 principal.filter_by_permission(
                     ResultQualifier.objects.filter(
-                        Q(workspace_id=datastream.thing.workspace_id)
+                        Q(workspace_id=datastream.monitoring_site.workspace_id)
                         | Q(workspace__isnull=True)
                     ).filter(code__in=result_qualifier_code_set),
                     "can_view",
@@ -412,7 +412,7 @@ class ObservationService(ServiceUtils):
             principal, datastream_id, action="view"
         )
         workspace, _ = self.get_workspace(
-            principal=principal, workspace_id=datastream.thing.workspace_id
+            principal=principal, workspace_id=datastream.monitoring_site.workspace_id
         )
 
         if not principal.has_permission(

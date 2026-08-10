@@ -324,9 +324,9 @@ const {
   linkedDatastreams,
   draftDatastreams,
   workspaceDatastreams,
-  workspaceThings,
+  workspaceMonitoringSites,
 } = storeToRefs(orchestrationStore)
-const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
+const { ensureWorkspaceDatastreams, ensureWorkspaceMonitoringSites } = orchestrationStore
 
 const showErrors = ref(false)
 const missingTargetKeys = ref<Set<string>>(new Set())
@@ -549,10 +549,10 @@ watch(
     try {
       await Promise.all([
         ensureWorkspaceDatastreams(workspaceId),
-        ensureWorkspaceThings(workspaceId),
+        ensureWorkspaceMonitoringSites(workspaceId),
       ])
     } catch (error) {
-      console.error('Error fetching workspace datastreams and things', error)
+      console.error('Error fetching workspace datastreams and monitoringSites', error)
     }
   },
   { immediate: true }

@@ -1,4 +1,4 @@
-# Monitoring Task 1 — Private Workspace (thing: 819260c8 = Public Thing, Private Workspace)
+# Monitoring Task 1 — Private Workspace (monitoring_site: 819260c8 = Public MonitoringSite, Private Workspace)
 - model: orchestration.task
   pk: 019d0001-0000-7000-8000-000000000001
   fields:
@@ -10,9 +10,9 @@
 - model: monitoring.monitoringtask
   pk: 019d0001-0000-7000-8000-000000000001
   fields:
-    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
 
-# Monitoring Task 2 — Public Workspace (thing: 3b7818af = Public Thing, Public Workspace)
+# Monitoring Task 2 — Public Workspace (monitoring_site: 3b7818af = Public MonitoringSite, Public Workspace)
 - model: orchestration.task
   pk: 019d0001-0000-7000-8000-000000000002
   fields:
@@ -24,9 +24,9 @@
 - model: monitoring.monitoringtask
   pk: 019d0001-0000-7000-8000-000000000002
   fields:
-    thing: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    monitoring_site: 3b7818af-eff7-4149-8517-e5cad9dc22e1
 
-# Monitoring Rule — range on dd1f9293 (belongs to thing 819260c8)
+# Monitoring Rule — range on dd1f9293 (belongs to monitoring_site 819260c8)
 - model: monitoring.monitoringrule
   pk: 019d0002-0000-7000-8000-000000000001
   fields:

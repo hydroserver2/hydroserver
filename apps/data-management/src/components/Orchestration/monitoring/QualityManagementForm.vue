@@ -169,7 +169,7 @@
             :datastreams="siteDatastreams"
             label="Datastream *"
             :loading="loadingDatastreams"
-            :disabled="!selectedThingId || loadingExisting"
+            :disabled="!selectedMonitoringSiteId || loadingExisting"
             :rules="rules.required"
             density="compact"
             class="mb-2"
@@ -282,7 +282,7 @@ import hs, {
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
 import { formatTime } from '@/utils/time'
-import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   QUALITY_ACCENT,
   QUALITY_ACCENT_LIGHT,
@@ -292,7 +292,7 @@ import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  initialThingId?: string | null
+  initialMonitoringSiteId?: string | null
   editTaskId?: string | null
 }>()
 
@@ -331,7 +331,7 @@ const makeRuleRow = (init: Partial<RuleRow> = {}): RuleRow => ({
 })
 
 const isEditMode = computed(() => !!props.editTaskId)
-const selectedThingId = computed(() => props.initialThingId ?? null)
+const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
 const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
 
 const formRef = ref<VForm>()
@@ -368,7 +368,7 @@ const windowUnitOptions: { title: string; value: MonitoringRuleWindowUnit }[] =
   ]
 
 const siteDatastreams = computed(() =>
-  datastreamsForThing(datastreams.value, selectedThingId.value)
+  datastreamsForMonitoringSite(datastreams.value, selectedMonitoringSiteId.value)
 )
 
 type Rule = (v: any) => true | string
@@ -632,7 +632,7 @@ async function onSubmit() {
   await formRef.value?.validate()
   if (!addRecipient()) return
   if (!valid.value) return
-  if (!selectedThingId.value && !isEditMode.value) {
+  if (!selectedMonitoringSiteId.value && !isEditMode.value) {
     Snackbar.error('Select a site before creating a quality task.')
     return
   }
@@ -653,7 +653,7 @@ async function onCreate() {
   const taskRes = await hs.monitoringTasks.create({
     id: '',
     name: taskName.value.trim(),
-    thingId: selectedThingId.value!,
+    monitoringSiteId: selectedMonitoringSiteId.value!,
     description: description.value.trim() || null,
     recipients: recipients.value,
     schedule: schedule.value,
@@ -715,7 +715,7 @@ watch(recipientInput, () => {
 })
 
 watch(
-  () => props.initialThingId,
+  () => props.initialMonitoringSiteId,
   () => {
     if (isEditMode.value) return
     ruleRows.value = [makeRuleRow()]

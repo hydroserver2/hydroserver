@@ -4,37 +4,37 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
 
-const thingA = { id: 't-a', name: 'Alpha' }
-const thingB = { id: 't-b', name: 'Beta' }
+const monitoringSiteA = { id: 't-a', name: 'Alpha' }
+const monitoringSiteB = { id: 't-b', name: 'Beta' }
 const opX = { id: 'op-x', name: 'Temp' }
 const plY = { id: 'pl-y', definition: 'Raw' }
 
-const things = ref<any[]>([thingA, thingB])
+const monitoringSites = ref<any[]>([monitoringSiteA, monitoringSiteB])
 const datastreams = ref<any[]>([
-  { thing: thingA, observedProperty: opX, processingLevel: plY },
-  { thing: thingB, observedProperty: opX, processingLevel: plY },
+  { monitoringSite: monitoringSiteA, observedProperty: opX, processingLevel: plY },
+  { monitoringSite: monitoringSiteB, observedProperty: opX, processingLevel: plY },
 ])
 const observedProperties = ref<any[]>([opX])
 const processingLevels = ref<any[]>([plY])
 
-const selectedThings = ref<any[]>([])
+const selectedMonitoringSites = ref<any[]>([])
 const selectedObservedPropertyNames = ref<string[]>([])
 const selectedProcessingLevelNames = ref<string[]>([])
 
-const matchesSelectedThing = vi.fn(() => true)
+const matchesSelectedMonitoringSite = vi.fn(() => true)
 const matchesSelectedObservedProperty = vi.fn(() => true)
 const matchesSelectedProcessingLevel = vi.fn(() => true)
 
 vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () => ({
-    things,
+    monitoringSites,
     datastreams,
     observedProperties,
     processingLevels,
-    selectedThings,
+    selectedMonitoringSites,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
-    matchesSelectedThing,
+    matchesSelectedMonitoringSite,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,
   }),
@@ -69,18 +69,18 @@ function createWrapper() {
 
 describe('DatastreamFilters.vue', () => {
   beforeEach(() => {
-    selectedThings.value = []
+    selectedMonitoringSites.value = []
     selectedObservedPropertyNames.value = []
     selectedProcessingLevelNames.value = []
-    things.value = [thingA, thingB]
+    monitoringSites.value = [monitoringSiteA, monitoringSiteB]
     datastreams.value = [
-      { thing: thingA, observedProperty: opX, processingLevel: plY },
-      { thing: thingB, observedProperty: opX, processingLevel: plY },
+      { monitoringSite: monitoringSiteA, observedProperty: opX, processingLevel: plY },
+      { monitoringSite: monitoringSiteB, observedProperty: opX, processingLevel: plY },
     ]
     observedProperties.value = [opX]
     processingLevels.value = [plY]
     vi.clearAllMocks()
-    matchesSelectedThing.mockReturnValue(true)
+    matchesSelectedMonitoringSite.mockReturnValue(true)
     matchesSelectedObservedProperty.mockReturnValue(true)
     matchesSelectedProcessingLevel.mockReturnValue(true)
   })
@@ -93,7 +93,7 @@ describe('DatastreamFilters.vue', () => {
   })
 
   it('shows the applied-count strip with the total number of selections', async () => {
-    selectedThings.value = [thingA]
+    selectedMonitoringSites.value = [monitoringSiteA]
     selectedObservedPropertyNames.value = ['Temp']
     const wrapper = createWrapper()
     await flushPromises()
@@ -101,7 +101,7 @@ describe('DatastreamFilters.vue', () => {
   })
 
   it('uses singular "filter" in the applied-count strip for 1 selection', async () => {
-    selectedThings.value = [thingA]
+    selectedMonitoringSites.value = [monitoringSiteA]
     const wrapper = createWrapper()
     await flushPromises()
     expect(wrapper.text()).toContain('1 filter applied')
@@ -121,7 +121,7 @@ describe('DatastreamFilters.vue', () => {
   })
 
   it('reflects selected counts in each FilterPanel', async () => {
-    selectedThings.value = [thingA, thingB]
+    selectedMonitoringSites.value = [monitoringSiteA, monitoringSiteB]
     selectedObservedPropertyNames.value = ['Temp']
     selectedProcessingLevelNames.value = []
     const wrapper = createWrapper()
@@ -133,7 +133,7 @@ describe('DatastreamFilters.vue', () => {
   })
 
   it('clicking Clear resets all filter selections', async () => {
-    selectedThings.value = [thingA]
+    selectedMonitoringSites.value = [monitoringSiteA]
     selectedObservedPropertyNames.value = ['Temp']
     selectedProcessingLevelNames.value = ['Raw']
     const wrapper = createWrapper()
@@ -143,22 +143,22 @@ describe('DatastreamFilters.vue', () => {
       .find((b) => b.text().includes('Clear'))
     expect(clearBtn).toBeTruthy()
     await clearBtn!.trigger('click')
-    expect(selectedThings.value).toEqual([])
+    expect(selectedMonitoringSites.value).toEqual([])
     expect(selectedObservedPropertyNames.value).toEqual([])
     expect(selectedProcessingLevelNames.value).toEqual([])
   })
 
   it('removes stale selections when the sorted list shrinks', async () => {
-    selectedThings.value = [thingA, thingB]
+    selectedMonitoringSites.value = [monitoringSiteA, monitoringSiteB]
     const wrapper = createWrapper()
     await flushPromises()
 
-    things.value = [thingA]
+    monitoringSites.value = [monitoringSiteA]
     datastreams.value = [
-      { thing: thingA, observedProperty: opX, processingLevel: plY },
+      { monitoringSite: monitoringSiteA, observedProperty: opX, processingLevel: plY },
     ]
     await flushPromises()
-    expect(selectedThings.value).toEqual([thingA])
+    expect(selectedMonitoringSites.value).toEqual([monitoringSiteA])
     wrapper.unmount()
   })
 })

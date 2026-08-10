@@ -1,71 +1,80 @@
-from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
+from ninja.errors import HttpError
 from sensorthings.types import Absent
+from sensorthings.versions.v1_1.dto import CollectionDTO, EntityResultSetDTO, LocationDTO
+
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Location, Thing
-from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, LocationDTO
+from core.sta.models import MonitoringSite
+
 from .utils import SensorThingsUtils
 
 
-_GROUP_BY_PARTITION = {
-    "thing": "thing_id",
-    "things": "thing_id",
-}
-
-
 class LocationMixin(SensorThingsUtils):
-
-    def get_locations(self, filters=None, orderby=None, group_by=None, select=None,
-                      top=100, skip=0, count=False, context=None):
+    def get_locations(
+        self,
+        filters=None,
+        orderby=None,
+        group_by=None,
+        select=None,
+        top=100,
+        skip=0,
+        count=False,
+        context=None,
+    ):
         needs_properties = select is None or "properties" in select
         principal = context.principal if context else AnonymousPrincipal()
 
-        visible_things = principal.filter_by_permission(Thing.objects, "can_view")
-        locations = Location.objects.filter(thing__in=visible_things)
+        sites = principal.filter_by_permission(MonitoringSite.objects, "can_view")
         if needs_properties:
-            locations = locations.select_related("thing__workspace")
+            sites = sites.select_related("workspace")
 
         if filters:
-            locations = self.apply_filters(locations, Location, filters)
+            sites = self.apply_filters(
+                sites, MonitoringSite, filters, entity_name="Location"
+            )
         if orderby:
-            locations = self.apply_order(locations, Location, orderby)
-        locations = locations.distinct()
+            sites = self.apply_order(
+                sites, MonitoringSite, orderby, entity_name="Location"
+            )
+        sites = sites.distinct()
 
         if group_by and group_by[0] == "location":
-            locations = locations.filter(pk__in=group_by[1])
-            loc_list = list(locations)
+            sites = sites.filter(pk__in=group_by[1])
+            site_list = list(sites)
             collections = {
-                "__UNGROUPED__": CollectionDTO(entity_ids=[location.id for location in loc_list])
+                "__UNGROUPED__": CollectionDTO(
+                    entity_ids=[site.id for site in site_list]
+                )
             }
-        elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
-            locations = locations.filter(**{f"{partition_field}__in": group_by[1]})
-            loc_list = list(self.apply_window(locations, partition_field, top, skip))
-            groups = {}
-            for loc in loc_list:
-                groups.setdefault(getattr(loc, partition_field), []).append(loc.id)
+        elif group_by and group_by[0] in {"thing", "things"}:
+            sites = sites.filter(pk__in=group_by[1])
+            site_list = list(sites)
+            site_ids = {site.id for site in site_list}
             collections = {
                 thing_id: CollectionDTO(
-                    entity_count=(1 if groups.get(thing_id) else 0) if count else None,
-                    entity_ids=groups.get(thing_id, []),
+                    entity_count=(1 if thing_id in site_ids else 0) if count else None,
+                    entity_ids=[thing_id] if thing_id in site_ids else [],
                 )
                 for thing_id in group_by[1]
             }
         else:
-            entity_count = locations.count() if count else None
-            loc_list = list(self.apply_pagination(locations, top, skip))
+            entity_count = sites.count() if count else None
+            site_list = list(self.apply_pagination(sites, top, skip))
             collections = {
                 "__UNGROUPED__": CollectionDTO(
                     entity_count=entity_count,
-                    entity_ids=[location.id for location in loc_list],
+                    entity_ids=[site.id for site in site_list],
                 )
             }
 
         try:
             entities = {
-                location.id: LocationDTO(
-                    id=self.select_field(select, "id", location.id),
-                    name=self.select_field(select, "name", location.name),
-                    description=self.select_field(select, "description", location.description),
+                site.id: LocationDTO(
+                    id=self.select_field(select, "id", site.id),
+                    name=self.select_field(select, "name", site.name),
+                    description=self.select_field(
+                        select, "description", site.description
+                    ),
                     encoding_type="application/geo+json",
                     location=(
                         {
@@ -73,32 +82,37 @@ class LocationMixin(SensorThingsUtils):
                             "properties": {},
                             "geometry": {
                                 "type": "Point",
-                                "coordinates": [location.longitude, location.latitude],
+                                "coordinates": [
+                                    float(site.longitude),
+                                    float(site.latitude),
+                                ],
                             },
                         }
-                        if select is None or "location" in select else Absent
+                        if select is None or "location" in select
+                        else Absent
                     ),
                     properties=(
                         {
-                            "elevation_m": location.elevation_m,
-                            "elevation_datum": location.elevation_datum,
-                            "admin_area_1": location.admin_area_1,
-                            "admin_area_2": location.admin_area_2,
-                            "country": location.country,
+                            "elevation_m": site.elevation_m,
+                            "elevation_datum": site.elevation_datum,
+                            "admin_area_1": site.admin_area_1,
+                            "admin_area_2": site.admin_area_2,
+                            "country": site.country,
                             "workspace": {
-                                "id": location.thing.workspace.id,
-                                "name": location.thing.workspace.name,
-                                "is_private": location.thing.workspace.is_private,
+                                "id": site.workspace.id,
+                                "name": site.workspace.name,
+                                "is_private": site.workspace.is_private,
                             },
                         }
-                        if needs_properties else Absent
+                        if needs_properties
+                        else Absent
                     ),
-                    thing_ids=[location.thing_id],
+                    thing_ids=[site.id],
                 )
-                for location in loc_list
+                for site in site_list
             }
-        except (DataError, DatabaseError) as e:
-            raise HttpError(400, str(e))
+        except (DataError, DatabaseError) as error:
+            raise HttpError(400, str(error))
 
         return EntityResultSetDTO(collections=collections, entities=entities)
 

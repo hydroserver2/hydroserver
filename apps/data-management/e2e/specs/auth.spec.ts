@@ -11,10 +11,8 @@ test.describe('authentication', () => {
   }) => {
     await page.goto('/orchestration')
 
-    await expect(page).toHaveURL(/\/login(?:\?.*)?$/)
-    await expect(
-      page.locator('main').getByRole('button', { name: 'Log in' })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Quality Control' })
     ).toHaveCount(0)
@@ -51,13 +49,11 @@ test.describe('authentication', () => {
     await page.getByTestId('account-menu-button').click()
     await expect(page.getByTestId('logout-menu-item')).toBeVisible()
     await Promise.all([
-      page.waitForURL(/\/login(?:\?.*)?$/),
+      page.waitForURL(/\/browse$/),
       page.getByTestId('logout-menu-item').click(),
     ])
 
-    await expect(page).toHaveURL(/\/login(?:\?.*)?$/)
-    await expect(
-      page.locator('main').getByRole('button', { name: 'Log in' })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/browse$/)
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible()
   })
 })

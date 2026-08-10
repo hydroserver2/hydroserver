@@ -41,10 +41,10 @@
                   {{ resolveTargetName(m) || '—' }}
                 </span>
                 <span
-                  v-if="resolveThingName(m)"
+                  v-if="resolveMonitoringSiteName(m)"
                   class="text-[rgba(0,0,0,0.66)] text-[0.78rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
                 >
-                  {{ resolveThingName(m) }}
+                  {{ resolveMonitoringSiteName(m) }}
                 </span>
                 <span
                   class="text-[rgba(0,0,0,0.55)] text-[0.72rem] mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
@@ -55,7 +55,7 @@
               <DatastreamSiteButton
                 :datastream="targetDatastream(m)"
                 :datastream-id="targetDatastreamId(m)"
-                :fallback-thing-id="resolveThingId(m)"
+                :fallback-monitoring-site-id="resolveMonitoringSiteId(m)"
               />
             </div>
           </div>
@@ -71,7 +71,7 @@ import type { TaskExpanded, TaskMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamThingId } from '@/utils/orchestration/datastreams'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 const props = defineProps<{
   task: TaskExpanded
@@ -81,7 +81,7 @@ const {
   linkedDatastreams,
   workspaceDatastreams,
   draftDatastreams,
-  workspaceThings,
+  workspaceMonitoringSites,
 } = storeToRefs(useOrchestrationStore())
 
 function targetDatastream(mapping: TaskMapping) {
@@ -107,23 +107,23 @@ function resolveTargetName(mapping: TaskMapping) {
   )
 }
 
-function resolveThingName(mapping: TaskMapping) {
-  const thingId = resolveThingId(mapping)
-  if (!thingId) return ''
-  return workspaceThings.value.find((t) => t.id === String(thingId))?.name || ''
+function resolveMonitoringSiteName(mapping: TaskMapping) {
+  const monitoringSiteId = resolveMonitoringSiteId(mapping)
+  if (!monitoringSiteId) return ''
+  return workspaceMonitoringSites.value.find((t) => t.id === String(monitoringSiteId))?.name || ''
 }
 
-function resolveThingId(mapping: TaskMapping) {
+function resolveMonitoringSiteId(mapping: TaskMapping) {
   const ds = targetDatastream(mapping)
   const dsId = targetDatastreamId(mapping)
-  const thingId = ds ? datastreamThingId(ds as any) : ''
-  if (thingId) return thingId
+  const monitoringSiteId = ds ? datastreamMonitoringSiteId(ds as any) : ''
+  if (monitoringSiteId) return monitoringSiteId
   if (!dsId) return ''
   const key = String(dsId)
   const relatedDatastream =
     workspaceDatastreams.value.find((d) => d.id === key) ||
     linkedDatastreams.value.find((d) => d.id === key) ||
     draftDatastreams.value.find((d) => String(d.id) === key)
-  return relatedDatastream ? datastreamThingId(relatedDatastream as any) : ''
+  return relatedDatastream ? datastreamMonitoringSiteId(relatedDatastream as any) : ''
 }
 </script>

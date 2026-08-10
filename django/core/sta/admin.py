@@ -3,21 +3,19 @@ from django.db import transaction
 from django.urls import path
 from django.core.management.base import CommandError
 from core.sta.models import (
-    Thing,
+    MonitoringSite,
     Sensor,
     ObservedProperty,
     Datastream,
-    Location,
     Unit,
     ProcessingLevel,
-    ThingFileAttachment,
-    ThingTag,
+    MonitoringSiteFileAttachment,
+    MonitoringSiteTag,
     DatastreamFileAttachment,
     DatastreamTag,
     ResultQualifier,
     Observation,
     SiteType,
-    SamplingFeatureType,
     MethodType,
     SensorEncodingType,
     VariableType,
@@ -31,24 +29,20 @@ from interfaces.actions.management.utils import generate_test_timeseries
 from hydroserver.admin import VocabularyAdmin
 
 
-class ThingAdmin(admin.ModelAdmin):
+class MonitoringSiteAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "workspace__name", "is_private")
 
     def delete_queryset(self, request, queryset):
-        Thing.delete_contents(filter_arg=queryset, filter_suffix="in")
+        MonitoringSite.delete_contents(filter_arg=queryset, filter_suffix="in")
         queryset.delete()
 
 
-class LocationAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name")
+class MonitoringSiteFileAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
-class ThingFileAttachmentAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name")
-
-
-class ThingTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "thing__name", "thing__workspace__name")
+class MonitoringSiteTagAdmin(admin.ModelAdmin):
+    list_display = ("id", "key", "value", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
 class SensorAdmin(admin.ModelAdmin):
@@ -123,7 +117,7 @@ class ProcessingLevelAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 
 class DatastreamAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name", "is_private")
+    list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name", "is_private")
 
     actions = ["populate_with_test_observations", "delete_observations"]
 
@@ -209,29 +203,6 @@ class SiteTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
             request,
             "admin:sta_sitetype_changelist",
             ["core/sta/fixtures/default_site_types.yaml"],
-        )
-
-
-class SamplingFeatureTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
-    list_display = ("id", "name")
-    change_list_template = "admin/sta/samplingfeaturetype/change_list.html"
-
-    def get_urls(self):
-        urls = super().get_urls()
-
-        return [
-            path(
-                "load-default-sampling-feature-type-data/",
-                self.admin_site.admin_view(self.load_default_data),
-                name="sampling_feature_type_load_default_data",
-            ),
-        ] + urls
-
-    def load_default_data(self, request):
-        return self.load_fixtures(
-            request,
-            "admin:sta_samplingfeaturetype_changelist",
-            ["core/sta/fixtures/default_sampling_feature_types.yaml"],
         )
 
 
@@ -419,10 +390,9 @@ class FileAttachmentTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
-admin.site.register(Thing, ThingAdmin)
-admin.site.register(Location, LocationAdmin)
-admin.site.register(ThingFileAttachment, ThingFileAttachmentAdmin)
-admin.site.register(ThingTag, ThingTagAdmin)
+admin.site.register(MonitoringSite, MonitoringSiteAdmin)
+admin.site.register(MonitoringSiteFileAttachment, MonitoringSiteFileAttachmentAdmin)
+admin.site.register(MonitoringSiteTag, MonitoringSiteTagAdmin)
 admin.site.register(Sensor, SensorAdmin)
 admin.site.register(ObservedProperty, ObservedPropertyAdmin)
 admin.site.register(Unit, UnitAdmin)
@@ -433,7 +403,6 @@ admin.site.register(DatastreamTag, DatastreamTagAdmin)
 admin.site.register(FileAttachmentType, FileAttachmentTypeAdmin)
 admin.site.register(ResultQualifier, ResultQualifierAdmin)
 admin.site.register(SiteType, SiteTypeAdmin)
-admin.site.register(SamplingFeatureType, SamplingFeatureTypeAdmin)
 admin.site.register(MethodType, MethodTypeAdmin)
 admin.site.register(VariableType, VariableTypeAdmin)
 admin.site.register(SensorEncodingType, SensorEncodingTypeAdmin)

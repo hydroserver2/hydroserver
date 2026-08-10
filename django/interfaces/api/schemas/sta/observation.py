@@ -59,7 +59,7 @@ class ObservationSummaryResponse(BaseGetResponse, ObservationFields):
     workspace_id: uuid.UUID = Field(
         ...,
         validation_alias=AliasChoices(
-            "workspaceId", AliasPath("datastream", "thing", "workspace_id")
+            "workspaceId", AliasPath("datastream", "monitoring_site", "workspace_id")
         ),
     )
     datastream_id: uuid.UUID
@@ -68,7 +68,7 @@ class ObservationSummaryResponse(BaseGetResponse, ObservationFields):
 class ObservationDetailResponse(BaseGetResponse, ObservationFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("datastream", "thing", "workspace")
+        ..., validation_alias=AliasPath("datastream", "monitoring_site", "workspace")
     )
     datastream: "DatastreamSummaryResponse"
 

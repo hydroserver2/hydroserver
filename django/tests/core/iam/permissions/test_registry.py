@@ -39,11 +39,11 @@ def test_register_resource_type_defaults_workspace_field_to_workspace():
 
 
 def test_register_resource_type_accepts_explicit_workspace_field():
-    @register_resource_type(workspace_field="thing__workspace")
+    @register_resource_type(workspace_field="monitoring_site__workspace")
     class Widget:
         pass
 
-    assert Widget.workspace_field == "thing__workspace"
+    assert Widget.workspace_field == "monitoring_site__workspace"
 
 
 def test_register_resource_type_accepts_workspace_field_none():
@@ -101,7 +101,7 @@ def test_register_resource_type_returns_the_class_unchanged():
 
 
 def test_resolve_resource_type_returns_string_unchanged():
-    assert resolve_resource_type("Thing") == "Thing"
+    assert resolve_resource_type("MonitoringSite") == "MonitoringSite"
 
 
 def test_resolve_resource_type_returns_class_resource_type():

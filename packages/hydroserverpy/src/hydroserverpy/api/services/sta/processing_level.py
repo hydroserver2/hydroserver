@@ -6,7 +6,7 @@ from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
-    from hydroserverpy.api.models import Workspace, Thing, Datastream
+    from hydroserverpy.api.models import Workspace, MonitoringSite, Datastream
 
 
 class ProcessingLevelService(HydroServerBaseService):
@@ -20,7 +20,7 @@ class ProcessingLevelService(HydroServerBaseService):
         page_size: int = ...,
         order_by: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
-        thing: Optional[Union["Thing", UUID, str]] = ...,
+        monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
         fetch_all: bool = False,
     ) -> List["ProcessingLevel"]:
@@ -31,7 +31,7 @@ class ProcessingLevelService(HydroServerBaseService):
             page_size=page_size,
             order_by=order_by,
             workspace_id=normalize_uuid(workspace),
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),
             fetch_all=fetch_all,
         )

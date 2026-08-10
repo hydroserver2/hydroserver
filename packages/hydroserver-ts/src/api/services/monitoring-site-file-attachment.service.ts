@@ -8,7 +8,7 @@ import {
 
 export const RATING_CURVE_ATTACHMENT_TYPE = 'rating_curve'
 
-export interface ThingFileAttachment {
+export interface MonitoringSiteFileAttachment {
   id: string | number
   name: string
   description: string
@@ -16,21 +16,21 @@ export interface ThingFileAttachment {
   fileAttachmentType: string
 }
 
-export type ThingFileAttachmentListParams = {
+export type MonitoringSiteFileAttachmentListParams = {
   page?: number | null
   page_size?: number | null
   type?: string | string[]
 }
 
-export type UploadThingFileAttachmentOptions = {
+export type UploadMonitoringSiteFileAttachmentOptions = {
   type?: string
   name?: string
   description?: string
 }
 
-export type ReplaceThingFileAttachmentOptions = UploadThingFileAttachmentOptions
+export type ReplaceMonitoringSiteFileAttachmentOptions = UploadMonitoringSiteFileAttachmentOptions
 
-export type ThingFileAttachmentPatchBody = {
+export type MonitoringSiteFileAttachmentPatchBody = {
   name?: string
   description?: string
 }
@@ -47,35 +47,35 @@ function errorResponse(status: number, message: string): ApiResponse<never> {
   return { ok: false, status, message }
 }
 
-export class ThingFileAttachmentService {
+export class MonitoringSiteFileAttachmentService {
   private readonly _client: HydroServer
 
   constructor(client: HydroServer) {
     this._client = client
   }
 
-  async list(thingId: string, params: ThingFileAttachmentListParams = {}) {
-    const url = this.withQuery(this.baseAttachmentRoute(thingId), params)
-    const res = await apiMethods.paginatedFetch<ThingFileAttachment[]>(url)
+  async list(monitoringSiteId: string, params: MonitoringSiteFileAttachmentListParams = {}) {
+    const url = this.withQuery(this.baseAttachmentRoute(monitoringSiteId), params)
+    const res = await apiMethods.paginatedFetch<MonitoringSiteFileAttachment[]>(url)
     if (!res.ok) return res
     return {
       ...res,
       data: normalizeAttachmentCollection(
         res.data,
         this._client.host
-      ) as ThingFileAttachment[],
+      ) as MonitoringSiteFileAttachment[],
     }
   }
 
-  async listItems(thingId: string, params: ThingFileAttachmentListParams = {}) {
-    const res = await this.list(thingId, params)
+  async listItems(monitoringSiteId: string, params: MonitoringSiteFileAttachmentListParams = {}) {
+    const res = await this.list(monitoringSiteId, params)
     return res.ok && Array.isArray(res.data) ? res.data : []
   }
 
   async upload(
-    thingId: string,
+    monitoringSiteId: string,
     file: File | Blob,
-    options: UploadThingFileAttachmentOptions = {}
+    options: UploadMonitoringSiteFileAttachmentOptions = {}
   ) {
     const data = new FormData()
     const uploadFile = toNamedUploadFile(file, options.name)
@@ -83,8 +83,8 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = await apiMethods.post<ThingFileAttachment>(
-      this.baseAttachmentRoute(thingId),
+    const res = await apiMethods.post<MonitoringSiteFileAttachment>(
+      this.baseAttachmentRoute(monitoringSiteId),
       data
     )
     if (!res.ok) return res
@@ -93,17 +93,17 @@ export class ThingFileAttachmentService {
       data: normalizeAttachmentRecord(
         res.data,
         this._client.host
-      ) as ThingFileAttachment,
+      ) as MonitoringSiteFileAttachment,
     }
   }
 
   async update(
-    thingId: string,
+    monitoringSiteId: string,
     fileAttachmentId: string | number,
-    body: ThingFileAttachmentPatchBody,
-    originalBody?: ThingFileAttachmentPatchBody
+    body: MonitoringSiteFileAttachmentPatchBody,
+    originalBody?: MonitoringSiteFileAttachmentPatchBody
   ) {
-    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+    const attachment = await this.findAttachment(monitoringSiteId, fileAttachmentId)
     if (!attachment) {
       return errorResponse(404, 'File attachment does not exist.')
     }
@@ -112,13 +112,13 @@ export class ThingFileAttachmentService {
     if (nextName !== attachment.name) {
       return errorResponse(
         400,
-        'Renaming existing thing file attachments is not supported.'
+        'Renaming existing monitoring site file attachments is not supported.'
       )
     }
 
     try {
       const file = await this.fetchAttachmentBlob(attachment.link)
-      return this.replace(thingId, file, {
+      return this.replace(monitoringSiteId, file, {
         name: attachment.name,
         type: attachment.fileAttachmentType,
         description:
@@ -135,9 +135,9 @@ export class ThingFileAttachmentService {
   }
 
   async replace(
-    thingId: string,
+    monitoringSiteId: string,
     file: File | Blob,
-    options: ReplaceThingFileAttachmentOptions = {}
+    options: ReplaceMonitoringSiteFileAttachmentOptions = {}
   ) {
     const uploadFile = toNamedUploadFile(file, options.name)
     const data = new FormData()
@@ -145,8 +145,8 @@ export class ThingFileAttachmentService {
     data.append('file_attachment_type', options.type ?? RATING_CURVE_ATTACHMENT_TYPE)
     if (options.description) data.append('description', options.description)
 
-    const res = await apiMethods.put<ThingFileAttachment>(
-      this.baseAttachmentRoute(thingId),
+    const res = await apiMethods.put<MonitoringSiteFileAttachment>(
+      this.baseAttachmentRoute(monitoringSiteId),
       data
     )
 
@@ -154,27 +154,27 @@ export class ThingFileAttachmentService {
       return res
     }
 
-    const attachment = await this.findAttachment(thingId, uploadFile.name)
+    const attachment = await this.findAttachment(monitoringSiteId, uploadFile.name)
     return {
       ...res,
       data: attachment ?? (res.data
-        ? (normalizeAttachmentRecord(res.data, this._client.host) as ThingFileAttachment)
+        ? (normalizeAttachmentRecord(res.data, this._client.host) as MonitoringSiteFileAttachment)
         : undefined),
     }
   }
 
   async replaceFile(
-    thingId: string,
+    monitoringSiteId: string,
     fileAttachmentId: string | number,
     file: File | Blob,
-    options: ReplaceThingFileAttachmentOptions = {}
+    options: ReplaceMonitoringSiteFileAttachmentOptions = {}
   ) {
-    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+    const attachment = await this.findAttachment(monitoringSiteId, fileAttachmentId)
     if (!attachment && !options.name) {
       return errorResponse(404, 'File attachment does not exist.')
     }
 
-    return this.replace(thingId, file, {
+    return this.replace(monitoringSiteId, file, {
       ...options,
       name: options.name ?? attachment?.name,
       type: options.type ?? attachment?.fileAttachmentType,
@@ -182,11 +182,11 @@ export class ThingFileAttachmentService {
     })
   }
 
-  async delete(thingId: string, fileAttachmentId: string | number) {
-    const attachment = await this.findAttachment(thingId, fileAttachmentId)
+  async delete(monitoringSiteId: string, fileAttachmentId: string | number) {
+    const attachment = await this.findAttachment(monitoringSiteId, fileAttachmentId)
     const name = attachment?.name ?? String(fileAttachmentId)
     return apiMethods.delete<NoContentResponse>(
-      this.baseAttachmentRoute(thingId),
+      this.baseAttachmentRoute(monitoringSiteId),
       { name }
     )
   }
@@ -303,13 +303,13 @@ export class ThingFileAttachmentService {
     return csvText
   }
 
-  private baseAttachmentRoute(thingId: string) {
-    return `${this._client.baseRoute}/things/${thingId}/file-attachments`
+  private baseAttachmentRoute(monitoringSiteId: string) {
+    return `${this._client.baseRoute}/monitoring-sites/${monitoringSiteId}/file-attachments`
   }
 
-  private async findAttachment(thingId: string, attachmentIdOrName: string | number) {
+  private async findAttachment(monitoringSiteId: string, attachmentIdOrName: string | number) {
     const target = String(attachmentIdOrName)
-    const items = await this.listItems(thingId)
+    const items = await this.listItems(monitoringSiteId)
     return (
       items.find((item) => String(item.id) === target) ??
       items.find((item) => item.name === target)
@@ -337,7 +337,7 @@ export class ThingFileAttachmentService {
     try {
       const parsed = new URL(link, globalThis.location?.origin ?? undefined)
 
-      if (isThingAttachmentDownloadPath(parsed.pathname)) {
+      if (isMonitoringSiteAttachmentDownloadPath(parsed.pathname)) {
         const pathAndQuery = `${parsed.pathname}${parsed.search}`
 
         const hostOrigin = this.hostOrigin()
@@ -381,7 +381,7 @@ export class ThingFileAttachmentService {
     return null
   }
 
-  private withQuery(base: string, params?: ThingFileAttachmentListParams) {
+  private withQuery(base: string, params?: MonitoringSiteFileAttachmentListParams) {
     if (!params || Object.keys(params).length === 0) return base
     const url = new URL(base, globalThis.location?.origin ?? undefined)
 
@@ -418,8 +418,8 @@ function toNamedUploadFile(file: File | Blob, name?: string) {
   })
 }
 
-function isThingAttachmentDownloadPath(pathname: string) {
-  return /^\/api\/data\/things\/[^/]+\/file-attachments\/[^/]+\/download\/?$/.test(
+function isMonitoringSiteAttachmentDownloadPath(pathname: string) {
+  return /^\/api\/data\/monitoring-sites\/[^/]+\/file-attachments\/[^/]+\/download\/?$/.test(
     pathname
   )
 }
@@ -465,7 +465,7 @@ function parsePreviewRows(csvText: string, maxRows = 20): RatingCurvePreviewRow[
     // STATION_ID,LOOKUP_COL1,LOOKUP_COL2
     const hasLeadingIdentifierColumn =
       header.length >= 3 &&
-      /(id|station|site|thing)/.test(header[0]) &&
+      /(id|station|site|monitoringSite)/.test(header[0]) &&
       /(lookup|stage|input|x)/.test(header[1]) &&
       /(lookup|output|discharge|y)/.test(header[2])
     if (hasLeadingIdentifierColumn) {

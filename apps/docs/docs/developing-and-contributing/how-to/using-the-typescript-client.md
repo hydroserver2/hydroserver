@@ -21,9 +21,9 @@ The TypeScript client exposes these services:
 | Area | Services |
 | --- | --- |
 | Authentication and account | `session`, `user` |
-| Data management | `workspaces`, `things`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
+| Data management | `workspaces`, `monitoringSites`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
 | Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
-| Files and quality control | `thingFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
+| Files and quality control | `monitoringSiteFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
 
@@ -207,100 +207,99 @@ await hs.workspaces.acceptOwnershipTransfer(workspaceId);
 await hs.workspaces.rejectOwnershipTransfer(workspaceId);
 ```
 
-## Things (Sites)
+## Monitoring Sites
 
-Things represent physical monitoring locations.
+Monitoring sites represent physical monitoring locations.
 
-### Example: Get things
+### Example: Get monitoringSites
 
 ```ts
-const publicThings = await hs.things.listAllItems();
+const publicMonitoringSites = await hs.monitoringSites.listAllItems();
 
-const workspaceThings = await hs.things.listAllItems({
+const workspaceMonitoringSites = await hs.monitoringSites.listAllItems({
   workspace_id: ["00000000-0000-0000-0000-000000000000"],
 });
 
-const boundedThings = await hs.things.listAllItems({
+const boundedMonitoringSites = await hs.monitoringSites.listAllItems({
   bbox: ["-112.166,41.369,-111.402,42.999"],
 });
 
-const filteredThings = await hs.things.listAllItems({
+const filteredMonitoringSites = await hs.monitoringSites.listAllItems({
   tag: ["Region:A"],
 });
 ```
 
-### Example: Create a thing
+### Example: Create a monitoringSite
 
 ```ts
-import { Thing } from "@hydroserver/client";
+import { MonitoringSite } from "@hydroserver/client";
 
-const thing = new Thing();
-thing.workspaceId = "00000000-0000-0000-0000-000000000000";
-thing.name = "My Site";
-thing.description = "This site records environmental observations.";
-thing.samplingFeatureType = "Site";
-thing.samplingFeatureCode = "OBSERVATION_SITE";
-thing.siteType = "Atmosphere";
-thing.location.latitude = 41.739;
-thing.location.longitude = -111.7957;
-thing.location.elevation_m = 1414;
-thing.location.elevationDatum = "EGM96";
-thing.location.adminArea1 = "UT";
-thing.location.adminArea2 = "Cache";
-thing.location.country = "US";
-thing.dataDisclaimer = "Data may be provisional and subject to revision.";
-thing.isPrivate = false;
+const monitoringSite = new MonitoringSite();
+monitoringSite.workspaceId = "00000000-0000-0000-0000-000000000000";
+monitoringSite.name = "My Site";
+monitoringSite.description = "This site records environmental observations.";
+monitoringSite.code = "OBSERVATION_SITE";
+monitoringSite.type = "Atmosphere";
+monitoringSite.latitude = 41.739;
+monitoringSite.longitude = -111.7957;
+monitoringSite.elevation_m = 1414;
+monitoringSite.elevationDatum = "EGM96";
+monitoringSite.adminArea1 = "UT";
+monitoringSite.adminArea2 = "Cache";
+monitoringSite.country = "US";
+monitoringSite.dataDisclaimer = "Data may be provisional and subject to revision.";
+monitoringSite.isPrivate = false;
 
-await hs.things.create(thing);
+await hs.monitoringSites.create(monitoringSite);
 ```
 
-### Example: Modify thing metadata and privacy
+### Example: Modify monitoringSite metadata and privacy
 
 ```ts
-const thing = await hs.things.getItem("00000000-0000-0000-0000-000000000000");
-if (!thing) throw new Error("Thing not found");
+const monitoringSite = await hs.monitoringSites.getItem("00000000-0000-0000-0000-000000000000");
+if (!monitoringSite) throw new Error("MonitoringSite not found");
 
-thing.name = "Updated Site Name";
-thing.description = "Updated site metadata";
-await hs.things.update(thing);
+monitoringSite.name = "Updated Site Name";
+monitoringSite.description = "Updated site metadata";
+await hs.monitoringSites.update(monitoringSite);
 
-await hs.things.updatePrivacy(thing.id, true);
+await hs.monitoringSites.updatePrivacy(monitoringSite.id, true);
 ```
 
-### Example: Manage thing tags
+### Example: Manage monitoringSite tags
 
 ```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
+const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 
-await hs.things.createTag(thingId, { key: "Region", value: "A" });
-await hs.things.updateTag(thingId, { key: "Region", value: "B" });
-await hs.things.deleteTag(thingId, { key: "Region" });
+await hs.monitoringSites.createTag(monitoringSiteId, { key: "Region", value: "A" });
+await hs.monitoringSites.updateTag(monitoringSiteId, { key: "Region", value: "B" });
+await hs.monitoringSites.deleteTag(monitoringSiteId, { key: "Region" });
 ```
 
-### Example: Manage thing file attachments
+### Example: Manage monitoringSite file attachments
 
 ```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
+const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 const data = new FormData();
 data.append("file", fileInput.files![0]);
 
-await hs.things.uploadAttachments(thingId, data);
-await hs.things.getAttachments(thingId);
-await hs.things.deleteAttachment(thingId, "site-photo.png");
+await hs.monitoringSites.uploadAttachments(monitoringSiteId, data);
+await hs.monitoringSites.getAttachments(monitoringSiteId);
+await hs.monitoringSites.deleteAttachment(monitoringSiteId, "site-photo.png");
 ```
 
-### Example: Get datastreams for a thing
+### Example: Get datastreams for a monitoringSite
 
 ```ts
-const thingDatastreams = await hs.datastreams.listAllItems({
-  thing_id: ["00000000-0000-0000-0000-000000000000"],
+const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
+  monitoring_site_id: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
-### Example: Delete a thing
+### Example: Delete a monitoringSite
 
 ```ts
-await hs.things.delete("00000000-0000-0000-0000-000000000000");
+await hs.monitoringSites.delete("00000000-0000-0000-0000-000000000000");
 ```
 
 ## Observed Properties
@@ -454,7 +453,7 @@ await hs.resultQualifiers.delete("00000000-0000-0000-0000-000000000000");
 
 ## Datastreams
 
-Datastreams group observations for one observed property, measured by one sensor, at one thing.
+Datastreams group observations for one observed property, measured by one sensor, at one monitoringSite.
 
 ### Example: Get datastreams
 
@@ -465,8 +464,8 @@ const workspaceDatastreams = await hs.datastreams.listAllItems({
   workspace_id: ["00000000-0000-0000-0000-000000000000"],
 });
 
-const thingDatastreams = await hs.datastreams.listAllItems({
-  thing_id: ["00000000-0000-0000-0000-000000000000"],
+const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
+  monitoring_site_id: ["00000000-0000-0000-0000-000000000000"],
 });
 
 const datastream = await hs.datastreams.getItem(
@@ -481,7 +480,7 @@ import { Datastream } from "@hydroserver/client";
 
 const datastream = new Datastream();
 datastream.workspaceId = "00000000-0000-0000-0000-000000000000";
-datastream.thingId = "11111111-1111-1111-1111-111111111111";
+datastream.monitoringSiteId = "11111111-1111-1111-1111-111111111111";
 datastream.sensorId = "22222222-2222-2222-2222-222222222222";
 datastream.observedPropertyId = "33333333-3333-3333-3333-333333333333";
 datastream.processingLevelId = "44444444-4444-4444-4444-444444444444";
@@ -549,7 +548,7 @@ const res = await hs.datastreams.get(
 
 if (res.ok) {
   const datastream = res.data as unknown as DatastreamExtended;
-  console.log(datastream.thing);
+  console.log(datastream.monitoringSite);
   console.log(datastream.sensor);
   console.log(datastream.observedProperty);
   console.log(datastream.unit);
@@ -768,7 +767,7 @@ The same `runTask`, `getTaskRuns`, and `getTaskRun` helpers are available on `mo
 
 ## Monitoring Tasks
 
-Monitoring tasks run data-quality rules for the datastreams at a Thing and can notify a list of recipients.
+Monitoring tasks run data-quality rules for the datastreams at a MonitoringSite and can notify a list of recipients.
 
 ```ts
 import { MonitoringTask } from "@hydroserver/client";
@@ -776,7 +775,7 @@ import { MonitoringTask } from "@hydroserver/client";
 const task = await hs.monitoringTasks.createItem(
   new MonitoringTask({
     name: "Daily range checks",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     recipients: ["alerts@example.com"],
     schedule: null,
   })
@@ -806,7 +805,7 @@ import { DataProductTask } from "@hydroserver/client";
 const task = await hs.dataProductTasks.createItem(
   new DataProductTask({
     name: "Convert temperature",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     schedule: null,
   })
 );
@@ -829,7 +828,7 @@ import { RatingCurve } from "@hydroserver/client";
 const curve = await hs.ratingCurves.createItem(
   new RatingCurve({
     name: "Stage to discharge",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     fittingMethod: "power_law",
     points: [
       [0.1, 0.3],
@@ -840,32 +839,32 @@ const curve = await hs.ratingCurves.createItem(
 );
 ```
 
-Use `listItemsForThing(thingId)` to retrieve all curves for one Thing.
+Use `listItemsForMonitoringSite(monitoringSiteId)` to retrieve all curves for one MonitoringSite.
 
-## Typed Thing File Attachments
+## Typed MonitoringSite File Attachments
 
-`hs.things` accepts raw `FormData` for general attachment operations. `hs.thingFileAttachments` provides typed upload, metadata update, replacement, deletion, and rating-curve preview helpers.
+`hs.monitoringSites` accepts raw `FormData` for general attachment operations. `hs.monitoringSiteFileAttachments` provides typed upload, metadata update, replacement, deletion, and rating-curve preview helpers.
 
 ```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
+const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 const file = fileInput.files![0];
 const replacementFile = replacementFileInput.files![0];
 
-const uploadRes = await hs.thingFileAttachments.upload(thingId, file, {
+const uploadRes = await hs.monitoringSiteFileAttachments.upload(monitoringSiteId, file, {
   type: "rating_curve",
   name: "rating-curve.csv",
   description: "Approved field rating curve",
 });
 
 if (uploadRes.ok) {
-  await hs.thingFileAttachments.replaceFile(
-    thingId,
+  await hs.monitoringSiteFileAttachments.replaceFile(
+    monitoringSiteId,
     uploadRes.data.id,
     replacementFile
   );
 }
 
-const attachments = await hs.thingFileAttachments.listItems(thingId, {
+const attachments = await hs.monitoringSiteFileAttachments.listItems(monitoringSiteId, {
   type: "rating_curve",
 });
 ```

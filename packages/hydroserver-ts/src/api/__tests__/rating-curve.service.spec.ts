@@ -15,7 +15,7 @@ describe('RatingCurveService', () => {
     vi.restoreAllMocks()
   })
 
-  it('lists rating curves for a thing with product query parameters', async () => {
+  it('lists rating curves for a monitoringSite with product query parameters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse(
         [
@@ -23,7 +23,7 @@ describe('RatingCurveService', () => {
             id: 'rating-curve-1',
             name: 'Stage to discharge',
             fittingMethod: 'linear',
-            thing: { id: 'thing-1', name: 'Site 1' },
+            monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
             points: [
               [1, 2],
               [2, 4],
@@ -36,14 +36,14 @@ describe('RatingCurveService', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    const response = await client.ratingCurves.listItemsForThing('thing-1', {
+    const response = await client.ratingCurves.listItemsForMonitoringSite('monitoringSite-1', {
       order_by: ['name'],
     })
 
     expect(response).toHaveLength(1)
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/data/products/rating-curves?order_by=name&thing_id=thing-1&page=1&page_size=200'
+      'https://hydro.example.com/api/data/products/rating-curves?order_by=name&monitoring_site_id=monitoringSite-1&page=1&page_size=200'
     )
   })
 
@@ -54,7 +54,7 @@ describe('RatingCurveService', () => {
         name: 'Curve',
         description: null,
         fittingMethod: 'power_law',
-        thing: { id: 'thing-1', name: 'Site 1' },
+        monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
         points: [[1, 2]],
       })
     )
@@ -66,7 +66,7 @@ describe('RatingCurveService', () => {
       name: 'Curve',
       description: null,
       fittingMethod: 'power_law',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       points: [[1, 2]],
     })
 
@@ -78,7 +78,7 @@ describe('RatingCurveService', () => {
       name: 'Curve',
       description: null,
       fittingMethod: 'power_law',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       points: [[1, 2]],
     })
   })
@@ -90,7 +90,7 @@ describe('RatingCurveService', () => {
         name: 'Updated',
         description: 'New notes',
         fittingMethod: 'linear',
-        thing: { id: 'thing-1', name: 'Site 1' },
+        monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
         points: [[2, 3]],
       })
     )
@@ -103,8 +103,8 @@ describe('RatingCurveService', () => {
       description: 'New notes',
       fittingMethod: 'linear',
       points: [[2, 3]],
-      thingId: 'thing-1',
-      thing: { id: 'thing-1', name: 'Site 1' },
+      monitoringSiteId: 'monitoringSite-1',
+      monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(

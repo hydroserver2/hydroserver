@@ -90,6 +90,7 @@ describe('WorkspaceService', () => {
       ok: false,
       status: 503,
       message: 'Page unavailable',
+      data: { detail: 'Page unavailable' },
     })
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })

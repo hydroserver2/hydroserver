@@ -1,0 +1,119 @@
+# Public monitoring site
+- model: sta.monitoringsite
+  pk: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+  fields:
+    name: Public Monitoring Site
+    description: Utah Water Research Lab
+    code: UWRL
+    type: Public
+    latitude: 41.739742
+    longitude: -111.793766
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.monitoringsitetag
+  pk: 1000000010
+  fields:
+    monitoring_site: 3b7818af-eff7-4149-8517-e5cad9dc22e1
+    key: Test Public Key
+    value: Test Public Value
+
+# Private monitoring site
+- model: sta.monitoringsite
+  pk: 76dadda5-224b-4e1f-8570-e385bd482b2d
+  fields:
+    name: Private Monitoring Site
+    description: Private Monitoring Site
+    code: TSC
+    type: Private
+    latitude: 41.743042
+    longitude: -111.813250
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    is_private: True
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+- model: sta.monitoringsitetag
+  pk: 1000000011
+  fields:
+    monitoring_site: 76dadda5-224b-4e1f-8570-e385bd482b2d
+    key: Test Private Key
+    value: Test Private Value
+
+# Private monitoring site in public workspace
+- model: sta.monitoringsite
+  pk: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+  fields:
+    name: Private Monitoring Site Public Workspace
+    description: Old Main Building
+    code: MAIN
+    type: Private
+    latitude: 41.740741
+    longitude: -111.813924
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    is_private: True
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.monitoringsitetag
+  pk: 1000000012
+  fields:
+    monitoring_site: 92a3a099-f2d3-40ec-9b0e-d25ae8bf59b7
+    key: Test Private Key
+    value: Test Private Value
+
+# Public monitoring site in private workspace
+- model: sta.monitoringsite
+  pk: 819260c8-2543-4046-b8c4-7431243ed7c5
+  fields:
+    name: Public Monitoring Site Private Workspace
+    description: Merrill-Cazier Library
+    code: LIB
+    type: Private
+    latitude: 41.742008
+    longitude: -111.809720
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    is_private: False
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+- model: sta.monitoringsitetag
+  pk: 1000000013
+  fields:
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
+    key: Test Private Key
+    value: Test Private Value
+
+# Mutable public monitoring site for E2E CRUD
+- model: sta.monitoringsite
+  pk: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+  fields:
+    name: E2E Mutable Monitoring Site
+    description: Deterministic mutable site reserved for browser CRUD tests
+    code: E2E-MUTABLE
+    type: Public
+    latitude: 41.741111
+    longitude: -111.805555
+    elevation_m: 1
+    elevation_datum: WGS84
+    admin_area_1: UT
+    admin_area_2: Cache
+    country: US
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+- model: sta.monitoringsitetag
+  pk: 1000000014
+  fields:
+    monitoring_site: 5d4db6d5-6030-4db8-a620-23bb2d8d3f91
+    key: E2E
+    value: Mutable

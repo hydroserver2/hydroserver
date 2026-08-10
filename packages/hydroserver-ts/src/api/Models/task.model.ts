@@ -52,8 +52,8 @@ export interface EtlMapping {
   targetDatastream: {
     id: string
     name: string
-    thingId?: string
-    thing_id?: string
+    monitoringSiteId?: string
+    monitoring_site_id?: string
     [key: string]: unknown
   }
 }

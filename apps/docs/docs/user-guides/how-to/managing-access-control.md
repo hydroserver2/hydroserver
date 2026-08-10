@@ -63,4 +63,4 @@ By default, workspaces, sites, and datastreams are public. However, each has a v
 
 These privacy settings work in a hierarchical, conditional manner:
 
-If you set the **Site Privacy** to private (thing.is_private), then both **Datastream Visibility** (datastream.is_visible) and **Datastream Data Visibility** (datastream.is_data_visible) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+If you set the **Site Privacy** to private (`monitoring_site.is_private`), then both **Datastream Visibility** (`datastream.is_visible`) and **Datastream Data Visibility** (`datastream.is_data_visible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.

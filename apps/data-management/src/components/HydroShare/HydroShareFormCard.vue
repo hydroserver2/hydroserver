@@ -1,7 +1,7 @@
 <template>
   <HydroShareDeleteCard
-    v-if="thing?.id && openDelete"
-    :thing-id="thing.id"
+    v-if="monitoringSite?.id && openDelete"
+    :monitoring-site-id="monitoringSite.id"
     @close="openDelete = false"
     @delete="onDelete"
   />
@@ -16,7 +16,7 @@
         </v-col>
         <v-spacer />
         <v-col cols="auto" v-if="isEdit">
-          <v-btn @click="archiveThing">
+          <v-btn @click="archiveMonitoringSite">
             <v-icon :icon="mdiUpload" left />
             Archive Now
           </v-btn>
@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import hs, {
@@ -211,13 +211,13 @@ const { hydroShareArchive: archive, loading } =
 
 const { item, isEdit, valid, myForm, uploadItem } =
   useFormLogic<PostHydroShareArchive>(
-    hs.things.createHydroShareArchive,
-    hs.things.updateHydroShareArchive,
+    hs.monitoringSites.createHydroShareArchive,
+    hs.monitoringSites.updateHydroShareArchive,
     PostHydroShareArchive,
     archive.value || undefined
   )
 
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const datastreams = ref<Datastream[]>([])
 const linkToExistingAccount = ref(false)
 const openDelete = ref(false)
@@ -248,20 +248,20 @@ const generateKeywords = () => {
   const mediumsSet = new Set(datastreams.value.map((ds) => ds.sampledMedium))
   const EXCLUDED_MEDIUMS = ['Not applicable', 'Unknown', 'Other']
   EXCLUDED_MEDIUMS.forEach((medium) => mediumsSet.delete(medium))
-  if (thing.value?.siteType) mediumsSet.add(thing.value.siteType)
+  if (monitoringSite.value?.type) mediumsSet.add(monitoringSite.value.type)
   return ['HydroServer Site Archive', ...mediumsSet]
 }
 
 function generateDefaultFormData() {
-  item.value.thingId = thing.value!.id
+  item.value.monitoringSiteId = monitoringSite.value!.id
   item.value.path = 'HydroServer'
   item.value.resourceKeywords = generateKeywords()
-  item.value.resourceTitle = `HydroServer Archive: ${thing.value?.name}`
-  item.value.publicResource = !thing.value?.isPrivate
+  item.value.resourceTitle = `HydroServer Archive: ${monitoringSite.value?.name}`
+  item.value.publicResource = !monitoringSite.value?.isPrivate
   item.value.datastreamIds = datastreams.value.map((ds) => ds.id)
   item.value.resourceAbstract =
     `This HydroShare resource serves as an archive for monitoring data collected at ` +
-    `${thing.value?.name}. The datasets contained herein represent a collection of hydrologic observations ` +
+    `${monitoringSite.value?.name}. The datasets contained herein represent a collection of hydrologic observations ` +
     `collected at this location. The purpose of this archive is to provide a centralized repository for the ` +
     `hydrologic data recorded at this site, facilitating accessibility, analysis, and collaboration among ` +
     `researchers and stakeholders.`
@@ -289,12 +289,12 @@ async function onSubmit() {
   }
 }
 
-const archiveThing = async () => {
+const archiveMonitoringSite = async () => {
   try {
     loading.value = true
     emit('close')
     Snackbar.info('Uploading site data to HydroShare. This may take a minute.')
-    await hs.things.triggerHydroShareArchive(thing.value!.id)
+    await hs.monitoringSites.triggerHydroShareArchive(monitoringSite.value!.id)
   } catch (error) {
     Snackbar.error('Failed to upload site data to HydroShare')
     console.error('Error archiving to HydroShare', error)
@@ -305,7 +305,7 @@ const archiveThing = async () => {
 
 onMounted(async () => {
   datastreams.value = await hs.datastreams.listAllItems({
-    thing_id: [thing.value!.id],
+    monitoring_site_id: [monitoringSite.value!.id],
   })
   if (!isEdit.value) generateDefaultFormData()
 })

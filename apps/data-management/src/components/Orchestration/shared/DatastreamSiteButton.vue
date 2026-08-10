@@ -16,7 +16,7 @@
           rounded="lg"
           class="task-datastream-site-button__button"
           :to="siteRoute"
-          :disabled="!thingId"
+          :disabled="!monitoringSiteId"
           :aria-label="ariaLabel"
           :data-testid="testId"
         >
@@ -32,18 +32,18 @@ import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { Datastream } from '@hydroserver/client'
 import { mdiOpenInNew } from '@mdi/js'
-import { datastreamThingId } from '@/utils/orchestration/datastreams'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 const props = withDefaults(
   defineProps<{
     datastream?: (Partial<Datastream> & Record<string, any>) | null
     datastreamId?: string | null
-    fallbackThingId?: string | null
+    fallbackMonitoringSiteId?: string | null
   }>(),
   {
     datastream: null,
     datastreamId: null,
-    fallbackThingId: null,
+    fallbackMonitoringSiteId: null,
   }
 )
 
@@ -52,31 +52,31 @@ const datastreamId = computed(() => {
   return id ? String(id) : ''
 })
 
-const thingId = computed(() => {
+const monitoringSiteId = computed(() => {
   const fromDatastream = props.datastream
-    ? datastreamThingId(props.datastream as Datastream)
+    ? datastreamMonitoringSiteId(props.datastream as Datastream)
     : ''
-  return fromDatastream || props.fallbackThingId || ''
+  return fromDatastream || props.fallbackMonitoringSiteId || ''
 })
 
 const siteRoute = computed<RouteLocationRaw | undefined>(() =>
-  thingId.value
+  monitoringSiteId.value
     ? datastreamId.value
       ? {
           name: 'SiteDetails',
-          params: { id: thingId.value },
+          params: { id: monitoringSiteId.value },
           query: { datastream: datastreamId.value },
         }
-      : { name: 'SiteDetails', params: { id: thingId.value } }
+      : { name: 'SiteDetails', params: { id: monitoringSiteId.value } }
     : undefined
 )
 
 const tooltipText = computed(() =>
-  thingId.value ? 'Go to site details page' : 'Site details unavailable'
+  monitoringSiteId.value ? 'Go to site details page' : 'Site details unavailable'
 )
 
 const ariaLabel = computed(() =>
-  thingId.value
+  monitoringSiteId.value
     ? `Go to site details page for datastream ${datastreamId.value || 'mapping'}`
     : 'Site details unavailable'
 )

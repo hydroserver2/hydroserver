@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.products.factories import (
     DataProductTaskFactory,
     DataProductTransformationFactory,
@@ -33,15 +33,15 @@ def _collaborator_with_permission(workspace, **permissions):
     return CollaboratorFactory(workspace=workspace, role=role)
 
 
-def _make_task_with_thing(workspace):
-    thing = ThingFactory(workspace=workspace)
-    task = DataProductTaskFactory(thing=thing)
-    return task, thing
+def _make_task_with_monitoring_site(workspace):
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    task = DataProductTaskFactory(monitoring_site=monitoring_site)
+    return task, monitoring_site
 
 
-def _make_transformation(task, thing):
-    output_ds = DatastreamFactory(thing=thing)
-    input_ds = DatastreamFactory(thing=thing)
+def _make_transformation(task, monitoring_site):
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
     transformation = DataProductTransformationFactory(
         task=task,
         output_datastream=output_ds,
@@ -71,8 +71,8 @@ def _transformation_body(output_ds, input_ds, **overrides):
 def test_get_expression_transformations_includes_transformation_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     client.force_login(owner)
 
     response = client.get(_transformations_url(task.id))
@@ -83,8 +83,8 @@ def test_get_expression_transformations_includes_transformation_for_workspace_ow
 
 def test_get_expression_transformations_returns_404_for_outsider(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    _make_transformation(task, monitoring_site)
     outsider = UserFactory()
     client.force_login(outsider)
 
@@ -95,7 +95,7 @@ def test_get_expression_transformations_returns_404_for_outsider(client):
 
 def test_get_expression_transformations_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
 
     response = client.get(_transformations_url(task.id))
 
@@ -108,9 +108,9 @@ def test_get_expression_transformations_returns_401_when_unauthenticated(client)
 def test_create_expression_transformation_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    output_ds = DatastreamFactory(thing=thing)
-    input_ds = DatastreamFactory(thing=thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
     client.force_login(owner)
 
     response = client.post(
@@ -125,9 +125,9 @@ def test_create_expression_transformation_succeeds_for_workspace_owner(client):
 
 def test_create_expression_transformation_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    output_ds = DatastreamFactory(thing=thing)
-    input_ds = DatastreamFactory(thing=thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
 
     response = client.post(
         _transformations_url(task.id),
@@ -140,9 +140,9 @@ def test_create_expression_transformation_returns_401_when_unauthenticated(clien
 
 def test_create_expression_transformation_returns_403_without_edit_permission(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    output_ds = DatastreamFactory(thing=thing)
-    input_ds = DatastreamFactory(thing=thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -158,9 +158,9 @@ def test_create_expression_transformation_returns_403_without_edit_permission(cl
 def test_create_expression_transformation_returns_400_for_invalid_formula(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    output_ds = DatastreamFactory(thing=thing)
-    input_ds = DatastreamFactory(thing=thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
     client.force_login(owner)
 
     response = client.post(
@@ -178,8 +178,8 @@ def test_create_expression_transformation_returns_400_for_invalid_formula(client
 def test_get_expression_transformation_returns_200_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     client.force_login(owner)
 
     response = client.get(_detail_url(task.id, transformation.id))
@@ -190,8 +190,8 @@ def test_get_expression_transformation_returns_200_for_workspace_owner(client):
 
 def test_get_expression_transformation_returns_404_for_outsider(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     outsider = UserFactory()
     client.force_login(outsider)
 
@@ -203,7 +203,7 @@ def test_get_expression_transformation_returns_404_for_outsider(client):
 def test_get_expression_transformation_returns_404_for_nonexistent_transformation(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, _ = _make_task_with_thing(workspace)
+    task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
     response = client.get(
@@ -219,8 +219,8 @@ def test_get_expression_transformation_returns_404_for_nonexistent_transformatio
 def test_update_expression_transformation_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     client.force_login(owner)
 
     response = client.patch(
@@ -235,8 +235,8 @@ def test_update_expression_transformation_succeeds_for_workspace_owner(client):
 
 def test_update_expression_transformation_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -255,8 +255,8 @@ def test_update_expression_transformation_returns_403_for_viewer_collaborator(cl
 def test_delete_expression_transformation_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     client.force_login(owner)
 
     response = client.delete(_detail_url(task.id, transformation.id))
@@ -267,8 +267,8 @@ def test_delete_expression_transformation_succeeds_for_workspace_owner(client):
 
 def test_delete_expression_transformation_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
-    task, thing = _make_task_with_thing(workspace)
-    transformation = _make_transformation(task, thing)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    transformation = _make_transformation(task, monitoring_site)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 

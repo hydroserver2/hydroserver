@@ -1,32 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import {
-  datastreamThingId,
-  datastreamsForThing,
+  datastreamMonitoringSiteId,
+  datastreamsForMonitoringSite,
 } from '../orchestration/datastreams'
 
 describe('datastream orchestration helpers', () => {
-  it('resolves thing ids from lean or expanded datastreams', () => {
-    expect(datastreamThingId({ thingId: 'thing-1' } as any)).toBe('thing-1')
-    expect(datastreamThingId({ thing_id: 'thing-snake' } as any)).toBe(
-      'thing-snake'
+  it('resolves monitoringSite ids from lean or expanded datastreams', () => {
+    expect(datastreamMonitoringSiteId({ monitoringSiteId: 'monitoringSite-1' } as any)).toBe('monitoringSite-1')
+    expect(datastreamMonitoringSiteId({ monitoring_site_id: 'monitoringSite-snake' } as any)).toBe(
+      'monitoringSite-snake'
     )
-    expect(datastreamThingId({ thing: { id: 'thing-2' } } as any)).toBe(
-      'thing-2'
+    expect(datastreamMonitoringSiteId({ monitoringSite: { id: 'monitoringSite-2' } } as any)).toBe(
+      'monitoringSite-2'
     )
-    expect(datastreamThingId({} as any)).toBe('')
+    expect(datastreamMonitoringSiteId({} as any)).toBe('')
   })
 
-  it('filters datastreams for the selected thing', () => {
+  it('filters datastreams for the selected monitoringSite', () => {
     const datastreams = [
-      { id: 'ds-1', thingId: 'thing-1' },
-      { id: 'ds-2', thing: { id: 'thing-1' } },
-      { id: 'ds-snake', thing_id: 'thing-1' },
-      { id: 'ds-3', thingId: 'thing-2' },
+      { id: 'ds-1', monitoringSiteId: 'monitoringSite-1' },
+      { id: 'ds-2', monitoringSite: { id: 'monitoringSite-1' } },
+      { id: 'ds-snake', monitoring_site_id: 'monitoringSite-1' },
+      { id: 'ds-3', monitoringSiteId: 'monitoringSite-2' },
     ] as any[]
 
-    expect(datastreamsForThing(datastreams, null)).toEqual([])
+    expect(datastreamsForMonitoringSite(datastreams, null)).toEqual([])
     expect(
-      datastreamsForThing(datastreams, 'thing-1').map((d) => d.id)
+      datastreamsForMonitoringSite(datastreams, 'monitoringSite-1').map((d) => d.id)
     ).toEqual(['ds-1', 'ds-2', 'ds-snake'])
   })
 })

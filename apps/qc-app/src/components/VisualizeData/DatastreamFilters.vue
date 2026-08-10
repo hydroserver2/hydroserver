@@ -22,20 +22,20 @@
       <FilterPanel
         icon="mdi-map-marker-outline"
         label="Sites"
-        :total="sortedThings.length"
-        :selected-count="selectedThings.length"
-        v-model:search="searchThing"
+        :total="sortedMonitoringSites.length"
+        :selected-count="selectedMonitoringSites.length"
+        v-model:search="searchMonitoringSite"
       >
         <template #default>
           <v-virtual-scroll
-            :items="sortedThings"
-            :height="sortedThings.length < 6 ? 'auto' : 180"
+            :items="sortedMonitoringSites"
+            :height="sortedMonitoringSites.length < 6 ? 'auto' : 180"
             item-height="28"
           >
             <template #default="{ item }">
               <v-checkbox
                 :key="item.id"
-                v-model="selectedThings"
+                v-model="selectedMonitoringSites"
                 :label="item.name"
                 :value="item"
                 hide-details
@@ -117,19 +117,19 @@ import { usePersistedFlag } from '@/composables/useResizable'
 const {
   matchesSelectedObservedProperty,
   matchesSelectedProcessingLevel,
-  matchesSelectedThing,
+  matchesSelectedMonitoringSite,
 } = useDataVisStore()
 const {
-  things,
+  monitoringSites,
   datastreams,
   processingLevels,
   observedProperties,
-  selectedThings,
+  selectedMonitoringSites,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
 
-const searchThing = ref('')
+const searchMonitoringSite = ref('')
 const searchObservedProperty = ref('')
 const searchProcessingLevel = ref('')
 
@@ -142,7 +142,7 @@ const sortedProcessingLevelNames = computed(() => {
       datastreams.value.some(
         (ds) =>
           ds.processingLevel.id === pl.id &&
-          matchesSelectedThing(ds) &&
+          matchesSelectedMonitoringSite(ds) &&
           matchesSelectedObservedProperty(ds)
       )
   )
@@ -150,14 +150,14 @@ const sortedProcessingLevelNames = computed(() => {
   return [...new Set(names)].sort()
 })
 
-const sortedThings = computed(() => {
-  return things.value
+const sortedMonitoringSites = computed(() => {
+  return monitoringSites.value
     .filter(
-      (thing) =>
-        thing.name.toLowerCase().includes(searchThing.value.toLowerCase()) &&
+      (monitoringSite) =>
+        monitoringSite.name.toLowerCase().includes(searchMonitoringSite.value.toLowerCase()) &&
         datastreams.value.some(
           (ds) =>
-            ds.thing.id === thing.id &&
+            ds.monitoringSite.id === monitoringSite.id &&
             matchesSelectedObservedProperty(ds) &&
             matchesSelectedProcessingLevel(ds)
         )
@@ -174,7 +174,7 @@ const sortedObservedPropertyNames = computed(() => {
       datastreams.value.some(
         (ds) =>
           ds.observedProperty.id === op.id &&
-          matchesSelectedThing(ds) &&
+          matchesSelectedMonitoringSite(ds) &&
           matchesSelectedProcessingLevel(ds)
       )
     )
@@ -184,10 +184,10 @@ const sortedObservedPropertyNames = computed(() => {
   return [...new Set(names)].sort()
 })
 
-watch(sortedThings, (newVal, oldVal) => {
+watch(sortedMonitoringSites, (newVal, oldVal) => {
   if (newVal.length < oldVal.length) {
-    selectedThings.value = selectedThings.value.filter((selectedThing) =>
-      newVal.some((thing) => thing.id === selectedThing.id)
+    selectedMonitoringSites.value = selectedMonitoringSites.value.filter((selectedMonitoringSite) =>
+      newVal.some((monitoringSite) => monitoringSite.id === selectedMonitoringSite.id)
     )
   }
 })
@@ -210,17 +210,17 @@ watch(sortedProcessingLevelNames, (newVal, oldVal) => {
 
 const appliedCount = computed(
   () =>
-    selectedThings.value.length +
+    selectedMonitoringSites.value.length +
     selectedObservedPropertyNames.value.length +
     selectedProcessingLevelNames.value.length
 )
 
 const clearFilters = () => {
-  selectedThings.value = []
+  selectedMonitoringSites.value = []
   selectedObservedPropertyNames.value = []
   selectedProcessingLevelNames.value = []
 
-  searchThing.value = ''
+  searchMonitoringSite.value = ''
   searchObservedProperty.value = ''
   searchProcessingLevel.value = ''
 }

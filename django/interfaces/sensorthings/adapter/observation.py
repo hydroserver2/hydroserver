@@ -125,7 +125,9 @@ class ObservationMixin(SensorThingsUtils):
                 action="view",
             )
 
-            if not principal.can_create("Observation", workspace=datastream.thing.workspace):
+            if not principal.can_create(
+                "Observation", workspace=datastream.monitoring_site.workspace
+            ):
                 raise HttpError(
                     403, "You do not have permission to create observations on this datastream."
                 )

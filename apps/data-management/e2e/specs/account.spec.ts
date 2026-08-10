@@ -1,6 +1,6 @@
 import { expect, test } from '../support/test'
 
-import { login, requestBrowserSession } from '../support/auth'
+import { login } from '../support/auth'
 import { users } from '../support/fixtures'
 
 test.describe('account management', () => {
@@ -26,28 +26,17 @@ test.describe('account management', () => {
 
     await page.getByTestId('account-menu-button').click()
     await page.getByTestId('account-menu-item').click()
-    await expect(page).toHaveURL(/\/profile$/)
-    await expect(
-      page.getByRole('heading', { name: 'User information' })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Organization information' })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/accounts\/profile\/$/)
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Organization' })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Edit account' }).click()
-    await page.getByLabel('First Name *').fill('Profile Updated')
-    await page.getByLabel('Affiliated with an Organization').click()
-
-    await expect(
-      page.getByText('Warning: Disabling organization affiliation')
-    ).toBeVisible()
-
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('link', { name: 'Edit' }).click()
+    await page.getByLabel('First name').fill('Profile Updated')
+    await page.getByRole('checkbox', { name: 'Organization Affiliation' }).uncheck()
+    await page.getByRole('button', { name: 'Save Changes' }).click()
 
     await expect(page.getByText('Profile Updated Example')).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Organization information' })
-    ).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Organization' })).toHaveCount(0)
   })
 
   test('account deletion removes the user session and invalidates login', async ({
@@ -57,17 +46,18 @@ test.describe('account management', () => {
     await expect(page).toHaveURL(/\/browse$/)
 
     await page.goto('/profile')
-    await page.getByRole('button', { name: 'Delete Account' }).click()
-    await page.getByRole('textbox').fill('delete my account and data')
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
-
-    await expect(page).toHaveURL(/\/login$/)
-
-    const response = await requestBrowserSession(
-      page,
-      users.deleteMe.email,
-      users.deleteMe.password
+    await page.getByRole('link', { name: 'Delete Account' }).click()
+    await page.getByLabel('Type "delete my account and data" to confirm').fill(
+      'delete my account and data'
     )
-    expect(response.ok()).toBeFalsy()
+    await page.getByRole('button', { name: 'Delete My Account' }).click()
+
+    await expect(page).toHaveURL(/\/accounts\/login\/$/)
+
+    await page.getByLabel('Email').fill(users.deleteMe.email)
+    await page.getByLabel('Password').fill(users.deleteMe.password)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await expect(page).toHaveURL(/\/accounts\/login\/$/)
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
   })
 })

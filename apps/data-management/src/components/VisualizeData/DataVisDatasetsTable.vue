@@ -223,11 +223,11 @@
     <v-dialog
       v-model="openInfoCard"
       width="50rem"
-      v-if="selectedDatastream && selectedThing"
+      v-if="selectedDatastream && selectedMonitoringSite"
     >
       <DatastreamInformationCard
         :datastream="selectedDatastream"
-        :thing="selectedThing"
+        :monitoringSite="selectedMonitoringSite"
         @close="openInfoCard = false"
       />
     </v-dialog>
@@ -236,7 +236,7 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream, Thing } from '@hydroserver/client'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
@@ -256,7 +256,7 @@ const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
 const selectedDatastream = ref<Datastream | null>(null)
-const selectedThing = ref<Thing | null>(null)
+const selectedMonitoringSite = ref<MonitoringSite | null>(null)
 const { smAndDown } = useDisplay()
 const isMobile = computed(() => smAndDown.value)
 
@@ -275,8 +275,8 @@ const onRowClick = (event: Event, item: any) => {
   let targetElement = event.target as HTMLElement
   if (targetElement.id && targetElement.id.startsWith('checkbox-')) return
 
-  const foundThing = dataVisStore.thingById.get(item.item.thingId)
-  if (foundThing) selectedThing.value = foundThing
+  const foundMonitoringSite = dataVisStore.monitoringSiteById.get(item.item.monitoringSiteId)
+  if (foundMonitoringSite) selectedMonitoringSite.value = foundMonitoringSite
 
   const selectedDatastreamId = item.item.id
   const foundDatastream = filteredDatastreams.value.find(
@@ -289,8 +289,8 @@ const onRowClick = (event: Event, item: any) => {
 }
 
 const openMetadata = (item: Datastream) => {
-  const foundThing = dataVisStore.thingById.get(item.thingId)
-  if (foundThing) selectedThing.value = foundThing
+  const foundMonitoringSite = dataVisStore.monitoringSiteById.get(item.monitoringSiteId)
+  if (foundMonitoringSite) selectedMonitoringSite.value = foundMonitoringSite
 
   const foundDatastream = filteredDatastreams.value.find(
     (d) => d.id === item.id
@@ -313,7 +313,7 @@ const displayDatastreams = computed(() => {
 
 const tableItems = computed(() => {
   return displayDatastreams.value.map((ds) => {
-    const thing = dataVisStore.thingById.get(ds.thingId)
+    const monitoringSite = dataVisStore.monitoringSiteById.get(ds.monitoringSiteId)
     const observedProperty = dataVisStore.observedPropertyById.get(
       ds.observedPropertyId
     )
@@ -333,7 +333,7 @@ const tableItems = computed(() => {
     )
     return {
       ...ds,
-      siteCodeName: thing?.samplingFeatureCode,
+      siteCodeName: monitoringSite?.code,
       observedPropertyName: observedPropertyDisplay,
       qualityControlLevelDefinition: processingLevel?.definition,
     }

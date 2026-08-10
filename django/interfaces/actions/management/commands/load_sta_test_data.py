@@ -11,7 +11,7 @@ class Command(BaseCommand):
             "tests/fixtures/test_workspaces.yaml",
             "tests/fixtures/test_roles.yaml",
             "tests/fixtures/test_collaborators.yaml",
-            "tests/fixtures/test_things.yaml",
+            "tests/fixtures/test_monitoring_sites.yaml",
             "tests/fixtures/test_observed_properties.yaml",
             "tests/fixtures/test_processing_levels.yaml",
             "tests/fixtures/test_result_qualifiers.yaml",

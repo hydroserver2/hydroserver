@@ -1,4 +1,4 @@
-# Public Datastream / Public Thing / Public Workspace Observations
+# Public Datastream / Public MonitoringSite / Public Workspace Observations
 - model: sta.observation
   pk: 2e4e9d87-ae23-4017-894a-b29e4883f350
   fields:
@@ -15,7 +15,7 @@
     quality_code: Public
     result_qualifiers: ["SystemResultQualifier"]
 
-# Private Datastream / Public Thing / Public Workspace
+# Private Datastream / Public MonitoringSite / Public Workspace
 - model: sta.observation
   pk: c2784042-ea28-4f15-91ed-8e3452199576
   fields:
@@ -31,7 +31,7 @@
     result: 3.2
     quality_code: Private
 
-# Public Datastream / Private Thing / Public Workspace
+# Public Datastream / Private MonitoringSite / Public Workspace
 - model: sta.observation
   pk: 040430a0-db2f-4458-87d0-aa3ebd327fc9
   fields:
@@ -47,7 +47,7 @@
     result: 3.3
     quality_code: Private
 
-# Private Datastream / Private Thing / Public Workspace
+# Private Datastream / Private MonitoringSite / Public Workspace
 - model: sta.observation
   pk: 1f4064cc-c61e-42c4-b92c-8c795691b2e5
   fields:
@@ -63,7 +63,7 @@
     result: 3.4
     quality_code: Private
 
-# Public Datastream / Public Thing / Private Workspace
+# Public Datastream / Public MonitoringSite / Private Workspace
 - model: sta.observation
   pk: d7b48f89-9b5b-476c-8e03-9b991ce2d294
   fields:
@@ -79,7 +79,7 @@
     result: 3.5
     quality_code: Private
 
-# Private Datastream / Public Thing / Private Workspace
+# Private Datastream / Public MonitoringSite / Private Workspace
 - model: sta.observation
   pk: ed024a1c-fc3a-424f-a1f6-007fa7b26d5c
   fields:
@@ -95,7 +95,7 @@
     result: 3.6
     quality_code: Private
 
-# Public Datastream / Private Thing / Private Workspace
+# Public Datastream / Private MonitoringSite / Private Workspace
 - model: sta.observation
   pk: 5e358710-665b-44df-9a18-8fc8a8a6795d
   fields:
@@ -111,7 +111,7 @@
     result: 3.7
     quality_code: Private
 
-# Private Datastream / Private Thing / Private Workspace
+# Private Datastream / Private MonitoringSite / Private Workspace
 - model: sta.observation
   pk: 3bfba7fa-c1ae-4f9e-bc6d-5d258d0f076a
   fields:

@@ -47,9 +47,9 @@ def get_monitoring_tasks(
             principal=request.principal,
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "thing", "workspace", "datastream", "rule_type",
+                "order_by", "monitoring_site", "workspace", "datastream", "rule_type",
             }),
-            **({"thing": query.thing} if "thing" in query.model_fields_set else {}),
+            **({"monitoring_site": query.monitoring_site} if "monitoring_site" in query.model_fields_set else {}),
             **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
             **({"datastream": query.datastream} if "datastream" in query.model_fields_set else {}),
             **({"rule_type": query.rule_type} if "rule_type" in query.model_fields_set else {}),
@@ -91,8 +91,8 @@ def create_monitoring_task(
     with raise_http_errors():
         task = monitoring_task_service.create(
             principal=request.principal,
-            thing=data.thing_id,
-            **data.model_dump(exclude_unset=True, exclude={"thing_id", "schedule"}),
+            monitoring_site=data.monitoring_site_id,
+            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id", "schedule"}),
             **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
         )
 

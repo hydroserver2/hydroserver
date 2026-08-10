@@ -31,7 +31,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-1',
           name: 'Rating curve',
-          thing: { id: 'thing-2' },
+          monitoringSite: { id: 'monitoringSite-2' },
           latestRun: null,
           schedule: null,
           ratingCurveTransformations: [{}],
@@ -41,7 +41,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-1',
           name: 'Quality check',
-          thing: { id: 'thing-3' },
+          monitoringSite: { id: 'monitoringSite-3' },
           latestRun: {
             status: 'FAILURE',
             result: { rulesViolated: 2 },
@@ -58,7 +58,7 @@ describe('useOrchestrationTaskRows', () => {
           ],
         },
       ] as any),
-      datastreamThingByDatastreamId: ref({ 'ds-1': 'thing-1' }),
+      datastreamMonitoringSiteByDatastreamId: ref({ 'ds-1': 'monitoringSite-1' }),
       runNowTriggeredByTaskId: { 'etl-1': true },
     })
 
@@ -71,7 +71,7 @@ describe('useOrchestrationTaskRows', () => {
       kind: 'etl',
       name: 'CSV load',
       dataConnectionId: 'dc-1',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       userClickedRunNow: true,
       taskType: null,
       noWorkWarning: null,
@@ -88,14 +88,14 @@ describe('useOrchestrationTaskRows', () => {
     expect(rows.dataProductTaskRows.value[0]).toMatchObject({
       id: 'dp-1',
       kind: 'dataProduct',
-      thingId: 'thing-2',
+      monitoringSiteId: 'monitoringSite-2',
       taskType: 'Rating curve',
       noWorkWarning: null,
     })
     expect(rows.monitoringTaskRows.value[0]).toMatchObject({
       id: 'mon-1',
       kind: 'monitoring',
-      thingId: 'thing-3',
+      monitoringSiteId: 'monitoringSite-3',
       statusName: 'Needs attention',
       statusSort: 'Needs attention',
       qualityRuleSummary: '2 RANGE CHECK, 1 SPIKE CHECK',
@@ -127,7 +127,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-summary',
           name: 'Summary product',
-          thingId: 'thing-summary',
+          monitoringSiteId: 'monitoringSite-summary',
           workspaceId: 'workspace-1',
           latestRun: null,
           schedule: null,
@@ -141,7 +141,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-summary',
           name: 'Summary quality',
-          thingId: 'thing-summary',
+          monitoringSiteId: 'monitoringSite-summary',
           workspaceId: 'workspace-1',
           latestRun: null,
           schedule: null,
@@ -154,7 +154,7 @@ describe('useOrchestrationTaskRows', () => {
           ],
         },
       ] as any),
-      datastreamThingByDatastreamId: ref({}),
+      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
@@ -165,12 +165,12 @@ describe('useOrchestrationTaskRows', () => {
     })
     expect(rows.dataProductTaskRows.value[0]).toMatchObject({
       id: 'dp-summary',
-      thingId: 'thing-summary',
+      monitoringSiteId: 'monitoringSite-summary',
       taskType: 'Aggregation',
     })
     expect(rows.monitoringTaskRows.value[0]).toMatchObject({
       id: 'mon-summary',
-      thingId: 'thing-summary',
+      monitoringSiteId: 'monitoringSite-summary',
       qualityRuleSummary: '1 Missing Data, 1 Range',
       qualityRuleCount: 2,
     })
@@ -193,7 +193,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-empty',
           name: 'Empty product',
-          thing: { id: 'thing-2' },
+          monitoringSite: { id: 'monitoringSite-2' },
           latestRun: null,
           schedule: null,
           aggregationTransformations: [],
@@ -206,13 +206,13 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-empty',
           name: 'Empty quality task',
-          thing: { id: 'thing-3' },
+          monitoringSite: { id: 'monitoringSite-3' },
           latestRun: null,
           schedule: null,
           monitoredDatastreams: [{ rules: [] }],
         },
       ] as any),
-      datastreamThingByDatastreamId: ref({}),
+      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
@@ -241,7 +241,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'dp-interval',
           name: 'Scheduled rating curve',
-          thing: { id: 'thing-2' },
+          monitoringSite: { id: 'monitoringSite-2' },
           latestRun: null,
           schedule: {
             enabled: true,
@@ -255,7 +255,7 @@ describe('useOrchestrationTaskRows', () => {
         },
       ] as any),
       monitoringTasks: ref([]),
-      datastreamThingByDatastreamId: ref({}),
+      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 
@@ -273,7 +273,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-ok',
           name: 'Quality OK',
-          thing: { id: 'thing-1' },
+          monitoringSite: { id: 'monitoringSite-1' },
           latestRun: {
             id: 'run-ok',
             status: 'SUCCESS',
@@ -284,7 +284,7 @@ describe('useOrchestrationTaskRows', () => {
           monitoredDatastreams: [],
         },
       ] as any),
-      datastreamThingByDatastreamId: ref({}),
+      datastreamMonitoringSiteByDatastreamId: ref({}),
       runNowTriggeredByTaskId: {},
     })
 

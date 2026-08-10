@@ -12,7 +12,7 @@ from core.types import Unset
 from core.iam.models import ServiceAccount, Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 from core.sta.services import DatastreamService
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, EtlMapping, DataConnection
@@ -74,7 +74,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
-        thing: list[uuid.UUID | Thing] | Unset = Unset,
+        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
         data_connection: list[uuid.UUID | DataConnection] | Unset = Unset,
         latest_run_status: list[str] | Unset = Unset,
@@ -103,9 +103,9 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             search_vector = SearchVector("name", "description", "data_connection__name")
             queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
 
-        if thing is not Unset:
-            queryset = queryset.filter(etl_mappings__target_datastream__thing__in=[
-                getattr(t, "pk", t) for t in thing
+        if monitoring_site is not Unset:
+            queryset = queryset.filter(etl_mappings__target_datastream__monitoring_site__in=[
+                getattr(t, "pk", t) for t in monitoring_site
             ])
 
         if workspace is not Unset:
@@ -325,7 +325,7 @@ class EtlTaskService(TaskService[EtlTask], ServiceUtils):
             ds = datastream_service.get_datastream_for_action(
                 principal=principal, uid=target_id, action="edit"
             )
-            if ds.thing.workspace_id != workspace.pk:
+            if ds.monitoring_site.workspace_id != workspace.pk:
                 raise ValueError(
                     f"Datastream {str(target_id)} does not belong to workspace {str(workspace.pk)}."
                 )

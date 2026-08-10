@@ -158,46 +158,46 @@
 
       <template v-else>
         <div
-          v-for="thing in sites"
-          :key="thing.id"
+          v-for="monitoringSite in sites"
+          :key="monitoringSite.id"
           class="sidebar-item"
-          :class="{ selected: selectedThingId === thing.id }"
+          :class="{ selected: selectedMonitoringSiteId === monitoringSite.id }"
           :style="
-            selectedThingId === thing.id
+            selectedMonitoringSiteId === monitoringSite.id
               ? { background: accent, color: 'white' }
               : {}
           "
-          @click="$emit('select-site', thing.id)"
+          @click="$emit('select-site', monitoringSite.id)"
         >
           <span
             class="sidebar-dot"
             :style="{
               background:
-                selectedThingId === thing.id
+                selectedMonitoringSiteId === monitoringSite.id
                   ? 'rgba(255,255,255,0.7)'
-                  : dotColorForSite(thing.id),
+                  : dotColorForSite(monitoringSite.id),
             }"
           />
           <div class="sidebar-item-body">
-            <div class="sidebar-item-title">{{ thing.name }}</div>
+            <div class="sidebar-item-title">{{ monitoringSite.name }}</div>
             <div class="sidebar-item-meta">
-              {{ taskCountForSite(thing.id) }} task{{
-                taskCountForSite(thing.id) === 1 ? '' : 's'
+              {{ taskCountForSite(monitoringSite.id) }} task{{
+                taskCountForSite(monitoringSite.id) === 1 ? '' : 's'
               }}
-              <span v-if="isQuality && violationCountForSite(thing.id) > 0">
-                · {{ violationCountForSite(thing.id) }} violated rule{{
-                  violationCountForSite(thing.id) === 1 ? '' : 's'
+              <span v-if="isQuality && violationCountForSite(monitoringSite.id) > 0">
+                · {{ violationCountForSite(monitoringSite.id) }} violated rule{{
+                  violationCountForSite(monitoringSite.id) === 1 ? '' : 's'
                 }}
               </span>
             </div>
           </div>
           <span
             v-if="
-              selectedThingId !== thing.id && issueCountForSite(thing.id) > 0
+              selectedMonitoringSiteId !== monitoringSite.id && issueCountForSite(monitoringSite.id) > 0
             "
             class="sidebar-item-badge"
           >
-            {{ issueCountForSite(thing.id) }}
+            {{ issueCountForSite(monitoringSite.id) }}
           </span>
         </div>
         <div v-if="sites.length === 0" class="sidebar-empty">No sites yet.</div>
@@ -239,21 +239,21 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiMagnify, mdiPencil, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
-import type { DataConnection, ThingTaskSummary } from '@hydroserver/client'
+import type { DataConnection, MonitoringSiteTaskSummary } from '@hydroserver/client'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { READ_ONLY_TOOLTIP, TAB_META } from './orchestrationTabs'
 
 const {
   activeTab,
   selectedConnectionId,
-  selectedThingId,
+  selectedMonitoringSiteId,
   sidebarSearch: search,
 } = storeToRefs(useOrchestrationStore())
 
 const props = withDefaults(
   defineProps<{
     connections: DataConnection[]
-    sites: ThingTaskSummary[]
+    sites: MonitoringSiteTaskSummary[]
     canCreate: boolean
     canEdit: boolean
     canDelete: boolean

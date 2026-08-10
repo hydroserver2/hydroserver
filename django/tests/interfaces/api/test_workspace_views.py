@@ -309,7 +309,7 @@ def test_accept_workspace_transfer_succeeds_for_new_owner(client):
     assert workspace.owner == new_owner
 
 
-def test_accept_workspace_transfer_returns_400_when_nothing_pending(client):
+def test_accept_workspace_transfer_returns_400_when_none_pending(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)
@@ -337,7 +337,7 @@ def test_reject_workspace_transfer_succeeds_for_owner(client):
     assert workspace.transfer is None
 
 
-def test_reject_workspace_transfer_returns_400_when_nothing_pending(client):
+def test_reject_workspace_transfer_returns_400_when_none_pending(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     client.force_login(owner)

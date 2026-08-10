@@ -72,7 +72,7 @@
           :datastreams="siteDatastreams"
           label="Input datastream *"
           :loading="loading"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
@@ -81,7 +81,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -173,7 +173,7 @@ import hs, {
 } from '@hydroserver/client'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -183,7 +183,7 @@ import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  initialThingId?: string | null
+  initialMonitoringSiteId?: string | null
   editTaskId?: string | null
 }>()
 
@@ -212,7 +212,7 @@ const schedule = ref<TaskSchedule | null>(null)
 const inputDatastreamId = ref<string | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const formula = ref('')
-const selectedThingId = computed(() => props.initialThingId ?? null)
+const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
 const existingTransformationId = ref<string | null>(null)
 const ALLOWED_OPS = ['+', '-', '*', '/', '**', '(', ')']
 const ALLOWED_FUNCTIONS = [
@@ -235,8 +235,8 @@ const ALLOWED_FUNCTIONS = [
 ]
 
 const siteDatastreams = computed(() => {
-  const thingId = selectedThingId.value
-  return datastreamsForThing(datastreams.value, thingId)
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 async function loadOptions() {
@@ -294,7 +294,7 @@ async function loadExistingTask() {
 
 async function onSubmit() {
   await formRef.value?.validate()
-  if (!selectedThingId.value) {
+  if (!selectedMonitoringSiteId.value) {
     Snackbar.error('Select a site before creating an expression task.')
     return
   }
@@ -316,7 +316,7 @@ async function onCreate() {
   const taskRes = await hs.dataProductTasks.create({
     id: '',
     name: taskName.value.trim(),
-    thingId: selectedThingId.value!,
+    monitoringSiteId: selectedMonitoringSiteId.value!,
     description: null,
     schedule: schedule.value,
   })
@@ -405,7 +405,7 @@ async function onDelete() {
   }
 }
 
-watch(selectedThingId, () => {
+watch(selectedMonitoringSiteId, () => {
   if (isEditMode.value) return
   inputDatastreamId.value = null
   outputDatastreamId.value = null

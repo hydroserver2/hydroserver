@@ -9,7 +9,7 @@ from interfaces.api.schemas import (
     BasePostBody,
     BasePatchBody,
     CollectionQueryParameters,
-    ThingSummaryResponse,
+    MonitoringSiteSummaryResponse,
 )
 
 
@@ -19,18 +19,18 @@ FittingMethod = Literal["linear", "power_law"]
 class RatingCurveOrderBy(OrderByField):
     id = ("id", "id")
     name = ("name", "name")
-    thing_id = ("thingId", "thing_id")
-    thing_name = ("thingName", "thing__name")
-    workspace_id = ("workspaceId", "thing__workspace_id")
-    workspace_name = ("workspaceName", "thing__workspace__name")
+    monitoring_site_id = ("monitoringSiteId", "monitoring_site_id")
+    monitoring_site_name = ("monitoringSiteName", "monitoring_site__name")
+    workspace_id = ("workspaceId", "monitoring_site__workspace_id")
+    workspace_name = ("workspaceName", "monitoring_site__workspace__name")
 
 
 class RatingCurveQueryParameters(CollectionQueryParameters):
     order_by: list[RatingCurveOrderBy] = Query(
         [], description="Select one or more fields to order the response by."
     )
-    thing: list[uuid.UUID] = Query(
-        [], description="Filter rating curves by thing ID.", alias="thing_id"
+    monitoring_site: list[uuid.UUID] = Query(
+        [], description="Filter rating curves by monitoring_site ID.", alias="monitoring_site_id"
     )
     workspace: list[uuid.UUID] = Query(
         [], description="Filter rating curves by workspace ID.", alias="workspace_id"
@@ -48,7 +48,7 @@ class RatingCurveResponse(BaseGetResponse):
     name: str
     description: Optional[str] = None
     fitting_method: FittingMethod
-    thing: ThingSummaryResponse
+    monitoring_site: MonitoringSiteSummaryResponse
     points: list[tuple[float, float]]
 
     @staticmethod
@@ -61,7 +61,7 @@ class RatingCurvePostBody(BasePostBody):
     name: str
     description: Optional[str] = None
     fitting_method: FittingMethod
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     points: list[tuple[float, float]] = []
 
 

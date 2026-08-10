@@ -4,14 +4,14 @@ from django.db import models
 
 from core.iam.permissions.mixins import ResourcePermissionMixin
 from core.iam.permissions.registry import register_resource_type
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 from processing.orchestration.models.task import Task
 
 
-@register_resource_type(workspace_field="thing__workspace")
+@register_resource_type(workspace_field="monitoring_site__workspace")
 class MonitoringTask(Task, ResourcePermissionMixin):
-    thing = models.ForeignKey(
-        Thing,
+    monitoring_site = models.ForeignKey(
+        MonitoringSite,
         on_delete=models.CASCADE,
         related_name="monitoring_tasks",
     )
@@ -24,7 +24,7 @@ class MonitoringTask(Task, ResourcePermissionMixin):
 
     @property
     def workspace(self):
-        return self.thing.workspace
+        return self.monitoring_site.workspace
 
 
 class MonitoringNotificationRecipient(models.Model):

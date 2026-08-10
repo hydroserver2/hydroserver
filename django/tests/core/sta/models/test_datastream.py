@@ -3,7 +3,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from core.sta.models import Datastream, Observation
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.core.tree_factories import bulk_create_observations
 
 pytestmark = pytest.mark.django_db
@@ -13,10 +13,10 @@ pytestmark = pytest.mark.django_db
 
 
 def test_delete_removes_datastream_and_its_observations_only():
-    thing = ThingFactory()
-    datastream = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory()
+    datastream = DatastreamFactory(monitoring_site=monitoring_site)
     bulk_create_observations(datastream, 1_000)
-    sibling = DatastreamFactory(thing=thing)
+    sibling = DatastreamFactory(monitoring_site=monitoring_site)
     bulk_create_observations(sibling, 10)
 
     datastream.delete()
@@ -31,11 +31,11 @@ def test_delete_removes_datastream_and_its_observations_only():
 
 
 def test_queryset_delete_removes_datastreams_and_observations_in_bulk():
-    thing = ThingFactory()
-    to_delete = DatastreamFactory.create_batch(3, thing=thing)
+    monitoring_site = MonitoringSiteFactory()
+    to_delete = DatastreamFactory.create_batch(3, monitoring_site=monitoring_site)
     for datastream in to_delete:
         bulk_create_observations(datastream, 100)
-    kept = DatastreamFactory(thing=thing)
+    kept = DatastreamFactory(monitoring_site=monitoring_site)
     bulk_create_observations(kept, 10)
 
     Datastream.objects.filter(pk__in=[d.pk for d in to_delete]).delete()
@@ -59,13 +59,13 @@ DATASTREAM_DELETE_SHAPES = [
 def test_queryset_delete_query_count_does_not_scale_with_datastream_count(
     datastream_count, observations_per_datastream
 ):
-    thing = ThingFactory()
+    monitoring_site = MonitoringSiteFactory()
 
-    small = DatastreamFactory.create_batch(datastream_count, thing=thing)
+    small = DatastreamFactory.create_batch(datastream_count, monitoring_site=monitoring_site)
     for datastream in small:
         bulk_create_observations(datastream, observations_per_datastream)
 
-    large = DatastreamFactory.create_batch(datastream_count * 2, thing=thing)
+    large = DatastreamFactory.create_batch(datastream_count * 2, monitoring_site=monitoring_site)
     for datastream in large:
         bulk_create_observations(datastream, observations_per_datastream)
 

@@ -48,10 +48,10 @@ def get_data_product_tasks(
             principal=request.principal,
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "thing", "workspace",
+                "order_by", "monitoring_site", "workspace",
                 "output_datastream", "input_datastream", "rating_curve",
             }),
-            **({"thing": query.thing} if "thing" in query.model_fields_set else {}),
+            **({"monitoring_site": query.monitoring_site} if "monitoring_site" in query.model_fields_set else {}),
             **({"workspace": query.workspace} if "workspace" in query.model_fields_set else {}),
             **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
             **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
@@ -94,8 +94,8 @@ def create_data_product_task(
     with raise_http_errors():
         task = data_product_task_service.create(
             principal=request.principal,
-            thing=data.thing_id,
-            **data.model_dump(exclude_unset=True, exclude={"thing_id", "uid", "schedule"}),
+            monitoring_site=data.monitoring_site_id,
+            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id", "uid", "schedule"}),
             **({"uid": data.uid} if data.uid is not Unset else {}),
             **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
         )

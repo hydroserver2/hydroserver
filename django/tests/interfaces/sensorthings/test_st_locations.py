@@ -1,6 +1,6 @@
 import pytest
 
-from tests.core.sta.factories import LocationFactory, ThingFactory
+from tests.core.sta.factories import MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -12,18 +12,18 @@ def _detail_url(location_id):
 
 
 def test_get_locations_collection_returns_200(client):
-    location = LocationFactory(thing=ThingFactory())
+    site = MonitoringSiteFactory()
 
     response = client.get(LOCATIONS_URL)
 
     assert response.status_code == 200
-    assert str(location.id) in [loc["@iot.id"] for loc in response.json()["value"]]
+    assert str(site.id) in [loc["@iot.id"] for loc in response.json()["value"]]
 
 
 def test_get_location_returns_200(client):
-    location = LocationFactory(thing=ThingFactory())
+    site = MonitoringSiteFactory()
 
-    response = client.get(_detail_url(location.id))
+    response = client.get(_detail_url(site.id))
 
     assert response.status_code == 200
-    assert response.json()["@iot.id"] == str(location.id)
+    assert response.json()["@iot.id"] == str(site.id)

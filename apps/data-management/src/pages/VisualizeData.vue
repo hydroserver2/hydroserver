@@ -48,8 +48,8 @@ const route = useRoute()
 const dataVisStore = useDataVisStore()
 const { onDateBtnClick, resetState } = dataVisStore
 const {
-  things,
-  selectedThings,
+  monitoringSites,
+  selectedMonitoringSites,
   plottedDatastreams,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
@@ -121,7 +121,7 @@ const generateStateUrl = () => {
 
   const queryParams = new URLSearchParams()
 
-  selectedThings.value.forEach((t) => queryParams.append('sites', t.id))
+  selectedMonitoringSites.value.forEach((t) => queryParams.append('sites', t.id))
 
   plottedDatastreams.value.forEach((ds) =>
     queryParams.append('datastreams', ds.id)
@@ -256,7 +256,7 @@ const parseUrlAndSetState = () => {
   )
 
   if (siteIdsStrings.length)
-    selectedThings.value = things.value.filter((t) =>
+    selectedMonitoringSites.value = monitoringSites.value.filter((t) =>
       siteIdsStrings.includes(t.id)
     )
 
@@ -381,7 +381,7 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const hasBootstrapData =
-      things.value.length > 0 ||
+      monitoringSites.value.length > 0 ||
       datastreams.value.length > 0 ||
       processingLevels.value.length > 0 ||
       observedProperties.value.length > 0
@@ -389,7 +389,7 @@ onMounted(async () => {
     if (!hasBootstrapData) {
       const res = await hs.datastreams.getVisualizationBootstrap()
       if (res.ok) {
-        things.value = res.data.things
+        monitoringSites.value = res.data.monitoringSites
         datastreams.value = res.data.datastreams
         processingLevels.value = res.data.processingLevels
         observedProperties.value = res.data.observedProperties

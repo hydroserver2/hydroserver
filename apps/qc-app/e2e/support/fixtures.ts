@@ -11,7 +11,7 @@
 export const WORKSPACE_ID = 'ws-qc-e2e'
 export const DATASTREAM_ID = 'ds-qc-e2e'
 export const UNIT_ID = 'unit-meters'
-export const THING_ID = 'thing-stream'
+export const MONITORING_SITE_ID = 'monitoring-site-stream'
 export const PROC_LEVEL_ID = 'pl-raw'
 export const OBSERVED_PROP_ID = 'op-streamflow'
 export const SENSOR_ID = 'sensor-adv'
@@ -57,15 +57,14 @@ export const workspaces = [
   },
 ]
 
-export const things = [
+export const monitoringSites = [
   {
-    id: THING_ID,
+    id: MONITORING_SITE_ID,
     workspaceId: WORKSPACE_ID,
     name: 'Test Stream Site',
     description: 'An e2e test site',
-    samplingFeatureCode: 'STRM-E2E',
-    samplingFeatureType: 'Site',
-    siteType: 'Stream',
+    code: 'STRM-E2E',
+    type: 'Stream',
     isPrivate: false,
   },
 ]
@@ -140,7 +139,7 @@ export const datastreams = [
     isPrivate: false,
     isVisible: true,
     unitId: UNIT_ID,
-    thingId: THING_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID,
     sensorId: SENSOR_ID,
@@ -149,16 +148,15 @@ export const datastreams = [
     resultBeginTime: FIXTURE_OBS_START_ISO,
     resultEndTime: FIXTURE_OBS_END_ISO,
     // `expand_related: true` populates these nested objects on the
-    // real server; the filter panel + table reads `ds.thing.id`,
+    // real server; the filter panel + table reads `ds.monitoringSite.id`,
     // `ds.observedProperty.name`, etc. without optional chaining in
     // some call sites, so omitting them triggers render-time throws
     // that blank out the whole table.
-    thing: {
-      id: THING_ID,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
       name: 'Test Stream Site',
-      samplingFeatureCode: 'STRM-E2E',
-      samplingFeatureType: 'Site',
-      siteType: 'Stream',
+      code: 'STRM-E2E',
+      type: 'Stream',
     },
     observedProperty: {
       id: OBSERVED_PROP_ID,
@@ -200,7 +198,7 @@ export const datastreams = [
     isPrivate: false,
     isVisible: true,
     unitId: UNIT_ID_B,
-    thingId: THING_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID_B,
     sensorId: SENSOR_ID_B,
@@ -208,12 +206,11 @@ export const datastreams = [
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
     resultEndTime: FIXTURE_OBS_END_ISO,
-    thing: {
-      id: THING_ID,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
       name: 'Test Stream Site',
-      samplingFeatureCode: 'STRM-E2E',
-      samplingFeatureType: 'Site',
-      siteType: 'Stream',
+      code: 'STRM-E2E',
+      type: 'Stream',
     },
     observedProperty: {
       id: OBSERVED_PROP_ID_B,

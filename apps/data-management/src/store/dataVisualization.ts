@@ -2,7 +2,7 @@ import {
   Datastream,
   ObservedProperty,
   ProcessingLevel,
-  Thing,
+  MonitoringSite,
   GraphSeries,
   Workspace,
 } from '@hydroserver/client'
@@ -19,12 +19,12 @@ import { useObservationStore } from '@/store/observations'
 export const useDataVisStore = defineStore('dataVisualization', () => {
   const { fetchGraphSeries, fetchGraphSeriesData } = useObservationStore()
 
-  const things = ref<Thing[]>([])
+  const monitoringSites = ref<MonitoringSite[]>([])
   const datastreams = ref<Datastream[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
 
-  const selectedThings = ref<Thing[]>([])
+  const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const plottedDatastreams = ref<Datastream[]>([])
   const selectedWorkspaces = ref<Workspace[]>([])
   const selectedObservedPropertyNames = ref<string[]>([])
@@ -82,8 +82,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const dataZoomEnd = ref(100)
   const xAxisRange = ref<{ start: number; end: number } | null>(null)
   const yAxisRanges = ref<Record<string, [number, number]>>({})
-  const thingById = computed(
-    () => new Map(things.value.map((thing) => [thing.id, thing]))
+  const monitoringSiteById = computed(
+    () => new Map(monitoringSites.value.map((monitoringSite) => [monitoringSite.id, monitoringSite]))
   )
   const observedPropertyById = computed(
     () =>
@@ -103,8 +103,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
         ])
       )
   )
-  const selectedThingIds = computed(
-    () => new Set(selectedThings.value.map((thing) => thing.id))
+  const selectedMonitoringSiteIds = computed(
+    () => new Set(selectedMonitoringSites.value.map((monitoringSite) => monitoringSite.id))
   )
   const selectedWorkspaceIds = computed(
     () => new Set(selectedWorkspaces.value.map((workspace) => workspace.id))
@@ -117,7 +117,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   )
 
   function resetState() {
-    selectedThings.value = []
+    selectedMonitoringSites.value = []
     plottedDatastreams.value = []
     selectedWorkspaces.value = []
     selectedObservedPropertyNames.value = []
@@ -160,29 +160,29 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     )
   }
 
-  function matchesSelectedThing(datastream: Datastream) {
+  function matchesSelectedMonitoringSite(datastream: Datastream) {
     return (
-      selectedThingIds.value.size === 0 ||
-      selectedThingIds.value.has(datastream.thingId)
+      selectedMonitoringSiteIds.value.size === 0 ||
+      selectedMonitoringSiteIds.value.has(datastream.monitoringSiteId)
     )
   }
 
   function matchesSelectedWorkspace(datastream: Datastream) {
     if (selectedWorkspaceIds.value.size === 0) return true
 
-    const thingWorkspaceId = thingById.value.get(
-      datastream.thingId
+    const monitoringSiteWorkspaceId = monitoringSiteById.value.get(
+      datastream.monitoringSiteId
     )?.workspaceId
 
-    if (!thingWorkspaceId) return false
+    if (!monitoringSiteWorkspaceId) return false
 
-    return selectedWorkspaceIds.value.has(thingWorkspaceId)
+    return selectedWorkspaceIds.value.has(monitoringSiteWorkspaceId)
   }
 
   const filteredDatastreams = computed(() => {
     return datastreams.value.filter(
       (datastream) =>
-        matchesSelectedThing(datastream) &&
+        matchesSelectedMonitoringSite(datastream) &&
         matchesSelectedWorkspace(datastream) &&
         matchesSelectedObservedProperty(datastream) &&
         matchesSelectedProcessingLevel(datastream)
@@ -500,14 +500,14 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   )
 
   return {
-    things,
+    monitoringSites,
     datastreams,
     processingLevels,
     observedProperties,
-    thingById,
+    monitoringSiteById,
     observedPropertyById,
     processingLevelById,
-    selectedThings,
+    selectedMonitoringSites,
     selectedWorkspaces,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
@@ -534,7 +534,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     tableHeaders,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,
-    matchesSelectedThing,
+    matchesSelectedMonitoringSite,
     matchesSelectedWorkspace,
     setDateRange,
     onDateBtnClick,

@@ -40,7 +40,7 @@
             </button>
           </template>
           <QualityManagementForm
-            :initial-thing-id="task.thing.id"
+            :initial-monitoring-site-id="task.monitoringSite.id"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -92,7 +92,7 @@
         @fetch-full="fetchRuns"
         @copy="copy"
       />
-      <QualityTaskMappings v-else :task="task" :thing-id="task.thing?.id" />
+      <QualityTaskMappings v-else :task="task" :monitoring-site-id="task.monitoringSite?.id" />
     </section>
   </div>
   <div v-else class="loading">Loading...</div>

@@ -13,7 +13,7 @@ from core.types import Unset
 from core.iam.models import ServiceAccount, Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 from processing.orchestration.services import TaskService
 from processing.products.exceptions import DataProductError
 from processing.products.models import DataProductTask
@@ -34,8 +34,8 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     task_model = DataProductTask
 
     order_by_fields = {
-        "id", "name", "thing_id", "thing__name",
-        "thing__workspace_id", "thing__workspace__name",
+        "id", "name", "monitoring_site_id", "monitoring_site__name",
+        "monitoring_site__workspace_id", "monitoring_site__workspace__name",
         "latest_run_status", "latest_run_started_at", "latest_run_finished_at",
     }
 
@@ -52,11 +52,11 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
 
         queryset = (
             self.annotate_latest_run(self.task_model.objects)
-            .select_related("thing", "periodic_task__crontab", "periodic_task__interval")
+            .select_related("monitoring_site", "periodic_task__crontab", "periodic_task__interval")
         )
 
         if expand_related:
-            queryset = queryset.select_related("thing__workspace").prefetch_related(
+            queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
                 "transformations__input_datastreams__datastream",
                 "transformations__input_datastreams__datastream__datastream_tags",
                 "transformations__input_datastreams__datastream__datastream_file_attachments",
@@ -78,7 +78,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
-        thing: list[uuid.UUID | Thing] | Unset = Unset,
+        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
         latest_run_status: list[str] | Unset = Unset,
         transformation_type: list[str] | Unset = Unset,
@@ -97,14 +97,14 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
         if search_term is not Unset:
-            search_vector = SearchVector("name", "description", "thing__name")
+            search_vector = SearchVector("name", "description", "monitoring_site__name")
             queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
 
-        if thing is not Unset:
-            queryset = queryset.filter(thing__in=[getattr(t, "pk", t) for t in thing])
+        if monitoring_site is not Unset:
+            queryset = queryset.filter(monitoring_site__in=[getattr(t, "pk", t) for t in monitoring_site])
 
         if workspace is not Unset:
-            queryset = queryset.filter(thing__workspace__in=[getattr(ws, "pk", ws) for ws in workspace])
+            queryset = queryset.filter(monitoring_site__workspace__in=[getattr(ws, "pk", ws) for ws in workspace])
 
         if latest_run_status is not Unset:
             queryset = queryset.filter(latest_run_status__in=latest_run_status)
@@ -128,7 +128,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
 
         if expand_related:
             queryset = queryset.select_related(
-                "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
+                "monitoring_site__workspace", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related(
                 "transformations__input_datastreams__datastream",
                 "transformations__input_datastreams__datastream__datastream_tags",
@@ -140,7 +140,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
             )
         else:
             queryset = queryset.select_related(
-                "thing", "periodic_task__crontab", "periodic_task__interval"
+                "monitoring_site", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related("transformations__input_datastreams")
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -156,7 +156,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        thing: uuid.UUID | Thing,
+        monitoring_site: uuid.UUID | MonitoringSite,
         name: str,
         description: str | None = None,
         crontab: str | None = None,
@@ -168,20 +168,20 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
     ) -> DataProductTask:
         """Create a data product task."""
 
-        if isinstance(thing, uuid.UUID):
+        if isinstance(monitoring_site, uuid.UUID):
             try:
-                thing = Thing.objects.select_related("workspace").get(pk=thing)
-            except Thing.DoesNotExist:
-                raise LookupError("Thing does not exist.")
+                monitoring_site = MonitoringSite.objects.select_related("workspace").get(pk=monitoring_site)
+            except MonitoringSite.DoesNotExist:
+                raise LookupError("MonitoringSite does not exist.")
 
-        if not principal.can_create("DataProductTask", workspace=thing.workspace):
+        if not principal.can_create("DataProductTask", workspace=monitoring_site.workspace):
             raise PermissionError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
             pk=uid,
             name=name,
             description=description,
-            thing=thing,
+            monitoring_site=monitoring_site,
         )
 
         self.apply_schedule(
@@ -246,7 +246,7 @@ class DataProductTaskService(TaskService[DataProductTask], ServiceUtils):
 
         transformations = list(
             task.transformations
-            .select_related("output_datastream", "rating_curve", "task__thing__workspace")
+            .select_related("output_datastream", "rating_curve", "task__monitoring_site__workspace")
             .prefetch_related("input_datastreams__datastream", "rating_curve__points")
         )
 

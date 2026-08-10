@@ -4,7 +4,7 @@ from django.db import models
 
 from core.iam.permissions.mixins import ResourcePermissionMixin
 from core.iam.permissions.registry import register_resource_type
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 
 
 class FittingMethod(models.TextChoices):
@@ -12,11 +12,11 @@ class FittingMethod(models.TextChoices):
     POWER_LAW = "power_law"
 
 
-@register_resource_type(workspace_field="thing__workspace")
+@register_resource_type(workspace_field="monitoring_site__workspace")
 class RatingCurve(models.Model, ResourcePermissionMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
-    thing = models.ForeignKey(
-        Thing,
+    monitoring_site = models.ForeignKey(
+        MonitoringSite,
         on_delete=models.CASCADE,
         related_name="rating_curves",
     )

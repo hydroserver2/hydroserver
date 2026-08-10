@@ -1,29 +1,19 @@
-# Thing
-- model: sta.thing
+# MonitoringSite
+- model: sta.monitoringsite
   pk: 97d08ec5-0c29-49e4-906a-9b3f7a09e5ac
   fields:
     name: Observations Test
-    description: A thing used to store testing datastreams with varying numbers of observations.
-    sampling_feature_type: Site
-    sampling_feature_code: TEST
-    site_type: Test
-    is_private: False
-    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
-
-# Location
-- model: sta.location
-  pk: 2c648e8c-84b2-446b-b308-18b240dbf5ab
-  fields:
-    name: Location for Observations Test
-    description: A test location used to store testing datastreams with varying numbers of observations.
-    encoding_type: application/geo+json
+    description: A monitoring site used to store testing datastreams with varying numbers of observations.
+    code: TEST
+    type: Test
     latitude: 0
     longitude: 0
     elevation_m: 1
     elevation_datum: WGS84
     admin_area_1: NA
     admin_area_2: NA
-    thing: 97d08ec5-0c29-49e4-906a-9b3f7a09e5ac
+    is_private: False
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
 
 # Observed Property
 - model: sta.observedproperty

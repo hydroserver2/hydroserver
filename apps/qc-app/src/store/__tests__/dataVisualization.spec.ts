@@ -51,7 +51,7 @@ vi.mock('@uwrl/qc-utils', async (importOriginal) => {
 const makeDs = (overrides: Record<string, any> = {}) => ({
   id: 'ds-1',
   name: 'Stream 1',
-  thing: { id: 'thing-1' },
+  monitoringSite: { id: 'monitoringSite-1' },
   observedProperty: { name: 'Temperature' },
   processingLevel: { definition: 'Raw' },
   ...overrides,
@@ -74,19 +74,19 @@ describe('useDataVisStore.filteredDatastreams', () => {
     const store = useDataVisStore()
     store.datastreams = [
       makeDs({ id: 'a' }),
-      makeDs({ id: 'b', thing: { id: 'thing-2' } }),
+      makeDs({ id: 'b', monitoringSite: { id: 'monitoringSite-2' } }),
     ] as any
     expect(store.filteredDatastreams).toHaveLength(2)
   })
 
-  it('filters by selected things', async () => {
+  it('filters by selected monitoringSites', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.datastreams = [
-      makeDs({ id: 'a', thing: { id: 'thing-1' } }),
-      makeDs({ id: 'b', thing: { id: 'thing-2' } }),
+      makeDs({ id: 'a', monitoringSite: { id: 'monitoringSite-1' } }),
+      makeDs({ id: 'b', monitoringSite: { id: 'monitoringSite-2' } }),
     ] as any
-    store.selectedThings = [{ id: 'thing-1' }] as any
+    store.selectedMonitoringSites = [{ id: 'monitoringSite-1' }] as any
     const ids = store.filteredDatastreams.map((d) => d.id)
     expect(ids).toEqual(['a'])
   })
@@ -117,7 +117,7 @@ describe('useDataVisStore.filteredDatastreams', () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.datastreams = [makeDs({ id: 'a' })] as any
-    store.selectedThings = [{ id: 'nope' }] as any
+    store.selectedMonitoringSites = [{ id: 'nope' }] as any
     expect(store.filteredDatastreams).toEqual([])
   })
 
@@ -127,21 +127,21 @@ describe('useDataVisStore.filteredDatastreams', () => {
     store.datastreams = [
       makeDs({
         id: 'a',
-        thing: { id: 'thing-1' },
+        monitoringSite: { id: 'monitoringSite-1' },
         observedProperty: { name: 'Temperature' },
       }),
       makeDs({
         id: 'b',
-        thing: { id: 'thing-1' },
+        monitoringSite: { id: 'monitoringSite-1' },
         observedProperty: { name: 'Pressure' },
       }),
       makeDs({
         id: 'c',
-        thing: { id: 'thing-2' },
+        monitoringSite: { id: 'monitoringSite-2' },
         observedProperty: { name: 'Temperature' },
       }),
     ] as any
-    store.selectedThings = [{ id: 'thing-1' }] as any
+    store.selectedMonitoringSites = [{ id: 'monitoringSite-1' }] as any
     store.selectedObservedPropertyNames = ['Temperature']
     expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['a'])
   })
@@ -153,25 +153,25 @@ describe('useDataVisStore.filteredDatastreams', () => {
     expect(store.filteredDatastreams).toEqual([])
   })
 
-  it('skips datastreams missing thing/observedProperty/processingLevel when filtered', async () => {
+  it('skips datastreams missing monitoringSite/observedProperty/processingLevel when filtered', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
     store.datastreams = [
-      makeDs({ id: 'noThing', thing: undefined }),
+      makeDs({ id: 'noMonitoringSite', monitoringSite: undefined }),
       makeDs({ id: 'noOp', observedProperty: undefined }),
       makeDs({ id: 'noPl', processingLevel: undefined }),
     ] as any
 
-    store.selectedThings = [{ id: 'thing-1' }] as any
+    store.selectedMonitoringSites = [{ id: 'monitoringSite-1' }] as any
     expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['noOp', 'noPl'])
 
-    store.selectedThings = []
+    store.selectedMonitoringSites = []
     store.selectedObservedPropertyNames = ['Temperature']
-    expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['noThing', 'noPl'])
+    expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['noMonitoringSite', 'noPl'])
 
     store.selectedObservedPropertyNames = []
     store.selectedProcessingLevelNames = ['Raw']
-    expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['noThing', 'noOp'])
+    expect(store.filteredDatastreams.map((d) => d.id)).toEqual(['noMonitoringSite', 'noOp'])
   })
 })
 
@@ -434,7 +434,7 @@ describe('useDataVisStore.resetState', () => {
   it('resets filter arrays, plotted state, and qc id', async () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     const store = useDataVisStore()
-    store.selectedThings = [{ id: 'x' }] as any
+    store.selectedMonitoringSites = [{ id: 'x' }] as any
     store.selectedObservedPropertyNames = ['Temperature']
     store.selectedProcessingLevelNames = ['Raw']
     store.plottedDatastreams = [makeDs({ id: 'a' })] as any
@@ -442,7 +442,7 @@ describe('useDataVisStore.resetState', () => {
 
     store.resetState()
 
-    expect(store.selectedThings).toEqual([])
+    expect(store.selectedMonitoringSites).toEqual([])
     expect(store.selectedObservedPropertyNames).toEqual([])
     expect(store.selectedProcessingLevelNames).toEqual([])
     expect(store.plottedDatastreams).toEqual([])

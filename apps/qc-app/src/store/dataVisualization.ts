@@ -10,7 +10,7 @@ import {
   type DatastreamExtended,
   ObservedProperty,
   ProcessingLevel,
-  Thing,
+  MonitoringSite,
 } from '@hydroserver/client'
 
 export const useDataVisStore = defineStore('dataVisualization', () => {
@@ -26,13 +26,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const { graphSeriesArray } = storeToRefs(usePlotlyStore())
 
   // To only fetch these once per page
-  const things = ref<Thing[]>([])
+  const monitoringSites = ref<MonitoringSite[]>([])
   const datastreams = ref<(Datastream & DatastreamExtended)[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
 
   // Filters
-  const selectedThings = ref<Thing[]>([])
+  const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const selectedObservedPropertyNames = ref<string[]>([])
   const selectedProcessingLevelNames = ref<string[]>([])
 
@@ -93,7 +93,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   function resetState() {
-    selectedThings.value = []
+    selectedMonitoringSites.value = []
     plottedDatastreams.value = []
     qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
@@ -246,7 +246,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   // Note: datastreams are loaded with `expand_related: true`, so these carry
-  // nested `thing`/`observedProperty`/`processingLevel` objects rather than
+  // nested `monitoringSite`/`observedProperty`/`processingLevel` objects rather than
   // the flat `*Id` fields on the bare Datastream type.
   function matchesSelectedObservedProperty(
     datastream: Datastream & DatastreamExtended
@@ -264,11 +264,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     return !!def && selectedProcessingLevelNames.value.includes(def)
   }
 
-  function matchesSelectedThing(datastream: Datastream & DatastreamExtended) {
-    if (selectedThings.value.length === 0) return true
-    const thingId = datastream.thing?.id
+  function matchesSelectedMonitoringSite(datastream: Datastream & DatastreamExtended) {
+    if (selectedMonitoringSites.value.length === 0) return true
+    const monitoringSiteId = datastream.monitoringSite?.id
     return (
-      !!thingId && selectedThings.value.some((thing) => thing.id === thingId)
+      !!monitoringSiteId && selectedMonitoringSites.value.some((monitoringSite) => monitoringSite.id === monitoringSiteId)
     )
   }
 
@@ -281,7 +281,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     return (
       datastreams.value?.filter(
         (datastream) =>
-          matchesSelectedThing(datastream) &&
+          matchesSelectedMonitoringSite(datastream) &&
           matchesSelectedObservedProperty(datastream) &&
           matchesSelectedProcessingLevel(datastream)
       ) ?? []
@@ -547,11 +547,11 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   )
 
   return {
-    things,
+    monitoringSites,
     datastreams,
     processingLevels,
     observedProperties,
-    selectedThings,
+    selectedMonitoringSites,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
     filteredDatastreams,
@@ -569,7 +569,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     hasSelectionShape,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,
-    matchesSelectedThing,
+    matchesSelectedMonitoringSite,
     setDateRange,
     onDateBtnClick,
     syncRangeToPreset,

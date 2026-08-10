@@ -28,7 +28,7 @@ import {
   resultQualifiers,
   sensors,
   session,
-  things,
+  monitoringSites,
   units,
   workspaces,
 } from './fixtures'
@@ -194,9 +194,9 @@ export async function installMocks(
       return json(route, { data: workspaces })
     }
 
-    // --- Things / datastreams / processing levels / observed properties ---
-    if (path.endsWith('/api/data/things') && method === 'GET') {
-      return json(route, { data: things })
+    // --- Monitoring sites / datastreams / processing levels / observed properties ---
+    if (path.endsWith('/api/data/monitoring-sites') && method === 'GET') {
+      return json(route, { data: monitoringSites })
     }
     if (path.endsWith('/api/data/datastreams') && method === 'GET') {
       return json(route, { data: datastreams })

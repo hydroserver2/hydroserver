@@ -41,7 +41,7 @@
   fields:
     name: QC Managed Datastream
     description: Managed datastream for QC history H1
-    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
     sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
@@ -68,7 +68,7 @@
   fields:
     name: QC Managed Datastream (No History)
     description: Managed datastream with no QC history, for create() tests
-    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
     sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a

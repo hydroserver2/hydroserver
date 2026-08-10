@@ -20,7 +20,7 @@ class DataProductTaskService(HydroServerBaseService):
         page: int = ...,
         page_size: int = ...,
         order_by: List[str] = ...,
-        thing: Optional[Union[UUID, str]] = ...,
+        monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         latest_run_status: str = ...,
         transformation_type: str = ...,
@@ -36,7 +36,7 @@ class DataProductTaskService(HydroServerBaseService):
             page_size=page_size,
             order_by=order_by,
             fetch_all=fetch_all,
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             workspace_id=normalize_uuid(workspace),
             latest_run_status=latest_run_status,
             transformation_type=transformation_type,
@@ -48,7 +48,7 @@ class DataProductTaskService(HydroServerBaseService):
     def create(
         self,
         name: str,
-        thing: Union[UUID, str],
+        monitoring_site: Union[UUID, str],
         description: Optional[str] = None,
         crontab: Optional[str] = None,
         interval: Optional[int] = None,
@@ -62,7 +62,7 @@ class DataProductTaskService(HydroServerBaseService):
         body: Dict[str, Any] = {
             "name": name,
             "description": description,
-            "thingId": normalize_uuid(thing),
+            "monitoringSiteId": normalize_uuid(monitoring_site),
         }
 
         if uid is not None:

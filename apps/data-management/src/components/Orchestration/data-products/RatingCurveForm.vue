@@ -54,7 +54,7 @@
           :datastreams="siteDatastreams"
           label="Input datastream *"
           :loading="loading"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
@@ -63,7 +63,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loading"
           :rules="rules.required"
           class="mb-2"
@@ -87,14 +87,14 @@
             item-value="value"
             label="Rating curve *"
             clearable
-            :disabled="!selectedThingId"
+            :disabled="!selectedMonitoringSiteId"
             :loading="ratingCurvesLoading || loadingExisting"
             :rules="rules.required"
             class="mb-2"
           />
           <div
             v-if="
-              selectedThingId &&
+              selectedMonitoringSiteId &&
               !ratingCurvesLoading &&
               !ratingCurveOptions.length
             "
@@ -222,7 +222,7 @@ import {
   parseRatingCurveCsvFile,
   toRatingCurveFileValidationMessage,
 } from '@/utils/orchestration/ratingCurveFile'
-import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -233,7 +233,7 @@ import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  initialThingId?: string | null
+  initialMonitoringSiteId?: string | null
   editTaskId?: string | null
 }>()
 
@@ -281,11 +281,11 @@ const fittingMethodOptions = [
   { title: 'Linear', value: 'linear' },
   { title: 'Power law', value: 'power_law' },
 ]
-const selectedThingId = computed(() => props.initialThingId ?? null)
+const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
 
 const siteDatastreams = computed(() => {
-  const thingId = selectedThingId.value
-  return datastreamsForThing(datastreams.value, thingId)
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 const ratingCurveOptions = computed(() =>
@@ -320,7 +320,7 @@ async function loadOptions() {
       expand_related: true,
     } as any)
     datastreams.value = datastreamItems as Datastream[]
-    if (selectedThingId.value) await loadRatingCurves(selectedThingId.value)
+    if (selectedMonitoringSiteId.value) await loadRatingCurves(selectedMonitoringSiteId.value)
   } catch (error: any) {
     Snackbar.error(
       error?.message || 'Unable to load rating curve form options.'
@@ -363,10 +363,10 @@ async function loadExistingTask() {
   loadingExisting.value = false
 }
 
-async function loadRatingCurves(thingId: string) {
+async function loadRatingCurves(monitoringSiteId: string) {
   ratingCurvesLoading.value = true
   try {
-    const items = await hs.ratingCurves.listItemsForThing(thingId, {
+    const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId, {
       order_by: ['name'],
     })
     ratingCurves.value = [...items].sort((a, b) => a.name.localeCompare(b.name))
@@ -437,7 +437,7 @@ async function resolveRatingCurveId() {
     return selectedRatingCurveId.value
 
   const file = selectedCreateFile.value
-  if (!selectedThingId.value || !file || !createCurveName.value.trim()) {
+  if (!selectedMonitoringSiteId.value || !file || !createCurveName.value.trim()) {
     Snackbar.error('Choose a CSV file and rating curve name.')
     return null
   }
@@ -459,7 +459,7 @@ async function resolveRatingCurveId() {
     name: createCurveName.value.trim(),
     description: createCurveDescription.value.trim() || null,
     fittingMethod: createFittingMethod.value,
-    thingId: selectedThingId.value,
+    monitoringSiteId: selectedMonitoringSiteId.value,
     points: createCurvePoints.value,
   })
 
@@ -475,7 +475,7 @@ async function resolveRatingCurveId() {
 
 async function onSubmit() {
   await formRef.value?.validate()
-  if (!selectedThingId.value) {
+  if (!selectedMonitoringSiteId.value) {
     Snackbar.error('Select a site before creating a rating curve task.')
     return
   }
@@ -500,7 +500,7 @@ async function onCreate() {
   const taskRes = await hs.dataProductTasks.create({
     id: '',
     name: taskName.value.trim(),
-    thingId: selectedThingId.value!,
+    monitoringSiteId: selectedMonitoringSiteId.value!,
     description: null,
     schedule: schedule.value,
   })
@@ -588,13 +588,13 @@ async function onDelete() {
   }
 }
 
-watch(selectedThingId, (thingId) => {
+watch(selectedMonitoringSiteId, (monitoringSiteId) => {
   if (isEditMode.value) return
   inputDatastreamId.value = null
   outputDatastreamId.value = null
   selectedRatingCurveId.value = null
   ratingCurves.value = []
-  if (thingId) void loadRatingCurves(thingId)
+  if (monitoringSiteId) void loadRatingCurves(monitoringSiteId)
 })
 
 watch(selectedCreateFile, (file) => {

@@ -12,7 +12,7 @@ def register_resource_type(
     Register a model as a gatekept permission resource type.
 
     workspace_field: None if the model itself is a Workspace, else a path to
-    reach one (e.g. "thing__workspace"). resource_type_name: overrides the
+    reach one (e.g. "monitoring_site__workspace"). resource_type_name: overrides the
     resource_type string (default: model_cls.__name__) — needed since
     resource_type is a flat namespace and two apps' models can share a name.
 

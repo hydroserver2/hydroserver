@@ -30,7 +30,7 @@ Data Management app's authenticated session. Endpoint groups used:
 | Session / auth     | `/auth/browser/session`                | Current session and logout. Login is handled by Data Management. |
 | Account            | `/auth/browser/account`                | Current user profile.                               |
 | Workspaces         | `/data/workspaces`                     | List, pick, create workspaces.                      |
-| Things (sites)     | `/data/things`                         | Sites the operator can browse.                      |
+| Monitoring sites     | `/data/monitoring-sites`                         | Sites the operator can browse.                      |
 | Datastreams        | `/data/datastreams`                    | List + fetch metadata + observations + bulk replace.|
 | Observations       | `/data/datastreams/{id}/observations`  | Paged columnar read, bulk POST with `mode=replace`. |
 | Result qualifiers  | `/data/result-qualifiers`              | Qualifier code lookups per workspace.               |
@@ -178,11 +178,11 @@ on boot.
 
 | Name                                | Kind     | Type / signature                                  | Notes |
 |-------------------------------------|----------|---------------------------------------------------|-------|
-| `things`                            | state    | `Thing[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
+| `monitoringSites`                            | state    | `MonitoringSite[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
 | `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
-| `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |
+| `selectedMonitoringSites`           | state    | `MonitoringSite[]`                                         | Site filter selection (sidebar). |
 | `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
 | `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
 | `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections. |
@@ -197,7 +197,7 @@ on boot.
 | `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded time-range window (the date pickers' source of truth). |
 | `dateOptions`                       | state    | `Array<{ id, icon, label, title, calculateBeginDate }>` | Preset definitions (1w, 1m, 6m, 1y, YTD, All). |
 | `selectedDateBtnId`                 | state    | `number`                                          | Active preset id; `-1` when the user picked dates manually. |
-| `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
+| `matchesSelectedMonitoringSite`     | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |

@@ -11,15 +11,15 @@
         <div class="datastream-display">
           <div class="datastream-display__content">
             <span class="target-name">{{ row.name }}</span>
-            <span v-if="row.thingName" class="target-thing">
-              {{ row.thingName }}
+            <span v-if="row.monitoringSiteName" class="target-monitoringSite">
+              {{ row.monitoringSiteName }}
             </span>
             <span class="target-id">{{ row.id || '—' }}</span>
           </div>
           <DatastreamSiteButton
             :datastream="row.datastream"
             :datastream-id="row.id"
-            :fallback-thing-id="row.thingId"
+            :fallback-monitoring-site-id="row.monitoringSiteId"
           />
         </div>
       </div>
@@ -34,26 +34,26 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamThingId } from '@/utils/orchestration/datastreams'
+import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 type DatastreamLike = {
   id?: string
   name?: string
-  thingId?: string
-  thing_id?: string
-  thing?: { id?: string; name?: string }
+  monitoringSiteId?: string
+  monitoring_site_id?: string
+  monitoringSite?: { id?: string; name?: string }
 } | null
 
 const props = defineProps<{
   task: any
-  thingId?: string | null
+  monitoringSiteId?: string | null
 }>()
 
 const {
   linkedDatastreams,
   workspaceDatastreams,
   draftDatastreams,
-  workspaceThings,
+  workspaceMonitoringSites,
 } = storeToRefs(useOrchestrationStore())
 
 const allKnownDatastreams = computed(() => [
@@ -71,9 +71,9 @@ const mappingRows = computed(() =>
         includedDatastream?.id ?? monitoredDatastream.datastreamId ?? ''
       )
       const datastream = resolveDatastream(includedDatastream, id)
-      const thingId =
-        (datastream ? datastreamThingId(datastream as any) : '') ||
-        props.thingId ||
+      const monitoringSiteId =
+        (datastream ? datastreamMonitoringSiteId(datastream as any) : '') ||
+        props.monitoringSiteId ||
         ''
 
       return {
@@ -81,11 +81,11 @@ const mappingRows = computed(() =>
         id,
         datastream,
         name: datastream?.name || id || '—',
-        thingId,
-        thingName:
-          (datastream as DatastreamLike)?.thing?.name ||
-          workspaceThings.value.find((thing) => thing.id === thingId)?.name ||
-          props.task?.thing?.name ||
+        monitoringSiteId,
+        monitoringSiteName:
+          (datastream as DatastreamLike)?.monitoringSite?.name ||
+          workspaceMonitoringSites.value.find((monitoringSite) => monitoringSite.id === monitoringSiteId)?.name ||
+          props.task?.monitoringSite?.name ||
           '',
       }
     }
@@ -161,7 +161,7 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
   overflow-wrap: anywhere;
 }
 
-.target-thing {
+.target-monitoringSite {
   margin-top: 2px;
   color: rgba(0, 0, 0, 0.66);
   font-size: 0.78rem;

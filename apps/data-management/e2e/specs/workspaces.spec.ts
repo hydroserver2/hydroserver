@@ -346,7 +346,7 @@ test.describe('workspace management', () => {
   test('a slow overview response cannot overwrite the newly selected workspace', async ({
     page,
   }) => {
-    await page.route('**/api/data/things/site-summaries?**', async (route) => {
+    await page.route('**/api/data/monitoring-sites/site-summaries?**', async (route) => {
       const workspaceId = new URL(route.request().url()).searchParams.get(
         'workspace_id'
       )

@@ -20,7 +20,7 @@ class DataProductTaskFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> DataProductTask: ...
 
-    thing = factory.SubFactory("tests.core.sta.factories.ThingFactory")
+    monitoring_site = factory.SubFactory("tests.core.sta.factories.MonitoringSiteFactory")
     name = factory.Sequence(lambda seq: f"Data Product Task {seq}")
     description = factory.Faker("sentence")
 
@@ -33,7 +33,7 @@ class RatingCurveFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> RatingCurve: ...
 
-    thing = factory.SubFactory("tests.core.sta.factories.ThingFactory")
+    monitoring_site = factory.SubFactory("tests.core.sta.factories.MonitoringSiteFactory")
     name = factory.Sequence(lambda seq: f"Rating Curve {seq}")
     description = factory.Faker("sentence")
     fitting_method = "linear"

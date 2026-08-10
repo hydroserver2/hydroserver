@@ -418,7 +418,7 @@ Array<[string, number]>    // legacy CSV-style row, retained for some serializer
 
 ### Other domain models
 
-`Thing`, `Datastream`, `DatastreamExtended`, `Unit`, `Sensor`,
+`MonitoringSite`, `Datastream`, `DatastreamExtended`, `Unit`, `Sensor`,
 `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Workspace`,
 `User`, `Tag`, `Frequency`, `Permission`, `PermissionAction`,
 `PermissionResource`, `CollaboratorRole`, `Collaborator`, `ApiKey`,

@@ -1,5 +1,5 @@
 import { UserService, SessionService, WorkspaceService } from './services'
-import { ThingService } from './services/thing.service'
+import { MonitoringSiteService } from './services/monitoring-site.service'
 import { ObservedPropertyService } from './services/observed-property.service'
 import { UnitService } from './services/unit.service'
 import { ProcessingLevelService } from './services/processing-level.service'
@@ -11,7 +11,7 @@ import { TaskService } from './services/task.service'
 import { MonitoringTaskService } from './services/monitoring-task.service'
 import { DataProductTaskService } from './services/data-product-task.service'
 import { RatingCurveService } from './services/rating-curve.service'
-import { ThingFileAttachmentService } from './services/thing-file-attachment.service'
+import { MonitoringSiteFileAttachmentService } from './services/monitoring-site-file-attachment.service'
 import {
   QualityControlHistoryService,
   QualityControlOperationService,
@@ -40,7 +40,7 @@ export class HydroServer {
   readonly oidc?: Required<HydroServerOIDCOptions>
 
   private _workspaces?: WorkspaceService
-  private _things?: ThingService
+  private _monitoringSites?: MonitoringSiteService
   private _observedProperties?: ObservedPropertyService
   private _units?: UnitService
   private _processingLevels?: ProcessingLevelService
@@ -55,7 +55,7 @@ export class HydroServer {
   private _monitoringTasks?: MonitoringTaskService
   private _dataProductTasks?: DataProductTaskService
   private _ratingCurves?: RatingCurveService
-  private _thingFileAttachments?: ThingFileAttachmentService
+  private _monitoringSiteFileAttachments?: MonitoringSiteFileAttachmentService
   private _qualityControlHistories?: QualityControlHistoryService
   private _qualityControlSessions?: QualityControlSessionService
   private _qualityControlOperations?: QualityControlOperationService
@@ -108,8 +108,8 @@ export class HydroServer {
   get workspaces(): WorkspaceService {
     return (this._workspaces ??= new WorkspaceService(this))
   }
-  get things(): ThingService {
-    return (this._things ??= new ThingService(this))
+  get monitoringSites(): MonitoringSiteService {
+    return (this._monitoringSites ??= new MonitoringSiteService(this))
   }
   get observedProperties(): ObservedPropertyService {
     return (this._observedProperties ??= new ObservedPropertyService(this))
@@ -144,8 +144,9 @@ export class HydroServer {
   get ratingCurves(): RatingCurveService {
     return (this._ratingCurves ??= new RatingCurveService(this))
   }
-  get thingFileAttachments(): ThingFileAttachmentService {
-    return (this._thingFileAttachments ??= new ThingFileAttachmentService(this))
+  get monitoringSiteFileAttachments(): MonitoringSiteFileAttachmentService {
+    return (this._monitoringSiteFileAttachments ??=
+      new MonitoringSiteFileAttachmentService(this))
   }
   get qualityControlHistories(): QualityControlHistoryService {
     return (this._qualityControlHistories ??= new QualityControlHistoryService(

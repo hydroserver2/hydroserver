@@ -38,7 +38,7 @@ export type Frequency = 'daily' | 'weekly' | 'monthly' | null
 
 export class HydroShareArchive {
   id: string
-  thingId: string
+  monitoringSiteId: string
   link: string
   frequency: Frequency
   path: string
@@ -47,7 +47,7 @@ export class HydroShareArchive {
 
   constructor() {
     this.id = ''
-    this.thingId = ''
+    this.monitoringSiteId = ''
     this.link = ''
     this.frequency = null
     this.path = 'HydroShare'
@@ -69,7 +69,14 @@ export class PostHydroShareArchive extends HydroShareArchive {
   }
 }
 
-export class SiteLocation {
+export class MonitoringSite {
+  id: string
+  workspaceId: string
+  name: string
+  tags: Tag[]
+  hydroShareArchive?: HydroShareArchive | null
+  type: string
+  code: string
   latitude?: number | ''
   longitude?: number | ''
   elevation_m?: number | ''
@@ -77,27 +84,8 @@ export class SiteLocation {
   adminArea1: string
   adminArea2: string
   country: string
-
-  constructor() {
-    this.elevationDatum = 'WGS84'
-    this.adminArea1 = ''
-    this.adminArea2 = ''
-    this.country = ''
-  }
-}
-
-export class Thing {
-  id: string
-  workspaceId: string
-  name: string
-  location: SiteLocation = new SiteLocation()
-  tags: Tag[]
-  hydroShareArchive?: HydroShareArchive | null
-  siteType: string
-  samplingFeatureCode: string
   isPrivate: boolean
   description: string
-  samplingFeatureType: string
   dataDisclaimer: string
 
   constructor() {
@@ -105,11 +93,14 @@ export class Thing {
     this.workspaceId = ''
     this.name = ''
     this.tags = []
-    this.siteType = ''
-    this.samplingFeatureCode = ''
+    this.type = ''
+    this.code = ''
+    this.elevationDatum = 'WGS84'
+    this.adminArea1 = ''
+    this.adminArea2 = ''
+    this.country = ''
     this.isPrivate = false
     this.description = ''
-    this.samplingFeatureType = 'Site'
     this.dataDisclaimer = ''
   }
 }
@@ -119,7 +110,7 @@ export class Datastream {
   workspaceId: string
   name: string
   description: string
-  thingId: string
+  monitoringSiteId: string
   observationType: string
   resultType?: string
   status?: string
@@ -140,12 +131,12 @@ export class Datastream {
   timeAggregationIntervalUnit: TimeSpacingUnit
   valueCount: number
 
-  constructor(thingId?: string) {
+  constructor(monitoringSiteId?: string) {
     this.id = ''
     this.workspaceId = ''
     this.name = ''
     this.description = ''
-    this.thingId = thingId || ''
+    this.monitoringSiteId = monitoringSiteId || ''
     this.observationType = 'OM_Measurement'
     this.resultType = 'Time Series Coverage'
     this.sampledMedium = ''
@@ -183,7 +174,7 @@ export interface DatastreamExtended {
   timeAggregationIntervalUnit: TimeSpacingUnit
   valueCount: number
 
-  thing: Thing
+  monitoringSite: MonitoringSite
   workspace: Workspace
   unit: Unit
   observedProperty: ObservedProperty
@@ -363,7 +354,7 @@ export enum PermissionResource {
   Role = 'Role',
   ServiceAccount = 'ServiceAccount',
   Collaborator = 'Collaborator',
-  Thing = 'Thing',
+  MonitoringSite = 'MonitoringSite',
   ObservedProperty = 'ObservedProperty',
   ProcessingLevel = 'ProcessingLevel',
   ResultQualifier = 'ResultQualifier',
@@ -451,11 +442,11 @@ export interface UserInfo {
   organizationName: string
 }
 
-export interface ThingMarker {
+export interface MonitoringSiteMarker {
   id: string
   workspaceId: string
   name: string
-  siteType: string
+  type: string
   isPrivate: boolean
   latitude: number
   longitude: number
@@ -466,15 +457,15 @@ export interface SiteTypeIcon {
   siteTypes: string[]
 }
 
-export interface ThingSiteSummary extends ThingMarker {
-  samplingFeatureCode: string
+export interface MonitoringSiteMapSummary extends MonitoringSiteMarker {
+  code: string
   tags: Tag[]
 }
 
-export interface ThingTaskSummary {
+export interface MonitoringSiteTaskSummary {
   id: string
   name: string
-  siteType: string
+  type: string
   productTaskCount: number
   productTaskAttentionCount: number
   monitoringTaskCount: number

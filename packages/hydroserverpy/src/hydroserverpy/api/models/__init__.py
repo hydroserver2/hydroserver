@@ -10,7 +10,7 @@ from .sta.observed_property import ObservedProperty
 from .sta.processing_level import ProcessingLevel
 from .sta.result_qualifier import ResultQualifier
 from .sta.sensor import Sensor
-from .sta.thing import Thing
+from .sta.monitoring_site import MonitoringSite
 from .sta.unit import Unit
 from .etl.data_connection import DataConnection
 from .etl.run import TaskRun

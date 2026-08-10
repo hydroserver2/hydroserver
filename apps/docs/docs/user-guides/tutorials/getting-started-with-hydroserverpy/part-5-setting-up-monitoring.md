@@ -13,7 +13,7 @@ Monitoring tasks are associated with a site, not a specific datastream — the d
 ```python
 stage_monitor = hs_api.monitoringtasks.create(
     name='Logan River Stage Monitor',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     description='Monitors gage height for out-of-range values and data gaps.',
     recipients=['your@email.com'],
     interval=15,

@@ -14,13 +14,12 @@ Note that USGS reports gage height in feet, so we'll use feet as the unit here r
 
 ```python
 # Site
-logan_river_site = hs_api.things.create(
+logan_river_site = hs_api.monitoring_sites.create(
     workspace=workspace,
     name='Logan River Above First Dam',
     description='USGS gauging station 101090000 on the Logan River near Logan, Utah.',
-    sampling_feature_type='Site',
-    sampling_feature_code='USGS-10109000',
-    site_type='Stream',
+    code='USGS-10109000',
+    type='Stream',
     is_private=False,
     latitude=41.7444,
     longitude=-111.8358,
@@ -73,8 +72,8 @@ raw_processing_level = hs_api.processinglevels.create(
 # Datastream
 stage_datastream = hs_api.datastreams.create(
     name=f'{gage_height_property.name} at {logan_river_site.name}',
-    description=f'{gage_height_property.name} from USGS station {logan_river_site.sampling_feature_code}.',
-    thing=logan_river_site,
+    description=f'{gage_height_property.name} from USGS station {logan_river_site.code}.',
+    monitoring_site=logan_river_site,
     sensor=usgs_sensor,
     observed_property=gage_height_property,
     processing_level=raw_processing_level,

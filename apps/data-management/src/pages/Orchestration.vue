@@ -163,7 +163,7 @@
 
         <v-dialog v-model="openAggregationForm" width="60rem">
           <AggregationForm
-            :initial-thing-id="selectedThingId"
+            :initial-monitoring-site-id="selectedMonitoringSiteId"
             :edit-task-id="editingAggregationTaskId"
             @close="closeAggregationForm"
             @created="onDataProductTaskCreated"
@@ -174,7 +174,7 @@
 
         <v-dialog v-model="openExpressionForm" width="60rem">
           <ExpressionForm
-            :initial-thing-id="selectedThingId"
+            :initial-monitoring-site-id="selectedMonitoringSiteId"
             @close="openExpressionForm = false"
             @created="onDataProductTaskCreated"
           />
@@ -182,7 +182,7 @@
 
         <v-dialog v-model="openDerivationForm" width="60rem">
           <DerivationForm
-            :initial-thing-id="selectedThingId"
+            :initial-monitoring-site-id="selectedMonitoringSiteId"
             :edit-task-id="editingDerivationTaskId"
             @close="closeDerivationForm"
             @created="onDataProductTaskCreated"
@@ -193,7 +193,7 @@
 
         <v-dialog v-model="openRatingCurveForm" width="60rem">
           <RatingCurveForm
-            :initial-thing-id="selectedThingId"
+            :initial-monitoring-site-id="selectedMonitoringSiteId"
             @close="openRatingCurveForm = false"
             @created="onDataProductTaskCreated"
           />
@@ -201,7 +201,7 @@
 
         <v-dialog v-model="openQualityForm" width="64rem">
           <QualityManagementForm
-            :initial-thing-id="selectedThingId"
+            :initial-monitoring-site-id="selectedMonitoringSiteId"
             :edit-task-id="editingQualityTaskId"
             @close="closeQualityForm"
             @created="onQualityTaskCreated"
@@ -226,7 +226,7 @@ import hs, {
   type MonitoringTask,
   PermissionAction,
   PermissionResource,
-  type ThingTaskSummary,
+  type MonitoringSiteTaskSummary,
 } from '@hydroserver/client'
 
 import router from '@/router/router'
@@ -284,8 +284,8 @@ const {
   taskLoading,
   workspaceTasks,
   dataConnections,
-  things,
-  datastreamThingByDatastreamId,
+  monitoringSites,
+  datastreamMonitoringSiteByDatastreamId,
   dataProductTasks,
   monitoringTasks,
   loadedTaskGroup,
@@ -302,7 +302,7 @@ const {
   orchestrationTaskTypeFilter,
   activeTab,
   selectedConnectionId,
-  selectedThingId,
+  selectedMonitoringSiteId,
   sidebarSearch,
   draftDatastreams,
 } = storeToRefs(orchestrationStore)
@@ -400,7 +400,7 @@ const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
     workspaceTasks,
     dataProductTasks,
     monitoringTasks,
-    datastreamThingByDatastreamId,
+    datastreamMonitoringSiteByDatastreamId,
     runNowTriggeredByTaskId,
   })
 
@@ -461,11 +461,11 @@ const tabs = computed<TabDefinition[]>(() => [
   },
   {
     ...TAB_META.aggregation,
-    issues: sumBy(things.value, productTaskAttentionCount),
+    issues: sumBy(monitoringSites.value, productTaskAttentionCount),
   },
   {
     ...TAB_META.quality,
-    issues: sumBy(things.value, monitoringTaskAttentionCount),
+    issues: sumBy(monitoringSites.value, monitoringTaskAttentionCount),
   },
 ])
 
@@ -479,14 +479,14 @@ const filteredConnections = computed(() =>
   filterByName(dataConnections.value, sidebarSearch.value)
 )
 const filteredSites = computed(() =>
-  filterByName(things.value, sidebarSearch.value)
+  filterByName(monitoringSites.value, sidebarSearch.value)
 )
 
 const connectionsById = computed(
   () => new Map(dataConnections.value.map((dc) => [dc.id, dc]))
 )
-const thingsById = computed(
-  () => new Map(things.value.map((th) => [th.id, th]))
+const monitoringSitesById = computed(
+  () => new Map(monitoringSites.value.map((th) => [th.id, th]))
 )
 
 const listLoading = computed(() => loading.value || taskLoading.value)
@@ -494,11 +494,11 @@ const listLoading = computed(() => loading.value || taskLoading.value)
 const taskAttentionCount = (connection: DataConnection) =>
   connection.taskAttentionCount
 
-const productTaskAttentionCount = (thing: ThingTaskSummary) =>
-  thing.productTaskAttentionCount
+const productTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
+  monitoringSite.productTaskAttentionCount
 
-const monitoringTaskAttentionCount = (thing: ThingTaskSummary) =>
-  thing.monitoringTaskAttentionCount
+const monitoringTaskAttentionCount = (monitoringSite: MonitoringSiteTaskSummary) =>
+  monitoringSite.monitoringTaskAttentionCount
 
 const summaryDotColor = (total: number, issues: number) => {
   if (total === 0) return DOT_EMPTY
@@ -519,8 +519,8 @@ const loadedGroupMatches = (tab: TabId, groupId: string) =>
 const selectedConnectionRows = (dcId: string) =>
   etlTaskRows.value.filter((t) => t.dataConnectionId === dcId)
 
-const selectedSiteRows = (thingId: string) =>
-  activeTaskRows.value.filter((t) => t.thingId === thingId)
+const selectedSiteRows = (monitoringSiteId: string) =>
+  activeTaskRows.value.filter((t) => t.monitoringSiteId === monitoringSiteId)
 
 const taskCountForConnection = (dcId: string) =>
   loadedGroupMatches('ingestion', dcId)
@@ -532,35 +532,35 @@ const issueCountForConnection = (dcId: string) =>
     ? countTaskIssues(selectedConnectionRows(dcId))
     : issueCountForConnectionSummary(dcId)
 
-const taskCountForSiteSummary = (thingId: string) => {
-  const thing = thingsById.value.get(thingId)
-  if (!thing) return 0
+const taskCountForSiteSummary = (monitoringSiteId: string) => {
+  const monitoringSite = monitoringSitesById.value.get(monitoringSiteId)
+  if (!monitoringSite) return 0
   return activeTab.value === 'aggregation'
-    ? thing.productTaskCount
-    : thing.monitoringTaskCount
+    ? monitoringSite.productTaskCount
+    : monitoringSite.monitoringTaskCount
 }
 
-const issueCountForSiteSummary = (thingId: string) => {
-  const thing = thingsById.value.get(thingId)
-  if (!thing) return 0
+const issueCountForSiteSummary = (monitoringSiteId: string) => {
+  const monitoringSite = monitoringSitesById.value.get(monitoringSiteId)
+  if (!monitoringSite) return 0
   return activeTab.value === 'aggregation'
-    ? thing.productTaskAttentionCount
-    : thing.monitoringTaskAttentionCount
+    ? monitoringSite.productTaskAttentionCount
+    : monitoringSite.monitoringTaskAttentionCount
 }
 
-const taskCountForSite = (thingId: string) =>
-  loadedGroupMatches(activeTab.value, thingId)
-    ? selectedSiteRows(thingId).length
-    : taskCountForSiteSummary(thingId)
+const taskCountForSite = (monitoringSiteId: string) =>
+  loadedGroupMatches(activeTab.value, monitoringSiteId)
+    ? selectedSiteRows(monitoringSiteId).length
+    : taskCountForSiteSummary(monitoringSiteId)
 
-const issueCountForSite = (thingId: string) =>
-  loadedGroupMatches(activeTab.value, thingId)
-    ? countTaskIssues(selectedSiteRows(thingId))
-    : issueCountForSiteSummary(thingId)
+const issueCountForSite = (monitoringSiteId: string) =>
+  loadedGroupMatches(activeTab.value, monitoringSiteId)
+    ? countTaskIssues(selectedSiteRows(monitoringSiteId))
+    : issueCountForSiteSummary(monitoringSiteId)
 
-const violationCountForSite = (thingId: string) =>
+const violationCountForSite = (monitoringSiteId: string) =>
   monitoringTaskRows.value
-    .filter((t) => t.thingId === thingId)
+    .filter((t) => t.monitoringSiteId === monitoringSiteId)
     .reduce((sum, task) => sum + (task.monitoringRulesViolated ?? 0), 0)
 
 const dotColorForConnection = (dcId: string) =>
@@ -571,12 +571,12 @@ const dotColorForConnection = (dcId: string) =>
         issueCountForConnectionSummary(dcId)
       )
 
-const dotColorForSite = (thingId: string) =>
-  loadedGroupMatches(activeTab.value, thingId)
-    ? worstDotColor(selectedSiteRows(thingId))
+const dotColorForSite = (monitoringSiteId: string) =>
+  loadedGroupMatches(activeTab.value, monitoringSiteId)
+    ? worstDotColor(selectedSiteRows(monitoringSiteId))
     : summaryDotColor(
-        taskCountForSiteSummary(thingId),
-        issueCountForSiteSummary(thingId)
+        taskCountForSiteSummary(monitoringSiteId),
+        issueCountForSiteSummary(monitoringSiteId)
       )
 
 const selectedConnection = computed<DataConnection | null>(() =>
@@ -586,8 +586,8 @@ const selectedConnection = computed<DataConnection | null>(() =>
 )
 
 const selectedSite = computed(() =>
-  selectedThingId.value
-    ? (thingsById.value.get(selectedThingId.value) ?? null)
+  selectedMonitoringSiteId.value
+    ? (monitoringSitesById.value.get(selectedMonitoringSiteId.value) ?? null)
     : null
 )
 
@@ -598,8 +598,8 @@ const visibleTasks = computed<TaskRow[]>(() => {
       (t) => t.dataConnectionId === selectedConnectionId.value
     )
   }
-  if (!selectedThingId.value) return []
-  return activeTaskRows.value.filter((t) => t.thingId === selectedThingId.value)
+  if (!selectedMonitoringSiteId.value) return []
+  return activeTaskRows.value.filter((t) => t.monitoringSiteId === selectedMonitoringSiteId.value)
 })
 
 const searchedVisibleTasks = computed<TaskRow[]>(() => {
@@ -635,7 +635,7 @@ const sortedVisibleTasks = computed<TaskRow[]>(() => searchedVisibleTasks.value)
 const hasSelection = computed(() =>
   activeTab.value === 'ingestion'
     ? !!selectedConnectionId.value
-    : !!selectedThingId.value
+    : !!selectedMonitoringSiteId.value
 )
 
 const detailTitle = computed(() => {
@@ -649,7 +649,7 @@ const detailTypeBadge = computed(() => {
   if (activeTab.value === 'ingestion') {
     return selectedConnection.value?.payload?.type ?? ''
   }
-  return selectedSite.value?.siteType ?? ''
+  return selectedSite.value?.type ?? ''
 })
 
 const emptyHeading = computed(() =>
@@ -657,7 +657,7 @@ const emptyHeading = computed(() =>
     ? dataConnections.value.length === 0
       ? 'No data connections have been registered yet.'
       : 'Select a data connection'
-    : things.value.length === 0
+    : monitoringSites.value.length === 0
       ? 'No sites registered in this workspace.'
       : 'Select a site'
 )
@@ -669,7 +669,7 @@ const emptyMessage = computed(() => {
     }
     return 'Pick a connection from the list to view its tasks.'
   }
-  if (things.value.length === 0) {
+  if (monitoringSites.value.length === 0) {
     return 'Create a site in your workspace to assign tasks to it.'
   }
   return 'Pick a site to view the tasks writing data to it.'
@@ -700,8 +700,8 @@ const selectSidebarFromTaskDetails = () => {
       task.dataConnection?.id ?? task.dataConnectionId ?? null
     return !!selectedConnectionId.value
   }
-  selectedThingId.value = task.thing?.id ?? task.thingId ?? null
-  return !!selectedThingId.value
+  selectedMonitoringSiteId.value = task.monitoringSite?.id ?? task.monitoringSiteId ?? null
+  return !!selectedMonitoringSiteId.value
 }
 
 const selectSidebarFromRouteGroup = () => {
@@ -713,8 +713,8 @@ const selectSidebarFromRouteGroup = () => {
   }
 
   const id = routeSiteId.value
-  if (!id || !thingsById.value.has(id)) return false
-  selectedThingId.value = id
+  if (!id || !monitoringSitesById.value.has(id)) return false
+  selectedMonitoringSiteId.value = id
   return true
 }
 
@@ -724,14 +724,14 @@ const autoSelectSidebar = () => {
     if (current && connectionsById.value.has(current)) return
     selectedConnectionId.value = dataConnections.value[0]?.id ?? null
   } else {
-    const current = selectedThingId.value
-    if (current && thingsById.value.has(current)) return
-    selectedThingId.value = things.value[0]?.id ?? null
+    const current = selectedMonitoringSiteId.value
+    if (current && monitoringSitesById.value.has(current)) return
+    selectedMonitoringSiteId.value = monitoringSites.value[0]?.id ?? null
   }
 }
 
 const selectedGroupIdForTab = (tab: TabId) =>
-  tab === 'ingestion' ? selectedConnectionId.value : selectedThingId.value
+  tab === 'ingestion' ? selectedConnectionId.value : selectedMonitoringSiteId.value
 
 const fetchVisibleTasks = async (force = false) => {
   if (!selectedWorkspaceId.value || hasTaskDetails.value) {
@@ -786,7 +786,7 @@ const selectConnection = async (id: string) => {
 }
 
 const selectSite = async (id: string) => {
-  selectedThingId.value = id
+  selectedMonitoringSiteId.value = id
   await fetchVisibleTasks()
   await replaceView(activeTab.value, id)
 }
@@ -826,7 +826,7 @@ watch(
     stopAll()
     closeWorkspaceScopedUi()
     selectedConnectionId.value = null
-    selectedThingId.value = null
+    selectedMonitoringSiteId.value = null
     if (workspaceChanged && !routeSelectedThisWorkspace)
       await closeTaskDetails()
     await fetchAll(newId)

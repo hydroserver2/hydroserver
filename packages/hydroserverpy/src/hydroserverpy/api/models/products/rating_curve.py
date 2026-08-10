@@ -11,8 +11,8 @@ class RatingCurve(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     fitting_method: Literal["linear", "power_law"]
-    thing_id: uuid.UUID = Field(..., validation_alias=AliasPath("thing", "id"))
-    thing_name: str = Field(..., validation_alias=AliasPath("thing", "name"))
+    monitoring_site_id: uuid.UUID = Field(..., validation_alias=AliasPath("monitoring_site", "id"))
+    monitoring_site_name: str = Field(..., validation_alias=AliasPath("monitoring_site", "name"))
     points: List[Tuple[float, float]] = []
 
     _editable_fields: ClassVar[set[str]] = set()

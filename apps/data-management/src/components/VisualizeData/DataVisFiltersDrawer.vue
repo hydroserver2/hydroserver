@@ -58,13 +58,13 @@
 
         <div>
           <div class="flex items-center justify-end text-xs text-slate-400">
-            <span>{{ sortedThings.length }}/{{ totalThingsCount }}</span>
+            <span>{{ sortedMonitoringSites.length }}/{{ totalMonitoringSitesCount }}</span>
           </div>
           <div class="pt-2">
             <v-autocomplete
-              v-model="selectedThings"
-              v-model:search="searchThing"
-              :items="sortedThings"
+              v-model="selectedMonitoringSites"
+              v-model:search="searchMonitoringSite"
+              :items="sortedMonitoringSites"
               item-title="name"
               return-object
               multiple
@@ -81,7 +81,7 @@
                   size="small"
                   closable
                   class="mr-1 mb-1 max-w-full"
-                  @click:close="selectedThings.splice(index, 1)"
+                  @click:close="selectedMonitoringSites.splice(index, 1)"
                 >
                   <span class="truncate">
                     {{ item.name }}
@@ -190,16 +190,16 @@ import {
 const {
   matchesSelectedObservedProperty,
   matchesSelectedProcessingLevel,
-  matchesSelectedThing,
+  matchesSelectedMonitoringSite,
   matchesSelectedWorkspace,
 } = useDataVisStore()
 const dataVisStore = useDataVisStore()
 const {
-  things,
+  monitoringSites,
   datastreams,
   processingLevels,
   observedProperties,
-  selectedThings,
+  selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
@@ -208,13 +208,13 @@ const {
 const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const searchWorkspace = ref('')
-const searchThing = ref('')
+const searchMonitoringSite = ref('')
 const searchObservedProperty = ref('')
 const searchProcessingLevel = ref('')
 const totalWorkspacesCount = computed(() => {
   const workspaceIds = new Set<string>()
   datastreams.value.forEach((ds) => {
-    const workspaceId = dataVisStore.thingById.get(ds.thingId)?.workspaceId
+    const workspaceId = dataVisStore.monitoringSiteById.get(ds.monitoringSiteId)?.workspaceId
     if (workspaceId) {
       workspaceIds.add(workspaceId)
     }
@@ -224,12 +224,12 @@ const totalWorkspacesCount = computed(() => {
     .length
 })
 
-const totalThingsCount = computed(() => {
+const totalMonitoringSitesCount = computed(() => {
   const ids = new Set<string>()
   datastreams.value.forEach((ds) => {
-    if (ds.thingId) ids.add(ds.thingId)
+    if (ds.monitoringSiteId) ids.add(ds.monitoringSiteId)
   })
-  return things.value.filter((thing) => ids.has(thing.id)).length
+  return monitoringSites.value.filter((monitoringSite) => ids.has(monitoringSite.id)).length
 })
 
 const totalObservedPropertyNamesCount = computed(() => {
@@ -255,14 +255,14 @@ const sortedWorkspaces = computed(() => {
 
   datastreams.value.forEach((ds) => {
     if (
-      !matchesSelectedThing(ds) ||
+      !matchesSelectedMonitoringSite(ds) ||
       !matchesSelectedObservedProperty(ds) ||
       !matchesSelectedProcessingLevel(ds)
     ) {
       return
     }
 
-    const workspaceId = dataVisStore.thingById.get(ds.thingId)?.workspaceId
+    const workspaceId = dataVisStore.monitoringSiteById.get(ds.monitoringSiteId)?.workspaceId
     if (workspaceId) workspaceIds.add(workspaceId)
   })
 
@@ -276,7 +276,7 @@ const sortedProcessingLevelNames = computed(() => {
 
   datastreams.value.forEach((ds) => {
     if (
-      !matchesSelectedThing(ds) ||
+      !matchesSelectedMonitoringSite(ds) ||
       !matchesSelectedObservedProperty(ds) ||
       !matchesSelectedWorkspace(ds)
     ) {
@@ -294,8 +294,8 @@ const sortedProcessingLevelNames = computed(() => {
   return [...names].sort()
 })
 
-const sortedThings = computed(() => {
-  const thingIds = new Set<string>()
+const sortedMonitoringSites = computed(() => {
+  const monitoringSiteIds = new Set<string>()
 
   datastreams.value.forEach((ds) => {
     if (
@@ -306,11 +306,11 @@ const sortedThings = computed(() => {
       return
     }
 
-    thingIds.add(ds.thingId)
+    monitoringSiteIds.add(ds.monitoringSiteId)
   })
 
-  return things.value
-    .filter((thing) => thingIds.has(thing.id))
+  return monitoringSites.value
+    .filter((monitoringSite) => monitoringSiteIds.has(monitoringSite.id))
     .sort((a, b) => a.name.localeCompare(b.name))
 })
 
@@ -319,7 +319,7 @@ const sortedObservedPropertyNames = computed(() => {
 
   datastreams.value.forEach((ds) => {
     if (
-      !matchesSelectedThing(ds) ||
+      !matchesSelectedMonitoringSite(ds) ||
       !matchesSelectedProcessingLevel(ds) ||
       !matchesSelectedWorkspace(ds)
     ) {
@@ -342,13 +342,13 @@ const emit = defineEmits<{
 }>()
 
 const clearFilters = () => {
-  selectedThings.value = []
+  selectedMonitoringSites.value = []
   selectedWorkspaces.value = []
   selectedObservedPropertyNames.value = []
   selectedProcessingLevelNames.value = []
 
   searchWorkspace.value = ''
-  searchThing.value = ''
+  searchMonitoringSite.value = ''
   searchObservedProperty.value = ''
   searchProcessingLevel.value = ''
 }

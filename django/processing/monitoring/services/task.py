@@ -19,7 +19,7 @@ from core.types import Unset
 from core.iam.models import ServiceAccount, Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.service import ServiceUtils
-from core.sta.models import Thing
+from core.sta.models import MonitoringSite
 from core.sta.models.observation import Observation
 from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL
 from processing.orchestration.services import TaskService
@@ -42,8 +42,8 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     task_model = MonitoringTask
 
     order_by_fields = {
-        "id", "name", "thing_id", "thing__name",
-        "thing__workspace_id", "thing__workspace__name",
+        "id", "name", "monitoring_site_id", "monitoring_site__name",
+        "monitoring_site__workspace_id", "monitoring_site__workspace__name",
         "latest_run_status", "latest_run_started_at", "latest_run_finished_at",
     }
 
@@ -62,11 +62,11 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         queryset = (
             self.annotate_latest_run(self.task_model.objects)
-            .select_related("thing", "periodic_task__crontab", "periodic_task__interval")
+            .select_related("monitoring_site", "periodic_task__crontab", "periodic_task__interval")
         )
 
         if expand_related:
-            queryset = queryset.select_related("thing__workspace").prefetch_related(
+            queryset = queryset.select_related("monitoring_site__workspace").prefetch_related(
                 "rules__datastream", "rules__datastream__datastream_tags",
                 "rules__datastream__datastream_file_attachments", "recipients"
             )
@@ -83,7 +83,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         page_size: int = Field(gt=0, default=100),
         order_by: list[str] = Field(default_factory=list),
         search_term: str | Unset = Unset,
-        thing: list[uuid.UUID | Thing] | Unset = Unset,
+        monitoring_site: list[uuid.UUID | MonitoringSite] | Unset = Unset,
         workspace: list[uuid.UUID | Workspace] | Unset = Unset,
         latest_run_status: list[str] | Unset = Unset,
         datastream: list[uuid.UUID] | Unset = Unset,
@@ -102,14 +102,14 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             queryset = self.annotate_latest_run(queryset, fields=self.latest_run_filter_fields)
 
         if search_term is not Unset:
-            search_vector = SearchVector("name", "description", "thing__name")
+            search_vector = SearchVector("name", "description", "monitoring_site__name")
             queryset = queryset.annotate(search=search_vector).filter(search=SearchQuery(search_term))
 
-        if thing is not Unset:
-            queryset = queryset.filter(thing__in=[getattr(t, "pk", t) for t in thing])
+        if monitoring_site is not Unset:
+            queryset = queryset.filter(monitoring_site__in=[getattr(t, "pk", t) for t in monitoring_site])
 
         if workspace is not Unset:
-            queryset = queryset.filter(thing__workspace__in=[getattr(w, "pk", w) for w in workspace])
+            queryset = queryset.filter(monitoring_site__workspace__in=[getattr(w, "pk", w) for w in workspace])
 
         if latest_run_status is not Unset:
             queryset = queryset.filter(latest_run_status__in=latest_run_status)
@@ -127,14 +127,14 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
 
         if expand_related:
             queryset = (queryset.select_related(
-                "thing", "thing__workspace", "periodic_task__crontab", "periodic_task__interval"
+                "monitoring_site", "monitoring_site__workspace", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related(
                 "rules__datastream", "rules__datastream__datastream_tags",
                 "rules__datastream__datastream_file_attachments", "recipients"
             ))
         else:
             queryset = queryset.select_related(
-                "thing", "periodic_task__crontab", "periodic_task__interval"
+                "monitoring_site", "periodic_task__crontab", "periodic_task__interval"
             ).prefetch_related("rules", "recipients")
 
         queryset = principal.filter_by_permission(queryset, "can_view").distinct()
@@ -150,7 +150,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
     def create(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
-        thing: uuid.UUID | Thing,
+        monitoring_site: uuid.UUID | MonitoringSite,
         name: str,
         uid: uuid.UUID = Field(default_factory=uuid.uuid7),
         description: str | None = None,
@@ -165,20 +165,20 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
         Create a monitoring task.
         """
 
-        if isinstance(thing, uuid.UUID):
+        if isinstance(monitoring_site, uuid.UUID):
             try:
-                thing = Thing.objects.select_related("workspace").get(pk=thing)
-            except Thing.DoesNotExist:
-                raise HttpError(404, "Thing does not exist.")
+                monitoring_site = MonitoringSite.objects.select_related("workspace").get(pk=monitoring_site)
+            except MonitoringSite.DoesNotExist:
+                raise HttpError(404, "MonitoringSite does not exist.")
 
-        if not principal.can_create("MonitoringTask", workspace=thing.workspace):
+        if not principal.can_create("MonitoringTask", workspace=monitoring_site.workspace):
             raise PermissionError("You do not have permission to create this task.")
 
         task = self.task_model.objects.create(
             pk=uid,
             name=name,
             description=description,
-            thing=thing,
+            monitoring_site=monitoring_site,
         )
 
         self.apply_schedule(
@@ -497,7 +497,7 @@ class MonitoringTaskService(TaskService[MonitoringTask], ServiceUtils):
             ]
 
         lines = [
-            f'Monitoring task "{task.name}" on thing "{task.thing.name}" detected issues during its latest run.',
+            f'Monitoring task "{task.name}" on monitoring_site "{task.monitoring_site.name}" detected issues during its latest run.',
             "",
             "Summary",
             "-------",

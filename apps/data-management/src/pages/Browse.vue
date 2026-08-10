@@ -2,17 +2,17 @@
   <div class="browse-page">
     <BrowseFilterTool
       class="browse-filter-overlay"
-      :things="things"
-      :things-loaded="loaded"
-      :selected-site-id="selectedThingId"
+      :monitoringSites="monitoringSites"
+      :monitoringSites-loaded="loaded"
+      :selected-site-id="selectedMonitoringSiteId"
       :show-my-sites-filter="hs.session.isAuthenticated"
       :my-workspace-ids="myWorkspaceIds"
       :show-register-site="hs.session.isAuthenticated"
       :can-register-site="canRegisterSite"
       :editable-workspace-ids="editableWorkspaceIds"
       :deletable-workspace-ids="deletableWorkspaceIds"
-      @filter="updateFilteredThings"
-      @select-site="selectedThingId = $event"
+      @filter="updateFilteredMonitoringSites"
+      @select-site="selectedMonitoringSiteId = $event"
       @color-settings="markerColorSettings = $event"
       @register-site="openSiteRegistration"
       @edit-site="openSiteEditor"
@@ -22,13 +22,13 @@
       v-if="loaded"
       class="browse-map"
       selectable
-      :things="filteredThings"
+      :monitoringSites="filteredMonitoringSites"
       :fit-padding="mapFitPadding"
-      :selected-thing-id="selectedThingId"
+      :selected-monitoring-site-id="selectedMonitoringSiteId"
       :color-mode="markerColorSettings.mode"
       :color-key="markerColorSettings.key"
       :color-labels="markerColorSettings.labels"
-      @select="selectedThingId = $event"
+      @select="selectedMonitoringSiteId = $event"
     />
     <FullScreenLoader v-else loading-text="Loading map..." />
 
@@ -37,7 +37,7 @@
         v-if="registrationWorkspaceId"
         :workspace-id="registrationWorkspaceId"
         @close="closeSiteRegistration"
-        @site-created="loadThings"
+        @site-created="loadMonitoringSites"
       >
         <template #workspace>
           <v-card-text class="pb-2">
@@ -58,7 +58,7 @@
     <v-dialog v-model="showEditSiteForm" width="80rem" :persistent="false">
       <SiteForm
         v-if="editingSite"
-        :thing-id="editingSite.id"
+        :monitoring-site-id="editingSite.id"
         :workspace-id="editingSite.workspaceId"
         @close="closeSiteEditor"
       />
@@ -67,7 +67,7 @@
     <v-dialog v-model="showDeleteSiteDialog" width="40rem" :persistent="false">
       <SiteDeleteModal
         v-if="deletingSite"
-        :thing="deletingSite"
+        :monitoringSite="deletingSite"
         @switch-to-access-control="switchToAccessControl"
         @close="closeSiteDeletion"
         @delete="deleteSite"
@@ -81,7 +81,7 @@
     >
       <SiteAccessControl
         v-if="deletingSite"
-        :thing-id="deletingSite.id"
+        :monitoring-site-id="deletingSite.id"
         @close="closeAccessControl"
       />
     </v-dialog>
@@ -98,10 +98,10 @@ import SiteForm from '@/components/Site/SiteForm.vue'
 import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
 import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
 import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
-import type { Thing, ThingSiteSummary } from '@hydroserver/client'
+import type { MonitoringSite, MonitoringSiteMapSummary } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useTagStore } from '@/store/tags'
 import { usePhotosStore } from '@/store/photos'
 import { Snackbar } from '@/utils/notifications'
@@ -111,15 +111,15 @@ const compactMapFitPadding: [number, number, number, number] = [72, 48, 72, 48]
 
 const workspaceStore = useWorkspaceStore()
 const { workspaces, selectedWorkspace } = storeToRefs(workspaceStore)
-const { thing: storedThing } = storeToRefs(useThingStore())
+const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags, previewTags } = storeToRefs(useTagStore())
 const { photos, newPhotos, photosToDelete } = storeToRefs(usePhotosStore())
 const { setWorkspaces } = workspaceStore
 const { hasPermission } = useWorkspacePermissions()
 
-const things = ref<ThingSiteSummary[]>([])
-const filteredThings = ref<ThingSiteSummary[]>([])
-const selectedThingId = ref<string>()
+const monitoringSites = ref<MonitoringSiteMapSummary[]>([])
+const filteredMonitoringSites = ref<MonitoringSiteMapSummary[]>([])
+const selectedMonitoringSiteId = ref<string>()
 const markerColorSettings = ref<MarkerColorSettings>({
   mode: 'none',
   key: '',
@@ -130,38 +130,38 @@ const isCompactMapViewport = ref(false)
 const showSiteForm = ref(false)
 const registrationWorkspaceId = ref('')
 const showEditSiteForm = ref(false)
-const editingSite = ref<ThingSiteSummary>()
+const editingSite = ref<MonitoringSiteMapSummary>()
 const showDeleteSiteDialog = ref(false)
-const deletingSite = ref<Thing>()
+const deletingSite = ref<MonitoringSite>()
 const showAccessControlDialog = ref(false)
 
 interface MarkerColorSettings {
-  mode: 'none' | 'workspace' | 'siteType' | 'metadata'
+  mode: 'none' | 'workspace' | 'type' | 'metadata'
   key: string
   labels: Record<string, string>
 }
 
 const creatableWorkspaces = computed(() =>
   workspaces.value.filter((workspace) =>
-    hasPermission(PermissionResource.Thing, PermissionAction.Create, workspace)
+    hasPermission(PermissionResource.MonitoringSite, PermissionAction.Create, workspace)
   )
 )
 const canRegisterSite = computed(() => creatableWorkspaces.value.length > 0)
 const hasSitePermission = (
-  site: ThingSiteSummary,
+  site: MonitoringSiteMapSummary,
   action: PermissionAction
 ) => {
   const workspace = workspaces.value.find(
     (candidate) => candidate.id === site.workspaceId
   )
   return workspace
-    ? hasPermission(PermissionResource.Thing, action, workspace)
+    ? hasPermission(PermissionResource.MonitoringSite, action, workspace)
     : false
 }
 const editableWorkspaceIds = computed(() =>
   workspaces.value
     .filter((workspace) =>
-      hasPermission(PermissionResource.Thing, PermissionAction.Edit, workspace)
+      hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit, workspace)
     )
     .map((workspace) => workspace.id)
 )
@@ -169,7 +169,7 @@ const deletableWorkspaceIds = computed(() =>
   workspaces.value
     .filter((workspace) =>
       hasPermission(
-        PermissionResource.Thing,
+        PermissionResource.MonitoringSite,
         PermissionAction.Delete,
         workspace
       )
@@ -190,19 +190,19 @@ const updateCompactMapViewport = (event?: MediaQueryListEvent) => {
     event?.matches ?? compactMapQuery?.matches ?? false
 }
 
-const updateFilteredThings = (updatedThings: ThingSiteSummary[]) => {
-  filteredThings.value = updatedThings
+const updateFilteredMonitoringSites = (updatedMonitoringSites: MonitoringSiteMapSummary[]) => {
+  filteredMonitoringSites.value = updatedMonitoringSites
   if (
-    selectedThingId.value &&
-    !updatedThings.some((thing) => thing.id === selectedThingId.value)
+    selectedMonitoringSiteId.value &&
+    !updatedMonitoringSites.some((monitoringSite) => monitoringSite.id === selectedMonitoringSiteId.value)
   ) {
-    selectedThingId.value = undefined
+    selectedMonitoringSiteId.value = undefined
   }
 }
 
-const loadThings = async () => {
-  const res = await hs.things.listSiteSummaries()
-  filteredThings.value = things.value = res.ok ? res.data : []
+const loadMonitoringSites = async () => {
+  const res = await hs.monitoringSites.listSiteSummaries()
+  filteredMonitoringSites.value = monitoringSites.value = res.ok ? res.data : []
 }
 
 const loadAssociatedWorkspaces = async () => {
@@ -233,11 +233,11 @@ const openSiteRegistration = () => {
 const closeSiteRegistration = async () => {
   showSiteForm.value = false
   resetSiteFormContext()
-  await loadThings()
+  await loadMonitoringSites()
 }
 
 const resetSiteFormContext = () => {
-  storedThing.value = undefined
+  storedMonitoringSite.value = undefined
   tags.value = []
   previewTags.value = []
   photos.value = []
@@ -245,10 +245,10 @@ const resetSiteFormContext = () => {
   photosToDelete.value = []
 }
 
-const fetchSite = async (site: ThingSiteSummary) => {
+const fetchSite = async (site: MonitoringSiteMapSummary) => {
   try {
-    const thing = await hs.things.getItem(site.id)
-    if (thing) return thing
+    const monitoringSite = await hs.monitoringSites.getItem(site.id)
+    if (monitoringSite) return monitoringSite
   } catch (error) {
     console.error('Error fetching site', error)
   }
@@ -257,21 +257,21 @@ const fetchSite = async (site: ThingSiteSummary) => {
   return null
 }
 
-const openSiteEditor = async (site: ThingSiteSummary) => {
+const openSiteEditor = async (site: MonitoringSiteMapSummary) => {
   if (!hasSitePermission(site, PermissionAction.Edit)) return
 
   try {
-    const [thing, tagResponse, attachmentResponse] = await Promise.all([
-      hs.things.getItem(site.id),
-      hs.things.getTags(site.id),
-      hs.things.getAttachments(site.id),
+    const [monitoringSite, tagResponse, attachmentResponse] = await Promise.all([
+      hs.monitoringSites.getItem(site.id),
+      hs.monitoringSites.getTags(site.id),
+      hs.monitoringSites.getAttachments(site.id),
     ])
-    if (!thing || !tagResponse.ok || !attachmentResponse.ok) {
+    if (!monitoringSite || !tagResponse.ok || !attachmentResponse.ok) {
       throw new Error('The site editing context could not be loaded.')
     }
 
     resetSiteFormContext()
-    storedThing.value = thing
+    storedMonitoringSite.value = monitoringSite
     tags.value = tagResponse.data
     photos.value = attachmentResponse.data
     editingSite.value = site
@@ -286,17 +286,17 @@ const closeSiteEditor = async () => {
   showEditSiteForm.value = false
   editingSite.value = undefined
   resetSiteFormContext()
-  await loadThings()
+  await loadMonitoringSites()
 }
 
-const openSiteDeletion = async (site: ThingSiteSummary) => {
+const openSiteDeletion = async (site: MonitoringSiteMapSummary) => {
   if (!hasSitePermission(site, PermissionAction.Delete)) return
 
-  const thing = await fetchSite(site)
-  if (!thing) return
+  const monitoringSite = await fetchSite(site)
+  if (!monitoringSite) return
 
-  storedThing.value = thing
-  deletingSite.value = thing
+  storedMonitoringSite.value = monitoringSite
+  deletingSite.value = monitoringSite
   showDeleteSiteDialog.value = true
 }
 
@@ -310,12 +310,12 @@ const deleteSite = async () => {
 
   const siteId = deletingSite.value.id
   try {
-    const response = await hs.things.delete(siteId)
+    const response = await hs.monitoringSites.delete(siteId)
     if (!response.ok) throw new Error(response.message)
 
-    if (selectedThingId.value === siteId) selectedThingId.value = undefined
+    if (selectedMonitoringSiteId.value === siteId) selectedMonitoringSiteId.value = undefined
     closeSiteDeletion()
-    await loadThings()
+    await loadMonitoringSites()
     Snackbar.success('Site deleted.')
   } catch (error) {
     console.error('Error deleting site', error)
@@ -331,7 +331,7 @@ const switchToAccessControl = () => {
 const closeAccessControl = async () => {
   showAccessControlDialog.value = false
   deletingSite.value = undefined
-  await loadThings()
+  await loadMonitoringSites()
 }
 
 onMounted(async () => {
@@ -339,7 +339,7 @@ onMounted(async () => {
   updateCompactMapViewport()
   compactMapQuery.addEventListener('change', updateCompactMapViewport)
 
-  await Promise.all([loadThings(), loadAssociatedWorkspaces()])
+  await Promise.all([loadMonitoringSites(), loadAssociatedWorkspaces()])
 
   await new Promise((r) => setTimeout(r, 100))
   loaded.value = true

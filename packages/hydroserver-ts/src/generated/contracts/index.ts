@@ -1,5 +1,5 @@
 export { WorkspaceContract } from './workspaces.contract'
-export { ThingContract } from './things.contract'
+export { MonitoringSiteContract } from './monitoring-sites.contract'
 export { DatastreamContract } from './datastreams.contract'
 export { UnitContract } from './units.contract'
 export { SensorContract } from './sensors.contract'

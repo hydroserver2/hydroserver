@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
-from tests.core.sta.factories import DatastreamFactory, ObservationFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, ObservationFactory, MonitoringSiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -56,8 +56,8 @@ def _observation_post_body(datastream_id, **overrides):
 
 def test_post_observation_returns_403_for_anonymous(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
-    datastream = DatastreamFactory(thing=thing)
+    thing = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=thing)
 
     response = client.post(
         OBSERVATIONS_URL,
@@ -71,8 +71,8 @@ def test_post_observation_returns_403_for_anonymous(client):
 def test_post_observation_succeeds_for_authenticated_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
-    datastream = DatastreamFactory(thing=thing)
+    thing = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=thing)
     client.force_login(owner)
 
     response = client.post(
@@ -102,8 +102,8 @@ def _create_observations_body(datastream_id, **overrides):
 
 def test_create_observations_returns_error_marker_for_anonymous(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
-    datastream = DatastreamFactory(thing=thing)
+    thing = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=thing)
 
     response = client.post(
         CREATE_OBSERVATIONS_URL,
@@ -118,8 +118,8 @@ def test_create_observations_returns_error_marker_for_anonymous(client):
 def test_create_observations_succeeds_for_authenticated_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
-    datastream = DatastreamFactory(thing=thing)
+    thing = MonitoringSiteFactory(workspace=workspace)
+    datastream = DatastreamFactory(monitoring_site=thing)
     client.force_login(owner)
 
     response = client.post(

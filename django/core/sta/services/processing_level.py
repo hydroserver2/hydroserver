@@ -73,7 +73,7 @@ class ProcessingLevelService(ServiceUtils):
 
         for field in [
             "workspace_id",
-            "datastreams__thing_id",
+            "datastreams__monitoring_site_id",
             "datastreams__id",
         ]:
             if field in filtering:

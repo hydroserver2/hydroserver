@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from processing.etl.loader import HydroServerInternalLoader
 from hydroserverpy.etl.exceptions import ETLError
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.etl.factories import EtlTaskFactory
 
 
@@ -62,7 +62,7 @@ class TestHydroServerInternalLoaderPhenomenonEndTimeFallback:
 
     def test_skips_observations_at_or_before_phenomenon_end_time(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -75,7 +75,7 @@ class TestHydroServerInternalLoaderPhenomenonEndTimeFallback:
 
     def test_skips_target_with_no_observations_after_cutoff(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(
             target_id=ds1, timestamps=["2025-02-09T00:00:00Z", "2025-02-10T09:00:00Z"], values=[1.0, 2.0],
@@ -89,7 +89,7 @@ class TestHydroServerInternalLoaderPhenomenonEndTimeFallback:
 
     def test_mode_is_append_by_default(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -107,7 +107,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
 
     def test_window_start_is_inclusive(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -124,7 +124,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
         # No phenomenon_end_time, so the fallback filter at loader.py doesn't apply and
         # only window_end bounds the result.
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=None,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=None,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -141,7 +141,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
         # phenomenon_end_time (CUTOFF) would normally exclude 2025-02-09 and 2025-02-10,
         # but an explicit window start takes priority and only bounds by the window itself.
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -153,7 +153,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
 
     def test_mode_is_insert_when_window_start_is_set(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -165,7 +165,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
 
     def test_replace_mode_issues_single_delete_over_full_range_before_inserting(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -182,7 +182,7 @@ class TestHydroServerInternalLoaderDataIngestionWindow:
 
     def test_replace_mode_skips_inserts_when_delete_fails(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(target_id=ds1)
 
@@ -208,10 +208,10 @@ class TestHydroServerInternalLoaderMultiTargetPrefilter:
         # the earliest/minimum cutoff) must not cause DS2 to load a row that
         # falls before DS2's own, later cutoff.
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         ds2 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace),
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace),
             phenomenon_end_time=CUTOFF + timedelta(days=1),
         ).pk)
         payload = pd.concat(
@@ -232,10 +232,10 @@ class TestHydroServerInternalLoaderMultiTargetPrefilter:
         # trim DS2's row even though DS2 has never been loaded and should
         # receive everything, including timestamps before DS1's cutoff.
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         ds2 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=None,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=None,
         ).pk)
         payload = pd.concat(
             [
@@ -272,7 +272,7 @@ class TestHydroServerInternalLoaderChunking:
 
     def test_uploads_in_multiple_chunks_when_over_chunk_size(self, task_instance):
         ds1 = str(DatastreamFactory(
-            thing=ThingFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
+            monitoring_site=MonitoringSiteFactory(workspace=task_instance.workspace), phenomenon_end_time=CUTOFF,
         ).pk)
         payload = _make_payload(
             target_id=ds1,

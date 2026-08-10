@@ -189,7 +189,7 @@ function buildMethod(
 // resources you already emit contracts for (keep in sync with contracts generator)
 const resources = [
   'workspaces',
-  'things',
+  'monitoring-sites',
   'datastreams',
   'units',
   'sensors',

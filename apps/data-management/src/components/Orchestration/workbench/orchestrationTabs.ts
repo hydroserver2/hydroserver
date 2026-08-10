@@ -63,7 +63,7 @@ export type TaskRow = {
   nextRunAt: string | null
   lastRunMessage: string
   dataConnectionId: string | null
-  thingId: string | null
+  monitoringSiteId: string | null
   taskType: DataProductTaskType
   qualityRuleSummary?: string
   qualityRuleCount?: number

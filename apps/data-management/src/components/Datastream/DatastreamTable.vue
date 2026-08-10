@@ -1,6 +1,6 @@
 <template>
   <h6 class="text-h6" style="color: #b71c1c">
-    {{ thing!.dataDisclaimer }}
+    {{ monitoringSite!.dataDisclaimer }}
   </h6>
 
   <v-card ref="datastreamSectionRef">
@@ -26,7 +26,7 @@
           color="white"
           variant="outlined"
           :prependIcon="mdiChartLine"
-          :to="{ name: 'VisualizeData', query: { sites: thing!.id } }"
+          :to="{ name: 'VisualizeData', query: { sites: monitoringSite!.id } }"
           >View on Data Visualization Page</v-btn
         >
         <v-btn-add
@@ -467,7 +467,7 @@
                   :data-testid="`visualize-datastream-${item.id}`"
                   :to="{
                     name: 'VisualizeData',
-                    query: { sites: item.thingId, datastreams: item.id },
+                    query: { sites: item.monitoringSiteId, datastreams: item.id },
                   }"
                 />
                 <v-list-item
@@ -774,7 +774,7 @@
                     :data-testid="`visualize-datastream-${item.id}`"
                     :to="{
                       name: 'VisualizeData',
-                      query: { sites: item.thingId, datastreams: item.id },
+                      query: { sites: item.monitoringSiteId, datastreams: item.id },
                     }"
                   />
                   <v-list-item
@@ -978,7 +978,7 @@
 
   <v-dialog v-model="openCreate" width="80rem">
     <DatastreamForm
-      :thing="thing!"
+      :monitoringSite="monitoringSite!"
       :workspace="workspace"
       @close="openCreate = false"
       @created="onCreated"
@@ -987,7 +987,7 @@
 
   <v-dialog v-model="openEdit" width="80rem">
     <DatastreamForm
-      :thing="thing!"
+      :monitoringSite="monitoringSite!"
       :workspace="workspace"
       :datastream="item"
       @close="openEdit = false"
@@ -1014,11 +1014,11 @@
   <v-dialog
     v-model="openInfoCard"
     width="50rem"
-    v-if="selectedDatastream && thing"
+    v-if="selectedDatastream && monitoringSite"
   >
     <DatastreamTableInfoCard
       :datastream="selectedDatastream"
-      :thing="thing"
+      :monitoringSite="monitoringSite"
       @close="openInfoCard = false"
     />
   </v-dialog>
@@ -1040,7 +1040,7 @@ import {
 } from 'vue'
 import { useMetadata } from '@/composables/useMetadata'
 import { storeToRefs } from 'pinia'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Datastream, Workspace, type StatusType } from '@hydroserver/client'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
@@ -1114,10 +1114,10 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
   lastRunStatus: StatusType
 }
 
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const openCreate = ref(false)
 const workspaceRef = toRef(props, 'workspace')
-const thingIdRef = computed(() => thing.value!.id)
+const monitoringSiteIdRef = computed(() => monitoringSite.value!.id)
 const downloading = reactive<Record<string, boolean>>({})
 const search = ref()
 const datastreamSectionRef = ref<any>(null)
@@ -1181,11 +1181,11 @@ const onCreated = async () => {
 
 const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   useTableLogic(
-    async (thingId: string) =>
-      await hs.datastreams.listAllItems({ thing_id: [thingId] }),
+    async (monitoringSiteId: string) =>
+      await hs.datastreams.listAllItems({ monitoring_site_id: [monitoringSiteId] }),
     hs.datastreams.delete,
     Datastream,
-    thingIdRef
+    monitoringSiteIdRef
   )
 
 const { sensors, units, observedProperties, processingLevels, fetchMetadata } =
@@ -1542,7 +1542,7 @@ const siteScopedRoute = (task: any, name: string, view: string) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const siteId = task.thing?.id ?? task.thingId ?? thing.value?.id
+  const siteId = task.monitoringSite?.id ?? task.monitoringSiteId ?? monitoringSite.value?.id
   if (siteId) query.site_id = String(siteId)
 
   return { name, params: { view }, query }
@@ -1644,7 +1644,7 @@ const loadLinkedTasks = async () => {
   const requestId = ++linkedTasksRequestId
   linkedTasksLoaded.value = false
   linkedTasksErrored.value = false
-  const site = thing.value
+  const site = monitoringSite.value
   if (!canViewOrchestrationInfo.value || !site || !props.workspace?.id) {
     rawEtlTasks.value = []
     rawDataProductTasks.value = []
@@ -1655,17 +1655,17 @@ const loadLinkedTasks = async () => {
   try {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
-        thing_id: [site.id],
+        monitoring_site_id: [site.id],
         order_by: ['name'],
         expand_related: true,
       }),
       hs.dataProductTasks.listAllItems({
-        thing_id: [site.id],
+        monitoring_site_id: [site.id],
         order_by: ['name'],
         expand_related: true,
       }),
       hs.monitoringTasks.listAllItems({
-        thing_id: [site.id],
+        monitoring_site_id: [site.id],
         order_by: ['name'],
         expand_related: true,
       }),
@@ -1799,7 +1799,7 @@ const monitoringTasksByDatastreamId = computed<
 })
 
 watch(
-  [() => props.workspace.id, canViewOrchestrationInfo, thingIdRef],
+  [() => props.workspace.id, canViewOrchestrationInfo, monitoringSiteIdRef],
   () => {
     void loadLinkedTasks()
   },
@@ -1910,7 +1910,7 @@ async function onObservationsDelete() {
 const loadDatastreams = async () => {
   try {
     items.value = await hs.datastreams.listAllItems({
-      thing_id: [thing.value!.id],
+      monitoring_site_id: [monitoringSite.value!.id],
     })
   } catch (e) {
     console.error('Error fetching datastreams', e)

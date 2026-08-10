@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from hydroserverpy import HydroServer
     from hydroserverpy.api.models import (
         Workspace,
-        Thing,
+        MonitoringSite,
         Sensor,
         ObservedProperty,
         Unit,
@@ -41,7 +41,7 @@ class Datastream(HydroServerBaseModel):
     intended_time_spacing_unit: Optional[
         Literal["seconds", "minutes", "hours", "days"]
     ] = None
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     workspace_id: uuid.UUID
     sensor_id: uuid.UUID
     observed_property_id: uuid.UUID
@@ -54,7 +54,7 @@ class Datastream(HydroServerBaseModel):
         "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
         "time_aggregation_interval", "status", "result_type", "value_count", "phenomenon_begin_time",
         "phenomenon_end_time", "result_begin_time", "result_end_time", "is_private", "is_visible",
-        "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "thing_id",
+        "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
         "sensor_id", "observed_property_id", "processing_level_id", "unit_id"
     }
 
@@ -62,7 +62,7 @@ class Datastream(HydroServerBaseModel):
         super().__init__(client=client, service=client.datastreams, **data)
 
         self._workspace = None
-        self._thing = None
+        self._monitoring_site = None
         self._observed_property = None
         self._unit = None
         self._processing_level = None
@@ -82,21 +82,21 @@ class Datastream(HydroServerBaseModel):
         return self._workspace
 
     @property
-    def thing(self) -> "Thing":
-        """The thing this datastream belongs to."""
+    def monitoring_site(self) -> "MonitoringSite":
+        """The monitoring_site this datastream belongs to."""
 
-        if self._thing is None:
-            self._thing = self.client.things.get(uid=self.thing_id)
+        if self._monitoring_site is None:
+            self._monitoring_site = self.client.monitoring_sites.get(uid=self.monitoring_site_id)
 
-        return self._thing
+        return self._monitoring_site
 
-    @thing.setter
-    def thing(self, thing: Union["Thing", UUID, str] = ...):
-        if not thing:
-            raise ValueError("Thing of datastream cannot be None.")
-        if normalize_uuid(thing) != str(self.thing_id):
-            self.thing_id = normalize_uuid(thing)
-            self._thing = None
+    @monitoring_site.setter
+    def monitoring_site(self, monitoring_site: Union["MonitoringSite", UUID, str] = ...):
+        if not monitoring_site:
+            raise ValueError("MonitoringSite of datastream cannot be None.")
+        if normalize_uuid(monitoring_site) != str(self.monitoring_site_id):
+            self.monitoring_site_id = normalize_uuid(monitoring_site)
+            self._monitoring_site = None
 
     @property
     def sensor(self) -> "Sensor":

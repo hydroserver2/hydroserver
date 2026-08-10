@@ -21,27 +21,29 @@ class SensorThingsUtils:
             return None
         return f"{begin.isoformat()}/{end.isoformat()}"
 
-    def transform_model_field(self, component, prop):
-        if component.__name__ == "Thing":
+    def transform_model_field(self, component, prop, entity_name=None):
+        component_name = entity_name or component.__name__
+
+        if component_name == "Thing":
             return {
-                "properties__samplingFeatureType": "sampling_feature_type",
-                "properties__samplingFeatureCode": "sampling_feature_code",
-                "properties__siteType": "site_type",
+                "properties__code": "code",
+                "properties__type": "type",
                 "properties__dataDisclaimer": "data_disclaimer",
                 "properties__isPrivate": "is_private",
                 "properties__workspace__id": "workspace_id",
                 "properties__workspace__name": "workspace__name",
                 "properties__workspace__isPrivate": "workspace__is_private",
-                "Location__id": "locations__id",
+                "Location__id": "id",
             }.get(prop, prop)
 
-        elif component.__name__ == "Location":
+        elif component_name == "Location":
             return {
-                "properties__workspace__id": "thing__workspace_id",
-                "properties__workspace__name": "thing__workspace__name",
-                "properties__workspace__isPrivate": "thing__workspace__is_private",
-                "Thing__id": "thing_id",
-            }.get(prop, f"location__{prop}")
+                "properties__workspace__id": "workspace_id",
+                "properties__workspace__name": "workspace__name",
+                "properties__workspace__isPrivate": "workspace__is_private",
+                "Thing__id": "id",
+                "location__coordinates": "id",
+            }.get(prop, prop)
 
         elif component.__name__ == "HistoricalLocation":
             return prop
@@ -71,7 +73,7 @@ class SensorThingsUtils:
 
         elif component.__name__ == "Datastream":
             related = {
-                "Thing": "thing",
+                "Thing": "monitoring_site",
                 "Sensor": "sensor",
                 "ObservedProperty": "observed_property",
             }
@@ -81,8 +83,13 @@ class SensorThingsUtils:
                     related[parent]
                     + "__"
                     + self.transform_model_field(
-                        component=getattr(sta_models, parent),
+                        component=(
+                            sta_models.MonitoringSite
+                            if parent == "Thing"
+                            else getattr(sta_models, parent)
+                        ),
                         prop="__".join(prop.split("__")[1:]),
+                        entity_name=parent,
                     )
                 )
             return {
@@ -91,9 +98,9 @@ class SensorThingsUtils:
                 "unitOfMeasurement__definition": "unit__definition",
                 "observationType": "observation_type",
                 "observedArea": "observed_area",
-                "properties__workspace__id": "thing__workspace_id",
-                "properties__workspace__name": "thing__workspace__name",
-                "properties__workspace__isPrivate": "thing__workspace__is_private",
+                "properties__workspace__id": "monitoring_site__workspace_id",
+                "properties__workspace__name": "monitoring_site__workspace__name",
+                "properties__workspace__isPrivate": "monitoring_site__workspace__is_private",
                 "properties__resultType": "result_type",
                 "properties__status": "status",
                 "properties__sampledMedium": "sampled_medium",
@@ -106,9 +113,6 @@ class SensorThingsUtils:
                 "properties__timeAggregationInterval": "time_aggregation_interval",
                 "properties__timeAggregationIntervalUnitOfMeasurement": "time_aggregation_interval_unit",
             }.get(prop, prop)
-
-        elif component.__name__ == "FeatureOfInterest":
-            return prop
 
         elif component.__name__ == "Observation":
             related = {
@@ -130,13 +134,15 @@ class SensorThingsUtils:
                 "resultTime": "result_time",
             }.get(prop, prop)
 
-    def apply_filters(self, queryset, component, filters):
+    def apply_filters(self, queryset, component, filters, entity_name=None):
         visitor = AstToDjangoQVisitor(component)
         query_filter = visitor.visit(filters)
 
         for prop in list(query_filter.flatten()):
             if isinstance(prop, F):
-                model_field = self.transform_model_field(component, prop.name)
+                model_field = self.transform_model_field(
+                    component, prop.name, entity_name=entity_name
+                )
                 prop.__dict__ = {
                     "_constructor_args": ((model_field,), {}),
                     "name": model_field,
@@ -146,14 +152,16 @@ class SensorThingsUtils:
         except FieldError:
             raise HttpError(422, "Failed to parse filter parameter.")
 
-    def apply_order(self, queryset, component, orderby):
+    def apply_order(self, queryset, component, orderby, entity_name=None):
         if not orderby:
             return queryset
 
         order_exprs = []
         for field in orderby:
             prop = "__".join(field.path)
-            model_field = self.transform_model_field(component, prop)
+            model_field = self.transform_model_field(
+                component, prop, entity_name=entity_name
+            )
             prefix = "-" if field.direction == OrderByDirection.DESC else ""
             order_exprs.append(f"{prefix}{model_field}")
 

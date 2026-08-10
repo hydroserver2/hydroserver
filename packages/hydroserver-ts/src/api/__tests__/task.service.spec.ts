@@ -96,7 +96,7 @@ describe('TaskService', () => {
         name: 'Range checks',
         description: null,
         recipients: [],
-        thing: { id: 'thing-1', name: 'Site 1' },
+        monitoringSite: { id: 'monitoringSite-1', name: 'Site 1' },
         monitoredDatastreams: [],
         schedule: null,
       })
@@ -107,7 +107,7 @@ describe('TaskService', () => {
     await client.monitoringTasks.create({
       id: '',
       name: 'Range checks',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
       schedule: null,
@@ -119,7 +119,7 @@ describe('TaskService', () => {
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       name: 'Range checks',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       description: null,
       recipients: [],
       schedule: null,

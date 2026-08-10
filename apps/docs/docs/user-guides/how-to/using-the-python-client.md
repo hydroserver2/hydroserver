@@ -105,7 +105,7 @@ Returned by `trigger()` and `list_runs()` across ETL tasks, data product tasks, 
 | `collaborators` | `List[Collaborator]` | No | Computed |
 | `apikeys` | `List[APIKey]` | No | Computed |
 | `roles` | `List[Role]` | No | Computed |
-| `things` | `List[Thing]` | No | Computed |
+| `monitoring_sites` | `List[MonitoringSite]` | No | Computed |
 | `observedproperties` | `List[ObservedProperty]` | No | Computed |
 | `units` | `List[Unit]` | No | Computed |
 | `processinglevels` | `List[ProcessingLevel]` | No | Computed |
@@ -178,20 +178,19 @@ hs_api.workspaces.create(name, is_private=False) -> Workspace
 
 ---
 
-## Things (Sites)
+## Monitoring Sites
 
-**Property:** `hs_api.things`
+**Property:** `hs_api.monitoring_sites`
 
-### Thing properties
+### MonitoringSite properties
 
 | Property | Type | Editable | Notes |
 |---|---|---|---|
 | `uid` | `UUID` | No | |
 | `name` | `str` | Yes | |
 | `description` | `str` | Yes | |
-| `sampling_feature_type` | `str` | Yes | |
-| `sampling_feature_code` | `str` | Yes | |
-| `site_type` | `str` | Yes | |
+| `code` | `str` | Yes | |
+| `type` | `str` | Yes | |
 | `data_disclaimer` | `str \| None` | Yes | |
 | `is_private` | `bool` | Yes | |
 | `latitude` | `float` | Yes | |
@@ -210,21 +209,20 @@ hs_api.workspaces.create(name, is_private=False) -> Workspace
 ### Service methods
 
 ```python
-hs_api.things.list(workspace=None, bbox=None, site_type=None, sampling_feature_type=None,
-                   tag=None, is_private=None) -> HydroServerCollection[Thing]
-hs_api.things.get(uid) -> Thing
-hs_api.things.create(workspace, name, description, sampling_feature_type, sampling_feature_code,
-                     site_type, is_private, latitude, longitude, elevation_m=None,
-                     elevation_datum=None, admin_area_1=None, admin_area_2=None,
-                     country=None, data_disclaimer=None, uid=None) -> Thing
+hs_api.monitoring_sites.list(workspace=None, bbox=None, type=None,
+                             tag=None, is_private=None) -> HydroServerCollection[MonitoringSite]
+hs_api.monitoring_sites.get(uid) -> MonitoringSite
+hs_api.monitoring_sites.create(workspace, name, description, code, type,
+                               is_private, latitude, longitude, elevation_m=None,
+                               elevation_datum=None, admin_area_1=None, admin_area_2=None,
+                               country=None, data_disclaimer=None, uid=None) -> MonitoringSite
 ```
 
 | Filter | Type | Description |
 |---|---|---|
 | `workspace` | `UUID \| str` | Filter by workspace |
 | `bbox` | `tuple` | `(min_lon, min_lat, max_lon, max_lat)` bounding box |
-| `site_type` | `str` | Filter by site type |
-| `sampling_feature_type` | `str` | Filter by sampling feature type |
+| `type` | `str` | Filter by site type |
 | `tag` | `tuple` | `(key, value)` filter by tag |
 | `is_private` | `bool` | Filter by privacy setting |
 
@@ -232,7 +230,7 @@ hs_api.things.create(workspace, name, description, sampling_feature_type, sampli
 
 | Method | Description |
 |---|---|
-| `add_tag(key, value)` | Add a tag to this thing |
+| `add_tag(key, value)` | Add a tag to this monitoring site |
 | `update_tag(key, value)` | Update an existing tag's value |
 | `delete_tag(key)` | Remove a tag |
 | `add_file_attachment(file, file_attachment_type)` | Upload a file; `file` is an open binary file object |
@@ -380,7 +378,7 @@ hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> Result
 | `result_end_time` | `datetime \| None` | Yes | |
 | `is_private` | `bool` | Yes | |
 | `is_visible` | `bool` | Yes | |
-| `thing_id` | `UUID` | Yes | |
+| `monitoring_site_id` | `UUID` | Yes | |
 | `sensor_id` | `UUID` | Yes | |
 | `observed_property_id` | `UUID` | Yes | |
 | `processing_level_id` | `UUID` | Yes | |
@@ -389,13 +387,13 @@ hs_api.resultqualifiers.create(workspace, code, description, uid=None) -> Result
 | `tags` | `Dict[str, str]` | No | Use tag methods to modify |
 | `file_attachments` | `Dict[str, dict]` | No | Use attachment methods to modify |
 | `workspace` | `Workspace` | No | Computed |
-| `thing` | `Thing` | No | Computed; also settable via assignment |
+| `monitoring_site` | `MonitoringSite` | No | Computed; also settable via assignment |
 | `sensor` | `Sensor` | No | Computed; also settable via assignment |
 | `observed_property` | `ObservedProperty` | No | Computed; also settable via assignment |
 | `unit` | `Unit` | No | Computed; also settable via assignment |
 | `processing_level` | `ProcessingLevel` | No | Computed; also settable via assignment |
 
-The computed relationship properties (`thing`, `sensor`, etc.) can be assigned directly — assigning a new value updates the corresponding `_id` field and clears the cache:
+The computed relationship properties (`monitoring_site`, `sensor`, etc.) can be assigned directly — assigning a new value updates the corresponding `_id` field and clears the cache:
 
 ```python
 datastream.sensor = new_sensor  # updates sensor_id and clears cached sensor
@@ -405,9 +403,9 @@ datastream.save()
 ### Service methods
 
 ```python
-hs_api.datastreams.list(workspace=None, thing=None) -> HydroServerCollection[Datastream]
+hs_api.datastreams.list(workspace=None, monitoring_site=None) -> HydroServerCollection[Datastream]
 hs_api.datastreams.get(uid) -> Datastream
-hs_api.datastreams.create(name, description, thing, sensor, observed_property, processing_level,
+hs_api.datastreams.create(name, description, monitoring_site, sensor, observed_property, processing_level,
                           unit, observation_type, result_type, sampled_medium, no_data_value,
                           aggregation_statistic, time_aggregation_interval,
                           time_aggregation_interval_unit, intended_time_spacing=None,
@@ -458,7 +456,7 @@ Deletes observations within the given time range. If both parameters are omitted
 
 ### Tag and file attachment methods
 
-Same as Things — `add_tag`, `update_tag`, `delete_tag`, `add_file_attachment`, `delete_file_attachment`.
+Same as monitoring sites — `add_tag`, `update_tag`, `delete_tag`, `add_file_attachment`, `delete_file_attachment`.
 
 ---
 
@@ -584,16 +582,16 @@ Mappings are a list of dicts with `source_identifier` and `target_datastream_id`
 | `name` | `str` | Yes | |
 | `description` | `str \| None` | Yes | |
 | `fitting_method` | `str` | Yes | `"linear"` or `"power_law"` |
-| `thing_id` | `UUID` | No | |
+| `monitoring_site_id` | `UUID` | No | |
 | `thing_name` | `str` | No | |
 | `points` | `List[Tuple[float, float]]` | Yes | List of `(input, output)` coordinate pairs |
 
 #### Service methods
 
 ```python
-hs_api.ratingcurves.list(workspace=None, thing=None) -> HydroServerCollection[RatingCurve]
+hs_api.ratingcurves.list(workspace=None, monitoring_site=None) -> HydroServerCollection[RatingCurve]
 hs_api.ratingcurves.get(uid) -> RatingCurve
-hs_api.ratingcurves.create(name, thing, fitting_method, description=None, points=None, uid=None) -> RatingCurve
+hs_api.ratingcurves.create(name, monitoring_site, fitting_method, description=None, points=None, uid=None) -> RatingCurve
 ```
 
 ---
@@ -609,7 +607,7 @@ hs_api.ratingcurves.create(name, thing, fitting_method, description=None, points
 | `uid` | `UUID` | No | |
 | `name` | `str` | Yes | |
 | `description` | `str \| None` | Yes | |
-| `thing_id` | `UUID` | No | |
+| `monitoring_site_id` | `UUID` | No | |
 | `thing_name` | `str` | No | |
 | `enabled` | `bool \| None` | Yes | |
 | `start_time` | `datetime \| None` | Yes | |
@@ -627,12 +625,12 @@ hs_api.ratingcurves.create(name, thing, fitting_method, description=None, points
 
 ```python
 hs_api.dataproducttasks.list(
-    workspace=None, thing=None, latest_run_status=None, transformation_type=None,
+    workspace=None, monitoring_site=None, latest_run_status=None, transformation_type=None,
     output_datastream=None, input_datastream=None, rating_curve=None,
 ) -> HydroServerCollection[DataProductTask]
 hs_api.dataproducttasks.get(uid) -> DataProductTask
 hs_api.dataproducttasks.create(
-    name, thing, description=None, crontab=None, interval=None,
+    name, monitoring_site, description=None, crontab=None, interval=None,
     interval_period=None, start_time=None, enabled=True, uid=None
 ) -> DataProductTask
 ```
@@ -762,7 +760,7 @@ hs_api.dataproducttransformations.delete_aggregation(task_id, uid)
 | `uid` | `UUID` | No | |
 | `name` | `str` | Yes | |
 | `description` | `str \| None` | Yes | |
-| `thing_id` | `UUID` | No | |
+| `monitoring_site_id` | `UUID` | No | |
 | `thing_name` | `str` | No | |
 | `recipients` | `List[str]` | Yes | Email addresses to alert |
 | `enabled` | `bool \| None` | Yes | |
@@ -781,12 +779,12 @@ hs_api.dataproducttransformations.delete_aggregation(task_id, uid)
 
 ```python
 hs_api.monitoringtasks.list(
-    workspace=None, thing=None, latest_run_status=None,
+    workspace=None, monitoring_site=None, latest_run_status=None,
     datastream=None, rule_type=None,
 ) -> HydroServerCollection[MonitoringTask]
 hs_api.monitoringtasks.get(uid) -> MonitoringTask
 hs_api.monitoringtasks.create(
-    name, thing, description=None, recipients=None,
+    name, monitoring_site, description=None, recipients=None,
     crontab=None, interval=None, interval_period=None,
     start_time=None, enabled=True, uid=None
 ) -> MonitoringTask

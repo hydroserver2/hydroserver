@@ -30,30 +30,30 @@
     </div>
 
     <div
-      v-if="uniqueColoredThings.length"
+      v-if="uniqueColoredMonitoringSites.length"
       class="legend"
       :class="{ 'legend--browse': selectable }"
       data-testid="map-marker-legend"
     >
       <h3>{{ legendTitle }}</h3>
       <ul>
-        <li v-for="thing in uniqueColoredThings" :key="thing.tagValue">
+        <li v-for="monitoringSite in uniqueColoredMonitoringSites" :key="monitoringSite.tagValue">
           <v-icon
             :icon="mdiMapMarker"
-            :style="{ color: thing.color?.background }"
+            :style="{ color: monitoringSite.color?.background }"
           ></v-icon>
-          {{ getLegendLabel(thing.tagValue) }}
+          {{ getLegendLabel(monitoringSite.tagValue) }}
         </li>
       </ul>
     </div>
 
     <transition name="detail-card">
-      <div v-if="selectable && detailThing" class="site-detail-card">
+      <div v-if="selectable && detailMonitoringSite" class="site-detail-card">
         <div class="detail-accent" />
         <div class="detail-body">
           <div class="detail-header">
             <div class="detail-heading">
-              <h2 class="detail-name">{{ detailThing.name }}</h2>
+              <h2 class="detail-name">{{ detailMonitoringSite.name }}</h2>
               <div v-if="detailSubtitle" class="detail-meta">
                 <v-icon
                   :icon="detailSiteTypeIcon"
@@ -85,7 +85,7 @@
               variant="flat"
               style="flex: 1"
               :append-icon="mdiChevronRight"
-              :to="{ name: 'SiteDetails', params: { id: detailThing.id } }"
+              :to="{ name: 'SiteDetails', params: { id: detailMonitoringSite.id } }"
             >
               View details
             </v-btn>
@@ -106,8 +106,8 @@ import {
   type PropType,
 } from 'vue'
 import { storeToRefs } from 'pinia'
-import hs, { Thing } from '@hydroserver/client'
-import { MapThing, MapThingWithColor } from '@/types'
+import hs, { MonitoringSite } from '@hydroserver/client'
+import { MapMonitoringSite, MapMonitoringSiteWithColor } from '@/types'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import {
   buildSiteTypeIconRules,
@@ -118,8 +118,8 @@ import {
   addSiteTypeColorToMarkers,
   addWorkspaceColorToMarkers,
   generateMarkerContent,
-  hasThingTags,
-  isThingMarker,
+  hasMonitoringSiteTags,
+  isMonitoringSiteMarker,
 } from '@/utils/maps/markers'
 import OlMap from 'ol/Map'
 import View from 'ol/View'
@@ -140,13 +140,13 @@ import { OSM, XYZ } from 'ol/source'
 import { mdiMapMarker, mdiChevronRight, mdiClose } from '@mdi/js'
 
 const props = defineProps({
-  things: {
-    type: Array as PropType<MapThing[]>,
+  monitoringSites: {
+    type: Array as PropType<MapMonitoringSite[]>,
     default: () => [],
   },
   colorKey: { type: String, default: '' },
   colorMode: {
-    type: String as PropType<'none' | 'workspace' | 'siteType' | 'metadata'>,
+    type: String as PropType<'none' | 'workspace' | 'type' | 'metadata'>,
     default: 'none',
   },
   colorLabels: {
@@ -159,7 +159,7 @@ const props = defineProps({
     type: Array as unknown as PropType<[number, number, number, number]>,
     default: () => [100, 100, 100, 100],
   },
-  selectedThingId: {
+  selectedMonitoringSiteId: {
     type: String,
     default: undefined,
   },
@@ -218,22 +218,22 @@ const popupContent = ref<HTMLElement>()
 const popupCloser = ref<HTMLElement>()
 const selectionLabelContainer = ref<HTMLElement>()
 
-const coloredThings = ref<MapThingWithColor[]>([])
+const coloredMonitoringSites = ref<MapMonitoringSiteWithColor[]>([])
 const selectedTileSourceName = ref<string>(basemapTileSources[0].name)
-const detailedThingCache = new Map<string, Thing>()
+const detailedMonitoringSiteCache = new Map<string, MonitoringSite>()
 
 let map: OlMap
 let rasterLayer: TileLayer
 let popupOverlay: Overlay | undefined
 let selectionLabelOverlay: Overlay | undefined
-let selectedThingTransitionId = 0
+let selectedMonitoringSiteTransitionId = 0
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
 const markerLayer = ref<WebGLVectorLayer>()
 const DEFAULT_MARKER_OPACITY = 0.85
 
 // ── Browse-style selection (only used when `selectable`) ──
-const detailThing = ref<MapThing>()
+const detailMonitoringSite = ref<MapMonitoringSite>()
 const selectionSource = new VectorSource<Feature>()
 let selectionLayer: VectorLayer | undefined
 // Final scale of the grown selection marker, relative to the 64px source png.
@@ -243,12 +243,12 @@ let selectionAnimId = 0
 const selectedSiteLabel = ref('')
 
 const detailSubtitle = computed(() => {
-  const thing = detailThing.value
-  if (!thing) return ''
+  const monitoringSite = detailMonitoringSite.value
+  if (!monitoringSite) return ''
   const parts: string[] = []
-  if (thing.siteType) parts.push(thing.siteType)
-  if (!isThingMarker(thing)) {
-    const area = [thing.location.adminArea2, thing.location.adminArea1]
+  if (monitoringSite.type) parts.push(monitoringSite.type)
+  if (!isMonitoringSiteMarker(monitoringSite)) {
+    const area = [monitoringSite.adminArea2, monitoringSite.adminArea1]
       .filter(Boolean)
       .join(', ')
     if (area) parts.push(area)
@@ -260,26 +260,28 @@ const siteTypeIconRules = computed(() =>
 )
 const detailSiteTypeIcon = computed(() =>
   resolveSiteTypeIcon(
-    detailThing.value?.siteType ?? '',
+    detailMonitoringSite.value?.type ?? '',
     siteTypeIconRules.value
   )
 )
 
 const detailCoordinates = computed(() => {
-  const thing = detailThing.value
-  if (!thing) return ''
-  const [lng, lat] = getThingCoordinates(thing as MapThingWithColor)
+  const monitoringSite = detailMonitoringSite.value
+  if (!monitoringSite) return ''
+  const [lng, lat] = getMonitoringSiteCoordinates(
+    monitoringSite as MapMonitoringSiteWithColor
+  )
   const latNum = Number(lat)
   const lngNum = Number(lng)
   if (!isFinite(latNum) || !isFinite(lngNum)) return ''
   return `${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`
 })
 
-const uniqueColoredThings = computed(() => {
+const uniqueColoredMonitoringSites = computed(() => {
   const firstOccurrenceMap = new Map()
-  coloredThings.value.forEach((thing) => {
-    if (thing.tagValue && !firstOccurrenceMap.has(thing.tagValue)) {
-      firstOccurrenceMap.set(thing.tagValue, thing)
+  coloredMonitoringSites.value.forEach((monitoringSite) => {
+    if (monitoringSite.tagValue && !firstOccurrenceMap.has(monitoringSite.tagValue)) {
+      firstOccurrenceMap.set(monitoringSite.tagValue, monitoringSite)
     }
   })
   return Array.from(firstOccurrenceMap.values()).sort((a, b) => {
@@ -290,7 +292,7 @@ const uniqueColoredThings = computed(() => {
 const legendTitle = computed(() =>
   props.colorMode === 'workspace'
     ? 'Workspace'
-    : props.colorMode === 'siteType'
+    : props.colorMode === 'type'
       ? 'Site type'
       : props.colorKey || 'Legend'
 )
@@ -298,16 +300,12 @@ const legendTitle = computed(() =>
 const getLegendLabel = (value?: string) =>
   value ? (props.colorLabels[value] ?? value) : ''
 
-const getThingCoordinates = (thing: MapThingWithColor) => {
-  if (isThingMarker(thing)) {
-    return [thing.longitude, thing.latitude] as const
-  }
+const getMonitoringSiteCoordinates = (
+  monitoringSite: MapMonitoringSiteWithColor
+) => [monitoringSite.longitude, monitoringSite.latitude] as const
 
-  return [thing.location.longitude, thing.location.latitude] as const
-}
-
-const createFeature = (thing: MapThingWithColor) => {
-  const [longitude, latitude] = getThingCoordinates(thing)
+const createFeature = (monitoringSite: MapMonitoringSiteWithColor) => {
+  const [longitude, latitude] = getMonitoringSiteCoordinates(monitoringSite)
   if (
     latitude == null ||
     longitude == null ||
@@ -318,9 +316,9 @@ const createFeature = (thing: MapThingWithColor) => {
   const f = new Feature({
     geometry: new Point(fromLonLat([longitude, latitude])),
   })
-  f.set('markerColor', thing?.color?.background || '#D32F2F')
+  f.set('markerColor', monitoringSite?.color?.background || '#D32F2F')
   f.set('markerOpacity', DEFAULT_MARKER_OPACITY)
-  f.set('thing', thing)
+  f.set('monitoringSite', monitoringSite)
   return f
 }
 
@@ -339,38 +337,40 @@ const fitViewToMarkers = (duration = 0) => {
   })
 }
 
-const getPopupThing = async (thing: MapThing): Promise<MapThing> => {
-  if (!isThingMarker(thing)) return thing
+const getPopupMonitoringSite = async (
+  monitoringSite: MapMonitoringSite
+): Promise<MapMonitoringSite> => {
+  if (!isMonitoringSiteMarker(monitoringSite)) return monitoringSite
 
-  const cachedThing = detailedThingCache.get(thing.id)
-  if (cachedThing) return cachedThing
+  const cachedMonitoringSite = detailedMonitoringSiteCache.get(monitoringSite.id)
+  if (cachedMonitoringSite) return cachedMonitoringSite
 
   try {
-    const detailedThing = await hs.things.getItem(thing.id)
-    if (!detailedThing) return thing
-    detailedThingCache.set(thing.id, detailedThing)
-    return detailedThing
+    const detailedMonitoringSite = await hs.monitoringSites.getItem(monitoringSite.id)
+    if (!detailedMonitoringSite) return monitoringSite
+    detailedMonitoringSiteCache.set(monitoringSite.id, detailedMonitoringSite)
+    return detailedMonitoringSite
   } catch (error) {
     console.error('Error fetching marker details', error)
-    return thing
+    return monitoringSite
   }
 }
 
-const getFeatureThing = (feature: Feature) =>
-  feature.get('thing') as MapThing | undefined
+const getFeatureMonitoringSite = (feature: Feature) =>
+  feature.get('monitoringSite') as MapMonitoringSite | undefined
 
-const findFeatureByThingId = (thingId: string) =>
+const findFeatureByMonitoringSiteId = (monitoringSiteId: string) =>
   vectorSource
     .getFeatures()
-    .find((feature) => getFeatureThing(feature)?.id === thingId)
+    .find((feature) => getFeatureMonitoringSite(feature)?.id === monitoringSiteId)
 
 const openPopupForFeature = async (feature: Feature) => {
-  const thing = getFeatureThing(feature)
+  const monitoringSite = getFeatureMonitoringSite(feature)
   const geometry = feature.getGeometry()
-  if (!thing || !(geometry instanceof Point) || !popupOverlay) return
+  if (!monitoringSite || !(geometry instanceof Point) || !popupOverlay) return
 
-  const popupThing = await getPopupThing(thing)
-  popupContent.value!.innerHTML = generateMarkerContent(popupThing)
+  const popupMonitoringSite = await getPopupMonitoringSite(monitoringSite)
+  popupContent.value!.innerHTML = generateMarkerContent(popupMonitoringSite)
   popupOverlay.setPosition(geometry.getCoordinates())
 }
 
@@ -402,21 +402,21 @@ const animateSelectionScale = (from: number, to: number, duration = 180) => {
   requestAnimationFrame(step)
 }
 
-const updateSelectionMarker = (thingId?: string | null) => {
+const updateSelectionMarker = (monitoringSiteId?: string | null) => {
   selectionSource.clear()
   // The enlarged selection marker replaces the base marker instead of
   // stacking on top of its semi-opaque pixels.
   vectorSource.getFeatures().forEach((feature) => {
-    const isSelected = getFeatureThing(feature)?.id === thingId
+    const isSelected = getFeatureMonitoringSite(feature)?.id === monitoringSiteId
     feature.set('markerOpacity', isSelected ? 0 : DEFAULT_MARKER_OPACITY)
   })
-  if (!thingId) {
+  if (!monitoringSiteId) {
     selectedSiteLabel.value = ''
     selectionLabelOverlay?.setPosition(undefined)
     selectionAnimId++ // stop any in-flight grow
     return
   }
-  const feature = findFeatureByThingId(thingId)
+  const feature = findFeatureByMonitoringSiteId(monitoringSiteId)
   const geometry = feature?.getGeometry()
   if (!feature || !(geometry instanceof Point)) {
     selectedSiteLabel.value = ''
@@ -426,23 +426,23 @@ const updateSelectionMarker = (thingId?: string | null) => {
 
   const clone = new Feature({ geometry: geometry.clone() })
   clone.set('markerColor', feature.get('markerColor'))
-  clone.set('thing', getFeatureThing(feature))
+  clone.set('monitoringSite', getFeatureMonitoringSite(feature))
   selectionSource.addFeature(clone)
-  selectedSiteLabel.value = getFeatureThing(feature)?.name ?? ''
+  selectedSiteLabel.value = getFeatureMonitoringSite(feature)?.name ?? ''
   selectionLabelOverlay?.setPosition(geometry.getCoordinates())
   animateSelectionScale(SELECTION_SCALE * 0.78, SELECTION_SCALE)
 }
 
-const loadDetailThing = async (thingId?: string | null) => {
-  if (!thingId) {
-    detailThing.value = undefined
+const loadDetailMonitoringSite = async (monitoringSiteId?: string | null) => {
+  if (!monitoringSiteId) {
+    detailMonitoringSite.value = undefined
     return
   }
-  const base = props.things.find((thing) => thing.id === thingId)
+  const base = props.monitoringSites.find((monitoringSite) => monitoringSite.id === monitoringSiteId)
   if (!base) return
-  detailThing.value = base // show immediately, then enrich
-  const detailed = await getPopupThing(base)
-  if (props.selectedThingId === thingId) detailThing.value = detailed
+  detailMonitoringSite.value = base // show immediately, then enrich
+  const detailed = await getPopupMonitoringSite(base)
+  if (props.selectedMonitoringSiteId === monitoringSiteId) detailMonitoringSite.value = detailed
 }
 
 const getPaddedCenter = (
@@ -557,18 +557,18 @@ const flyTo = (
   requestAnimationFrame(step)
 }
 
-const focusThingById = (thingId?: string | null) => {
-  selectedThingTransitionId++
-  const transitionId = selectedThingTransitionId
+const focusMonitoringSiteById = (monitoringSiteId?: string | null) => {
+  selectedMonitoringSiteTransitionId++
+  const transitionId = selectedMonitoringSiteTransitionId
 
-  if (!map || !thingId) {
+  if (!map || !monitoringSiteId) {
     activeFlyId++ // cancel any in-flight fly
     popupOverlay?.setPosition(undefined)
     if (props.selectable) updateSelectionMarker(undefined)
     return
   }
 
-  const feature = findFeatureByThingId(thingId)
+  const feature = findFeatureByMonitoringSiteId(monitoringSiteId)
   const geometry = feature?.getGeometry()
   if (!feature || !(geometry instanceof Point)) return
 
@@ -582,7 +582,7 @@ const focusThingById = (thingId?: string | null) => {
 
   if (props.selectable) {
     // Browse mode: grow the marker + show its label; details live in the card.
-    updateSelectionMarker(thingId)
+    updateSelectionMarker(monitoringSiteId)
     flyTo(targetCenter, targetZoom, { duration: 700 })
     return
   }
@@ -590,7 +590,7 @@ const focusThingById = (thingId?: string | null) => {
   flyTo(targetCenter, targetZoom, {
     duration: 700,
     onComplete: () => {
-      if (transitionId !== selectedThingTransitionId) return
+      if (transitionId !== selectedMonitoringSiteTransitionId) return
       void openPopupForFeature(feature)
     },
   })
@@ -599,20 +599,20 @@ const focusThingById = (thingId?: string | null) => {
 async function updateFeatures() {
   // 1) Rebuild features
   if (props.colorMode === 'workspace') {
-    coloredThings.value = addWorkspaceColorToMarkers(props.things)
-  } else if (props.colorMode === 'siteType') {
-    coloredThings.value = addSiteTypeColorToMarkers(props.things)
+    coloredMonitoringSites.value = addWorkspaceColorToMarkers(props.monitoringSites)
+  } else if (props.colorMode === 'type') {
+    coloredMonitoringSites.value = addSiteTypeColorToMarkers(props.monitoringSites)
   } else if (
     props.colorMode === 'metadata' &&
     props.colorKey &&
-    props.things.every(hasThingTags)
+    props.monitoringSites.every(hasMonitoringSiteTags)
   ) {
-    coloredThings.value = addColorToMarkers(props.things, props.colorKey)
+    coloredMonitoringSites.value = addColorToMarkers(props.monitoringSites, props.colorKey)
   } else {
-    coloredThings.value = props.things
+    coloredMonitoringSites.value = props.monitoringSites
   }
 
-  const features = coloredThings.value
+  const features = coloredMonitoringSites.value
     .map(createFeature)
     .filter((feature) => feature !== null)
 
@@ -621,9 +621,9 @@ async function updateFeatures() {
   vectorSource.clear()
   vectorSource.addFeatures(features)
 
-  if (props.selectedThingId) {
-    if (findFeatureByThingId(props.selectedThingId)) {
-      focusThingById(props.selectedThingId)
+  if (props.selectedMonitoringSiteId) {
+    if (findFeatureByMonitoringSiteId(props.selectedMonitoringSiteId)) {
+      focusMonitoringSiteById(props.selectedMonitoringSiteId)
       return
     }
 
@@ -732,8 +732,8 @@ const initializeMap = () => {
       const clickedFeature = Array.isArray(rawFeatures.get('features'))
         ? rawFeatures.get('features')[0]
         : rawFeatures
-      const thingId = getFeatureThing(clickedFeature as Feature)?.id
-      if (thingId) emit('select', thingId)
+      const monitoringSiteId = getFeatureMonitoringSite(clickedFeature as Feature)?.id
+      if (monitoringSiteId) emit('select', monitoringSiteId)
       return
     }
 
@@ -764,14 +764,14 @@ const initializeMap = () => {
 }
 
 const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.selectedThingId) emit('select', undefined)
+  if (e.key === 'Escape' && props.selectedMonitoringSiteId) emit('select', undefined)
 }
 
 onMounted(async () => {
   if (!mapContainer.value) return
   initializeMap()
   if (props.selectable) {
-    void loadDetailThing(props.selectedThingId)
+    void loadDetailMonitoringSite(props.selectedMonitoringSiteId)
     window.addEventListener('keydown', onKeydown)
   }
 })
@@ -790,16 +790,16 @@ onBeforeUnmount(() => {
 
 watch(
   () =>
-    [props.things, props.colorMode, props.colorKey, props.colorLabels] as const,
+    [props.monitoringSites, props.colorMode, props.colorKey, props.colorLabels] as const,
   updateFeatures,
   { deep: true }
 )
 
 watch(
-  () => props.selectedThingId,
-  (thingId) => {
-    void focusThingById(thingId)
-    if (props.selectable) void loadDetailThing(thingId)
+  () => props.selectedMonitoringSiteId,
+  (monitoringSiteId) => {
+    void focusMonitoringSiteById(monitoringSiteId)
+    if (props.selectable) void loadDetailMonitoringSite(monitoringSiteId)
   }
 )
 
@@ -808,8 +808,8 @@ watch(
   () => {
     if (!map) return
     map.updateSize()
-    if (props.selectedThingId) {
-      void focusThingById(props.selectedThingId)
+    if (props.selectedMonitoringSiteId) {
+      void focusMonitoringSiteById(props.selectedMonitoringSiteId)
     } else {
       fitViewToMarkers(250)
     }

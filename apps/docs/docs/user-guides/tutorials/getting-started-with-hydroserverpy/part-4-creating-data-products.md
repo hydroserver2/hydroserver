@@ -35,7 +35,7 @@ meters_unit = hs_api.units.create(
 daily_stage_datastream = hs_api.datastreams.create(
     name=f'Daily Mean Gage Height at {logan_river_site.name}',
     description='Daily mean gage height computed from 15-minute USGS readings.',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     sensor=usgs_sensor,
     observed_property=gage_height_property,
     processing_level=derived_processing_level,
@@ -55,7 +55,7 @@ daily_stage_datastream = hs_api.datastreams.create(
 stage_meters_datastream = hs_api.datastreams.create(
     name=f'Gage Height (meters) at {logan_river_site.name}',
     description='Gage height converted from feet to meters.',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     sensor=usgs_sensor,
     observed_property=gage_height_property,
     processing_level=derived_processing_level,
@@ -81,7 +81,7 @@ A data product task defines the schedule on which computations run. The actual c
 ```python
 daily_aggregation_task = hs_api.dataproducttasks.create(
     name='Logan River Daily Mean Stage',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     description='Computes a daily mean gage height from 15-minute USGS readings.',
     interval=1,
     interval_period='days',
@@ -130,7 +130,7 @@ For the feet-to-meters conversion, we want the output to stay in sync with the i
 ```python
 meters_conversion_task = hs_api.dataproducttasks.create(
     name='Logan River Stage in Meters',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     description='Converts gage height from feet to meters.',
     interval=15,
     interval_period='minutes',

@@ -8,7 +8,7 @@ const OUT_DIR = path.resolve('src/generated/contracts')
 
 const resources = [
   'workspaces',
-  'things',
+  'monitoring-sites',
   'datastreams',
   'units',
   'sensors',

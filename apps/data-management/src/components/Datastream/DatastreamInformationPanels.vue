@@ -206,13 +206,13 @@ onMounted(async () => {
     { label: 'Code', value: op.code },
   ]
 
-  let t = d.thing
-  let l = t.location
+  let t = d.monitoringSite
+  let l = t
   locationItems.value = [
     { label: 'Site name', value: t.name },
-    { label: 'Site code', value: t.samplingFeatureCode },
+    { label: 'Site code', value: t.code },
     { label: 'Description', value: t.description },
-    { label: 'Site type', value: t.siteType },
+    { label: 'Site type', value: t.type },
     { label: 'Latitude', value: l.latitude },
     { label: 'Longitude', value: l.longitude },
     { label: 'Elevation (m)', value: l.elevation_m },
@@ -221,9 +221,8 @@ onMounted(async () => {
     { label: 'County/District', value: l.adminArea2 },
     { label: 'Country', value: l.country },
 
-    { label: 'Sampling feature type', value: t.samplingFeatureType },
     { label: 'Is private', value: t.isPrivate ? 'Yes' : 'No' },
-    { label: 'Thing id', value: t.id },
+    { label: 'MonitoringSite id', value: t.id },
   ]
 
   let u = d.unit

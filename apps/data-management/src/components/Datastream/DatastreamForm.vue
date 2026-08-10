@@ -609,7 +609,7 @@ import InfoCard from '../Metadata/InfoCard.vue'
 import hs, {
   PermissionAction,
   PermissionResource,
-  Thing,
+  MonitoringSite,
   Datastream,
   Workspace,
 } from '@hydroserver/client'
@@ -632,15 +632,15 @@ import {
 const emit = defineEmits(['close', 'updated', 'created'])
 
 const props = defineProps({
-  thing: { type: Object as () => Thing, required: true },
+  monitoringSite: { type: Object as () => MonitoringSite, required: true },
   workspace: { type: Object as () => Workspace, required: true },
   datastream: { type: Object as () => Datastream, required: false },
 })
 
 const vocabularyStore = useVocabularyStore()
 
-const thing = ref<Thing>()
-const datastream = ref<Datastream>(new Datastream(props.thing.id))
+const monitoringSite = ref<MonitoringSite>()
+const datastream = ref<Datastream>(new Datastream(props.monitoringSite.id))
 
 const timeUnits = ['seconds', 'minutes', 'hours', 'days']
 
@@ -684,7 +684,7 @@ const generateDefaultName = () => {
   const PL = processingLevels.value.find(
     (pl) => pl.id === datastream.value.processingLevelId
   )?.code
-  return `${OP} at ${thing.value?.samplingFeatureCode} with processing level ${PL}`
+  return `${OP} at ${monitoringSite.value?.code} with processing level ${PL}`
 }
 
 const generateDefaultDescription = () => {
@@ -700,7 +700,7 @@ const generateDefaultDescription = () => {
   const unitName = units.value.find(
     (pl) => pl.id === datastream.value.unitId
   )?.name
-  return `A datastream of ${OP} at ${thing.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${sensorName} having units of ${unitName}`
+  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${sensorName} having units of ${unitName}`
 }
 
 watch(selectedDatastreamID, async () => {
@@ -737,7 +737,7 @@ function onSpacingUnitChange() {
 async function onSubmit() {
   await myForm.value?.validate()
   if (!valid.value) return
-  datastream.value.thingId = props.thing.id
+  datastream.value.monitoringSiteId = props.monitoringSite.id
   if (isEdit.value) {
     try {
       await hs.datastreams.update(datastream.value)
@@ -763,7 +763,7 @@ onMounted(async () => {
       originalName.value = datastream.value.name
       originalDescription.value = datastream.value.description
     }
-    thing.value = props.thing
+    monitoringSite.value = props.monitoringSite
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')
     console.error('Error fetching datastream data from DB.', error)

@@ -44,7 +44,7 @@
           </template>
           <AggregationForm
             v-if="taskLabel === 'aggregation'"
-            :initial-thing-id="task.thing.id"
+            :initial-monitoring-site-id="task.monitoringSite.id"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -52,7 +52,7 @@
           />
           <ExpressionForm
             v-else-if="taskLabel === 'expression'"
-            :initial-thing-id="task.thing.id"
+            :initial-monitoring-site-id="task.monitoringSite.id"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -60,7 +60,7 @@
           />
           <DerivationForm
             v-else-if="taskLabel === 'derivation'"
-            :initial-thing-id="task.thing.id"
+            :initial-monitoring-site-id="task.monitoringSite.id"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -68,7 +68,7 @@
           />
           <RatingCurveForm
             v-else
-            :initial-thing-id="task.thing.id"
+            :initial-monitoring-site-id="task.monitoringSite.id"
             :edit-task-id="task.id"
             @close="closeEditDialog"
             @updated="onFormUpdated"
@@ -124,13 +124,13 @@
       <RatingCurveSwimlanes
         v-else-if="taskLabel === 'rating curve'"
         :transformations="task.ratingCurveTransformations ?? []"
-        :thing-id="task.thing?.id"
+        :monitoring-site-id="task.monitoringSite?.id"
       />
       <ProductTaskSwimlanes
         v-else
         :task="task"
         :task-label="taskLabel"
-        :thing-id="task.thing?.id"
+        :monitoring-site-id="task.monitoringSite?.id"
       />
     </section>
   </div>

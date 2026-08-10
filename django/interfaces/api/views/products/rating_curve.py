@@ -78,8 +78,8 @@ def create_rating_curve(
     with raise_http_errors():
         rating_curve = rating_curve_service.create(
             principal=request.principal,
-            thing=data.thing_id,
-            **data.model_dump(exclude_unset=True, exclude={"thing_id"}),
+            monitoring_site=data.monitoring_site_id,
+            **data.model_dump(exclude_unset=True, exclude={"monitoring_site_id"}),
         )
 
     return 201, rating_curve

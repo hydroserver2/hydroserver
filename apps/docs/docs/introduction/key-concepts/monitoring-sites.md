@@ -6,8 +6,8 @@ A site encompasses both the physical location and the metadata describing the si
 
 A site is _not_ the physical sensors or instruments that are deployed at the site's location. That metadata lives in the Sensor table of HydroServer's database.
 
-::: tip A side note on Thing vs. Site
-Given that it is an "Internet of Things" standard, SensorThings uses the term `Thing` in order to stay as general as possible. In the field of water data management, users are more more often familiar with the term `Site` as in a `monitoring site`. Therefore, we've opted to refer to a `Thing` as `Site` in all of our user facing applications. But, to strictly follow the SensorThings specification, we've kept SensorThing's original `Thing` naming in our data model and APIs.
+::: tip MonitoringSite and SensorThings
+HydroServer's data model and Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.
 :::
 
 ## key:value tagging system

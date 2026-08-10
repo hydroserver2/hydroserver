@@ -512,6 +512,262 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data/monitoring-sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Sites
+         * @description Get public MonitoringSites and MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_sites"];
+        put?: never;
+        /**
+         * Create Monitoring Site
+         * @description Create a new MonitoringSite.
+         */
+        post: operations["interfaces_api_views_sta_monitoring_site_create_monitoring_site"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/file-attachment-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get File Attachment Types
+         * @description Get file attachment types.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_file_attachment_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Markers
+         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/site-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Summaries
+         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/site-type-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Type Icons
+         * @description Get the configured site type icon mappings.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/site-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Types
+         * @description Get site types.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_site_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/tags/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Tag Keys
+         * @description Get all existing unique monitoring_site tag keys.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/task-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Task Summaries
+         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/{monitoring_site_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site
+         * @description Get a MonitoringSite.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Monitoring Site
+         * @description Delete a MonitoringSite.
+         */
+        delete: operations["interfaces_api_views_sta_monitoring_site_delete_monitoring_site"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Monitoring Site
+         * @description Update a MonitoringSite.
+         */
+        patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site"];
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/{monitoring_site_id}/file-attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site File Attachments
+         * @description Get all file attachments associated with a MonitoringSite.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments"];
+        /**
+         * Replace Monitoring Site File Attachment
+         * @description Replace a file attachment for a monitoring_site.
+         */
+        put: operations["interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment"];
+        /**
+         * Add Monitoring Site File Attachment
+         * @description Add a file attachment to a monitoring_site.
+         */
+        post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment"];
+        /**
+         * Remove Monitoring Site File Attachment
+         * @description Remove a file attachment from a monitoring_site.
+         */
+        delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/monitoring-sites/{monitoring_site_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Site Tags
+         * @description Get all tags associated with a MonitoringSite.
+         */
+        get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags"];
+        /**
+         * Edit Monitoring Site Tag
+         * @description Edit a tag of a MonitoringSite.
+         */
+        put: operations["interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag"];
+        /**
+         * Add Monitoring Site Tag
+         * @description Add a tag to a MonitoringSite.
+         */
+        post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag"];
+        /**
+         * Remove Monitoring Site Tag
+         * @description Remove a tag from a MonitoringSite.
+         */
+        delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/data/monitoring/tasks": {
         parameters: {
             query?: never;
@@ -1528,282 +1784,6 @@ export interface paths {
         patch: operations["interfaces_api_views_sta_sensor_update_sensor"];
         trace?: never;
     };
-    "/api/data/things": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Things
-         * @description Get public Things and Things associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_things"];
-        put?: never;
-        /**
-         * Create Thing
-         * @description Create a new Thing.
-         */
-        post: operations["interfaces_api_views_sta_thing_create_thing"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/file-attachment-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get File Attachment Types
-         * @description Get file attachment types.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_file_attachment_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/markers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing Markers
-         * @description Get lean marker data for public Things plus private Things visible to the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_markers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/sampling-feature-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Sampling Feature Types
-         * @description Get sampling feature types.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_sampling_feature_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/site-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing Site Summaries
-         * @description Get lean site summary data for public Things and Things associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_site_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/site-type-icons": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Type Icons
-         * @description Get the configured site type icon mappings.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_site_type_icons"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/site-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Types
-         * @description Get site types.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_site_types"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/tags/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing Tag Keys
-         * @description Get all existing unique thing tag keys.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_tag_keys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/task-summaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing Task Summaries
-         * @description Get task count summaries for Things associated with the authenticated user.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_task_summaries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/{thing_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing
-         * @description Get a Thing.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Thing
-         * @description Delete a Thing.
-         */
-        delete: operations["interfaces_api_views_sta_thing_delete_thing"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Thing
-         * @description Update a Thing.
-         */
-        patch: operations["interfaces_api_views_sta_thing_update_thing"];
-        trace?: never;
-    };
-    "/api/data/things/{thing_id}/file-attachments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing File Attachments
-         * @description Get all file attachments associated with a Thing.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_file_attachments"];
-        /**
-         * Replace Thing File Attachment
-         * @description Replace a file attachment for a thing.
-         */
-        put: operations["interfaces_api_views_sta_thing_replace_thing_file_attachment"];
-        /**
-         * Add Thing File Attachment
-         * @description Add a file attachment to a thing.
-         */
-        post: operations["interfaces_api_views_sta_thing_add_thing_file_attachment"];
-        /**
-         * Remove Thing File Attachment
-         * @description Remove a file attachment from a thing.
-         */
-        delete: operations["interfaces_api_views_sta_thing_remove_thing_file_attachment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/data/things/{thing_id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Thing Tags
-         * @description Get all tags associated with a Thing.
-         */
-        get: operations["interfaces_api_views_sta_thing_get_thing_tags"];
-        /**
-         * Edit Thing Tag
-         * @description Edit a tag of a Thing.
-         */
-        put: operations["interfaces_api_views_sta_thing_edit_thing_tag"];
-        /**
-         * Add Thing Tag
-         * @description Add a tag to a Thing.
-         */
-        post: operations["interfaces_api_views_sta_thing_add_thing_tag"];
-        /**
-         * Remove Thing Tag
-         * @description Remove a tag from a Thing.
-         */
-        delete: operations["interfaces_api_views_sta_thing_remove_thing_tag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/data/units": {
         parameters: {
             query?: never;
@@ -2577,18 +2557,18 @@ export interface components {
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
             name: string;
             /** Ratingcurvetransformations */
             ratingCurveTransformations: components["schemas"]["RatingCurveTransformationResponse"][];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            thing: components["schemas"]["ThingSummaryResponse"];
         };
         /**
          * DataProductTaskOrderBy
          * @enum {string}
          */
-        DataProductTaskOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        DataProductTaskOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
         /** DataProductTaskPatchBody */
         DataProductTaskPatchBody: {
             /** Description */
@@ -2607,14 +2587,14 @@ export interface components {
              * Format: uuid
              */
             id?: string;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             schedule?: components["schemas"]["SchedulePostBody"] | null;
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
         };
         /** DataProductTaskQueryParameters */
         DataProductTaskQueryParameters: {
@@ -2633,11 +2613,17 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Monitoring Site Id
+             * @description Filter data product tasks by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: string[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
             /**
              * Output Datastream Id
              * @description Filter data product tasks by output datastream ID.
@@ -2662,12 +2648,6 @@ export interface components {
              * @default []
              */
             rating_curve_id: string[];
-            /**
-             * Thing Id
-             * @description Filter data product tasks by thing ID.
-             * @default []
-             */
-            thing_id: string[];
             /**
              * Transformation Type
              * @description Filter data product tasks by transformation type.
@@ -2697,16 +2677,16 @@ export interface components {
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /** Ratingcurvetransformations */
             ratingCurveTransformations: components["schemas"]["RatingCurveTransformationSummaryResponse"][];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
             /**
              * Workspaceid
              * Format: uuid
@@ -2778,6 +2758,7 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
             name: string;
             /** Nodatavalue */
@@ -2803,7 +2784,6 @@ export interface components {
             status?: string | null;
             /** Tags */
             tags: components["schemas"]["TagGetResponse"][];
-            thing: components["schemas"]["ThingSummaryResponse"];
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -2830,6 +2810,11 @@ export interface components {
             isPrivate?: boolean;
             /** Isvisible */
             isVisible?: boolean;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId?: string;
             /** Name */
             name?: string;
             /** Nodatavalue */
@@ -2865,11 +2850,6 @@ export interface components {
             sensorId?: string;
             /** Status */
             status?: string | null;
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId?: string;
             /** Timeaggregationinterval */
             timeAggregationInterval?: number;
             /**
@@ -2907,6 +2887,11 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /** Nodatavalue */
@@ -2947,11 +2932,6 @@ export interface components {
              * @default []
              */
             tags: components["schemas"]["TagPostBody"][];
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -2977,8 +2957,14 @@ export interface components {
              */
             is_private?: boolean | null;
             /**
+             * Monitoring Site Id
+             * @description Filter datastreams by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: string[];
+            /**
              * Observation Type
-             * @description Filter things by observation type.
+             * @description Filter monitoring_sites by observation type.
              * @default []
              */
             observation_type: string[];
@@ -3060,13 +3046,13 @@ export interface components {
             result_qualifier_id: string[];
             /**
              * Result Type
-             * @description Filter things by result type.
+             * @description Filter monitoring_sites by result type.
              * @default []
              */
             result_type: string[];
             /**
              * Sampled Medium
-             * @description Filter things by sampled medium.
+             * @description Filter monitoring_sites by sampled medium.
              * @default []
              */
             sampled_medium: string[];
@@ -3078,7 +3064,7 @@ export interface components {
             sensor_id: string[];
             /**
              * Status
-             * @description Filter things by status.
+             * @description Filter monitoring_sites by status.
              * @default []
              */
             status: string[];
@@ -3088,12 +3074,6 @@ export interface components {
              * @default []
              */
             tag: string[];
-            /**
-             * Thing Id
-             * @description Filter datastreams by thing ID.
-             * @default []
-             */
-            thing_id: string[];
             /**
              * Unit Id
              * @description Filter datastreams by unit ID.
@@ -3144,6 +3124,11 @@ export interface components {
              * @default true
              */
             isVisible: boolean;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /** Nodatavalue */
@@ -3181,11 +3166,6 @@ export interface components {
             status?: string | null;
             /** Tags */
             tags: components["schemas"]["TagGetResponse"][];
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
             /** Timeaggregationinterval */
             timeAggregationInterval: number;
             /**
@@ -3219,12 +3199,12 @@ export interface components {
         DatastreamVisualizationBootstrapResponse: {
             /** Datastreams */
             datastreams: components["schemas"]["VisualizationDatastreamResponse"][];
+            /** Monitoringsites */
+            monitoringSites: components["schemas"]["VisualizationMonitoringSiteResponse"][];
             /** Observedproperties */
             observedProperties: components["schemas"]["VisualizationObservedPropertyResponse"][];
             /** Processinglevels */
             processingLevels: components["schemas"]["VisualizationProcessingLevelResponse"][];
-            /** Things */
-            things: components["schemas"]["VisualizationThingResponse"][];
         };
         /** EtlDataMappingPatchBody */
         EtlDataMappingPatchBody: {
@@ -3360,6 +3340,12 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Monitoring Site Id
+             * @description Filter ETL tasks by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: string[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -3377,12 +3363,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter ETL tasks by thing ID.
-             * @default []
-             */
-            thing_id: string[];
             /**
              * Workspace Id
              * @description Filter ETL tasks by workspace ID.
@@ -3562,57 +3542,6 @@ export interface components {
              */
             type: "JSON";
         };
-        /** LocationDetailResponse */
-        LocationDetailResponse: {
-            /** Adminarea1 */
-            adminArea1?: string | null;
-            /** Adminarea2 */
-            adminArea2?: string | null;
-            /** Country */
-            country?: string | null;
-            /** Elevationdatum */
-            elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-        };
-        /** LocationPatchBody */
-        LocationPatchBody: {
-            /** Adminarea1 */
-            adminArea1?: string | null;
-            /** Adminarea2 */
-            adminArea2?: string | null;
-            /** Country */
-            country?: string | null;
-            /** Elevationdatum */
-            elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
-            /** Latitude */
-            latitude?: number;
-            /** Longitude */
-            longitude?: number;
-        };
-        /** LocationPostBody */
-        LocationPostBody: {
-            /** Adminarea1 */
-            adminArea1?: string | null;
-            /** Adminarea2 */
-            adminArea2?: string | null;
-            /** Country */
-            country?: string | null;
-            /** Elevationdatum */
-            elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-        };
         /** MonitoredDatastreamResponse */
         MonitoredDatastreamResponse: {
             datastream: components["schemas"]["DatastreamSummaryResponse"];
@@ -3751,6 +3680,361 @@ export interface components {
             /** Windowintervalunits */
             windowIntervalUnits?: ("minutes" | "hours" | "days") | null;
         };
+        /** MonitoringSiteDetailResponse */
+        MonitoringSiteDetailResponse: {
+            /** Adminarea1 */
+            adminArea1?: string | null;
+            /** Adminarea2 */
+            adminArea2?: string | null;
+            /** Code */
+            code: string;
+            /** Country */
+            country?: string | null;
+            /** Datadisclaimer */
+            dataDisclaimer?: string | null;
+            /** Description */
+            description: string;
+            /** Elevationdatum */
+            elevationDatum?: string | null;
+            /** Elevation M */
+            elevation_m?: number | null;
+            /** Fileattachments */
+            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Tags */
+            tags: components["schemas"]["TagGetResponse"][];
+            /** Type */
+            type: string;
+            workspace: components["schemas"]["WorkspaceSummaryResponse"];
+        };
+        /** MonitoringSiteMapSummaryQueryParameters */
+        MonitoringSiteMapSummaryQueryParameters: {
+            /**
+             * Type
+             * @description Filter summaries by monitoring site type.
+             * @default []
+             */
+            type: string[];
+            /**
+             * Workspace Id
+             * @description Filter site summaries by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** MonitoringSiteMapSummaryResponse */
+        MonitoringSiteMapSummaryResponse: {
+            /** Code */
+            code: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Tags */
+            tags: components["schemas"]["TagGetResponse"][];
+            /** Type */
+            type: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** MonitoringSiteMarkerQueryParameters */
+        MonitoringSiteMarkerQueryParameters: {
+            /**
+             * Bbox
+             * @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
+             * @default []
+             */
+            bbox: string[];
+            /**
+             * Type
+             * @description Filter markers by monitoring site type.
+             * @default []
+             */
+            type: string[];
+            /**
+             * Workspace Id
+             * @description Filter markers by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** MonitoringSiteMarkerResponse */
+        MonitoringSiteMarkerResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** MonitoringSitePatchBody */
+        MonitoringSitePatchBody: {
+            /** Adminarea1 */
+            adminArea1?: string | null;
+            /** Adminarea2 */
+            adminArea2?: string | null;
+            /** Code */
+            code?: string;
+            /** Country */
+            country?: string | null;
+            /** Datadisclaimer */
+            dataDisclaimer?: string | null;
+            /** Description */
+            description?: string;
+            /** Elevationdatum */
+            elevationDatum?: string | null;
+            /** Elevation M */
+            elevation_m?: number | null;
+            /** Isprivate */
+            isPrivate?: boolean;
+            /** Latitude */
+            latitude?: number;
+            /** Longitude */
+            longitude?: number;
+            /** Name */
+            name?: string;
+            /** Type */
+            type?: string;
+        };
+        /** MonitoringSitePostBody */
+        MonitoringSitePostBody: {
+            /** Adminarea1 */
+            adminArea1?: string | null;
+            /** Adminarea2 */
+            adminArea2?: string | null;
+            /** Code */
+            code: string;
+            /** Country */
+            country?: string | null;
+            /** Datadisclaimer */
+            dataDisclaimer?: string | null;
+            /** Description */
+            description: string;
+            /** Elevationdatum */
+            elevationDatum?: string | null;
+            /** Elevation M */
+            elevation_m?: number | null;
+            /** Id */
+            id?: string | null;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagPostBody"][];
+            /** Type */
+            type: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** MonitoringSiteQueryParameters */
+        MonitoringSiteQueryParameters: {
+            /**
+             * Admin Area 1
+             * @description Filter monitoring sites by admin area 1.
+             * @default []
+             */
+            admin_area_1: string[];
+            /**
+             * Admin Area 2
+             * @description Filter monitoring sites by admin area 2.
+             * @default []
+             */
+            admin_area_2: string[];
+            /**
+             * Bbox
+             * @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
+             * @default []
+             */
+            bbox: string[];
+            /**
+             * Country
+             * @description Filter monitoring sites by country.
+             * @default []
+             */
+            country: string[];
+            /** Expand Related */
+            expand_related?: boolean | null;
+            /**
+             * Is Private
+             * @description Controls whether the returned monitoring sites should be private or public.
+             */
+            is_private?: boolean | null;
+            /**
+             * Order By
+             * @description Select one or more fields to order the response by.
+             * @default []
+             */
+            order_by: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+            /**
+             * Page
+             * @description Page number (1-based).
+             * @default 1
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @description The number of items per page.
+             * @default 100
+             */
+            page_size: number | null;
+            /**
+             * Tag
+             * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
+             * @default []
+             */
+            tag: string[];
+            /**
+             * Type
+             * @description Filter monitoring sites by type.
+             * @default []
+             */
+            type: string[];
+            /**
+             * Workspace Id
+             * @description Filter monitoring sites by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** MonitoringSiteSummaryResponse */
+        MonitoringSiteSummaryResponse: {
+            /** Adminarea1 */
+            adminArea1?: string | null;
+            /** Adminarea2 */
+            adminArea2?: string | null;
+            /** Code */
+            code: string;
+            /** Country */
+            country?: string | null;
+            /** Datadisclaimer */
+            dataDisclaimer?: string | null;
+            /** Description */
+            description: string;
+            /** Elevationdatum */
+            elevationDatum?: string | null;
+            /** Elevation M */
+            elevation_m?: number | null;
+            /** Fileattachments */
+            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Tags */
+            tags: components["schemas"]["TagGetResponse"][];
+            /** Type */
+            type: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** MonitoringSiteTaskSummaryQueryParameters */
+        MonitoringSiteTaskSummaryQueryParameters: {
+            /**
+             * Type
+             * @description Filter summaries by monitoring site type.
+             * @default []
+             */
+            type: string[];
+            /**
+             * Workspace Id
+             * @description Filter task summaries by workspace ID.
+             * @default []
+             */
+            workspace_id: string[];
+        };
+        /** MonitoringSiteTaskSummaryResponse */
+        MonitoringSiteTaskSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Monitoringtaskattentioncount
+             * @default 0
+             */
+            monitoringTaskAttentionCount: number;
+            /**
+             * Monitoringtaskcount
+             * @default 0
+             */
+            monitoringTaskCount: number;
+            /** Name */
+            name: string;
+            /**
+             * Producttaskattentioncount
+             * @default 0
+             */
+            productTaskAttentionCount: number;
+            /**
+             * Producttaskcount
+             * @default 0
+             */
+            productTaskCount: number;
+            /** Type */
+            type: string;
+        };
         /** MonitoringTaskDetailResponse */
         MonitoringTaskDetailResponse: {
             /** Description */
@@ -3763,18 +4047,18 @@ export interface components {
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
             /** Monitoreddatastreams */
             monitoredDatastreams: components["schemas"]["MonitoredDatastreamResponse"][];
+            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
             name: string;
             /** Recipients */
             recipients: string[];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            thing: components["schemas"]["ThingSummaryResponse"];
         };
         /**
          * MonitoringTaskOrderBy
          * @enum {string}
          */
-        MonitoringTaskOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
+        MonitoringTaskOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt";
         /** MonitoringTaskPatchBody */
         MonitoringTaskPatchBody: {
             /** Description */
@@ -3795,6 +4079,11 @@ export interface components {
              * Format: uuid
              */
             id?: string;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /**
@@ -3803,11 +4092,6 @@ export interface components {
              */
             recipients: string[];
             schedule?: components["schemas"]["SchedulePostBody"] | null;
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
         };
         /** MonitoringTaskQueryParameters */
         MonitoringTaskQueryParameters: {
@@ -3826,11 +4110,17 @@ export interface components {
              */
             latest_run_status: (string | "null")[];
             /**
+             * Monitoring Site Id
+             * @description Filter monitoring tasks by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: string[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
             /**
              * Page
              * @description Page number (1-based).
@@ -3850,12 +4140,6 @@ export interface components {
              */
             rule_type: string[];
             /**
-             * Thing Id
-             * @description Filter monitoring tasks by thing ID.
-             * @default []
-             */
-            thing_id: string[];
-            /**
              * Workspace Id
              * @description Filter monitoring tasks by workspace ID.
              * @default []
@@ -3874,16 +4158,16 @@ export interface components {
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
             /** Monitoreddatastreams */
             monitoredDatastreams: components["schemas"]["MonitoredDatastreamSummaryResponse"][];
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /** Recipients */
             recipients: string[];
             schedule?: components["schemas"]["ScheduleResponse"] | null;
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
             /**
              * Workspaceid
              * Format: uuid
@@ -4129,6 +4413,12 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Monitoring Site Id
+             * @description Filter observed properties by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -4146,12 +4436,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter observed properties by thing ID.
-             * @default []
-             */
-            thing_id: (string | "null")[];
             /**
              * Type
              * @description Filter observed properties by type
@@ -4215,7 +4499,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "Thing" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Sensor" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "ObservedProperty" | "ProcessingLevel" | "ResultQualifier" | "Sensor" | "Unit" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "RatingCurve" | "DataProductTask" | "MonitoringTask";
         };
         /** PlaceholderVariablePatchBody */
         PlaceholderVariablePatchBody: {
@@ -4301,6 +4585,12 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Monitoring Site Id
+             * @description Filter processing levels by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -4318,12 +4608,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter processing levels by thing ID.
-             * @default []
-             */
-            thing_id: (string | "null")[];
             /**
              * Workspace Id
              * @description Filter processing levels by workspace ID.
@@ -4658,7 +4942,7 @@ export interface components {
          * RatingCurveOrderBy
          * @enum {string}
          */
-        RatingCurveOrderBy: "id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName";
+        RatingCurveOrderBy: "id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName";
         /** RatingCurvePatchBody */
         RatingCurvePatchBody: {
             /** Description */
@@ -4690,6 +4974,11 @@ export interface components {
              * Format: uuid
              */
             id?: string;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /**
@@ -4700,20 +4989,21 @@ export interface components {
                 number,
                 number
             ][];
-            /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
         };
         /** RatingCurveQueryParameters */
         RatingCurveQueryParameters: {
+            /**
+             * Monitoring Site Id
+             * @description Filter rating curves by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: string[];
             /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
              */
-            order_by: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName")[];
+            order_by: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
             /**
              * Page
              * @description Page number (1-based).
@@ -4726,12 +5016,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter rating curves by thing ID.
-             * @default []
-             */
-            thing_id: string[];
             /**
              * Workspace Id
              * @description Filter rating curves by workspace ID.
@@ -4753,6 +5037,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            monitoringSite: components["schemas"]["MonitoringSiteSummaryResponse"];
             /** Name */
             name: string;
             /** Points */
@@ -4760,7 +5045,6 @@ export interface components {
                 number,
                 number
             ][];
-            thing: components["schemas"]["ThingSummaryResponse"];
         };
         /** RatingCurveSummaryResponse */
         RatingCurveSummaryResponse: {
@@ -4894,6 +5178,12 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Monitoring Site Id
+             * @description Filter result qualifiers by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -4911,12 +5201,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter result qualifiers by thing ID.
-             * @default []
-             */
-            thing_id: (string | "null")[];
             /**
              * Workspace Id
              * @description Filter sensors by workspace ID.
@@ -5144,6 +5428,12 @@ export interface components {
              */
             method_type: string[];
             /**
+             * Monitoring Site Id
+             * @description Filter sensors by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -5161,12 +5451,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter sensors by thing ID.
-             * @default []
-             */
-            thing_id: (string | "null")[];
             /**
              * Workspace Id
              * @description Filter sensors by workspace ID.
@@ -5485,324 +5769,6 @@ export interface components {
              */
             status: "PENDING" | "STARTED" | "SUCCESS" | "FAILURE";
         };
-        /** ThingDetailResponse */
-        ThingDetailResponse: {
-            /** Datadisclaimer */
-            dataDisclaimer?: string | null;
-            /** Description */
-            description: string;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            location: components["schemas"]["LocationDetailResponse"];
-            /** Name */
-            name: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode: string;
-            /** Samplingfeaturetype */
-            samplingFeatureType: string;
-            /** Sitetype */
-            siteType: string;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
-            workspace: components["schemas"]["WorkspaceSummaryResponse"];
-        };
-        /** ThingMarkerQueryParameters */
-        ThingMarkerQueryParameters: {
-            /**
-             * Bbox
-             * @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
-            /**
-             * Site Type
-             * @description Filter markers by site type.
-             * @default []
-             */
-            site_type: string[];
-            /**
-             * Workspace Id
-             * @description Filter markers by workspace ID.
-             * @default []
-             */
-            workspace_id: string[];
-        };
-        /** ThingMarkerResponse */
-        ThingMarkerResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Name */
-            name: string;
-            /** Sitetype */
-            siteType: string;
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** ThingPatchBody */
-        ThingPatchBody: {
-            /** Datadisclaimer */
-            dataDisclaimer?: string | null;
-            /** Description */
-            description?: string;
-            /** Isprivate */
-            isPrivate?: boolean;
-            /** Location */
-            location?: components["schemas"]["LocationPatchBody"] | null;
-            /** Name */
-            name?: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode?: string;
-            /** Samplingfeaturetype */
-            samplingFeatureType?: string;
-            /** Sitetype */
-            siteType?: string;
-        };
-        /** ThingPostBody */
-        ThingPostBody: {
-            /** Datadisclaimer */
-            dataDisclaimer?: string | null;
-            /** Description */
-            description: string;
-            /** Id */
-            id?: string | null;
-            /** Isprivate */
-            isPrivate: boolean;
-            location: components["schemas"]["LocationPostBody"];
-            /** Name */
-            name: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode: string;
-            /** Samplingfeaturetype */
-            samplingFeatureType: string;
-            /** Sitetype */
-            siteType: string;
-            /**
-             * Tags
-             * @default []
-             */
-            tags: components["schemas"]["TagPostBody"][];
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** ThingQueryParameters */
-        ThingQueryParameters: {
-            /**
-             * Admin Area 1
-             * @description Filter things by admin area 1.
-             * @default []
-             */
-            admin_area_1: string[];
-            /**
-             * Admin Area 2
-             * @description Filter things by admin area 2.
-             * @default []
-             */
-            admin_area_2: string[];
-            /**
-             * Bbox
-             * @description Filter things by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}
-             * @default []
-             */
-            bbox: string[];
-            /**
-             * Country
-             * @description Filter things by country.
-             * @default []
-             */
-            country: string[];
-            /** Expand Related */
-            expand_related?: boolean | null;
-            /**
-             * Is Private
-             * @description Controls whether the returned things should be private or public.
-             */
-            is_private?: boolean | null;
-            /**
-             * Order By
-             * @description Select one or more fields to order the response by.
-             * @default []
-             */
-            order_by: ("name" | "samplingFeatureType" | "samplingFeatureCode" | "siteType" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-samplingFeatureType" | "-samplingFeatureCode" | "-siteType" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
-            /**
-             * Page
-             * @description Page number (1-based).
-             * @default 1
-             */
-            page: number | null;
-            /**
-             * Page Size
-             * @description The number of items per page.
-             * @default 100
-             */
-            page_size: number | null;
-            /**
-             * Sampling Feature Type
-             * @description Filter things by sampling feature type.
-             * @default []
-             */
-            sampling_feature_type: string[];
-            /**
-             * Site Type
-             * @description Filter things by site type.
-             * @default []
-             */
-            site_type: string[];
-            /**
-             * Tag
-             * @description Filter things by tag. Format tag filters as {key}:{value}
-             * @default []
-             */
-            tag: string[];
-            /**
-             * Workspace Id
-             * @description Filter things by workspace ID.
-             * @default []
-             */
-            workspace_id: string[];
-        };
-        /** ThingSiteSummaryQueryParameters */
-        ThingSiteSummaryQueryParameters: {
-            /**
-             * Site Type
-             * @description Filter site summaries by site type.
-             * @default []
-             */
-            site_type: string[];
-            /**
-             * Workspace Id
-             * @description Filter site summaries by workspace ID.
-             * @default []
-             */
-            workspace_id: string[];
-        };
-        /** ThingSiteSummaryResponse */
-        ThingSiteSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Name */
-            name: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode: string;
-            /** Sitetype */
-            siteType: string;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** ThingSummaryResponse */
-        ThingSummaryResponse: {
-            /** Datadisclaimer */
-            dataDisclaimer?: string | null;
-            /** Description */
-            description: string;
-            /** Fileattachments */
-            fileAttachments: components["schemas"]["FileAttachmentGetResponse"][];
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Isprivate */
-            isPrivate: boolean;
-            location: components["schemas"]["LocationDetailResponse"];
-            /** Name */
-            name: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode: string;
-            /** Samplingfeaturetype */
-            samplingFeatureType: string;
-            /** Sitetype */
-            siteType: string;
-            /** Tags */
-            tags: components["schemas"]["TagGetResponse"][];
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
-        };
-        /** ThingTaskSummaryQueryParameters */
-        ThingTaskSummaryQueryParameters: {
-            /**
-             * Site Type
-             * @description Filter task summaries by site type.
-             * @default []
-             */
-            site_type: string[];
-            /**
-             * Workspace Id
-             * @description Filter task summaries by workspace ID.
-             * @default []
-             */
-            workspace_id: string[];
-        };
-        /** ThingTaskSummaryResponse */
-        ThingTaskSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Monitoringtaskattentioncount
-             * @default 0
-             */
-            monitoringTaskAttentionCount: number;
-            /**
-             * Monitoringtaskcount
-             * @default 0
-             */
-            monitoringTaskCount: number;
-            /** Name */
-            name: string;
-            /**
-             * Producttaskattentioncount
-             * @default 0
-             */
-            productTaskAttentionCount: number;
-            /**
-             * Producttaskcount
-             * @default 0
-             */
-            productTaskCount: number;
-            /** Sitetype */
-            siteType: string;
-        };
         /** TransformationInputPostBody */
         TransformationInputPostBody: {
             /**
@@ -5873,6 +5839,12 @@ export interface components {
             /** Expand Related */
             expand_related?: boolean | null;
             /**
+             * Monitoring Site Id
+             * @description Filter units by monitoring_site ID.
+             * @default []
+             */
+            monitoring_site_id: (string | "null")[];
+            /**
              * Order By
              * @description Select one or more fields to order the response by.
              * @default []
@@ -5890,12 +5862,6 @@ export interface components {
              * @default 100
              */
             page_size: number | null;
-            /**
-             * Thing Id
-             * @description Filter units by thing ID.
-             * @default []
-             */
-            thing_id: (string | "null")[];
             /**
              * Type
              * @description Filter units by type
@@ -5938,6 +5904,11 @@ export interface components {
             intendedTimeSpacing?: number | null;
             /** Intendedtimespacingunit */
             intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
             /** Name */
             name: string;
             /** Nodatavalue */
@@ -5957,17 +5928,29 @@ export interface components {
              */
             processingLevelId: string;
             /**
-             * Thingid
-             * Format: uuid
-             */
-            thingId: string;
-            /**
              * Unitid
              * Format: uuid
              */
             unitId: string;
             /** Valuecount */
             valueCount?: number | null;
+        };
+        /** VisualizationMonitoringSiteResponse */
+        VisualizationMonitoringSiteResponse: {
+            /** Code */
+            code: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** VisualizationObservedPropertyResponse */
         VisualizationObservedPropertyResponse: {
@@ -5990,23 +5973,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-        };
-        /** VisualizationThingResponse */
-        VisualizationThingResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Samplingfeaturecode */
-            samplingFeatureCode: string;
-            /**
-             * Workspaceid
-             * Format: uuid
-             */
-            workspaceId: string;
         };
         /** VocabularyQueryParameters */
         VocabularyQueryParameters: {
@@ -6134,8 +6100,8 @@ export interface operations {
                 order_by?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime")[] | null;
                 /** @description Filter datastreams by workspace ID. */
                 workspace_id?: string[];
-                /** @description Filter datastreams by thing ID. */
-                thing_id?: string[];
+                /** @description Filter datastreams by monitoring_site ID. */
+                monitoring_site_id?: string[];
                 /** @description Filter datastreams by sensor ID. */
                 sensor_id?: string[];
                 /** @description Filter datastreams by observed property ID. */
@@ -6146,13 +6112,13 @@ export interface operations {
                 unit_id?: string[];
                 /** @description Filter datastreams by observation result qualifier ID. */
                 result_qualifier_id?: string[];
-                /** @description Filter things by observation type. */
+                /** @description Filter monitoring_sites by observation type. */
                 observation_type?: string[];
-                /** @description Filter things by sampled medium. */
+                /** @description Filter monitoring_sites by sampled medium. */
                 sampled_medium?: string[];
-                /** @description Filter things by status. */
+                /** @description Filter monitoring_sites by status. */
                 status?: string[];
-                /** @description Filter things by result type. */
+                /** @description Filter monitoring_sites by result type. */
                 result_type?: string[];
                 /** @description Filter datastreams by tag. Format tag filters as {key}:{value} */
                 tag?: string[];
@@ -7688,8 +7654,8 @@ export interface operations {
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
                 order_by?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-                /** @description Filter ETL tasks by thing ID. */
-                thing_id?: string[];
+                /** @description Filter ETL tasks by monitoring_site ID. */
+                monitoring_site_id?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter ETL tasks by data connection ID. */
@@ -8135,6 +8101,959 @@ export interface operations {
             };
         };
     };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_sites: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                expand_related?: boolean | null;
+                /** @description Select one or more fields to order the response by. */
+                order_by?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
+                /** @description Filter monitoring sites by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
+                bbox?: string[];
+                /** @description Filter monitoring sites by admin area 1. */
+                admin_area_1?: string[];
+                /** @description Filter monitoring sites by admin area 2. */
+                admin_area_2?: string[];
+                /** @description Filter monitoring sites by country. */
+                country?: string[];
+                /** @description Filter monitoring sites by type. */
+                type?: string[];
+                /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value} */
+                tag?: string[];
+                /** @description Controls whether the returned monitoring sites should be private or public. */
+                is_private?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"][] | components["schemas"]["MonitoringSiteDetailResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_create_monitoring_site: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringSitePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_file_attachment_types: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Sort terms by descending. */
+                order_desc?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
+        parameters: {
+            query?: {
+                /** @description Filter markers by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
+                bbox?: string[];
+                /** @description Filter markers by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMarkerResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter site summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteMapSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_site_type_icons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_site_types: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Sort terms by descending. */
+                order_desc?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                monitoring_site_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string[];
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
+        parameters: {
+            query?: {
+                /** @description Filter task summaries by workspace ID. */
+                workspace_id?: string[];
+                /** @description Filter summaries by monitoring site type. */
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteTaskSummaryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_delete_monitoring_site: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_update_monitoring_site: {
+        parameters: {
+            query?: {
+                expand_related?: boolean | null;
+            };
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringSitePatchBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSiteSummaryResponse"] | components["schemas"]["MonitoringSiteDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_file_attachments: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based). */
+                page?: number | null;
+                /** @description The number of items per page. */
+                page_size?: number | null;
+                /** @description Filter by file attachment type. */
+                type?: string[];
+            };
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileAttachmentGetResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_replace_monitoring_site_file_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Description */
+                    description?: string | null;
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_add_monitoring_site_file_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Description */
+                    description?: string | null;
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** File Attachment Type */
+                    file_attachment_type: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileAttachmentGetResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_remove_monitoring_site_file_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileAttachmentDeleteBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_get_monitoring_site_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagGetResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_edit_monitoring_site_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagPostBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagGetResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_add_monitoring_site_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagPostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagGetResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_monitoring_site_remove_monitoring_site_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                monitoring_site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagDeleteBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     interfaces_api_views_monitoring_task_get_monitoring_tasks: {
         parameters: {
             query?: {
@@ -8143,9 +9062,9 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-                /** @description Filter monitoring tasks by thing ID. */
-                thing_id?: string[];
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter monitoring tasks by monitoring_site ID. */
+                monitoring_site_id?: string[];
                 /** @description Filter monitoring tasks by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter monitoring tasks by their most recent run status. */
@@ -8898,8 +9817,8 @@ export interface operations {
                 order_by?: ("name" | "type" | "code" | "-name" | "-type" | "-code")[] | null;
                 /** @description Filter observed properties by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter observed properties by thing ID. */
-                thing_id?: (string | "null")[];
+                /** @description Filter observed properties by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
                 /** @description Filter observed properties by datastream ID. */
                 datastream_id?: (string | "null")[];
                 /** @description Filter observed properties by type */
@@ -9185,8 +10104,8 @@ export interface operations {
                 order_by?: ("code" | "-code")[] | null;
                 /** @description Filter processing levels by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter processing levels by thing ID. */
-                thing_id?: (string | "null")[];
+                /** @description Filter processing levels by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
                 /** @description Filter processing levels by datastream ID. */
                 datastream_id?: (string | "null")[];
             };
@@ -9439,9 +10358,9 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName")[];
-                /** @description Filter rating curves by thing ID. */
-                thing_id?: string[];
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName")[];
+                /** @description Filter rating curves by monitoring_site ID. */
+                monitoring_site_id?: string[];
                 /** @description Filter rating curves by workspace ID. */
                 workspace_id?: string[];
             };
@@ -9715,9 +10634,9 @@ export interface operations {
                 /** @description The number of items per page. */
                 page_size?: number | null;
                 /** @description Select one or more fields to order the response by. */
-                order_by?: ("id" | "name" | "thingId" | "thingName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-thingId" | "-thingName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
-                /** @description Filter data product tasks by thing ID. */
-                thing_id?: string[];
+                order_by?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt")[];
+                /** @description Filter data product tasks by monitoring_site ID. */
+                monitoring_site_id?: string[];
                 /** @description Filter data product tasks by workspace ID. */
                 workspace_id?: string[];
                 /** @description Filter data product tasks by their most recent run status. */
@@ -12267,8 +13186,8 @@ export interface operations {
                 order_by?: ("code" | "-code")[] | null;
                 /** @description Filter sensors by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter result qualifiers by thing ID. */
-                thing_id?: (string | "null")[];
+                /** @description Filter result qualifiers by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
                 /** @description Filter result qualifiers by datastream ID. */
                 datastream_id?: (string | "null")[];
             };
@@ -12579,8 +13498,8 @@ export interface operations {
                 order_by?: ("name" | "encodingType" | "manufacturer" | "model" | "methodType" | "methodCode" | "-name" | "-encodingType" | "-manufacturer" | "-model" | "-methodType" | "-methodCode")[] | null;
                 /** @description Filter sensors by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter sensors by thing ID. */
-                thing_id?: (string | "null")[];
+                /** @description Filter sensors by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
                 /** @description Filter sensors by datastream ID. */
                 datastream_id?: (string | "null")[];
                 /** @description Filter sensors by encodingType */
@@ -12885,988 +13804,6 @@ export interface operations {
             };
         };
     };
-    interfaces_api_views_sta_thing_get_things: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                expand_related?: boolean | null;
-                /** @description Select one or more fields to order the response by. */
-                order_by?: ("name" | "samplingFeatureType" | "samplingFeatureCode" | "siteType" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-samplingFeatureType" | "-samplingFeatureCode" | "-siteType" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country")[] | null;
-                /** @description Filter things by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter things by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
-                /** @description Filter things by admin area 1. */
-                admin_area_1?: string[];
-                /** @description Filter things by admin area 2. */
-                admin_area_2?: string[];
-                /** @description Filter things by country. */
-                country?: string[];
-                /** @description Filter things by site type. */
-                site_type?: string[];
-                /** @description Filter things by sampling feature type. */
-                sampling_feature_type?: string[];
-                /** @description Filter things by tag. Format tag filters as {key}:{value} */
-                tag?: string[];
-                /** @description Controls whether the returned things should be private or public. */
-                is_private?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingSummaryResponse"][] | components["schemas"]["ThingDetailResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_create_thing: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ThingPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingSummaryResponse"] | components["schemas"]["ThingDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_file_attachment_types: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_markers: {
-        parameters: {
-            query?: {
-                /** @description Filter markers by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat} */
-                bbox?: string[];
-                /** @description Filter markers by site type. */
-                site_type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingMarkerResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_sampling_feature_types: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_site_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter site summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter site summaries by site type. */
-                site_type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingSiteSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_site_type_icons: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteTypeIconResponse"][];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_site_types: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Sort terms by descending. */
-                order_desc?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_tag_keys: {
-        parameters: {
-            query?: {
-                workspace_id?: string | null;
-                thing_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string[];
-                    };
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_task_summaries: {
-        parameters: {
-            query?: {
-                /** @description Filter task summaries by workspace ID. */
-                workspace_id?: string[];
-                /** @description Filter task summaries by site type. */
-                site_type?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingTaskSummaryResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingSummaryResponse"] | components["schemas"]["ThingDetailResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_delete_thing: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_update_thing: {
-        parameters: {
-            query?: {
-                expand_related?: boolean | null;
-            };
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ThingPatchBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThingSummaryResponse"] | components["schemas"]["ThingDetailResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_file_attachments: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-based). */
-                page?: number | null;
-                /** @description The number of items per page. */
-                page_size?: number | null;
-                /** @description Filter by file attachment type. */
-                type?: string[];
-            };
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_replace_thing_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Description */
-                    description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
-                };
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Content Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_add_thing_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Description */
-                    description?: string | null;
-                    /**
-                     * File
-                     * Format: binary
-                     */
-                    file: string;
-                    /** File Attachment Type */
-                    file_attachment_type: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileAttachmentGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Content Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_remove_thing_file_attachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FileAttachmentDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_get_thing_tags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_edit_thing_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_add_thing_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagPostBody"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagGetResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    interfaces_api_views_sta_thing_remove_thing_tag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                thing_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TagDeleteBody"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     interfaces_api_views_sta_unit_get_units: {
         parameters: {
             query?: {
@@ -13879,8 +13816,8 @@ export interface operations {
                 order_by?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type")[] | null;
                 /** @description Filter units by workspace ID. */
                 workspace_id?: (string | "null")[];
-                /** @description Filter units by thing ID. */
-                thing_id?: (string | "null")[];
+                /** @description Filter units by monitoring_site ID. */
+                monitoring_site_id?: (string | "null")[];
                 /** @description Filter units by datastream ID. */
                 datastream_id?: (string | "null")[];
                 /** @description Filter units by type */

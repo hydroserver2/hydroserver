@@ -14,7 +14,7 @@
       <v-icon :icon="mdiMagnify" size="16" color="primary" />
       <span class="filter-chip-label">Sites</span>
       <span class="filter-chip-count">
-        {{ thingsLoaded ? `(${availableSites.length})` : '...' }}
+        {{ monitoringSitesLoaded ? `(${availableSites.length})` : '...' }}
       </span>
     </v-btn>
 
@@ -70,7 +70,7 @@
             density="compact"
             color="primary"
             autocomplete="off"
-            :disabled="!thingsLoaded"
+            :disabled="!monitoringSitesLoaded"
             @keydown.enter.prevent="onSiteSearchEnter"
             @click:clear="siteSearch = ''"
           />
@@ -95,7 +95,7 @@
               density="compact"
               color="primary"
               :prepend-inner-icon="mdiBriefcaseOutline"
-              :disabled="!thingsLoaded"
+              :disabled="!monitoringSitesLoaded"
             >
               <template v-slot:selection="{ item, index }">
                 <v-chip
@@ -134,25 +134,25 @@
             <div class="filter-section-title">Site type</div>
             <div class="chip-grid">
               <v-btn
-                v-for="siteType in availableSiteTypes"
-                :key="siteType"
+                v-for="type in availableSiteTypes"
+                :key="type"
                 class="filter-pill"
-                :class="{ selected: selectedSiteTypes.includes(siteType) }"
+                :class="{ selected: selectedSiteTypes.includes(type) }"
                 :variant="
-                  selectedSiteTypes.includes(siteType) ? 'tonal' : 'outlined'
+                  selectedSiteTypes.includes(type) ? 'tonal' : 'outlined'
                 "
                 color="default"
                 rounded="pill"
-                @click="toggleSiteType(siteType)"
+                @click="toggleSiteType(type)"
               >
                 <v-icon
-                  :icon="getSiteTypeIcon(siteType)"
+                  :icon="getSiteTypeIcon(type)"
                   :color="
-                    selectedSiteTypes.includes(siteType) ? 'primary' : 'default'
+                    selectedSiteTypes.includes(type) ? 'primary' : 'default'
                   "
                   size="16"
                 />
-                <span>{{ siteType }}</span>
+                <span>{{ type }}</span>
               </v-btn>
             </div>
           </section>
@@ -229,9 +229,9 @@
               class="color-mode-button"
               color="grey-darken-1"
               size="small"
-              :variant="markerColorMode === 'siteType' ? 'tonal' : 'outlined'"
-              :aria-pressed="markerColorMode === 'siteType'"
-              @click="toggleMarkerColorMode('siteType')"
+              :variant="markerColorMode === 'type' ? 'tonal' : 'outlined'"
+              :aria-pressed="markerColorMode === 'type'"
+              @click="toggleMarkerColorMode('type')"
             >
               Site type
             </v-btn>
@@ -271,7 +271,7 @@
         <div class="site-list-header">
           <div class="site-list-count">
             {{
-              thingsLoaded ? `${availableSites.length} sites` : 'Loading sites'
+              monitoringSitesLoaded ? `${availableSites.length} sites` : 'Loading sites'
             }}
           </div>
 
@@ -302,7 +302,7 @@
           </div>
         </div>
 
-        <div v-if="!thingsLoaded" class="site-list-items">
+        <div v-if="!monitoringSitesLoaded" class="site-list-items">
           <div v-for="index in 8" :key="index" class="site-row skeleton-row">
             <span class="site-row-icon skeleton-icon" />
 
@@ -327,16 +327,16 @@
               @click="$emit('select-site', site.id)"
             >
               <span class="site-row-icon">
-                <v-icon :icon="getSiteTypeIcon(site.siteType)" size="20" />
+                <v-icon :icon="getSiteTypeIcon(site.type)" size="20" />
               </span>
 
               <span class="site-row-text">
                 <span class="site-row-name">{{ site.name }}</span>
                 <span class="site-row-workspace">
-                  <span v-if="site.samplingFeatureCode" class="site-row-code">
-                    {{ site.samplingFeatureCode }}
+                  <span v-if="site.code" class="site-row-code">
+                    {{ site.code }}
                   </span>
-                  <span v-if="site.samplingFeatureCode" aria-hidden="true">
+                  <span v-if="site.code" aria-hidden="true">
                     ·
                   </span>
                   {{ getWorkspaceName(site.workspaceId) }}
@@ -393,7 +393,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import {
   buildBrowseFilterQuery,
-  filterThingMarkers,
+  filterMonitoringSiteMarkers,
   parseBrowseFilterQuery,
 } from '@/utils/browseFilters'
 import type { MarkerColorMode } from '@/utils/browseFilters'
@@ -402,7 +402,7 @@ import {
   getSiteTypeIcon as resolveSiteTypeIcon,
 } from '@/utils/siteTypeIcons'
 import hs, { Workspace } from '@hydroserver/client'
-import type { ThingSiteSummary } from '@/types'
+import type { MonitoringSiteMapSummary } from '@/types'
 import {
   mdiAccountOutline,
   mdiBriefcaseOutline,
@@ -436,7 +436,7 @@ const hasAppliedInitialRouteState = ref(false)
 let routeApplyId = 0
 
 const emit = defineEmits<{
-  filter: [ThingSiteSummary[]]
+  filter: [MonitoringSiteMapSummary[]]
   'select-site': [string | undefined]
   'color-settings': [
     {
@@ -446,16 +446,16 @@ const emit = defineEmits<{
     },
   ]
   'register-site': []
-  'edit-site': [ThingSiteSummary]
-  'delete-site': [ThingSiteSummary]
+  'edit-site': [MonitoringSiteMapSummary]
+  'delete-site': [MonitoringSiteMapSummary]
 }>()
 
 const props = defineProps({
-  things: {
-    type: Array as () => ThingSiteSummary[],
+  monitoringSites: {
+    type: Array as () => MonitoringSiteMapSummary[],
     required: true,
   },
-  thingsLoaded: {
+  monitoringSitesLoaded: {
     type: Boolean,
     default: false,
   },
@@ -494,8 +494,8 @@ if (routeState.drawer !== null) {
   isExpanded.value = routeState.drawer
 }
 
-const sortedThings = computed(() =>
-  [...props.things].sort((a, b) => a.name.localeCompare(b.name))
+const sortedMonitoringSites = computed(() =>
+  [...props.monitoringSites].sort((a, b) => a.name.localeCompare(b.name))
 )
 
 const workspaceById = computed(
@@ -506,32 +506,32 @@ const searchNeedle = computed(() =>
   (siteSearch.value ?? '').trim().toLowerCase()
 )
 
-const thingsMatchingSearch = computed(() => {
-  if (!searchNeedle.value) return sortedThings.value
+const monitoringSitesMatchingSearch = computed(() => {
+  if (!searchNeedle.value) return sortedMonitoringSites.value
 
-  return sortedThings.value.filter((thing) => {
-    const workspaceName = getWorkspaceName(thing.workspaceId)
+  return sortedMonitoringSites.value.filter((monitoringSite) => {
+    const workspaceName = getWorkspaceName(monitoringSite.workspaceId)
     return [
-      thing.name,
-      thing.samplingFeatureCode,
-      thing.siteType,
+      monitoringSite.name,
+      monitoringSite.code,
+      monitoringSite.type,
       workspaceName,
     ].some((value) => value.toLowerCase().includes(searchNeedle.value))
   })
 })
 
-const thingsMatchingMySites = computed(() => {
-  if (!showOnlyMySites.value) return thingsMatchingSearch.value
+const monitoringSitesMatchingMySites = computed(() => {
+  if (!showOnlyMySites.value) return monitoringSitesMatchingSearch.value
 
   const workspaceIds = new Set(props.myWorkspaceIds)
-  return thingsMatchingSearch.value.filter((thing) =>
-    workspaceIds.has(thing.workspaceId)
+  return monitoringSitesMatchingSearch.value.filter((monitoringSite) =>
+    workspaceIds.has(monitoringSite.workspaceId)
   )
 })
 
 const availableSites = computed(() =>
-  filterThingMarkers(
-    thingsMatchingMySites.value,
+  filterMonitoringSiteMarkers(
+    monitoringSitesMatchingMySites.value,
     selectedWorkspaces.value,
     selectedSiteTypes.value,
     undefined,
@@ -542,14 +542,14 @@ const availableSites = computed(() =>
 
 const availableWorkspaces = computed(() => {
   const workspaceIds = new Set(
-    filterThingMarkers(
-      thingsMatchingMySites.value,
+    filterMonitoringSiteMarkers(
+      monitoringSitesMatchingMySites.value,
       [],
       selectedSiteTypes.value,
       undefined,
       selectedTagKey.value,
       selectedTagValues.value
-    ).map((thing) => thing.workspaceId)
+    ).map((monitoringSite) => monitoringSite.workspaceId)
   )
 
   return workspaces.value.filter((workspace) => workspaceIds.has(workspace.id))
@@ -557,22 +557,22 @@ const availableWorkspaces = computed(() => {
 
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
-    filterThingMarkers(
-      thingsMatchingMySites.value,
+    filterMonitoringSiteMarkers(
+      monitoringSitesMatchingMySites.value,
       selectedWorkspaces.value,
       [],
       undefined,
       selectedTagKey.value,
       selectedTagValues.value
-    ).map((thing) => thing.siteType)
+    ).map((monitoringSite) => monitoringSite.type)
   )
 
   return [...siteTypes].filter(Boolean).sort((a, b) => a.localeCompare(b))
 })
 
-const thingsMatchingPrimaryFilters = computed(() =>
-  filterThingMarkers(
-    thingsMatchingMySites.value,
+const monitoringSitesMatchingPrimaryFilters = computed(() =>
+  filterMonitoringSiteMarkers(
+    monitoringSitesMatchingMySites.value,
     selectedWorkspaces.value,
     selectedSiteTypes.value
   )
@@ -580,8 +580,8 @@ const thingsMatchingPrimaryFilters = computed(() =>
 
 const availableTagKeys = computed(() => {
   const keys = new Set(
-    thingsMatchingPrimaryFilters.value.flatMap((thing) =>
-      thing.tags.map((tag) => tag.key)
+    monitoringSitesMatchingPrimaryFilters.value.flatMap((monitoringSite) =>
+      monitoringSite.tags.map((tag) => tag.key)
     )
   )
   return [...keys].filter(Boolean).sort((a, b) => a.localeCompare(b))
@@ -590,8 +590,8 @@ const availableTagKeys = computed(() => {
 const availableTagValues = computed(() => {
   if (!selectedTagKey.value) return []
   const values = new Set(
-    thingsMatchingPrimaryFilters.value.flatMap((thing) =>
-      thing.tags
+    monitoringSitesMatchingPrimaryFilters.value.flatMap((monitoringSite) =>
+      monitoringSite.tags
         .filter((tag) => tag.key === selectedTagKey.value)
         .map((tag) => tag.value)
     )
@@ -618,22 +618,22 @@ const editableWorkspaceIdSet = computed(
 const deletableWorkspaceIdSet = computed(
   () => new Set(props.deletableWorkspaceIds)
 )
-const canEditSite = (site: ThingSiteSummary) =>
+const canEditSite = (site: MonitoringSiteMapSummary) =>
   editableWorkspaceIdSet.value.has(site.workspaceId)
-const canDeleteSite = (site: ThingSiteSummary) =>
+const canDeleteSite = (site: MonitoringSiteMapSummary) =>
   deletableWorkspaceIdSet.value.has(site.workspaceId)
 
 const siteTypeIconRules = computed(() =>
   buildSiteTypeIconRules(siteTypeIcons.value)
 )
 
-const getSiteTypeIcon = (siteType: string) =>
-  resolveSiteTypeIcon(siteType, siteTypeIconRules.value)
+const getSiteTypeIcon = (type: string) =>
+  resolveSiteTypeIcon(type, siteTypeIconRules.value)
 
-const toggleSiteType = (siteType: string) => {
-  selectedSiteTypes.value = selectedSiteTypes.value.includes(siteType)
-    ? selectedSiteTypes.value.filter((selected) => selected !== siteType)
-    : [...selectedSiteTypes.value, siteType]
+const toggleSiteType = (type: string) => {
+  selectedSiteTypes.value = selectedSiteTypes.value.includes(type)
+    ? selectedSiteTypes.value.filter((selected) => selected !== type)
+    : [...selectedSiteTypes.value, type]
 }
 
 const setExpanded = (value: boolean) => {
@@ -653,7 +653,7 @@ const onSiteSearchEnter = () => {
   }
 }
 
-const emitFilteredThings = () => {
+const emitFilteredMonitoringSites = () => {
   emit('filter', availableSites.value)
 }
 
@@ -690,7 +690,7 @@ const syncRouteFromSelection = async (siteId = props.selectedSiteId) => {
 }
 
 const applyRouteState = async () => {
-  if (!props.thingsLoaded || !workspacesLoaded.value) return
+  if (!props.monitoringSitesLoaded || !workspacesLoaded.value) return
 
   const applyId = ++routeApplyId
   const state = parseBrowseFilterQuery(route.query)
@@ -724,7 +724,7 @@ const applyRouteState = async () => {
 
   isApplyingRouteState.value = false
   hasAppliedInitialRouteState.value = true
-  emitFilteredThings()
+  emitFilteredMonitoringSites()
   void syncRouteFromSelection(linkedSiteId)
 }
 
@@ -755,7 +755,7 @@ watch(
     showOnlyMySites,
     siteSearch,
   ],
-  emitFilteredThings,
+  emitFilteredMonitoringSites,
   { deep: true }
 )
 
@@ -804,8 +804,8 @@ watch(
   () =>
     [
       route.query,
-      props.things,
-      props.thingsLoaded,
+      props.monitoringSites,
+      props.monitoringSitesLoaded,
       props.showMySitesFilter,
       props.myWorkspaceIds,
       workspacesLoaded.value,
@@ -823,7 +823,7 @@ const pruneSelectionToAvailable = <T, A>(
   availableKey: (item: A) => unknown
 ) =>
   watch(available, (items) => {
-    if (!props.thingsLoaded) return
+    if (!props.monitoringSitesLoaded) return
     const availableKeys = new Set(items.map(availableKey))
     const pruned = selected.value.filter((item) =>
       availableKeys.has(selectedKey(item))
@@ -843,8 +843,8 @@ pruneSelectionToAvailable(
 pruneSelectionToAvailable(
   selectedSiteTypes,
   availableSiteTypes,
-  (siteType) => siteType,
-  (siteType) => siteType
+  (type) => type,
+  (type) => type
 )
 
 watch(availableTagKeys, (keys) => {

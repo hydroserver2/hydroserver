@@ -406,12 +406,12 @@ const {
   plottedDatastreams,
   qcDatastream,
   datastreams,
-  things,
+  monitoringSites,
   beginDate,
   endDate,
   selectedDateBtnId,
   dateOptions,
-  selectedThings,
+  selectedMonitoringSites,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
@@ -593,11 +593,11 @@ const hydrateFromUrl = () => {
   else activeTab.value = 'plot'
 
   // Filters first; the store's filteredDatastreams watcher prunes
-  // plottedDatastreams whose thing/op/pl is filtered out, so we
+  // plottedDatastreams whose monitoringSite/op/pl is filtered out, so we
   // need these set before we assign plottedDatastreams below.
-  const thingIds = state.thingIds ?? []
-  selectedThings.value = thingIds
-    .map((id) => things.value.find((t) => t.id === id))
+  const monitoringSiteIds = state.monitoringSiteIds ?? []
+  selectedMonitoringSites.value = monitoringSiteIds
+    .map((id) => monitoringSites.value.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => !!t)
   selectedObservedPropertyNames.value = state.observedPropertyNames ?? []
   selectedProcessingLevelNames.value = state.processingLevelNames ?? []
@@ -704,7 +704,7 @@ watch(
     beginDate,
     endDate,
     selectedDateBtnId,
-    selectedThings,
+    selectedMonitoringSites,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
     selectedWorkspaceId,
@@ -732,7 +732,7 @@ watch(
       // Sidebar filters only matter on the Select view (they drive
       // the datastreams table, not the plot). Skip them in Edit
       // links to keep URLs short.
-      thingIds: isEdit ? [] : selectedThings.value.map((t) => t.id),
+      monitoringSiteIds: isEdit ? [] : selectedMonitoringSites.value.map((t) => t.id),
       observedPropertyNames: isEdit
         ? []
         : selectedObservedPropertyNames.value,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
-import { Thing, Datastream, ObservedProperty, ProcessingLevel } from '../../types'
+import { MonitoringSite, Datastream, ObservedProperty, ProcessingLevel } from '../../types'
 
 const jsonResponse = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -8,7 +8,7 @@ const jsonResponse = (data: unknown, status = 200) =>
     headers: { 'Content-Type': 'application/json' },
   })
 
-describe('ThingService', () => {
+describe('MonitoringSiteService', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -16,13 +16,13 @@ describe('ThingService', () => {
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
   describe('listMarkers', () => {
-    it('fetches thing markers and returns them in data', async () => {
+    it('fetches monitoringSite markers and returns them in data', async () => {
       const payload = [
         {
-          id: 'thing-1',
+          id: 'monitoringSite-1',
           workspaceId: 'workspace-1',
           name: 'Site 1',
-          siteType: 'Stream',
+          type: 'Stream',
           isPrivate: false,
           latitude: 41.7,
           longitude: -111.8,
@@ -31,18 +31,18 @@ describe('ThingService', () => {
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(payload)))
 
-      const res = await client.things.listMarkers()
+      const res = await client.monitoringSites.listMarkers()
 
       expect(res.ok).toBe(true)
       expect(res.data).toEqual(payload)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/things\/markers$/)
+      expect(url).toMatch(/\/api\/data\/monitoring-sites\/markers$/)
     })
 
     it('returns ok:false on a failed request', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'error' }, 503)))
 
-      const res = await client.things.listMarkers()
+      const res = await client.monitoringSites.listMarkers()
 
       expect(res.ok).toBe(false)
       expect(res.status).toBe(503)
@@ -53,45 +53,45 @@ describe('ThingService', () => {
     it('fetches visible site summaries without requiring a workspace filter', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([])))
 
-      const res = await client.things.listSiteSummaries()
+      const res = await client.monitoringSites.listSiteSummaries()
 
       expect(res.ok).toBe(true)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/things\/site-summaries$/)
+      expect(url).toMatch(/\/api\/data\/monitoring-sites\/site-summaries$/)
     })
 
     it('passes workspace_id as a query param and returns summaries', async () => {
       const payload = [
         {
-          id: 'thing-1',
+          id: 'monitoringSite-1',
           workspaceId: 'workspace-1',
           name: 'Site 1',
-          siteType: 'Stream',
+          type: 'Stream',
           isPrivate: false,
           latitude: 41.7,
           longitude: -111.8,
-          samplingFeatureCode: 'SF-1',
+          code: 'SF-1',
           tags: [{ key: 'network', value: 'main' }],
         },
       ]
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(payload)))
 
-      const res = await client.things.listSiteSummaries('workspace id')
+      const res = await client.monitoringSites.listSiteSummaries('workspace id')
 
       expect(res.ok).toBe(true)
       expect(res.data).toEqual(payload)
 
       const [url] = (fetch as any).mock.calls[0]
       const parsed = new URL(url)
-      expect(parsed.pathname).toBe('/api/data/things/site-summaries')
+      expect(parsed.pathname).toBe('/api/data/monitoring-sites/site-summaries')
       expect(parsed.searchParams.get('workspace_id')).toBe('workspace id')
     })
 
     it('returns ok:false on a failed request', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'forbidden' }, 403)))
 
-      const res = await client.things.listSiteSummaries('ws-1')
+      const res = await client.monitoringSites.listSiteSummaries('ws-1')
 
       expect(res.ok).toBe(false)
       expect(res.status).toBe(403)
@@ -112,10 +112,10 @@ describe('DatastreamService', () => {
         'fetch',
         vi.fn().mockResolvedValue(
           jsonResponse({
-            things: [{ id: 'thing-1', workspaceId: 'ws-1', name: 'Site 1', samplingFeatureCode: 'SF-1' }],
+            monitoringSites: [{ id: 'monitoringSite-1', workspaceId: 'ws-1', name: 'Site 1', code: 'SF-1' }],
             datastreams: [
-              { id: 'ds-1', name: 'DS 1', thingId: 'thing-1', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
-              { id: 'ds-2', name: 'DS 2', thingId: 'missing-thing', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
+              { id: 'ds-1', name: 'DS 1', monitoringSiteId: 'monitoringSite-1', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
+              { id: 'ds-2', name: 'DS 2', monitoringSiteId: 'missing-monitoringSite', observedPropertyId: 'op-1', processingLevelId: 'pl-1', unitId: 'u-1', noDataValue: -9999 },
             ],
             observedProperties: [{ id: 'op-1', name: 'Temperature', code: 'temp' }],
             processingLevels: [{ id: 'pl-1', definition: 'Raw data' }],
@@ -130,7 +130,7 @@ describe('DatastreamService', () => {
       const [url] = (fetch as any).mock.calls[0]
       expect(url).toMatch(/\/api\/data\/datastreams\/visualization-bootstrap$/)
 
-      expect(res.data.things[0]).toBeInstanceOf(Thing)
+      expect(res.data.monitoringSites[0]).toBeInstanceOf(MonitoringSite)
       expect(res.data.datastreams[0]).toBeInstanceOf(Datastream)
       expect(res.data.observedProperties[0]).toBeInstanceOf(ObservedProperty)
       expect(res.data.processingLevels[0]).toBeInstanceOf(ProcessingLevel)

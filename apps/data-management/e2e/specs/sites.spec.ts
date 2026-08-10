@@ -45,10 +45,10 @@ test.describe('sites and workspaces', () => {
   })
 
   test('public site details render seeded datastreams', async ({ page }) => {
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
     await expect(
-      page.getByRole('heading', { name: fixtures.things.public.name })
+      page.getByRole('heading', { name: fixtures.monitoringSites.public.name })
     ).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Site information' })
@@ -66,11 +66,11 @@ test.describe('sites and workspaces', () => {
     page,
   }) => {
     await authenticateSession(page, users.viewer.email, users.viewer.password)
-    await page.goto(`/sites/${fixtures.things.privateWorkspacePublic.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.privateWorkspacePublic.id}`)
 
     await expect(
       page.getByRole('heading', {
-        name: fixtures.things.privateWorkspacePublic.name,
+        name: fixtures.monitoringSites.privateWorkspacePublic.name,
         exact: true,
       })
     ).toBeVisible()
@@ -93,44 +93,44 @@ test.describe('sites and workspaces', () => {
       fixtures.workspaces.public.name
     )
 
-    const publicThingRow = page.getByRole('button', {
-      name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+    const publicMonitoringSiteRow = page.getByRole('button', {
+      name: `${fixtures.monitoringSites.public.name} ${fixtures.monitoringSites.public.siteCode} ${fixtures.workspaces.public.name}`,
       exact: true,
     })
     const privateWorkspaceRow = page
-      .locator(`[data-site-id="${fixtures.things.privatePublic.id}"]`)
+      .locator(`[data-site-id="${fixtures.monitoringSites.privatePublic.id}"]`)
       .locator('.site-row-main')
-    const mutableThingRow = page
-      .locator(`[data-site-id="${fixtures.things.mutablePublic.id}"]`)
+    const mutableMonitoringSiteRow = page
+      .locator(`[data-site-id="${fixtures.monitoringSites.mutablePublic.id}"]`)
       .locator('.site-row-main')
 
     const searchBox = page.getByRole('textbox', { name: 'Search sites' })
     await expect(searchBox).toBeVisible()
 
-    await searchBox.fill(fixtures.things.public.siteCode)
-    await expect(publicThingRow).toBeVisible()
+    await searchBox.fill(fixtures.monitoringSites.public.siteCode)
+    await expect(publicMonitoringSiteRow).toBeVisible()
     await expect(privateWorkspaceRow).toHaveCount(0)
-    await expect(mutableThingRow).toHaveCount(0)
+    await expect(mutableMonitoringSiteRow).toHaveCount(0)
 
     await searchBox.clear()
-    await expect(publicThingRow).toBeVisible()
+    await expect(publicMonitoringSiteRow).toBeVisible()
     await expect(privateWorkspaceRow).toBeVisible()
-    await expect(mutableThingRow).toBeVisible()
+    await expect(mutableMonitoringSiteRow).toBeVisible()
 
     await chooseAutocompleteOption(page, 'Key', 'E2E')
     await chooseAutocompleteOption(page, 'Value', 'Mutable')
 
-    await expect(mutableThingRow).toBeVisible()
-    await expect(publicThingRow).toHaveCount(0)
+    await expect(mutableMonitoringSiteRow).toBeVisible()
+    await expect(publicMonitoringSiteRow).toHaveCount(0)
     await expect(privateWorkspaceRow).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Reset', exact: true }).click()
-    await expect(publicThingRow).toBeVisible()
+    await expect(publicMonitoringSiteRow).toBeVisible()
     await expect(privateWorkspaceRow).toBeVisible()
-    await expect(mutableThingRow).toBeVisible()
+    await expect(mutableMonitoringSiteRow).toBeVisible()
 
-    await publicThingRow.click()
-    const sidebarSiteTypeIconPath = await publicThingRow
+    await publicMonitoringSiteRow.click()
+    const sidebarSiteTypeIconPath = await publicMonitoringSiteRow
       .locator('.site-row-icon path')
       .getAttribute('d')
     const selectedSiteTypeIcon = page.getByTestId('selected-site-type-icon')
@@ -171,25 +171,25 @@ test.describe('sites and workspaces', () => {
     await page.goto('/browse')
 
     const mySitesFilter = page.getByTestId('my-sites-filter')
-    const publicThingRow = page.getByRole('button', {
-      name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+    const publicMonitoringSiteRow = page.getByRole('button', {
+      name: `${fixtures.monitoringSites.public.name} ${fixtures.monitoringSites.public.siteCode} ${fixtures.workspaces.public.name}`,
       exact: true,
     })
 
     await expect(mySitesFilter).toBeVisible()
     await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'false')
-    await expect(publicThingRow).toBeVisible()
+    await expect(publicMonitoringSiteRow).toBeVisible()
 
     await mySitesFilter.click()
     await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'true')
     await expect(page).toHaveURL(/mySites=1/)
     await expect(page.getByText('0 sites', { exact: true })).toBeVisible()
-    await expect(publicThingRow).toHaveCount(0)
+    await expect(publicMonitoringSiteRow).toHaveCount(0)
 
     await mySitesFilter.click()
     await expect(mySitesFilter).toHaveAttribute('aria-pressed', 'false')
     await expect(page).not.toHaveURL(/mySites=/)
-    await expect(publicThingRow).toBeVisible()
+    await expect(publicMonitoringSiteRow).toBeVisible()
   })
 
   test('Browse provides filter visibility and owner site CRUD controls', async ({
@@ -203,7 +203,7 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
 
     const siteRow = page.locator(
-      `[data-site-id="${fixtures.things.public.id}"]`
+      `[data-site-id="${fixtures.monitoringSites.public.id}"]`
     )
     const siteRowActions = siteRow.locator('.site-row-actions')
     await expect(siteRow).toBeVisible()
@@ -213,12 +213,12 @@ test.describe('sites and workspaces', () => {
     await expect(siteRowActions).toHaveCSS('opacity', '1')
     await expect(
       siteRow.getByRole('button', {
-        name: `Edit ${fixtures.things.public.name}`,
+        name: `Edit ${fixtures.monitoringSites.public.name}`,
       })
     ).toBeVisible()
     await expect(
       siteRow.getByRole('button', {
-        name: `Delete ${fixtures.things.public.name}`,
+        name: `Delete ${fixtures.monitoringSites.public.name}`,
       })
     ).toBeVisible()
 
@@ -238,7 +238,7 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
 
     await siteRow
-      .getByRole('button', { name: `Edit ${fixtures.things.public.name}` })
+      .getByRole('button', { name: `Edit ${fixtures.monitoringSites.public.name}` })
       .click()
     const editDialog = page.getByRole('dialog')
     await expect(
@@ -248,7 +248,7 @@ test.describe('sites and workspaces', () => {
     await expect(editDialog).toBeHidden()
 
     await siteRow
-      .getByRole('button', { name: `Delete ${fixtures.things.public.name}` })
+      .getByRole('button', { name: `Delete ${fixtures.monitoringSites.public.name}` })
       .click()
     const deleteDialog = page.getByRole('dialog')
     await expect(
@@ -268,40 +268,40 @@ test.describe('sites and workspaces', () => {
     await page.goto('/browse')
 
     const siteRow = page.locator(
-      `[data-site-id="${fixtures.things.privateWorkspacePublic.id}"]`
+      `[data-site-id="${fixtures.monitoringSites.privateWorkspacePublic.id}"]`
     )
     await expect(siteRow).toBeVisible()
     await expect(
       siteRow.getByRole('button', {
-        name: `Edit ${fixtures.things.privateWorkspacePublic.name}`,
+        name: `Edit ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
       })
     ).toHaveCount(0)
     await expect(
       siteRow.getByRole('button', {
-        name: `Delete ${fixtures.things.privateWorkspacePublic.name}`,
+        name: `Delete ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
       })
     ).toHaveCount(0)
   })
 
-  test('Browse shows site mutation controls to editors with Thing permissions', async ({
+  test('Browse shows site mutation controls to editors with MonitoringSite permissions', async ({
     page,
   }) => {
     await authenticateSession(page, users.editor.email, users.editor.password)
     await page.goto('/browse')
 
     const siteRow = page.locator(
-      `[data-site-id="${fixtures.things.privateWorkspacePublic.id}"]`
+      `[data-site-id="${fixtures.monitoringSites.privateWorkspacePublic.id}"]`
     )
     await expect(siteRow).toBeVisible()
     await siteRow.hover()
     await expect(
       siteRow.getByRole('button', {
-        name: `Edit ${fixtures.things.privateWorkspacePublic.name}`,
+        name: `Edit ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
       })
     ).toBeVisible()
     await expect(
       siteRow.getByRole('button', {
-        name: `Delete ${fixtures.things.privateWorkspacePublic.name}`,
+        name: `Delete ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
       })
     ).toBeVisible()
   })
@@ -309,7 +309,7 @@ test.describe('sites and workspaces', () => {
   test('Browse metadata controls stay on one line with multiple values', async ({
     page,
   }) => {
-    await page.route('**/api/data/things/site-summaries*', async (route) => {
+    await page.route('**/api/data/monitoring-sites/site-summaries*', async (route) => {
       const response = await route.fetch()
       const summaries = (await response.json()) as Array<{
         tags: Array<{ key: string; value: string }>
@@ -372,7 +372,7 @@ test.describe('sites and workspaces', () => {
 
     await expect(
       page.getByRole('button', {
-        name: `${fixtures.things.public.name} ${fixtures.things.public.siteCode} ${fixtures.workspaces.public.name}`,
+        name: `${fixtures.monitoringSites.public.name} ${fixtures.monitoringSites.public.siteCode} ${fixtures.workspaces.public.name}`,
         exact: true,
       })
     ).toBeVisible()
@@ -401,7 +401,7 @@ test.describe('sites and workspaces', () => {
     await fillCombobox(page, 'Select Site Type *', 'Lake')
     await page.getByLabel('Latitude *').fill('41.7501')
     await page.getByLabel('Longitude *').fill('-111.8102')
-    await page.getByLabel('Elevation (m) *').fill('1380')
+    await page.getByLabel('Elevation (m)').fill('1380')
     const tagKey = siteFormDialog.getByRole('combobox', { name: 'Key' })
     await tagKey.fill('E2E')
     await tagKey.press('Enter')
@@ -461,20 +461,20 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     const anonymousContext = await browser.newContext()
     const anonymousPage = await anonymousContext.newPage()
-    await anonymousPage.goto(`/sites/${fixtures.things.mutablePublic.id}`)
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.mutablePublic.id}`)
     await expect(
       anonymousPage.getByRole('heading', {
-        name: fixtures.things.mutablePublic.name,
+        name: fixtures.monitoringSites.mutablePublic.name,
         exact: true,
       })
     ).toBeVisible()
     await anonymousContext.close()
 
-    await page.goto(`/sites/${fixtures.things.mutablePublic.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.mutablePublic.id}`)
 
     await expect(
       page.getByRole('heading', {
-        name: fixtures.things.mutablePublic.name,
+        name: fixtures.monitoringSites.mutablePublic.name,
         exact: true,
       })
     ).toBeVisible()
@@ -590,13 +590,13 @@ test.describe('sites and workspaces', () => {
     browser,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
     const anonymousContext = await browser.newContext()
     const anonymousPage = await anonymousContext.newPage()
 
     const siteHeading = anonymousPage.getByRole('heading', {
-      name: fixtures.things.public.name,
+      name: fixtures.monitoringSites.public.name,
       exact: true,
     })
     const datastreamPrivacyToggle = page.getByTestId(
@@ -614,20 +614,20 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/things/${fixtures.things.public.id}`
+          `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
         )
-        const thing = await response.json()
-        return thing.isPrivate
+        const monitoringSite = await response.json()
+        return monitoringSite.isPrivate
       })
       .toBe(true)
     await page.getByRole('button', { name: 'Close' }).click()
 
-    const blockedThingRequest = anonymousPage.waitForResponse((response) =>
-      response.url().includes(`/api/data/things/${fixtures.things.public.id}`)
+    const blockedMonitoringSiteRequest = anonymousPage.waitForResponse((response) =>
+      response.url().includes(`/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`)
     )
-    await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
-    const blockedThingResponse = await blockedThingRequest
-    expect([403, 404]).toContain(blockedThingResponse.status())
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
+    const blockedMonitoringSiteResponse = await blockedMonitoringSiteRequest
+    expect([403, 404]).toContain(blockedMonitoringSiteResponse.status())
     await expect(siteHeading).toHaveCount(0)
 
     await page.getByTestId('site-access-control-button').click()
@@ -635,15 +635,15 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/things/${fixtures.things.public.id}`
+          `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
         )
-        const thing = await response.json()
-        return thing.isPrivate
+        const monitoringSite = await response.json()
+        return monitoringSite.isPrivate
       })
       .toBe(false)
     await page.getByRole('button', { name: 'Close' }).click()
 
-    await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     await expect(siteHeading).toBeVisible()
 
     await datastreamPrivacyToggle.click()
@@ -656,7 +656,7 @@ test.describe('sites and workspaces', () => {
         return datastream.isPrivate
       })
       .toBe(true)
-    await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     await expect(
       datastreamEntriesByName(anonymousPage, fixtures.datastreams.public.name)
     ).toHaveCount(0)
@@ -690,7 +690,7 @@ test.describe('sites and workspaces', () => {
         return datastream.isVisible
       })
       .toBe(false)
-    await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     const anonymousPublicDatastreamRow = datastreamEntriesByName(
       anonymousPage,
       fixtures.datastreams.public.name
@@ -707,7 +707,7 @@ test.describe('sites and workspaces', () => {
       })
       .toBe(true)
 
-    await anonymousPage.goto(`/sites/${fixtures.things.public.id}`)
+    await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     await expect(
       datastreamEntriesByName(anonymousPage, fixtures.datastreams.public.name)
     ).toHaveCount(1)
@@ -719,7 +719,7 @@ test.describe('sites and workspaces', () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
     const datastreamRow = datastreamEntriesByName(
       page,
@@ -740,7 +740,7 @@ test.describe('sites and workspaces', () => {
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
     await page
       .getByTestId(`datastream-metadata-${fixtures.datastreams.public.id}`)
@@ -768,19 +768,19 @@ test.describe('sites and workspaces', () => {
   }) => {
     await page.setViewportSize({ width: 500, height: 900 })
     await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
 
     await page
       .getByRole('link', { name: 'View on Data Visualization Page' })
       .click()
     await expect(page).toHaveURL(
-      new RegExp(`/visualize-data\\?sites=${fixtures.things.public.id}`)
+      new RegExp(`/visualize-data\\?sites=${fixtures.monitoringSites.public.id}`)
     )
     await expect(
       page.getByText(fixtures.datastreams.public.name, { exact: true })
     ).toBeVisible()
 
-    await page.goto(`/sites/${fixtures.things.public.id}`)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     const datastreamRow = datastreamEntriesByName(
       page,
       fixtures.datastreams.public.name
@@ -792,7 +792,7 @@ test.describe('sites and workspaces', () => {
 
     await expect(page).toHaveURL(
       new RegExp(
-        `/visualize-data\\?sites=${fixtures.things.public.id}&datastreams=${fixtures.datastreams.public.id}`
+        `/visualize-data\\?sites=${fixtures.monitoringSites.public.id}&datastreams=${fixtures.datastreams.public.id}`
       )
     )
     await expect(

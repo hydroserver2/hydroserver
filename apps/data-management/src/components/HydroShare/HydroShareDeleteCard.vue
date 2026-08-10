@@ -41,7 +41,7 @@ import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['delete', 'close'])
 const props = defineProps({
-  thingId: { type: String, required: true },
+  monitoringSiteId: { type: String, required: true },
 })
 const deleteInput = ref('')
 
@@ -51,7 +51,7 @@ async function deleteLink() {
     return
   }
   try {
-    await hs.things.deleteHydroShareArchive(props.thingId)
+    await hs.monitoringSites.deleteHydroShareArchive(props.monitoringSiteId)
     Snackbar.info('Your site has been unlinked')
     emit('delete')
     emit('close')

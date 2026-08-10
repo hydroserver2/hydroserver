@@ -46,30 +46,30 @@ export let fixtures = {
       name: 'Transfer',
     },
   },
-  things: {
+  monitoringSites: {
     public: {
       id: 'uninitialized',
-      name: 'Public Thing',
+      name: 'Public Monitoring Site',
       siteCode: 'UWRL',
     },
     private: {
       id: 'uninitialized',
-      name: 'Private Thing',
+      name: 'Private Monitoring Site',
       siteCode: 'TSC',
     },
     privatePublic: {
       id: 'uninitialized',
-      name: 'Private Thing Public Workspace',
+      name: 'Private Monitoring Site Public Workspace',
       siteCode: 'MAIN',
     },
     privateWorkspacePublic: {
       id: 'uninitialized',
-      name: 'Public Thing Private Workspace',
+      name: 'Public Monitoring Site Private Workspace',
       siteCode: 'LIB',
     },
     mutablePublic: {
       id: 'uninitialized',
-      name: 'E2E Mutable Thing',
+      name: 'E2E Mutable Monitoring Site',
       siteCode: 'E2E-MUTABLE',
     },
   },

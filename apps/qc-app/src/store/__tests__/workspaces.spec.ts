@@ -101,7 +101,7 @@ describe('useWorkspaceStore.canEditSelected', () => {
     const { useWorkspaceStore } = await import('@/store/workspaces')
     const store = useWorkspaceStore()
     store.selectedWorkspace = ws(
-      role([{ resource: 'Thing', action: 'edit' }])
+      role([{ resource: 'MonitoringSite', action: 'edit' }])
     ) as any
     expect(store.canEditSelected).toBe(false)
   })

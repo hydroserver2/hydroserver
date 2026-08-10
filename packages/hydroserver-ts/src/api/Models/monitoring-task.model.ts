@@ -39,7 +39,7 @@ export class MonitoringTask {
   name = ''
   description: string | null = null
   recipients: string[] = []
-  thingId = ''
+  monitoringSiteId = ''
   schedule: TaskSchedule | null = null
 
   constructor(init?: Partial<MonitoringTask>) {
@@ -52,7 +52,7 @@ export interface MonitoringTaskExpanded {
   name: string
   description?: string | null
   recipients: string[]
-  thing: { id: string; name: string; [key: string]: unknown }
+  monitoringSite: { id: string; name: string; [key: string]: unknown }
   monitoredDatastreams: Array<{
     id: string
     rules?: MonitoringRule[]

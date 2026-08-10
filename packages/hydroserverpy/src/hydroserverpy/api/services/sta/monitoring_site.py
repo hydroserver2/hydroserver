@@ -1,7 +1,7 @@
 import json
 from typing import TYPE_CHECKING, Union, IO, List, Dict, Optional, Tuple
 from uuid import UUID
-from hydroserverpy.api.models import Thing
+from hydroserverpy.api.models import MonitoringSite
 from hydroserverpy.api.utils import normalize_uuid
 from ..base import HydroServerBaseService
 
@@ -10,9 +10,9 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import Workspace
 
 
-class ThingService(HydroServerBaseService):
+class MonitoringSiteService(HydroServerBaseService):
     def __init__(self, client: "HydroServer"):
-        self.model = Thing
+        self.model = MonitoringSite
         super().__init__(client)
 
     def list(
@@ -25,14 +25,12 @@ class ThingService(HydroServerBaseService):
         admin_area_1: str = ...,
         admin_area_2: str = ...,
         country: str = ...,
-        site_type: str = ...,
-        sampling_feature_type: str = ...,
-        sampling_feature_code: str = ...,
+        type: str = ...,
         tag: Tuple[str, str] = ...,
         is_private: bool = ...,
         fetch_all: bool = False,
-    ) -> List["Thing"]:
-        """Fetch a collection of things."""
+    ) -> List["MonitoringSite"]:
+        """Fetch a collection of monitoring_sites."""
 
         return super().list(
             page=page,
@@ -43,9 +41,7 @@ class ThingService(HydroServerBaseService):
             admin_area_1=admin_area_1,
             admin_area_2=admin_area_2,
             country=country,
-            site_type=site_type,
-            sampling_feature_type=sampling_feature_type,
-            sampling_feature_code=sampling_feature_code,
+            type=type,
             tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
             fetch_all=fetch_all,
@@ -56,10 +52,9 @@ class ThingService(HydroServerBaseService):
         workspace: Union["Workspace", UUID, str],
         name: str,
         description: str,
-        sampling_feature_type: str,
-        sampling_feature_code: str,
-        site_type: str,
-        is_private: False,
+        code: str,
+        type: str,
+        is_private: bool,
         latitude: float,
         longitude: float,
         elevation_m: Optional[float] = None,
@@ -70,28 +65,25 @@ class ThingService(HydroServerBaseService):
         data_disclaimer: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         uid: Optional[UUID] = None,
-    ) -> "Thing":
-        """Create a new thing."""
+    ) -> "MonitoringSite":
+        """Create a new monitoring_site."""
 
         body = {
             "id": normalize_uuid(uid),
             "name": name,
             "description": description,
-            "samplingFeatureType": sampling_feature_type,
-            "samplingFeatureCode": sampling_feature_code,
-            "siteType": site_type,
+            "code": code,
+            "type": type,
             "isPrivate": is_private,
             "dataDisclaimer": data_disclaimer,
             "workspaceId": normalize_uuid(workspace),
-            "location": {
-                "latitude": latitude,
-                "longitude": longitude,
-                "elevation_m": elevation_m,
-                "elevationDatum": elevation_datum,
-                "adminArea1": admin_area_1,
-                "adminArea2": admin_area_2,
-                "country": country,
-            },
+            "latitude": latitude,
+            "longitude": longitude,
+            "elevation_m": elevation_m,
+            "elevationDatum": elevation_datum,
+            "adminArea1": admin_area_1,
+            "adminArea2": admin_area_2,
+            "country": country,
             "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
         }
 
@@ -102,9 +94,8 @@ class ThingService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         description: str = ...,
-        sampling_feature_type: str = ...,
-        sampling_feature_code: str = ...,
-        site_type: str = ...,
+        code: str = ...,
+        type: str = ...,
         is_private: bool = ...,
         latitude: float = ...,
         longitude: float = ...,
@@ -114,32 +105,29 @@ class ThingService(HydroServerBaseService):
         admin_area_2: Optional[str] = ...,
         country: Optional[str] = ...,
         data_disclaimer: Optional[str] = ...,
-    ) -> "Thing":
-        """Update a thing."""
+    ) -> "MonitoringSite":
+        """Update a monitoring_site."""
 
         body = {
             "name": name,
             "description": description,
-            "samplingFeatureType": sampling_feature_type,
-            "samplingFeatureCode": sampling_feature_code,
-            "siteType": site_type,
+            "code": code,
+            "type": type,
             "isPrivate": is_private,
             "dataDisclaimer": data_disclaimer,
-            "location": {
-                "latitude": latitude,
-                "longitude": longitude,
-                "elevation_m": elevation_m,
-                "elevationDatum": elevation_datum,
-                "adminArea1": admin_area_1,
-                "adminArea2": admin_area_2,
-                "country": country,
-            }
+            "latitude": latitude,
+            "longitude": longitude,
+            "elevation_m": elevation_m,
+            "elevationDatum": elevation_datum,
+            "adminArea1": admin_area_1,
+            "adminArea2": admin_area_2,
+            "country": country,
         }
 
         return super().update(uid=str(uid), **body)
 
     def add_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Tag a HydroServer thing."""
+        """Tag a HydroServer monitoring_site."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
         headers = {"Content-type": "application/json"}
@@ -152,7 +140,7 @@ class ThingService(HydroServerBaseService):
         ).json()
 
     def update_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Update the tag of a HydroServer thing."""
+        """Update the tag of a HydroServer monitoring_site."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
         headers = {"Content-type": "application/json"}
@@ -165,7 +153,7 @@ class ThingService(HydroServerBaseService):
         ).json()
 
     def delete_tag(self, uid: Union[UUID, str], key: str, value: str) -> None:
-        """Remove a tag from a HydroServer thing."""
+        """Remove a tag from a HydroServer monitoring_site."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
         headers = {"Content-type": "application/json"}
@@ -178,7 +166,7 @@ class ThingService(HydroServerBaseService):
         )
 
     def add_file_attachment(self, uid: Union[UUID, str], file: IO[bytes], file_attachment_type: str) -> Dict[str, str]:
-        """Add a file attachment of a HydroServer thing."""
+        """Add a file attachment of a HydroServer monitoring_site."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
 
@@ -187,7 +175,7 @@ class ThingService(HydroServerBaseService):
         ).json()
 
     def delete_file_attachment(self, uid: Union[UUID, str], name: str) -> None:
-        """Delete a file attachment of a HydroServer thing."""
+        """Delete a file attachment of a HydroServer monitoring_site."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
         headers = {"Content-type": "application/json"}

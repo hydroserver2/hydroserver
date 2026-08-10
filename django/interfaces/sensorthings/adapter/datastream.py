@@ -11,7 +11,7 @@ from .utils import SensorThingsUtils
 datastream_service = DatastreamService()
 
 _GROUP_BY_PARTITION = {
-    "thing": "thing_id",
+    "thing": "monitoring_site_id",
     "sensor": "sensor_id",
     "observed_property": "observed_property_id",
 }
@@ -30,7 +30,7 @@ class DatastreamMixin(SensorThingsUtils):
         if needs_unit or needs_properties:
             related.append("unit")
         if needs_properties:
-            related += ["processing_level", "thing__workspace"]
+            related += ["processing_level", "monitoring_site__workspace"]
         if related:
             datastreams = datastreams.select_related(*related)
         if needs_properties:
@@ -52,12 +52,15 @@ class DatastreamMixin(SensorThingsUtils):
                 "__UNGROUPED__": CollectionDTO(entity_ids=[datastream.id for datastream in ds_list])
             }
         elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
-            datastreams = datastreams.filter(**{f"{group_by[0]}_id__in": group_by[1]})
+            group_field = (
+                "monitoring_site" if group_by[0] == "thing" else group_by[0]
+            )
+            datastreams = datastreams.filter(**{f"{group_field}_id__in": group_by[1]})
             ds_counts = dict(
                 datastreams
-                .values(group_by[0])
+                .values(group_field)
                 .annotate(total=Count("id"))
-                .values_list(group_by[0], "total")
+                .values_list(group_field, "total")
             ) if count else None
             ds_list = list(self.apply_window(datastreams, partition_field, top, skip))
             groups = {}
@@ -121,9 +124,9 @@ class DatastreamMixin(SensorThingsUtils):
                             "is_private": datastream.is_private,
                             "is_visible": datastream.is_visible,
                             "workspace": {
-                                "id": datastream.thing.workspace.id,
-                                "name": datastream.thing.workspace.name,
-                                "is_private": datastream.thing.workspace.is_private,
+                                "id": datastream.monitoring_site.workspace.id,
+                                "name": datastream.monitoring_site.workspace.name,
+                                "is_private": datastream.monitoring_site.workspace.is_private,
                             },
                             "tags": {tag.key: tag.value for tag in datastream.datastream_tags.all()},
                             "file_attachments": {
@@ -133,7 +136,7 @@ class DatastreamMixin(SensorThingsUtils):
                         }
                         if needs_properties else Absent
                     ),
-                    thing_id=datastream.thing_id,
+                    thing_id=datastream.monitoring_site_id,
                     sensor_id=datastream.sensor_id,
                     observed_property_id=datastream.observed_property_id,
                 )

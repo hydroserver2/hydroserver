@@ -8,23 +8,23 @@ import type * as Data from '../../generated/data.types'
 import type { ApiResponse } from '../responseInterceptor'
 import {
   Datastream as M,
-  Thing,
+  MonitoringSite,
   ObservedProperty,
   ProcessingLevel,
 } from '../../types'
 import { normalizeAttachmentCollection } from './attachment-link'
 
 interface VisualizationBootstrapPayload {
-  things: Array<{
+  monitoringSites: Array<{
     id: string
     workspaceId: string
     name: string
-    samplingFeatureCode: string
+    code: string
   }>
   datastreams: Array<{
     id: string
     name: string
-    thingId: string
+    monitoringSiteId: string
     observedPropertyId: string
     processingLevelId: string
     unitId: string
@@ -40,7 +40,7 @@ interface VisualizationBootstrapPayload {
 }
 
 export interface VisualizationBootstrap {
-  things: Thing[]
+  monitoringSites: MonitoringSite[]
   datastreams: M[]
   observedProperties: ObservedProperty[]
   processingLevels: ProcessingLevel[]
@@ -219,13 +219,13 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
     const payload = res.data
 
-    const things = payload.things.map((p) => Object.assign(new Thing(), p))
-    const thingById = new Map(things.map((t) => [t.id, t]))
+    const monitoringSites = payload.monitoringSites.map((p) => Object.assign(new MonitoringSite(), p))
+    const monitoringSiteById = new Map(monitoringSites.map((t) => [t.id, t]))
 
     const datastreams = payload.datastreams.map((p) =>
       Object.assign(new M(), {
         ...p,
-        workspaceId: thingById.get(p.thingId)?.workspaceId ?? '',
+        workspaceId: monitoringSiteById.get(p.monitoringSiteId)?.workspaceId ?? '',
       })
     )
     const observedProperties = payload.observedProperties.map((p) =>
@@ -237,7 +237,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
     return {
       ...res,
-      data: { things, datastreams, observedProperties, processingLevels },
+      data: { monitoringSites, datastreams, observedProperties, processingLevels },
     }
   }
 }

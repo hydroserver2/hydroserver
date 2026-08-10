@@ -83,7 +83,7 @@ class DataProductTransformationService(ServiceUtils):
         if isinstance(transformation, uuid.UUID):
             try:
                 transformation = DataProductTransformation.objects.select_related(
-                    "task__thing__workspace",
+                    "task__monitoring_site__workspace",
                     "output_datastream",
                     "rating_curve",
                 ).prefetch_related(
@@ -128,7 +128,7 @@ class DataProductTransformationService(ServiceUtils):
 
         if isinstance(task, uuid.UUID):
             try:
-                task = DataProductTask.objects.select_related("thing__workspace").get(pk=task)
+                task = DataProductTask.objects.select_related("monitoring_site__workspace").get(pk=task)
             except DataProductTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
@@ -137,7 +137,7 @@ class DataProductTransformationService(ServiceUtils):
                 raise LookupError(f"Task with ID {str(task.id)} does not exist.")
 
         queryset = DataProductTransformation.objects.filter(task=task).select_related(
-            "task__thing__workspace",
+            "task__monitoring_site__workspace",
             "output_datastream",
             "rating_curve",
         ).prefetch_related(
@@ -194,7 +194,7 @@ class DataProductTransformationService(ServiceUtils):
         if isinstance(task, uuid.UUID):
             try:
                 task = principal.annotate_permissions(
-                    DataProductTask.objects.select_related("thing__workspace").filter(pk=task)
+                    DataProductTask.objects.select_related("monitoring_site__workspace").filter(pk=task)
                 ).get()
             except DataProductTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
@@ -422,18 +422,18 @@ class DataProductTransformationService(ServiceUtils):
 
         if isinstance(task, uuid.UUID):
             try:
-                task = DataProductTask.objects.select_related("thing__workspace").get(pk=task)
+                task = DataProductTask.objects.select_related("monitoring_site__workspace").get(pk=task)
             except DataProductTask.DoesNotExist:
                 raise LookupError(f"Task with ID {str(task)} does not exist.")
 
-        workspace = task.thing.workspace
-        thing = task.thing
+        workspace = task.monitoring_site.workspace
+        monitoring_site = task.monitoring_site
         input_datastream_variable_names = []
 
         for input_datastream in input_datastreams:
             if isinstance(input_datastream.datastream, uuid.UUID):
                 try:
-                    input_datastream_obj = Datastream.objects.select_related("thing__workspace").get(
+                    input_datastream_obj = Datastream.objects.select_related("monitoring_site__workspace").get(
                         pk=input_datastream.datastream
                     )
                 except Datastream.DoesNotExist:
@@ -441,7 +441,7 @@ class DataProductTransformationService(ServiceUtils):
             else:
                 input_datastream_obj = input_datastream.datastream
 
-            if input_datastream_obj.thing.workspace != workspace:
+            if input_datastream_obj.monitoring_site.workspace != workspace:
                 raise ValueError(
                     f"Datastream with ID {str(input_datastream_obj.id)} does not belong to workspace "
                     f"{workspace.id}."
@@ -454,7 +454,7 @@ class DataProductTransformationService(ServiceUtils):
 
         if isinstance(output_datastream, uuid.UUID):
             try:
-                output_datastream_obj = Datastream.objects.select_related("thing__workspace").get(
+                output_datastream_obj = Datastream.objects.select_related("monitoring_site__workspace").get(
                     pk=output_datastream
                 )
             except Datastream.DoesNotExist:
@@ -462,15 +462,15 @@ class DataProductTransformationService(ServiceUtils):
         else:
             output_datastream_obj = output_datastream
 
-        if output_datastream_obj.thing.workspace != workspace:
+        if output_datastream_obj.monitoring_site.workspace != workspace:
             raise ValueError(
                 f"Datastream with ID {str(output_datastream_obj.id)} does not belong to workspace "
                 f"{workspace.id}."
             )
-        if output_datastream_obj.thing != thing:
+        if output_datastream_obj.monitoring_site != monitoring_site:
             raise ValueError(
-                f"Datastream with ID {str(output_datastream_obj.id)} does not belong to thing "
-                f"{thing.id}."
+                f"Datastream with ID {str(output_datastream_obj.id)} does not belong to monitoring_site "
+                f"{monitoring_site.id}."
             )
 
         if transformation_type == "rating_curve":
@@ -486,11 +486,11 @@ class DataProductTransformationService(ServiceUtils):
                 )
             try:
                 RatingCurve.objects.get(
-                    pk=getattr(rating_curve, "pk", rating_curve), thing=task.thing
+                    pk=getattr(rating_curve, "pk", rating_curve), monitoring_site=task.monitoring_site
                 )
             except RatingCurve.DoesNotExist:
                 raise LookupError(
-                    f"Rating curve with ID {str(output_datastream)} does not exist at site {task.thing.id}."
+                    f"Rating curve with ID {str(output_datastream)} does not exist at site {task.monitoring_site.id}."
                 )
 
         elif transformation_type == "expression":
@@ -850,7 +850,7 @@ class DataProductTransformationService(ServiceUtils):
         """
 
         output_ds = transformation.output_datastream
-        principal = transformation.task.thing.workspace.owner
+        principal = transformation.task.monitoring_site.workspace.owner
 
         data = list(zip(
             result_df[TIMESTAMP_COL].tolist(),

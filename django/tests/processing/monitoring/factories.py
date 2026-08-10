@@ -14,7 +14,7 @@ class MonitoringTaskFactory(DjangoModelFactory):
 
         def __new__(cls, *args, **kwargs) -> MonitoringTask: ...
 
-    thing = factory.SubFactory("tests.core.sta.factories.ThingFactory")
+    monitoring_site = factory.SubFactory("tests.core.sta.factories.MonitoringSiteFactory")
     name = factory.Sequence(lambda seq: f"Monitoring Task {seq}")
     description = factory.Faker("sentence")
 

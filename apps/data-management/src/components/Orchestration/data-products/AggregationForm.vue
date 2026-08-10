@@ -59,7 +59,7 @@
           :datastreams="siteDatastreams"
           label="Input datastream *"
           :loading="loadingDatastreams"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :rules="rules.required"
           class="mb-2"
         />
@@ -68,7 +68,7 @@
           v-model="outputDatastreamId"
           :datastreams="siteDatastreams"
           label="Output datastream *"
-          :disabled="!selectedThingId || loadingExisting"
+          :disabled="!selectedMonitoringSiteId || loadingExisting"
           :loading="loadingDatastreams"
           :rules="rules.required"
           class="mb-2"
@@ -213,7 +213,7 @@ import hs, {
 import { FIXED_OFFSET_TIMEZONES, DST_AWARE_TIMEZONES } from '@/models/timestamp'
 import { rules } from '@/utils/rules'
 import { Snackbar } from '@/utils/notifications'
-import { datastreamsForThing } from '@/utils/orchestration/datastreams'
+import { datastreamsForMonitoringSite } from '@/utils/orchestration/datastreams'
 import {
   DATA_PRODUCT_ACCENT,
   DATA_PRODUCT_TOOLBAR_STYLE,
@@ -223,7 +223,7 @@ import ScheduleFields from '../shared/ScheduleFields.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 const props = defineProps<{
-  initialThingId?: string | null
+  initialMonitoringSiteId?: string | null
   editTaskId?: string | null
 }>()
 
@@ -261,7 +261,7 @@ const minValues = ref<number | null>(null)
 const timezoneType = ref<'offset' | 'iana' | null>(null)
 const timezone = ref<string | null>(null)
 
-const selectedThingId = computed(() => props.initialThingId ?? null)
+const selectedMonitoringSiteId = computed(() => props.initialMonitoringSiteId ?? null)
 
 const aggregationMethodOptions = [
   { title: 'Arithmetic Mean', value: 'mean' },
@@ -308,8 +308,8 @@ const timezoneMode = computed({
 })
 
 const siteDatastreams = computed(() => {
-  const thingId = selectedThingId.value
-  return datastreamsForThing(datastreams.value, thingId)
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  return datastreamsForMonitoringSite(datastreams.value, monitoringSiteId)
 })
 
 type Rule = (v: any) => true | string
@@ -433,8 +433,8 @@ async function onSubmit() {
 }
 
 async function onCreate() {
-  const thingId = selectedThingId.value
-  if (!thingId) {
+  const monitoringSiteId = selectedMonitoringSiteId.value
+  if (!monitoringSiteId) {
     Snackbar.error('Select a site before creating an aggregation task.')
     return
   }
@@ -442,7 +442,7 @@ async function onCreate() {
   const taskRes = await hs.dataProductTasks.create({
     id: '',
     name: taskName.value.trim(),
-    thingId,
+    monitoringSiteId,
     description: null,
     schedule: schedule.value,
   })
@@ -541,7 +541,7 @@ async function onDelete() {
 }
 
 watch(
-  () => props.initialThingId,
+  () => props.initialMonitoringSiteId,
   () => {
     if (!isEditMode.value) {
       inputDatastreamId.value = null

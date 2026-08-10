@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import hs, { DataConnection, ThingTaskSummary } from '@hydroserver/client'
+import hs, { DataConnection, MonitoringSiteTaskSummary } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -26,8 +26,8 @@ export function useOrchestrationData() {
   const loading = ref(false)
   const taskLoading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
-  const things = ref<ThingTaskSummary[]>([])
-  const datastreamThingByDatastreamId = ref<Record<string, string>>({})
+  const monitoringSites = ref<MonitoringSiteTaskSummary[]>([])
+  const datastreamMonitoringSiteByDatastreamId = ref<Record<string, string>>({})
   const dataProductTasks = ref<DataProductTask[]>([])
   const monitoringTasks = ref<MonitoringTask[]>([])
   const loadedTaskGroup = ref<LoadedTaskGroup>(null)
@@ -39,7 +39,7 @@ export function useOrchestrationData() {
     workspaceTasks.value = []
     dataProductTasks.value = []
     monitoringTasks.value = []
-    datastreamThingByDatastreamId.value = {}
+    datastreamMonitoringSiteByDatastreamId.value = {}
     loadedTaskGroup.value = null
   }
 
@@ -55,7 +55,7 @@ export function useOrchestrationData() {
       loading.value = false
       dataConnections.value = []
       clearTaskLists()
-      things.value = []
+      monitoringSites.value = []
       return
     }
 
@@ -66,7 +66,7 @@ export function useOrchestrationData() {
           workspace_id: requestedWorkspaceId,
           order_by: 'name',
         } as any),
-        hs.things.listTaskSummaries({
+        hs.monitoringSites.listTaskSummaries({
           workspace_id: [requestedWorkspaceId],
         }),
       ])
@@ -74,7 +74,7 @@ export function useOrchestrationData() {
       if (requestId !== fetchRequestId) return
 
       dataConnections.value = dcItems
-      things.value = taskSummaryResponse.ok
+      monitoringSites.value = taskSummaryResponse.ok
         ? taskSummaryResponse.data ?? []
         : []
       clearTaskLists()
@@ -137,7 +137,7 @@ export function useOrchestrationData() {
       } else if (tab === 'aggregation') {
         const items = await hs.dataProductTasks.listAllItems({
           workspace_id: [requestedWorkspaceId],
-          thing_id: [groupId],
+          monitoring_site_id: [groupId],
           order_by: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
@@ -145,7 +145,7 @@ export function useOrchestrationData() {
       } else {
         const items = await hs.monitoringTasks.listAllItems({
           workspace_id: [requestedWorkspaceId],
-          thing_id: [groupId],
+          monitoring_site_id: [groupId],
           order_by: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
@@ -170,8 +170,8 @@ export function useOrchestrationData() {
     taskLoading,
     workspaceTasks,
     dataConnections,
-    things,
-    datastreamThingByDatastreamId,
+    monitoringSites,
+    datastreamMonitoringSiteByDatastreamId,
     dataProductTasks,
     monitoringTasks,
     loadedTaskGroup,

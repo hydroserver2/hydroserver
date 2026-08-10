@@ -66,7 +66,7 @@ class UnitService(ServiceUtils):
 
         for field in [
             "workspace_id",
-            "datastreams__thing_id",
+            "datastreams__monitoring_site_id",
             "datastreams__id",
             "unit_type",
         ]:

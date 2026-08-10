@@ -7,7 +7,7 @@ from tests.core.iam.factories import (
     UserFactory,
     WorkspaceFactory,
 )
-from tests.core.sta.factories import DatastreamFactory, ThingFactory
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.quality.factories import QCHistoryFactory
 
 pytestmark = pytest.mark.django_db
@@ -26,9 +26,9 @@ def _collaborator_with_permission(workspace, **permissions):
 
 
 def _make_history(workspace, managed_private=False, **kwargs):
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing, private=managed_private)
-    source = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site, private=managed_private)
+    source = DatastreamFactory(monitoring_site=monitoring_site)
     return QCHistoryFactory(managed_datastream=managed, source_datastream=source, **kwargs)
 
 
@@ -70,9 +70,9 @@ def test_get_qc_histories_returns_401_when_unauthenticated(client):
 def test_create_qc_history_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing)
-    source = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site)
+    source = DatastreamFactory(monitoring_site=monitoring_site)
     client.force_login(owner)
 
     response = client.post(
@@ -90,9 +90,9 @@ def test_create_qc_history_succeeds_for_workspace_owner(client):
 
 def test_create_qc_history_returns_401_when_unauthenticated(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing)
-    source = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site)
+    source = DatastreamFactory(monitoring_site=monitoring_site)
 
     response = client.post(
         QC_HISTORIES_URL,
@@ -108,9 +108,9 @@ def test_create_qc_history_returns_401_when_unauthenticated(client):
 
 def test_create_qc_history_returns_403_without_edit_permission(client):
     workspace = WorkspaceFactory()
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing)
-    source = DatastreamFactory(thing=thing)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site)
+    source = DatastreamFactory(monitoring_site=monitoring_site)
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -129,9 +129,9 @@ def test_create_qc_history_returns_403_without_edit_permission(client):
 def test_create_qc_history_returns_400_when_processing_levels_match(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    thing = ThingFactory(workspace=workspace)
-    managed = DatastreamFactory(thing=thing)
-    source = DatastreamFactory(thing=thing, processing_level=managed.processing_level)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site)
+    source = DatastreamFactory(monitoring_site=monitoring_site, processing_level=managed.processing_level)
     client.force_login(owner)
 
     response = client.post(
@@ -150,7 +150,7 @@ def test_create_qc_history_returns_400_when_managed_datastream_already_has_histo
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
-    other_source = DatastreamFactory(thing=history.managed_datastream.thing)
+    other_source = DatastreamFactory(monitoring_site=history.managed_datastream.monitoring_site)
     client.force_login(owner)
 
     response = client.post(
