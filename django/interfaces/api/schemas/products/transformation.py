@@ -37,7 +37,7 @@ class DataProductTransformationTypeQueryParameters(CollectionQueryParameters):
     )
 
 
-# --- Composite expression input schemas ---
+# --- Derivation input schemas ---
 
 class TransformationInputResponse(BaseGetResponse):
     datastream: DatastreamSummaryResponse
@@ -65,37 +65,13 @@ class RatingCurveTransformationSummaryResponse(BaseGetResponse):
         return first.datastream_id if first else None
 
 
-class ExpressionTransformationSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream_id: uuid.UUID
-    input_datastream_id: uuid.UUID
-    variable_name: Optional[str] = None
-    formula: str
-
-    @staticmethod
-    def resolve_input_datastream_id(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream_id", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream_id if first else None
-
-    @staticmethod
-    def resolve_variable_name(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "variable_name", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.variable_name if first else None
-
-
-class CompositeExpressionTransformationSummaryResponse(BaseGetResponse):
+class DerivationTransformationSummaryResponse(BaseGetResponse):
     id: uuid.UUID
     output_datastream_id: uuid.UUID
     input_datastream_ids: list[uuid.UUID]
     formula: str
-    output_interval_units: Period
-    output_interval: int
-    max_gap_interval: Optional[int] = None
-    max_gap_interval_units: Optional[Period] = None
+    stop_on_no_data: bool
+    stop_on_error: bool
 
     @staticmethod
     def resolve_input_datastream_ids(obj):
@@ -139,37 +115,13 @@ class RatingCurveTransformationResponse(BaseGetResponse):
         return first.datastream if first else None
 
 
-class ExpressionTransformationResponse(BaseGetResponse):
-    id: uuid.UUID
-    output_datastream: DatastreamSummaryResponse
-    input_datastream: DatastreamSummaryResponse
-    variable_name: Optional[str] = None
-    formula: str
-
-    @staticmethod
-    def resolve_input_datastream(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "input_datastream", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.datastream if first else None
-
-    @staticmethod
-    def resolve_variable_name(obj):
-        if not hasattr(obj, "input_datastreams"):
-            return getattr(obj, "variable_name", None)
-        first = next(iter(obj.input_datastreams.all()), None)
-        return first.variable_name if first else None
-
-
-class CompositeExpressionTransformationResponse(BaseGetResponse):
+class DerivationTransformationResponse(BaseGetResponse):
     id: uuid.UUID
     output_datastream: DatastreamSummaryResponse
     input_datastreams: list[TransformationInputResponse]
     formula: str
-    output_interval_units: Period
-    output_interval: int
-    max_gap_interval: Optional[int] = None
-    max_gap_interval_units: Optional[Period] = None
+    stop_on_no_data: bool
+    stop_on_error: bool
 
     @staticmethod
     def resolve_input_datastreams(obj):
@@ -209,19 +161,11 @@ class RatingCurveTransformationPostBody(_TransformationPostBodyBase):
     rating_curve: uuid.UUID = Field(alias="ratingCurveId")
 
 
-class ExpressionTransformationPostBody(_TransformationPostBodyBase):
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    variable_name: str
-    formula: str
-
-
-class CompositeExpressionTransformationPostBody(_TransformationPostBodyBase):
+class DerivationTransformationPostBody(_TransformationPostBodyBase):
     input_datastreams: list[TransformationInputPostBody]
     formula: str
-    output_interval_units: Period
-    output_interval: int
-    max_gap_interval: Optional[int] = None
-    max_gap_interval_units: Optional[Period] = None
+    stop_on_no_data: bool = True
+    stop_on_error: bool = True
 
 
 class AggregationTransformationPostBody(_TransformationPostBodyBase):
@@ -242,21 +186,12 @@ class RatingCurveTransformationPatchBody(BasePatchBody):
     rating_curve: uuid.UUID = Field(alias="ratingCurveId")
 
 
-class ExpressionTransformationPatchBody(BasePatchBody):
-    output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
-    input_datastream: uuid.UUID = Field(alias="inputDatastreamId")
-    variable_name: Optional[str]
-    formula: str
-
-
-class CompositeExpressionTransformationPatchBody(BasePatchBody):
+class DerivationTransformationPatchBody(BasePatchBody):
     output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastreams: list[TransformationInputPostBody]
     formula: str
-    output_interval_units: Period
-    output_interval: int
-    max_gap_interval: Optional[int]
-    max_gap_interval_units: Optional[Period]
+    stop_on_no_data: bool
+    stop_on_error: bool
 
 
 class AggregationTransformationPatchBody(BasePatchBody):

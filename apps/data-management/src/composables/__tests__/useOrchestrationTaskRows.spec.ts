@@ -109,6 +109,47 @@ describe('useOrchestrationTaskRows', () => {
     })
   })
 
+  it('classifies derivation transformations as derivation regardless of input count', () => {
+    const rows = useOrchestrationTaskRows({
+      activeTab: ref('aggregation'),
+      workspaceTasks: ref([]),
+      dataProductTasks: ref([
+        {
+          id: 'dp-expr',
+          name: 'Unit conversion',
+          thing: { id: 'thing-4' },
+          latestRun: null,
+          schedule: null,
+          derivationTransformations: [
+            { id: 'expr-1', inputDatastreams: [{ datastream: { id: 'ds-1' } }] },
+          ],
+        },
+        {
+          id: 'dp-combined',
+          name: 'Combined flow',
+          thing: { id: 'thing-4' },
+          latestRun: null,
+          schedule: null,
+          derivationTransformations: [
+            {
+              id: 'expr-2',
+              inputDatastreams: [
+                { datastream: { id: 'ds-1' } },
+                { datastream: { id: 'ds-2' } },
+              ],
+            },
+          ],
+        },
+      ] as any),
+      monitoringTasks: ref([]),
+      datastreamThingByDatastreamId: ref({}),
+      runNowTriggeredByTaskId: {},
+    })
+
+    expect(rows.dataProductTaskRows.value[0].taskType).toBe('Derivation')
+    expect(rows.dataProductTaskRows.value[1].taskType).toBe('Derivation')
+  })
+
   it('builds rows from summary task responses without expanded related objects', () => {
     const rows = useOrchestrationTaskRows({
       activeTab: ref('ingestion'),
@@ -132,8 +173,7 @@ describe('useOrchestrationTaskRows', () => {
           latestRun: null,
           schedule: null,
           aggregationTransformations: [{ id: 'agg-1' }],
-          compositeExpressionTransformations: [],
-          expressionTransformations: [],
+          derivationTransformations: [],
           ratingCurveTransformations: [],
         },
       ] as any),
@@ -197,8 +237,7 @@ describe('useOrchestrationTaskRows', () => {
           latestRun: null,
           schedule: null,
           aggregationTransformations: [],
-          compositeExpressionTransformations: [],
-          expressionTransformations: [],
+          derivationTransformations: [],
           ratingCurveTransformations: [],
         },
       ] as any),
@@ -323,7 +362,7 @@ describe('useOrchestrationTaskRows', () => {
         .sortRows([
           { name: 'Mean stage', taskType: 'Aggregation' } as any,
           { name: 'Curve output', taskType: 'Rating curve' } as any,
-          { name: 'Derived flow', taskType: 'Derivation' } as any,
+          { name: 'Combined flow', taskType: 'Derivation' } as any,
         ])
         .map((row) => row.taskType)
     ).toEqual(['Aggregation', 'Derivation', 'Rating curve'])

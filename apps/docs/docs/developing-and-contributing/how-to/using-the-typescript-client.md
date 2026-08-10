@@ -798,7 +798,7 @@ Use `listRules`, `getRule`, `createRule`, `updateRule`, and `deleteRule` to mana
 
 ## Data Product Tasks and Rating Curves
 
-Data product tasks create derived datastreams through expression, rating-curve, aggregation, or composite-expression transformations.
+Data product tasks create derived datastreams through derivation, rating-curve, or aggregation transformations.
 
 ```ts
 import { DataProductTask } from "@hydroserver/client";
@@ -813,7 +813,7 @@ const task = await hs.dataProductTasks.createItem(
 
 if (!task) throw new Error("Unable to create data product task");
 
-await hs.dataProductTasks.createExpressionTransformation(task.id, {
+await hs.dataProductTasks.createDerivationTransformation(task.id, {
   inputDatastreamId: "11111111-1111-1111-1111-111111111111",
   outputDatastreamId: "22222222-2222-2222-2222-222222222222",
   variableName: "temperature",

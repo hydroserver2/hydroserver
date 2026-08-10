@@ -109,13 +109,13 @@ def test_get_data_product_task_includes_latest_run(get_principal):
 
 
 def test_get_data_product_task_includes_transformations(get_principal):
-    """TASK1 has 2 fixture transformations: rating_curve and expression."""
+    """TASK1 has 2 fixture transformations: rating_curve and derivation."""
     result = task_service.get(
         task=uuid.UUID(TASK1),
         principal=get_principal("owner"),
     )
     types = {t.transformation_type for t in result.transformations.all()}
-    assert types == {"rating_curve", "expression"}
+    assert types == {"rating_curve", "derivation"}
 
 
 @pytest.mark.parametrize(
@@ -291,7 +291,7 @@ def test_delete_data_product_task_nonexistent(get_principal):
 # --- Task run ---
 
 def test_run_data_product_task_loads_observations(get_principal):
-    """Running TASK1 processes T_RC (rating_curve) and T_EXP (expression) and loads observations."""
+    """Running TASK1 processes T_RC (rating_curve) and T_EXP (derivation) and loads observations."""
     from core.sta.models import Datastream
     from core.sta.models.observation import Observation
     import uuid6
