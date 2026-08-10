@@ -2399,6 +2399,7 @@ export interface components {
             /**
              * Type
              * @constant
+             * @enum {string}
              */
             type: "CSV";
         };
@@ -2418,6 +2419,7 @@ export interface components {
             /**
              * Type
              * @constant
+             * @enum {string}
              */
             type: "CSV";
         };
@@ -3442,9 +3444,7 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: {
-                [key: string]: unknown;
-            };
+            taskVariables: Record<string, never>;
         };
         /**
          * EtlTaskOrderBy
@@ -3462,9 +3462,7 @@ export interface components {
             /** Schedule */
             schedule?: components["schemas"]["SchedulePatchBody"] | null;
             /** Taskvariables */
-            taskVariables?: {
-                [key: string]: unknown;
-            };
+            taskVariables?: Record<string, never>;
         };
         /** EtlTaskPostBody */
         EtlTaskPostBody: {
@@ -3492,9 +3490,7 @@ export interface components {
              * Taskvariables
              * @default {}
              */
-            taskVariables: {
-                [key: string]: unknown;
-            };
+            taskVariables: Record<string, never>;
         };
         /** EtlTaskQueryParameters */
         EtlTaskQueryParameters: {
@@ -3582,9 +3578,7 @@ export interface components {
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
             /** Taskvariables */
-            taskVariables: {
-                [key: string]: unknown;
-            };
+            taskVariables: Record<string, never>;
             /**
              * Workspaceid
              * Format: uuid
@@ -3717,6 +3711,7 @@ export interface components {
             /**
              * Type
              * @constant
+             * @enum {string}
              */
             type: "JSON";
         };
@@ -3732,6 +3727,7 @@ export interface components {
             /**
              * Type
              * @constant
+             * @enum {string}
              */
             type: "JSON";
         };
@@ -4607,9 +4603,7 @@ export interface components {
         /** QualityControlOperationPatchBody */
         QualityControlOperationPatchBody: {
             /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            arguments?: Record<string, never> | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /** Order */
@@ -4618,9 +4612,7 @@ export interface components {
         /** QualityControlOperationPostBody */
         QualityControlOperationPostBody: {
             /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            arguments?: Record<string, never> | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -4649,9 +4641,7 @@ export interface components {
         /** QualityControlOperationResponse */
         QualityControlOperationResponse: {
             /** Arguments */
-            arguments?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            arguments?: Record<string, never> | unknown[] | null;
             /** Comment */
             comment?: string | null;
             /** Createdat */
@@ -5452,9 +5442,7 @@ export interface components {
             /** Message */
             message?: string | null;
             /** Result */
-            result?: {
-                [key: string]: unknown;
-            } | null;
+            result?: Record<string, never> | null;
             /**
              * Startedat
              * Format: date-time

@@ -1070,6 +1070,9 @@
           },
           "type": {
             "const": "CSV",
+            "enum": [
+              "CSV"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -1151,6 +1154,9 @@
           },
           "type": {
             "const": "CSV",
+            "enum": [
+              "CSV"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -2400,6 +2406,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -4129,7 +4138,6 @@
             ]
           },
           "taskVariables": {
-            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4204,7 +4212,6 @@
             "title": "Schedule"
           },
           "taskVariables": {
-            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           }
@@ -4258,7 +4265,6 @@
             ]
           },
           "taskVariables": {
-            "additionalProperties": true,
             "default": {},
             "title": "Taskvariables",
             "type": "object"
@@ -4368,6 +4374,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -4506,7 +4515,6 @@
             ]
           },
           "taskVariables": {
-            "additionalProperties": true,
             "title": "Taskvariables",
             "type": "object"
           },
@@ -4808,6 +4816,9 @@
           },
           "type": {
             "const": "JSON",
+            "enum": [
+              "JSON"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -4859,6 +4870,9 @@
           },
           "type": {
             "const": "JSON",
+            "enum": [
+              "JSON"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -4923,8 +4937,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999,
-                "minimum": -99999,
+                "maximum": 99999.0,
+                "minimum": -99999.0,
                 "type": "number"
               },
               {
@@ -4934,14 +4948,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90,
-            "minimum": -90,
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180,
-            "minimum": -180,
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Longitude",
             "type": "number"
           }
@@ -5006,8 +5020,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999,
-                "minimum": -99999,
+                "maximum": 99999.0,
+                "minimum": -99999.0,
                 "type": "number"
               },
               {
@@ -5017,14 +5031,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90,
-            "minimum": -90,
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180,
-            "minimum": -180,
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Longitude",
             "type": "number"
           }
@@ -5085,8 +5099,8 @@
           "elevation_m": {
             "anyOf": [
               {
-                "maximum": 99999,
-                "minimum": -99999,
+                "maximum": 99999.0,
+                "minimum": -99999.0,
                 "type": "number"
               },
               {
@@ -5096,14 +5110,14 @@
             "title": "Elevation M"
           },
           "latitude": {
-            "maximum": 90,
-            "minimum": -90,
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Latitude",
             "type": "number"
           },
           "longitude": {
-            "maximum": 180,
-            "minimum": -180,
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Longitude",
             "type": "number"
           }
@@ -5770,6 +5784,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -6639,6 +6656,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -6721,6 +6741,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -6748,6 +6771,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -7224,6 +7250,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -7302,6 +7331,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -7320,6 +7352,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -7655,7 +7690,6 @@
           "arguments": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7692,7 +7726,6 @@
           "arguments": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7790,7 +7823,6 @@
           "arguments": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8801,6 +8833,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -8879,6 +8914,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -8897,6 +8935,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -9101,6 +9142,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -9729,6 +9773,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -9844,6 +9891,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -9862,6 +9912,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -10259,7 +10312,6 @@
           "result": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11191,6 +11243,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -11273,6 +11328,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -11300,6 +11358,9 @@
                 },
                 {
                   "const": "null",
+                  "enum": [
+                    "null"
+                  ],
                   "type": "string"
                 }
               ]
@@ -15586,6 +15647,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -16682,6 +16746,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -18271,6 +18338,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -18295,6 +18365,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -18319,6 +18392,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -18981,6 +19057,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -19005,6 +19084,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -19029,6 +19111,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -20118,6 +20203,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -25172,6 +25260,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -25196,6 +25287,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -25220,6 +25314,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -25750,6 +25847,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -26054,6 +26154,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -26078,6 +26181,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -26102,6 +26208,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -29031,6 +29140,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -29055,6 +29167,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
@@ -29079,6 +29194,9 @@
                   },
                   {
                     "const": "null",
+                    "enum": [
+                      "null"
+                    ],
                     "type": "string"
                   }
                 ]
