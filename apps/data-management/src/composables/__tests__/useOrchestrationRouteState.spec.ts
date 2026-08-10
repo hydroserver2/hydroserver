@@ -51,8 +51,8 @@ describe('useOrchestrationRouteState', () => {
     expect(normalizeOrchestrationTaskDetailType('rating-curve')).toBe(
       'rating-curve'
     )
-    expect(normalizeOrchestrationTaskDetailType(['expression'])).toBe(
-      'expression'
+    expect(normalizeOrchestrationTaskDetailType(['derivation'])).toBe(
+      'derivation'
     )
     expect(normalizeOrchestrationTaskDetailType('workspaces')).toBeNull()
   })
@@ -69,9 +69,9 @@ describe('useOrchestrationRouteState', () => {
     expect(
       detailTypeForTaskRow({
         kind: 'dataProduct',
-        taskType: 'Expression',
+        taskType: 'Derivation',
       } as any)
-    ).toBe('expression')
+    ).toBe('derivation')
     expect(detailTypeForTaskRow({ kind: 'dataProduct' } as any)).toBeNull()
   })
 

@@ -110,7 +110,6 @@
               @open-task="goToTask"
               @add-task="openCreateTaskDialog(selectedConnection!)"
               @add-aggregation="openDataProductForm('aggregation')"
-              @add-expression="openDataProductForm('expression')"
               @add-derivation="openDataProductForm('derivation')"
               @add-rating-curve="openRatingCurveTaskForm"
               @add-quality="openQualityTaskForm"
@@ -172,22 +171,12 @@
           />
         </v-dialog>
 
-        <v-dialog v-model="openExpressionForm" width="60rem">
-          <ExpressionForm
-            :initial-monitoring-site-id="selectedMonitoringSiteId"
-            @close="openExpressionForm = false"
-            @created="onDataProductTaskCreated"
-          />
-        </v-dialog>
-
         <v-dialog v-model="openDerivationForm" width="60rem">
           <DerivationForm
             :initial-monitoring-site-id="selectedMonitoringSiteId"
             :edit-task-id="editingDerivationTaskId"
             @close="closeDerivationForm"
             @created="onDataProductTaskCreated"
-            @updated="onTaskDetailsChanged"
-            @deleted="onTaskDetailsChanged"
           />
         </v-dialog>
 
@@ -247,7 +236,6 @@ import DataConnectionForm from '@/components/Orchestration/connections/DataConne
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteDataConnectionCard from '@/components/Orchestration/connections/DeleteDataConnectionCard.vue'
 import AggregationForm from '@/components/Orchestration/data-products/AggregationForm.vue'
-import ExpressionForm from '@/components/Orchestration/data-products/ExpressionForm.vue'
 import DerivationForm from '@/components/Orchestration/data-products/DerivationForm.vue'
 import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurveForm.vue'
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
@@ -371,7 +359,6 @@ const openEditDataConnection = ref(false)
 const openDeleteDataConnection = ref(false)
 const openAggregationForm = ref(false)
 const editingAggregationTaskId = ref<string | null>(null)
-const openExpressionForm = ref(false)
 const openDerivationForm = ref(false)
 const editingDerivationTaskId = ref<string | null>(null)
 const openRatingCurveForm = ref(false)
@@ -797,7 +784,6 @@ const closeWorkspaceScopedUi = () => {
   openEditDataConnection.value = false
   openDeleteDataConnection.value = false
   openAggregationForm.value = false
-  openExpressionForm.value = false
   openDerivationForm.value = false
   openRatingCurveForm.value = false
   openQualityForm.value = false
@@ -891,12 +877,9 @@ const openDeleteDialog = (dc: DataConnection) => {
   openDeleteDataConnection.value = true
 }
 
-const openDataProductForm = (
-  form: 'aggregation' | 'expression' | 'derivation'
-) => {
+const openDataProductForm = (form: 'aggregation' | 'derivation') => {
   if (!canCreateActiveTasks.value) return
   if (form === 'aggregation') openAggregationForm.value = true
-  if (form === 'expression') openExpressionForm.value = true
   if (form === 'derivation') openDerivationForm.value = true
 }
 
@@ -938,8 +921,7 @@ const closeQualityForm = () => {
 
 const onDataProductTaskCreated = async (createdTask?: DataProductTask) => {
   openAggregationForm.value = false
-  openDerivationForm.value = false
-  openExpressionForm.value = false
+  closeDerivationForm()
   openRatingCurveForm.value = false
   await fetchAll()
   await autoSelectSidebarAndSync()

@@ -100,7 +100,7 @@
 #   1c9a797e — private DS, Public MonitoringSite Private Workspace
 #
 # T_RC  output → 42e08eea  input ← 9f96957b
-# T_EXP output → 9f96957b  input ← 42e08eea
+# T_EXP output → 9f96957b  input ← 42e08eea (derivation)
 # ============================================================
 
 # T_RC — Rating Curve transformation
@@ -117,9 +117,9 @@
     timezone_type: null
     timezone: null
     aggregation_method: null
-    max_gap_interval_units: null
-    max_gap_interval: null
     min_values: null
+    stop_on_no_data: true
+    stop_on_error: true
 
 - model: products.dataproducttransformationinput
   pk: 019c0006-0000-7000-8000-000000000001
@@ -128,13 +128,13 @@
     datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
     variable_name: null
 
-# T_EXP — Expression transformation
+# T_EXP — Derivation transformation
 - model: products.dataproducttransformation
   pk: 019c0005-0000-7000-8000-000000000002
   fields:
     task: 019c0003-0000-7000-8000-000000000001
     output_datastream: 9f96957b-ee20-4c7b-bf2b-673a0cda3a04
-    transformation_type: expression
+    transformation_type: derivation
     rating_curve: null
     formula: "x * 2.0"
     output_interval_units: null
@@ -142,9 +142,9 @@
     timezone_type: null
     timezone: null
     aggregation_method: null
-    max_gap_interval_units: null
-    max_gap_interval: null
     min_values: null
+    stop_on_no_data: true
+    stop_on_error: true
 
 - model: products.dataproducttransformationinput
   pk: 019c0006-0000-7000-8000-000000000002

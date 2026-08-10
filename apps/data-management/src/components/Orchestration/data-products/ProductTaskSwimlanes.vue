@@ -78,7 +78,7 @@ import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSi
 import { useOrchestrationStore } from '@/store/orchestration'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
-type ProductTaskLabel = 'aggregation' | 'expression' | 'derivation'
+type ProductTaskLabel = 'aggregation' | 'derivation'
 type DatastreamLike = {
   id?: string
   name?: string
@@ -116,76 +116,75 @@ const allKnownDatastreams = computed(() => [
 ])
 
 const mappingRows = computed<MappingRow[]>(() => {
-  if (props.taskLabel === 'derivation') {
-    return (props.task?.compositeExpressionTransformations ?? []).flatMap(
-      (transformation: any, transformationIndex: number) => {
+  if (props.taskLabel === 'aggregation') {
+    return (props.task?.aggregationTransformations ?? []).map(
+      (transformation: any, index: number) => {
+        const sourceDatastream = resolveDatastream(
+          transformation.inputDatastream,
+          transformation.inputDatastreamId
+        )
         const targetDatastream = resolveDatastream(
           transformation.outputDatastream,
           transformation.outputDatastreamId
         )
-        const targetDatastreamId = datastreamId(
+
+        return {
+          key: `${transformation.id ?? index}`,
+          sourceDatastream,
+          sourceDatastreamId: datastreamId(
+            sourceDatastream,
+            transformation.inputDatastreamId
+          ),
+          sourceDetail: '',
           targetDatastream,
-          transformation.outputDatastreamId
-        )
-
-        return (transformation.inputDatastreams ?? []).map(
-          (input: any, inputIndex: number) => {
-            const sourceDatastream = resolveDatastream(
-              input.datastream ?? input.inputDatastream,
-              input.datastreamId ?? input.inputDatastreamId
-            )
-
-            return {
-              key: `${transformation.id ?? transformationIndex}-${
-                input.datastreamId ?? inputIndex
-              }`,
-              sourceDatastream,
-              sourceDatastreamId: datastreamId(
-                sourceDatastream,
-                input.datastreamId ?? input.inputDatastreamId
-              ),
-              sourceDetail: input.variableName
-                ? `Variable ${input.variableName}`
-                : '',
-              targetDatastream,
-              targetDatastreamId,
-            }
-          }
-        )
+          targetDatastreamId: datastreamId(
+            targetDatastream,
+            transformation.outputDatastreamId
+          ),
+        }
       }
     )
   }
 
-  const transformations =
-    props.taskLabel === 'aggregation'
-      ? props.task?.aggregationTransformations ?? []
-      : props.task?.expressionTransformations ?? []
-
-  return transformations.map((transformation: any, index: number) => {
-    const sourceDatastream = resolveDatastream(
-      transformation.inputDatastream,
-      transformation.inputDatastreamId
-    )
-    const targetDatastream = resolveDatastream(
-      transformation.outputDatastream,
-      transformation.outputDatastreamId
-    )
-
-    return {
-      key: `${transformation.id ?? index}`,
-      sourceDatastream,
-      sourceDatastreamId: datastreamId(
-        sourceDatastream,
-        transformation.inputDatastreamId
-      ),
-      sourceDetail: '',
-      targetDatastream,
-      targetDatastreamId: datastreamId(
+  // The derivation transformation type always carries a list of inputs
+  // (one or more).
+  return (props.task?.derivationTransformations ?? []).flatMap(
+    (transformation: any, transformationIndex: number) => {
+      const targetDatastream = resolveDatastream(
+        transformation.outputDatastream,
+        transformation.outputDatastreamId
+      )
+      const targetDatastreamId = datastreamId(
         targetDatastream,
         transformation.outputDatastreamId
-      ),
+      )
+
+      return (transformation.inputDatastreams ?? []).map(
+        (input: any, inputIndex: number) => {
+          const sourceDatastream = resolveDatastream(
+            input.datastream ?? input.inputDatastream,
+            input.datastreamId ?? input.inputDatastreamId
+          )
+
+          return {
+            key: `${transformation.id ?? transformationIndex}-${
+              input.datastreamId ?? inputIndex
+            }`,
+            sourceDatastream,
+            sourceDatastreamId: datastreamId(
+              sourceDatastream,
+              input.datastreamId ?? input.inputDatastreamId
+            ),
+            sourceDetail: input.variableName
+              ? `Variable ${input.variableName}`
+              : '',
+            targetDatastream,
+            targetDatastreamId,
+          }
+        }
+      )
     }
-  })
+  )
 })
 
 function resolveDatastream(datastream: DatastreamLike, id?: string | null) {

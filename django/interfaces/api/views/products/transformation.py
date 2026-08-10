@@ -8,25 +8,22 @@ from interfaces.api.http.errors import raise_http_errors
 from interfaces.api.http.response import apply_response_pagination_headers
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
-from processing.products.services.transformation import (DataProductTransformationService, TransformationInput,
-                                                         TransformationInputPatch)
+from processing.products.services.transformation import DataProductTransformationService, TransformationInput
 from interfaces.api.schemas.products.transformation import (
     DataProductTransformationTypeQueryParameters,
     RatingCurveTransformationSummaryResponse,
     RatingCurveTransformationPostBody,
     RatingCurveTransformationPatchBody,
-    ExpressionTransformationSummaryResponse,
-    ExpressionTransformationPostBody,
-    ExpressionTransformationPatchBody,
-    CompositeExpressionTransformationSummaryResponse,
-    CompositeExpressionTransformationPostBody,
-    CompositeExpressionTransformationPatchBody,
+    DerivationTransformationSummaryResponse,
+    DerivationTransformationPostBody,
+    DerivationTransformationPatchBody,
     AggregationTransformationSummaryResponse,
     AggregationTransformationPostBody,
     AggregationTransformationPatchBody,
 )
 
-data_product_transformation_service = DataProductTransformationService()
+_service = DataProductTransformationService()
+_auth = [session_auth, oidc_auth, apikey_auth, basic_auth]
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +35,7 @@ rating_curve_transformation_router = Router(tags=["Rating Curve Transformations"
 
 @rating_curve_transformation_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: list[RatingCurveTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -51,7 +48,7 @@ def get_rating_curve_transformations(
     """Get rating curve transformations for a data product task."""
 
     with raise_http_errors():
-        count, transformations = data_product_transformation_service.get_collection(
+        count, transformations = _service.get_collection(
             task=task_id,
             principal=request.principal,
             transformation_type=["rating_curve"],
@@ -68,7 +65,7 @@ def get_rating_curve_transformations(
 
 @rating_curve_transformation_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={201: RatingCurveTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -80,7 +77,7 @@ def create_rating_curve_transformation(
     """Create a rating curve transformation on a data product task."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.create(
+        transformation = _service.create(
             task=task_id,
             principal=request.principal,
             transformation_type="rating_curve",
@@ -98,7 +95,7 @@ def create_rating_curve_transformation(
 
 @rating_curve_transformation_router.get(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: RatingCurveTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -110,7 +107,7 @@ def get_rating_curve_transformation(
     """Get a rating curve transformation."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.get(
+        transformation = _service.get(
             transformation=transformation_id, task=task_id, principal=request.principal, action="view",
         )
 
@@ -119,7 +116,7 @@ def get_rating_curve_transformation(
 
 @rating_curve_transformation_router.patch(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: RatingCurveTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -137,7 +134,7 @@ def update_rating_curve_transformation(
         update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.update(
+        transformation = _service.update(
             transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
         )
 
@@ -146,7 +143,7 @@ def update_rating_curve_transformation(
 
 @rating_curve_transformation_router.delete(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -158,39 +155,36 @@ def delete_rating_curve_transformation(
     """Delete a rating curve transformation."""
 
     with raise_http_errors():
-        data_product_transformation_service.delete(
-            transformation=transformation_id, task=task_id, principal=request.principal
-        )
+        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None
 
-
 # ---------------------------------------------------------------------------
-# Expression
+# Derivation
 # ---------------------------------------------------------------------------
 
-expression_transformation_router = Router(tags=["Expression Transformations"])
+derivation_transformation_router = Router(tags=["Derivation Transformations"])
 
 
-@expression_transformation_router.get(
+@derivation_transformation_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: list[ExpressionTransformationSummaryResponse], 401: str, 403: str, 404: str},
+    auth=_auth,
+    response={200: list[DerivationTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
-def get_expression_transformations(
+def get_derivation_transformations(
     request: HydroServerHttpRequest,
     response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[DataProductTransformationTypeQueryParameters],
 ):
-    """Get expression transformations for a data product task."""
+    """Get derivation transformations for a data product task."""
 
     with raise_http_errors():
-        count, transformations = data_product_transformation_service.get_collection(
+        count, transformations = _service.get_collection(
             task=task_id,
             principal=request.principal,
-            transformation_type=["expression"],
+            transformation_type=["derivation"],
             order_by=[f.orm_field for f in query.order_by],
             **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
             **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
@@ -202,170 +196,24 @@ def get_expression_transformations(
     return 200, transformations
 
 
-@expression_transformation_router.post(
+@derivation_transformation_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: ExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    auth=_auth,
+    response={201: DerivationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
-def create_expression_transformation(
+def create_derivation_transformation(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    data: ExpressionTransformationPostBody,
+    data: DerivationTransformationPostBody,
 ):
-    """Create an expression transformation on a data product task."""
+    """Create a derivation transformation on a data product task."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.create(
+        transformation = _service.create(
             task=task_id,
             principal=request.principal,
-            transformation_type="expression",
-            output_datastream=data.output_datastream,
-            input_datastreams=[
-                TransformationInput(
-                    datastream=data.input_datastream,
-                    variable_name=data.variable_name
-                )
-            ],
-            **data.model_dump(
-                exclude_unset=True,
-                exclude={"uid", "output_datastream", "input_datastream", "variable_name"},
-            ),
-            **({"uid": data.uid} if data.uid is not Unset else {}),
-        )
-
-    return 201, transformation
-
-
-@expression_transformation_router.get(
-    "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: ExpressionTransformationSummaryResponse, 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def get_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-):
-    """Get an expression transformation."""
-
-    with raise_http_errors():
-        transformation = data_product_transformation_service.get(
-            transformation=transformation_id, task=task_id, principal=request.principal, action="view",
-        )
-
-    return 200, transformation
-
-
-@expression_transformation_router.patch(
-    "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: ExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
-    by_alias=True,
-)
-def update_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-    data: ExpressionTransformationPatchBody,
-):
-    """Update an expression transformation."""
-
-    update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastream", "variable_name"})
-
-    if "input_datastream" in data.model_fields_set or "variable_name" in data.model_fields_set:
-        patch_kwargs = {}
-        if "input_datastream" in data.model_fields_set:
-            patch_kwargs["datastream"] = data.input_datastream
-        if "variable_name" in data.model_fields_set:
-            patch_kwargs["variable_name"] = data.variable_name
-        update_kwargs["input_datastreams"] = [TransformationInputPatch(**patch_kwargs)]
-
-    with raise_http_errors():
-        transformation = data_product_transformation_service.update(
-            transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
-        )
-
-    return 200, transformation
-
-
-@expression_transformation_router.delete(
-    "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={204: None, 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def delete_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    transformation_id: Path[uuid.UUID],
-):
-    """Delete an expression transformation."""
-
-    with raise_http_errors():
-        data_product_transformation_service.delete(
-            transformation=transformation_id, task=task_id, principal=request.principal
-        )
-
-    return 204, None
-
-
-# ---------------------------------------------------------------------------
-# Composite Expression
-# ---------------------------------------------------------------------------
-
-composite_expression_transformation_router = Router(tags=["Composite Expression Transformations"])
-
-
-@composite_expression_transformation_router.get(
-    "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: list[CompositeExpressionTransformationSummaryResponse], 401: str, 403: str, 404: str},
-    by_alias=True,
-)
-def get_composite_expression_transformations(
-    request: HydroServerHttpRequest,
-    response: HttpResponse,
-    task_id: Path[uuid.UUID],
-    query: Query[DataProductTransformationTypeQueryParameters],
-):
-    """Get composite expression transformations for a data product task."""
-
-    with raise_http_errors():
-        count, transformations = data_product_transformation_service.get_collection(
-            task=task_id,
-            principal=request.principal,
-            transformation_type=["composite_expression"],
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by", "output_datastream", "input_datastream"}),
-            **({"output_datastream": query.output_datastream} if "output_datastream" in query.model_fields_set else {}),
-            **({"input_datastream": query.input_datastream} if "input_datastream" in query.model_fields_set else {}),
-        )
-
-    apply_response_pagination_headers(response=response, count=count, page=query.page, page_size=query.page_size)
-
-    return 200, transformations
-
-
-@composite_expression_transformation_router.post(
-    "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={201: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
-    by_alias=True,
-)
-def create_composite_expression_transformation(
-    request: HydroServerHttpRequest,
-    task_id: Path[uuid.UUID],
-    data: CompositeExpressionTransformationPostBody,
-):
-    """Create a composite expression transformation on a data product task."""
-
-    with raise_http_errors():
-        transformation = data_product_transformation_service.create(
-            task=task_id,
-            principal=request.principal,
-            transformation_type="composite_expression",
+            transformation_type="derivation",
             output_datastream=data.output_datastream,
             input_datastreams=[TransformationInput(**inp.model_dump()) for inp in data.input_datastreams],
             **data.model_dump(
@@ -378,40 +226,40 @@ def create_composite_expression_transformation(
     return 201, transformation
 
 
-@composite_expression_transformation_router.get(
+@derivation_transformation_router.get(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: CompositeExpressionTransformationSummaryResponse, 401: str, 403: str, 404: str},
+    auth=_auth,
+    response={200: DerivationTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
-def get_composite_expression_transformation(
+def get_derivation_transformation(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
 ):
-    """Get a composite expression transformation."""
+    """Get a derivation transformation."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.get(
+        transformation = _service.get(
             transformation=transformation_id, task=task_id, principal=request.principal, action="view",
         )
 
     return 200, transformation
 
 
-@composite_expression_transformation_router.patch(
+@derivation_transformation_router.patch(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
-    response={200: CompositeExpressionTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
+    auth=_auth,
+    response={200: DerivationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
-def update_composite_expression_transformation(
+def update_derivation_transformation(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
-    data: CompositeExpressionTransformationPatchBody,
+    data: DerivationTransformationPatchBody,
 ):
-    """Update a composite expression transformation."""
+    """Update a derivation transformation."""
 
     update_kwargs = data.model_dump(exclude_unset=True, exclude={"input_datastreams"})
 
@@ -419,30 +267,28 @@ def update_composite_expression_transformation(
         update_kwargs["input_datastreams"] = [TransformationInput(**inp.model_dump()) for inp in data.input_datastreams]
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.update(
+        transformation = _service.update(
             transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
         )
 
     return 200, transformation
 
 
-@composite_expression_transformation_router.delete(
+@derivation_transformation_router.delete(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )
-def delete_composite_expression_transformation(
+def delete_derivation_transformation(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
     transformation_id: Path[uuid.UUID],
 ):
-    """Delete a composite expression transformation."""
+    """Delete a derivation transformation."""
 
     with raise_http_errors():
-        data_product_transformation_service.delete(
-            transformation=transformation_id, task=task_id, principal=request.principal
-        )
+        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None
 
@@ -456,7 +302,7 @@ aggregation_transformation_router = Router(tags=["Aggregation Transformations"])
 
 @aggregation_transformation_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: list[AggregationTransformationSummaryResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -469,7 +315,7 @@ def get_aggregation_transformations(
     """Get aggregation transformations for a data product task."""
 
     with raise_http_errors():
-        count, transformations = data_product_transformation_service.get_collection(
+        count, transformations = _service.get_collection(
             task=task_id,
             principal=request.principal,
             transformation_type=["aggregation"],
@@ -486,7 +332,7 @@ def get_aggregation_transformations(
 
 @aggregation_transformation_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={201: AggregationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -498,7 +344,7 @@ def create_aggregation_transformation(
     """Create an aggregation transformation on a data product task."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.create(
+        transformation = _service.create(
             task=task_id,
             principal=request.principal,
             transformation_type="aggregation",
@@ -516,7 +362,7 @@ def create_aggregation_transformation(
 
 @aggregation_transformation_router.get(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: AggregationTransformationSummaryResponse, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -528,7 +374,7 @@ def get_aggregation_transformation(
     """Get an aggregation transformation."""
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.get(
+        transformation = _service.get(
             transformation=transformation_id, task=task_id, principal=request.principal, action="view",
         )
 
@@ -537,7 +383,7 @@ def get_aggregation_transformation(
 
 @aggregation_transformation_router.patch(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={200: AggregationTransformationSummaryResponse, 400: str, 401: str, 403: str, 404: str, 422: str},
     by_alias=True,
 )
@@ -555,7 +401,7 @@ def update_aggregation_transformation(
         update_kwargs["input_datastreams"] = [TransformationInput(datastream=data.input_datastream)]
 
     with raise_http_errors():
-        transformation = data_product_transformation_service.update(
+        transformation = _service.update(
             transformation=transformation_id, task=task_id, principal=request.principal, **update_kwargs,
         )
 
@@ -564,7 +410,7 @@ def update_aggregation_transformation(
 
 @aggregation_transformation_router.delete(
     "/{transformation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=_auth,
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -576,8 +422,6 @@ def delete_aggregation_transformation(
     """Delete an aggregation transformation."""
 
     with raise_http_errors():
-        data_product_transformation_service.delete(
-            transformation=transformation_id, task=task_id, principal=request.principal
-        )
+        _service.delete(transformation=transformation_id, task=task_id, principal=request.principal)
 
     return 204, None

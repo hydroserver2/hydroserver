@@ -97,6 +97,16 @@ class ServiceUtils:
             resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
             order_by_fields.append(f"-{resolved_field}" if descending else resolved_field)
 
+        # Requested fields (e.g. "name") are rarely unique, so rows that tie on
+        # them have no guaranteed relative order. Since results are fetched a
+        # page at a time via separate queries (see paginatedFetch on the
+        # client), an unstable tie order lets rows shift between pages and
+        # silently drop out of every page. Appending the primary key as a
+        # final tiebreaker makes the ordering - and therefore pagination -
+        # deterministic.
+        if "id" not in stripped_fields:
+            order_by_fields.append("id")
+
         return queryset.order_by(*order_by_fields)
 
     @staticmethod

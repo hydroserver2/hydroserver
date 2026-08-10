@@ -16,12 +16,10 @@ from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, Sche
 from interfaces.api.schemas.orchestration.run import TaskRunResponse
 from interfaces.api.schemas.products.transformation import (
     RatingCurveTransformationSummaryResponse,
-    ExpressionTransformationSummaryResponse,
-    CompositeExpressionTransformationSummaryResponse,
+    DerivationTransformationSummaryResponse,
     AggregationTransformationSummaryResponse,
     RatingCurveTransformationResponse,
-    ExpressionTransformationResponse,
-    CompositeExpressionTransformationResponse,
+    DerivationTransformationResponse,
     AggregationTransformationResponse,
 )
 
@@ -107,8 +105,7 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
     rating_curve_transformations: list[RatingCurveTransformationSummaryResponse]
-    expression_transformations: list[ExpressionTransformationSummaryResponse]
-    composite_expression_transformations: list[CompositeExpressionTransformationSummaryResponse]
+    derivation_transformations: list[DerivationTransformationSummaryResponse]
     aggregation_transformations: list[AggregationTransformationSummaryResponse]
 
     @staticmethod
@@ -132,16 +129,10 @@ class DataProductTaskSummaryResponse(BaseGetResponse):
         return [t for t in obj.transformations.all() if t.transformation_type == "rating_curve"]
 
     @staticmethod
-    def resolve_expression_transformations(obj):
+    def resolve_derivation_transformations(obj):
         if not hasattr(obj, "transformations"):
-            return getattr(obj, "expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "expression"]
-
-    @staticmethod
-    def resolve_composite_expression_transformations(obj):
-        if not hasattr(obj, "transformations"):
-            return getattr(obj, "composite_expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "composite_expression"]
+            return getattr(obj, "derivation_transformations", [])
+        return [t for t in obj.transformations.all() if t.transformation_type == "derivation"]
 
     @staticmethod
     def resolve_aggregation_transformations(obj):
@@ -158,8 +149,7 @@ class DataProductTaskDetailResponse(BaseGetResponse):
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
     rating_curve_transformations: list[RatingCurveTransformationResponse]
-    expression_transformations: list[ExpressionTransformationResponse]
-    composite_expression_transformations: list[CompositeExpressionTransformationResponse]
+    derivation_transformations: list[DerivationTransformationResponse]
     aggregation_transformations: list[AggregationTransformationResponse]
 
     @staticmethod
@@ -177,16 +167,10 @@ class DataProductTaskDetailResponse(BaseGetResponse):
         return [t for t in obj.transformations.all() if t.transformation_type == "rating_curve"]
 
     @staticmethod
-    def resolve_expression_transformations(obj):
+    def resolve_derivation_transformations(obj):
         if not hasattr(obj, "transformations"):
-            return getattr(obj, "expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "expression"]
-
-    @staticmethod
-    def resolve_composite_expression_transformations(obj):
-        if not hasattr(obj, "transformations"):
-            return getattr(obj, "composite_expression_transformations", [])
-        return [t for t in obj.transformations.all() if t.transformation_type == "composite_expression"]
+            return getattr(obj, "derivation_transformations", [])
+        return [t for t in obj.transformations.all() if t.transformation_type == "derivation"]
 
     @staticmethod
     def resolve_aggregation_transformations(obj):

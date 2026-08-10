@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 
 from hydroserverpy.core.timeseries import TIMESTAMP_COL, RESULT_COL, normalize_tz
 from hydroserverpy.core.duration import duration_to_us
-from hydroserverpy.products.expression import validate_expression, apply_expression
+from hydroserverpy.products.derivation import validate_derivation_formula, apply_derivation
 from hydroserverpy.products.aggregation import apply_aggregation
 from hydroserverpy.products.rating_curve import apply_rating_curve
 
@@ -42,7 +42,7 @@ datastream_service = DatastreamService()
 observation_service = ObservationService()
 rating_curve_service = RatingCurveService()
 
-TransformationType = Literal["rating_curve", "expression", "composite_expression", "aggregation"]
+TransformationType = Literal["rating_curve", "derivation", "aggregation"]
 AggregationMethod = Literal["mean", "sum", "min", "max", "first", "last", "time_weighted_mean"]
 IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
 
@@ -50,13 +50,6 @@ IntervalUnits = Literal["minutes", "hours", "days", "weeks", "months"]
 class TransformationInput(BaseModel):
     datastream: Union[uuid.UUID, Datastream]
     variable_name: str | None = None
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class TransformationInputPatch(BaseModel):
-    datastream: Union[uuid.UUID, Datastream] | Unset = Unset
-    variable_name: str | None | Unset = Unset
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -182,9 +175,9 @@ class DataProductTransformationService(ServiceUtils):
         output_interval: int | Unset = Unset,
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
-        max_gap_interval: int | None | Unset = Unset,
-        max_gap_interval_units: IntervalUnits | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
+        stop_on_no_data: bool | Unset = Unset,
+        stop_on_error: bool | Unset = Unset,
     ) -> DataProductTransformation:
         """Create a transformation for a task."""
 
@@ -216,9 +209,9 @@ class DataProductTransformationService(ServiceUtils):
             output_interval=output_interval,
             timezone_type=timezone_type,
             timezone=timezone,
-            max_gap_interval=max_gap_interval,
-            max_gap_interval_units=max_gap_interval_units,
             min_values=min_values,
+            stop_on_no_data=stop_on_no_data,
+            stop_on_error=stop_on_error,
         )
 
         transformation = DataProductTransformation.objects.create(
@@ -233,9 +226,9 @@ class DataProductTransformationService(ServiceUtils):
             output_interval=output_interval if output_interval is not Unset else None,
             timezone_type=timezone_type if timezone_type is not Unset else None,
             timezone=timezone if timezone is not Unset else None,
-            max_gap_interval=max_gap_interval if max_gap_interval is not Unset else None,
-            max_gap_interval_units=max_gap_interval_units if max_gap_interval_units is not Unset else None,
             min_values=min_values if min_values is not Unset else None,
+            stop_on_no_data=stop_on_no_data if stop_on_no_data is not Unset else True,
+            stop_on_error=stop_on_error if stop_on_error is not Unset else True,
         )
 
         self.apply_input_datastreams(transformation, input_datastreams)
@@ -249,7 +242,7 @@ class DataProductTransformationService(ServiceUtils):
         principal: User | ServiceAccount | AnonymousPrincipal | Unset,
         task: Union[uuid.UUID, DataProductTask],
         transformation: Union[uuid.UUID, DataProductTransformation],
-        input_datastreams: list[Union[TransformationInput, TransformationInputPatch]] | Unset = Unset,
+        input_datastreams: list[TransformationInput] | Unset = Unset,
         output_datastream: Union[uuid.UUID, Datastream] | Unset = Unset,
         rating_curve: Union[uuid.UUID, RatingCurve] | Unset = Unset,
         formula: str | Unset = Unset,
@@ -258,9 +251,9 @@ class DataProductTransformationService(ServiceUtils):
         output_interval: int | Unset = Unset,
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
-        max_gap_interval: int | None | Unset = Unset,
-        max_gap_interval_units: IntervalUnits | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
+        stop_on_no_data: bool | Unset = Unset,
+        stop_on_error: bool | Unset = Unset,
     ) -> DataProductTransformation:
         """Update a transformation's parameters and inputs."""
 
@@ -269,24 +262,6 @@ class DataProductTransformationService(ServiceUtils):
         )
 
         transformation_type: TransformationType = transformation.transformation_type  # type: ignore[assignment]
-
-        if input_datastreams is not Unset and any(
-            isinstance(inp, TransformationInputPatch) for inp in input_datastreams
-        ):
-            existing_inputs = list(transformation.input_datastreams.select_related("datastream").all())
-            input_datastreams = [
-                TransformationInput(
-                    datastream=(
-                        inp.datastream if inp.datastream is not Unset
-                        else existing_inputs[i].datastream
-                    ),
-                    variable_name=(
-                        inp.variable_name if inp.variable_name is not Unset
-                        else (existing_inputs[i].variable_name if i < len(existing_inputs) else None)
-                    ),
-                ) if isinstance(inp, TransformationInputPatch) else inp
-                for i, inp in enumerate(input_datastreams)
-            ]
 
         self.validate_transformation(
             task=task,
@@ -301,9 +276,7 @@ class DataProductTransformationService(ServiceUtils):
             ),
             formula=(
                 formula if formula is not Unset
-                else (
-                    transformation.formula if transformation_type in ("expression", "composite_expression") else Unset
-                )
+                else (transformation.formula if transformation_type == "derivation" else Unset)
             ),
             aggregation_method=(
                 aggregation_method if aggregation_method is not Unset
@@ -311,17 +284,11 @@ class DataProductTransformationService(ServiceUtils):
             ),
             output_interval_units=(
                 output_interval_units if output_interval_units is not Unset
-                else (
-                    transformation.output_interval_units
-                    if transformation_type in ("aggregation", "composite_expression") else Unset
-                )
+                else (transformation.output_interval_units if transformation_type == "aggregation" else Unset)
             ),
             output_interval=(
                 output_interval if output_interval is not Unset
-                else (
-                    transformation.output_interval
-                    if transformation_type in ("aggregation", "composite_expression") else Unset
-                )
+                else (transformation.output_interval if transformation_type == "aggregation" else Unset)
             ),
             timezone_type=(
                 timezone_type if timezone_type is not Unset
@@ -331,17 +298,17 @@ class DataProductTransformationService(ServiceUtils):
                 timezone if timezone is not Unset
                 else (transformation.timezone if transformation_type == "aggregation" else Unset)
             ),
-            max_gap_interval=(
-                max_gap_interval if max_gap_interval is not Unset
-                else (transformation.max_gap_interval if transformation_type == "composite_expression" else Unset)
-            ),
-            max_gap_interval_units=(
-                max_gap_interval_units if max_gap_interval_units is not Unset
-                else (transformation.max_gap_interval_units if transformation_type == "composite_expression" else Unset)
-            ),
             min_values=(
                 min_values if min_values is not Unset
                 else (transformation.min_values if transformation_type == "aggregation" else Unset)
+            ),
+            stop_on_no_data=(
+                stop_on_no_data if stop_on_no_data is not Unset
+                else (transformation.stop_on_no_data if transformation_type == "derivation" else Unset)
+            ),
+            stop_on_error=(
+                stop_on_error if stop_on_error is not Unset
+                else (transformation.stop_on_error if transformation_type == "derivation" else Unset)
             ),
         )
 
@@ -354,9 +321,9 @@ class DataProductTransformationService(ServiceUtils):
             "output_interval": output_interval,
             "timezone_type": timezone_type,
             "timezone": timezone,
-            "max_gap_interval": max_gap_interval,
-            "max_gap_interval_units": max_gap_interval_units,
             "min_values": min_values,
+            "stop_on_no_data": stop_on_no_data,
+            "stop_on_error": stop_on_error,
         }
         for field, value in editable_fields.items():
             if value is not Unset:
@@ -414,9 +381,9 @@ class DataProductTransformationService(ServiceUtils):
         output_interval: int | Unset = Unset,
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
-        max_gap_interval: int | None | Unset = Unset,
-        max_gap_interval_units: IntervalUnits | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
+        stop_on_no_data: bool | Unset = Unset,
+        stop_on_error: bool | Unset = Unset,
     ) -> None:
         """Validate transformation parameters and raise ValueError if invalid."""
 
@@ -477,12 +444,12 @@ class DataProductTransformationService(ServiceUtils):
             if rating_curve is Unset:
                 raise ValueError("rating_curve is required for transformation_type 'rating_curve'.")
             if any(v is not Unset for v in (
-                formula, output_interval_units, output_interval, aggregation_method, max_gap_interval,
-                max_gap_interval_units, min_values
+                formula, output_interval_units, output_interval, aggregation_method, min_values,
+                stop_on_no_data, stop_on_error,
             )):
                 raise ValueError(
-                    "formula, output_interval_units, output_interval, and aggregation_method must not be set "
-                    "for transformation_type 'rating_curve'."
+                    "formula, output_interval_units, output_interval, aggregation_method, min_values, "
+                    "stop_on_no_data, and stop_on_error must not be set for transformation_type 'rating_curve'."
                 )
             try:
                 RatingCurve.objects.get(
@@ -490,46 +457,25 @@ class DataProductTransformationService(ServiceUtils):
                 )
             except RatingCurve.DoesNotExist:
                 raise LookupError(
-                    f"Rating curve with ID {str(output_datastream)} does not exist at site {task.monitoring_site.id}."
+                    f"Rating curve with ID {str(getattr(rating_curve, 'pk', rating_curve))} "
+                    f"does not exist at site {task.monitoring_site.id}."
                 )
 
-        elif transformation_type == "expression":
+        elif transformation_type == "derivation":
             if formula is Unset:
-                raise ValueError("formula is required for transformation_type 'expression'.")
+                raise ValueError("formula is required for transformation_type 'derivation'.")
+            if not input_datastreams:
+                raise ValueError("At least one input datastream is required for transformation_type 'derivation'.")
             if any(v is not Unset for v in (
-                rating_curve, output_interval_units, output_interval, aggregation_method, max_gap_interval,
-                max_gap_interval_units, min_values
+                rating_curve, output_interval_units, output_interval, aggregation_method, min_values,
             )):
                 raise ValueError(
-                    "rating_curve_id, output_interval_units, output_interval, and aggregation_method must not be set "
-                    "for transformation_type 'expression'."
+                    "rating_curve_id, output_interval_units, output_interval, aggregation_method, and min_values "
+                    "must not be set for transformation_type 'derivation'."
                 )
-            validate_expression(
-                formula=formula,
-                variables=input_datastream_variable_names
-            )
-
-        elif transformation_type == "composite_expression":
-            if any(v is Unset for v in (formula, output_interval_units, output_interval)):
-                raise ValueError(
-                    "formula, output_interval_units, and output_interval are required "
-                    "for transformation_type 'composite_expression'."
-                )
-            if any(v is not Unset for v in (rating_curve, aggregation_method, min_values)):
-                raise ValueError(
-                    "rating_curve_id, min_values, and aggregation_method must not be set "
-                    "for transformation_type 'composite_expression'."
-                )
-            if (max_gap_interval is Unset) != (max_gap_interval_units is Unset):
-                raise ValueError(
-                    "max_gap_interval and max_gap_interval_units must both be set or both be unset."
-                )
-            if len(input_datastreams) < 2:
-                raise ValueError(
-                    "composite_expression requires at least 2 inputs. "
-                    "Use 'expression' for single-input transformations."
-                )
-            validate_expression(
+            if any(input_datastream.variable_name is None for input_datastream in input_datastreams):
+                raise ValueError("variable_name is required for every input of transformation_type 'derivation'.")
+            validate_derivation_formula(
                 formula=formula,
                 variables=input_datastream_variable_names
             )
@@ -540,9 +486,11 @@ class DataProductTransformationService(ServiceUtils):
                     "aggregation_method, output_interval_units, and output_interval are required for "
                     "transformation_type 'aggregation'."
                 )
-            if any(v is not Unset for v in (rating_curve, formula, max_gap_interval, max_gap_interval_units)):
+            if any(v is not Unset for v in (
+                rating_curve, formula, stop_on_no_data, stop_on_error,
+            )):
                 raise ValueError(
-                    "rating_curve, formula, max_gap_interval, and max_gap_interval_units must not be set "
+                    "rating_curve, formula, stop_on_no_data, and stop_on_error must not be set "
                     "for transformation_type 'aggregation'."
                 )
 
@@ -573,10 +521,8 @@ class DataProductTransformationService(ServiceUtils):
 
         if transformation.transformation_type == "rating_curve":
             return self.run_rating_curve(transformation)
-        elif transformation.transformation_type == "expression":
-            return self.run_expression(transformation)
-        elif transformation.transformation_type == "composite_expression":
-            return self.run_composite_expression(transformation)
+        elif transformation.transformation_type == "derivation":
+            return self.run_derivation(transformation)
         elif transformation.transformation_type == "aggregation":
             return self.run_aggregation(transformation)
         else:
@@ -631,63 +577,18 @@ class DataProductTransformationService(ServiceUtils):
 
         return self._load_to_datastream(transformation, result_df)
 
-    def run_expression(self, transformation: DataProductTransformation) -> int:
+    def run_derivation(self, transformation: DataProductTransformation) -> int:
         """
-        Evaluate a formula against a single input datastream and load results to the output datastream.
+        Evaluate a formula against one or more input datastreams and load results
+        to the output datastream.
         """
-
-        input_entry = transformation.input_datastreams.first()
-        if input_entry is None:
-            return 0
-
-        input_ds = input_entry.datastream
-        output_ds = transformation.output_datastream
-        variable_name = input_entry.variable_name or RESULT_COL
-
-        start = output_ds.phenomenon_end_time
-        end = input_ds.phenomenon_end_time
-
-        if end is None:
-            return 0
-        if start is not None and end <= start:
-            return 0
-
-        input_df = self._fetch_observations(input_ds, after=start, through=end)
-        if len(input_df) == 0:
-            return 0
-
-        result_df = apply_expression(
-            inputs={variable_name: input_df},
-            formula=transformation.formula,
-            no_data_value=input_ds.no_data_value,
-        )
-
-        if len(result_df) == 0:
-            return 0
-
-        return self._load_to_datastream(transformation, result_df)
-
-    def run_composite_expression(self, transformation: DataProductTransformation) -> int:
-        """
-        Interpolate multiple input datastreams onto a shared time grid, evaluate a formula
-        against each row, and load results to the output datastream.
-        """
-
-        if transformation.output_interval_units not in _UNIT_TO_DURATION:
-            raise NotImplementedError(
-                f"Interval unit '{transformation.output_interval_units}' is not supported. "
-                f"Supported units: {', '.join(_UNIT_TO_DURATION)}."
-            )
 
         input_entries = list(transformation.input_datastreams.select_related("datastream").all())
         if not input_entries:
             return 0
 
         output_ds = transformation.output_datastream
-        interval = f"{transformation.output_interval}{_UNIT_TO_DURATION[transformation.output_interval_units]}"
 
-        # Limit end at the earliest input's phenomenon_end_time so we only
-        # interpolate where all inputs have data.
         input_ends = [entry.datastream.phenomenon_end_time for entry in input_entries]
         if any(e is None for e in input_ends):
             return 0
@@ -697,29 +598,22 @@ class DataProductTransformationService(ServiceUtils):
         if start is not None and end <= start:
             return 0
 
-        max_gap = None
-        if transformation.max_gap_interval is not None and transformation.max_gap_interval_units is not None:
-            if transformation.max_gap_interval_units not in _UNIT_TO_DURATION:
-                raise NotImplementedError(
-                    f"max_gap interval unit '{transformation.max_gap_interval_units}' is not supported. "
-                    f"Supported units: {', '.join(_UNIT_TO_DURATION)}."
-                )
-            max_gap = f"{transformation.max_gap_interval}{_UNIT_TO_DURATION[transformation.max_gap_interval_units]}"
-
         inputs = {}
+        input_no_data_values = {}
         for entry in input_entries:
             df = self._fetch_observations(entry.datastream, after=start, through=end)
             if len(df) == 0:
                 return 0
             inputs[entry.variable_name] = df
+            input_no_data_values[entry.variable_name] = entry.datastream.no_data_value
 
-        result_df = apply_expression(
+        result_df = apply_derivation(
             inputs=inputs,
             formula=transformation.formula,
-            interval=interval,
-            on_missing="interpolate",
-            max_gap=max_gap,
-            no_data_value=input_entries[0].datastream.no_data_value,
+            stop_on_no_data=transformation.stop_on_no_data,
+            stop_on_error=transformation.stop_on_error,
+            input_no_data_values=input_no_data_values,
+            output_no_data_value=output_ds.no_data_value,
         )
 
         if len(result_df) == 0:
