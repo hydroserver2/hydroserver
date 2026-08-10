@@ -1,5 +1,5 @@
 import uuid
-from pydantic import AliasPath, AliasChoices
+from pydantic import AliasPath, AliasChoices, field_validator
 from ninja import Schema, Field, Query
 from typing import Optional, Literal, TYPE_CHECKING
 from core.types import ISODatetime
@@ -10,7 +10,12 @@ from interfaces.api.schemas import (
     BaseQueryParameters,
     CollectionQueryParameters,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.attachment import (
+    TagGetResponse,
+    TagPostBody,
+    FileAttachmentGetResponse,
+    tags_dict_to_list,
+)
 
 if TYPE_CHECKING:
     from interfaces.api.schemas import WorkspaceSummaryResponse
@@ -220,10 +225,15 @@ class DatastreamSummaryResponse(
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
+    tags: list[TagGetResponse] = []
     datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags_dict_to_list(cls, value):
+        return tags_dict_to_list(value)
 
 
 class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
@@ -236,10 +246,15 @@ class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
     observed_property: "ObservedPropertySummaryResponse"
     processing_level: "ProcessingLevelSummaryResponse"
     unit: "UnitSummaryResponse"
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
+    tags: list[TagGetResponse] = []
     datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags_dict_to_list(cls, value):
+        return tags_dict_to_list(value)
 
 
 class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):

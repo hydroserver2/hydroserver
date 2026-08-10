@@ -10,9 +10,7 @@ from core.sta.models import (
     Unit,
     ProcessingLevel,
     MonitoringSiteFileAttachment,
-    MonitoringSiteTag,
     DatastreamFileAttachment,
-    DatastreamTag,
     ResultQualifier,
     Observation,
     SiteType,
@@ -38,10 +36,6 @@ class MonitoringSiteAdmin(admin.ModelAdmin):
 
 class MonitoringSiteFileAttachmentAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name")
-
-
-class MonitoringSiteTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
 class MethodAdmin(admin.ModelAdmin):
@@ -172,10 +166,6 @@ class DatastreamAdmin(admin.ModelAdmin):
 
 class DatastreamFileAttachmentAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "datastream__name")
-
-
-class DatastreamTagAdmin(admin.ModelAdmin):
-    list_display = ("id", "key", "value", "datastream__name")
 
 
 class ResultQualifierAdmin(admin.ModelAdmin):
@@ -368,14 +358,12 @@ class FileAttachmentTypeAdmin(admin.ModelAdmin, VocabularyAdmin):
 
 admin.site.register(MonitoringSite, MonitoringSiteAdmin)
 admin.site.register(MonitoringSiteFileAttachment, MonitoringSiteFileAttachmentAdmin)
-admin.site.register(MonitoringSiteTag, MonitoringSiteTagAdmin)
 admin.site.register(Method, MethodAdmin)
 admin.site.register(ObservedProperty, ObservedPropertyAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ProcessingLevel, ProcessingLevelAdmin)
 admin.site.register(Datastream, DatastreamAdmin)
 admin.site.register(DatastreamFileAttachment, DatastreamFileAttachmentAdmin)
-admin.site.register(DatastreamTag, DatastreamTagAdmin)
 admin.site.register(FileAttachmentType, FileAttachmentTypeAdmin)
 admin.site.register(ResultQualifier, ResultQualifierAdmin)
 admin.site.register(SiteType, SiteTypeAdmin)

@@ -3,7 +3,6 @@ import pytest
 from core.sta.models import (
     DatastreamAggregation,
     DatastreamStatus,
-    DatastreamTag,
     FileAttachmentType,
     SampledMedium,
 )
@@ -316,7 +315,8 @@ def test_get_datastream_tags_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.get(_tags_url(datastream.id))
@@ -371,7 +371,8 @@ def test_add_datastream_tag_returns_400_for_duplicate_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.post(
@@ -387,7 +388,8 @@ def test_edit_datastream_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.put(
@@ -403,7 +405,8 @@ def test_edit_datastream_tag_succeeds_for_workspace_owner(client):
 def test_edit_datastream_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -420,7 +423,8 @@ def test_remove_datastream_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.delete(
@@ -430,13 +434,15 @@ def test_remove_datastream_tag_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 204
-    assert not DatastreamTag.objects.filter(datastream=datastream, key="season").exists()
+    datastream.refresh_from_db()
+    assert "season" not in datastream.tags
 
 
 def test_remove_datastream_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -482,7 +488,8 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
-    DatastreamTag.objects.create(datastream=datastream, key="season", value="summer")
+    datastream.tags = {"season": "summer"}
+    datastream.save()
     client.force_login(owner)
 
     response = client.get(f"{DATASTREAMS_URL}/tags/keys")

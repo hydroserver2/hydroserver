@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from django.db.models import Q
+from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
 
 from core.iam.models import Workspace
@@ -37,25 +39,25 @@ class MonitoringSite(models.Model):
     country = models.CharField(max_length=2, null=True, blank=True)
     is_private = models.BooleanField(default=False)
     data_disclaimer = models.TextField(null=True, blank=True)
+    tags = models.JSONField(default=dict, blank=True)
 
     objects = MonitoringSiteQuerySet.as_manager()
+
+    class Meta:
+        indexes = [
+            GinIndex(
+                fields=["tags"],
+                name="sta_monitoringsite_tags_gin",
+                opclasses=["jsonb_path_ops"],
+                condition=~Q(tags={}),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     def delete(self, *args, **kwargs):
         return type(self).objects.filter(pk=self.pk).delete()
-
-
-class MonitoringSiteTag(models.Model):
-    monitoring_site = models.ForeignKey(
-        MonitoringSite, related_name="monitoring_site_tags", on_delete=models.CASCADE
-    )
-    key = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.key}: {self.value} - {self.id}"
 
 
 def monitoring_site_file_attachment_storage_path(instance, filename):

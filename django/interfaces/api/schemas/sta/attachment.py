@@ -1,10 +1,20 @@
 from typing import Optional
-from ninja import Query
+from ninja import Field, Query
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     CollectionQueryParameters,
 )
+
+
+# TODO: Temporary bridge until API tagging shape is updated.
+def tags_dict_to_list(value):
+    """Bridges the JSONB {key: value} storage shape to the wire shape of list[{key,value}]."""
+
+    if isinstance(value, dict):
+        return [{"key": key, "value": val} for key, val in value.items()]
+
+    return value
 
 
 class FileAttachmentQueryParameters(CollectionQueryParameters):
@@ -17,8 +27,8 @@ class TagGetResponse(BaseGetResponse):
 
 
 class TagPostBody(BasePostBody):
-    key: str
-    value: str
+    key: str = Field(..., max_length=255)
+    value: str = Field(..., max_length=255)
 
 
 class TagDeleteBody(BasePostBody):

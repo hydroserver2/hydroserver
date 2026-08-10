@@ -1,6 +1,5 @@
 from .monitoring_site import (
     MonitoringSite,
-    MonitoringSiteTag,
     MonitoringSiteFileAttachment,
     SiteType,
     FileAttachmentType,
@@ -12,7 +11,6 @@ from .method import Method, MethodType
 from .unit import Unit, UnitType
 from .datastream import (
     Datastream,
-    DatastreamTag,
     DatastreamFileAttachment,
     DatastreamAggregation,
     DatastreamStatus,

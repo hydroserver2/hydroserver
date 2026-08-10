@@ -3,7 +3,6 @@ import pytest
 from core.sta.models import (
     FileAttachmentType,
     SiteType,
-    MonitoringSiteTag,
 )
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -281,7 +280,8 @@ def test_get_monitoring_site_tags_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.get(_tags_url(monitoring_site.id))
@@ -336,7 +336,8 @@ def test_add_monitoring_site_tag_returns_400_for_duplicate_key(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.post(
@@ -352,7 +353,8 @@ def test_edit_monitoring_site_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.put(
@@ -368,7 +370,8 @@ def test_edit_monitoring_site_tag_succeeds_for_workspace_owner(client):
 def test_edit_monitoring_site_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -385,7 +388,8 @@ def test_remove_monitoring_site_tag_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.delete(
@@ -395,13 +399,15 @@ def test_remove_monitoring_site_tag_succeeds_for_workspace_owner(client):
     )
 
     assert response.status_code == 204
-    assert not MonitoringSiteTag.objects.filter(monitoring_site=monitoring_site, key="season").exists()
+    monitoring_site.refresh_from_db()
+    assert "season" not in monitoring_site.tags
 
 
 def test_remove_monitoring_site_tag_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     collaborator = _collaborator_with_permission(workspace, can_view=True)
     client.force_login(collaborator.user)
 
@@ -470,7 +476,8 @@ def test_get_monitoring_site_tag_keys_returns_keys_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    MonitoringSiteTag.objects.create(monitoring_site=monitoring_site, key="season", value="summer")
+    monitoring_site.tags = {"season": "summer"}
+    monitoring_site.save()
     client.force_login(owner)
 
     response = client.get(f"{MONITORING_SITES_URL}/tags/keys")

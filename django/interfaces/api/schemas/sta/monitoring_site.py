@@ -16,6 +16,7 @@ from interfaces.api.schemas.sta.attachment import (
     FileAttachmentGetResponse,
     TagGetResponse,
     TagPostBody,
+    tags_dict_to_list,
 )
 
 if TYPE_CHECKING:
@@ -165,19 +166,29 @@ class MonitoringSiteMapSummaryResponse(BaseGetResponse):
 class MonitoringSiteSummaryResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace_id: uuid.UUID
-    monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
+    tags: list[TagGetResponse] = []
     monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags_dict_to_list(cls, value):
+        return tags_dict_to_list(value)
 
 
 class MonitoringSiteDetailResponse(BaseGetResponse, MonitoringSiteFields):
     id: uuid.UUID
     workspace: "WorkspaceSummaryResponse"
-    monitoring_site_tags: list[TagGetResponse] = Field(..., alias="tags")
+    tags: list[TagGetResponse] = []
     monitoring_site_file_attachments: list[FileAttachmentGetResponse] = Field(
         ..., alias="fileAttachments"
     )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags_dict_to_list(cls, value):
+        return tags_dict_to_list(value)
 
 
 class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
